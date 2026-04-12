@@ -16,7 +16,7 @@ public sealed class PresidioAnalyzerResource(string name)
     /// </summary>
     public ReferenceExpression ConnectionStringExpression =>
         ReferenceExpression.Create(
-            $"http://{HttpEndpoint.Property(EndpointProperty.Host)}:{HttpEndpoint.Property(EndpointProperty.Port)}"
+            $"{HttpEndpointName}://{HttpEndpoint.Property(EndpointProperty.Host)}:{HttpEndpoint.Property(EndpointProperty.Port)}"
         );
 }
 
@@ -36,6 +36,6 @@ public sealed class PresidioAnonymizerResource(string name)
     /// </summary>
     public ReferenceExpression ConnectionStringExpression =>
         ReferenceExpression.Create(
-            $"http://{HttpEndpoint.Property(EndpointProperty.Host)}:{HttpEndpoint.Property(EndpointProperty.Port)}"
+            $"{HttpEndpointName}://{HttpEndpoint.Property(EndpointProperty.Host)}:{HttpEndpoint.Property(EndpointProperty.Port)}"
         );
 }

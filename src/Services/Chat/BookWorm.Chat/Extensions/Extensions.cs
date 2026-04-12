@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
@@ -81,6 +82,15 @@ internal static class Extensions
 
             // Agent governance (policy enforcement, identity, rings, injection detection)
             builder.AddAgentGovernance("Policies/chat-agents.yaml");
+
+            // Agent discovery client for locating
+            services.AddAgentDiscoveryClient(
+                HttpUtilities
+                    .AsUrlBuilder()
+                    .WithScheme(Http.Schemes.HttpOrHttps)
+                    .WithHost(Services.Rating)
+                    .Build()
+            );
 
             // Register each agent as a self-contained vertical slice
             builder.AddBookAgent();

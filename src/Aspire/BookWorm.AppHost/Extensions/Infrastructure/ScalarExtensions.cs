@@ -5,95 +5,97 @@ namespace BookWorm.AppHost.Extensions.Infrastructure;
 
 internal static class ScalarExtensions
 {
-    /// <summary>
-    ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.
-    ///     Only local Keycloak authentication is supported.
-    /// </summary>
-    /// <param name="builder">The distributed application builder to extend.</param>
-    /// <param name="keycloak">The Keycloak resource builder to use for authentication.</param>
-    /// <returns>An <see cref="IResourceBuilder{ScalarResource}" /> configured with the specified theme and font settings.</returns>
-    public static IResourceBuilder<ScalarResource> AddScalar(
-        this IDistributedApplicationBuilder builder,
-        IResourceBuilder<IResource>? keycloak = null
-    )
+    extension(IDistributedApplicationBuilder builder)
     {
-        var scalar = builder.AddScalarApiReference(options =>
-            options.DisableDefaultFonts().PreferHttpsEndpoint().AllowSelfSignedCertificates()
-        );
-
-        if (keycloak is null)
+        /// <summary>
+        ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.
+        ///     Only local Keycloak authentication is supported.
+        /// </summary>
+        /// <param name="keycloak">The Keycloak resource builder to use for authentication.</param>
+        /// <returns>An <see cref="IResourceBuilder{ScalarResource}" /> configured with the specified theme and font settings.</returns>
+        public IResourceBuilder<ScalarResource> AddScalar(
+            IResourceBuilder<IResource>? keycloak = null
+        )
         {
-            return scalar;
+            var scalar = builder.AddScalarApiReference(options =>
+                options.DisableDefaultFonts().PreferHttpsEndpoint().AllowSelfSignedCertificates()
+            );
+
+            if (keycloak is null)
+            {
+                return scalar;
+            }
+
+            return keycloak switch
+            {
+                IResourceBuilder<KeycloakResource> container => scalar
+                    .WithReference(container)
+                    .WaitForStart(container),
+
+                _ => throw new InvalidOperationException(
+                    "Unsupported Keycloak resource builder type."
+                ),
+            };
         }
-
-        return keycloak switch
-        {
-            IResourceBuilder<KeycloakResource> container => scalar
-                .WithReference(container)
-                .WaitForStart(container),
-
-            _ => throw new InvalidOperationException("Unsupported Keycloak resource builder type."),
-        };
     }
 
-    /// <summary>
-    ///     Configures the Scalar resource builder to include an API reference with OAuth authorization.
-    /// </summary>
-    /// <param name="builder">The Scalar resource builder to configure.</param>
-    /// <param name="api">The project resource builder representing the API project.</param>
-    /// <returns>The configured Scalar resource builder with OAuth authorization.</returns>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when Keycloak resource is not found in the application builder or when the required 'kc-realm' parameter is
-    ///     not configured.
-    /// </exception>
-    public static IResourceBuilder<ScalarResource> WithOpenAPI(
-        this IResourceBuilder<ScalarResource> builder,
-        IResourceBuilder<ProjectResource> api
-    )
+    extension(IResourceBuilder<ScalarResource> builder)
     {
-        return builder.WithApiReference(
-            api,
-            async (options, ctx) =>
-            {
-                var clientId = api.Resource.Name;
-
-                var parameter = builder
-                    .ApplicationBuilder.Resources.OfType<ParameterResource>()
-                    .FirstOrDefault(r =>
-                        string.Equals(
-                            r.Name,
-                            $"{clientId}-secret",
-                            StringComparison.OrdinalIgnoreCase
-                        )
-                    );
-
-                if (parameter is not null)
+        /// <summary>
+        ///     Configures the Scalar resource builder to include an API reference with OAuth authorization.
+        /// </summary>
+        /// <param name="api">The project resource builder representing the API project.</param>
+        /// <returns>The configured Scalar resource builder with OAuth authorization.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when Keycloak resource is not found in the application builder or when the required 'kc-realm' parameter is
+        ///     not configured.
+        /// </exception>
+        public IResourceBuilder<ScalarResource> WithOpenAPI(IResourceBuilder<ProjectResource> api)
+        {
+            return builder.WithApiReference(
+                api,
+                async (options, ctx) =>
                 {
-                    var clientSecret = await parameter.GetValueAsync(ctx);
+                    var clientId = api.Resource.Name;
 
-                    options
-                        .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
-                        .AddAuthorizationCodeFlow(
-                            OAuthDefaults.DisplayName,
-                            flow =>
-                            {
-                                flow.WithPkce(Pkce.Sha256)
-                                    .WithClientId(clientId)
-                                    .AddBodyParameter("audience", "account");
-
-                                if (!string.IsNullOrWhiteSpace(clientSecret))
-                                {
-                                    flow.WithClientSecret(clientSecret);
-                                }
-
-                                flow.WithSelectedScopes(
-                                    $"{clientId}_{Authorization.Actions.Read}",
-                                    $"{clientId}_{Authorization.Actions.Write}"
-                                );
-                            }
+                    var parameter = builder
+                        .ApplicationBuilder.Resources.OfType<ParameterResource>()
+                        .FirstOrDefault(r =>
+                            string.Equals(
+                                r.Name,
+                                $"{clientId}-secret",
+                                StringComparison.OrdinalIgnoreCase
+                            )
                         );
+
+                    if (parameter is not null)
+                    {
+                        var clientSecret = await parameter.GetValueAsync(ctx);
+
+                        options
+                            .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
+                            .AddAuthorizationCodeFlow(
+                                OAuthDefaults.DisplayName,
+                                flow =>
+                                {
+                                    flow.WithPkce(Pkce.Sha256)
+                                        .WithClientId(clientId)
+                                        .AddBodyParameter("audience", "account");
+
+                                    if (!string.IsNullOrWhiteSpace(clientSecret))
+                                    {
+                                        flow.WithClientSecret(clientSecret);
+                                    }
+
+                                    flow.WithSelectedScopes(
+                                        $"{clientId}_{Authorization.Actions.Read}",
+                                        $"{clientId}_{Authorization.Actions.Write}"
+                                    );
+                                }
+                            );
+                    }
                 }
-            }
-        );
+            );
+        }
     }
 }

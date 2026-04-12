@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace BookWorm.Chassis.AI.Governance;
 
-public static class GovernanceExtensions
+public static class Extensions
 {
     extension(IHostApplicationBuilder builder)
     {
@@ -56,7 +56,7 @@ public static class GovernanceExtensions
 
                 return new GovernanceKernel(governanceOptions);
             });
-            services.AddSingleton<AgentIdentityProvider>();
+            services.AddSingleton<IAgentIdentityProvider, AgentIdentityProvider>();
 
             // Rogue agent detection — Z-score frequency analysis with auto-quarantine
             services.AddSingleton<RogueAgentDetector>();

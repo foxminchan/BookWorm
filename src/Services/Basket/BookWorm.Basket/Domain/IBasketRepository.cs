@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Basket.Domain;
 
-public interface IBasketRepository
+internal interface IBasketRepository
 {
     Task<CustomerBasket?> GetBasketAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id

@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Utilities.Configurations;
+using Microsoft.Extensions.Configuration;
 
 namespace BookWorm.ServiceDefaults.Cors;
 
@@ -6,13 +7,18 @@ public static class CorsExtensions
 {
     extension(IHostApplicationBuilder builder)
     {
+        /// <summary>
+        ///     Registers the CORS policy appropriate for the current environment.
+        ///     In development, allows any request from localhost.
+        ///     In non-development environments, applies the strongly-typed <see cref="CorsSettings" /> configuration.
+        /// </summary>
         public void AddDefaultCors()
         {
             var services = builder.Services;
 
             if (builder.Environment.IsDevelopment())
             {
-                builder.Services.AddCors(options =>
+                services.AddCors(options =>
                 {
                     options.AddPolicy(
                         CorsConstants.AllowAllCorsPolicy,
@@ -33,28 +39,33 @@ public static class CorsExtensions
             {
                 builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
 
+                var corsSettings =
+                    builder
+                        .Configuration.GetRequiredSection(CorsSettings.ConfigurationSection)
+                        .Get<CorsSettings>()
+                    ?? throw new InvalidOperationException(
+                        $"Failed to bind CORS settings from configuration section: {CorsSettings.ConfigurationSection}"
+                    );
+
                 services.AddCors(options =>
                 {
                     options.AddPolicy(
                         CorsConstants.AllowSpecificCorsPolicy,
                         policyBuilder =>
                         {
-                            var serviceProvider = services.BuildServiceProvider();
-                            var corsOptions = serviceProvider.GetRequiredService<CorsSettings>();
-
                             policyBuilder
-                                .WithOrigins([.. corsOptions.Origins])
-                                .WithHeaders([.. corsOptions.Headers])
-                                .WithMethods([.. corsOptions.Methods]);
+                                .WithOrigins([.. corsSettings.Origins])
+                                .WithHeaders([.. corsSettings.Headers])
+                                .WithMethods([.. corsSettings.Methods]);
 
-                            if (corsOptions.MaxAge is not null)
+                            if (corsSettings.MaxAge is not null)
                             {
                                 policyBuilder.SetPreflightMaxAge(
-                                    TimeSpan.FromSeconds(corsOptions.MaxAge.Value)
+                                    TimeSpan.FromSeconds(corsSettings.MaxAge.Value)
                                 );
                             }
 
-                            if (corsOptions.AllowCredentials)
+                            if (corsSettings.AllowCredentials)
                             {
                                 policyBuilder.AllowCredentials();
                             }
@@ -65,12 +76,19 @@ public static class CorsExtensions
         }
     }
 
-    public static void UseDefaultCors(this WebApplication app)
+    extension(WebApplication app)
     {
-        app.UseCors(
-            app.Environment.IsDevelopment()
-                ? CorsConstants.AllowAllCorsPolicy
-                : CorsConstants.AllowSpecificCorsPolicy
-        );
+        /// <summary>
+        ///     Applies the CORS middleware using the policy registered by <see cref="CorsExtensions" />.
+        ///     Selects <c>AllowAll</c> in development and <c>AllowSpecific</c> in all other environments.
+        /// </summary>
+        public void UseDefaultCors()
+        {
+            app.UseCors(
+                app.Environment.IsDevelopment()
+                    ? CorsConstants.AllowAllCorsPolicy
+                    : CorsConstants.AllowSpecificCorsPolicy
+            );
+        }
     }
 }

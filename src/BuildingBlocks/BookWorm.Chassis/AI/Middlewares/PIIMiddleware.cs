@@ -3,24 +3,20 @@ using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Middlewares;
 
-public static class PIIMiddleware
+internal static class PIIMiddleware
 {
-    /// <summary>
-    ///     Creates a PII filtering delegate that uses the given <see cref="IPresidioService" />
-    ///     to anonymize messages before they reach the inner chat client.
-    /// </summary>
-    /// <param name="presidioService">The Presidio service for PII anonymization.</param>
-    /// <returns>A delegate compatible with <c>ChatClientBuilder.Use()</c>.</returns>
     public static Func<
         IEnumerable<ChatMessage>,
         ChatOptions?,
         IChatClient,
         CancellationToken,
         Task<ChatResponse>
-    > Create(IPresidioService presidioService)
+    > Create()
     {
         return async (messages, options, innerChatClient, cancellationToken) =>
         {
+            var presidioService = innerChatClient.GetRequiredService<IPresidioService>();
+
             var filteredMessages = await FilterMessagesAsync(
                 presidioService,
                 messages,
@@ -54,5 +50,21 @@ public static class PIIMiddleware
         }
 
         return result;
+    }
+}
+
+public static class PIIMiddlewareExtensions
+{
+    extension(ChatClientBuilder builder)
+    {
+        /// <summary>
+        ///     Adds PII (Personally Identifiable Information) redaction middleware to the chat client pipeline.
+        ///     Intercepts chat messages and anonymizes sensitive information before forwarding to the inner client.
+        /// </summary>
+        /// <returns>The <see cref="ChatClientBuilder" /> so that additional calls can be chained.</returns>
+        public ChatClientBuilder UsePIIMiddleware()
+        {
+            return builder.Use(PIIMiddleware.Create(), null);
+        }
     }
 }

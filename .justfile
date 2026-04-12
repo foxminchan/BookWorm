@@ -82,7 +82,7 @@ prepare: restore hook
 # Run the application
 
 run:
-    aspire run
+    aspire run --isolated
 
 # Update EventCatalog bun packages
 

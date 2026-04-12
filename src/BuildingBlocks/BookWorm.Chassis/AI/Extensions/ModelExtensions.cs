@@ -10,6 +10,21 @@ public static class ModelExtensions
 {
     extension(IHostApplicationBuilder builder)
     {
+        /// <summary>
+        ///     Registers AI services (chat client and embedding generator) based on available
+        ///     connection strings in the application configuration.
+        /// </summary>
+        /// <remarks>
+        ///     Conditionally adds an OpenAI chat client with function invocation support if
+        ///     <c>Components.OpenAI.Chat</c> connection string is present, and an embedding
+        ///     generator if <c>Components.OpenAI.Embedding</c> connection string is present.
+        /// </remarks>
+        /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
+        /// <example>
+        ///     <code>
+        ///         builder.AddAIServices();
+        ///     </code>
+        /// </example>
         public IHostApplicationBuilder AddAIServices()
         {
             if (
@@ -38,6 +53,20 @@ public static class ModelExtensions
             return builder;
         }
 
+        /// <summary>
+        ///     Configures OpenTelemetry tracing and metrics for AI-related components,
+        ///     including Microsoft Extensions AI and Microsoft Agents AI sources.
+        /// </summary>
+        /// <remarks>
+        ///     Enables the OpenAI experimental OpenTelemetry switch in development environments.
+        ///     Registers tracing sources for agent workflows, runtime, and in-process actors,
+        ///     as well as meters for agent governance and AI metrics.
+        /// </remarks>
+        /// <example>
+        ///     <code>
+        ///         builder.WithAITelemetry();
+        ///     </code>
+        /// </example>
         public void WithAITelemetry()
         {
             var services = builder.Services;

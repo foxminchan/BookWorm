@@ -5,51 +5,30 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.AI.Middlewares;
 
-public static class GovernanceToolCallMiddleware
+internal static class GovernanceToolCallMiddleware
 {
-    private sealed record GovernanceContext(
-        GovernanceKernel Kernel,
-        AgentIdentityProvider IdentityProvider,
-        string AgentName,
-        string AgentDid,
-        RogueAgentDetector? RogueDetector,
-        GovernanceAuditTrail? AuditTrail,
-        ILogger? Logger
-    );
-
-    /// <summary>
-    ///     Creates a governance-aware chat client middleware delegate that enforces policy,
-    ///     detects prompt injection, monitors for rogue agent behavior, and logs decisions
-    ///     to a tamper-proof Merkle-chained audit trail.
-    /// </summary>
-    /// <param name="kernel">The governance kernel for policy evaluation.</param>
-    /// <param name="identityProvider">Provider for agent DID-based identities.</param>
-    /// <param name="agentName">The logical name of the agent this middleware protects.</param>
-    /// <param name="rogueDetector">Optional rogue agent detector for anomaly analysis.</param>
-    /// <param name="auditTrail">Optional Merkle-chained audit trail for compliance logging.</param>
-    /// <param name="logger">Optional logger for diagnostics.</param>
-    /// <returns>A delegate compatible with <c>ChatClientBuilder.Use()</c>.</returns>
     public static Func<
         IEnumerable<ChatMessage>,
         ChatOptions?,
         IChatClient,
         CancellationToken,
         Task<ChatResponse>
-    > Create(
-        GovernanceKernel kernel,
-        AgentIdentityProvider identityProvider,
-        string agentName,
-        RogueAgentDetector? rogueDetector = null,
-        GovernanceAuditTrail? auditTrail = null,
-        ILogger? logger = null
-    )
+    > Create(IAgentIdentityProvider identityProvider, string agentName)
     {
         var identity = identityProvider.GetOrCreateIdentity(agentName);
 
         return async (messages, options, innerChatClient, cancellationToken) =>
         {
+            var kernel = innerChatClient.GetRequiredService<GovernanceKernel>();
+            var rogueDetector = innerChatClient.GetRequiredService<RogueAgentDetector>();
+            var auditTrail = innerChatClient.GetRequiredService<GovernanceAuditTrail>();
+
+            // init logger via factory
+            var loggerFactory = innerChatClient.GetService<ILoggerFactory>();
+            var logger = loggerFactory?.CreateLogger(nameof(GovernanceToolCallMiddleware));
+
             // Check quarantine status before processing
-            if (rogueDetector?.IsQuarantined(identity.Did) is true)
+            if (rogueDetector.IsQuarantined(identity.Did))
             {
                 logger?.LogCritical(
                     "Quarantined agent {AgentName} ({Did}) attempted request — rejecting",
@@ -57,7 +36,7 @@ public static class GovernanceToolCallMiddleware
                     identity.Did
                 );
 
-                auditTrail?.Log(identity.Did, "quarantine_reject", "deny", agentName);
+                auditTrail.Log(identity.Did, "quarantine_reject", "deny", agentName);
 
                 return new([
                     new(
@@ -94,7 +73,7 @@ public static class GovernanceToolCallMiddleware
             );
 
             identityProvider.RecordSuccess(agentName);
-            auditTrail?.Log(identity.Did, "request_completed", "allow", agentName);
+            auditTrail.Log(identity.Did, "request_completed", "allow", agentName);
 
             return response;
         };
@@ -112,9 +91,9 @@ public static class GovernanceToolCallMiddleware
                 (
                     Tool: tool,
                     Result: ctx.Kernel.EvaluateToolCall(
-                        agentId: ctx.AgentDid,
-                        toolName: tool.Name,
-                        args: new() { ["agent_name"] = ctx.AgentName }
+                        ctx.AgentDid,
+                        tool.Name,
+                        new() { ["agent_name"] = ctx.AgentName }
                     )
                 )
             )
@@ -216,5 +195,38 @@ public static class GovernanceToolCallMiddleware
         }
 
         return null;
+    }
+
+    private sealed record GovernanceContext(
+        GovernanceKernel Kernel,
+        IAgentIdentityProvider IdentityProvider,
+        string AgentName,
+        string AgentDid,
+        RogueAgentDetector? RogueDetector,
+        GovernanceAuditTrail? AuditTrail,
+        ILogger? Logger
+    );
+}
+
+public static class GovernanceToolCallMiddlewareExtensions
+{
+    extension(ChatClientBuilder builder)
+    {
+        /// <summary>
+        ///     Adds governance enforcement middleware for tool calls made by the configured agent.
+        /// </summary>
+        /// <param name="identityProvider">Provides and tracks the agent identity used during governance checks.</param>
+        /// <param name="agentName">The logical agent name used to resolve identity and audit entries.</param>
+        /// <returns>The same <see cref="ChatClientBuilder" /> instance for fluent middleware configuration.</returns>
+        public ChatClientBuilder UseGovernanceToolCall(
+            IAgentIdentityProvider identityProvider,
+            string agentName
+        )
+        {
+            return builder.Use(
+                GovernanceToolCallMiddleware.Create(identityProvider, agentName),
+                null
+            );
+        }
     }
 }

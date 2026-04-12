@@ -2,7 +2,7 @@
 
 namespace BookWorm.Chassis.AI.Middlewares;
 
-public static class GuardrailMiddleware
+internal static class GuardrailMiddleware
 {
     private static readonly string[] _sourceArray =
     [
@@ -44,5 +44,20 @@ public static class GuardrailMiddleware
             )
                 ? "[REDACTED: Forbidden content]"
                 : content;
+    }
+}
+
+public static class GuardrailMiddlewareExtensions
+{
+    extension(ChatClientBuilder builder)
+    {
+        /// <summary>
+        ///     Registers the guardrail middleware in the chat client pipeline to filter disallowed content.
+        /// </summary>
+        /// <returns>The configured <see cref="ChatClientBuilder" /> instance for fluent chaining.</returns>
+        public ChatClientBuilder UseGuardrailMiddleware()
+        {
+            return builder.Use(GuardrailMiddleware.InvokeAsync, null);
+        }
     }
 }

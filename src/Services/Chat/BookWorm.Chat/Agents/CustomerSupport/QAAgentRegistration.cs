@@ -1,6 +1,5 @@
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
-using BookWorm.Chassis.AI.Presidio;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
@@ -14,26 +13,15 @@ internal static class QAAgentRegistration
             QAAgentDefinition.Name,
             (sp, key) =>
             {
-                var presidioService = sp.GetRequiredService<IPresidioService>();
-                var governanceKernel = sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
-                var identityProvider = sp.GetRequiredService<AgentIdentityProvider>();
-                var rogueDetector = sp.GetRequiredService<RogueAgentDetector>();
-                var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
+                var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
+
                 var compactionProvider = CompactionPipelineFactory.CreateLight();
+
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .Use(PIIMiddleware.Create(presidioService), null)
-                    .Use(
-                        GovernanceToolCallMiddleware.Create(
-                            governanceKernel,
-                            identityProvider,
-                            QAAgentDefinition.Name,
-                            rogueDetector,
-                            auditTrail
-                        ),
-                        null
-                    )
-                    .Use(GuardrailMiddleware.InvokeAsync, null)
+                    .UsePIIMiddleware()
+                    .UseGuardrailMiddleware()
+                    .UseGovernanceToolCall(identityProvider, QAAgentDefinition.Name)
                     .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 

@@ -36,40 +36,25 @@ internal static class Extensions
             services.AddOpenAIResponses();
             services.AddOpenAIConversations();
             services.AddScoped<ReviewTool>();
-            services.AddHttpClient<AgentDiscoveryClient>(client =>
-                client.BaseAddress = new(
-                    HttpUtilities
-                        .AsUrlBuilder()
-                        .WithScheme(Http.Schemes.HttpOrHttps)
-                        .WithHost(Constants.Aspire.Services.Chatting)
-                        .Build()
-                )
+            services.AddAgentDiscoveryClient(
+                HttpUtilities
+                    .AsUrlBuilder()
+                    .WithScheme(Http.Schemes.HttpOrHttps)
+                    .WithHost(Constants.Aspire.Services.Chatting)
+                    .Build()
             );
 
             builder.AddAIAgent(
                 RatingAgent.Name,
                 (sp, key) =>
                 {
-                    var presidioService = sp.GetRequiredService<IPresidioService>();
-                    var governanceKernel =
-                        sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
-                    var identityProvider = sp.GetRequiredService<AgentIdentityProvider>();
-                    var rogueDetector = sp.GetRequiredService<RogueAgentDetector>();
-                    var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
+                    var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
+
                     var chatClient = sp.GetRequiredService<IChatClient>()
                         .AsBuilder()
-                        .Use(PIIMiddleware.Create(presidioService), null)
-                        .Use(
-                            GovernanceToolCallMiddleware.Create(
-                                governanceKernel,
-                                identityProvider,
-                                RatingAgent.Name,
-                                rogueDetector,
-                                auditTrail
-                            ),
-                            null
-                        )
-                        .Use(GuardrailMiddleware.InvokeAsync, null)
+                        .UsePIIMiddleware()
+                        .UseGuardrailMiddleware()
+                        .UseGovernanceToolCall(identityProvider, RatingAgent.Name)
                         .Build(sp);
 
                     using var spScope = sp.CreateScope();
