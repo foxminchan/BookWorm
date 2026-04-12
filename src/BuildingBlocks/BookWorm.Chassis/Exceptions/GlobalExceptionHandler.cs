@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Exceptions;
 
-public sealed class GlobalExceptionHandler(
+internal sealed class GlobalExceptionHandler(
     ILogger<GlobalExceptionHandler> logger,
     GlobalLogBuffer logBuffer
 ) : IExceptionHandler
@@ -56,5 +57,20 @@ public sealed class GlobalExceptionHandler(
             ),
             _ => (StatusCodes.Status500InternalServerError, "We made a mistake but we are on it!"),
         };
+    }
+}
+
+public static class GlobalExceptionHandlerExtensions
+{
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the global exception handler implementation used to map unhandled exceptions to standardized problem
+        ///     responses.
+        /// </summary>
+        public void AddGlobalExceptionHandler()
+        {
+            services.AddExceptionHandler<GlobalExceptionHandler>();
+        }
     }
 }

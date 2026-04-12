@@ -21,7 +21,6 @@ public sealed partial class WorkflowEvaluationTests : IAsyncDisposable
             EnvironmentVariables.StorageRootPath,
             GetDefaultEvaluators(),
             s_chatConfiguration,
-            true,
             executionName: s_executionName,
             tags: GetTags()
         );
@@ -31,7 +30,6 @@ public sealed partial class WorkflowEvaluationTests : IAsyncDisposable
             EnvironmentVariables.StorageRootPath,
             GetGroundednessEvaluators(),
             s_chatConfiguration,
-            true,
             executionName: s_executionName,
             tags: GetTags()
         );

@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.List;
 
-public sealed class ListBuyersEndpoint
+internal sealed class ListBuyersEndpoint
     : IEndpoint<Ok<PagedResult<BuyerDto>>, ListBuyersQuery, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)

@@ -4,17 +4,6 @@ using MassTransit.KafkaIntegration.Serializers;
 
 namespace BookWorm.Chassis.EventBus.Kafka;
 
-/// <summary>
-///     Kafka-level serialization factory that wraps message values in
-///     <see href="https://cloudevents.io/">CloudEvents</see> structured-content JSON envelopes.
-/// </summary>
-/// <remarks>
-///     Plugged into the Kafka rider via
-///     <see cref="MassTransit.IKafkaFactoryConfigurator.SetSerializationFactory" />,
-///     replacing the default <see cref="DefaultKafkaSerializerFactory" />.
-///     Primitive Kafka key types (<see cref="Null" />, <c>byte[]</c>, <c>string</c>)
-///     delegate to their built-in Confluent serializers.
-/// </remarks>
 internal sealed class CloudEventKafkaSerializerFactory : IKafkaSerializerFactory
 {
     public ContentType ContentType => new("application/cloudevents+json");

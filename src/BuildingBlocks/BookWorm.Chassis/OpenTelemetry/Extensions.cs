@@ -5,9 +5,12 @@ namespace BookWorm.Chassis.OpenTelemetry;
 
 public static class Extensions
 {
-    public static IServiceCollection AddActivityScope(this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        services.AddSingleton<IActivityScope, ActivityScope.ActivityScope>();
-        return services;
+        public IServiceCollection AddActivityScope()
+        {
+            services.AddSingleton<IActivityScope, ActivityScope.ActivityScope>();
+            return services;
+        }
     }
 }

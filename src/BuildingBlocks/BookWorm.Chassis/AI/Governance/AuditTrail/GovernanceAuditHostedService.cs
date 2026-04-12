@@ -3,12 +3,12 @@ using AgentGovernance.Audit;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace BookWorm.Chassis.AI.Governance;
+namespace BookWorm.Chassis.AI.Governance.AuditTrail;
 
 internal sealed class GovernanceAuditHostedService(
     GovernanceKernel kernel,
     ILogger<GovernanceKernel> logger,
-    GovernanceAuditTrail auditTrail
+    IGovernanceAuditTrail auditTrail
 ) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
@@ -42,7 +42,6 @@ internal sealed class GovernanceAuditHostedService(
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        // Verify audit trail integrity on shutdown for compliance logging
         var (isValid, count) = auditTrail.VerifyIntegrity();
 
         if (isValid)

@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Basket.Features.Update;
 
-public sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketCommand, ISender>
+internal sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

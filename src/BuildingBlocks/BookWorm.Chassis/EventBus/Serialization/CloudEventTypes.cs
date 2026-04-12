@@ -1,8 +1,5 @@
 namespace BookWorm.Chassis.EventBus.Serialization;
 
-/// <summary>
-///     Maps MassTransit message type URNs to/from CloudEvent <c>type</c> attribute values.
-/// </summary>
 internal static class CloudEventTypes
 {
     private const string Prefix = "urn:message:";

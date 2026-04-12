@@ -15,103 +15,110 @@ namespace BookWorm.Rating.Extensions;
 
 internal static class Extensions
 {
-    public static void AddApplicationServices(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        public void AddApplicationServices()
+        {
+            var services = builder.Services;
 
-        builder.AddDefaultCors();
+            builder.AddDefaultCors();
 
-        builder.AddAppSettings<RatingAppSettings>();
+            builder.AddAppSettings<RatingAppSettings>();
 
-        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
-        services
-            .AddAuthorizationBuilder()
-            .AddPolicy(
-                Authorization.Policies.Admin,
-                policy =>
+            services
+                .AddAuthorizationBuilder()
+                .AddPolicy(
+                    Authorization.Policies.Admin,
+                    policy =>
+                    {
+                        policy
+                            .RequireAuthenticatedUser()
+                            .RequireRole(Authorization.Roles.Admin)
+                            .RequireScope(
+                                $"{Services.Rating}_{Authorization.Actions.Read}",
+                                $"{Services.Rating}_{Authorization.Actions.Write}"
+                            );
+                    }
+                );
+
+            // Add exception handlers
+            services.AddValidationExceptionHandler();
+            services.AddNotFoundExceptionHandler();
+            services.AddGlobalExceptionHandler();
+            services.AddProblemDetails();
+
+            // Configure Mediator
+            services
+                .AddMediator(
+                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+                )
+                .ApplyLoggingBehavior()
+                .ApplyActivityBehavior()
+                .ApplyValidationBehavior()
+                .ApplyTransactionBehavior<RatingDbContext>();
+
+            builder.AddRateLimiting();
+
+            // Add database configuration
+            builder.AddAzurePostgresDbContext<RatingDbContext>(
+                Components.Database.Rating,
+                _ =>
                 {
-                    policy
-                        .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.Admin)
-                        .RequireScope(
-                            $"{Services.Rating}_{Authorization.Actions.Read}",
-                            $"{Services.Rating}_{Authorization.Actions.Write}"
-                        );
+                    services.AddMigration<RatingDbContext>();
+
+                    services.AddRepositories(typeof(IRatingApiMarker));
                 }
             );
 
-        // Add exception handlers
-        services.AddExceptionHandler<ValidationExceptionHandler>();
-        services.AddExceptionHandler<NotFoundExceptionHandler>();
-        services.AddExceptionHandler<GlobalExceptionHandler>();
-        services.AddProblemDetails();
+            // Configure FluentValidation
+            services.AddValidatorsFromAssemblyContaining<IRatingApiMarker>(
+                includeInternalTypes: true
+            );
 
-        // Configure Mediator
-        services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
-            .ApplyLoggingBehavior()
-            .ApplyActivityBehavior()
-            .ApplyValidationBehavior()
-            .ApplyTransactionBehavior<RatingDbContext>();
+            services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
-        builder.AddRateLimiting();
-
-        // Add database configuration
-        builder.AddAzurePostgresDbContext<RatingDbContext>(
-            Components.Database.Rating,
-            _ =>
-            {
-                services.AddMigration<RatingDbContext>();
-
-                services.AddRepositories(typeof(IRatingApiMarker));
-            }
-        );
-
-        // Configure FluentValidation
-        services.AddValidatorsFromAssemblyContaining<IRatingApiMarker>(includeInternalTypes: true);
-
-        services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
-
-        // Configure EventBus first
-        builder.AddEventBus(
-            typeof(IRatingApiMarker),
-            cfg =>
-            {
-                cfg.AddEntityFrameworkOutbox<RatingDbContext>(o =>
+            // Configure EventBus first
+            builder.AddEventBus(
+                typeof(IRatingApiMarker),
+                cfg =>
                 {
-                    o.QueryDelay = TimeSpan.FromSeconds(1);
+                    cfg.AddEntityFrameworkOutbox<RatingDbContext>(o =>
+                    {
+                        o.QueryDelay = TimeSpan.FromSeconds(1);
 
-                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
 
-                    o.UsePostgres();
+                        o.UsePostgres();
 
-                    o.UseBusOutbox();
-                });
+                        o.UseBusOutbox();
+                    });
 
-                cfg.AddConfigureEndpointsCallback(
-                    (context, _, configurator) =>
-                        configurator.UseEntityFrameworkOutbox<RatingDbContext>(context)
-                );
-            }
-        );
+                    cfg.AddConfigureEndpointsCallback(
+                        (context, _, configurator) =>
+                            configurator.UseEntityFrameworkOutbox<RatingDbContext>(context)
+                    );
+                }
+            );
 
-        // Then register event-related services
-        services.AddEventDispatcher();
-        services.AddScoped<IEventMapper, EventMapper>();
+            // Then register event-related services
+            services.AddEventDispatcher();
+            services.AddScoped<IEventMapper, EventMapper>();
 
-        // Configure endpoints
-        services.AddVersioning();
-        services.AddEndpoints(typeof(IRatingApiMarker));
-        services.AddDefaultOpenApi(options =>
-            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<RatingAppSettings>>()
-        );
+            // Configure endpoints
+            services.AddVersioning();
+            services.AddEndpoints(typeof(IRatingApiMarker));
+            services.AddDefaultOpenApi(options =>
+                options.AddDocumentTransformer<
+                    OpenApiInfoDefinitionsTransformer<RatingAppSettings>
+                >()
+            );
 
-        builder.AddAgents();
-        services.AddScoped<ISummarizer, RatingSummarizer>();
+            builder.AddAgents();
+            services.AddScoped<ISummarizer, RatingSummarizer>();
 
-        services.AddKeycloakTokenIntrospection();
+            services.AddKeycloakTokenIntrospection();
+        }
     }
 }

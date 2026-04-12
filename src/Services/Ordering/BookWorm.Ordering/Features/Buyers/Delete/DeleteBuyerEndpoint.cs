@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Features.Buyers.Delete;
 
-public sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, Guid, ISender>
+internal sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

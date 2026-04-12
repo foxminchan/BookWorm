@@ -3,6 +3,8 @@ using System.Text.Json.Nodes;
 using BookWorm.Chassis.Security.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace BookWorm.Chassis.Security.Keycloak;
@@ -55,5 +57,27 @@ internal sealed class KeycloakRolesClaimsTransformation(
         principal.AddIdentity(claimsIdentity);
 
         return Task.FromResult(principal);
+    }
+}
+
+public static class KeycloakClaimsTransformationExtensions
+{
+    extension(IHostApplicationBuilder builder)
+    {
+        /// <summary>
+        ///     Registers the Keycloak claims transformation that maps Keycloak realm and resource roles to
+        ///     <see cref="ClaimTypes.Role" /> claims.
+        /// </summary>
+        /// <returns>
+        ///     The current <see cref="IHostApplicationBuilder" /> instance for fluent chaining.
+        /// </returns>
+        public IHostApplicationBuilder WithKeycloakClaimsTransformation()
+        {
+            builder.Services.AddTransient<
+                IClaimsTransformation,
+                KeycloakRolesClaimsTransformation
+            >();
+            return builder;
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
@@ -18,7 +19,7 @@ public sealed class NotFoundException(string message) : Exception(message)
     }
 }
 
-public sealed class NotFoundExceptionHandler(
+internal sealed class NotFoundExceptionHandler(
     ILogger<NotFoundExceptionHandler> logger,
     PerRequestLogBuffer logBuffer
 ) : IExceptionHandler
@@ -48,5 +49,19 @@ public sealed class NotFoundExceptionHandler(
             .ExecuteAsync(httpContext);
 
         return true;
+    }
+}
+
+public static class NotFoundExceptionHandlerExtensions
+{
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the <see cref="NotFoundExceptionHandler" /> in the ASP.NET Core exception handling pipeline.
+        /// </summary>
+        public void AddNotFoundExceptionHandler()
+        {
+            services.AddExceptionHandler<NotFoundExceptionHandler>();
+        }
     }
 }

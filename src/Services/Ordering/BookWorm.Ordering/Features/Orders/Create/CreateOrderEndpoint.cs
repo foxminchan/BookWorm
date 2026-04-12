@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
-public sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, LinkGenerator>
+internal sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

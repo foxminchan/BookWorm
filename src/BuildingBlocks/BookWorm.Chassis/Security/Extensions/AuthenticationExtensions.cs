@@ -11,51 +11,68 @@ namespace BookWorm.Chassis.Security.Extensions;
 
 public static class AuthenticationExtensions
 {
-    public static IHostApplicationBuilder AddDefaultAuthentication(
-        this IHostApplicationBuilder builder
-    )
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        /// <summary>
+        ///     Configures the default JWT bearer authentication pipeline using Keycloak settings
+        ///     resolved from the configured identity options.
+        /// </summary>
+        /// <remarks>
+        ///     This method also registers a named HTTP client for Keycloak and applies stricter
+        ///     token validation outside development environments.
+        /// </remarks>
+        /// <returns>The same <see cref="IHostApplicationBuilder" /> instance for fluent configuration.</returns>
+        public IHostApplicationBuilder AddDefaultAuthentication()
+        {
+            var services = builder.Services;
 
-        builder.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
+            // Binds identity configuration section to <see cref="IdentityOptions"/>.
+            builder.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
 
-        var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
+            // Resolves the Keycloak realm from bound identity options.
+            var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
 
-        var scheme = builder.Environment.IsDevelopment()
-            ? Uri.UriSchemeHttp
-            : Http.Schemes.HttpOrHttps;
+            // Uses HTTP in development and HTTP/HTTPS for non-development environments.
+            var scheme = builder.Environment.IsDevelopment()
+                ? Uri.UriSchemeHttp
+                : Http.Schemes.HttpOrHttps;
 
-        var keycloakUrl = HttpUtilities
-            .AsUrlBuilder()
-            .WithScheme(scheme)
-            .WithHost(Components.KeyCloak)
-            .Build();
+            // Builds the Keycloak base URL from internal component naming conventions.
+            var keycloakUrl = HttpUtilities
+                .AsUrlBuilder()
+                .WithScheme(scheme)
+                .WithHost(Components.KeyCloak)
+                .Build();
 
-        services.AddHttpClient(
-            Components.KeyCloak,
-            client => client.BaseAddress = new(keycloakUrl)
-        );
-
-        services
-            .AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddKeycloakJwtBearer(
+            // Registers a named HTTP client used for Keycloak communication.
+            services.AddHttpClient(
                 Components.KeyCloak,
-                realm,
-                options =>
-                {
-                    options.Audience = "account";
-                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-                    options.TokenValidationParameters.ValidateAudience =
-                        !builder.Environment.IsDevelopment();
-                    options.TokenValidationParameters.ValidateIssuer =
-                        !builder.Environment.IsDevelopment();
-                }
+                client => client.BaseAddress = new(keycloakUrl)
             );
 
-        return builder;
+            // Configures JWT bearer authentication backed by Keycloak.
+            services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddKeycloakJwtBearer(
+                    Components.KeyCloak,
+                    realm,
+                    options =>
+                    {
+                        // Uses the Keycloak account client audience.
+                        options.Audience = "account";
+                        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+                        options.TokenValidationParameters.ValidateAudience =
+                            !builder.Environment.IsDevelopment();
+                        options.TokenValidationParameters.ValidateIssuer =
+                            !builder.Environment.IsDevelopment();
+                    }
+                );
+
+            return builder;
+        }
     }
 }

@@ -10,6 +10,7 @@ public sealed class BookUpdatedRatingFailedIntegrationEventHandlerTests
 {
     private readonly Mock<ConsumeContext<BookUpdatedRatingFailedIntegrationEvent>> _contextMock =
         new();
+
     private readonly BookUpdatedRatingFailedIntegrationEventHandler _handler;
     private readonly Mock<IFeedbackRepository> _repositoryMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();

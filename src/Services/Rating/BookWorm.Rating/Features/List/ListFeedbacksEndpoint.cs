@@ -4,7 +4,7 @@ using Mediator;
 
 namespace BookWorm.Rating.Features.List;
 
-public sealed class ListFeedbacksEndpoint
+internal sealed class ListFeedbacksEndpoint
     : IEndpoint<Ok<PagedResult<FeedbackDto>>, ListFeedbacksQuery, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)

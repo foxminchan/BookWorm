@@ -1,71 +1,94 @@
 ﻿using BookWorm.Chassis.Utilities.Configurations;
+using Microsoft.Extensions.Configuration;
 
 namespace BookWorm.ServiceDefaults.Cors;
 
 public static class CorsExtensions
 {
-    public static void AddDefaultCors(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
-        if (builder.Environment.IsDevelopment())
+        /// <summary>
+        ///     Registers the CORS policy appropriate for the current environment.
+        ///     In development, allows any request from localhost.
+        ///     In non-development environments, applies the strongly-typed <see cref="CorsSettings" /> configuration.
+        /// </summary>
+        public void AddDefaultCors()
         {
-            builder.Services.AddCors(options =>
+            var services = builder.Services;
+
+            if (builder.Environment.IsDevelopment())
             {
-                options.AddPolicy(
-                    CorsConstants.AllowAllCorsPolicy,
-                    policyBuilder =>
-                    {
-                        policyBuilder
-                            .SetIsOriginAllowed(origin => new Uri(origin).Host == Network.Localhost)
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
-                    }
-                );
-            });
-        }
-        else
-        {
-            builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
-
-            services.AddCors(options =>
+                services.AddCors(options =>
+                {
+                    options.AddPolicy(
+                        CorsConstants.AllowAllCorsPolicy,
+                        policyBuilder =>
+                        {
+                            policyBuilder
+                                .SetIsOriginAllowed(origin =>
+                                    new Uri(origin).Host == Network.Localhost
+                                )
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials();
+                        }
+                    );
+                });
+            }
+            else
             {
-                options.AddPolicy(
-                    CorsConstants.AllowSpecificCorsPolicy,
-                    policyBuilder =>
-                    {
-                        var serviceProvider = services.BuildServiceProvider();
-                        var corsOptions = serviceProvider.GetRequiredService<CorsSettings>();
+                builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
 
-                        policyBuilder
-                            .WithOrigins([.. corsOptions.Origins])
-                            .WithHeaders([.. corsOptions.Headers])
-                            .WithMethods([.. corsOptions.Methods]);
+                var corsSettings =
+                    builder
+                        .Configuration.GetRequiredSection(CorsSettings.ConfigurationSection)
+                        .Get<CorsSettings>()
+                    ?? throw new InvalidOperationException(
+                        $"Failed to bind CORS settings from configuration section: {CorsSettings.ConfigurationSection}"
+                    );
 
-                        if (corsOptions.MaxAge is not null)
+                services.AddCors(options =>
+                {
+                    options.AddPolicy(
+                        CorsConstants.AllowSpecificCorsPolicy,
+                        policyBuilder =>
                         {
-                            policyBuilder.SetPreflightMaxAge(
-                                TimeSpan.FromSeconds(corsOptions.MaxAge.Value)
-                            );
-                        }
+                            policyBuilder
+                                .WithOrigins([.. corsSettings.Origins])
+                                .WithHeaders([.. corsSettings.Headers])
+                                .WithMethods([.. corsSettings.Methods]);
 
-                        if (corsOptions.AllowCredentials)
-                        {
-                            policyBuilder.AllowCredentials();
+                            if (corsSettings.MaxAge is not null)
+                            {
+                                policyBuilder.SetPreflightMaxAge(
+                                    TimeSpan.FromSeconds(corsSettings.MaxAge.Value)
+                                );
+                            }
+
+                            if (corsSettings.AllowCredentials)
+                            {
+                                policyBuilder.AllowCredentials();
+                            }
                         }
-                    }
-                );
-            });
+                    );
+                });
+            }
         }
     }
 
-    public static void UseDefaultCors(this WebApplication app)
+    extension(WebApplication app)
     {
-        app.UseCors(
-            app.Environment.IsDevelopment()
-                ? CorsConstants.AllowAllCorsPolicy
-                : CorsConstants.AllowSpecificCorsPolicy
-        );
+        /// <summary>
+        ///     Applies the CORS middleware using the policy registered by <see cref="CorsExtensions" />.
+        ///     Selects <c>AllowAll</c> in development and <c>AllowSpecific</c> in all other environments.
+        /// </summary>
+        public void UseDefaultCors()
+        {
+            app.UseCors(
+                app.Environment.IsDevelopment()
+                    ? CorsConstants.AllowAllCorsPolicy
+                    : CorsConstants.AllowSpecificCorsPolicy
+            );
+        }
     }
 }

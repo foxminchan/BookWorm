@@ -153,10 +153,19 @@ internal sealed class PaginationHeaderFilter : IEndpointFilter
 
 public static class PaginationHeaderFilterExtensions
 {
-    public static TBuilder WithPaginationHeaders<TBuilder>(this TBuilder builder)
+    extension<TBuilder>(TBuilder builder)
         where TBuilder : IEndpointConventionBuilder
     {
-        builder.AddEndpointFilter(new PaginationHeaderFilter());
-        return builder;
+        /// <summary>
+        ///     Adds the pagination header endpoint filter to the current endpoint builder.
+        /// </summary>
+        /// <returns>
+        ///     The same endpoint builder instance to support fluent chaining.
+        /// </returns>
+        public TBuilder WithPaginationHeaders()
+        {
+            builder.AddEndpointFilter(new PaginationHeaderFilter());
+            return builder;
+        }
     }
 }

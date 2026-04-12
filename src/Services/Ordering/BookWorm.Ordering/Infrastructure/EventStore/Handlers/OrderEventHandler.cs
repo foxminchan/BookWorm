@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Handlers;
 
-public sealed class OrderEventHandler(
+internal sealed class OrderEventHandler(
     IDocumentSession documentSession,
     ILogger<OrderEventHandler> logger
 )

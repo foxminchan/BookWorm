@@ -126,9 +126,9 @@ public sealed class CatalogResourceProviderTests
             null,
             29.99m,
             null,
-            new Category(Guid.CreateVersion7(), "Sci-Fi"),
-            new Publisher(Guid.CreateVersion7(), "Publisher A"),
-            [new Author(Guid.CreateVersion7(), "Frank Herbert")],
+            new(Guid.CreateVersion7(), "Sci-Fi"),
+            new(Guid.CreateVersion7(), "Publisher A"),
+            [new(Guid.CreateVersion7(), "Frank Herbert")],
             4.8,
             120
         );

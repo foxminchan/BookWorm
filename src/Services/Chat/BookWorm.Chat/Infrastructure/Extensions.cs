@@ -5,16 +5,19 @@ namespace BookWorm.Chat.Infrastructure;
 
 internal static class Extensions
 {
-    public static void AddAIInfrastructure(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        public void AddAIInfrastructure()
+        {
+            var services = builder.Services;
 
-        builder.AddAIServices().WithAITelemetry();
-        builder.AddPresidio();
-        builder.AddMcpClient(Services.McpTools);
+            builder.AddAIServices().WithAITelemetry();
+            builder.AddPresidio();
+            builder.AddMcpClient(Services.McpTools);
 
-        services.AddAGUI();
-        services.AddOpenAIResponses();
-        services.AddOpenAIConversations();
+            services.AddAGUI();
+            services.AddOpenAIResponses();
+            services.AddOpenAIConversations();
+        }
     }
 }

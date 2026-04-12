@@ -11,35 +11,42 @@ namespace BookWorm.Chassis.AI.Extensions;
 
 public static class ActorFrameworkWebApplicationExtensions
 {
-    public static void MapAgentDiscovery(
-        this IEndpointRouteBuilder endpoints,
-        [StringSyntax("Route")] string path
-    )
+    extension(IEndpointRouteBuilder endpoints)
     {
-        var registeredAIAgents = endpoints.ServiceProvider.GetKeyedServices<AIAgent>(
-            KeyedService.AnyKey
-        );
+        /// <summary>
+        ///     Maps an AI agent discovery endpoint for all keyed <see cref="AIAgent" /> registrations.
+        /// </summary>
+        /// <param name="path">The route prefix used for the discovery endpoint.</param>
+        public void MapAgentDiscovery([StringSyntax("Route")] string path)
+        {
+            // Resolve all keyed AI agents from the container so they can be exposed via discovery.
+            var registeredAIAgents = endpoints.ServiceProvider.GetKeyedServices<AIAgent>(
+                KeyedService.AnyKey
+            );
 
-        var routeGroup = endpoints.MapGroup(path);
+            // Group discovery routes under the provided path.
+            var routeGroup = endpoints.MapGroup(path);
 
-        routeGroup
-            .MapGet(
-                "/",
-                Ok<List<AgentDiscoveryCard>> () =>
-                {
-                    var results = registeredAIAgents
-                        .Select(result => new AgentDiscoveryCard
-                        {
-                            Id = result.Id,
-                            Name = result.Name ?? "Unnamed Agent",
-                            Description = result.Description,
-                        })
-                        .ToList();
+            routeGroup
+                .MapGet(
+                    "/",
+                    Ok<List<AgentDiscoveryCard>> () =>
+                    {
+                        // Project internal agent instances into a discovery-safe response model.
+                        var results = registeredAIAgents
+                            .Select(result => new AgentDiscoveryCard
+                            {
+                                Id = result.Id,
+                                Name = result.Name ?? "Unnamed Agent",
+                                Description = result.Description,
+                            })
+                            .ToList();
 
-                    return TypedResults.Ok(results);
-                }
-            )
-            .WithName("GetAgents");
+                        return TypedResults.Ok(results);
+                    }
+                )
+                .WithName("GetAgents");
+        }
     }
 
     private sealed record AgentDiscoveryCard

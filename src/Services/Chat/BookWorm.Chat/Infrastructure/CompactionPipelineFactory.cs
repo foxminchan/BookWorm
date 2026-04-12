@@ -14,39 +14,6 @@ internal static class CompactionPipelineFactory
     private const int LightSlidingWindowTurnThreshold = 15;
     private const int LightTruncationTokenBudget = 16_000;
 
-    /// <summary>
-    ///     Creates a full 4-layer compaction pipeline for tool-heavy agents.
-    ///     <list type="number">
-    ///         <item>
-    ///             <description>
-    ///                 <see cref="ToolResultCompactionStrategy" /> — gentle: collapses older
-    ///                 tool-call groups into concise inline summaries.
-    ///             </description>
-    ///         </item>
-    ///         <item>
-    ///             <description>
-    ///                 <see cref="SummarizationCompactionStrategy" /> — moderate: LLM-summarizes
-    ///                 older conversation spans.
-    ///             </description>
-    ///         </item>
-    ///         <item>
-    ///             <description>
-    ///                 <see cref="SlidingWindowCompactionStrategy" /> — aggressive: retains only
-    ///                 the most recent N user turns.
-    ///             </description>
-    ///         </item>
-    ///         <item>
-    ///             <description>
-    ///                 <see cref="TruncationCompactionStrategy" /> — emergency: hard token-budget
-    ///                 backstop.
-    ///             </description>
-    ///         </item>
-    ///     </list>
-    /// </summary>
-    /// <param name="summarizerClient">
-    ///     The <see cref="IChatClient" /> used by the summarization strategy to compress older
-    ///     conversation spans. Can be a smaller, cheaper model than the primary agent model.
-    /// </param>
     public static CompactionProvider CreateFull(IChatClient summarizerClient)
     {
         PipelineCompactionStrategy pipeline = new(
@@ -70,10 +37,6 @@ internal static class CompactionPipelineFactory
         return new(pipeline);
     }
 
-    /// <summary>
-    ///     Creates a lightweight compaction pipeline for agents without tool calls.
-    ///     Uses sliding window and truncation only.
-    /// </summary>
     public static CompactionProvider CreateLight()
     {
         PipelineCompactionStrategy pipeline = new(

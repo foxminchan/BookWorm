@@ -6,24 +6,26 @@ namespace BookWorm.Notification.Infrastructure.Senders.SendGrid;
 
 internal static class SendGridExtensions
 {
-    private static void AddSendGrid(
-        this IServiceCollection services,
-        Action<IServiceProvider, SendGridClientOptions> configureOptions
-    )
+    extension(IServiceCollection services)
     {
-        services
-            .AddOptions<SendGridClientOptions>()
-            .Configure<IServiceProvider>((options, resolver) => configureOptions(resolver, options))
-            .Validate(
-                o => !string.IsNullOrWhiteSpace(o.ApiKey),
-                "SendGrid API key must be provided in the configuration."
+        private void AddSendGrid(Action<IServiceProvider, SendGridClientOptions> configureOptions)
+        {
+            services
+                .AddOptions<SendGridClientOptions>()
+                .Configure<IServiceProvider>(
+                    (options, resolver) => configureOptions(resolver, options)
+                )
+                .Validate(
+                    o => !string.IsNullOrWhiteSpace(o.ApiKey),
+                    "SendGrid API key must be provided in the configuration."
+                );
+
+            services.TryAddTransient<ISendGridClient>(resolver =>
+                resolver.GetRequiredService<InjectableSendGridClient>()
             );
 
-        services.TryAddTransient<ISendGridClient>(resolver =>
-            resolver.GetRequiredService<InjectableSendGridClient>()
-        );
-
-        services.AddHttpClient<InjectableSendGridClient>();
+            services.AddHttpClient<InjectableSendGridClient>();
+        }
     }
 
     extension(IHostApplicationBuilder builder)

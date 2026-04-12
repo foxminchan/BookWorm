@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Rating.Infrastructure.Summarizer;
 
-internal interface ISummarizer
+public interface ISummarizer
 {
     Task<string?> SummarizeAsync(string content, CancellationToken cancellationToken = default);
 }

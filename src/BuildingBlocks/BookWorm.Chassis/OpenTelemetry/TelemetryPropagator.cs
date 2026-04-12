@@ -8,15 +8,6 @@ public static class TelemetryPropagator
 {
     private static readonly TextMapPropagator _propagator = Propagators.DefaultTextMapPropagator;
 
-    public static void Inject<T>(
-        this PropagationContext context,
-        T carrier,
-        Action<T, string, string> setter
-    )
-    {
-        _propagator.Inject(context, carrier, setter);
-    }
-
     public static PropagationContext Extract<T>(
         PropagationContext context,
         T carrier,
@@ -36,23 +27,6 @@ public static class TelemetryPropagator
         return _propagator.Extract(default, carrier, getter);
     }
 
-    public static PropagationContext? Propagate<T>(
-        this Activity? activity,
-        T carrier,
-        Action<T, string, string> setter
-    )
-    {
-        if (activity?.Context is null)
-        {
-            return null;
-        }
-
-        var propagationContext = new PropagationContext(activity.Context, Baggage.Current);
-        propagationContext.Inject(carrier, setter);
-
-        return propagationContext;
-    }
-
     public static PropagationContext? GetPropagationContext(Activity? activity = null)
     {
         var activityContext = (activity ?? Activity.Current)?.Context;
@@ -63,5 +37,29 @@ public static class TelemetryPropagator
         }
 
         return new PropagationContext(activityContext.Value, Baggage.Current);
+    }
+
+    extension(PropagationContext context)
+    {
+        public void Inject<T>(T carrier, Action<T, string, string> setter)
+        {
+            _propagator.Inject(context, carrier, setter);
+        }
+    }
+
+    extension(Activity? activity)
+    {
+        public PropagationContext? Propagate<T>(T carrier, Action<T, string, string> setter)
+        {
+            if (activity?.Context is null)
+            {
+                return null;
+            }
+
+            var propagationContext = new PropagationContext(activity.Context, Baggage.Current);
+            propagationContext.Inject(carrier, setter);
+
+            return propagationContext;
+        }
     }
 }

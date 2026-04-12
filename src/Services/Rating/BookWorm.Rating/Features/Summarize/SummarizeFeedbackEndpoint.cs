@@ -4,7 +4,7 @@ using Mediator;
 
 namespace BookWorm.Rating.Features.Summarize;
 
-public sealed class SummarizeFeedbackEndpoint : IEndpoint<Ok<SummarizeResult>, Guid, ISender>
+internal sealed class SummarizeFeedbackEndpoint : IEndpoint<Ok<SummarizeResult>, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

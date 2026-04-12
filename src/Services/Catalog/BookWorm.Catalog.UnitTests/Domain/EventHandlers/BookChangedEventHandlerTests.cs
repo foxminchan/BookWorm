@@ -1,4 +1,3 @@
-using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.EventHandlers;
 using BookWorm.Catalog.Domain.Events;
 using BookWorm.Chassis.Caching;

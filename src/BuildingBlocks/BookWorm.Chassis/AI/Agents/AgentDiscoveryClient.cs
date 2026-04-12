@@ -1,10 +1,12 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.AI.Agents;
 
-public abstract class AgentDiscoveryClient(
+internal abstract class AgentDiscoveryClient(
     HttpClient httpClient,
     ILogger<AgentDiscoveryClient> logger
 )
@@ -49,3 +51,27 @@ public abstract class AgentDiscoveryClient(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
 )]
 internal sealed partial class AgentDiscoveryCardSerializationContext : JsonSerializerContext;
+
+public static class AgentDiscoveryClientExtensions
+{
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers an <see cref="AgentDiscoveryClient" /> with the dependency injection container
+        ///     and configures the underlying <see cref="System.Net.Http.HttpClient" /> with the specified base address.
+        /// </summary>
+        /// <param name="baseAddress">
+        ///     The base URI of the agent discovery API endpoint.
+        ///     Must be a valid absolute URI string (e.g., <c>https://my-agent-service/</c>).
+        /// </param>
+        public void AddAgentDiscoveryClient(
+            [StringSyntax(StringSyntaxAttribute.Uri)] string baseAddress
+        )
+        {
+            services.AddHttpClient<AgentDiscoveryClient>(client =>
+            {
+                client.BaseAddress = new(baseAddress);
+            });
+        }
+    }
+}

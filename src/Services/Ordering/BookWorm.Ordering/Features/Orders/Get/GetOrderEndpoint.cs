@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Features.Orders.Get;
 
-public sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
+internal sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

@@ -52,6 +52,7 @@ var openai = builder.AddOpenAI(Components.OpenAI.Resource);
 var chat = openai
     .AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini)
     .WithHealthCheck();
+
 var embedding = openai
     .AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large)
     .WithHealthCheck();
@@ -62,9 +63,12 @@ IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
+    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
+
 var presidioAnonymizer = builder
     .AddPresidioAnonymizer(Components.Presidio.Anonymizer)
+    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var catalogApi = builder

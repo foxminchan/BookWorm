@@ -1,13 +1,15 @@
 using AgentGovernance;
 using AgentGovernance.Policy;
+using BookWorm.Chassis.AI.Governance.AuditTrail;
+using BookWorm.Chassis.AI.Governance.Detectors;
+using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace BookWorm.Chassis.AI.Governance;
 
-public static class GovernanceExtensions
+public static class Extensions
 {
     extension(IHostApplicationBuilder builder)
     {
@@ -27,6 +29,7 @@ public static class GovernanceExtensions
             var section = builder.Configuration.GetSection(
                 AgentGovernanceOptions.ConfigurationSection
             );
+
             services
                 .AddOptionsWithValidateOnStart<AgentGovernanceOptions>()
                 .Bind(section)
@@ -56,22 +59,18 @@ public static class GovernanceExtensions
 
                 return new GovernanceKernel(governanceOptions);
             });
-            services.AddSingleton<AgentIdentityProvider>();
+
+            // Identity provider for agents to track trust scores and audit entries
+            services.AddSingleton<IAgentIdentityProvider, AgentIdentityProvider>();
 
             // Rogue agent detection — Z-score frequency analysis with auto-quarantine
-            services.AddSingleton<RogueAgentDetector>();
+            services.AddSingleton<IRogueAgentDetector, RogueAgentDetector>();
 
             // Merkle-chained audit trail — tamper-proof compliance logging
-            services.AddSingleton<GovernanceAuditTrail>();
+            services.AddSingleton<IGovernanceAuditTrail, GovernanceAuditTrail>();
 
             // Wire audit events to logging and Merkle chain
-            services.AddSingleton<IHostedService>(sp =>
-            {
-                var logger = sp.GetRequiredService<ILogger<GovernanceKernel>>();
-                var kernel = sp.GetRequiredService<GovernanceKernel>();
-                var auditTrail = sp.GetRequiredService<GovernanceAuditTrail>();
-                return new GovernanceAuditHostedService(kernel, logger, auditTrail);
-            });
+            services.AddSingleton<IHostedService, GovernanceAuditHostedService>();
 
             // Register OpenTelemetry meters for governance
             services.AddOpenTelemetry().WithMetrics(m => m.AddMeter("agent_governance"));

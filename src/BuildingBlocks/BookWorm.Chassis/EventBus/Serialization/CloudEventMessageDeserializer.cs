@@ -8,18 +8,6 @@ using MassTransit.Serialization;
 
 namespace BookWorm.Chassis.EventBus.Serialization;
 
-/// <summary>
-///     MassTransit message deserializer that reads incoming CloudEvents structured-content
-///     JSON envelopes and reconstructs the MassTransit <see cref="MessageEnvelope" /> expected
-///     by <see cref="SystemTextJsonMessageSerializer" />.
-/// </summary>
-/// <remarks>
-///     Unlike the approach in <c>CloudEventify</c> which implements a custom
-///     <c>DeserializerConsumeContext</c> (losing MassTransit metadata like correlation/conversation
-///     tracking), this deserializer preserves the full MassTransit envelope by extracting
-///     metadata from CloudEvent extension attributes and delegating to
-///     <see cref="SystemTextJsonMessageSerializer" /> for complete deserialization.
-/// </remarks>
 internal sealed class CloudEventMessageDeserializer(JsonEventFormatter formatter)
     : IMessageDeserializer
 {

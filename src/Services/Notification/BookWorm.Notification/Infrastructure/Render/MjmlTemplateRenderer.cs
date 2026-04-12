@@ -8,7 +8,7 @@ namespace BookWorm.Notification.Infrastructure.Render;
 
 internal sealed partial class MjmlTemplateRenderer : IRenderer
 {
-    private static readonly Assembly Assembly = typeof(MjmlTemplateRenderer).Assembly;
+    private static readonly Assembly _assembly = typeof(MjmlTemplateRenderer).Assembly;
 
     private static readonly MjmlRenderer _mjmlCompiler = new();
 
@@ -52,10 +52,10 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
     )
     {
         var resourceName =
-            $"{Assembly.GetName().Name}.Templates.{templateName.Replace('/', '.')}.mjml";
+            $"{_assembly.GetName().Name}.Templates.{templateName.Replace('/', '.')}.mjml";
 
         await using var stream =
-            Assembly.GetManifestResourceStream(resourceName)
+            _assembly.GetManifestResourceStream(resourceName)
             ?? throw new FileNotFoundException(
                 $"Embedded MJML template '{templateName}' not found as resource '{resourceName}'"
             );

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
-public sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddressCommand, ISender>
+internal sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddressCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

@@ -16,68 +16,6 @@ public static class Extensions
 {
     private static readonly KebabCaseEndpointNameFormatter _formatter = new(false);
 
-    public static void AddEventBus(
-        this IHostApplicationBuilder builder,
-        Type type,
-        Action<IBusRegistrationConfigurator>? busConfigure = null
-    )
-    {
-        var connectionString = builder.Configuration.GetConnectionString(Components.Broker);
-
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            return;
-        }
-
-        builder.Services.AddMassTransit(config =>
-        {
-            config.SetKebabCaseEndpointNameFormatter();
-
-            config.AddActivities(type.Assembly);
-
-            config.UsingInMemory(
-                (context, configurator) =>
-                {
-                    configurator.UseCloudEvents();
-                    configurator.ConfigureEndpoints(context);
-                    configurator.UseMessageRetry(AddRetryConfiguration);
-                    configurator.UseDelayedMessageScheduler();
-                    configurator.UsePublishFilter(typeof(KafkaPublishFilter<>), context);
-                }
-            );
-
-            config.AddRider(rider =>
-            {
-                var consumerEntries = DiscoverConsumerEntries(type.Assembly);
-
-                RegisterKafkaConsumers(rider, consumerEntries);
-                RegisterKafkaProducers(rider, type.Assembly);
-
-                rider.UsingKafka(
-                    (context, k) =>
-                    {
-                        k.Host(connectionString);
-                        k.SetSerializationFactory(new CloudEventKafkaSerializerFactory());
-
-                        ConfigureKafkaTopicEndpoints(k, context, type, consumerEntries);
-                    }
-                );
-            });
-
-            busConfigure?.Invoke(config);
-        });
-
-        builder
-            .Services.AddOpenTelemetry()
-            .WithMetrics(b => b.AddMeter(DiagnosticHeaders.DefaultListenerName))
-            .WithTracing(p => p.AddSource(DiagnosticHeaders.DefaultListenerName));
-    }
-
-    public static void AddEventDispatcher(this IServiceCollection services)
-    {
-        services.AddScoped<IEventDispatcher, EventDispatcher>();
-    }
-
     private static void AddRetryConfiguration(IRetryConfigurator retryConfigurator)
     {
         retryConfigurator
@@ -195,6 +133,112 @@ public static class Extensions
         }
 
         return messageTypes;
+    }
+
+    extension(IHostApplicationBuilder builder)
+    {
+        /// <summary>
+        ///     Registers and configures the event bus infrastructure for the current host.
+        /// </summary>
+        /// <param name="type">
+        ///     A marker type used to discover consumers, producers, and activities from its assembly.
+        /// </param>
+        /// <param name="busConfigure">
+        ///     Optional callback for additional <see cref="IBusRegistrationConfigurator" /> customization.
+        /// </param>
+        /// <remarks>
+        ///     This method configures an in-memory MassTransit transport for local pipeline behavior
+        ///     and a Kafka rider for broker-based messaging. If the broker connection string is not configured,
+        ///     registration is skipped.
+        /// </remarks>
+        public void AddEventBus(
+            Type type,
+            Action<IBusRegistrationConfigurator>? busConfigure = null
+        )
+        {
+            // Resolve broker connection details from configuration.
+            var connectionString = builder.Configuration.GetConnectionString(Components.Broker);
+
+            // Skip event bus registration when no broker is configured.
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return;
+            }
+
+            builder.Services.AddMassTransit(config =>
+            {
+                // Enforce kebab-case endpoint naming consistency across message endpoints.
+                config.SetKebabCaseEndpointNameFormatter();
+
+                // Auto-register MassTransit activities from the target assembly.
+                config.AddActivities(type.Assembly);
+
+                config.UsingInMemory(
+                    (context, configurator) =>
+                    {
+                        // Use CloudEvents envelopes for interoperability.
+                        configurator.UseCloudEvents();
+
+                        // Auto-configure discovered consumer endpoints.
+                        configurator.ConfigureEndpoints(context);
+
+                        // Apply shared retry policy and ignore validation exceptions.
+                        configurator.UseMessageRetry(AddRetryConfiguration);
+
+                        // Enable delayed scheduling for deferred message delivery.
+                        configurator.UseDelayedMessageScheduler();
+
+                        // Redirect publish operations through Kafka via publish filter.
+                        configurator.UsePublishFilter(typeof(KafkaPublishFilter<>), context);
+                    }
+                );
+
+                config.AddRider(rider =>
+                {
+                    // Discover consumers once and reuse the result for registration and endpoint setup.
+                    var consumerEntries = DiscoverConsumerEntries(type.Assembly);
+
+                    // Register all discovered Kafka consumers and producers.
+                    RegisterKafkaConsumers(rider, consumerEntries);
+                    RegisterKafkaProducers(rider, type.Assembly);
+
+                    rider.UsingKafka(
+                        (context, k) =>
+                        {
+                            // Configure Kafka host and serialization strategy.
+                            k.Host(connectionString);
+                            k.SetSerializationFactory(new CloudEventKafkaSerializerFactory());
+
+                            // Create topic endpoints and bind each consumer to its message topic.
+                            ConfigureKafkaTopicEndpoints(k, context, type, consumerEntries);
+                        }
+                    );
+                });
+
+                // Allow callers to append custom MassTransit configuration.
+                busConfigure?.Invoke(config);
+            });
+
+            // Register MassTransit diagnostic meter/source for OpenTelemetry metrics and traces.
+            builder
+                .Services.AddOpenTelemetry()
+                .WithMetrics(b => b.AddMeter(DiagnosticHeaders.DefaultListenerName))
+                .WithTracing(p => p.AddSource(DiagnosticHeaders.DefaultListenerName));
+        }
+    }
+
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the event dispatcher service in the dependency injection container.
+        /// </summary>
+        /// <remarks>
+        ///     The dispatcher is registered with a scoped lifetime so a single instance is used per request scope.
+        /// </remarks>
+        public void AddEventDispatcher()
+        {
+            services.AddScoped<IEventDispatcher, EventDispatcher>();
+        }
     }
 
     private sealed record ConsumerEntry(Type ConsumerType, Type MessageType);

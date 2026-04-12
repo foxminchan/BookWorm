@@ -81,12 +81,30 @@ public static class MigrateDbContextExtensions
 
     extension(IServiceCollection services)
     {
+        /// <summary>
+        ///     Registers a hosted database migration for the specified <typeparamref name="TContext" />
+        ///     without custom seed logic.
+        /// </summary>
+        /// <typeparam name="TContext">The EF Core database context to migrate.</typeparam>
+        /// <returns>The same service collection for chaining.</returns>
         public IServiceCollection AddMigration<TContext>()
             where TContext : DbContext
         {
             return services.AddMigration<TContext>((_, _) => Task.CompletedTask);
         }
 
+        /// <summary>
+        ///     Registers a hosted database migration for the specified <typeparamref name="TContext" />
+        ///     and executes the provided seed delegate after migrations are applied.
+        /// </summary>
+        /// <typeparam name="TContext">The EF Core database context to migrate.</typeparam>
+        /// <param name="seeder">
+        ///     A delegate that seeds data after migration using the resolved context and scoped services.
+        /// </param>
+        /// <returns>The same service collection for chaining.</returns>
+        /// <remarks>
+        ///     This method also registers OpenTelemetry tracing for the migration activity source.
+        /// </remarks>
         public IServiceCollection AddMigration<TContext>(
             Func<TContext, IServiceProvider, Task> seeder
         )
@@ -102,6 +120,15 @@ public static class MigrateDbContextExtensions
             ));
         }
 
+        /// <summary>
+        ///     Registers a typed database seeder and configures hosted migration for
+        ///     <typeparamref name="TContext" />.
+        /// </summary>
+        /// <typeparam name="TContext">The EF Core database context to migrate.</typeparam>
+        /// <typeparam name="TDbSeeder">
+        ///     The seeder implementation used to seed the migrated database.
+        /// </typeparam>
+        /// <returns>The same service collection for chaining.</returns>
         public IServiceCollection AddMigration<TContext, TDbSeeder>()
             where TContext : DbContext
             where TDbSeeder : class, IDbSeeder<TContext>

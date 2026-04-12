@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Features.Orders.Delete;
 
-public sealed class DeleteOrderEndpoint : IEndpoint<NoContent, Guid, ISender>
+internal sealed class DeleteOrderEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

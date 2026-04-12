@@ -5,9 +5,12 @@ namespace BookWorm.Basket.Extensions;
 
 internal static class ClaimsPrincipalIdentityExtensions
 {
-    public static string GetAuthenticatedUserId(this ClaimsPrincipal claimsPrincipal)
+    extension(ClaimsPrincipal claimsPrincipal)
     {
-        var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
-        return Guard.Against.NotAuthenticated(sub);
+        public string GetAuthenticatedUserId()
+        {
+            var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
+            return Guard.Against.NotAuthenticated(sub);
+        }
     }
 }

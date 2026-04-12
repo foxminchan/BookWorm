@@ -6,14 +6,24 @@ namespace BookWorm.Chassis.AI.Extensions;
 
 public static class DevUIExtensions
 {
-    public static void UseDevUI(this WebApplication app)
+    extension(WebApplication app)
     {
-        app.MapOpenAIResponses();
-        app.MapOpenAIConversations();
-
-        if (app.Environment.IsDevelopment())
+        /// <summary>
+        ///     Maps OpenAI response and conversation endpoints, and maps the Dev UI endpoint only in development environments.
+        /// </summary>
+        /// <remarks>
+        ///     This method is intended for local development support. In non-development environments,
+        ///     only the OpenAI-related endpoints are registered.
+        /// </remarks>
+        public void UseDevUI()
         {
-            app.MapDevUI();
+            app.MapOpenAIResponses();
+            app.MapOpenAIConversations();
+
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapDevUI();
+            }
         }
     }
 }

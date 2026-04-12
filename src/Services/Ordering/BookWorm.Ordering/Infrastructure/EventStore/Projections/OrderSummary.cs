@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Ordering.Infrastructure.EventStore.Projections;
 
-public sealed record OrderSummary(Guid Id, Status Status, decimal TotalPrice)
+internal sealed record OrderSummary(Guid Id, Status Status, decimal TotalPrice)
 {
     public static OrderSummary Create(OrderPlacedEvent @event)
     {

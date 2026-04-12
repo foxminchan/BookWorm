@@ -22,6 +22,24 @@ public static class ServiceReferenceExtensions
 
     extension(IServiceCollection services)
     {
+        /// <summary>
+        ///     Adds a typed gRPC client reference with resilience and health check registration.
+        /// </summary>
+        /// <typeparam name="TClient">
+        ///     The typed gRPC client contract.
+        /// </typeparam>
+        /// <param name="address">
+        ///     The absolute URI of the downstream gRPC service.
+        /// </param>
+        /// <param name="failureStatus">
+        ///     One of the enumeration values that specifies the health status reported when the health probe fails.
+        /// </param>
+        /// <returns>
+        ///     An HTTP client builder for the registered gRPC client.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        ///     Address is not a valid absolute URI.
+        /// </exception>
         public IHttpClientBuilder AddGrpcServiceReference<TClient>(
             string address,
             HealthStatus failureStatus
@@ -51,6 +69,28 @@ public static class ServiceReferenceExtensions
             return builder;
         }
 
+        /// <summary>
+        ///     Adds a typed HTTP client reference with optional endpoint health check registration.
+        /// </summary>
+        /// <typeparam name="TClient">
+        ///     The typed Refit client contract.
+        /// </typeparam>
+        /// <param name="address">
+        ///     The absolute URI of the downstream HTTP service.
+        /// </param>
+        /// <param name="failureStatus">
+        ///     One of the enumeration values that specifies the health status reported when the health probe fails.
+        /// </param>
+        /// <param name="healthRelativePath">
+        ///     A relative URI path for the health endpoint. When <see langword="null" /> or empty, the default health path is
+        ///     used.
+        /// </param>
+        /// <exception cref="ArgumentException">
+        ///     Address is not a valid absolute URI.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Health check path is not a valid relative URI.
+        /// </exception>
         public void AddHttpServiceReference<TClient>(
             string address,
             HealthStatus failureStatus,

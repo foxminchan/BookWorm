@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Basket.Features.Get;
 
-public sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender>
+internal sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

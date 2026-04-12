@@ -1,15 +1,5 @@
 ﻿namespace BookWorm.Chassis.Mapper;
 
-/// <summary>
-///     Defines a contract for mapping between source models and destination objects with automatic Dependency Injection
-///     support.
-/// </summary>
-/// <typeparam name="TSource">The source model types to map from. Must be a reference type.</typeparam>
-/// <typeparam name="TDestination">The destination object type to map to. Must be non-null.</typeparam>
-/// <remarks>
-///     This interface supports one-way mapping from domain/entity models to objects.
-///     Implementations should be stateless and thread-safe.
-/// </remarks>
 public interface IMapper<in TSource, out TDestination>
     where TSource : class
     where TDestination : notnull

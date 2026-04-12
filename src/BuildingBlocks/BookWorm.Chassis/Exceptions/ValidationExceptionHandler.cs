@@ -1,12 +1,13 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Exceptions;
 
-public sealed class ValidationExceptionHandler(
+internal sealed class ValidationExceptionHandler(
     ILogger<ValidationExceptionHandler> logger,
     PerRequestLogBuffer logBuffer
 ) : IExceptionHandler
@@ -43,5 +44,20 @@ public sealed class ValidationExceptionHandler(
             .ExecuteAsync(httpContext);
 
         return true;
+    }
+}
+
+public static class ValidationExceptionHandlerExtensions
+{
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the validation exception handler so FluentValidation failures are returned as standardized validation
+        ///     problem responses.
+        /// </summary>
+        public void AddValidationExceptionHandler()
+        {
+            services.AddExceptionHandler<ValidationExceptionHandler>();
+        }
     }
 }

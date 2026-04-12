@@ -16,77 +16,85 @@ namespace BookWorm.Basket.Extensions;
 
 internal static class Extensions
 {
-    public static void AddApplicationServices(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        public void AddApplicationServices()
+        {
+            var services = builder.Services;
 
-        builder.AddDefaultCors();
+            builder.AddDefaultCors();
 
-        builder.AddAppSettings<BasketAppSettings>();
+            builder.AddAppSettings<BasketAppSettings>();
 
-        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
-        services
-            .AddAuthorizationBuilder()
-            .SetDefaultPolicy(
-                new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .RequireRole(Authorization.Roles.User)
-                    .RequireScope(
-                        $"{Services.Basket}_{Authorization.Actions.Read}",
-                        $"{Services.Basket}_{Authorization.Actions.Write}"
-                    )
-                    .Build()
+            services
+                .AddAuthorizationBuilder()
+                .SetDefaultPolicy(
+                    new AuthorizationPolicyBuilder()
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.User)
+                        .RequireScope(
+                            $"{Services.Basket}_{Authorization.Actions.Read}",
+                            $"{Services.Basket}_{Authorization.Actions.Write}"
+                        )
+                        .Build()
+                );
+
+            // Add exception handlers
+            services.AddValidationExceptionHandler();
+            services.AddNotFoundExceptionHandler();
+            services.AddGlobalExceptionHandler();
+            services.AddProblemDetails();
+
+            // Configure Mediator
+            services
+                .AddMediator(
+                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+                )
+                .ApplyLoggingBehavior()
+                .ApplyActivityBehavior()
+                .ApplyValidationBehavior()
+                .AddScoped<GetBasketPostProcessor>();
+
+            builder.AddRateLimiting();
+
+            // Add database configuration
+            builder
+                .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+                .WithAzureAuthentication();
+
+            services.AddSingleton<IBasketRepository, BasketRepository>();
+
+            // Configure FluentValidation
+            services.AddValidatorsFromAssemblyContaining<IBasketApiMarker>(
+                includeInternalTypes: true
             );
 
-        // Add exception handlers
-        services.AddExceptionHandler<ValidationExceptionHandler>();
-        services.AddExceptionHandler<NotFoundExceptionHandler>();
-        services.AddExceptionHandler<GlobalExceptionHandler>();
-        services.AddProblemDetails();
+            services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
-        // Configure Mediator
-        services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
-            .ApplyLoggingBehavior()
-            .ApplyActivityBehavior()
-            .ApplyValidationBehavior()
-            .AddScoped<GetBasketPostProcessor>();
+            // Configure endpoints
+            services.AddVersioning();
+            services.AddEndpoints(typeof(IBasketApiMarker));
+            services.AddDefaultOpenApi(options =>
+                options.AddDocumentTransformer<
+                    OpenApiInfoDefinitionsTransformer<BasketAppSettings>
+                >()
+            );
 
-        builder.AddRateLimiting();
+            // Configure gRPC
+            builder.AddGrpcServices();
 
-        // Add database configuration
-        builder
-            .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
-            .WithAzureAuthentication();
+            // Configure ClaimsPrincipal
+            services.AddTransient(s =>
+                s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User
+                ?? new ClaimsPrincipal()
+            );
 
-        services.AddSingleton<IBasketRepository, BasketRepository>();
+            // Configure EventBus
+            builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
 
-        // Configure FluentValidation
-        services.AddValidatorsFromAssemblyContaining<IBasketApiMarker>(includeInternalTypes: true);
-
-        services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
-
-        // Configure endpoints
-        services.AddVersioning();
-        services.AddEndpoints(typeof(IBasketApiMarker));
-        services.AddDefaultOpenApi(options =>
-            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<BasketAppSettings>>()
-        );
-
-        // Configure gRPC
-        builder.AddGrpcServices();
-
-        // Configure ClaimsPrincipal
-        services.AddTransient(s =>
-            s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User ?? new ClaimsPrincipal()
-        );
-
-        // Configure EventBus
-        builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
-
-        services.AddKeycloakTokenIntrospection();
+            services.AddKeycloakTokenIntrospection();
+        }
     }
 }

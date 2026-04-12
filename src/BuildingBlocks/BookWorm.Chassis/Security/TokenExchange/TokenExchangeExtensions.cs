@@ -8,23 +8,33 @@ namespace BookWorm.Chassis.Security.TokenExchange;
 
 public static class TokenExchangeExtensions
 {
-    public static IHttpClientBuilder AddAuthTokenExchange(
-        this IHttpClientBuilder builder,
-        string? serviceKey = null
-    )
+    extension(IHttpClientBuilder builder)
     {
-        var service = builder.Services;
+        /// <summary>
+        ///     Adds token exchange support to the configured <see cref="IHttpClientBuilder" /> by
+        ///     registering the token exchange service and an authorization delegating handler.
+        /// </summary>
+        /// <param name="serviceKey">
+        ///     Optional target service identifier used to resolve audience and scope for token exchange.
+        /// </param>
+        /// <returns>
+        ///     The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.
+        /// </returns>
+        public IHttpClientBuilder AddAuthTokenExchange(string? serviceKey = null)
+        {
+            var service = builder.Services;
 
-        service.TryAddTransient<ITokenExchange, TokenExchange>();
+            service.TryAddTransient<ITokenExchange, TokenExchange>();
 
-        service.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
-            sp.GetRequiredService<IHttpContextAccessor>(),
-            serviceKey
-        ));
+            service.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
+                sp.GetRequiredService<IHttpContextAccessor>(),
+                serviceKey
+            ));
 
-        builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
+            builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
 
-        return builder;
+            return builder;
+        }
     }
 
     private sealed class HttpClientAuthorizationDelegatingHandler(

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 
-public sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
+internal sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

@@ -2,13 +2,23 @@
 
 public static class HttpClientExtensions
 {
-    public static IHttpClientBuilder AddAuthToken(this IHttpClientBuilder builder)
+    extension(IHttpClientBuilder builder)
     {
-        builder.Services.TryAddTransient<HttpClientAuthorizationDelegatingHandler>();
+        /// <summary>
+        ///     Adds a delegating handler that forwards the current user access token
+        ///     from the active HTTP context to outgoing HTTP client requests.
+        /// </summary>
+        /// <returns>
+        ///     The configured <see cref="IHttpClientBuilder" /> instance for chaining.
+        /// </returns>
+        public IHttpClientBuilder AddAuthToken()
+        {
+            builder.Services.TryAddTransient<HttpClientAuthorizationDelegatingHandler>();
 
-        builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
+            builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
 
-        return builder;
+            return builder;
+        }
     }
 
     private sealed class HttpClientAuthorizationDelegatingHandler(

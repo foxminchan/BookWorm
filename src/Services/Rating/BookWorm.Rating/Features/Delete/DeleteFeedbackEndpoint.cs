@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Rating.Features.Delete;
 
-public sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
+internal sealed class DeleteFeedbackEndpoint : IEndpoint<NoContent, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
