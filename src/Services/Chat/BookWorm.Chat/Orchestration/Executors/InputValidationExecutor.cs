@@ -1,14 +1,9 @@
 using System.Text.RegularExpressions;
 using AgentGovernance;
-using AgentGovernance.Security;
 using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Chat.Orchestration.Executors;
 
-/// <summary>
-///     The outcome of input validation — either accepted with a sanitized message
-///     or rejected with an explanation.
-/// </summary>
 internal sealed record InputValidationResult(bool IsAccepted, ChatMessage Message);
 
 internal sealed partial class InputValidationExecutor(GovernanceKernel? governanceKernel = null)

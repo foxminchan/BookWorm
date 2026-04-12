@@ -7,7 +7,6 @@ using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.Extensions.Options;
-using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
@@ -62,14 +61,6 @@ internal static class Extensions
                 .WithSetLoggingLevelHandler(
                     async (ctx, ct) =>
                     {
-                        if (ctx.Params?.Level is null)
-                        {
-                            throw new McpProtocolException(
-                                "Missing required argument 'level'",
-                                McpErrorCode.InvalidParams
-                            );
-                        }
-
                         await ctx.Server.SendNotificationAsync(
                             "notifications/message",
                             new

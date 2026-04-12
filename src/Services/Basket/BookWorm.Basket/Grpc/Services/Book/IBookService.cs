@@ -2,7 +2,7 @@
 
 namespace BookWorm.Basket.Grpc.Services.Book;
 
-internal interface IBookService
+public interface IBookService
 {
     Task<GetBookResponse?> GetBookByIdAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,

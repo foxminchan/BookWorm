@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
-public sealed class CreateBuyerEndpoint
+internal sealed class CreateBuyerEndpoint
     : IEndpoint<Created<Guid>, CreateBuyerCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)

@@ -66,6 +66,6 @@ public sealed class UnsentOutboxSpecTests
         var key = keySelector(outbox);
 
         // Assert
-        key.ShouldBe(99L as object);
+        key.ShouldBe(99L);
     }
 }

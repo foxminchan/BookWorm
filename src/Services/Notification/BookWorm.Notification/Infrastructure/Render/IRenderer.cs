@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Notification.Infrastructure.Render;
 
-internal interface IRenderer
+public interface IRenderer
 {
     /// <summary>
     ///     Renders the specified embedded MJML template with the given model and returns compiled HTML.

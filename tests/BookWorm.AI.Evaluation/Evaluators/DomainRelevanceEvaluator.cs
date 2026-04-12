@@ -90,8 +90,8 @@ public sealed class DomainRelevanceEvaluator : IEvaluator
                 3 => new(EvaluationRating.Average, reason: "Domain relevance score was 3/5."),
                 _ => new(
                     EvaluationRating.Unacceptable,
-                    failed: true,
-                    reason: $"Domain relevance score was {score}/5."
+                    true,
+                    $"Domain relevance score was {score}/5."
                 ),
             };
         }

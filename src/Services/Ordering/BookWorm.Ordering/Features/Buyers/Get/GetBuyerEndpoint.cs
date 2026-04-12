@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Features.Buyers.Get;
 
-public sealed class GetBuyerEndpoint : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, ISender>
+internal sealed class GetBuyerEndpoint : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

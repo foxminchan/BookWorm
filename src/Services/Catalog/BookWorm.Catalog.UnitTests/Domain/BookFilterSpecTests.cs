@@ -138,7 +138,7 @@ public sealed class BookFilterSpecTests
     public void GivenNullIdsOnlyConstructor_WhenCreatingSpec_ThenShouldNotApplyFilter()
     {
         // Act
-        var spec = new BookFilterSpec(ids: null);
+        var spec = new BookFilterSpec(null);
 
         // Assert
         spec.WhereExpressions.ShouldBeEmpty();

@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Basket.Features.Delete;
 
-public sealed class DeleteBasketEndpoint : IEndpoint<NoContent, ISender>
+internal sealed class DeleteBasketEndpoint : IEndpoint<NoContent, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

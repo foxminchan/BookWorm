@@ -83,15 +83,13 @@ internal sealed partial class InputValidationExecutor(GovernanceKernel? governan
             content = content[..TruncateLength];
         }
 
-        return ValueTask.FromResult(
-            new InputValidationResult(true, new ChatMessage(ChatRole.User, content))
-        );
+        return ValueTask.FromResult(new InputValidationResult(true, new(ChatRole.User, content)));
     }
 
     private static ValueTask<InputValidationResult> Rejected(string reason)
     {
         return ValueTask.FromResult(
-            new InputValidationResult(false, new ChatMessage(ChatRole.Assistant, reason))
+            new InputValidationResult(false, new(ChatRole.Assistant, reason))
         );
     }
 }

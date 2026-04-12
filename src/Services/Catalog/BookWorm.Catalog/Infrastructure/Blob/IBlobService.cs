@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Infrastructure.Blob;
 
-internal interface IBlobService
+public interface IBlobService
 {
     Task<string> UploadFileAsync(IFormFile file, CancellationToken cancellationToken = default);
     Task DeleteFileAsync(string urn, CancellationToken cancellationToken = default);

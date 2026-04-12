@@ -4,7 +4,7 @@ using Mediator;
 
 namespace BookWorm.Basket.Features.Create;
 
-public sealed class CreateBasketEndpoint
+internal sealed class CreateBasketEndpoint
     : IEndpoint<Created<string>, CreateBasketCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)

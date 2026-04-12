@@ -27,6 +27,13 @@ public static class Extensions
 
     extension(WebApplication app)
     {
+        /// <summary>
+        ///     Maps development-only health check endpoints for readiness and liveness probing.
+        /// </summary>
+        /// <remarks>
+        ///     The readiness endpoint requires all checks to pass, while the liveness endpoint
+        ///     evaluates only checks tagged with <c>live</c>.
+        /// </remarks>
         public void MapDefaultEndpoints()
         {
             if (!app.Environment.IsDevelopment())
@@ -34,10 +41,10 @@ public static class Extensions
                 return;
             }
 
-            // All health checks must pass for app to be considered ready to accept traffic after starting
+            // All health checks must pass for app to be considered ready to accept traffic after starting.
             app.MapHealthChecks(Http.Endpoints.HealthEndpointPath);
 
-            // Only health checks tagged with the "live" tag must pass for app to be considered alive
+            // Only health checks tagged with the "live" tag must pass for app to be considered alive.
             app.MapHealthChecks(
                 Http.Endpoints.AlivenessEndpointPath,
                 new() { Predicate = r => r.Tags.Contains("live") }
@@ -118,6 +125,13 @@ public static class Extensions
     extension<TBuilder>(TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
+        /// <summary>
+        ///     Configures the default platform capabilities for a service host.
+        /// </summary>
+        /// <remarks>
+        ///     This enables OpenTelemetry, baseline health checks, service discovery, and
+        ///     default HTTP client resilience/service discovery behavior.
+        /// </remarks>
         public void AddServiceDefaults()
         {
             builder.ConfigureOpenTelemetry();

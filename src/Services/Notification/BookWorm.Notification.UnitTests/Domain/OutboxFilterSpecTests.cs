@@ -65,6 +65,6 @@ public sealed class OutboxFilterSpecTests
         var key = keySelector(outbox);
 
         // Assert
-        key.ShouldBe(42L as object);
+        key.ShouldBe(42L);
     }
 }

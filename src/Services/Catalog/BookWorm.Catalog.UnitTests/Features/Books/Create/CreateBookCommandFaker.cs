@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Create;
 
-internal sealed class CreateBookCommandFaker : Faker<CreateBookCommand>
+public sealed class CreateBookCommandFaker : Faker<CreateBookCommand>
 {
     public CreateBookCommandFaker()
     {

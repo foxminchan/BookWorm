@@ -32,7 +32,7 @@ public sealed class BookRecommendationPromptTypeTests
         const string genre = "science fiction";
 
         // Act
-        var result = BookRecommendationPromptType.RecommendBooksPrompt(genre: genre);
+        var result = BookRecommendationPromptType.RecommendBooksPrompt(genre);
 
         // Assert
         result.Text.ShouldContain("Genre/Topic: science fiction");
@@ -82,10 +82,10 @@ public sealed class BookRecommendationPromptTypeTests
     {
         // Act
         var result = BookRecommendationPromptType.RecommendBooksPrompt(
-            genre: "fantasy",
-            priceRange: "15-40",
-            preferredAuthors: "Tolkien",
-            readerProfile: "adult reader"
+            "fantasy",
+            "15-40",
+            "Tolkien",
+            "adult reader"
         );
 
         // Assert

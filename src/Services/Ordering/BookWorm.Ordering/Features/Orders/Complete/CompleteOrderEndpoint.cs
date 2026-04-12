@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Complete;
 
-public sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
+internal sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

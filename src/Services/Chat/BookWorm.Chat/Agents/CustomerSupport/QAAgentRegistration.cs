@@ -1,4 +1,3 @@
-using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
@@ -28,7 +27,7 @@ internal static class QAAgentRegistration
 
                 var skillsProvider = new AgentSkillsProvider(
                     Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
-                    scriptRunner: null,
+                    null,
                     loggerFactory: sp.GetService<ILoggerFactory>()
                 );
 

@@ -12,12 +12,37 @@ public static class RateLimiterExtensions
 
     extension(IHostApplicationBuilder builder)
     {
+        /// <summary>
+        ///     Registers and configures API rate limiting for the current host.
+        /// </summary>
+        /// <remarks>
+        ///     This method configures:
+        ///     <list type="bullet">
+        ///         <item>
+        ///             <description>
+        ///                 A global fixed-window limiter for all requests.
+        ///             </description>
+        ///         </item>
+        ///         <item>
+        ///             <description>
+        ///                 A per-user token-bucket policy identified by <c>PerUserRateLimit</c>.
+        ///             </description>
+        ///         </item>
+        ///         <item>
+        ///             <description>
+        ///                 A unified rejection behavior that returns HTTP <c>429</c> responses.
+        ///             </description>
+        ///         </item>
+        ///     </list>
+        /// </remarks>
         public void AddRateLimiting()
         {
             var services = builder.Services;
 
+            // Registers ASP.NET Core rate limiting services.
             services.AddRateLimiter();
 
+            // Configures the global fixed-window limiter options.
             builder.Configure<FixedWindowRateLimiterOptions>(
                 nameof(FixedWindowRateLimiter),
                 configure: options =>
@@ -29,6 +54,7 @@ public static class RateLimiterExtensions
                 }
             );
 
+            // Configures the per-user token bucket limiter options.
             builder.Configure<TokenBucketRateLimiterOptions>(
                 nameof(TokenBucketRateLimiter),
                 configure: options =>
@@ -41,6 +67,7 @@ public static class RateLimiterExtensions
                 }
             );
 
+            // Applies rate limiter pipeline behavior and policy wiring.
             services
                 .AddOptions<RateLimiterOptions>()
                 .Configure(
@@ -64,6 +91,10 @@ public static class RateLimiterExtensions
 
     extension(IEndpointConventionBuilder builder)
     {
+        /// <summary>
+        ///     Applies the per-user rate limiting policy to the endpoint.
+        /// </summary>
+        /// <returns>The endpoint convention builder with the rate limit policy applied.</returns>
         public IEndpointConventionBuilder RequirePerUserRateLimit()
         {
             return builder.RequireRateLimiting(PerUserPolicy);

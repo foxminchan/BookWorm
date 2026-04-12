@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.AI.Agents;
+﻿using AgentGovernance;
+using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Governance.IdentityProvider;
@@ -170,8 +171,7 @@ internal static class Extensions
                         );
 
                         // Create custom executors
-                        var governanceKernel =
-                            sp.GetRequiredService<AgentGovernance.GovernanceKernel>();
+                        var governanceKernel = sp.GetRequiredService<GovernanceKernel>();
                         InputValidationExecutor inputValidator = new(governanceKernel);
                         ResponseFormatterExecutor responseFormatter = new();
 

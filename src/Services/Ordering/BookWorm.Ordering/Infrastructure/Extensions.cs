@@ -45,10 +45,13 @@ internal static class Extensions
         }
     }
 
-    private static void ConfigureOrders(this StoreOptions options)
+    extension(StoreOptions options)
     {
-        // Snapshots
-        options.Projections.LiveStreamAggregation<OrderSummary>();
-        options.Projections.Add<OrderSummaryViewProjection>(ProjectionLifecycle.Async);
+        private void ConfigureOrders()
+        {
+            // Snapshots
+            options.Projections.LiveStreamAggregation<OrderSummary>();
+            options.Projections.Add<OrderSummaryViewProjection>(ProjectionLifecycle.Async);
+        }
     }
 }
