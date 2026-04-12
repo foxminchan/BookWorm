@@ -11,51 +11,52 @@ namespace BookWorm.Chassis.Security.Extensions;
 
 public static class AuthenticationExtensions
 {
-    public static IHostApplicationBuilder AddDefaultAuthentication(
-        this IHostApplicationBuilder builder
-    )
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        public IHostApplicationBuilder AddDefaultAuthentication()
+        {
+            var services = builder.Services;
 
-        builder.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
+            builder.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
 
-        var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
+            var realm = services.BuildServiceProvider().GetRequiredService<IdentityOptions>().Realm;
 
-        var scheme = builder.Environment.IsDevelopment()
-            ? Uri.UriSchemeHttp
-            : Http.Schemes.HttpOrHttps;
+            var scheme = builder.Environment.IsDevelopment()
+                ? Uri.UriSchemeHttp
+                : Http.Schemes.HttpOrHttps;
 
-        var keycloakUrl = HttpUtilities
-            .AsUrlBuilder()
-            .WithScheme(scheme)
-            .WithHost(Components.KeyCloak)
-            .Build();
+            var keycloakUrl = HttpUtilities
+                .AsUrlBuilder()
+                .WithScheme(scheme)
+                .WithHost(Components.KeyCloak)
+                .Build();
 
-        services.AddHttpClient(
-            Components.KeyCloak,
-            client => client.BaseAddress = new(keycloakUrl)
-        );
-
-        services
-            .AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddKeycloakJwtBearer(
+            services.AddHttpClient(
                 Components.KeyCloak,
-                realm,
-                options =>
-                {
-                    options.Audience = "account";
-                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-                    options.TokenValidationParameters.ValidateAudience =
-                        !builder.Environment.IsDevelopment();
-                    options.TokenValidationParameters.ValidateIssuer =
-                        !builder.Environment.IsDevelopment();
-                }
+                client => client.BaseAddress = new(keycloakUrl)
             );
 
-        return builder;
+            services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddKeycloakJwtBearer(
+                    Components.KeyCloak,
+                    realm,
+                    options =>
+                    {
+                        options.Audience = "account";
+                        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+                        options.TokenValidationParameters.ValidateAudience =
+                            !builder.Environment.IsDevelopment();
+                        options.TokenValidationParameters.ValidateIssuer =
+                            !builder.Environment.IsDevelopment();
+                    }
+                );
+
+            return builder;
+        }
     }
 }

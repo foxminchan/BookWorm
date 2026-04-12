@@ -5,13 +5,16 @@ namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
 public static class OpenApiExtensions
 {
-    public static void UseDefaultOpenApi(this WebApplication app)
+    extension(WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        public void UseDefaultOpenApi()
         {
-            app.MapOpenApi();
-            app.MapGet("/", () => TypedResults.Redirect("openapi/v1.json"))
-                .ExcludeFromDescription();
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapOpenApi();
+                app.MapGet("/", () => TypedResults.Redirect("openapi/v1.json"))
+                    .ExcludeFromDescription();
+            }
         }
     }
 

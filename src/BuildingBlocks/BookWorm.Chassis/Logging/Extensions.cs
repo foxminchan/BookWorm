@@ -10,35 +10,40 @@ namespace BookWorm.Chassis.Logging;
 
 public static class Extensions
 {
-    public static void AddRedaction(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var keyString = builder
-            .Configuration.GetRequiredSection("HMAC")
-            .GetValue<string>("Key")
-            ?.Trim();
-
-        if (string.IsNullOrEmpty(keyString))
+        public void AddRedaction()
         {
-            throw new InvalidOperationException("HMAC key configuration is missing or empty");
+            var keyString = builder
+                .Configuration.GetRequiredSection("HMAC")
+                .GetValue<string>("Key")
+                ?.Trim();
+
+            if (string.IsNullOrEmpty(keyString))
+            {
+                throw new InvalidOperationException("HMAC key configuration is missing or empty");
+            }
+
+            var keyBytes = Encoding.UTF8.GetBytes(keyString);
+            var base64Key = Convert.ToBase64String(keyBytes);
+
+            builder.Logging.EnableRedaction();
+
+            builder.Services.AddRedaction(x =>
+            {
+                x.SetRedactor<AsteriskRedactor>(
+                    new DataClassificationSet(DataTaxonomy.SensitiveData)
+                );
+
+                x.SetHmacRedactor(
+                    options =>
+                    {
+                        options.KeyId = 10;
+                        options.Key = base64Key;
+                    },
+                    new DataClassificationSet(DataTaxonomy.PIIData)
+                );
+            });
         }
-
-        var keyBytes = Encoding.UTF8.GetBytes(keyString);
-        var base64Key = Convert.ToBase64String(keyBytes);
-
-        builder.Logging.EnableRedaction();
-
-        builder.Services.AddRedaction(x =>
-        {
-            x.SetRedactor<AsteriskRedactor>(new DataClassificationSet(DataTaxonomy.SensitiveData));
-
-            x.SetHmacRedactor(
-                options =>
-                {
-                    options.KeyId = 10;
-                    options.Key = base64Key;
-                },
-                new DataClassificationSet(DataTaxonomy.PIIData)
-            );
-        });
     }
 }

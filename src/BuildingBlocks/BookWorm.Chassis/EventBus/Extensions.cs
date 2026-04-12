@@ -16,66 +16,71 @@ public static class Extensions
 {
     private static readonly KebabCaseEndpointNameFormatter _formatter = new(false);
 
-    public static void AddEventBus(
-        this IHostApplicationBuilder builder,
-        Type type,
-        Action<IBusRegistrationConfigurator>? busConfigure = null
-    )
+    extension(IHostApplicationBuilder builder)
     {
-        var connectionString = builder.Configuration.GetConnectionString(Components.Broker);
-
-        if (string.IsNullOrWhiteSpace(connectionString))
+        public void AddEventBus(
+            Type type,
+            Action<IBusRegistrationConfigurator>? busConfigure = null
+        )
         {
-            return;
-        }
+            var connectionString = builder.Configuration.GetConnectionString(Components.Broker);
 
-        builder.Services.AddMassTransit(config =>
-        {
-            config.SetKebabCaseEndpointNameFormatter();
-
-            config.AddActivities(type.Assembly);
-
-            config.UsingInMemory(
-                (context, configurator) =>
-                {
-                    configurator.UseCloudEvents();
-                    configurator.ConfigureEndpoints(context);
-                    configurator.UseMessageRetry(AddRetryConfiguration);
-                    configurator.UseDelayedMessageScheduler();
-                    configurator.UsePublishFilter(typeof(KafkaPublishFilter<>), context);
-                }
-            );
-
-            config.AddRider(rider =>
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
-                var consumerEntries = DiscoverConsumerEntries(type.Assembly);
+                return;
+            }
 
-                RegisterKafkaConsumers(rider, consumerEntries);
-                RegisterKafkaProducers(rider, type.Assembly);
+            builder.Services.AddMassTransit(config =>
+            {
+                config.SetKebabCaseEndpointNameFormatter();
 
-                rider.UsingKafka(
-                    (context, k) =>
+                config.AddActivities(type.Assembly);
+
+                config.UsingInMemory(
+                    (context, configurator) =>
                     {
-                        k.Host(connectionString);
-                        k.SetSerializationFactory(new CloudEventKafkaSerializerFactory());
-
-                        ConfigureKafkaTopicEndpoints(k, context, type, consumerEntries);
+                        configurator.UseCloudEvents();
+                        configurator.ConfigureEndpoints(context);
+                        configurator.UseMessageRetry(AddRetryConfiguration);
+                        configurator.UseDelayedMessageScheduler();
+                        configurator.UsePublishFilter(typeof(KafkaPublishFilter<>), context);
                     }
                 );
+
+                config.AddRider(rider =>
+                {
+                    var consumerEntries = DiscoverConsumerEntries(type.Assembly);
+
+                    RegisterKafkaConsumers(rider, consumerEntries);
+                    RegisterKafkaProducers(rider, type.Assembly);
+
+                    rider.UsingKafka(
+                        (context, k) =>
+                        {
+                            k.Host(connectionString);
+                            k.SetSerializationFactory(new CloudEventKafkaSerializerFactory());
+
+                            ConfigureKafkaTopicEndpoints(k, context, type, consumerEntries);
+                        }
+                    );
+                });
+
+                busConfigure?.Invoke(config);
             });
 
-            busConfigure?.Invoke(config);
-        });
-
-        builder
-            .Services.AddOpenTelemetry()
-            .WithMetrics(b => b.AddMeter(DiagnosticHeaders.DefaultListenerName))
-            .WithTracing(p => p.AddSource(DiagnosticHeaders.DefaultListenerName));
+            builder
+                .Services.AddOpenTelemetry()
+                .WithMetrics(b => b.AddMeter(DiagnosticHeaders.DefaultListenerName))
+                .WithTracing(p => p.AddSource(DiagnosticHeaders.DefaultListenerName));
+        }
     }
 
-    public static void AddEventDispatcher(this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        services.AddScoped<IEventDispatcher, EventDispatcher>();
+        public void AddEventDispatcher()
+        {
+            services.AddScoped<IEventDispatcher, EventDispatcher>();
+        }
     }
 
     private static void AddRetryConfiguration(IRetryConfigurator retryConfigurator)

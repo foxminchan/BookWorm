@@ -4,7 +4,9 @@ using BookWorm.Chassis.Security.Settings;
 using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.Security.Keycloak;
@@ -102,5 +104,24 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
                 extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
             )
             .ExecuteAsync(context);
+    }
+}
+
+public static class KeycloakTokenIntrospectionMiddlewareExtensions
+{
+    extension(IServiceCollection services)
+    {
+        public IServiceCollection AddKeycloakTokenIntrospection()
+        {
+            return services.AddScoped<KeycloakTokenIntrospectionMiddleware>();
+        }
+    }
+
+    extension(IApplicationBuilder app)
+    {
+        public IApplicationBuilder UseKeycloakTokenIntrospection()
+        {
+            return app.UseMiddleware<KeycloakTokenIntrospectionMiddleware>();
+        }
     }
 }

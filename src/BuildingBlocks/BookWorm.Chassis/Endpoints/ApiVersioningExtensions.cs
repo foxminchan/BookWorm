@@ -6,18 +6,21 @@ namespace BookWorm.Chassis.Endpoints;
 
 public static class Extension
 {
-    public static void AddVersioning(this IServiceCollection service)
+    extension(IServiceCollection service)
     {
-        service
-            .AddApiVersioning(options =>
-            {
-                options.DefaultApiVersion = ApiVersions.V1;
-                options.ApiVersionReader = new UrlSegmentApiVersionReader();
-            })
-            .AddApiExplorer(options =>
-            {
-                options.GroupNameFormat = "'v'V";
-                options.SubstituteApiVersionInUrl = true;
-            });
+        public void AddVersioning()
+        {
+            service
+                .AddApiVersioning(options =>
+                {
+                    options.DefaultApiVersion = ApiVersions.V1;
+                    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+                })
+                .AddApiExplorer(options =>
+                {
+                    options.GroupNameFormat = "'v'V";
+                    options.SubstituteApiVersionInUrl = true;
+                });
+        }
     }
 }

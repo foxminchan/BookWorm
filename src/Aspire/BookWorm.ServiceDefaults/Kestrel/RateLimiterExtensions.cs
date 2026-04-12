@@ -10,60 +10,64 @@ public static class RateLimiterExtensions
 {
     private const string PerUserPolicy = "PerUserRateLimit";
 
-    public static void AddRateLimiting(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        public void AddRateLimiting()
+        {
+            var services = builder.Services;
 
-        services.AddRateLimiter();
+            services.AddRateLimiter();
 
-        builder.Configure<FixedWindowRateLimiterOptions>(
-            nameof(FixedWindowRateLimiter),
-            configure: options =>
-            {
-                options.AutoReplenishment = true;
-                options.PermitLimit = 30;
-                options.QueueLimit = 5;
-                options.Window = TimeSpan.FromMinutes(1);
-            }
-        );
-
-        builder.Configure<TokenBucketRateLimiterOptions>(
-            nameof(TokenBucketRateLimiter),
-            configure: options =>
-            {
-                options.AutoReplenishment = true;
-                options.TokenLimit = 100;
-                options.TokensPerPeriod = 100;
-                options.QueueLimit = 100;
-                options.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
-            }
-        );
-
-        services
-            .AddOptions<RateLimiterOptions>()
-            .Configure(
-                (
-                    RateLimiterOptions options,
-                    IOptionsMonitor<TokenBucketRateLimiterOptions> userRateLimitingOptions,
-                    IOptionsMonitor<FixedWindowRateLimiterOptions> windowRateLimiterOptions
-                ) =>
+            builder.Configure<FixedWindowRateLimiterOptions>(
+                nameof(FixedWindowRateLimiter),
+                configure: options =>
                 {
-                    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-                    options.AddRejectBehavior();
-
-                    options.AddDefaultLimiter(windowRateLimiterOptions);
-
-                    options.AddUserRateLimiter(userRateLimitingOptions);
+                    options.AutoReplenishment = true;
+                    options.PermitLimit = 30;
+                    options.QueueLimit = 5;
+                    options.Window = TimeSpan.FromMinutes(1);
                 }
             );
+
+            builder.Configure<TokenBucketRateLimiterOptions>(
+                nameof(TokenBucketRateLimiter),
+                configure: options =>
+                {
+                    options.AutoReplenishment = true;
+                    options.TokenLimit = 100;
+                    options.TokensPerPeriod = 100;
+                    options.QueueLimit = 100;
+                    options.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
+                }
+            );
+
+            services
+                .AddOptions<RateLimiterOptions>()
+                .Configure(
+                    (
+                        RateLimiterOptions options,
+                        IOptionsMonitor<TokenBucketRateLimiterOptions> userRateLimitingOptions,
+                        IOptionsMonitor<FixedWindowRateLimiterOptions> windowRateLimiterOptions
+                    ) =>
+                    {
+                        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                        options.AddRejectBehavior();
+
+                        options.AddDefaultLimiter(windowRateLimiterOptions);
+
+                        options.AddUserRateLimiter(userRateLimitingOptions);
+                    }
+                );
+        }
     }
 
-    public static IEndpointConventionBuilder RequirePerUserRateLimit(
-        this IEndpointConventionBuilder builder
-    )
+    extension(IEndpointConventionBuilder builder)
     {
-        return builder.RequireRateLimiting(PerUserPolicy);
+        public IEndpointConventionBuilder RequirePerUserRateLimit()
+        {
+            return builder.RequireRateLimiting(PerUserPolicy);
+        }
     }
 
     private static string GetClientIdentifier(this HttpContext context)

@@ -8,13 +8,12 @@ public static class TelemetryPropagator
 {
     private static readonly TextMapPropagator _propagator = Propagators.DefaultTextMapPropagator;
 
-    public static void Inject<T>(
-        this PropagationContext context,
-        T carrier,
-        Action<T, string, string> setter
-    )
+    extension(PropagationContext context)
     {
-        _propagator.Inject(context, carrier, setter);
+        public void Inject<T>(T carrier, Action<T, string, string> setter)
+        {
+            _propagator.Inject(context, carrier, setter);
+        }
     }
 
     public static PropagationContext Extract<T>(
@@ -36,21 +35,20 @@ public static class TelemetryPropagator
         return _propagator.Extract(default, carrier, getter);
     }
 
-    public static PropagationContext? Propagate<T>(
-        this Activity? activity,
-        T carrier,
-        Action<T, string, string> setter
-    )
+    extension(Activity? activity)
     {
-        if (activity?.Context is null)
+        public PropagationContext? Propagate<T>(T carrier, Action<T, string, string> setter)
         {
-            return null;
+            if (activity?.Context is null)
+            {
+                return null;
+            }
+
+            var propagationContext = new PropagationContext(activity.Context, Baggage.Current);
+            propagationContext.Inject(carrier, setter);
+
+            return propagationContext;
         }
-
-        var propagationContext = new PropagationContext(activity.Context, Baggage.Current);
-        propagationContext.Inject(carrier, setter);
-
-        return propagationContext;
     }
 
     public static PropagationContext? GetPropagationContext(Activity? activity = null)

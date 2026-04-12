@@ -26,7 +26,7 @@ internal static class Extensions
         builder.AddAppSettings<McpToolsAppSettings>();
 
         // Add exception handlers
-        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddGlobalExceptionHandler();
         services.AddProblemDetails();
 
         // Configure HTTP clients

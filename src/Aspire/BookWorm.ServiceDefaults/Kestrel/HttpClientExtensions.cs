@@ -2,13 +2,16 @@
 
 public static class HttpClientExtensions
 {
-    public static IHttpClientBuilder AddAuthToken(this IHttpClientBuilder builder)
+    extension(IHttpClientBuilder builder)
     {
-        builder.Services.TryAddTransient<HttpClientAuthorizationDelegatingHandler>();
+        public IHttpClientBuilder AddAuthToken()
+        {
+            builder.Services.TryAddTransient<HttpClientAuthorizationDelegatingHandler>();
 
-        builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
+            builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
 
-        return builder;
+            return builder;
+        }
     }
 
     private sealed class HttpClientAuthorizationDelegatingHandler(

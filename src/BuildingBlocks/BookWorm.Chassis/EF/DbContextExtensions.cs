@@ -9,46 +9,48 @@ namespace BookWorm.Chassis.EF;
 
 public static class DbContextExtensions
 {
-    public static void AddAzurePostgresDbContext<TDbContext>(
-        this IHostApplicationBuilder builder,
-        string name,
-        Action<IHostApplicationBuilder>? action = null,
-        bool excludeDefaultInterceptors = false
-    )
-        where TDbContext : DbContext
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
-        if (!excludeDefaultInterceptors)
+        public void AddAzurePostgresDbContext<TDbContext>(
+            string name,
+            Action<IHostApplicationBuilder>? action = null,
+            bool excludeDefaultInterceptors = false
+        )
+            where TDbContext : DbContext
         {
-            services.AddScoped<IInterceptor, QueryPerformanceInterceptor>();
-            services.AddScoped<IInterceptor, EventDispatchInterceptor>();
-            services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
-        }
+            var services = builder.Services;
 
-        services.AddDbContext<TDbContext>(
-            (sp, options) =>
+            if (!excludeDefaultInterceptors)
             {
-                options
-                    .UseNpgsql(builder.Configuration.GetConnectionString(name))
-                    .UseSnakeCaseNamingConvention()
-                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
-                    // Issue: https://github.com/dotnet/efcore/issues/35285
-                    .ConfigureWarnings(warnings =>
-                        warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
-                    );
-
-                var interceptors = sp.GetServices<IInterceptor>().ToArray();
-
-                if (interceptors.Length != 0)
-                {
-                    options.AddInterceptors(interceptors);
-                }
+                services.AddScoped<IInterceptor, QueryPerformanceInterceptor>();
+                services.AddScoped<IInterceptor, EventDispatchInterceptor>();
+                services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
             }
-        );
 
-        builder.EnrichAzureNpgsqlDbContext<TDbContext>();
+            services.AddDbContext<TDbContext>(
+                (sp, options) =>
+                {
+                    options
+                        .UseNpgsql(builder.Configuration.GetConnectionString(name))
+                        .UseSnakeCaseNamingConvention()
+                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                        // Issue: https://github.com/dotnet/efcore/issues/35285
+                        .ConfigureWarnings(warnings =>
+                            warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
+                        );
 
-        action?.Invoke(builder);
+                    var interceptors = sp.GetServices<IInterceptor>().ToArray();
+
+                    if (interceptors.Length != 0)
+                    {
+                        options.AddInterceptors(interceptors);
+                    }
+                }
+            );
+
+            builder.EnrichAzureNpgsqlDbContext<TDbContext>();
+
+            action?.Invoke(builder);
+        }
     }
 }

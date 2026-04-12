@@ -19,7 +19,7 @@ internal static class Extensions
         builder.AddDefaultCors();
 
         // Add exception handlers
-        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddGlobalExceptionHandler();
         services.AddProblemDetails();
 
         services.AddSingleton(

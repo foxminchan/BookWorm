@@ -5,8 +5,11 @@ namespace BookWorm.Basket.Extensions;
 
 internal static class ServerCallContextIdentityExtensions
 {
-    public static string? GetUserIdentity(this ServerCallContext context)
+    extension(ServerCallContext context)
     {
-        return context.GetHttpContext().User.GetClaimValue(ClaimTypes.NameIdentifier);
+        public string? GetUserIdentity()
+        {
+            return context.GetHttpContext().User.GetClaimValue(ClaimTypes.NameIdentifier);
+        }
     }
 }

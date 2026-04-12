@@ -4,59 +4,62 @@ namespace BookWorm.ServiceDefaults.Cors;
 
 public static class CorsExtensions
 {
-    public static void AddDefaultCors(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
-        if (builder.Environment.IsDevelopment())
+        public void AddDefaultCors()
         {
-            builder.Services.AddCors(options =>
+            var services = builder.Services;
+
+            if (builder.Environment.IsDevelopment())
             {
-                options.AddPolicy(
-                    CorsConstants.AllowAllCorsPolicy,
-                    policyBuilder =>
-                    {
-                        policyBuilder
-                            .SetIsOriginAllowed(origin => new Uri(origin).Host == Network.Localhost)
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
-                    }
-                );
-            });
-        }
-        else
-        {
-            builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
-
-            services.AddCors(options =>
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy(
+                        CorsConstants.AllowAllCorsPolicy,
+                        policyBuilder =>
+                        {
+                            policyBuilder
+                                .SetIsOriginAllowed(origin => new Uri(origin).Host == Network.Localhost)
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials();
+                        }
+                    );
+                });
+            }
+            else
             {
-                options.AddPolicy(
-                    CorsConstants.AllowSpecificCorsPolicy,
-                    policyBuilder =>
-                    {
-                        var serviceProvider = services.BuildServiceProvider();
-                        var corsOptions = serviceProvider.GetRequiredService<CorsSettings>();
+                builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
 
-                        policyBuilder
-                            .WithOrigins([.. corsOptions.Origins])
-                            .WithHeaders([.. corsOptions.Headers])
-                            .WithMethods([.. corsOptions.Methods]);
-
-                        if (corsOptions.MaxAge is not null)
+                services.AddCors(options =>
+                {
+                    options.AddPolicy(
+                        CorsConstants.AllowSpecificCorsPolicy,
+                        policyBuilder =>
                         {
-                            policyBuilder.SetPreflightMaxAge(
-                                TimeSpan.FromSeconds(corsOptions.MaxAge.Value)
-                            );
-                        }
+                            var serviceProvider = services.BuildServiceProvider();
+                            var corsOptions = serviceProvider.GetRequiredService<CorsSettings>();
 
-                        if (corsOptions.AllowCredentials)
-                        {
-                            policyBuilder.AllowCredentials();
+                            policyBuilder
+                                .WithOrigins([.. corsOptions.Origins])
+                                .WithHeaders([.. corsOptions.Headers])
+                                .WithMethods([.. corsOptions.Methods]);
+
+                            if (corsOptions.MaxAge is not null)
+                            {
+                                policyBuilder.SetPreflightMaxAge(
+                                    TimeSpan.FromSeconds(corsOptions.MaxAge.Value)
+                                );
+                            }
+
+                            if (corsOptions.AllowCredentials)
+                            {
+                                policyBuilder.AllowCredentials();
+                            }
                         }
-                    }
-                );
-            });
+                    );
+                });
+            }
         }
     }
 

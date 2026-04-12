@@ -8,23 +8,23 @@ namespace BookWorm.Chassis.Security.TokenExchange;
 
 public static class TokenExchangeExtensions
 {
-    public static IHttpClientBuilder AddAuthTokenExchange(
-        this IHttpClientBuilder builder,
-        string? serviceKey = null
-    )
+    extension(IHttpClientBuilder builder)
     {
-        var service = builder.Services;
+        public IHttpClientBuilder AddAuthTokenExchange(string? serviceKey = null)
+        {
+            var service = builder.Services;
 
-        service.TryAddTransient<ITokenExchange, TokenExchange>();
+            service.TryAddTransient<ITokenExchange, TokenExchange>();
 
-        service.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
-            sp.GetRequiredService<IHttpContextAccessor>(),
-            serviceKey
-        ));
+            service.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
+                sp.GetRequiredService<IHttpContextAccessor>(),
+                serviceKey
+            ));
 
-        builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
+            builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
 
-        return builder;
+            return builder;
+        }
     }
 
     private sealed class HttpClientAuthorizationDelegatingHandler(

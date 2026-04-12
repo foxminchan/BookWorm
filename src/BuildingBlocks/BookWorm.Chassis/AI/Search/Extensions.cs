@@ -4,8 +4,11 @@ namespace BookWorm.Chassis.AI.Search;
 
 public static class Extensions
 {
-    public static void AddHybridSearch(this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        services.AddScoped<ISearch, HybridSearch>();
+        public void AddHybridSearch()
+        {
+            services.AddScoped<ISearch, HybridSearch>();
+        }
     }
 }

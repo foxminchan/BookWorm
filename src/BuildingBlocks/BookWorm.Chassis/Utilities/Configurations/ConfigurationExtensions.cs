@@ -8,18 +8,21 @@ namespace BookWorm.Chassis.Utilities.Configurations;
 
 public static class ConfigurationExtensions
 {
-    public static string GetRequiredConnectionString(this IConfiguration configuration, string name)
+    extension(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString(name);
-
-        if (string.IsNullOrEmpty(connectionString))
+        public string GetRequiredConnectionString(string name)
         {
-            throw new InvalidOperationException(
-                $"Configuration missing value for: {(configuration is IConfigurationSection s ? s.Path + ":" + name : name)}"
-            );
-        }
+            var connectionString = configuration.GetConnectionString(name);
 
-        return connectionString;
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException(
+                    $"Configuration missing value for: {(configuration is IConfigurationSection s ? s.Path + ":" + name : name)}"
+                );
+            }
+
+            return connectionString;
+        }
     }
 
     extension(IHostApplicationBuilder builder)

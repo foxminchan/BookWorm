@@ -5,24 +5,24 @@ namespace BookWorm.Chassis.Security.Extensions;
 
 public static class PolicyBuilderExtensions
 {
-    public static AuthorizationPolicyBuilder RequireScope(
-        this AuthorizationPolicyBuilder authorizationPolicyBuilder,
-        params string[] allowedValues
-    )
+    extension(AuthorizationPolicyBuilder authorizationPolicyBuilder)
     {
-        var scopeClaim = authorizationPolicyBuilder.RequireAssertion(context =>
+        public AuthorizationPolicyBuilder RequireScope(params string[] allowedValues)
         {
-            var scopeClaim = context.User.FindFirst(KeycloakClaimTypes.Scope);
-
-            if (scopeClaim is null)
+            var scopeClaim = authorizationPolicyBuilder.RequireAssertion(context =>
             {
-                return false;
-            }
+                var scopeClaim = context.User.FindFirst(KeycloakClaimTypes.Scope);
 
-            var scopes = scopeClaim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            return scopes.Any(s => allowedValues.Contains(s, StringComparer.OrdinalIgnoreCase));
-        });
+                if (scopeClaim is null)
+                {
+                    return false;
+                }
 
-        return scopeClaim;
+                var scopes = scopeClaim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                return scopes.Any(s => allowedValues.Contains(s, StringComparer.OrdinalIgnoreCase));
+            });
+
+            return scopeClaim;
+        }
     }
 }

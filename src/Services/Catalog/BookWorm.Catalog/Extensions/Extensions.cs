@@ -18,119 +18,122 @@ namespace BookWorm.Catalog.Extensions;
 
 internal static class Extensions
 {
-    public static void AddApplicationServices(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        public void AddApplicationServices()
+        {
+            var services = builder.Services;
 
-        builder.AddDefaultCors();
+            builder.AddDefaultCors();
 
-        builder.AddAppSettings<CatalogAppSettings>();
+            builder.AddAppSettings<CatalogAppSettings>();
 
-        builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
-        services
-            .AddAuthorizationBuilder()
-            .AddPolicy(
-                Authorization.Policies.Admin,
-                policy =>
-                {
-                    policy
+            services
+                .AddAuthorizationBuilder()
+                .AddPolicy(
+                    Authorization.Policies.Admin,
+                    policy =>
+                    {
+                        policy
+                            .RequireAuthenticatedUser()
+                            .RequireRole(Authorization.Roles.Admin)
+                            .RequireScope(
+                                $"{Services.Catalog}_{Authorization.Actions.Read}",
+                                $"{Services.Catalog}_{Authorization.Actions.Write}"
+                            );
+                    }
+                )
+                .SetDefaultPolicy(
+                    new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.Admin)
-                        .RequireScope(
-                            $"{Services.Catalog}_{Authorization.Actions.Read}",
-                            $"{Services.Catalog}_{Authorization.Actions.Write}"
-                        );
-                }
-            )
-            .SetDefaultPolicy(
-                new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .RequireScope($"{Services.Catalog}_{Authorization.Actions.Read}")
-                    .Build()
+                        .RequireScope($"{Services.Catalog}_{Authorization.Actions.Read}")
+                        .Build()
+                );
+
+            // Add exception handlers
+            services.AddValidationExceptionHandler();
+            services.AddNotFoundExceptionHandler();
+            services.AddGlobalExceptionHandler();
+            services.AddProblemDetails();
+
+            // Configure Mediator
+            services
+                .AddMediator(
+                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
+                )
+                .ApplyLoggingBehavior()
+                .ApplyActivityBehavior()
+                .ApplyValidationBehavior()
+                .ApplyTransactionBehavior<CatalogDbContext>()
+                .AddScoped<CreateBookPreProcessor>()
+                .AddScoped<UpdateBookPreProcessor>()
+                .AddScoped<UpdateBookPostProcessor>();
+
+            builder.AddRateLimiting();
+
+            services.AddGrpc(options =>
+            {
+                options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+                options.Interceptors.Add<GrpcExceptionInterceptor>();
+            });
+
+            services.AddGrpcHealthChecks();
+
+            services.AddSingleton(_ =>
+            {
+                var options = new JsonSerializerOptions();
+                options.Converters.Add(StringTrimmerJsonConverter.Instance);
+                options.Converters.Add(DecimalJsonConverter.Instance);
+                return options;
+            });
+
+            // Add database configuration
+            builder.AddPersistenceServices();
+
+            // Configure FluentValidation
+            services.AddValidatorsFromAssemblyContaining<ICatalogApiMarker>(includeInternalTypes: true);
+
+            services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
+
+            // Configure AI
+            builder.AddAI();
+
+            // Configure endpoints
+            services.AddVersioning();
+            services.AddEndpoints(typeof(ICatalogApiMarker));
+            services.AddDefaultOpenApi(options =>
+                options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<CatalogAppSettings>>()
             );
 
-        // Add exception handlers
-        services.AddExceptionHandler<ValidationExceptionHandler>();
-        services.AddExceptionHandler<NotFoundExceptionHandler>();
-        services.AddExceptionHandler<GlobalExceptionHandler>();
-        services.AddProblemDetails();
+            // Configure Mapper
+            services.AddMapper(typeof(ICatalogApiMarker));
 
-        // Configure Mediator
-        services
-            .AddMediator(
-                (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-            )
-            .ApplyLoggingBehavior()
-            .ApplyActivityBehavior()
-            .ApplyValidationBehavior()
-            .ApplyTransactionBehavior<CatalogDbContext>()
-            .AddScoped<CreateBookPreProcessor>()
-            .AddScoped<UpdateBookPreProcessor>()
-            .AddScoped<UpdateBookPostProcessor>();
-
-        builder.AddRateLimiting();
-
-        services.AddGrpc(options =>
-        {
-            options.EnableDetailedErrors = builder.Environment.IsDevelopment();
-            options.Interceptors.Add<GrpcExceptionInterceptor>();
-        });
-
-        services.AddGrpcHealthChecks();
-
-        services.AddSingleton(_ =>
-        {
-            var options = new JsonSerializerOptions();
-            options.Converters.Add(StringTrimmerJsonConverter.Instance);
-            options.Converters.Add(DecimalJsonConverter.Instance);
-            return options;
-        });
-
-        // Add database configuration
-        builder.AddPersistenceServices();
-
-        // Configure FluentValidation
-        services.AddValidatorsFromAssemblyContaining<ICatalogApiMarker>(includeInternalTypes: true);
-
-        services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
-
-        // Configure AI
-        builder.AddAI();
-
-        // Configure endpoints
-        services.AddVersioning();
-        services.AddEndpoints(typeof(ICatalogApiMarker));
-        services.AddDefaultOpenApi(options =>
-            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<CatalogAppSettings>>()
-        );
-
-        // Configure Mapper
-        services.AddMapper(typeof(ICatalogApiMarker));
-
-        // Configure EventBus
-        builder.AddEventBus(
-            typeof(ICatalogApiMarker),
-            cfg =>
-            {
-                cfg.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
+            // Configure EventBus
+            builder.AddEventBus(
+                typeof(ICatalogApiMarker),
+                cfg =>
                 {
-                    o.QueryDelay = TimeSpan.FromSeconds(1);
+                    cfg.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
+                    {
+                        o.QueryDelay = TimeSpan.FromSeconds(1);
 
-                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
 
-                    o.UsePostgres();
+                        o.UsePostgres();
 
-                    o.UseBusOutbox();
-                });
+                        o.UseBusOutbox();
+                    });
 
-                cfg.AddConfigureEndpointsCallback(
-                    (context, _, configurator) =>
-                        configurator.UseEntityFrameworkOutbox<CatalogDbContext>(context)
-                );
-            }
-        );
+                    cfg.AddConfigureEndpointsCallback(
+                        (context, _, configurator) =>
+                            configurator.UseEntityFrameworkOutbox<CatalogDbContext>(context)
+                    );
+                }
+            );
 
-        services.AddKeycloakTokenIntrospection();
+            services.AddKeycloakTokenIntrospection();
+        }
     }
 }
