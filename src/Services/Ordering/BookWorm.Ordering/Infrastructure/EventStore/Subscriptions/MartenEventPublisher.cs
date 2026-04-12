@@ -6,7 +6,7 @@ using Microsoft.Extensions.Diagnostics.Buffering;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Subscriptions;
 
-public sealed class MartenEventPublisher(
+internal sealed class MartenEventPublisher(
     IServiceScopeFactory scopeFactory,
     IActivityScope activityScope,
     ILogger<MartenEventPublisher> logger,

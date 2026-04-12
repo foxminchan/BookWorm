@@ -93,7 +93,9 @@ internal static class Extensions
             builder.AddPersistenceServices();
 
             // Configure FluentValidation
-            services.AddValidatorsFromAssemblyContaining<ICatalogApiMarker>(includeInternalTypes: true);
+            services.AddValidatorsFromAssemblyContaining<ICatalogApiMarker>(
+                includeInternalTypes: true
+            );
 
             services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
@@ -104,7 +106,9 @@ internal static class Extensions
             services.AddVersioning();
             services.AddEndpoints(typeof(ICatalogApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<CatalogAppSettings>>()
+                options.AddDocumentTransformer<
+                    OpenApiInfoDefinitionsTransformer<CatalogAppSettings>
+                >()
             );
 
             // Configure Mapper

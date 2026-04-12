@@ -28,7 +28,9 @@ internal static class WorkflowRegistration
                         var routerAgent = sp.GetRequiredKeyedService<AIAgent>(
                             RouterAgentDefinition.Name
                         );
-                        var bookAgent = sp.GetRequiredKeyedService<AIAgent>(BookAgentDefinition.Name);
+                        var bookAgent = sp.GetRequiredKeyedService<AIAgent>(
+                            BookAgentDefinition.Name
+                        );
                         var languageAgent = sp.GetRequiredKeyedService<AIAgent>(
                             LanguageAgentDefinition.Name
                         );

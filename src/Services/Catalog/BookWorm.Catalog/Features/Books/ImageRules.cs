@@ -6,7 +6,7 @@ internal static class ImageRules
 {
     private const int MaxFileSize = 1048576;
 
-    private static readonly FrozenDictionary<string, FrozenSet<string>> AllowedTypes =
+    private static readonly FrozenDictionary<string, FrozenSet<string>> _allowedTypes =
         new Dictionary<string, FrozenSet<string>>
         {
             [MediaTypeNames.Image.Jpeg] = new[] { ".jpg", ".jpeg" }.ToFrozenSet(
@@ -29,13 +29,13 @@ internal static class ImageRules
             .WithMessage("The file must not be empty.")
             .Must(x => x?.Length <= MaxFileSize)
             .WithMessage($"The file size should not exceed {MaxFileSize / 1024} KB.")
-            .Must(x => x?.ContentType is not null && AllowedTypes.ContainsKey(x.ContentType))
+            .Must(x => x?.ContentType is not null && _allowedTypes.ContainsKey(x.ContentType))
             .WithMessage("File type is not allowed. Allowed file types are JPEG, PNG, and WebP.")
             .Must(x =>
             {
                 var ext = Path.GetExtension(x!.FileName);
 
-                return AllowedTypes.TryGetValue(x.ContentType!, out var extensions)
+                return _allowedTypes.TryGetValue(x.ContentType, out var extensions)
                     && extensions.Contains(ext);
             })
             .WithMessage("The file extension does not match its content type.");

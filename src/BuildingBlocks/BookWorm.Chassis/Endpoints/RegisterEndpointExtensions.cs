@@ -13,12 +13,14 @@ public static class RegisterEndpointExtensions
         {
             services.Scan(scan =>
                 scan.FromAssembliesOf(type)
-                    .AddClasses(classes =>
-                        classes
-                            .AssignableTo<IEndpoint>()
-                            .Where(typeInfo =>
-                                typeInfo is { IsAbstract: false, IsInterface: false }
-                            )
+                    .AddClasses(
+                        classes =>
+                            classes
+                                .AssignableTo<IEndpoint>()
+                                .Where(typeInfo =>
+                                    typeInfo is { IsAbstract: false, IsInterface: false }
+                                ),
+                        false
                     )
                     .AsImplementedInterfaces()
                     .WithTransientLifetime()

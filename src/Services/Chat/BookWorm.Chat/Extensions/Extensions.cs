@@ -72,7 +72,8 @@ internal static class Extensions
 
             // Configure ClaimsPrincipal
             services.AddTransient(s =>
-                s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User ?? new ClaimsPrincipal()
+                s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User
+                ?? new ClaimsPrincipal()
             );
 
             // AI infrastructure (chat client, telemetry, protocols)

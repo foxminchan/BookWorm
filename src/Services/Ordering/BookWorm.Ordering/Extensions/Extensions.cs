@@ -10,68 +10,73 @@ namespace BookWorm.Ordering.Extensions;
 
 internal static class Extensions
 {
-    public static void AddApplicationServices(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
+        public void AddApplicationServices()
+        {
+            var services = builder.Services;
 
-        builder.AddDefaultCors();
+            builder.AddDefaultCors();
 
-        builder.AddAppSettings<OrderingAppSettings>();
+            builder.AddAppSettings<OrderingAppSettings>();
 
-        builder.AddSecurityServices();
+            builder.AddSecurityServices();
 
-        // Add exception handlers
-        services.AddValidationExceptionHandler();
-        services.AddNotFoundExceptionHandler();
-        services.AddGlobalExceptionHandler();
-        services.AddProblemDetails();
+            // Add exception handlers
+            services.AddValidationExceptionHandler();
+            services.AddNotFoundExceptionHandler();
+            services.AddGlobalExceptionHandler();
+            services.AddProblemDetails();
 
-        services.AddCqrsInfrastructure();
+            services.AddCqrsInfrastructure();
 
-        services.AddSingleton(
-            new JsonSerializerOptions { Converters = { DecimalJsonConverter.Instance } }
-        );
+            services.AddSingleton(
+                new JsonSerializerOptions { Converters = { DecimalJsonConverter.Instance } }
+            );
 
-        builder.AddRateLimiting();
+            builder.AddRateLimiting();
 
-        builder.AddRedaction();
+            builder.AddRedaction();
 
-        builder.AddPersistenceServices();
+            builder.AddPersistenceServices();
 
-        // Configure endpoints
-        services.AddVersioning();
-        services.AddEndpoints(typeof(IOrderingApiMarker));
-        services.AddDefaultOpenApi(options =>
-            options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<OrderingAppSettings>>()
-        );
+            // Configure endpoints
+            services.AddVersioning();
+            services.AddEndpoints(typeof(IOrderingApiMarker));
+            services.AddDefaultOpenApi(options =>
+                options.AddDocumentTransformer<
+                    OpenApiInfoDefinitionsTransformer<OrderingAppSettings>
+                >()
+            );
 
-        // Add event bus configuration
-        builder.AddEventBus(
-            typeof(IOrderingApiMarker),
-            cfg =>
-            {
-                cfg.AddEntityFrameworkOutbox<OrderingDbContext>(o =>
+            // Add event bus configuration
+            builder.AddEventBus(
+                typeof(IOrderingApiMarker),
+                cfg =>
                 {
-                    o.QueryDelay = TimeSpan.FromSeconds(1);
+                    cfg.AddEntityFrameworkOutbox<OrderingDbContext>(o =>
+                    {
+                        o.QueryDelay = TimeSpan.FromSeconds(1);
 
-                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
 
-                    o.UsePostgres();
+                        o.UsePostgres();
 
-                    o.UseBusOutbox();
-                });
+                        o.UseBusOutbox();
+                    });
 
-                cfg.AddConfigureEndpointsCallback(
-                    (context, _, configurator) =>
-                        configurator.UseEntityFrameworkOutbox<OrderingDbContext>(context)
-                );
-            }
-        );
+                    cfg.AddConfigureEndpointsCallback(
+                        (context, _, configurator) =>
+                            configurator.UseEntityFrameworkOutbox<OrderingDbContext>(context)
+                    );
+                }
+            );
 
-        // Configure gRPC
-        builder.AddGrpcServices();
+            // Configure gRPC
+            builder.AddGrpcServices();
 
-        // Configure Redis distributed lock
-        builder.AddDistributedLock();
+            // Configure Redis distributed lock
+            builder.AddDistributedLock();
+        }
     }
 }

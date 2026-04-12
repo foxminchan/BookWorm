@@ -67,7 +67,9 @@ internal static class Extensions
             services.AddSingleton<IBasketRepository, BasketRepository>();
 
             // Configure FluentValidation
-            services.AddValidatorsFromAssemblyContaining<IBasketApiMarker>(includeInternalTypes: true);
+            services.AddValidatorsFromAssemblyContaining<IBasketApiMarker>(
+                includeInternalTypes: true
+            );
 
             services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
@@ -75,7 +77,9 @@ internal static class Extensions
             services.AddVersioning();
             services.AddEndpoints(typeof(IBasketApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<BasketAppSettings>>()
+                options.AddDocumentTransformer<
+                    OpenApiInfoDefinitionsTransformer<BasketAppSettings>
+                >()
             );
 
             // Configure gRPC
@@ -83,7 +87,8 @@ internal static class Extensions
 
             // Configure ClaimsPrincipal
             services.AddTransient(s =>
-                s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User ?? new ClaimsPrincipal()
+                s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User
+                ?? new ClaimsPrincipal()
             );
 
             // Configure EventBus

@@ -5,47 +5,50 @@ namespace BookWorm.Scheduler.Extensions;
 
 internal static class Extensions
 {
-    public static void AddApplicationServices(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
-        builder.AddEventBus(typeof(ISchedulerApiMarker));
-
-        services.AddAntiforgery();
-
-        services.Configure<QuartzOptions>(options =>
+        public void AddApplicationServices()
         {
-            options["quartz.plugin.jobHistory.type"] =
-                "Quartz.Plugin.History.LoggingJobHistoryPlugin, Quartz.Plugins";
-            options["quartz.plugin.triggerHistory.type"] =
-                "Quartz.Plugin.History.LoggingTriggerHistoryPlugin, Quartz.Plugins";
-        });
+            var services = builder.Services;
 
-        services.AddQuartz(q =>
-        {
-            q.SchedulerId = $"{nameof(BookWorm)}-{nameof(Scheduler)}-{Environment.MachineName}";
-            q.SchedulerName = nameof(Scheduler);
+            builder.AddEventBus(typeof(ISchedulerApiMarker));
 
-            q.InterruptJobsOnShutdown = true;
-            q.InterruptJobsOnShutdownWithWait = true;
+            services.AddAntiforgery();
 
-            q.UseTimeZoneConverter();
-            q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Environment.ProcessorCount);
-            q.AddJobListener<JobTelemetryListener>();
-
-            q.UseXmlSchedulingConfiguration(x =>
+            services.Configure<QuartzOptions>(options =>
             {
-                x.Files = ["~/jobs.xml"];
-                x.ScanInterval = TimeSpan.FromMinutes(1);
-                x.FailOnFileNotFound = true;
-                x.FailOnSchedulingError = true;
+                options["quartz.plugin.jobHistory.type"] =
+                    "Quartz.Plugin.History.LoggingJobHistoryPlugin, Quartz.Plugins";
+                options["quartz.plugin.triggerHistory.type"] =
+                    "Quartz.Plugin.History.LoggingTriggerHistoryPlugin, Quartz.Plugins";
             });
-        });
 
-        services.AddQuartzDashboard();
+            services.AddQuartz(q =>
+            {
+                q.SchedulerId = $"{nameof(BookWorm)}-{nameof(Scheduler)}-{Environment.MachineName}";
+                q.SchedulerName = nameof(Scheduler);
 
-        services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
+                q.InterruptJobsOnShutdown = true;
+                q.InterruptJobsOnShutdownWithWait = true;
 
-        services.AddOpenTelemetry().WithTracing(t => t.AddQuartzInstrumentation());
+                q.UseTimeZoneConverter();
+                q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Environment.ProcessorCount);
+                q.AddJobListener<JobTelemetryListener>();
+
+                q.UseXmlSchedulingConfiguration(x =>
+                {
+                    x.Files = ["~/jobs.xml"];
+                    x.ScanInterval = TimeSpan.FromMinutes(1);
+                    x.FailOnFileNotFound = true;
+                    x.FailOnSchedulingError = true;
+                });
+            });
+
+            services.AddQuartzDashboard();
+
+            services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
+
+            services.AddOpenTelemetry().WithTracing(t => t.AddQuartzInstrumentation());
+        }
     }
 }

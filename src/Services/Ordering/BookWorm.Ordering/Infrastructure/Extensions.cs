@@ -4,42 +4,45 @@ namespace BookWorm.Ordering.Infrastructure;
 
 internal static class Extensions
 {
-    public static void AddPersistenceServices(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-
-        // Add database configuration
-        builder.AddAzurePostgresDbContext<OrderingDbContext>(
-            Components.Database.Ordering,
-            _ =>
-            {
-                services.AddMigration<OrderingDbContext>();
-
-                services.AddRepositories(typeof(IOrderingApiMarker));
-            }
-        );
-
-        // Configure EventStore
-        builder.AddEventStore(storeOptions =>
+        public void AddPersistenceServices()
         {
-            storeOptions.ConfigureOrders();
-            storeOptions.Projections.DaemonLockId = 44444;
-            storeOptions.DisableNpgsqlLogging = true;
+            var services = builder.Services;
 
-            // If we're running in development mode, let Marten just take care
-            // of all necessary schema building and patching behind the scenes
-            if (builder.Environment.IsDevelopment())
+            // Add database configuration
+            builder.AddAzurePostgresDbContext<OrderingDbContext>(
+                Components.Database.Ordering,
+                _ =>
+                {
+                    services.AddMigration<OrderingDbContext>();
+
+                    services.AddRepositories(typeof(IOrderingApiMarker));
+                }
+            );
+
+            // Configure EventStore
+            builder.AddEventStore(storeOptions =>
             {
-                storeOptions.AutoCreateSchemaObjects = AutoCreate.All;
-            }
-        });
+                storeOptions.ConfigureOrders();
+                storeOptions.Projections.DaemonLockId = 44444;
+                storeOptions.DisableNpgsqlLogging = true;
 
-        // Configure Redis
-        builder
-            .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
-            .WithAzureAuthentication();
+                // If we're running in development mode, let Marten just take care
+                // of all necessary schema building and patching behind the scenes
+                if (builder.Environment.IsDevelopment())
+                {
+                    storeOptions.AutoCreateSchemaObjects = AutoCreate.All;
+                }
+            });
 
-        builder.AddCaching();
+            // Configure Redis
+            builder
+                .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+                .WithAzureAuthentication();
+
+            builder.AddCaching();
+        }
     }
 
     private static void ConfigureOrders(this StoreOptions options)

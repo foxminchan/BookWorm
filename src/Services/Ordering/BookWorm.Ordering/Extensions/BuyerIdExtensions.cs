@@ -4,12 +4,15 @@ namespace BookWorm.Ordering.Extensions;
 
 internal static class BuyerIdExtensions
 {
-    public static Guid ToBuyerId(this string? userId)
+    extension(string? userId)
     {
-        userId = Guard.Against.NotAuthenticated(userId);
+        public Guid ToBuyerId()
+        {
+            userId = Guard.Against.NotAuthenticated(userId);
 
-        return !Guid.TryParse(userId, out var buyerId)
-            ? throw new ArgumentException("Invalid Buyer ID format.", nameof(userId))
-            : buyerId;
+            return !Guid.TryParse(userId, out var buyerId)
+                ? throw new ArgumentException("Invalid Buyer ID format.", nameof(userId))
+                : buyerId;
+        }
     }
 }

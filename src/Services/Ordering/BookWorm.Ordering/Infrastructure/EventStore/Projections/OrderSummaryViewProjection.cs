@@ -2,7 +2,7 @@
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Projections;
 
-public sealed class OrderSummaryView
+internal sealed class OrderSummaryView
 {
     [Identity]
     public Guid Id { get; set; }
@@ -11,7 +11,7 @@ public sealed class OrderSummaryView
     public decimal TotalPrice { get; set; }
 }
 
-public sealed class OrderSummaryViewProjection : MultiStreamProjection<OrderSummaryView, Guid>
+internal sealed class OrderSummaryViewProjection : MultiStreamProjection<OrderSummaryView, Guid>
 {
     public OrderSummaryViewProjection()
     {
