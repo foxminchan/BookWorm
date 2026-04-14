@@ -2,10 +2,8 @@
 
 namespace BookWorm.Chassis.OpenTelemetry.ActivityScope;
 
-public sealed class ActivityScope : IActivityScope
+internal sealed class ActivityScope : IActivityScope
 {
-    public static readonly IActivityScope Instance = new ActivityScope();
-
     public Activity? Start(string name, StartActivityOptions options)
     {
         return options.Parent.HasValue

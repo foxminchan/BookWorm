@@ -4,7 +4,7 @@ namespace BookWorm.Chassis.OpenTelemetry;
 
 public static class TelemetryTags
 {
-    public static class Commands
+    internal static class Commands
     {
         public const string Command = $"{ActivitySourceProvider.DefaultSourceName}.command";
         public const string CommandType = $"{Command}.type";
@@ -15,7 +15,7 @@ public static class TelemetryTags
         public const string CommandHandlingDuration = $"{CommandHandling}.duration";
     }
 
-    public static class Queries
+    internal static class Queries
     {
         public const string Query = $"{ActivitySourceProvider.DefaultSourceName}.query";
         public const string QueryType = $"{Query}.type";
@@ -31,7 +31,7 @@ public static class TelemetryTags
         public const string Event = $"{ActivitySourceProvider.DefaultSourceName}.event";
     }
 
-    public static class Validator
+    internal static class Validator
     {
         public const string Validation = $"{ActivitySourceProvider.DefaultSourceName}.validator";
     }

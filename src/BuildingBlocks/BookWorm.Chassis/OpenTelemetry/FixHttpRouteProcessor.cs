@@ -1,9 +1,10 @@
 ﻿using System.Diagnostics;
 using OpenTelemetry;
+using OpenTelemetry.Trace;
 
 namespace BookWorm.Chassis.OpenTelemetry;
 
-public sealed class FixHttpRouteProcessor : BaseProcessor<Activity>
+internal sealed class FixHttpRouteProcessor : BaseProcessor<Activity>
 {
     private const string HttpRequestMethodTag = "http.request.method";
     private const string UrlPathTag = "url.path";
@@ -31,5 +32,29 @@ public sealed class FixHttpRouteProcessor : BaseProcessor<Activity>
         activity.SetTag(HttpRouteTag, path);
         activity.SetTag(NameTag, displayName);
         activity.SetTag(RequestNameTag, displayName);
+    }
+}
+
+public static class FixHttpRouteProcessorExtensions
+{
+    extension(TracerProviderBuilder tracerProviderBuilder)
+    {
+        /// <summary>
+        ///     Adds the <see cref="FixHttpRouteProcessor" /> to the <see cref="TracerProviderBuilder" /> pipeline.
+        /// </summary>
+        /// <returns>
+        ///     The <see cref="TracerProviderBuilder" /> with the <see cref="FixHttpRouteProcessor" /> registered,
+        ///     enabling HTTP route normalization in OpenTelemetry traces.
+        /// </returns>
+        /// <example>
+        ///     <code>
+        ///         builder.Services.AddOpenTelemetry()
+        ///             .WithTracing(tracing => tracing.AddFixHttpRouteProcessor());
+        ///     </code>
+        /// </example>
+        public TracerProviderBuilder AddFixHttpRouteProcessor()
+        {
+            return tracerProviderBuilder.AddProcessor(new FixHttpRouteProcessor());
+        }
     }
 }

@@ -9,6 +9,14 @@ public static class CachingExtensions
 {
     extension(IHostApplicationBuilder builder)
     {
+        /// <summary>
+        ///     Registers hybrid caching services with the dependency injection container,
+        ///     configuring options from <see cref="CachingOptions" /> and an optional delegate.
+        /// </summary>
+        /// <param name="configure">
+        ///     An optional delegate to further configure <see cref="HybridCacheOptions" />
+        ///     after the defaults derived from <see cref="CachingOptions" /> have been applied.
+        /// </param>
         public void AddCaching(Action<HybridCacheOptions>? configure = null)
         {
             var services = builder.Services;

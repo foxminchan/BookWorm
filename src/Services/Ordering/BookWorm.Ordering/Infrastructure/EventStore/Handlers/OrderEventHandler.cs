@@ -1,10 +1,12 @@
-﻿using BookWorm.Ordering.Extensions;
+﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Ordering.Extensions;
 using Mediator;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Handlers;
 
 internal sealed class OrderEventHandler(
     IDocumentSession documentSession,
+    IActivityScope activityScope,
     ILogger<OrderEventHandler> logger
 )
     : INotificationHandler<OrderPlacedEvent>,
@@ -20,6 +22,7 @@ internal sealed class OrderEventHandler(
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
+            activityScope,
             cancellationToken
         );
     }
@@ -33,6 +36,7 @@ internal sealed class OrderEventHandler(
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
+            activityScope,
             cancellationToken
         );
     }
@@ -46,6 +50,7 @@ internal sealed class OrderEventHandler(
         await documentSession.Add<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
+            activityScope,
             cancellationToken
         );
     }

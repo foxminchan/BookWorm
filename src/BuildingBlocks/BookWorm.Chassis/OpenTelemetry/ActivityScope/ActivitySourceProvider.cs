@@ -8,7 +8,7 @@ public static class ActivitySourceProvider
 
     public static readonly ActivitySource Instance = new(DefaultSourceName, "v1");
 
-    public static ActivityListener AddDummyListener(
+    internal static ActivityListener AddDummyListener(
         ActivitySamplingResult samplingResult = ActivitySamplingResult.AllDataAndRecorded
     )
     {

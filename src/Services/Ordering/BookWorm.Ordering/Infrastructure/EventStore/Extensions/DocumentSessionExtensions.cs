@@ -8,10 +8,16 @@ internal static class DocumentSessionWithTelemetryExtensions
 {
     extension(IDocumentSession documentSession)
     {
-        public async Task Add<T>(Guid id, DomainEvent @event, CancellationToken ct = default)
+        public async Task Add<T>(
+            Guid id,
+            DomainEvent @event,
+            IActivityScope activityScope,
+            CancellationToken ct = default
+        )
             where T : class
         {
             await documentSession.WithTelemetry<T>(
+                activityScope,
                 async token =>
                 {
                     documentSession.Events.StartStream<T>(id, @event);
@@ -21,10 +27,16 @@ internal static class DocumentSessionWithTelemetryExtensions
             );
         }
 
-        public Task Add<T>(Guid id, IntegrationEvent @event, CancellationToken ct = default)
+        public Task Add<T>(
+            Guid id,
+            IntegrationEvent @event,
+            IActivityScope activityScope,
+            CancellationToken ct = default
+        )
             where T : class
         {
             return documentSession.WithTelemetry<IntegrationEvent>(
+                activityScope,
                 async token =>
                 {
                     documentSession.Events.StartStream<T>(id, @event);
@@ -37,11 +49,13 @@ internal static class DocumentSessionWithTelemetryExtensions
         public async Task GetAndUpdate<T>(
             Guid id,
             DomainEvent @event,
+            IActivityScope activityScope,
             CancellationToken cancellationToken = default
         )
             where T : class
         {
             await documentSession.WithTelemetry<T>(
+                activityScope,
                 async token =>
                 {
                     await documentSession.Events.WriteToAggregate<T>(
@@ -58,11 +72,13 @@ internal static class DocumentSessionWithTelemetryExtensions
         public async Task GetAndUpdate<T>(
             Guid id,
             IntegrationEvent @event,
+            IActivityScope activityScope,
             CancellationToken cancellationToken = default
         )
             where T : class
         {
             await documentSession.WithTelemetry<IntegrationEvent>(
+                activityScope,
                 async token =>
                 {
                     await documentSession.Events.WriteToAggregate<T>(
@@ -77,12 +93,13 @@ internal static class DocumentSessionWithTelemetryExtensions
         }
 
         private async Task WithTelemetry<T>(
+            IActivityScope activityScope,
             Func<CancellationToken, Task> run,
             CancellationToken cancellationToken,
             [CallerMemberName] string memberName = ""
         )
         {
-            await ActivityScope.Instance.Run(
+            await activityScope.Run(
                 $"{nameof(DocumentSessionWithTelemetryExtensions)}/{memberName}",
                 (activity, token) =>
                 {
