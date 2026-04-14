@@ -21,7 +21,7 @@ internal sealed class KafkaPublishFilter<T>(IServiceProvider serviceProvider)
                     context.Message,
                     Pipe.Execute<KafkaSendContext<T>>(ctx =>
                     {
-                        if (userId is not null)
+                        if (!string.IsNullOrEmpty(userId))
                         {
                             ctx.Headers.Set(EventBusHeaders.UserId, userId);
                         }
