@@ -17,20 +17,17 @@ internal sealed class KafkaPublishFilter<T>(IServiceProvider serviceProvider)
             {
                 var userId = context.Headers.Get<string>(EventBusHeaders.UserId);
 
-                if (userId is not null)
-                {
-                    await producer.Produce(
-                        context.Message,
-                        Pipe.Execute<KafkaSendContext<T>>(ctx =>
-                            ctx.Headers.Set(EventBusHeaders.UserId, userId)
-                        ),
-                        context.CancellationToken
-                    );
-                }
-                else
-                {
-                    await producer.Produce(context.Message, context.CancellationToken);
-                }
+                await producer.Produce(
+                    context.Message,
+                    Pipe.Execute<KafkaSendContext<T>>(ctx =>
+                    {
+                        if (userId is not null)
+                        {
+                            ctx.Headers.Set(EventBusHeaders.UserId, userId);
+                        }
+                    }),
+                    context.CancellationToken
+                );
 
                 return;
             }
