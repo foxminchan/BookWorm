@@ -188,6 +188,9 @@ public static class Extensions
                         // Enable delayed scheduling for deferred message delivery.
                         configurator.UseDelayedMessageScheduler();
 
+                        // Inject UserId from the current user context into message headers.
+                        configurator.UsePublishFilter(typeof(UserIdPublishFilter<>), context);
+
                         // Redirect publish operations through Kafka via publish filter.
                         configurator.UsePublishFilter(typeof(KafkaPublishFilter<>), context);
                     }

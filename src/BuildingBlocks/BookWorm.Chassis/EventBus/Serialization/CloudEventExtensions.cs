@@ -36,6 +36,11 @@ internal static class CloudEventExtensions
         CloudEventAttributeType.String
     );
 
+    internal static readonly CloudEventAttribute UserId = CloudEventAttribute.CreateExtension(
+        "userid",
+        CloudEventAttributeType.String
+    );
+
     internal static readonly CloudEventAttribute[] All =
     [
         CorrelationId,
@@ -46,5 +51,6 @@ internal static class CloudEventExtensions
         ResponseAddress,
         FaultAddress,
         MessageType,
+        UserId,
     ];
 }
