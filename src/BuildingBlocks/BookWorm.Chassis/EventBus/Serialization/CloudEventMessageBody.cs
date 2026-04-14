@@ -85,6 +85,13 @@ internal sealed class CloudEventMessageBody<T>(SendContext<T> context, JsonEvent
             cloudEvent[CloudEventExtensions.MessageType] = string.Join(";", messageTypes);
         }
 
+        var userId = context.Headers.Get<string>(EventBusHeaders.UserId);
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            cloudEvent[CloudEventExtensions.UserId] = userId;
+        }
+
         return formatter.EncodeStructuredModeMessage(cloudEvent, out _).ToArray();
     }
 }

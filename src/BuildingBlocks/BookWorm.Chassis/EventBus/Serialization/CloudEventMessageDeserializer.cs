@@ -92,12 +92,20 @@ internal sealed class CloudEventMessageDeserializer(JsonEventFormatter formatter
         var responseAddress = GetExtension(cloudEvent, CloudEventExtensions.ResponseAddress);
         var faultAddress = GetExtension(cloudEvent, CloudEventExtensions.FaultAddress);
         var messageTypeHeader = GetExtension(cloudEvent, CloudEventExtensions.MessageType);
+        var userId = GetExtension(cloudEvent, CloudEventExtensions.UserId);
 
         var messageTypes = string.IsNullOrEmpty(messageTypeHeader)
             ? []
             : messageTypeHeader.Split(';', StringSplitOptions.RemoveEmptyEntries);
 
         var sourceAddress = cloudEvent.Source?.ToString();
+
+        var headers = new Dictionary<string, object?>();
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            headers[EventBusHeaders.UserId] = userId;
+        }
 
         return new()
         {
@@ -113,6 +121,7 @@ internal sealed class CloudEventMessageDeserializer(JsonEventFormatter formatter
             SentTime = sentTime,
             MessageType = messageTypes,
             Message = cloudEvent.Data,
+            Headers = headers,
         };
     }
 
