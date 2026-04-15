@@ -148,7 +148,7 @@ internal static IResourceBuilder<YarpResource> BuildApiGatewayProxy(
                     .WithTransformPathPrefix("/")
                     .WithTransformUseOriginalHostHeader()
                     .WithTransformPathRemovePrefix($"/{service.Name}")
-                    .WithTransformXForwarded("trace-id")
+                    .WithTransformXForwarded()
                     .WithTransformResponseHeader("X-Powered-By", "BookWorm Gateway");
             }
 

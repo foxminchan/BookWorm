@@ -22,8 +22,9 @@ internal static class ProxyExtensions
                 .WithIconName("SerialPort")
                 .WithConfiguration(yarpBuilder =>
                 {
-                    foreach (var service in services)
+                    for (var routeIndex = 0; routeIndex < services.Count; routeIndex++)
                     {
+                        var service = services[routeIndex];
                         var routeBuilder = yarpBuilder.AddRoute(
                             $"/{service.Name}/{{**remainder}}",
                             service.Resource
@@ -35,11 +36,12 @@ internal static class ProxyExtensions
                         }
 
                         routeBuilder
+                            .WithOrder(service.Order ?? routeIndex)
+                            .WithMaxRequestBodySize(service.MaxRequestBodySize)
                             .WithTransformPathPrefix("/")
                             .WithTransformUseOriginalHostHeader()
                             .WithTransformPathRemovePrefix($"/{service.Name}")
-                            .WithTransformXForwarded("trace-id")
-                            .WithTransformXForwarded("Trace-Id")
+                            .WithTransformXForwarded()
                             .WithTransformResponseHeader(
                                 "X-Powered-By",
                                 $"{nameof(BookWorm)} {nameof(Services.Gateway)}"
@@ -55,9 +57,12 @@ internal static class ProxyExtensions
 
 internal sealed class Service
 {
+    public const long DefaultMaxRequestBodySize = 10 * 1024 * 1024;
     public required string Name { get; init; }
     public required IResourceBuilder<ProjectResource> Resource { get; init; }
     public bool UseProtobuf { get; init; }
+    public long MaxRequestBodySize { get; init; } = DefaultMaxRequestBodySize;
+    public int? Order { get; init; }
 }
 
 internal sealed class ApiGatewayProxyBuilder
@@ -73,7 +78,9 @@ internal sealed class ApiGatewayProxyBuilder
 
     public ApiGatewayProxyBuilder WithService(
         IResourceBuilder<ProjectResource> service,
-        bool useProtobuf = false
+        bool useProtobuf = false,
+        long maxRequestBodySize = Service.DefaultMaxRequestBodySize,
+        int? order = null
     )
     {
         _services.Add(
@@ -82,6 +89,8 @@ internal sealed class ApiGatewayProxyBuilder
                 Name = service.Resource.Name,
                 Resource = service,
                 UseProtobuf = useProtobuf,
+                MaxRequestBodySize = maxRequestBodySize,
+                Order = order,
             }
         );
 
