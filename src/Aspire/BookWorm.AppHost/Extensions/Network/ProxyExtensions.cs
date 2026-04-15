@@ -57,11 +57,7 @@ internal static class ProxyExtensions
 
 internal sealed class Service
 {
-    /// <summary>
-    ///     The default maximum request body size (10 MB).
-    /// </summary>
     public const long DefaultMaxRequestBodySize = 10 * 1024 * 1024;
-
     public required string Name { get; init; }
     public required IResourceBuilder<ProjectResource> Resource { get; init; }
     public bool UseProtobuf { get; init; }
