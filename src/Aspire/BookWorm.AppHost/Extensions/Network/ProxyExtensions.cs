@@ -38,8 +38,7 @@ internal static class ProxyExtensions
                             .WithTransformPathPrefix("/")
                             .WithTransformUseOriginalHostHeader()
                             .WithTransformPathRemovePrefix($"/{service.Name}")
-                            .WithTransformXForwarded("trace-id")
-                            .WithTransformXForwarded("Trace-Id")
+                            .WithTransformXForwarded()
                             .WithTransformResponseHeader(
                                 "X-Powered-By",
                                 $"{nameof(BookWorm)} {nameof(Services.Gateway)}"
