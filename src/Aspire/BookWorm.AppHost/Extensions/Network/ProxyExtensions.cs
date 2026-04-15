@@ -22,8 +22,9 @@ internal static class ProxyExtensions
                 .WithIconName("SerialPort")
                 .WithConfiguration(yarpBuilder =>
                 {
-                    foreach (var service in services)
+                    for (var i = 0; i < services.Count; i++)
                     {
+                        var service = services[i];
                         var routeBuilder = yarpBuilder.AddRoute(
                             $"/{service.Name}/{{**remainder}}",
                             service.Resource
@@ -35,6 +36,8 @@ internal static class ProxyExtensions
                         }
 
                         routeBuilder
+                            .WithOrder(service.Order ?? i)
+                            .WithMaxRequestBodySize(service.MaxRequestBodySize)
                             .WithTransformPathPrefix("/")
                             .WithTransformUseOriginalHostHeader()
                             .WithTransformPathRemovePrefix($"/{service.Name}")
@@ -54,9 +57,16 @@ internal static class ProxyExtensions
 
 internal sealed class Service
 {
+    /// <summary>
+    ///     The default maximum request body size (10 MB).
+    /// </summary>
+    public const long DefaultMaxRequestBodySize = 10 * 1024 * 1024;
+
     public required string Name { get; init; }
     public required IResourceBuilder<ProjectResource> Resource { get; init; }
     public bool UseProtobuf { get; init; }
+    public long MaxRequestBodySize { get; init; } = DefaultMaxRequestBodySize;
+    public int? Order { get; init; }
 }
 
 internal sealed class ApiGatewayProxyBuilder
@@ -72,7 +82,9 @@ internal sealed class ApiGatewayProxyBuilder
 
     public ApiGatewayProxyBuilder WithService(
         IResourceBuilder<ProjectResource> service,
-        bool useProtobuf = false
+        bool useProtobuf = false,
+        long maxRequestBodySize = Service.DefaultMaxRequestBodySize,
+        int? order = null
     )
     {
         _services.Add(
@@ -81,6 +93,8 @@ internal sealed class ApiGatewayProxyBuilder
                 Name = service.Resource.Name,
                 Resource = service,
                 UseProtobuf = useProtobuf,
+                MaxRequestBodySize = maxRequestBodySize,
+                Order = order,
             }
         );
 
