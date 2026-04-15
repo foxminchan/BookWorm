@@ -5,45 +5,45 @@ namespace BookWorm.Chassis.Specification.Builders;
 
 public static partial class SpecificationBuilderExtensions
 {
-    public static IIncludeSpecificationBuilder<TEntity, TProperty> ThenInclude<
-        TEntity,
-        TPreviousProperty,
-        TProperty
-    >(
-        this IIncludeSpecificationBuilder<TEntity, TPreviousProperty> builder,
-        Expression<Func<TPreviousProperty, TProperty>> navigationSelector
+    extension<TEntity, TPreviousProperty>(
+        IIncludeSpecificationBuilder<TEntity, TPreviousProperty> builder
     )
         where TEntity : class
     {
-        var expr = new IncludeExpression(navigationSelector, typeof(TPreviousProperty));
-        builder.Specification.Add(expr);
+        public IIncludeSpecificationBuilder<TEntity, TProperty> ThenInclude<TProperty>(
+            Expression<Func<TPreviousProperty, TProperty>> navigationSelector
+        )
+        {
+            var expr = new IncludeExpression(navigationSelector, typeof(TPreviousProperty));
+            builder.Specification.Add(expr);
 
-        var includeBuilder = new IncludeSpecificationBuilder<TEntity, TProperty>(
-            builder.Specification
-        );
-        return includeBuilder;
+            var includeBuilder = new IncludeSpecificationBuilder<TEntity, TProperty>(
+                builder.Specification
+            );
+            return includeBuilder;
+        }
     }
 
-    public static IIncludeSpecificationBuilder<TEntity, TProperty> ThenInclude<
-        TEntity,
-        TPreviousProperty,
-        TProperty
-    >(
-        this IIncludeSpecificationBuilder<TEntity, IEnumerable<TPreviousProperty>> builder,
-        Expression<Func<TPreviousProperty, TProperty>> navigationSelector
+    extension<TEntity, TPreviousProperty>(
+        IIncludeSpecificationBuilder<TEntity, IEnumerable<TPreviousProperty>> builder
     )
         where TEntity : class
     {
-        var expr = new IncludeExpression(
-            navigationSelector,
-            typeof(IEnumerable<TPreviousProperty>)
-        );
-        builder.Specification.Add(expr);
+        public IIncludeSpecificationBuilder<TEntity, TProperty> ThenInclude<TProperty>(
+            Expression<Func<TPreviousProperty, TProperty>> navigationSelector
+        )
+        {
+            var expr = new IncludeExpression(
+                navigationSelector,
+                typeof(IEnumerable<TPreviousProperty>)
+            );
+            builder.Specification.Add(expr);
 
-        var includeBuilder = new IncludeSpecificationBuilder<TEntity, TProperty>(
-            builder.Specification
-        );
-        return includeBuilder;
+            var includeBuilder = new IncludeSpecificationBuilder<TEntity, TProperty>(
+                builder.Specification
+            );
+            return includeBuilder;
+        }
     }
 
     extension<T>(ISpecificationBuilder<T> builder)

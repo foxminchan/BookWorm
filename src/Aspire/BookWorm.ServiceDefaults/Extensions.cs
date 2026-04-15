@@ -57,12 +57,13 @@ public static class Extensions
         private void AddLogging()
         {
             var logger = builder.Logging;
+            var loggerSection = builder.Configuration.GetSection("Logging");
 
             logger.EnableEnrichment();
             builder.AddApplicationEnricher();
 
-            logger.AddGlobalBuffer(builder.Configuration.GetSection("Logging"));
-            logger.AddPerIncomingRequestBuffer(builder.Configuration.GetSection("Logging"));
+            logger.AddGlobalBuffer(loggerSection);
+            logger.AddPerIncomingRequestBuffer(loggerSection);
 
             logger.AddOpenTelemetry(logging =>
             {
@@ -73,6 +74,10 @@ public static class Extensions
             if (builder.Environment.IsDevelopment())
             {
                 logger.AddTraceBasedSampler();
+            }
+            else
+            {
+                logger.AddRandomProbabilisticSampler(loggerSection);
             }
         }
     }

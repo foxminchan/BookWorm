@@ -13,6 +13,7 @@ internal static class CorsExtensions
         HeaderNames.Origin,
         HeaderNames.XRequestedWith,
         HeaderNames.XPoweredBy,
+        Http.RequestIdHeader,
     ];
 
     private static readonly string[] _defaultMethods =

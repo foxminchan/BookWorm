@@ -1,10 +1,11 @@
 ﻿using System.Collections.Immutable;
 using BookWorm.SharedKernel.SeedWork;
 using Mediator;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.SharedKernel;
 
-public sealed class MediatorDomainEventDispatcher(IPublisher publisher) : IDomainEventDispatcher
+internal sealed class MediatorDomainEventDispatcher(IPublisher publisher) : IDomainEventDispatcher
 {
     public async Task DispatchAndClearEvents(ImmutableList<IHasDomainEvents> entitiesWithEvents)
     {
@@ -22,6 +23,21 @@ public sealed class MediatorDomainEventDispatcher(IPublisher publisher) : IDomai
             {
                 await publisher.Publish(domainEvent);
             }
+        }
+    }
+}
+
+public static class MediatorDomainEventDispatcherExtensions
+{
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the <see cref="MediatorDomainEventDispatcher" /> as a scoped implementation
+        ///     of <see cref="IDomainEventDispatcher" /> in the dependency injection container.
+        /// </summary>
+        public void AddMediatorDomainEventDispatcher()
+        {
+            services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
         }
     }
 }
