@@ -22,9 +22,9 @@ internal static class ProxyExtensions
                 .WithIconName("SerialPort")
                 .WithConfiguration(yarpBuilder =>
                 {
-                    for (var i = 0; i < services.Count; i++)
+                    for (var routeIndex = 0; routeIndex < services.Count; routeIndex++)
                     {
-                        var service = services[i];
+                        var service = services[routeIndex];
                         var routeBuilder = yarpBuilder.AddRoute(
                             $"/{service.Name}/{{**remainder}}",
                             service.Resource
@@ -36,7 +36,7 @@ internal static class ProxyExtensions
                         }
 
                         routeBuilder
-                            .WithOrder(service.Order ?? i)
+                            .WithOrder(service.Order ?? routeIndex)
                             .WithMaxRequestBodySize(service.MaxRequestBodySize)
                             .WithTransformPathPrefix("/")
                             .WithTransformUseOriginalHostHeader()
