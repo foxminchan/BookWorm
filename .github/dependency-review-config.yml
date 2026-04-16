@@ -1,0 +1,62 @@
+# Dependency Review configuration
+# https://github.com/actions/dependency-review-action
+
+# Fail on vulnerabilities with severity >= high
+fail-on-severity: high
+
+# Check both runtime and development scopes
+fail-on-scopes:
+  - runtime
+  - development
+
+# Enable both vulnerability and license checks
+vulnerability-check: true
+license-check: true
+
+# Post a comment summary on every PR
+comment-summary-in-pr: always
+
+# Block PRs with violations (do not just warn)
+warn-only: false
+
+# Show OpenSSF Scorecard data for changed dependencies
+show-openssf-scorecard: true
+warn-on-openssf-scorecard-level: 3
+
+# Show first patched version for each vulnerability
+show-patched-versions: true
+
+# FOSS-compliant license allow-list (MIT-compatible permissive licenses only)
+# This project is MIT-licensed — only allow licenses compatible with MIT.
+# All identifiers follow the SPDX License List: https://spdx.org/licenses/
+allow-licenses:
+  # Primary permissive licenses
+  - MIT
+  - MIT-0
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+
+  # Public domain / dedication
+  - CC0-1.0
+  - Unlicense
+
+  # Creative Commons (attribution-only, for docs/assets)
+  - CC-BY-3.0
+  - CC-BY-4.0
+
+  # Other permissive / common ecosystem licenses
+  - BlueOak-1.0.0
+  - BSL-1.0
+  - Zlib
+  - PostgreSQL
+  - Python-2.0
+  - Unicode-3.0
+  - Unicode-DFS-2016
+  - WTFPL
+  - MPL-2.0
+
+  # Catch-all for ClearlyDefined-detected non-SPDX licenses
+  - LicenseRef-clearlydefined-OTHER
