@@ -47,6 +47,10 @@ allow-licenses:
   - CC-BY-3.0
   - CC-BY-4.0
 
+  # Weak copyleft (safe for consuming prebuilt binaries / unmodified deps)
+  - MPL-2.0
+  - LGPL-3.0-or-later
+
   # Other permissive / common ecosystem licenses
   - BlueOak-1.0.0
   - BSL-1.0
@@ -55,3 +59,10 @@ allow-licenses:
   - Python-2.0
   - Unicode-3.0
   - Unicode-DFS-2016
+
+# Per-package license exemptions for packages with missing/undetectable metadata
+allow-dependencies-licenses:
+  - "pkg:npm/%40ag-ui/a2ui-middleware"
+  - "pkg:npm/%40ag-ui/langgraph"
+  - "pkg:npm/%40copilotkit/license-verifier"
+  - "pkg:npm/khroma"
