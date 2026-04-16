@@ -4,7 +4,7 @@
     {
       "name": "scan",
       "command": "betterleaks",
-      "args": ["git", "--exit-code", "1", "."]
+      "args": ["git", "--pre-commit", "--staged", "--exit-code", "1", "."]
     },
     {
       "name": "format",
