@@ -43,7 +43,7 @@ allow-licenses:
   - CC0-1.0
   - Unlicense
 
-  # Creative Commons (attribution-only, for docs/assets)
+  # Creative Commons (attribution-only, strictly for docs/assets)
   - CC-BY-3.0
   - CC-BY-4.0
 
@@ -55,8 +55,3 @@ allow-licenses:
   - Python-2.0
   - Unicode-3.0
   - Unicode-DFS-2016
-  - WTFPL
-  - MPL-2.0
-
-  # Catch-all for ClearlyDefined-detected non-SPDX licenses
-  - LicenseRef-clearlydefined-OTHER
