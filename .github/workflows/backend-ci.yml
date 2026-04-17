@@ -3,22 +3,23 @@ run-name: Backend CI - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       # Source & test code
-      - "src/**"
-      - "tests/**"
+      - src/**
+      - tests/**
       # CI/CD configuration
-      - ".github/actions/**"
-      - ".github/workflows/backend-ci.yml"
-      - ".github/workflows/backend-shared.yml"
+      - .github/actions/**
+      - .github/workflows/backend-ci.yml
+      - .github/workflows/backend-shared.yml
       # Build configuration
-      - ".config/dotnet-tools.json"
-      - "BookWorm.slnx"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "global.json"
-      - "Versions.props"
+      - .config/dotnet-tools.json
+      - BookWorm.slnx
+      - Directory.Build.props
+      - Directory.Packages.props
+      - global.json
+      - Versions.props
       # Exclusions (last-match-wins, must follow includes)
       - "!**.md"
       - "!src/Aspire/BookWorm.AppHost/Container/**"
@@ -26,16 +27,16 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to deploy to"
+        description: The environment to deploy to
         required: true
         type: environment
       publish:
-        description: "Whether to publish the artifacts"
+        description: Whether to publish the artifacts
         type: boolean
         required: true
         default: true
       enable_debug_logging:
-        description: "Enable debug-level logging for Aspire CLI commands"
+        description: Enable debug-level logging for Aspire CLI commands
         type: boolean
         required: false
         default: false
@@ -43,8 +44,8 @@ on:
 permissions: {}
 
 env:
-  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
+  GLOBAL_JSON_PATH: global.json
+  BUN_VERSION_FILE: .bun-version
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -62,11 +63,14 @@ jobs:
 
   publish:
     name: Publish Artifacts
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.event.inputs.publish ==
+      'true'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}
     timeout-minutes: 15
-    needs: [ci]
+    needs:
+      - ci
     permissions:
       contents: write
       packages: write
@@ -115,7 +119,8 @@ jobs:
           repository: ${{ github.repository }}
           azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           azure-location: ${{ secrets.AZURE_LOCATION || 'southeastasia' }}
-          enable-debug-logging: ${{ inputs.enable_debug_logging && 'true' || runner.debug == '1' && 'true' || 'false' }}
+          enable-debug-logging: |
+            ${{ inputs.enable_debug_logging && 'true' || runner.debug == '1' && 'true' || 'false' }}
 
       - name: Trigger container security scan
         uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.1.0
@@ -124,7 +129,8 @@ jobs:
 
   attest-backend:
     name: Attest
-    needs: [publish]
+    needs:
+      - publish
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}
     permissions:

@@ -3,20 +3,21 @@ run-name: Frontend CI - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - ".github/workflows/frontend-ci.yml"
-      - ".github/workflows/frontend-shared.yml"
-      - "src/Clients/**"
+      - .github/workflows/frontend-ci.yml
+      - .github/workflows/frontend-shared.yml
+      - src/Clients/**
       - "!**.md"
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to deploy to"
+        description: The environment to deploy to
         required: true
         type: environment
       publish:
-        description: "Whether to build and push Docker images"
+        description: Whether to build and push Docker images
         type: boolean
         required: true
         default: true
@@ -40,8 +41,11 @@ jobs:
 
   publish:
     name: Docker Build, Push & Attest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'
-    needs: [ci]
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.event.inputs.publish ==
+      'true'
+    needs:
+      - ci
     timeout-minutes: 20
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}

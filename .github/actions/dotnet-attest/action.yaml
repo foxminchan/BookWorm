@@ -1,34 +1,39 @@
-name: "Attest .NET Container Image"
-description: "Queries the image digest from GitHub Packages and generates SLSA build provenance attestation for a container image"
-author: "BookWorm Team"
+name: Attest .NET Container Image
+description: >-
+  Queries the image digest from GitHub Packages and generates SLSA build
+  provenance attestation for a container image
+author: BookWorm Team
 
 branding:
-  icon: "shield"
-  color: "blue"
+  icon: shield
+  color: blue
 
 inputs:
   service:
-    description: "Service name to attest (e.g., 'catalog', 'ordering')"
+    description: Service name to attest (e.g., 'catalog', 'ordering')
     required: true
   repository:
-    description: "Full GitHub repository name (e.g., 'owner/repo')"
+    description: Full GitHub repository name (e.g., 'owner/repo')
     required: true
   token:
-    description: "GitHub token for Packages API authentication"
+    description: GitHub token for Packages API authentication
     required: true
   pushed-after:
-    description: "ISO 8601 UTC timestamp; the digest must have been created at or after this time (prevents TOCTOU). Defaults to 60 minutes ago."
+    description: >-
+      ISO 8601 UTC timestamp; the digest must have been created at or after this
+      time (prevents TOCTOU). Defaults to 60 minutes ago
     required: false
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Normalize repository name
       id: repo
       shell: bash
       env:
         REPOSITORY: ${{ inputs.repository }}
-      run: echo "repository=$(echo "$REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+      run: |
+        echo "repository=$(echo "$REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
     - name: Get image digest
       id: digest

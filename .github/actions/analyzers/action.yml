@@ -1,23 +1,25 @@
-name: "Analyzers"
-description: "Run static analysis checks on the BookWorm repository using Husky-managed analyzers to enforce code quality standards"
-author: "BookWorm Team"
+name: Analyzers
+description: >-
+  Run static analysis checks on the BookWorm repository using Husky-managed
+  analyzers to enforce code quality standards
+author: BookWorm Team
 
 branding:
-  icon: "search"
-  color: "purple"
+  icon: search
+  color: purple
 
 inputs:
   global-json-file:
-    description: "Path to the global.json file that specifies the .NET SDK version"
+    description: Path to the global.json file that specifies the .NET SDK version
     required: false
-    default: "./global.json"
+    default: global.json
   bun-version-file:
-    description: "Path to the .bun-version file that specifies the Bun runtime version"
+    description: Path to the .bun-version file that specifies the Bun runtime version
     required: false
-    default: ".bun-version"
+    default: .bun-version
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Setup Environment
       uses: ./.github/actions/setup
