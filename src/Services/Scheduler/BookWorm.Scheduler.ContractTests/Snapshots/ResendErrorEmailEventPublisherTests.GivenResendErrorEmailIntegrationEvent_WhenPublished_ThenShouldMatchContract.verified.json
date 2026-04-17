@@ -13,6 +13,14 @@
         {
           "Key": "MT-Activity-Id",
           "Value": "TraceId_Scrubbed"
+        },
+        {
+          "Key": "MT-Activity-Correlation-Context",
+          "Value": [
+            {
+              "tunit.test.id": "Guid_4"
+            }
+          ]
         }
       ]
     }

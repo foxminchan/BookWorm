@@ -6,18 +6,18 @@ on:
     branches:
       - main
     paths:
-      - "src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/**"
-      - ".github/workflows/keycloak-ci.yml"
+      - src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/**
+      - .github/workflows/keycloak-ci.yml
   pull_request:
     branches:
       - main
     paths:
-      - "src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/**"
-      - ".github/workflows/keycloak-ci.yml"
+      - src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/**
+      - .github/workflows/keycloak-ci.yml
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to deploy to"
+        description: The environment to deploy to
         required: true
         type: environment
 
@@ -30,14 +30,18 @@ concurrency:
 
 env:
   JAVA_VERSION: "25"
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
+  BUN_VERSION_FILE: .bun-version
+  KEYCLOAK_DIR: src/Aspire/BookWorm.AppHost/Container/keycloak
+  KEYCLOAKIFY_DIR: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
 
 jobs:
   build:
     name: Build Keycloak Theme
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'development' }}
+    environment: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.environment || 'development' }}
 
     steps:
       - name: Checkout repository
@@ -48,8 +52,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.0.0
         with:
-          distribution: "temurin"
-          java-version: "${{ env.JAVA_VERSION }}"
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Verify Maven installation
         run: |
@@ -62,27 +66,28 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.0
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-keycloakify-${{ hashFiles('src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/bun.lock') }}
+          key: |
+            ${{ runner.os }}-bun-keycloakify-${{ hashFiles('src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-keycloakify-
 
       - name: Install dependencies
-        working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
+        working-directory: ${{ env.KEYCLOAKIFY_DIR }}
         run: bun install --frozen-lockfile
 
       - name: Run CI checks
-        working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
+        working-directory: ${{ env.KEYCLOAKIFY_DIR }}
         run: bun run ci
 
       - name: Build Keycloak theme
-        working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
+        working-directory: ${{ env.KEYCLOAKIFY_DIR }}
         run: bun run build-keycloak-theme
 
       - name: List generated files
-        working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak
+        working-directory: ${{ env.KEYCLOAK_DIR }}
         run: |
           echo "=== Generated theme files ==="
           find themes -name "*.jar" -type f || echo "No JAR files found"
@@ -91,7 +96,7 @@ jobs:
       - name: Get theme version
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: theme-version
-        working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
+        working-directory: ${{ env.KEYCLOAKIFY_DIR }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -99,7 +104,7 @@ jobs:
 
       - name: Prepare JAR artifacts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        working-directory: src/Aspire/BookWorm.AppHost/Container/keycloak
+        working-directory: ${{ env.KEYCLOAK_DIR }}
         run: |
           mkdir -p jar-artifacts
           # Find and copy all JAR files from themes directory
@@ -109,9 +114,10 @@ jobs:
 
       - name: Upload JAR artifacts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: bookworm-keycloak-theme-v${{ steps.theme-version.outputs.version || 'latest' }}
+          name: |
+            bookworm-keycloak-theme-v${{ steps.theme-version.outputs.version || 'latest' }}
           path: src/Aspire/BookWorm.AppHost/Container/keycloak/jar-artifacts/*.jar
           retention-days: 90
           if-no-files-found: error

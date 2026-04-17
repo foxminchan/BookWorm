@@ -1,23 +1,25 @@
-name: "Format"
-description: "Verify code formatting across the BookWorm repository using Husky-managed formatters for C#, TypeScript, and configuration files"
-author: "BookWorm Team"
+name: Format
+description: >-
+  Verify code formatting across the BookWorm repository using Husky-managed
+  formatters for C#, TypeScript, and configuration files
+author: BookWorm Team
 
 branding:
-  icon: "align-left"
-  color: "yellow"
+  icon: align-left
+  color: yellow
 
 inputs:
   global-json-file:
-    description: "Path to the global.json file that specifies the .NET SDK version"
+    description: Path to the global.json file that specifies the .NET SDK version
     required: false
-    default: "./global.json"
+    default: global.json
   bun-version-file:
-    description: "Path to the .bun-version file that specifies the Bun runtime version"
+    description: Path to the .bun-version file that specifies the Bun runtime version
     required: false
-    default: ".bun-version"
+    default: .bun-version
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Setup Environment
       uses: ./.github/actions/setup

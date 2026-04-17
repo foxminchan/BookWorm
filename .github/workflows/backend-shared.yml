@@ -7,8 +7,8 @@ on:
 permissions: {}
 
 env:
-  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
+  GLOBAL_JSON_PATH: global.json
+  BUN_VERSION_FILE: .bun-version
 
 jobs:
   format:
@@ -68,7 +68,10 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [format, style, analyzers]
+    needs:
+      - format
+      - style
+      - analyzers
     timeout-minutes: 15
     permissions:
       contents: read
@@ -87,7 +90,10 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: [format, style, analyzers]
+    needs:
+      - format
+      - style
+      - analyzers
     timeout-minutes: 15
     permissions:
       contents: read

@@ -7,22 +7,22 @@ on:
       - main
     paths:
       # Source & test code
-      - "src/**"
-      - "tests/**"
+      - src/**
+      - tests/**
       # CI/CD configuration
-      - ".github/workflows/sonar.yml"
+      - .github/workflows/sonar.yml
       # SonarQube configuration
-      - ".sonarlint/**"
-      - "SonarQube.Analysis.xml"
+      - .sonarlint/**
+      - SonarQube.Analysis.xml
       # Exclusions (last-match-wins, must follow includes)
       - "!src/Aspire/BookWorm.AppHost/Container/**"
   pull_request:
     paths:
-      - "src/**"
-      - "tests/**"
-      - ".github/workflows/sonar.yml"
-      - ".sonarlint/**"
-      - "SonarQube.Analysis.xml"
+      - src/**
+      - tests/**
+      - .github/workflows/sonar.yml
+      - .sonarlint/**
+      - SonarQube.Analysis.xml
       - "!src/Aspire/BookWorm.AppHost/Container/**"
       - "!**.md"
     types:
@@ -34,10 +34,10 @@ permissions: {}
 
 env:
   JAVA_VERSION: "25"
-  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
-  HANG_TIMEOUT: "7m"
-  SESSION_TIMEOUT: "15m"
+  GLOBAL_JSON_PATH: global.json
+  BUN_VERSION_FILE: .bun-version
+  HANG_TIMEOUT: 7m
+  SESSION_TIMEOUT: 15m
 
 jobs:
   frontend-test:
@@ -59,7 +59,7 @@ jobs:
         run: pnpm turbo run test:coverage
 
       - name: Upload frontend coverage
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-coverage
           path: |
@@ -70,7 +70,8 @@ jobs:
 
   analyze:
     name: Build and analyze
-    needs: [frontend-test]
+    needs:
+      - frontend-test
     if: ${{ !cancelled() && needs.frontend-test.result != 'failure' }}
     runs-on: ubuntu-latest
     permissions:
@@ -95,10 +96,11 @@ jobs:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
       - name: Cache NuGet Packages
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          key: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
@@ -116,36 +118,25 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
-          .sonar/scanner/dotnet-sonarscanner begin
-          /k:"foxminchan_BookWorm"
-          /o:"foxminchan"
-          /d:sonar.token="$SONAR_TOKEN"
+          .sonar/scanner/dotnet-sonarscanner begin /k:"foxminchan_BookWorm"
+          /o:"foxminchan" /d:sonar.token="$SONAR_TOKEN"
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: Build
         run: >
-          dotnet build
-          --configuration Release
-          --no-incremental
-          -p:SkipK6Build=true
-          -p:SkipKeycloakifyBuild=true
+          dotnet build --configuration Release --no-incremental
+          -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
       - name: Test
         run: >
-          dotnet test
-          --configuration Release
-          --report-trx
-          --coverage
-          --coverage-settings Coverage.runsettings
-          --results-directory ./test-results
-          --github-reporter-style full
-          --hangdump --hangdump-timeout ${{ env.HANG_TIMEOUT }}
-          --crashdump
-          --timeout ${{ env.SESSION_TIMEOUT }}
+          dotnet test --configuration Release --report-trx --coverage
+          --coverage-settings Coverage.runsettings --results-directory
+          ./test-results --github-reporter-style full --hangdump
+          --hangdump-timeout ${{ env.HANG_TIMEOUT }} --crashdump --timeout ${{
+          env.SESSION_TIMEOUT }}
 
       - name: Sonarqube End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
-          .sonar/scanner/dotnet-sonarscanner end
-          /d:sonar.token="$SONAR_TOKEN"
+          .sonar/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
