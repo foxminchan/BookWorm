@@ -20,7 +20,7 @@ runs:
       id: cache-sonar-scanner
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
-        path: ${{ runner.temp }}/bookworm-sonar-scanner
+        path: ./.sonar/scanner
         key: ${{ runner.os }}-sonar-scanner
         restore-keys: ${{ runner.os }}-sonar-scanner
 
@@ -28,7 +28,7 @@ runs:
       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
       shell: bash
       env:
-        SCANNER_PATH: ${{ runner.temp }}/bookworm-sonar-scanner
+        SCANNER_PATH: ./.sonar/scanner
       run: |
         mkdir -p "${SCANNER_PATH}"
         dotnet tool update dotnet-sonarscanner --tool-path "${SCANNER_PATH}"
