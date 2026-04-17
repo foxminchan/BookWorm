@@ -11,15 +11,15 @@ internal sealed class MailKitClientFactory(MailKitSettings settings)
     /// <exception cref="InvalidOperationException">Thrown when connection or authentication fails.</exception>
     public async Task<SmtpClient> CreateClientAsync(CancellationToken cancellationToken = default)
     {
+        if (settings.Endpoint is null)
+        {
+            throw new InvalidOperationException("SMTP endpoint is not configured.");
+        }
+
         var client = new SmtpClient();
 
         try
         {
-            if (settings.Endpoint is null)
-            {
-                throw new InvalidOperationException("SMTP endpoint is not configured.");
-            }
-
             await client.ConnectAsync(settings.Endpoint, cancellationToken);
 
             if (settings.Credentials is not null)

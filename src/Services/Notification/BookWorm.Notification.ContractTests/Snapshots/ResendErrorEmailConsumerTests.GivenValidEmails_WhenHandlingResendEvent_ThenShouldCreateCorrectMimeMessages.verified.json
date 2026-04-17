@@ -14,6 +14,14 @@
           {
             "Key": "MT-Activity-Id",
             "Value": "TraceId_Scrubbed"
+          },
+          {
+            "Key": "MT-Activity-Correlation-Context",
+            "Value": [
+              {
+                "tunit.test.id": "Guid_4"
+              }
+            ]
           }
         ]
       },
@@ -23,7 +31,7 @@
         "ConversationId": "Guid_2",
         "DestinationAddress": "BookWorm.Contracts:ResendErrorEmailIntegrationEvent",
         "Message": {
-          "Id": "Guid_4",
+          "Id": "Guid_5",
           "CreationDate": "DateTime_2"
         }
       }
@@ -37,7 +45,7 @@
         "ConversationId": "Guid_2",
         "DestinationAddress": "BookWorm.Contracts:ResendErrorEmailIntegrationEvent",
         "Message": {
-          "Id": "Guid_4",
+          "Id": "Guid_5",
           "CreationDate": "DateTime_2"
         }
       }

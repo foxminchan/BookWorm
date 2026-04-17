@@ -15,6 +15,14 @@
           {
             "Key": "MT-Activity-Id",
             "Value": "TraceId_Scrubbed"
+          },
+          {
+            "Key": "MT-Activity-Correlation-Context",
+            "Value": [
+              {
+                "tunit.test.id": "Guid_5"
+              }
+            ]
           }
         ]
       },
@@ -25,7 +33,7 @@
         "DestinationAddress": "BookWorm.Contracts:BookUpdatedRatingFailedIntegrationEvent",
         "Message": {
           "FeedbackId": "Guid_3",
-          "Id": "Guid_5",
+          "Id": "Guid_6",
           "CreationDate": "DateTime_2"
         }
       }
@@ -40,7 +48,7 @@
         "DestinationAddress": "BookWorm.Contracts:BookUpdatedRatingFailedIntegrationEvent",
         "Message": {
           "FeedbackId": "Guid_3",
-          "Id": "Guid_5",
+          "Id": "Guid_6",
           "CreationDate": "DateTime_2"
         }
       }

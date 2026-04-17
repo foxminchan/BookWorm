@@ -19,6 +19,14 @@
           {
             "Key": "MT-Activity-Id",
             "Value": "TraceId_Scrubbed"
+          },
+          {
+            "Key": "MT-Activity-Correlation-Context",
+            "Value": [
+              {
+                "tunit.test.id": "Guid_6"
+              }
+            ]
           }
         ]
       },
@@ -33,24 +41,24 @@
           "FullName": "John Doe",
           "Email": "john.doe@example.com",
           "TotalMoney": 99.99,
-          "Id": "Guid_6",
+          "Id": "Guid_7",
           "CreationDate": "DateTime_2"
         }
       },
       {
         "Sent": "PlaceOrderTimeoutIntegrationEvent",
-        "MessageId": "Guid_7",
+        "MessageId": "Guid_8",
         "ConversationId": "Guid_2",
         "DestinationAddress": "OrderState",
         "Message": {
           "OrderId": "Guid_3",
-          "Id": "Guid_8",
+          "Id": "Guid_9",
           "CreationDate": "DateTime_3"
         },
         "Headers": [
           {
             "Key": "MT-Scheduling-TokenId",
-            "Value": "Guid_9"
+            "Value": "Guid_10"
           },
           {
             "Key": "MT-Activity-Id",
@@ -60,7 +68,7 @@
       },
       {
         "Published": "PlaceOrderCommand",
-        "MessageId": "Guid_10",
+        "MessageId": "Guid_11",
         "ConversationId": "Guid_2",
         "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
         "Message": {
@@ -69,7 +77,7 @@
           "Email": "john.doe@example.com",
           "OrderId": "Guid_3",
           "TotalMoney": 99.99,
-          "Id": "Guid_11",
+          "Id": "Guid_12",
           "CreationDate": "DateTime_4"
         },
         "Headers": [
@@ -81,29 +89,8 @@
       },
       {
         "Published": "OrderStatusChangedToCompleteIntegrationEvent",
-        "MessageId": "Guid_12",
-        "ConversationId": "Guid_13",
-        "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
-        "Message": {
-          "OrderId": "Guid_3",
-          "BasketId": "Guid_4",
-          "FullName": "John Doe",
-          "Email": "john.doe@example.com",
-          "TotalMoney": 99.99,
-          "Id": "Guid_14",
-          "CreationDate": "DateTime_5"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          }
-        ]
-      },
-      {
-        "Received": "OrderStatusChangedToCompleteIntegrationEvent",
-        "MessageId": "Guid_12",
-        "ConversationId": "Guid_13",
+        "MessageId": "Guid_13",
+        "ConversationId": "Guid_14",
         "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
         "Message": {
           "OrderId": "Guid_3",
@@ -112,20 +99,49 @@
           "Email": "john.doe@example.com",
           "TotalMoney": 99.99,
           "Id": "Guid_15",
+          "CreationDate": "DateTime_5"
+        },
+        "Headers": [
+          {
+            "Key": "MT-Activity-Id",
+            "Value": "TraceId_Scrubbed"
+          },
+          {
+            "Key": "MT-Activity-Correlation-Context",
+            "Value": [
+              {
+                "tunit.test.id": "Guid_6"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Received": "OrderStatusChangedToCompleteIntegrationEvent",
+        "MessageId": "Guid_13",
+        "ConversationId": "Guid_14",
+        "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
+        "Message": {
+          "OrderId": "Guid_3",
+          "BasketId": "Guid_4",
+          "FullName": "John Doe",
+          "Email": "john.doe@example.com",
+          "TotalMoney": 99.99,
+          "Id": "Guid_16",
           "CreationDate": "DateTime_6"
         }
       },
       {
         "Published": "CompleteOrderCommand",
-        "MessageId": "Guid_16",
-        "ConversationId": "Guid_13",
+        "MessageId": "Guid_17",
+        "ConversationId": "Guid_14",
         "DestinationAddress": "BookWorm.Contracts:CompleteOrderCommand",
         "Message": {
           "OrderId": "Guid_3",
           "FullName": "John Doe",
           "Email": "john.doe@example.com",
           "TotalMoney": 99.99,
-          "Id": "Guid_17",
+          "Id": "Guid_18",
           "CreationDate": "DateTime_7"
         },
         "Headers": [
@@ -150,14 +166,14 @@
           "FullName": "John Doe",
           "Email": "john.doe@example.com",
           "TotalMoney": 99.99,
-          "Id": "Guid_6",
+          "Id": "Guid_7",
           "CreationDate": "DateTime_2"
         }
       },
       {
         "Received": "OrderStatusChangedToCompleteIntegrationEvent",
-        "MessageId": "Guid_12",
-        "ConversationId": "Guid_13",
+        "MessageId": "Guid_13",
+        "ConversationId": "Guid_14",
         "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
         "Message": {
           "OrderId": "Guid_3",
@@ -165,7 +181,7 @@
           "FullName": "John Doe",
           "Email": "john.doe@example.com",
           "TotalMoney": 99.99,
-          "Id": "Guid_15",
+          "Id": "Guid_16",
           "CreationDate": "DateTime_6"
         }
       }

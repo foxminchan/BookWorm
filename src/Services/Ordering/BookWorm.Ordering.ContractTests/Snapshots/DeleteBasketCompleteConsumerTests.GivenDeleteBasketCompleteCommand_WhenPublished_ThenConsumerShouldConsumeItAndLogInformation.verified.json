@@ -16,6 +16,14 @@
           {
             "Key": "MT-Activity-Id",
             "Value": "TraceId_Scrubbed"
+          },
+          {
+            "Key": "MT-Activity-Correlation-Context",
+            "Value": [
+              {
+                "tunit.test.id": "Guid_5"
+              }
+            ]
           }
         ]
       },
@@ -27,7 +35,7 @@
         "Message": {
           "OrderId": "Guid_3",
           "TotalMoney": 125.99,
-          "Id": "Guid_5",
+          "Id": "Guid_6",
           "CreationDate": "DateTime_2"
         }
       }
@@ -43,7 +51,7 @@
         "Message": {
           "OrderId": "Guid_3",
           "TotalMoney": 125.99,
-          "Id": "Guid_5",
+          "Id": "Guid_6",
           "CreationDate": "DateTime_2"
         }
       }
