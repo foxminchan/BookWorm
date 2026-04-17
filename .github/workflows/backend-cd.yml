@@ -5,20 +5,20 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to deploy to"
+        description: The environment to deploy to
         required: true
         type: environment
       storefront_url:
-        description: "The Storefront application URL for CORS (e.g., https://storefront.bookworm.com)"
+        description: The Storefront application URL for CORS
         required: true
         type: string
       backoffice_url:
-        description: "The Backoffice application URL for CORS (e.g., https://backoffice.bookworm.com)"
+        description: The Backoffice application URL for CORS
         required: true
         type: string
 
 env:
-  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+  GLOBAL_JSON_PATH: global.json
 
 permissions:
   id-token: write
@@ -70,7 +70,8 @@ jobs:
 
       - name: Normalize repository name
         id: normalize
-        run: echo "repository=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "repository=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Deploy with Aspire
         run: |

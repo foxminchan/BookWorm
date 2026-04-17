@@ -4,15 +4,19 @@ run-name: CodeQL Analysis - ${{ github.event_name }} by ${{ github.actor }}
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
     paths-ignore:
       - "**/*.md"
+      - "**/*.mdx"
       - "**/*.txt"
+      - "**/*.json"
   schedule:
     # Runs every Wednesday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
-    - cron: "0 3 * * 3"
+    - cron: 0 3 * * 3
 
 permissions: {}
 
@@ -21,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GLOBAL_JSON_PATH: ${{ github.workspace }}/global.json
+  GLOBAL_JSON_PATH: global.json
 
 jobs:
   analyze:
@@ -50,7 +54,7 @@ jobs:
           fetch-depth: 1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        uses: github/codeql-action/init@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4.35.2
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -65,10 +69,11 @@ jobs:
 
       - name: Cache NuGet Packages
         if: matrix.build-mode == 'manual'
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          key: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
@@ -82,6 +87,6 @@ jobs:
           -p:SkipKeycloakifyBuild=true
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        uses: github/codeql-action/analyze@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4.35.2
         with:
           category: "/language:${{ matrix.language }}"

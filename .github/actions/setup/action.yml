@@ -1,23 +1,25 @@
-name: "Setup"
-description: "Bootstrap the BookWorm development environment by installing .NET SDK, Bun runtime, dotnet tools, and configuring Husky git hooks"
-author: "BookWorm Team"
+name: Setup
+description: >-
+  Bootstrap the BookWorm development environment by installing .NET SDK, Bun
+  runtime, dotnet tools, and configuring Husky git hooks
+author: BookWorm Team
 
 branding:
-  icon: "settings"
-  color: "gray-dark"
+  icon: settings
+  color: gray-dark
 
 inputs:
   global-json-file:
-    description: "Path to the global.json file that specifies the .NET SDK version"
+    description: Path to the global.json file that specifies the .NET SDK version
     required: false
-    default: "./global.json"
+    default: global.json
   bun-version-file:
-    description: "Path to the .bun-version file that specifies the Bun runtime version"
+    description: Path to the .bun-version file that specifies the Bun runtime version
     required: false
-    default: ".bun-version"
+    default: .bun-version
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0

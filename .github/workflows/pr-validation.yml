@@ -5,18 +5,18 @@ on:
   pull_request:
     paths:
       # Source & test code
-      - "src/**"
-      - "tests/**"
+      - src/**
+      - tests/**
       # CI/CD configuration
-      - ".github/actions/**"
-      - ".github/workflows/**"
+      - .github/actions/**
+      - .github/workflows/**
       # Build configuration
-      - ".config/dotnet-tools.json"
-      - "BookWorm.slnx"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "global.json"
-      - "Versions.props"
+      - .config/dotnet-tools.json
+      - BookWorm.slnx
+      - Directory.Build.props
+      - Directory.Packages.props
+      - global.json
+      - Versions.props
       # Exclusions (last-match-wins, must follow includes)
       - "!**.md"
       - "!src/Aspire/BookWorm.AppHost/Container/**"
@@ -47,8 +47,10 @@ jobs:
         id: detect
         env:
           GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          CHANGED=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files --paginate --jq '.[].filename')
+          CHANGED=$(gh api repos/$REPOSITORY/pulls/$PR_NUMBER/files --paginate --jq '.[].filename')
           backend=false
           frontend=false
 
@@ -65,7 +67,8 @@ jobs:
 
   backend:
     name: Backend CI
-    needs: changes
+    needs:
+      - changes
     if: needs.changes.outputs.backend == 'true'
     uses: ./.github/workflows/backend-shared.yml
     permissions:
@@ -76,7 +79,8 @@ jobs:
 
   frontend:
     name: Frontend CI
-    needs: changes
+    needs:
+      - changes
     if: needs.changes.outputs.frontend == 'true'
     uses: ./.github/workflows/frontend-shared.yml
     with:
@@ -108,13 +112,21 @@ jobs:
     name: PR Status
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [changes, backend, frontend, dependency-review]
+    needs:
+      - changes
+      - backend
+      - frontend
+      - dependency-review
     if: ${{ !cancelled() }}
     permissions: {}
     steps:
       - name: Check results
+        env:
+          BACKEND: ${{ needs.backend.result }}
+          FRONTEND: ${{ needs.frontend.result }}
+          DEPENDENCY_REVIEW: ${{ needs.dependency-review.result }}
         run: |
-          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" || "${{ needs.dependency-review.result }}" == "failure" ]]; then
+          if [[ "$BACKEND" == "failure" || "$FRONTEND" == "failure" || "$DEPENDENCY_REVIEW" == "failure" ]]; then
             echo "::error::One or more CI pipelines failed"
             exit 1
           fi

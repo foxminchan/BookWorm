@@ -1,15 +1,15 @@
 name: Release
-run-name: "Release ${{ inputs.version }} by ${{ github.actor }}"
+run-name: Release ${{ inputs.version }} by ${{ github.actor }}
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g., v1.0.0)"
+        description: Release version (e.g., v1.0.0)
         required: true
         type: string
       prerelease:
-        description: "Mark as pre-release"
+        description: Mark as pre-release
         type: boolean
         default: false
 

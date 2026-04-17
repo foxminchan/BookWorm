@@ -5,12 +5,12 @@ on:
   workflow_call:
     inputs:
       retention-days:
-        description: "Number of days to retain artifacts"
+        description: Number of days to retain artifacts
         type: number
         default: 7
     secrets:
       TURBO_TOKEN:
-        description: "Turborepo remote cache token"
+        description: Turborepo remote cache token
         required: false
 
 permissions: {}
@@ -28,8 +28,10 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}
+      TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before ||
+        'HEAD~1' }}
       TURBO_SCM_HEAD: ${{ github.sha }}
+      FRONTEND_APPS_DIR: src/Clients/apps
 
     defaults:
       run:
@@ -39,8 +41,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # fetch-depth: 2 is needed for Turbo's change detection (compares HEAD~1)
-          fetch-depth: 2
+          # fetch-depth: 0 ensures the base SHA from pull_request/push events is always available
+          fetch-depth: 0
 
       - name: Setup Frontend
         uses: ./.github/actions/frontend-setup
@@ -60,32 +62,34 @@ jobs:
 
       - name: Upload Allure Report (Backoffice)
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: allure-report-backoffice
-          path: src/Clients/apps/backoffice/allure-report/
+          path: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-report/
           retention-days: ${{ inputs.retention-days }}
           if-no-files-found: ignore
 
       - name: Upload Allure Report (Storefront)
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: allure-report-storefront
-          path: src/Clients/apps/storefront/allure-report/
+          path: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report/
           retention-days: ${{ inputs.retention-days }}
           if-no-files-found: ignore
 
       - name: Post Allure Summary (Backoffice)
-        if: ${{ !cancelled() && hashFiles('src/Clients/apps/backoffice/allure-report/index.html') != '' }}
+        if: |
+          ${{ !cancelled() && hashFiles('src/Clients/apps/backoffice/allure-report/index.html') != '' }}
         uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0.3.0
         with:
-          report-directory: src/Clients/apps/backoffice/allure-report
+          report-directory: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-report
           github-token: ${{ github.token }}
 
       - name: Post Allure Summary (Storefront)
-        if: ${{ !cancelled() && hashFiles('src/Clients/apps/storefront/allure-report/index.html') != '' }}
+        if: |
+          ${{ !cancelled() && hashFiles('src/Clients/apps/storefront/allure-report/index.html') != '' }}
         uses: allure-framework/allure-action@c24234151c027cfee99e00eb6ec2dac1eb350414 # v0.3.0
         with:
-          report-directory: src/Clients/apps/storefront/allure-report
+          report-directory: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report
           github-token: ${{ github.token }}

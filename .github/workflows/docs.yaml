@@ -6,12 +6,15 @@ on:
     branches:
       - main
     paths:
-      - ".github/workflows/docs.yaml"
-      - "docs/docusaurus/**"
+      - .github/workflows/docs.yaml
+      - docs/docusaurus/**
   workflow_run:
-    workflows: ["BookWorm CI (Frontend)"]
-    types: [completed]
-    branches: [main]
+    workflows:
+      - BookWorm CI (Frontend)
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
 
 permissions: {}
@@ -21,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  BUN_VERSION_FILE: ${{ github.workspace }}/.bun-version
+  BUN_VERSION_FILE: .bun-version
 
 jobs:
   build:
@@ -44,7 +47,7 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('docs/docusaurus/bun.lock') }}
@@ -87,7 +90,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: docs/docusaurus/build
 
