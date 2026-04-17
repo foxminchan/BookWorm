@@ -59,7 +59,7 @@ jobs:
         run: pnpm turbo run test:coverage
 
       - name: Upload frontend coverage
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-coverage
           path: |
@@ -118,36 +118,25 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
-          .sonar/scanner/dotnet-sonarscanner begin
-          /k:"foxminchan_BookWorm"
-          /o:"foxminchan"
-          /d:sonar.token="$SONAR_TOKEN"
+          .sonar/scanner/dotnet-sonarscanner begin /k:"foxminchan_BookWorm"
+          /o:"foxminchan" /d:sonar.token="$SONAR_TOKEN"
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: Build
         run: >
-          dotnet build
-          --configuration Release
-          --no-incremental
-          -p:SkipK6Build=true
-          -p:SkipKeycloakifyBuild=true
+          dotnet build --configuration Release --no-incremental
+          -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
       - name: Test
         run: >
-          dotnet test
-          --configuration Release
-          --report-trx
-          --coverage
-          --coverage-settings Coverage.runsettings
-          --results-directory ./test-results
-          --github-reporter-style full
-          --hangdump --hangdump-timeout ${{ env.HANG_TIMEOUT }}
-          --crashdump
-          --timeout ${{ env.SESSION_TIMEOUT }}
+          dotnet test --configuration Release --report-trx --coverage
+          --coverage-settings Coverage.runsettings --results-directory
+          ./test-results --github-reporter-style full --hangdump
+          --hangdump-timeout ${{ env.HANG_TIMEOUT }} --crashdump --timeout ${{
+          env.SESSION_TIMEOUT }}
 
       - name: Sonarqube End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
-          .sonar/scanner/dotnet-sonarscanner end
-          /d:sonar.token="$SONAR_TOKEN"
+          .sonar/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"

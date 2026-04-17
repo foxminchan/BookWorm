@@ -28,7 +28,8 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}
+      TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before ||
+        'HEAD~1' }}
       TURBO_SCM_HEAD: ${{ github.sha }}
       FRONTEND_APPS_DIR: src/Clients/apps
 
@@ -61,7 +62,7 @@ jobs:
 
       - name: Upload Allure Report (Backoffice)
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: allure-report-backoffice
           path: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-report/
@@ -70,7 +71,7 @@ jobs:
 
       - name: Upload Allure Report (Storefront)
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: allure-report-storefront
           path: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report/

@@ -25,8 +25,8 @@ importers:
   .:
     devDependencies:
       '@lavamoat/allow-scripts':
-        specifier: ^4.0.0
-        version: 4.0.0
+        specifier: ^5.0.1
+        version: 5.0.1
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^6.0.2
         version: 6.0.2(prettier@3.8.3)
@@ -49,8 +49,8 @@ importers:
         specifier: ^2.9.6
         version: 2.9.6
       typescript:
-        specifier: 6.0.2
-        version: 6.0.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   apps/backoffice:
     dependencies:
@@ -98,7 +98,7 @@ importers:
         version: link:../../packages/validations
       better-auth:
         specifier: ^1.6.5
-        version: 1.6.5(@opentelemetry/api@1.9.1)(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(typescript@6.0.3))(mongodb@7.1.0(socks@2.8.7))(mysql2@3.15.3)(next@16.2.4(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@4.1.4)
+        version: 1.6.5(@opentelemetry/api@1.9.1)(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(typescript@6.0.3))(mongodb@7.1.0(socks@2.8.7))(mysql2@3.15.3)(next@16.2.4(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@4.1.4)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -270,7 +270,7 @@ importers:
         version: link:../../packages/validations
       better-auth:
         specifier: ^1.6.5
-        version: 1.6.5(@opentelemetry/api@1.9.1)(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(typescript@6.0.3))(mongodb@7.1.0(socks@2.8.7))(mysql2@3.15.3)(next@16.2.4(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@4.1.4)
+        version: 1.6.5(@opentelemetry/api@1.9.1)(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(typescript@6.0.3))(mongodb@7.1.0(socks@2.8.7))(mysql2@3.15.3)(next@16.2.4(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@4.1.4)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -488,8 +488,8 @@ importers:
         specifier: ^7.37.5
         version: 7.37.5(eslint@10.2.0(jiti@2.6.1))
       eslint-plugin-react-hooks:
-        specifier: ^7.1.0
-        version: 7.1.0(eslint@10.2.0(jiti@2.6.1))
+        specifier: ^7.1.1
+        version: 7.1.1(eslint@10.2.0(jiti@2.6.1))
       eslint-plugin-turbo:
         specifier: ^2.9.6
         version: 2.9.6(eslint@10.2.0(jiti@2.6.1))(turbo@2.9.6)
@@ -2170,8 +2170,8 @@ packages:
     engines: {node: ^20.19.0 || ^22.5.1 || ^24.0.0}
     hasBin: true
 
-  '@lavamoat/allow-scripts@4.0.0':
-    resolution: {integrity: sha512-stjiuDZqH4ODrLGrpqC6rfmda7eJByo07VK2yu1fF/81nTwft6wrQp1sF1FHIWWHWWhKyM+b7EZNU7gUnbMyGA==}
+  '@lavamoat/allow-scripts@5.0.1':
+    resolution: {integrity: sha512-z/xeKBsSnadkXxkMrFz6YZAq/2IdP01rRPy5mzmZZtYOfthaSVejOZT083m9YCO5AmfRjN/8hcIjZ9Wr2gaw9w==}
     engines: {node: ^20.19.0 || ^22.5.1 || ^24.0.0}
     hasBin: true
 
@@ -2422,8 +2422,8 @@ packages:
     resolution: {integrity: sha512-gOBg5YHMfZy+TfHArfVogwgfBeQnKbbGo3pSUyK/gSI0AVu+pEiDVcKlQb0D8Mg1LNRZILZ6XG8I5dJ4KuAd9Q==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  '@npmcli/run-script@10.0.3':
-    resolution: {integrity: sha512-ER2N6itRkzWbbtVmZ9WKaWxVlKlOeBFF1/7xx+KA5J1xKa4JjUwBdb6tDpk0v1qA+d+VDwHI9qmLcXSWcmi+Rw==}
+  '@npmcli/run-script@10.0.4':
+    resolution: {integrity: sha512-mGUWr1uMnf0le2TwfOZY4SFxZGXGfm4Jtay/nwAa2FLNAKXUoUwaGwBMNH36UHPtinWfTSJ3nqFQr0091CxVGg==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   '@open-draft/deferred-promise@2.2.0':
@@ -5253,8 +5253,8 @@ packages:
   eslint-plugin-only-warn@1.2.1:
     resolution: {integrity: sha512-j37hwfaQDEOfkZ1Dpvu/HnWLavlzQxQxfbrU/9Jb4R9qzrE1eTYuRJyrxq7LzLRI8miG5FOV6veoUVhx7AI84w==}
 
-  eslint-plugin-react-hooks@7.1.0:
-    resolution: {integrity: sha512-LDicyhrRFrIaheDYryeM2W8gWyZXnAs4zIr2WVPiOSeTmIu2RjR4x/9N0xLaRWZ+9hssBDGo3AadcohuzAvSvg==}
+  eslint-plugin-react-hooks@7.1.1:
+    resolution: {integrity: sha512-f2I7Gw6JbvCexzIInuSbZpfdQ44D7iqdWX01FKLvrPgqxoE7oMj8clOfto8U6vYiz4yd5oKu39rRSVOe1zRu0g==}
     engines: {node: '>=18'}
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0 || ^10.0.0
@@ -8263,11 +8263,6 @@ packages:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
 
-  typescript@6.0.2:
-    resolution: {integrity: sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
   typescript@6.0.3:
     resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
@@ -10428,10 +10423,10 @@ snapshots:
     dependencies:
       resolve: 1.22.12
 
-  '@lavamoat/allow-scripts@4.0.0':
+  '@lavamoat/allow-scripts@5.0.1':
     dependencies:
       '@lavamoat/aa': 5.0.1
-      '@npmcli/run-script': 10.0.3
+      '@npmcli/run-script': 10.0.4
       bin-links: 4.0.4
       npm-normalize-package-bin: 3.0.1
       type-fest: 4.41.0
@@ -10850,14 +10845,13 @@ snapshots:
 
   '@npmcli/redact@4.0.0': {}
 
-  '@npmcli/run-script@10.0.3':
+  '@npmcli/run-script@10.0.4':
     dependencies:
       '@npmcli/node-gyp': 5.0.0
       '@npmcli/package-json': 7.0.5
       '@npmcli/promise-spawn': 9.0.1
       node-gyp: 12.2.0
       proc-log: 6.1.0
-      which: 6.0.1
     transitivePeerDependencies:
       - supports-color
 
@@ -13064,7 +13058,7 @@ snapshots:
 
   baseline-browser-mapping@2.10.19: {}
 
-  better-auth@1.6.5(@opentelemetry/api@1.9.1)(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(typescript@6.0.3))(mongodb@7.1.0(socks@2.8.7))(mysql2@3.15.3)(next@16.2.4(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@4.1.4):
+  better-auth@1.6.5(@opentelemetry/api@1.9.1)(@prisma/client@7.4.2(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(typescript@6.0.3))(mongodb@7.1.0(socks@2.8.7))(mysql2@3.15.3)(next@16.2.4(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(prisma@7.4.2(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@4.1.4):
     dependencies:
       '@better-auth/core': 1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.2.0)
       '@better-auth/drizzle-adapter': 1.6.5(@better-auth/core@1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.2.0))(@better-auth/utils@0.4.0)
@@ -14017,7 +14011,7 @@ snapshots:
 
   eslint-plugin-only-warn@1.2.1: {}
 
-  eslint-plugin-react-hooks@7.1.0(eslint@10.2.0(jiti@2.6.1)):
+  eslint-plugin-react-hooks@7.1.1(eslint@10.2.0(jiti@2.6.1)):
     dependencies:
       '@babel/core': 7.29.0
       '@babel/parser': 7.29.2
@@ -17775,8 +17769,6 @@ snapshots:
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
-
-  typescript@6.0.2: {}
 
   typescript@6.0.3: {}
 

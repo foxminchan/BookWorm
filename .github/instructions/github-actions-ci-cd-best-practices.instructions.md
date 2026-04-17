@@ -66,7 +66,7 @@ jobs:
           zip -r dist.zip dist
           echo "path=dist.zip" >> "$GITHUB_OUTPUT"
       - name: Upload build artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: my-app-build
           path: dist.zip
