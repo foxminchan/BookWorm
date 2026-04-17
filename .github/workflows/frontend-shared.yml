@@ -28,8 +28,7 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      TURBO_SCM_BASE: |
-        ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}
+      TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}
       TURBO_SCM_HEAD: ${{ github.sha }}
       FRONTEND_APPS_DIR: src/Clients/apps
 
@@ -41,8 +40,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # fetch-depth: 2 is needed for Turbo's change detection (compares HEAD~1)
-          fetch-depth: 2
+          # fetch-depth: 0 ensures the base SHA from pull_request/push events is always available
+          fetch-depth: 0
 
       - name: Setup Frontend
         uses: ./.github/actions/frontend-setup
