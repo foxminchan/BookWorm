@@ -5,10 +5,7 @@ namespace BookWorm.Chassis.EventBus.Dispatcher;
 
 internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEventDispatcher
 {
-    public Task DispatchAsync(
-        DomainEvent @event,
-        CancellationToken cancellationToken = default
-    )
+    public Task DispatchAsync(DomainEvent @event, CancellationToken cancellationToken = default)
     {
         return DispatchAsync(@event, userId: null, cancellationToken);
     }
