@@ -1,3 +1,4 @@
+using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,21 +17,13 @@ public static class PresidioExtensions
         /// <returns>The builder for chaining.</returns>
         public IHostApplicationBuilder AddPresidio()
         {
-            var analyzerConnectionString = builder.Configuration.GetConnectionString(
+            var analyzerConnectionString = builder.Configuration.GetRequiredConnectionString(
                 Components.Presidio.Analyzer
             );
 
-            var anonymizerConnectionString = builder.Configuration.GetConnectionString(
+            var anonymizerConnectionString = builder.Configuration.GetRequiredConnectionString(
                 Components.Presidio.Anonymizer
             );
-
-            if (
-                string.IsNullOrWhiteSpace(analyzerConnectionString)
-                || string.IsNullOrWhiteSpace(anonymizerConnectionString)
-            )
-            {
-                return builder;
-            }
 
             var services = builder.Services;
 

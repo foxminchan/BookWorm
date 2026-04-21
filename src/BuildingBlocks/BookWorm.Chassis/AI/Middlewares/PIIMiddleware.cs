@@ -1,5 +1,6 @@
 ﻿using BookWorm.Chassis.AI.Presidio;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Chassis.AI.Middlewares;
 
@@ -11,12 +12,10 @@ internal static class PIIMiddleware
         IChatClient,
         CancellationToken,
         Task<ChatResponse>
-    > Create()
+    > Create(IPresidioService presidioService)
     {
         return async (messages, options, innerChatClient, cancellationToken) =>
         {
-            var presidioService = innerChatClient.GetRequiredService<IPresidioService>();
-
             var filteredMessages = await FilterMessagesAsync(
                 presidioService,
                 messages,
@@ -59,12 +58,15 @@ public static class PIIMiddlewareExtensions
     {
         /// <summary>
         ///     Adds PII (Personally Identifiable Information) redaction middleware to the chat client pipeline.
-        ///     Intercepts chat messages and anonymizes sensitive information before forwarding to the inner client.
+        ///     Resolves <see cref="IPresidioService" /> from the provided <paramref name="sp" /> at build time
+        ///     so the service is captured in the middleware closure rather than looked up per-request.
         /// </summary>
+        /// <param name="sp">The DI service provider used to resolve <see cref="IPresidioService" />.</param>
         /// <returns>The <see cref="ChatClientBuilder" /> so that additional calls can be chained.</returns>
-        public ChatClientBuilder UsePIIMiddleware()
+        public ChatClientBuilder UsePIIMiddleware(IServiceProvider sp)
         {
-            return builder.Use(PIIMiddleware.Create(), null);
+            var presidioService = sp.GetRequiredService<IPresidioService>();
+            return builder.Use(PIIMiddleware.Create(presidioService), null);
         }
     }
 }

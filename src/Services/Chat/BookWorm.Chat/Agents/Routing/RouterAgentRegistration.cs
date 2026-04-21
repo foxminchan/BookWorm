@@ -1,4 +1,3 @@
-using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -13,12 +12,10 @@ internal static class RouterAgentRegistration
             RouterAgentDefinition.Name,
             (sp, key) =>
             {
-                var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
-
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .UseGuardrailMiddleware()
-                    .UseGovernanceToolCall(identityProvider, RouterAgentDefinition.Name)
+                    .UseGovernanceToolCall(sp, RouterAgentDefinition.Name)
                     .Build(sp);
 
                 var agent = new ChatClientAgent(

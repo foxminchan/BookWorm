@@ -1,4 +1,3 @@
-using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -21,17 +20,15 @@ internal static class BookAgentRegistration
             BookAgentDefinition.Name,
             (sp, key) =>
             {
-                var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
-
                 var compactionProvider = CompactionPipelineFactory.CreateFull(
                     sp.GetRequiredService<IChatClient>()
                 );
 
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UsePIIMiddleware()
+                    .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
-                    .UseGovernanceToolCall(identityProvider, BookAgentDefinition.Name)
+                    .UseGovernanceToolCall(sp, BookAgentDefinition.Name)
                     .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 
@@ -47,7 +44,6 @@ internal static class BookAgentRegistration
 
                 var skillsProvider = new AgentSkillsProvider(
                     Path.Combine(AppContext.BaseDirectory, "Skills", "book-catalog"),
-                    null,
                     loggerFactory: sp.GetService<ILoggerFactory>()
                 );
 

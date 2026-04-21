@@ -1,4 +1,3 @@
-using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -13,13 +12,11 @@ internal static class SentimentAgentRegistration
             SentimentAgentDefinition.Name,
             (sp, key) =>
             {
-                var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
-
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UsePIIMiddleware()
+                    .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
-                    .UseGovernanceToolCall(identityProvider, SentimentAgentDefinition.Name)
+                    .UseGovernanceToolCall(sp, SentimentAgentDefinition.Name)
                     .Build(sp);
 
                 var agent = new ChatClientAgent(

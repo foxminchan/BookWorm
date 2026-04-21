@@ -1,4 +1,3 @@
-using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -13,21 +12,18 @@ internal static class QAAgentRegistration
             QAAgentDefinition.Name,
             (sp, key) =>
             {
-                var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
-
                 var compactionProvider = CompactionPipelineFactory.CreateLight();
 
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
-                    .UsePIIMiddleware()
+                    .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
-                    .UseGovernanceToolCall(identityProvider, QAAgentDefinition.Name)
+                    .UseGovernanceToolCall(sp, QAAgentDefinition.Name)
                     .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 
                 var skillsProvider = new AgentSkillsProvider(
                     Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
-                    null,
                     loggerFactory: sp.GetService<ILoggerFactory>()
                 );
 
