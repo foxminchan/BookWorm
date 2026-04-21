@@ -15,13 +15,14 @@ internal static class PIIMiddleware
     {
         return async (messages, options, innerChatClient, cancellationToken) =>
         {
-            var presidioService = innerChatClient.GetRequiredService<IPresidioService>();
+            var presidioService = innerChatClient.GetService<IPresidioService>();
 
-            var filteredMessages = await FilterMessagesAsync(
-                presidioService,
-                messages,
-                cancellationToken
-            );
+            // If Presidio is not configured (e.g. when running standalone without the
+            // Aspire AppHost providing the analyzer/anonymizer connection strings),
+            // skip PII redaction and forward messages unchanged rather than failing.
+            var filteredMessages = presidioService is null
+                ? messages
+                : await FilterMessagesAsync(presidioService, messages, cancellationToken);
 
             return await innerChatClient.GetResponseAsync(
                 filteredMessages,
