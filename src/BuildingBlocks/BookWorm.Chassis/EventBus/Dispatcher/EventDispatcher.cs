@@ -7,7 +7,7 @@ internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEve
 {
     public Task DispatchAsync(DomainEvent @event, CancellationToken cancellationToken = default)
     {
-        return DispatchAsync(@event, userId: null, cancellationToken);
+        return DispatchAsync(@event, null, cancellationToken);
     }
 
     public async Task DispatchAsync(
@@ -30,8 +30,8 @@ internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEve
             return;
         }
 
-        // Propagate the user identifier through the publish context so that the
-        // existing publish filters (UserIdPublishFilter / KafkaPublishFilter) and
+        // Propagate the user identifier through the publishing context so that the
+        // existing publishing filters (UserIdPublishFilter / KafkaPublishFilter) and
         // the CloudEvent envelope serializer pick it up just as they would for an
         // event originating from an HTTP request scope.
         await bus.Publish(

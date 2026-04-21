@@ -118,11 +118,7 @@ internal sealed class MartenEventPublisher(
 
     private static string? ExtractUserIdFromEventMetadata(Dictionary<string, object>? headers)
     {
-        if (
-            headers is null
-            || !headers.TryGetValue(EventBusHeaders.UserId, out var value)
-            || value is null
-        )
+        if (headers is null || !headers.TryGetValue(EventBusHeaders.UserId, out var value))
         {
             return null;
         }
