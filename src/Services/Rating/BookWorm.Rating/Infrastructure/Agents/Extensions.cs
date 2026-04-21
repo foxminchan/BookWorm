@@ -2,7 +2,6 @@
 using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
-using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chassis.AI.Presidio;
 using BookWorm.Chassis.Utilities;
@@ -50,13 +49,11 @@ internal static class Extensions
                 RatingAgent.Name,
                 (sp, key) =>
                 {
-                    var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
-
                     var chatClient = sp.GetRequiredService<IChatClient>()
                         .AsBuilder()
-                        .UsePIIMiddleware()
+                        .UsePIIMiddleware(sp)
                         .UseGuardrailMiddleware()
-                        .UseGovernanceToolCall(identityProvider, RatingAgent.Name)
+                        .UseGovernanceToolCall(sp, RatingAgent.Name)
                         .Build(sp);
 
                     using var spScope = sp.CreateScope();

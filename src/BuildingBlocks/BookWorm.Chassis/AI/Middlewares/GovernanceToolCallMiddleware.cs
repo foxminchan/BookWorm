@@ -3,6 +3,7 @@ using BookWorm.Chassis.AI.Governance.AuditTrail;
 using BookWorm.Chassis.AI.Governance.Detectors;
 using BookWorm.Chassis.AI.Governance.IdentityProvider;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.AI.Middlewares;
@@ -15,20 +16,18 @@ internal static class GovernanceToolCallMiddleware
         IChatClient,
         CancellationToken,
         Task<ChatResponse>
-    > Create(IAgentIdentityProvider identityProvider, string agentName)
+    > Create(IServiceProvider sp, string agentName)
     {
+        var kernel = sp.GetRequiredService<GovernanceKernel>();
+        var rogueDetector = sp.GetRequiredService<IRogueAgentDetector>();
+        var auditTrail = sp.GetRequiredService<IGovernanceAuditTrail>();
+        var identityProvider = sp.GetRequiredService<IAgentIdentityProvider>();
         var identity = identityProvider.GetOrCreateIdentity(agentName);
+        var logger = sp.GetService<ILoggerFactory>()
+            ?.CreateLogger(nameof(GovernanceToolCallMiddleware));
 
         return async (messages, options, innerChatClient, cancellationToken) =>
         {
-            var kernel = innerChatClient.GetRequiredService<GovernanceKernel>();
-            var rogueDetector = innerChatClient.GetRequiredService<IRogueAgentDetector>();
-            var auditTrail = innerChatClient.GetRequiredService<IGovernanceAuditTrail>();
-
-            // init logger via factory
-            var loggerFactory = innerChatClient.GetService<ILoggerFactory>();
-            var logger = loggerFactory?.CreateLogger(nameof(GovernanceToolCallMiddleware));
-
             // Check quarantine status before processing
             if (rogueDetector.IsQuarantined(identity.Did))
             {
@@ -217,18 +216,12 @@ public static class GovernanceToolCallMiddlewareExtensions
         /// <summary>
         ///     Adds governance enforcement middleware for tool calls made by the configured agent.
         /// </summary>
-        /// <param name="identityProvider">Provides and tracks the agent identity used during governance checks.</param>
+        /// <param name="sp">The DI service provider used to resolve governance dependencies at build time.</param>
         /// <param name="agentName">The logical agent name used to resolve identity and audit entries.</param>
         /// <returns>The same <see cref="ChatClientBuilder" /> instance for fluent middleware configuration.</returns>
-        public ChatClientBuilder UseGovernanceToolCall(
-            IAgentIdentityProvider identityProvider,
-            string agentName
-        )
+        public ChatClientBuilder UseGovernanceToolCall(IServiceProvider sp, string agentName)
         {
-            return builder.Use(
-                GovernanceToolCallMiddleware.Create(identityProvider, agentName),
-                null
-            );
+            return builder.Use(GovernanceToolCallMiddleware.Create(sp, agentName), null);
         }
     }
 }
