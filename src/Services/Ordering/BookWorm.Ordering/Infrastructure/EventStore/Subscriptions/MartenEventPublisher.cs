@@ -44,7 +44,9 @@ internal sealed class MartenEventPublisher(
 
                         if (@event.Data is DomainEvent domainEvent)
                         {
-                            await eventDispatcher.DispatchAsync(domainEvent, ct);
+                            var userId = ExtractUserIdFromEventMetadata(@event.Headers);
+
+                            await eventDispatcher.DispatchAsync(domainEvent, userId, ct);
 
                             await dbContext.SaveChangesAsync(ct);
                         }
@@ -112,5 +114,15 @@ internal sealed class MartenEventPublisher(
 
             return [];
         }
+    }
+
+    private static string? ExtractUserIdFromEventMetadata(Dictionary<string, object>? headers)
+    {
+        if (headers is null || !headers.TryGetValue(EventBusHeaders.UserId, out var value))
+        {
+            return null;
+        }
+
+        return value.ToString();
     }
 }
