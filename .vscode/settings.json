@@ -1,10 +1,12 @@
 {
   "files.eol": "\n",
-  "dotnet.defaultSolution": "BookWorm.slnx",
+  "dotnet.defaultSolution": "./BookWorm.slnx",
+  "dotnet.solution.autoOpen": "./BookWorm.slnx",
   "js/ts.tsdk.path": "src/Clients/node_modules/typescript/lib",
   "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "dotnet.automaticallyCreateSolutionInWorkspace": false,
-  "dotnet.enableWorkspaceBasedDevelopment": true,
+  "aspire.enableSettingsFileCreationPromptOnStartup": false,
+  "aspire.enableAutoRestore": false,
   "sonarlint.connectedMode.project": {
     "connectionId": "foxminchan",
     "projectKey": "foxminchan_BookWorm"

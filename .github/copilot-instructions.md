@@ -86,3 +86,10 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 - Tests: `tests/` (architecture tests, AI evaluation), `src/Services/{Name}/BookWorm.{Name}.UnitTests/`
 - Specs: `specs/` (feature specifications)
 - Docs: `docs/docusaurus/` (architecture), `docs/eventcatalog/` (event schemas)
+
+<!-- SPECKIT START -->
+
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+
+<!-- SPECKIT END -->

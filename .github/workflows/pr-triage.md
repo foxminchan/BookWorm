@@ -3,11 +3,11 @@ description: Automatically triage incoming pull requests by analyzing content an
 on:
   pull_request:
     types: [opened, edited, synchronize]
+  roles: all
 concurrency:
   group: gh-aw-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
-roles: all
 permissions:
   contents: read
   pull-requests: read

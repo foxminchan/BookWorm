@@ -3,11 +3,11 @@ description: Automatically triage incoming issues by analyzing content and apply
 on:
   issues:
     types: [opened, edited]
+  roles: all
 concurrency:
   group: gh-aw-${{ github.workflow }}-${{ github.event.issue.number }}
   cancel-in-progress: false
 if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
-roles: all
 permissions:
   contents: read
   issues: read
