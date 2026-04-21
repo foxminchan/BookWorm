@@ -16,21 +16,17 @@ public static class PresidioExtensions
         /// <returns>The builder for chaining.</returns>
         public IHostApplicationBuilder AddPresidio()
         {
-            var analyzerConnectionString = builder.Configuration.GetConnectionString(
-                Components.Presidio.Analyzer
-            );
+            var analyzerConnectionString =
+                builder.Configuration.GetConnectionString(Components.Presidio.Analyzer)
+                ?? throw new InvalidOperationException(
+                    $"Connection string '{Components.Presidio.Analyzer}' is required for Presidio analyzer."
+                );
 
-            var anonymizerConnectionString = builder.Configuration.GetConnectionString(
-                Components.Presidio.Anonymizer
-            );
-
-            if (
-                string.IsNullOrWhiteSpace(analyzerConnectionString)
-                || string.IsNullOrWhiteSpace(anonymizerConnectionString)
-            )
-            {
-                return builder;
-            }
+            var anonymizerConnectionString =
+                builder.Configuration.GetConnectionString(Components.Presidio.Anonymizer)
+                ?? throw new InvalidOperationException(
+                    $"Connection string '{Components.Presidio.Anonymizer}' is required for Presidio anonymizer."
+                );
 
             var services = builder.Services;
 
