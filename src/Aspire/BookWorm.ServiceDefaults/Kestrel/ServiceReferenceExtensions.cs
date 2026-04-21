@@ -156,9 +156,7 @@ public static class ServiceReferenceExtensions
                 };
             }
             catch (RpcException exception)
-                when (
-                    exception.StatusCode is StatusCode.Cancelled or StatusCode.DeadlineExceeded
-                )
+                when (exception.StatusCode is StatusCode.Cancelled or StatusCode.DeadlineExceeded)
             {
                 return HealthCheckResult.Unhealthy(exception.Status.Detail, exception);
             }
