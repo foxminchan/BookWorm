@@ -1,5 +1,6 @@
 ﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Extensions;
+using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 using Mediator;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Handlers;
@@ -7,6 +8,7 @@ namespace BookWorm.Ordering.Infrastructure.EventStore.Handlers;
 internal sealed class OrderEventHandler(
     IDocumentSession documentSession,
     IActivityScope activityScope,
+    ClaimsPrincipal claimsPrincipal,
     ILogger<OrderEventHandler> logger
 )
     : INotificationHandler<OrderPlacedEvent>,
@@ -19,6 +21,7 @@ internal sealed class OrderEventHandler(
     )
     {
         OrderingTrace.LogOrderCancelled(logger, notification.Order.Id, Status.Cancelled);
+        documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
@@ -33,6 +36,7 @@ internal sealed class OrderEventHandler(
     )
     {
         OrderingTrace.LogOrderCompleted(logger, notification.Order.Id, Status.Completed);
+        documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
@@ -47,6 +51,7 @@ internal sealed class OrderEventHandler(
     )
     {
         OrderingTrace.LogOrderPlaced(logger, notification.Order.Id, Status.New);
+        documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.Add<OrderSummary>(
             Guid.CreateVersion7(),
             notification,
