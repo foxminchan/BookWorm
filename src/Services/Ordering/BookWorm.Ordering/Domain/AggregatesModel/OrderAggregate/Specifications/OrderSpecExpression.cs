@@ -4,12 +4,11 @@ namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications
 
 public static class OrderSpecExpression
 {
-    public static void ApplyPaging(
-        this ISpecificationBuilder<Order> builder,
-        int pageIndex,
-        int pageSize
-    )
+    extension(ISpecificationBuilder<Order> builder)
     {
-        builder.Skip((pageIndex - 1) * pageSize).Take(pageSize);
+        public void ApplyPaging(int pageIndex, int pageSize)
+        {
+            builder.Skip((pageIndex - 1) * pageSize).Take(pageSize);
+        }
     }
 }
