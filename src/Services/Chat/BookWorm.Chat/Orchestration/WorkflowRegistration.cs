@@ -52,7 +52,13 @@ internal static class WorkflowRegistration
                             .CreateHandoffBuilderWith(routerAgent)
                             .WithHandoffs(
                                 routerAgent,
-                                [languageAgent, summarizeAgent, sentimentAgent, bookAgent, basketAgent]
+                                [
+                                    languageAgent,
+                                    summarizeAgent,
+                                    sentimentAgent,
+                                    bookAgent,
+                                    basketAgent,
+                                ]
                             )
                             // Define handoff paths for agent collaboration
                             .WithHandoff(
