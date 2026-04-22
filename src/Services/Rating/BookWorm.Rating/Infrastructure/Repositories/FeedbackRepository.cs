@@ -1,5 +1,6 @@
 ﻿using BookWorm.Chassis.Specification;
 using BookWorm.Chassis.Specification.Evaluators;
+using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 
 namespace BookWorm.Rating.Infrastructure.Repositories;
 
@@ -19,6 +20,19 @@ internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRep
     {
         var entry = await _context.Feedbacks.AddAsync(feedback, cancellationToken);
         return entry.Entity;
+    }
+
+    public async Task<Feedback?> FindByBookAndCustomerAsync(
+        Guid bookId,
+        string? firstName,
+        string? lastName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var spec = new FeedbackByBookAndCustomerSpec(bookId, firstName, lastName);
+        return await Specification
+            .GetQuery(_context.Feedbacks.AsQueryable(), spec)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<Feedback?> GetByIdAsync(

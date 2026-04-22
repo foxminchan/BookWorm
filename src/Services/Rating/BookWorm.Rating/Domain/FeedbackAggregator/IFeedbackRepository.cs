@@ -7,6 +7,13 @@ public interface IFeedbackRepository : IRepository<Feedback>
     Task<Feedback> AddAsync(Feedback feedback, CancellationToken cancellationToken = default);
     Task<Feedback?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<Feedback?> FindByBookAndCustomerAsync(
+        Guid bookId,
+        string? firstName,
+        string? lastName,
+        CancellationToken cancellationToken = default
+    );
+
     Task<IReadOnlyList<Feedback>> ListAsync(
         ISpecification<Feedback> spec,
         CancellationToken cancellationToken = default

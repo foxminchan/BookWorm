@@ -4,6 +4,7 @@ using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Chat.Agents.Basket;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.LanguageTranslation;
@@ -92,6 +93,19 @@ internal static class Extensions
                     .Build()
             );
 
+            // Internal HTTP client for Basket service (used by BasketAgent tool)
+            services.AddHttpClient(
+                Services.Basket,
+                client =>
+                    client.BaseAddress = new(
+                        HttpUtilities
+                            .AsUrlBuilder()
+                            .WithScheme(Http.Schemes.HttpOrHttps)
+                            .WithHost(Services.Basket)
+                            .Build()
+                    )
+            );
+
             // Register each agent as a self-contained vertical slice
             builder.AddBookAgent();
             builder.AddLanguageAgent();
@@ -99,6 +113,7 @@ internal static class Extensions
             builder.AddSummarizeAgent();
             builder.AddQAAgent();
             builder.AddRouterAgent();
+            builder.AddBasketAgent();
 
             // Compose the multi-agent workflow
             builder.AddChatWorkflow();

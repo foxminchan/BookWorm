@@ -5,6 +5,28 @@ import { useCoAgent } from "@copilotkit/react-core";
 import { env } from "@/env.mjs";
 
 /**
+ * State shape for a pending basket add approval dialog.
+ */
+type BasketApprovalState = {
+  approvalId: string;
+  bookId: string;
+  bookTitle?: string;
+  quantity: number;
+  unitPrice?: number;
+};
+
+/**
+ * State shape for a pending review submission approval dialog.
+ */
+type ReviewApprovalState = {
+  approvalId: string;
+  bookId: string;
+  bookTitle?: string;
+  rating: number;
+  comment?: string;
+};
+
+/**
  * Agent state type matching the backend chat workflow state
  */
 type ChatAgentState = {
@@ -17,6 +39,8 @@ type ChatAgentState = {
   }>;
   lastAction?: string;
   conversationContext?: string;
+  pendingBasketApproval?: BasketApprovalState;
+  pendingReviewApproval?: ReviewApprovalState;
 };
 
 /**
@@ -34,6 +58,8 @@ export function useChatAgentState() {
         searchResults: undefined,
         lastAction: undefined,
         conversationContext: undefined,
+        pendingBasketApproval: undefined,
+        pendingReviewApproval: undefined,
       },
     });
 

@@ -11,37 +11,36 @@
 version: "1.0"
 name: "bookworm-rating-agent-governance"
 description: >
-  Governance policy for the BookWorm Rating service agent.
-  Permits read-only access to book and review data for
-  LLM-based review summarization. Blocks all write operations
-  (create, update, delete) to prevent unauthorized data mutation.
-  Enforces PII redaction in summarized review output and blocks
-  destructive SQL patterns from reaching the database.
+  Governance policy for the BookWorm Rating service agent. Permits read-only
+  access to book and review data for LLM-based review summarization. Allows
+  HITL-gated review submission (submitReview) that requires explicit customer
+  approval before execution. Enforces PII redaction in summarized review output
+  and blocks destructive SQL patterns.
 default_action: deny
 rules:
-  # ── Write operation blocking (priority 100) ─────────────────────
-  - name: block-write-operations
-    condition: "tool_name in blocked_tools"
-    action: deny
-    priority: 100
-
-  # ── Destructive SQL blocking (priority 95) ──────────────────────
-  # Adapted from AGT sql-readonly.yaml — blocks all SQL data
-  # modification even if tools are not in the blocked list.
-  - name: block-destructive-sql
-    condition: "tool_name in blocked_tools"
-    action: deny
-    priority: 95
-
-  # ── Read tools (priority 50) ────────────────────────────────────
-  - name: allow-read-tools
-    condition: "tool_name in allowed_tools"
+  # ── HITL-approved write: submitReview (priority 80) ─────────────
+  # submitReview is wrapped in ApprovalRequiredAIFunction — the
+  # customer must explicitly confirm before the tool executes.
+  # Allow it through governance; the HITL gate is the auth control.
+  - name: allow-submit-review-hitl
+    condition: "tool_name == 'submitReview'"
     action: allow
-    priority: 50
+    priority: 80
+
+  # ── Read tools (priority 60) ────────────────────────────────────
+  - name: allow-get-customer-reviews
+    condition: "tool_name == 'GetCustomerReviews'"
+    action: allow
+    priority: 60
+
+  - name: allow-get-book
+    condition: "tool_name == 'get_book'"
+    action: allow
+    priority: 60
 
   # ── Rate limiting (priority 30) ─────────────────────────────────
   - name: rate-limit-review-reads
-    condition: "tool_name == 'get_reviews'"
+    condition: "tool_name == 'GetCustomerReviews'"
     action: rate_limit
     limit: "30/minute"
 
@@ -62,13 +61,13 @@ sql_policy:
     - DELETE
 
   blocked_patterns:
-    - '\bEXEC(UTE)?\b'
-    - '\bXP_\w+'
-    - '\bSP_\w+'
-    - '\bLOAD_FILE\s*\('
-    - '\bINTO\s+(OUT|DUMP)FILE\b'
-    - '\bCOPY\s+'
-    - '\bSET\s+(GLOBAL|ROLE)\b'
+    - "\\bEXEC(UTE)?\\b"
+    - "\\bXP_\\w+"
+    - "\\bSP_\\w+"
+    - "\\bLOAD_FILE\\s*\\("
+    - "\\bINTO\\s+(OUT|DUMP)FILE\\b"
+    - "\\bCOPY\\s+"
+    - "\\bSET\\s+(GLOBAL|ROLE)\\b"
 
   allowed_statements:
     - SELECT
@@ -77,6 +76,6 @@ sql_policy:
 # Adapted from AGT pii-detection.yaml — regex patterns to detect
 # PII that may appear in user reviews before summarization output.
 pii_patterns:
-  email: '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
-  phone: '(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
-  credit_card: '\b(?:\d[ -]*?){13,19}\b'
+  email: "[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+"
+  phone: "(?:\\+?1[-.\\s]?)?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}"
+  credit_card: "\\b(?:\\d[ -]*?){13,19}\\b"

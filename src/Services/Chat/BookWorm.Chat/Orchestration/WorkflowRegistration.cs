@@ -1,4 +1,7 @@
+using A2A;
 using AgentGovernance;
+using BookWorm.Chassis.AI.Agents;
+using BookWorm.Chat.Agents.Basket;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.LanguageTranslation;
@@ -41,6 +44,16 @@ internal static class WorkflowRegistration
                             SummarizeAgentDefinition.Name
                         );
                         var qaAgent = sp.GetRequiredKeyedService<AIAgent>(QAAgentDefinition.Name);
+                        var basketAgent = sp.GetRequiredKeyedService<AIAgent>(
+                            BasketAgentDefinition.Name
+                        );
+
+                        // A2A proxy to the RatingAgent in the Rating service
+                        var ratingAgentProxy = A2AClientFactory.CreateA2AAgentClient(
+                            sp,
+                            Constants.Aspire.Services.Rating,
+                            Constants.Other.Agents.RatingAgent
+                        );
 
                         // Build handoff workflow for dynamic agent routing
                         // RouterAgent analyzes requests and delegates to specialized agents
@@ -48,7 +61,14 @@ internal static class WorkflowRegistration
                             .CreateHandoffBuilderWith(routerAgent)
                             .WithHandoffs(
                                 routerAgent,
-                                [languageAgent, summarizeAgent, sentimentAgent, bookAgent]
+                                [
+                                    languageAgent,
+                                    summarizeAgent,
+                                    sentimentAgent,
+                                    bookAgent,
+                                    basketAgent,
+                                    ratingAgentProxy,
+                                ]
                             )
                             // Define handoff paths for agent collaboration
                             .WithHandoff(
@@ -66,6 +86,16 @@ internal static class WorkflowRegistration
                                 bookAgent,
                                 routerAgent,
                                 "Transfer back to RouterAgent for any follow-up handling."
+                            )
+                            .WithHandoff(
+                                basketAgent,
+                                routerAgent,
+                                "Transfer back to RouterAgent after basket operation completes or is cancelled."
+                            )
+                            .WithHandoff(
+                                ratingAgentProxy,
+                                routerAgent,
+                                "Transfer back to RouterAgent after review or rating analysis completes."
                             )
                             .Build();
 

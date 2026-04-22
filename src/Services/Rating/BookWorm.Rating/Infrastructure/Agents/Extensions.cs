@@ -1,4 +1,5 @@
-﻿using AgentGovernance;
+﻿using System.Security.Claims;
+using AgentGovernance;
 using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
@@ -37,6 +38,14 @@ internal static class Extensions
             services.AddOpenAIResponses();
             services.AddOpenAIConversations();
             services.AddScoped<ReviewTool>();
+
+            // Register ClaimsPrincipal for per-request resolution (used by ReviewTool.SubmitReview)
+            services.AddHttpContextAccessor();
+            services.AddTransient(sp =>
+                sp.GetRequiredService<IHttpContextAccessor>().HttpContext?.User
+                ?? new ClaimsPrincipal()
+            );
+
             services.AddAgentDiscoveryClient(
                 HttpUtilities
                     .AsUrlBuilder()
@@ -228,6 +237,10 @@ internal static class Extensions
         public void MapAgentsDiscovery()
         {
             app.MapAgentDiscovery("/agents");
+
+            // Expose RatingAgent via A2A so the Chat service can delegate review/rating tasks
+            app.MapA2A(RatingAgent.Name, $"/a2a/{RatingAgent.Name}", RatingAgent.AgentCard)
+                .WithTags(RatingAgent.Name);
 
             app.MapAGUI(
                     "/ag-ui",

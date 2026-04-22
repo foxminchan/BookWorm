@@ -34,6 +34,7 @@ import { useBookSearchActions } from "@/hooks/useBookSearchActions";
 import { useChatAgentState } from "@/hooks/useChatAgentState";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { useRateLimit } from "@/hooks/useRateLimit";
+import { useReviewActions } from "@/hooks/useReviewActions";
 import { useUserContext } from "@/hooks/useUserContext";
 import "@/styles/copilot.css";
 
@@ -129,7 +130,8 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   useBasketContext();
   useUserContext();
   useBookSearchActions();
-  const { ConfirmationDialog, liveRegion } = useBasketActions();
+  const { liveRegion } = useBasketActions();
+  useReviewActions();
 
   // Rate limiting and offline support
   const { isRateLimited, isThrottling, resetIn } = useRateLimit({
@@ -251,8 +253,6 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
       open
       aria-label="BookWorm Literary Guide Chat"
     >
-      {/* Render confirmation dialog for basket actions */}
-      <ConfirmationDialog />
       {/* Live region for basket announcements */}
       {liveRegion}
 

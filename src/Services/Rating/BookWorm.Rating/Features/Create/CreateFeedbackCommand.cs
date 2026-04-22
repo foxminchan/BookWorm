@@ -20,6 +20,19 @@ internal sealed class CreateFeedbackHandler(IFeedbackRepository repository)
         CancellationToken cancellationToken
     )
     {
+        // Replace existing review from the same customer for the same book (upsert pattern)
+        var existing = await repository.FindByBookAndCustomerAsync(
+            request.BookId,
+            request.FirstName,
+            request.LastName,
+            cancellationToken
+        );
+
+        if (existing is not null)
+        {
+            repository.Delete(existing.Remove());
+        }
+
         var result = await repository.AddAsync(
             new(
                 request.BookId,

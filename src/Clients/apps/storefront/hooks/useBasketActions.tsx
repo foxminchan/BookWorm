@@ -1,18 +1,40 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useCopilotAction } from "@copilotkit/react-core";
-import { Check } from "lucide-react";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
 import type { BasketItem } from "@workspace/types/basket";
 import { formatPrice } from "@workspace/utils/format";
 
-import { useBasketConfirmation } from "./useBasketConfirmation";
+import { BasketConfirmDialog } from "@/components/chat-hitl/BasketConfirmDialog";
 
+import { useChatAgentState } from "./useChatAgentState";
+
+const MAX_RETRIES = 3;
+
+/**
+ * Provides CopilotKit actions for basket management with HITL approval via
+ * `renderAndWaitForResponse`. Includes cancel-on-new-message behavior,
+ * price re-fetch at confirmation time, and up to 3 retries on network failure.
+ */
 export function useBasketActions() {
-  const { requestConfirmation, ConfirmationDialog } = useBasketConfirmation();
   const [announcement, setAnnouncement] = useState<string>("");
   const clearTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const { isAgentRunning } = useChatAgentState();
+
+  // Holds the pending respond callback from renderAndWaitForResponse.
+  // When the agent starts a new turn this ref is used to auto-dismiss.
+  const pendingRespond = useRef<
+    ((response: { approved: boolean; quantity?: number }) => void) | null
+  >(null);
+
+  // Cancel pending approval when agent starts processing a new message
+  useEffect(() => {
+    if (isAgentRunning && pendingRespond.current) {
+      pendingRespond.current({ approved: false });
+      pendingRespond.current = null;
+    }
+  }, [isAgentRunning]);
 
   const announce = useCallback((message: string) => {
     if (clearTimerRef.current) {
@@ -52,60 +74,77 @@ export function useBasketActions() {
         required: false,
       },
     ],
-    handler: async ({ bookId, quantity = 1, bookTitle, price }) => {
-      // Request user confirmation before adding to basket (Human-in-the-Loop)
-      const confirmed = await requestConfirmation(
-        bookId,
-        quantity,
-        bookTitle,
-        price,
+    renderAndWaitForResponse({ args, respond, status }) {
+      const { bookId, quantity = 1, bookTitle, price } = args;
+
+      // Store the respond callback for cancel-on-new-message
+      if (status === "inProgress" && respond) {
+        pendingRespond.current = respond;
+      }
+
+      if (status === "complete") {
+        return <></>;
+      }
+
+      return (
+        <BasketConfirmDialog
+          bookId={String(bookId ?? "")}
+          bookTitle={bookTitle != null ? String(bookTitle) : undefined}
+          unitPrice={price != null ? Number(price) : undefined}
+          initialQuantity={quantity != null ? Number(quantity) : 1}
+          onConfirm={async (confirmedQuantity) => {
+            pendingRespond.current = null;
+
+            // Re-fetch current price to detect price changes before committing
+            let effectivePrice = price != null ? Number(price) : undefined;
+            try {
+              const basketData = await basketApiClient.get();
+              const existingItem = basketData.items.find(
+                (item) => item.id === bookId,
+              );
+              if (existingItem) {
+                effectivePrice = existingItem.priceSale ?? existingItem.price;
+              }
+            } catch {
+              // Price re-fetch is best-effort; proceed with the original price
+            }
+
+            // Attempt basket update with up to MAX_RETRIES retries
+            let attempt = 0;
+            let lastError: unknown = null;
+            while (attempt < MAX_RETRIES) {
+              try {
+                await basketApiClient.update({
+                  items: [{ id: String(bookId), quantity: confirmedQuantity }],
+                });
+
+                const bookSuffix = bookTitle ? ` of ${bookTitle}` : "";
+                const message = `Added ${confirmedQuantity} ${confirmedQuantity === 1 ? "copy" : "copies"}${bookSuffix} to basket`;
+                announce(message);
+
+                respond?.({
+                  approved: true,
+                  quantity: confirmedQuantity,
+                });
+                return;
+              } catch (err) {
+                lastError = err;
+                attempt++;
+              }
+            }
+
+            // All retries exhausted
+            announce(
+              `Failed to add to basket after ${MAX_RETRIES} attempts. Please try again.`,
+            );
+            respond?.({ approved: false });
+          }}
+          onDismiss={() => {
+            pendingRespond.current = null;
+            respond?.({ approved: false });
+          }}
+        />
       );
-
-      if (!confirmed) {
-        return {
-          success: false,
-          cancelled: true,
-          message: "Action cancelled by user",
-        };
-      }
-
-      await basketApiClient.update({
-        items: [{ id: bookId, quantity }],
-      });
-
-      const bookSuffix = bookTitle ? ` of ${bookTitle}` : "";
-      const message = `Added ${quantity} ${quantity === 1 ? "copy" : "copies"}${bookSuffix} to basket`;
-      announce(message);
-
-      return {
-        success: true,
-        bookId,
-        quantity,
-        message,
-      };
-    },
-    render: ({ status, result }) => {
-      if (status === "executing") {
-        return (
-          <div className="flex items-center gap-2 rounded-lg border bg-blue-50 p-3 dark:bg-blue-950">
-            <div className="size-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-            <span className="text-sm">Adding to basket...</span>
-          </div>
-        );
-      }
-
-      if (status === "complete" && result) {
-        return (
-          <div className="rounded-lg border bg-green-50 p-3 dark:bg-green-950">
-            <div className="flex items-center gap-2">
-              <Check className="size-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium">{result.message}</span>
-            </div>
-          </div>
-        );
-      }
-
-      return <></>;
     },
   });
 
@@ -188,13 +227,12 @@ export function useBasketActions() {
     },
   });
 
-  // Live region for screen reader announcements — rendered as JSX element
-  // to avoid component identity changing and causing remounts on every render.
+  // Live region for screen reader announcements
   const liveRegion = (
     <output aria-live="polite" aria-atomic="true" className="sr-only">
       {announcement}
     </output>
   );
 
-  return { ConfirmationDialog, liveRegion };
+  return { liveRegion };
 }
