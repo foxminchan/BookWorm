@@ -4,6 +4,7 @@ using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Chat.Agents.Basket;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.LanguageTranslation;
@@ -94,6 +95,7 @@ internal static class Extensions
 
             // Register each agent as a self-contained vertical slice
             builder.AddBookAgent();
+            builder.AddBasketAgent();
             builder.AddLanguageAgent();
             builder.AddSentimentAgent();
             builder.AddSummarizeAgent();

@@ -1,4 +1,5 @@
 using AgentGovernance;
+using BookWorm.Chat.Agents.Basket;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.LanguageTranslation;
@@ -41,6 +42,9 @@ internal static class WorkflowRegistration
                             SummarizeAgentDefinition.Name
                         );
                         var qaAgent = sp.GetRequiredKeyedService<AIAgent>(QAAgentDefinition.Name);
+                        var basketAgent = sp.GetRequiredKeyedService<AIAgent>(
+                            BasketAgentDefinition.Name
+                        );
 
                         // Build handoff workflow for dynamic agent routing
                         // RouterAgent analyzes requests and delegates to specialized agents
@@ -48,7 +52,7 @@ internal static class WorkflowRegistration
                             .CreateHandoffBuilderWith(routerAgent)
                             .WithHandoffs(
                                 routerAgent,
-                                [languageAgent, summarizeAgent, sentimentAgent, bookAgent]
+                                [languageAgent, summarizeAgent, sentimentAgent, bookAgent, basketAgent]
                             )
                             // Define handoff paths for agent collaboration
                             .WithHandoff(
@@ -64,8 +68,23 @@ internal static class WorkflowRegistration
                             .WithHandoffs(sentimentAgent, [bookAgent, routerAgent])
                             .WithHandoff(
                                 bookAgent,
+                                basketAgent,
+                                "Transfer to this agent when the user expresses intent to buy a book or asks to add an item to their basket."
+                            )
+                            .WithHandoff(
+                                bookAgent,
                                 routerAgent,
                                 "Transfer back to RouterAgent for any follow-up handling."
+                            )
+                            .WithHandoff(
+                                basketAgent,
+                                bookAgent,
+                                "Transfer to this agent when the user asks for more book details, search, or recommendations."
+                            )
+                            .WithHandoff(
+                                basketAgent,
+                                routerAgent,
+                                "Transfer back to RouterAgent after the basket interaction completes or when the topic shifts away from purchasing."
                             )
                             .Build();
 

@@ -1,4 +1,4 @@
-namespace BookWorm.Chat.Agents.BookSearch;
+﻿namespace BookWorm.Chat.Agents.BookSearch;
 
 internal static class BookAgentDefinition
 {
@@ -22,6 +22,8 @@ internal static class BookAgentDefinition
         - Ask questions to understand user preferences for better recommendations
         - Be friendly and knowledgeable
         - Provide accurate information from search results only
+        - When the user expresses purchase intent ("I want to buy this", "add to cart",
+          etc.), hand off to BasketAgent — do not attempt to modify the basket yourself
         - Complete tasks before handing off to RouterAgent for topic changes
 
         Help users discover their next great read!

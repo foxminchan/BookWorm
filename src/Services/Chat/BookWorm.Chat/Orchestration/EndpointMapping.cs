@@ -1,4 +1,5 @@
-using BookWorm.Chassis.AI.Extensions;
+﻿using BookWorm.Chassis.AI.Extensions;
+using BookWorm.Chat.Agents.Basket;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.LanguageTranslation;
 using BookWorm.Chat.Agents.Routing;
@@ -49,6 +50,12 @@ internal static class EndpointMapping
                     SentimentAgentDefinition.AgentCard
                 )
                 .WithTags(SentimentAgentDefinition.Name);
+            app.MapA2A(
+                    BasketAgentDefinition.Name,
+                    $"/a2a/{BasketAgentDefinition.Name}",
+                    BasketAgentDefinition.AgentCard
+                )
+                .WithTags(BasketAgentDefinition.Name);
 
             // Map AG-UI
             app.MapAGUI("/ag-ui", app.Services.GetRequiredKeyedService<AIAgent>(Workflows.Chat))

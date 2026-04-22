@@ -13,14 +13,23 @@ name: "bookworm-chat-agents-governance"
 description: >
   Per-agent governance policy for the BookWorm Chat service.
   BookAgent is permitted to invoke catalog tools for book search
-  and retrieval. All other agents (Router, Language, Summarize,
-  Sentiment, QA) are denied tool calls. Includes conversation
-  guardian thresholds for detecting escalating rhetoric and
-  offensive content in agent-to-agent communication.
+  and retrieval. BasketAgent is permitted to invoke the
+  storefront's AG-UI client-side basket actions (addToBasket,
+  viewBasket) which are subject to a Human-in-the-Loop (HITL)
+  confirmation dialog on the client. All other agents (Router,
+  Language, Summarize, Sentiment, QA) are denied tool calls.
+  Includes conversation guardian thresholds for detecting
+  escalating rhetoric and offensive content in agent-to-agent
+  communication.
 default_action: deny
 rules:
   - name: book-agent-catalog-tools
     condition: "agent_id == 'book-agent' and tool_name in allowed_tools"
+    action: allow
+    priority: 60
+
+  - name: basket-agent-client-tools
+    condition: "agent_id == 'basket-agent' and tool_name in ['addToBasket', 'viewBasket']"
     action: allow
     priority: 60
 
