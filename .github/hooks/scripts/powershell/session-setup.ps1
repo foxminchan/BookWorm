@@ -3,7 +3,8 @@
 $ErrorActionPreference = 'Stop'
 
 $RawInput = [Console]::In.ReadToEnd()
-$Data = $RawInput | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($RawInput)) { exit 0 }
+try { $Data = $RawInput | ConvertFrom-Json } catch { exit 0 }
 $Source = $Data.source
 $Cwd = $Data.cwd
 $Timestamp = $Data.timestamp
@@ -25,7 +26,8 @@ if (Get-Command dotnet -ErrorAction SilentlyContinue) {
     $SdkVersion = & dotnet --version 2>$null
     if (-not $SdkVersion) { $SdkVersion = 'unknown' }
     Add-Content -Path $SessionLog -Value "  .NET SDK: $SdkVersion"
-} else {
+}
+else {
     Add-Content -Path $SessionLog -Value "  WARNING: dotnet SDK not found"
 }
 
@@ -33,7 +35,8 @@ if (Get-Command dotnet -ErrorAction SilentlyContinue) {
 $ToolList = & dotnet tool list 2>$null
 if ($ToolList -match 'csharpier') {
     Add-Content -Path $SessionLog -Value "  CSharpier: installed"
-} else {
+}
+else {
     Add-Content -Path $SessionLog -Value "  WARNING: CSharpier not found - run 'dotnet tool restore'"
 }
 
@@ -41,7 +44,8 @@ if ($ToolList -match 'csharpier') {
 $ArtifactsDir = Join-Path $Cwd 'artifacts'
 if (Test-Path $ArtifactsDir) {
     Add-Content -Path $SessionLog -Value "  Build artifacts: present"
-} else {
+}
+else {
     Add-Content -Path $SessionLog -Value "  Build artifacts: not found (initial build may be required)"
 }
 

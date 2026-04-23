@@ -3,9 +3,9 @@
 $ErrorActionPreference = 'Stop'
 
 $RawInput = [Console]::In.ReadToEnd()
-$Data = $RawInput | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($RawInput)) { exit 0 }
+try { $Data = $RawInput | ConvertFrom-Json } catch { exit 0 }
 $Reason = $Data.reason
-$Timestamp = $Data.timestamp
 $Cwd = $Data.cwd
 
 $LogDir = Join-Path $Cwd '.github/hooks/logs'
@@ -26,10 +26,12 @@ try {
         Add-Content -Path $SessionLog -Value "  Running 'just format'..."
         $FormatOutput = & just format 2>&1 | Out-String
         Add-Content -Path $SessionLog -Value $FormatOutput
-    } else {
+    }
+    else {
         Add-Content -Path $SessionLog -Value "  WARNING: 'just' not found - skipping format"
     }
-} catch {
+}
+catch {
     Add-Content -Path $SessionLog -Value "  WARNING: 'just format' failed: $_"
 }
 

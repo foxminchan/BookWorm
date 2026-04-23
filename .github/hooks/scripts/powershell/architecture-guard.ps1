@@ -3,7 +3,8 @@
 $ErrorActionPreference = 'Stop'
 
 $RawInput = [Console]::In.ReadToEnd()
-$Data = $RawInput | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($RawInput)) { exit 0 }
+try { $Data = $RawInput | ConvertFrom-Json } catch { exit 0 }
 $ToolName = $Data.toolName
 $ToolArgs = $Data.toolArgs
 
@@ -14,9 +15,9 @@ if ($ToolName -ne 'edit' -and $ToolName -ne 'create') {
 
 $FilePath = if ($ToolArgs.path) { $ToolArgs.path } elseif ($ToolArgs.filePath) { $ToolArgs.filePath } else { '' }
 $Content = if ($ToolArgs.content) { $ToolArgs.content }
-           elseif ($ToolArgs.newText) { $ToolArgs.newText }
-           elseif ($ToolArgs.new_string) { $ToolArgs.new_string }
-           else { '' }
+elseif ($ToolArgs.newText) { $ToolArgs.newText }
+elseif ($ToolArgs.new_string) { $ToolArgs.new_string }
+else { '' }
 
 # Service names in the project
 $Services = @('Catalog', 'Basket', 'Ordering', 'Rating', 'Chat', 'Finance', 'Notification', 'Scheduler', 'McpTools')

@@ -3,7 +3,8 @@
 $ErrorActionPreference = 'Stop'
 
 $RawInput = [Console]::In.ReadToEnd()
-$Data = $RawInput | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($RawInput)) { exit 0 }
+try { $Data = $RawInput | ConvertFrom-Json } catch { exit 0 }
 $ToolName = $Data.toolName
 $ToolArgs = $Data.toolArgs
 

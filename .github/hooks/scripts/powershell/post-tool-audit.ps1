@@ -3,7 +3,8 @@
 $ErrorActionPreference = 'Stop'
 
 $RawInput = [Console]::In.ReadToEnd()
-$Data = $RawInput | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($RawInput)) { exit 0 }
+try { $Data = $RawInput | ConvertFrom-Json } catch { exit 0 }
 $ToolName = $Data.toolName
 $ResultType = $Data.toolResult.resultType
 $Timestamp = $Data.timestamp
@@ -30,7 +31,8 @@ function Write-LogLine {
                 [System.Text.Encoding]::UTF8
             )
             return
-        } catch {
+        }
+        catch {
             if ($attempt -eq $maxAttempts) { throw }
             Start-Sleep -Milliseconds (25 * $attempt)
         }
@@ -52,7 +54,8 @@ if ($ResultType -eq 'failure') {
     $FailureLog = Join-Path $LogDir 'failures.log'
     $ResultText = if ($Data.toolResult.textResultForLlm) {
         $Data.toolResult.textResultForLlm.Substring(0, [Math]::Min(500, $Data.toolResult.textResultForLlm.Length))
-    } else { 'no details' }
+    }
+    else { 'no details' }
     Write-LogLine -Path $FailureLog -Line "$($Now): FAILURE [$ToolName] $ResultText"
 }
 

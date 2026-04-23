@@ -3,7 +3,8 @@
 $ErrorActionPreference = 'Stop'
 
 $RawInput = [Console]::In.ReadToEnd()
-$Data = $RawInput | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($RawInput)) { exit 0 }
+try { $Data = $RawInput | ConvertFrom-Json } catch { exit 0 }
 $ToolName = $Data.toolName
 $ToolArgs = $Data.toolArgs
 
@@ -47,9 +48,9 @@ if ($ToolName -eq 'bash') {
 # Check file edits/creates for embedded secrets
 if ($ToolName -eq 'edit' -or $ToolName -eq 'create') {
     $Content = if ($ToolArgs.content) { $ToolArgs.content }
-               elseif ($ToolArgs.newText) { $ToolArgs.newText }
-               elseif ($ToolArgs.new_string) { $ToolArgs.new_string }
-               else { '' }
+    elseif ($ToolArgs.newText) { $ToolArgs.newText }
+    elseif ($ToolArgs.new_string) { $ToolArgs.new_string }
+    else { '' }
     Test-ForSecrets -Content $Content -Context 'file content'
 }
 
