@@ -2,26 +2,53 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are currently being supported with security updates.
+Only the latest release series receives security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.0.x   | :white_check_mark: |
 | < 1.0   | :x:                |
 
+## Scope
+
+The following are considered in scope for security reports:
+
+- Authentication and authorization bypasses (Keycloak integration)
+- Injection vulnerabilities (SQL, command, prompt injection)
+- Sensitive data exposure or PII leakage
+- Insecure deserialization or message-bus exploits
+- Supply-chain vulnerabilities in first-party code
+
+The following are **out of scope**:
+
+- Vulnerabilities in third-party dependencies that are already publicly known — please report those upstream
+- Issues in infrastructure you manage yourself (your own Kafka cluster, PostgreSQL instance, etc.)
+- Theoretical vulnerabilities without a working proof-of-concept
+
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+**Do not disclose security vulnerabilities publicly as GitHub issues.**
 
-Tell them where to go, how often they can expect to get an update on a reported vulnerability, what to expect if the vulnerability is accepted or declined, etc.
+Preferred method — use [GitHub Private Vulnerability Reporting](https://github.com/foxminchan/BookWorm/security/advisories/new). This keeps the report private and creates a shared draft advisory between you and the maintainer.
 
-If you believe you have found a security vulnerability in this project, please follow these steps:
+Alternatively, email [nguyenxuannhan407@gmail.com](mailto:nguyenxuannhan407@gmail.com) with:
 
-1. **Do not disclose the vulnerability publicly**
-2. Email me at [nguyenxuannhan407@gmail.com](mailto:nguyenxuannhan407@gmail.com) with details about the vulnerability
-3. Include steps to reproduce, impact, and any potential remediation ideas you may have
-4. Allow time for me to review and address the vulnerability before any public disclosure
+1. A clear description of the vulnerability and its impact
+2. Step-by-step reproduction instructions
+3. Affected component(s) and version(s)
+4. Any potential remediation ideas you may have
+
+### What to Expect
+
+| Stage                          | Timeline                                                                |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| Initial acknowledgment         | Within 48 hours                                                         |
+| Triage and severity assessment | Within 5 business days                                                  |
+| Resolution or mitigation plan  | Varies by severity (critical: best-effort ASAP)                         |
+| Public disclosure              | After a fix is released, or 90 days from report — whichever comes first |
+
+We will keep you informed at each stage. If you do not receive acknowledgment within 48 hours, please follow up by email.
 
 ## Security Updates and Announcements
 
-Security updates and announcements will be released on our GitHub repository and may also be available through other channels such as our project website or mailing list.
+Security fixes are shipped as patch releases and documented in the [GitHub Release Notes](https://github.com/foxminchan/BookWorm/releases). For critical vulnerabilities, a GitHub Security Advisory will be published at the time of disclosure.

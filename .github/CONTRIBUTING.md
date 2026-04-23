@@ -372,7 +372,8 @@ We're here to help! If you have questions or need assistance:
 - 📖 **Documentation**: Start with [AGENTS.md](../AGENTS.md) and the [project README](../README.md)
 - 🐛 **Bug Reports**: [Create a bug report](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml)
 - 💡 **Feature Requests**: [Submit a feature request](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml)
-- 👥 **Maintainers**: Reach out via GitHub issues
+- � **Security Vulnerabilities**: Do **not** open a public issue — follow the process in [SECURITY.md](./SECURITY.md)
+- �👥 **Maintainers**: Reach out via GitHub issues
 
 ### Response Times
 
