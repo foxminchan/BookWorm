@@ -1,4 +1,3 @@
-using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chat.Extensions;
 using BookWorm.Chat.Orchestration;
@@ -43,6 +42,8 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
 
-app.UseDevUI();
+app.MapOpenAIResponses();
+
+app.MapOpenAIConversations();
 
 app.Run();

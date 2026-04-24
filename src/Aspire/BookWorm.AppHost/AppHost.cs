@@ -137,7 +137,7 @@ var chatApi = builder
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
     .WithContainerRegistry(registry)
-    .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
+    .WithFriendlyUrls();
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
@@ -156,7 +156,7 @@ var ratingApi = builder
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
     .WithContainerRegistry(registry)
-    .WithFriendlyUrls("Dev UI", path: Http.Endpoints.DevUIEndpointPath);
+    .WithFriendlyUrls();
 
 mcp.WithReference(ratingApi);
 
@@ -245,6 +245,24 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(orderingApi);
 
     builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
+
+    builder
+        .AddDevUI(Components.DevUI)
+        .WithAgentService(
+            chatApi,
+            [
+                new(Agents.QAAgent),
+                new(Agents.RouterAgent),
+                new(Agents.LanguageAgent),
+                new(Agents.SummarizeAgent),
+                new(Agents.SentimentAgent),
+                new(Agents.BookAgent),
+                new(Workflows.Chat),
+            ]
+        )
+        .WithAgentService(ratingApi, [new(Agents.RatingAgent), new(Workflows.RatingSummarizer)])
+        .WaitFor(chatApi)
+        .WaitFor(ratingApi);
 
     builder.AddK6(gateway);
 }

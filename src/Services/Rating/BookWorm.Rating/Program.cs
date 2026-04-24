@@ -1,4 +1,3 @@
-using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Constants.Core;
 using BookWorm.Rating.Extensions;
@@ -43,6 +42,8 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
 
-app.UseDevUI();
+app.MapOpenAIResponses();
+
+app.MapOpenAIConversations();
 
 app.Run();
