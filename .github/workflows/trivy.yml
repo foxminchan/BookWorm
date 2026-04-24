@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: "."
@@ -80,7 +80,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run Trivy misconfiguration scanner
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: config
           scan-ref: "."
@@ -172,7 +172,7 @@ jobs:
           echo "image_ref=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}@${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Run Trivy scanner
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: image
           image-ref: ${{ steps.image-digest.outputs.image_ref }}
@@ -193,7 +193,7 @@ jobs:
           category: trivy-container-scan-${{ matrix.image }}
 
       - name: Generate CycloneDX SBOM
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: image
           image-ref: ${{ steps.image-digest.outputs.image_ref }}
@@ -233,7 +233,7 @@ jobs:
           fetch-depth: 1
 
       - name: Generate CycloneDX SBOM for attestation
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: "."
@@ -241,7 +241,7 @@ jobs:
           output: sbom.cyclonedx.json
 
       - name: Submit dependency snapshot to GitHub Dependency Graph
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: "."
