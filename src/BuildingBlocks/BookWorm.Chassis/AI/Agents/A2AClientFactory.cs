@@ -15,18 +15,25 @@ public static class A2AClientFactory
     ///     The client ID for authentication. Required if the agent has authentication enabled;
     ///     otherwise, <c>null</c>.
     /// </param>
+    /// <param name="scope">
+    ///     The OAuth2 scope(s) to request when exchanging the caller token. Required together with
+    ///     <paramref name="agentClientId" /> when the target agent requires authentication; otherwise,
+    ///     <c>null</c>. Multiple scopes can be space-separated.
+    /// </param>
     /// <param name="path">The path to the A2A endpoint. Defaults to <c>"a2a"</c>.</param>
     /// <returns>An <see cref="AIAgent" /> instance configured to communicate with the specified agent.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the service endpoint cannot be found.</exception>
     /// <remarks>
     ///     This method performs service discovery to locate the agent endpoint and establishes an A2A connection.
-    ///     The <paramref name="agentClientId" /> parameter must be provided if the target agent requires authentication.
+    ///     The <paramref name="agentClientId" /> and <paramref name="scope" /> parameters must both be provided
+    ///     if the target agent requires authentication.
     /// </remarks>
     public static AIAgent CreateA2AAgentClient(
         IServiceProvider serviceProvider,
         string serviceName,
         string agentName,
         string? agentClientId = null,
+        string? scope = null,
         string? path = "a2a"
     )
     {
@@ -34,7 +41,7 @@ public static class A2AClientFactory
 
         var agentClient = new A2AAgentClient(new(baseAddress), path);
 
-        var agent = agentClient.GetAIAgent(serviceProvider, agentName, agentClientId);
+        var agent = agentClient.GetAIAgent(serviceProvider, agentName, agentClientId, scope);
 
         return agent.GetAwaiter().GetResult();
     }

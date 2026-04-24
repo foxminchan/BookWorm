@@ -8,34 +8,36 @@ internal static class LanguageAgentRegistration
 {
     public static void AddLanguageAgent(this IHostApplicationBuilder builder)
     {
-        builder.AddAIAgent(
-            LanguageAgentDefinition.Name,
-            (sp, key) =>
-            {
-                var chatClient = sp.GetRequiredService<IChatClient>()
-                    .AsBuilder()
-                    .UsePIIMiddleware(sp)
-                    .UseGuardrailMiddleware()
-                    .UseGovernanceToolCall(sp, LanguageAgentDefinition.Name)
-                    .Build(sp);
+        builder
+            .AddAIAgent(
+                LanguageAgentDefinition.Name,
+                (sp, key) =>
+                {
+                    var chatClient = sp.GetRequiredService<IChatClient>()
+                        .AsBuilder()
+                        .UsePIIMiddleware(sp)
+                        .UseGuardrailMiddleware()
+                        .UseGovernanceToolCall(sp, LanguageAgentDefinition.Name)
+                        .Build(sp);
 
-                var agent = new ChatClientAgent(
-                    chatClient,
-                    options: new()
-                    {
-                        Name = key,
-                        Description = LanguageAgentDefinition.Description,
-                        ChatOptions = new()
+                    var agent = new ChatClientAgent(
+                        chatClient,
+                        options: new()
                         {
-                            Instructions = LanguageAgentDefinition.Instructions,
-                            Temperature = 0.3f,
-                            MaxOutputTokens = 500,
-                        },
-                    }
-                );
+                            Name = key,
+                            Description = LanguageAgentDefinition.Description,
+                            ChatOptions = new()
+                            {
+                                Instructions = LanguageAgentDefinition.Instructions,
+                                Temperature = 0.3f,
+                                MaxOutputTokens = 500,
+                            },
+                        }
+                    );
 
-                return agent;
-            }
-        );
+                    return agent;
+                }
+            )
+            .AddA2AServer();
     }
 }

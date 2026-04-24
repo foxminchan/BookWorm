@@ -8,34 +8,36 @@ internal static class SummarizeAgentRegistration
 {
     public static void AddSummarizeAgent(this IHostApplicationBuilder builder)
     {
-        builder.AddAIAgent(
-            SummarizeAgentDefinition.Name,
-            (sp, key) =>
-            {
-                var chatClient = sp.GetRequiredService<IChatClient>()
-                    .AsBuilder()
-                    .UsePIIMiddleware(sp)
-                    .UseGuardrailMiddleware()
-                    .UseGovernanceToolCall(sp, SummarizeAgentDefinition.Name)
-                    .Build(sp);
+        builder
+            .AddAIAgent(
+                SummarizeAgentDefinition.Name,
+                (sp, key) =>
+                {
+                    var chatClient = sp.GetRequiredService<IChatClient>()
+                        .AsBuilder()
+                        .UsePIIMiddleware(sp)
+                        .UseGuardrailMiddleware()
+                        .UseGovernanceToolCall(sp, SummarizeAgentDefinition.Name)
+                        .Build(sp);
 
-                var agent = new ChatClientAgent(
-                    chatClient,
-                    options: new()
-                    {
-                        Name = key,
-                        Description = SummarizeAgentDefinition.Description,
-                        ChatOptions = new()
+                    var agent = new ChatClientAgent(
+                        chatClient,
+                        options: new()
                         {
-                            Instructions = SummarizeAgentDefinition.Instructions,
-                            Temperature = 0.4f,
-                            MaxOutputTokens = 800,
-                        },
-                    }
-                );
+                            Name = key,
+                            Description = SummarizeAgentDefinition.Description,
+                            ChatOptions = new()
+                            {
+                                Instructions = SummarizeAgentDefinition.Instructions,
+                                Temperature = 0.4f,
+                                MaxOutputTokens = 800,
+                            },
+                        }
+                    );
 
-                return agent;
-            }
-        );
+                    return agent;
+                }
+            )
+            .AddA2AServer();
     }
 }
