@@ -16,13 +16,11 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
         string? scope
     )
     {
-        var (resolver, httpClient) = ResolveClient(agentName);
+        var (card, httpClient) = ResolveClient(agentName);
 
         await HandleAuthenticationAsync(agentClientId, scope, httpClient, serviceProvider);
 
-        var agent = await resolver.GetAIAgentAsync(httpClient);
-
-        return agent;
+        return card.AsAIAgent(httpClient);
     }
 
     private static async Task HandleAuthenticationAsync(
@@ -48,7 +46,7 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
         );
     }
 
-    private (A2ACardResolver, HttpClient) ResolveClient(string agentName)
+    private (AgentCard, HttpClient) ResolveClient(string agentName)
     {
         var httpClient = new HttpClient
         {
@@ -56,12 +54,21 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
             Timeout = TimeSpan.FromMinutes(2),
         };
 
-        var resolver = new A2ACardResolver(
-            httpClient.BaseAddress,
-            httpClient,
-            $"/{path?.TrimStart('/')}/{agentName}/card"
-        );
+        var endpointUrl = new Uri(httpClient.BaseAddress!, $"/{path?.TrimStart('/')}/{agentName}");
 
-        return (resolver, httpClient);
+        var card = new AgentCard
+        {
+            Name = agentName,
+            SupportedInterfaces =
+            [
+                new()
+                {
+                    Url = endpointUrl.ToString(),
+                    ProtocolBinding = ProtocolBindingNames.JsonRpc,
+                },
+            ],
+        };
+
+        return (card, httpClient);
     }
 }

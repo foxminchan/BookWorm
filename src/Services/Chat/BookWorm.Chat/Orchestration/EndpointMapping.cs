@@ -36,7 +36,7 @@ internal static class EndpointMapping
             }
 
             // Map AG-UI endpoint for interactive agents (e.g. RouterAgent)
-            app.MapAGUI("/ag-ui", Workflows.Chat)
+            app.MapAGUI(Workflows.Chat, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
                 .WithTags(nameof(Chat));
 
