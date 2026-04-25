@@ -66,16 +66,11 @@ runs:
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN']);
           core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
 
-    - name: Setup Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-      with:
-        node-version: "24"
-
     - name: Start AIMock server
       uses: CopilotKit/aimock@068304006d8ef603ca18ac3465cd8796b84c912f # v1.15.1
       id: aimock
       with:
-        config: tests/BookWorm.AI.Evaluation/aimock.json
+        fixtures: tests/BookWorm.AI.Evaluation/fixtures.json
 
     - name: Test
       shell: bash
@@ -85,6 +80,7 @@ runs:
         TEST_SESSION_TIMEOUT: ${{ inputs.testSessionTimeout }}
         NO_BUILD: ${{ inputs.no-build }}
         OPENAI_BASE_URL: ${{ steps.aimock.outputs.url }}/v1
+        OPENAI_API_KEY: test
       run: >
         dotnet test
         --configuration Release

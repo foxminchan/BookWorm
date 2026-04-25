@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
@@ -8,7 +8,7 @@
     <PackageReference Include="Shouldly" />
     <PackageReference Include="Aspire.Azure.AI.OpenAI" />
     <PackageReference Include="Microsoft.Extensions.AI.Evaluation.Quality" />
-    <PackageReference Include="Microsoft.Extensions.AI.Evaluation.Reporting.Azure" />
+    <PackageReference Include="Microsoft.Extensions.AI.Evaluation.Reporting" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />

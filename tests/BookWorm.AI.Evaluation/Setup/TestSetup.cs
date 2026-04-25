@@ -18,7 +18,7 @@ internal static class TestSetup
         }
 
         var openAiClientOptions = EnvironmentVariables.OpenAIBaseUrl is { } baseUrl
-            ? new OpenAIClientOptions { Endpoint = new Uri(baseUrl) }
+            ? new OpenAIClientOptions { Endpoint = new(baseUrl) }
             : null;
 
         var openAiClient = openAiClientOptions is not null
