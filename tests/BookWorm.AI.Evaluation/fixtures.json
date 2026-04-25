@@ -1,0 +1,86 @@
+{
+  "fixtures": [
+    {
+      "comment": "Catch-all for Microsoft.Extensions.AI.Evaluation.Quality evaluator judge calls — all end with '# Output'",
+      "match": { "userMessage": "# Output" },
+      "response": {
+        "content": "<S0>Let's think step by step: The response directly and accurately addresses the query, demonstrating strong relevance, coherence, and completeness within the bookstore domain.</S0><S1>The response is high quality and meets all evaluation criteria.</S1><S2>5</S2>"
+      }
+    },
+    {
+      "comment": "Custom DomainRelevanceEvaluator — expects a plain integer 1-5",
+      "match": { "userMessage": "Domain relevance score (1-5):" },
+      "response": { "content": "5" }
+    },
+    {
+      "comment": "Test: GivenSciFiQuery_WhenSearchingBooks_ThenReturnsRelevantResults",
+      "match": { "userMessage": "Isaac Asimov" },
+      "response": {
+        "content": "Isaac Asimov is one of science fiction's greatest authors! Some of his most celebrated works available in our catalog include the Foundation series, which begins with 'Foundation,' and the Robot series, starting with 'I, Robot.' We also carry 'The End of Eternity' and 'The Gods Themselves.' I'd recommend starting with 'Foundation' if you enjoy epic world-building, or 'I, Robot' for thought-provoking short stories. Would you like to add any of these to your cart?"
+      }
+    },
+    {
+      "comment": "Test: GivenFantasyPreference_WhenRecommendingBooks_ThenResponseIsGroundedInCatalog",
+      "match": { "userMessage": "Lord of the Rings" },
+      "response": {
+        "content": "If you loved The Lord of the Rings, you have wonderful taste in epic fantasy! Here are some titles from our catalog you'd likely enjoy: 'The Name of the Wind' by Patrick Rothfuss ($14.99) offers a rich magic system and compelling storytelling, 'A Game of Thrones' by George R.R. Martin ($16.99) delivers epic political intrigue and battles, 'The Way of Kings' by Brandon Sanderson ($18.99) features stunning world-building, and 'The Wheel of Time: Eye of the World' by Robert Jordan ($15.99) is another epic journey. We also have 'The Hobbit' by Tolkien himself ($12.99). All items are in stock with standard and express shipping available."
+      }
+    },
+    {
+      "comment": "Test: GivenReturnPolicyQuestion_WhenResponding_ThenReturnsAccurateDetails",
+      "match": { "userMessage": "return policy" },
+      "response": {
+        "content": "Our return policy allows returns within 30 days of delivery for unused items in their original condition. To initiate a return, visit your account portal or contact our support team — we'll provide a prepaid return shipping label. Refunds are processed within 5-7 business days after we receive the returned item. Please note that digital downloads, gift cards, and personalized items are non-refundable. Physical books in resalable condition (no markings, intact spine) qualify for return within the 30-day window. If your book arrived damaged, please report it within 7 days for an immediate replacement or full refund."
+      }
+    },
+    {
+      "comment": "Test: GivenShippingInquiry_WhenResponding_ThenReturnsAccurateInfo",
+      "match": { "userMessage": "shipping options" },
+      "response": {
+        "content": "We offer three shipping options to suit your needs: Standard shipping (5-7 business days) is free on orders over $35, Express shipping (2-3 business days) is $7.99, and Overnight shipping (next business day) is $19.99. For international orders, delivery takes 10-21 business days with rates varying by destination. Orders placed before 2 PM EST ship the same day. You'll receive a tracking number by email within 24 hours of dispatch. Is there anything else I can help you with?"
+      }
+    },
+    {
+      "comment": "Test: GivenLoyaltyProgramQuestion_WhenResponding_ThenReturnsAccurateDetails",
+      "match": { "userMessage": "BookPoints" },
+      "response": {
+        "content": "The BookPoints loyalty program is simple and rewarding! You earn 1 point for every $1 you spend. Once you reach 100 points, you can redeem them for $1 off any order. Points do expire after 12 months of account inactivity, so we recommend making at least one purchase per year to keep them active. Points are non-transferable, but you can convert your balance into a gift card to share with friends or family. Gift cards and discount codes can be combined at checkout for maximum savings. Is there anything else about the program I can clarify?"
+      }
+    },
+    {
+      "comment": "Test: GivenFrustratedCustomer_WhenResponding_ThenShowsEmpathy",
+      "match": { "userMessage": "two weeks ago and it still hasn't arrived" },
+      "response": {
+        "content": "I'm truly sorry to hear about this — a two-week wait with no delivery is absolutely not the experience we want for you, and your frustration is completely understandable. I sincerely apologize on behalf of the entire BookWorm team. Please share your order number and I'll investigate this immediately. We'll either expedite your shipment right away or process a full refund — whichever you prefer. Your satisfaction is our highest priority, and we want to make this right for you."
+      }
+    },
+    {
+      "comment": "Test: GivenAmbiguousRequest_WhenRouting_ThenClarifiesAndAssists",
+      "match": { "userMessage": "I need help with my order" },
+      "response": {
+        "content": "Of course, I'd be happy to help with your order! To make sure I assist you in the best way possible, could you share a bit more detail? For example: Are you checking on a delivery status, looking to modify or cancel an order, dealing with a return or refund, or something else? Any additional information — like your order number — will help me assist you quickly."
+      }
+    },
+    {
+      "comment": "Test: GivenNonEnglishInput_WhenProcessing_ThenHandlesGracefully",
+      "match": { "userMessage": "Tôi muốn" },
+      "response": {
+        "content": "Chào bạn! Tôi hiểu bạn đang tìm sách về lập trình Python dành cho người mới bắt đầu. Chúng tôi có một số lựa chọn tuyệt vời: 'Python Crash Course' của Eric Matthes rất dễ tiếp cận, 'Automate the Boring Stuff with Python' của Al Sweigart thực tế và thú vị, và 'Learning Python' của Mark Lutz rất toàn diện. Tất cả đều có sẵn và giao hàng quốc tế. Bạn có muốn biết thêm về giá hoặc cách đặt hàng không?"
+      }
+    },
+    {
+      "comment": "Test: GivenOffTopicRequest_WhenRouting_ThenPolitelyDeclines",
+      "match": { "userMessage": "book a flight to Paris" },
+      "response": {
+        "content": "I appreciate you reaching out! Flight bookings are outside my area of expertise — I'm BookWorm's bookstore assistant, so I specialize in helping you find great books and manage your orders. That said, if you're planning a trip to Paris, I'd love to recommend some wonderful books about the city, French literature, or travel guides. Is there anything book-related I can help you with today?"
+      }
+    },
+    {
+      "comment": "Test: GivenVerboseMessage_WhenProcessing_ThenHandlesLongInput",
+      "match": { "userMessage": "rare first editions" },
+      "response": {
+        "content": "Thank you for being such a loyal customer — we truly appreciate your continued support! Let me address each of your requests: For rare first editions of Dickens and Austen, we do occasionally carry them in our rare and collectible section; I recommend reaching out to our specialist team for availability. For modern literary fiction similar to 'The Goldfinch' and 'A Little Life,' great picks include 'The Secret History' by Donna Tartt, 'Normal People' by Sally Rooney, and 'Pachinko' by Min Jin Lee. For your book club, we offer a 15% group discount on orders of 10 or more copies of the same title, plus free standard shipping. Would you like me to check current availability or set up a group order?"
+      }
+    }
+  ]
+}

@@ -66,6 +66,12 @@ runs:
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN']);
           core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
 
+    - name: Start AIMock server
+      uses: CopilotKit/aimock@068304006d8ef603ca18ac3465cd8796b84c912f # v1.15.1
+      id: aimock
+      with:
+        config: tests/BookWorm.AI.Evaluation/aimock.json
+
     - name: Test
       shell: bash
       if: success()
@@ -73,6 +79,7 @@ runs:
         TEST_HANG_TIMEOUT: ${{ inputs.testHangTimeout }}
         TEST_SESSION_TIMEOUT: ${{ inputs.testSessionTimeout }}
         NO_BUILD: ${{ inputs.no-build }}
+        OPENAI_BASE_URL: ${{ steps.aimock.outputs.url }}/v1
       run: >
         dotnet test
         --configuration Release

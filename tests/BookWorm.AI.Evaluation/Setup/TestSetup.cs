@@ -17,9 +17,13 @@ internal static class TestSetup
             return s_chatConfiguration;
         }
 
-        var openAiClient = new OpenAIClient(
-            new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey)
-        );
+        var openAiClientOptions = EnvironmentVariables.OpenAIBaseUrl is { } baseUrl
+            ? new OpenAIClientOptions { Endpoint = new Uri(baseUrl) }
+            : null;
+
+        var openAiClient = openAiClientOptions is not null
+            ? new OpenAIClient(new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey), openAiClientOptions)
+            : new OpenAIClient(new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey));
 
         var chatClient = openAiClient
             .GetChatClient(Components.OpenAI.OpenAIGpt4oMini)
