@@ -63,6 +63,8 @@ jobs:
         with:
           sarif_file: trivy-fs-results.sarif
           category: trivy-vulnerability-scan
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
 
   misconfig-scan:
     name: Misconfiguration Scan
@@ -94,6 +96,8 @@ jobs:
         with:
           sarif_file: trivy-config-results.sarif
           category: trivy-misconfig-scan
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
 
   container-scan-setup:
     name: Resolve Container Images
@@ -191,6 +195,8 @@ jobs:
         with:
           sarif_file: trivy-image-results.sarif
           category: trivy-container-scan-${{ matrix.image }}
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
 
       - name: Generate CycloneDX SBOM
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0

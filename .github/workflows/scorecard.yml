@@ -53,3 +53,5 @@ jobs:
         with:
           sarif_file: results.sarif
           category: openssf-scorecard
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}

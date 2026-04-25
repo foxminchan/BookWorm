@@ -24,10 +24,4 @@
   <Property Name="sonar.javascript.lcov.reportPaths">
     src/Clients/apps/storefront/coverage/lcov.info,src/Clients/apps/backoffice/coverage/lcov.info
   </Property>
-  <Property Name="sonar.sarifReportPaths">
-    results.sarif
-  </Property>
-  <Property Name="sonar.architecture.configpath">
-    ./.sonarlint/architecture.json
-  </Property>
 </SonarQubeAnalysisProperties>
