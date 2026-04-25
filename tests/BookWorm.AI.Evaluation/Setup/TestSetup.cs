@@ -22,7 +22,10 @@ internal static class TestSetup
             : null;
 
         var openAiClient = openAiClientOptions is not null
-            ? new OpenAIClient(new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey), openAiClientOptions)
+            ? new OpenAIClient(
+                new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey),
+                openAiClientOptions
+            )
             : new OpenAIClient(new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey));
 
         var chatClient = openAiClient
