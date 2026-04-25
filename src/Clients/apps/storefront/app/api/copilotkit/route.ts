@@ -47,7 +47,7 @@ const getRuntime = async () => {
   return new CopilotRuntime({ agents } as any);
 };
 
-export const POST = async (req: NextRequest) => {
+const handleCopilotRequest = async (req: NextRequest) => {
   try {
     const runtime = await getRuntime();
     const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
@@ -72,3 +72,7 @@ export const POST = async (req: NextRequest) => {
     );
   }
 };
+
+// GET handles the v2 /info capability-discovery endpoint
+export const GET = handleCopilotRequest;
+export const POST = handleCopilotRequest;

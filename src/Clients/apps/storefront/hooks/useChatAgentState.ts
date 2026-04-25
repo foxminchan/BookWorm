@@ -1,6 +1,6 @@
 "use client";
 
-import { useCoAgent } from "@copilotkit/react-core";
+import { useAgent } from "@copilotkit/react-core/v2";
 
 import { env } from "@/env.mjs";
 
@@ -20,28 +20,18 @@ type ChatAgentState = {
 };
 
 /**
- * Hook for bidirectional state synchronization with the chat agent
- * Provides setState and state for shared agent/UI state management
+ * Hook for reading shared agent state from the chat agent.
+ * In v2, state is owned by the AbstractAgent instance returned by useAgent.
+ * The state is cast to ChatAgentState for typed access in the UI.
  */
 export function useChatAgentState() {
-  const agentName = env.NEXT_PUBLIC_COPILOT_AGENT_NAME;
+  const agentId = env.NEXT_PUBLIC_COPILOT_AGENT_NAME;
 
-  const { state, setState, running, nodeName, threadId } =
-    useCoAgent<ChatAgentState>({
-      name: agentName,
-      initialState: {
-        searchQuery: undefined,
-        searchResults: undefined,
-        lastAction: undefined,
-        conversationContext: undefined,
-      },
-    });
+  const { agent } = useAgent({ agentId });
 
   return {
-    state,
-    setState,
-    isAgentRunning: running,
-    currentNode: nodeName,
-    threadId,
+    state: agent.state as ChatAgentState,
+    isAgentRunning: agent.isRunning,
+    threadId: agent.threadId,
   };
 }

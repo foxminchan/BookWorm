@@ -1,6 +1,6 @@
 "use client";
 
-import { useCopilotAction } from "@copilotkit/react-core";
+import { useFrontendTool } from "@copilotkit/react-core/v2";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
 import type { Book } from "@workspace/types/catalog/books";
@@ -15,7 +15,7 @@ import { Spinner } from "@workspace/ui/components/spinner";
 import { formatPrice } from "@workspace/utils/format";
 
 export function useBookSearchActions() {
-  useCopilotAction({
+  useFrontendTool({
     name: "searchBooks",
     description:
       "Search for books by title, author, category, or keywords. Returns a list of matching books.",

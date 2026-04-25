@@ -1,6 +1,6 @@
 "use client";
 
-import { useCopilotReadable } from "@copilotkit/react-core";
+import { useAgentContext } from "@copilotkit/react-core/v2";
 
 import { useSession } from "@/lib/auth-client";
 
@@ -11,7 +11,7 @@ export function useUserContext() {
     isAuthenticated: !!session?.user,
   };
 
-  useCopilotReadable({
+  useAgentContext({
     description: "Whether the user is currently authenticated",
     value: userData,
   });

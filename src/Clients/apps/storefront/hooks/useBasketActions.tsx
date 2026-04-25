@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 
-import { useCopilotAction } from "@copilotkit/react-core";
+import { useFrontendTool } from "@copilotkit/react-core/v2";
 import { Check } from "lucide-react";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
@@ -22,7 +22,7 @@ export function useBasketActions() {
     clearTimerRef.current = setTimeout(() => setAnnouncement(""), 3000);
   }, []);
 
-  useCopilotAction({
+  useFrontendTool({
     name: "addToBasket",
     description:
       "Add a book to the user's shopping basket. Use this when the user expresses interest in purchasing a book. Always requires user confirmation before adding.",
@@ -109,7 +109,7 @@ export function useBasketActions() {
     },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "viewBasket",
     description:
       "Show the current contents of the user's shopping basket with all items and total price",

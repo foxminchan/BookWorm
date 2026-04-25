@@ -15,8 +15,8 @@ const { mockList } = vi.hoisted(() => ({
   mockList: vi.fn(),
 }));
 
-vi.mock("@copilotkit/react-core", () => ({
-  useCopilotAction: vi.fn((config) => {
+vi.mock("@copilotkit/react-core/v2", () => ({
+  useFrontendTool: vi.fn((config) => {
     registeredActions.push(config);
   }),
 }));

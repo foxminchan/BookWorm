@@ -1,6 +1,6 @@
 "use client";
 
-import { useCopilotReadable } from "@copilotkit/react-core";
+import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAtomValue } from "jotai";
 
 import { basketItemCountAtom, basketItemsAtom } from "@/atoms/basket-atom";
@@ -24,7 +24,7 @@ export function useBasketContext() {
     ),
   };
 
-  useCopilotReadable({
+  useAgentContext({
     description:
       "The current user's shopping basket with books they plan to purchase",
     value: basketData,

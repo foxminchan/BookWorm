@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { basketItemCountAtom, basketItemsAtom } from "@/atoms/basket-atom";
 import { useBasketContext } from "@/hooks/useBasketContext";
 
-const { mockUseAtomValue, mockUseCopilotReadable } = vi.hoisted(() => ({
+const { mockUseAtomValue, mockUseAgentContext } = vi.hoisted(() => ({
   mockUseAtomValue: vi.fn(),
-  mockUseCopilotReadable: vi.fn(),
+  mockUseAgentContext: vi.fn(),
 }));
 
 vi.mock("jotai", async () => {
@@ -17,8 +17,8 @@ vi.mock("jotai", async () => {
   };
 });
 
-vi.mock("@copilotkit/react-core", () => ({
-  useCopilotReadable: (args: unknown) => mockUseCopilotReadable(args),
+vi.mock("@copilotkit/react-core/v2", () => ({
+  useAgentContext: (args: unknown) => mockUseAgentContext(args),
 }));
 
 describe("useBasketContext", () => {
@@ -38,8 +38,8 @@ describe("useBasketContext", () => {
 
     renderHook(() => useBasketContext());
 
-    expect(mockUseCopilotReadable).toHaveBeenCalledTimes(1);
-    expect(mockUseCopilotReadable).toHaveBeenCalledWith({
+    expect(mockUseAgentContext).toHaveBeenCalledTimes(1);
+    expect(mockUseAgentContext).toHaveBeenCalledWith({
       description:
         "The current user's shopping basket with books they plan to purchase",
       value: {

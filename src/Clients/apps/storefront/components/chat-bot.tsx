@@ -6,12 +6,11 @@ import {
   useEffect,
   useImperativeHandle,
   useReducer,
-  useRef,
   useState,
 } from "react";
 
-import { CopilotSidebar } from "@copilotkit/react-ui";
-import "@copilotkit/react-ui/styles.css";
+import { CopilotSidebar } from "@copilotkit/react-core/v2";
+import "@copilotkit/react-core/v2/styles.css";
 import { useAtomValue } from "jotai";
 import {
   AlertCircle,
@@ -35,7 +34,6 @@ import { useChatAgentState } from "@/hooks/useChatAgentState";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { useUserContext } from "@/hooks/useUserContext";
-import "@/styles/copilot.css";
 
 export type ChatBotRef = {
   openChat: () => void;
@@ -61,16 +59,12 @@ const ChatBotErrorFallback = ({ onReset }: { onReset: () => void }) => (
 
 const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   type ChatUIState = {
-    isOpen: boolean;
     hasError: boolean;
     error?: Error;
     rateLimitWarning: string | null;
   };
 
   type ChatUIAction =
-    | { type: "OPEN" }
-    | { type: "CLOSE" }
-    | { type: "SET_OPEN"; open: boolean }
     | { type: "SET_ERROR"; error: Error }
     | { type: "CLEAR_ERROR" }
     | { type: "RESET" }
@@ -80,13 +74,6 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   const chatUIReducer = useCallback(
     (state: ChatUIState, action: ChatUIAction): ChatUIState => {
       return match(action)
-        .with({ type: "OPEN" }, () => ({
-          ...state,
-          isOpen: true,
-          hasError: false,
-        }))
-        .with({ type: "CLOSE" }, () => ({ ...state, isOpen: false }))
-        .with({ type: "SET_OPEN" }, ({ open }) => ({ ...state, isOpen: open }))
         .with({ type: "SET_ERROR" }, ({ error }) => ({
           ...state,
           hasError: true,
@@ -101,7 +88,6 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
           ...state,
           hasError: false,
           error: undefined,
-          isOpen: false,
         }))
         .with({ type: "SET_RATE_LIMIT_WARNING" }, ({ warning }) => ({
           ...state,
@@ -117,12 +103,16 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   );
 
   const [uiState, dispatch] = useReducer(chatUIReducer, {
-    isOpen: false,
     hasError: false,
     rateLimitWarning: null,
   });
 
-  const triggerButtonRef = useRef<HTMLButtonElement>(null);
+  // Defer client-only overlay rendering to avoid SSR/client hydration mismatch.
+  // Network state (isOnline) is unavailable during SSR and differs on first client render.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Enable copilot tools and bidirectional agent state
   useChatAgentState();
@@ -139,51 +129,15 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   });
   const { isOnline, queueSize, isSyncing } = useOfflineQueue();
 
+  // CopilotSidebar v2 manages its own toggle button; click it programmatically
   useImperativeHandle(ref, () => ({
     openChat: () => {
-      dispatch({ type: "OPEN" });
+      const toggleBtn = document.querySelector<HTMLElement>(
+        "[data-copilot-chat-trigger]",
+      );
+      toggleBtn?.click();
     },
   }));
-
-  // Focus management: return focus to trigger button when dialog closes
-  useEffect(() => {
-    if (!uiState.isOpen && triggerButtonRef.current) {
-      triggerButtonRef.current.focus();
-    }
-  }, [uiState.isOpen]);
-
-  // Focus trap: keep focus within dialog when open
-  useEffect(() => {
-    if (!uiState.isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Tab") {
-        const dialog = document.querySelector('[role="dialog"]');
-        if (!dialog) return;
-
-        const focusableElements = dialog.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        const firstElement = focusableElements[0] as HTMLElement;
-        const lastElement = focusableElements[
-          focusableElements.length - 1
-        ] as HTMLElement;
-
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
-            e.preventDefault();
-            lastElement?.focus();
-          }
-        } else if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [uiState.isOpen]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
@@ -229,35 +183,15 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
     dispatch({ type: "RESET" });
   }, []);
 
-  if (!uiState.isOpen) {
-    return (
-      <Button
-        ref={triggerButtonRef}
-        onClick={() => dispatch({ type: "OPEN" })}
-        size="icon"
-        className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
-        aria-label="Open BookWorm Literary Guide chat"
-        aria-haspopup="dialog"
-        data-copilot-chat-trigger
-      >
-        <MessageCircle className="h-6 w-6" aria-hidden="true" />
-      </Button>
-    );
-  }
-
   return (
-    <dialog
-      className="fixed inset-0 z-50 m-0 h-auto w-auto max-w-none border-none bg-transparent p-0 md:block"
-      open
-      aria-label="BookWorm Literary Guide Chat"
-    >
+    <>
       {/* Render confirmation dialog for basket actions */}
       <ConfirmationDialog />
       {/* Live region for basket announcements */}
       {liveRegion}
 
-      {/* Offline indicator */}
-      {!isOnline && (
+      {/* Offline indicator — client-only to avoid hydration mismatch */}
+      {mounted && !isOnline && (
         <output
           className="copilot-offline-badge"
           aria-live="polite"
@@ -273,8 +207,8 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
         </output>
       )}
 
-      {/* Rate limit warning */}
-      {uiState.rateLimitWarning && (
+      {/* Rate limit warning — client-only */}
+      {mounted && uiState.rateLimitWarning && (
         <div
           className="copilot-rate-limit-warning fixed top-20 right-6 z-50"
           role="alert"
@@ -285,8 +219,8 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
         </div>
       )}
 
-      {/* Syncing indicator */}
-      {isSyncing && isOnline && (
+      {/* Syncing indicator — client-only */}
+      {mounted && isSyncing && isOnline && (
         <output
           className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-lg border bg-blue-50 px-3 py-2 text-sm dark:bg-blue-950"
           aria-live="polite"
@@ -310,19 +244,17 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
         </div>
       ) : (
         <CopilotSidebar
+          agentId={env.NEXT_PUBLIC_COPILOT_AGENT_NAME}
           labels={{
-            title: "BookWorm Literary Guide",
-            initial:
+            modalHeaderTitle: "BookWorm Literary Guide",
+            welcomeMessageText:
               "Hi! I'm your literary assistant. I can help you find books, manage your basket, and answer questions about our collection. What would you like to explore today?",
-            placeholder:
+            chatInputPlaceholder:
               "Ask about books, search for titles, or manage your basket...",
           }}
-          defaultOpen={uiState.isOpen}
-          onSetOpen={(open) => dispatch({ type: "SET_OPEN", open })}
-          clickOutsideToClose={true}
         />
       )}
-    </dialog>
+    </>
   );
 });
 
