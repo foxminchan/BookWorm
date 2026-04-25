@@ -124,16 +124,32 @@ jobs:
 
       - name: Build
         run: >
-          dotnet build --configuration Release --no-incremental
-          -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
+          dotnet build
+          --configuration Release
+          --no-incremental
+          -p:SkipK6Build=true
+          -p:SkipKeycloakifyBuild=true
+
+      - name: Start AIMock server
+        uses: CopilotKit/aimock@068304006d8ef603ca18ac3465cd8796b84c912f # v1.15.1
+        id: aimock
+        with:
+          fixtures: tests/BookWorm.AI.Evaluation/fixtures.json
 
       - name: Test
+        env:
+          OPENAI_BASE_URL: ${{ steps.aimock.outputs.url }}/v1
+          OPENAI_API_KEY: test
         run: >
-          dotnet test --configuration Release --report-trx --coverage
-          --coverage-settings Coverage.runsettings --results-directory
-          ./test-results --github-reporter-style full --hangdump
-          --hangdump-timeout ${{ env.HANG_TIMEOUT }} --crashdump --timeout ${{
-          env.SESSION_TIMEOUT }}
+          dotnet test
+          --configuration Release
+          --report-trx
+          --coverage
+          --coverage-settings Coverage.runsettings
+          --results-directory ./test-results
+          --github-reporter-style full --hangdump
+          --hangdump-timeout ${{ env.HANG_TIMEOUT }}
+          --crashdump --timeout ${{ env.SESSION_TIMEOUT }}
 
       - name: Sonarqube End
         env:
