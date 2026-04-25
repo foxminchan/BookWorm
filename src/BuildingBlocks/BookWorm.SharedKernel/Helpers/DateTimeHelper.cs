@@ -12,8 +12,11 @@ public static class DateTimeHelper
         return DateTimeOffset.Now.UtcDateTime.ToDateTime(DateTimeKind.Utc);
     }
 
-    private static DateTime ToDateTime(this DateTime dateTime, DateTimeKind kind)
+    extension(DateTime dateTime)
     {
-        return DateTime.SpecifyKind(dateTime, kind);
+        private DateTime ToDateTime(DateTimeKind kind)
+        {
+            return DateTime.SpecifyKind(dateTime, kind);
+        }
     }
 }

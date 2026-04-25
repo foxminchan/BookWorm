@@ -1,9 +1,5 @@
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chat.Agents.CustomerSupport;
-using BookWorm.Chat.Agents.LanguageTranslation;
-using BookWorm.Chat.Agents.Routing;
-using BookWorm.Chat.Agents.SentimentAnalysis;
-using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
@@ -18,56 +14,46 @@ internal static class EndpointMapping
         {
             app.MapAgentDiscovery("/agents");
 
-            // Map A2A
-            app.MapA2A(
-                    QAAgentDefinition.Name,
-                    $"/a2a/{QAAgentDefinition.Name}",
-                    QAAgentDefinition.AgentCard
-                )
-                .WithTags(QAAgentDefinition.Name);
-            app.MapA2A(
-                    RouterAgentDefinition.Name,
-                    $"/a2a/{RouterAgentDefinition.Name}",
-                    RouterAgentDefinition.AgentCard
-                )
-                .WithTags(RouterAgentDefinition.Name);
-            app.MapA2A(
-                    LanguageAgentDefinition.Name,
-                    $"/a2a/{LanguageAgentDefinition.Name}",
-                    LanguageAgentDefinition.AgentCard
-                )
-                .WithTags(LanguageAgentDefinition.Name);
-            app.MapA2A(
-                    SummarizeAgentDefinition.Name,
-                    $"/a2a/{SummarizeAgentDefinition.Name}",
-                    SummarizeAgentDefinition.AgentCard
-                )
-                .WithTags(SummarizeAgentDefinition.Name);
-            app.MapA2A(
-                    SentimentAgentDefinition.Name,
-                    $"/a2a/{SentimentAgentDefinition.Name}",
-                    SentimentAgentDefinition.AgentCard
-                )
-                .WithTags(SentimentAgentDefinition.Name);
+            // Dynamically discover all agents that have an A2AServer registered via
+            // A2AServerServiceCollectionExtensions.AddA2AServer(), which keys each
+            // A2AServer instance by agent name in the DI container.
+            // Agents are resolved once here and reused for both A2A and chat completion mapping.
+            ReadOnlySpan<AIAgent> agents =
+            [
+                .. app
+                    .Services.GetKeyedServices<AIAgent>(KeyedService.AnyKey)
+                    .Where(agent =>
+                        agent.Name is not null
+                        && app.Services.GetKeyedService<A2AServer>(agent.Name) is not null
+                    ),
+            ];
 
-            // Map AG-UI
-            app.MapAGUI("/ag-ui", app.Services.GetRequiredKeyedService<AIAgent>(Workflows.Chat))
+            // Map A2A endpoints and OpenAI Chat Completions in a single pass
+            foreach (var agent in agents)
+            {
+                var agentName = agent.Name ?? string.Empty;
+
+                app.MapA2AJsonRpc(agent, $"/a2a/{agentName}").WithTags(agentName);
+
+                app.MapA2AHttpJson(agent, $"/a2a/{agentName}").WithTags(agentName);
+
+                // QAAgent is handoff-only and not directly callable via chat completions
+                if (
+                    string.Compare(agentName, QAAgentDefinition.Name, StringComparison.Ordinal) != 0
+                )
+                {
+                    app.MapOpenAIChatCompletions(agent).WithTags(agentName);
+                }
+            }
+
+            // Map AG-UI endpoint for interactive agents (e.g. RouterAgent)
+            app.MapAGUI(Workflows.Chat, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
                 .WithTags(nameof(Chat));
 
-            // Map OpenAI Chat Completions
-            app.MapOpenAIChatCompletions(
-                    app.Services.GetRequiredKeyedService<AIAgent>(SummarizeAgentDefinition.Name)
-                )
-                .WithTags(SummarizeAgentDefinition.Name);
-            app.MapOpenAIChatCompletions(
-                    app.Services.GetRequiredKeyedService<AIAgent>(LanguageAgentDefinition.Name)
-                )
-                .WithTags(LanguageAgentDefinition.Name);
-            app.MapOpenAIChatCompletions(
-                    app.Services.GetRequiredKeyedService<AIAgent>(SentimentAgentDefinition.Name)
-                )
-                .WithTags(SentimentAgentDefinition.Name);
+            app.MapOpenAIResponses();
+
+            app.MapOpenAIConversations();
         }
     }
 }

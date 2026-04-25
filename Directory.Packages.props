@@ -31,7 +31,8 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.9.24" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.9.27" />
+    <PackageVersion Include="Aspire.Hosting.AgentFramework.DevUI" Version="$(AgentFrameworkVersion)" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -40,9 +41,9 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Quality" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Reporting.Azure" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Reporting" Version="$(MsExtVersion)" />
     <!-- ASP.NET Core -->
-    <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.0.0-preview.2" />
+    <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.0.0-rc.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="$(MsExtVersion)" />
     <!-- Data -->
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
@@ -55,11 +56,11 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.1.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.3.0" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.DevUI" Version="$(AgentFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.3.0-alpha.260423.1" />
     <PackageVersion Include="Microsoft.AgentGovernance" Version="3.0.2" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.74.0-preview" />
     <!-- Miscellaneous -->
@@ -68,7 +69,7 @@
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="10.1.6" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.32.0" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.32.1" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
@@ -102,7 +103,7 @@
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.3" />
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.16.1" />
+    <PackageVersion Include="Verify.TUnit" Version="31.16.2" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->

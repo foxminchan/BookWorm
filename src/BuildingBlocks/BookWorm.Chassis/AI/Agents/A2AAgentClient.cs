@@ -3,7 +3,6 @@ using A2A;
 using BookWorm.Chassis.Security.TokenExchange;
 using Microsoft.Agents.AI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Chassis.AI.Agents;
@@ -13,72 +12,41 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
     public async Task<AIAgent> GetAIAgent(
         IServiceProvider serviceProvider,
         string agentName,
-        string? agentClientId
+        string? agentClientId,
+        string? scope
     )
     {
-        var (resolver, httpClient) = ResolveClient(agentName);
+        var (card, httpClient) = ResolveClient(agentName);
 
-        var agentCard = await resolver.GetAgentCardAsync();
+        await HandleAuthenticationAsync(agentClientId, scope, httpClient, serviceProvider);
 
-        await HandleAuthenticationAsync(
-            agentName,
-            agentClientId,
-            agentCard,
-            httpClient,
-            serviceProvider
-        );
-
-        var agent = await resolver.GetAIAgentAsync(httpClient);
-
-        return agent;
+        return card.AsAIAgent(httpClient);
     }
 
     private static async Task HandleAuthenticationAsync(
-        string agentName,
         string? agentClientId,
-        AgentCard agentCard,
+        string? scope,
         HttpClient httpClient,
         IServiceProvider serviceProvider
     )
     {
-        if (
-            agentCard.SecuritySchemes is not null
-            && agentCard.SecuritySchemes.TryGetValue(
-                OAuthDefaults.DisplayName,
-                out var securityScheme
-            )
-            && securityScheme is OAuth2SecurityScheme oAuth2SecurityScheme
-        )
+        if (string.IsNullOrWhiteSpace(agentClientId) || string.IsNullOrWhiteSpace(scope))
         {
-            var scope = string.Join(
-                ' ',
-                oAuth2SecurityScheme.Flows.AuthorizationCode?.Scopes.Keys ?? []
-            );
-
-            if (string.IsNullOrWhiteSpace(scope))
-            {
-                throw new InvalidOperationException(
-                    $"Agent '{agentName}' JWT Bearer configuration is invalid: no scopes defined."
-                );
-            }
-
-            var tokenExchange = serviceProvider.GetRequiredService<ITokenExchange>();
-            var claimsPrincipal = serviceProvider.GetRequiredService<ClaimsPrincipal>();
-
-            var accessToken = await tokenExchange.ExchangeAsync(
-                claimsPrincipal,
-                agentClientId,
-                scope
-            );
-
-            httpClient.DefaultRequestHeaders.Authorization = new(
-                JwtBearerDefaults.AuthenticationScheme,
-                accessToken
-            );
+            return;
         }
+
+        var tokenExchange = serviceProvider.GetRequiredService<ITokenExchange>();
+        var claimsPrincipal = serviceProvider.GetRequiredService<ClaimsPrincipal>();
+
+        var accessToken = await tokenExchange.ExchangeAsync(claimsPrincipal, agentClientId, scope);
+
+        httpClient.DefaultRequestHeaders.Authorization = new(
+            JwtBearerDefaults.AuthenticationScheme,
+            accessToken
+        );
     }
 
-    private (A2ACardResolver, HttpClient) ResolveClient(string agentName)
+    private (AgentCard, HttpClient) ResolveClient(string agentName)
     {
         var httpClient = new HttpClient
         {
@@ -86,12 +54,21 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
             Timeout = TimeSpan.FromMinutes(2),
         };
 
-        var resolver = new A2ACardResolver(
-            httpClient.BaseAddress,
-            httpClient,
-            $"/{path?.TrimStart('/')}/{agentName}/v1/card/"
-        );
+        var endpointUrl = new Uri(httpClient.BaseAddress!, $"/{path?.TrimStart('/')}/{agentName}");
 
-        return (resolver, httpClient);
+        var card = new AgentCard
+        {
+            Name = agentName,
+            SupportedInterfaces =
+            [
+                new()
+                {
+                    Url = endpointUrl.ToString(),
+                    ProtocolBinding = ProtocolBindingNames.JsonRpc,
+                },
+            ],
+        };
+
+        return (card, httpClient);
     }
 }

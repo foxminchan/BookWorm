@@ -2,15 +2,19 @@
 
 internal static class DomainToDtoMapper
 {
-    public static PublisherDto ToPublisherDto(this Publisher publisher)
+    extension(Publisher publisher)
     {
-        return new(publisher.Id, publisher.Name);
+        public PublisherDto ToPublisherDto()
+        {
+            return new(publisher.Id, publisher.Name);
+        }
     }
 
-    public static IReadOnlyList<PublisherDto> ToPublisherDtos(
-        this IEnumerable<Publisher> publishers
-    )
+    extension(IEnumerable<Publisher> publishers)
     {
-        return [.. publishers.Select(ToPublisherDto)];
+        public IReadOnlyList<PublisherDto> ToPublisherDtos()
+        {
+            return [.. publishers.Select(ToPublisherDto)];
+        }
     }
 }

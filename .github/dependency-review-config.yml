@@ -49,7 +49,21 @@ allow-licenses:
 
   # Weak copyleft (safe for consuming prebuilt binaries / unmodified deps)
   - MPL-2.0
+  - LGPL-2.0-only
+  - LGPL-2.1-only
+  - LGPL-3.0-only
   - LGPL-3.0-or-later
+
+  # Academic / other OSI-approved permissive licenses
+  - AFL-2.1
+  - AFL-3.0
+  - MS-PL
+
+  # BSD variants
+  - BSD-2-Clause-Views
+
+  # JSON license (SPDX: JSON) — used in JS ecosystem tooling
+  - JSON
 
   # Other permissive / common ecosystem licenses
   - BlueOak-1.0.0

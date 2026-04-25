@@ -2,13 +2,19 @@
 
 internal static class DomainToDtoMapper
 {
-    public static CategoryDto ToCategoryDto(this Category category)
+    extension(Category category)
     {
-        return new(category.Id, category.Name);
+        public CategoryDto ToCategoryDto()
+        {
+            return new(category.Id, category.Name);
+        }
     }
 
-    public static IReadOnlyList<CategoryDto> ToCategoryDtos(this IEnumerable<Category> categories)
+    extension(IEnumerable<Category> categories)
     {
-        return [.. categories.Select(ToCategoryDto)];
+        public IReadOnlyList<CategoryDto> ToCategoryDtos()
+        {
+            return [.. categories.Select(ToCategoryDto)];
+        }
     }
 }

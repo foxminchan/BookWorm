@@ -10,6 +10,7 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.OpenAI" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
   </ItemGroup>
   <ItemGroup Label="Agent Skills">

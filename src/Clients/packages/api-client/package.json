@@ -28,14 +28,14 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "axios": "^1.15.0",
+    "axios": "^1.15.2",
     "axios-retry": "^4.5.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^10.2.0"
+    "eslint": "^10.2.1"
   },
   "peerDependencies": {
     "@workspace/types": "workspace:*"

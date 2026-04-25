@@ -6,45 +6,50 @@ namespace BookWorm.Chat.Agents.CustomerSupport;
 
 internal static class QAAgentRegistration
 {
-    public static void AddQAAgent(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        builder.AddAIAgent(
-            QAAgentDefinition.Name,
-            (sp, key) =>
-            {
-                var compactionProvider = CompactionPipelineFactory.CreateLight();
-
-                var chatClient = sp.GetRequiredService<IChatClient>()
-                    .AsBuilder()
-                    .UsePIIMiddleware(sp)
-                    .UseGuardrailMiddleware()
-                    .UseGovernanceToolCall(sp, QAAgentDefinition.Name)
-                    .UseAIContextProviders(compactionProvider)
-                    .Build(sp);
-
-                var skillsProvider = new AgentSkillsProvider(
-                    Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
-                    loggerFactory: sp.GetService<ILoggerFactory>()
-                );
-
-                var agent = new ChatClientAgent(
-                    chatClient,
-                    options: new()
+        public void AddQAAgent()
+        {
+            builder
+                .AddAIAgent(
+                    QAAgentDefinition.Name,
+                    (sp, key) =>
                     {
-                        Name = key,
-                        Description = QAAgentDefinition.Description,
-                        AIContextProviders = [skillsProvider],
-                        ChatOptions = new()
-                        {
-                            Instructions = QAAgentDefinition.Instructions,
-                            Temperature = 0.5f,
-                            MaxOutputTokens = 1000,
-                        },
-                    }
-                );
+                        var compactionProvider = CompactionPipelineFactory.CreateLight();
 
-                return agent;
-            }
-        );
+                        var chatClient = sp.GetRequiredService<IChatClient>()
+                            .AsBuilder()
+                            .UsePIIMiddleware(sp)
+                            .UseGuardrailMiddleware()
+                            .UseGovernanceToolCall(sp, QAAgentDefinition.Name)
+                            .UseAIContextProviders(compactionProvider)
+                            .Build(sp);
+
+                        var skillsProvider = new AgentSkillsProvider(
+                            Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
+                            loggerFactory: sp.GetService<ILoggerFactory>()
+                        );
+
+                        var agent = new ChatClientAgent(
+                            chatClient,
+                            options: new()
+                            {
+                                Name = key,
+                                Description = QAAgentDefinition.Description,
+                                AIContextProviders = [skillsProvider],
+                                ChatOptions = new()
+                                {
+                                    Instructions = QAAgentDefinition.Instructions,
+                                    Temperature = 0.5f,
+                                    MaxOutputTokens = 1000,
+                                },
+                            }
+                        );
+
+                        return agent;
+                    }
+                )
+                .AddA2AServer();
+        }
     }
 }

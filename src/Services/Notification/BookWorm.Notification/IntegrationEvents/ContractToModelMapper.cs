@@ -6,28 +6,42 @@ internal static class ContractToModelMapper
 {
     private const string Customer = nameof(Customer);
 
-    public static Order ToOrder(this CancelOrderCommand command)
+    extension(CancelOrderCommand command)
     {
-        return new(
-            command.OrderId,
-            command.FullName ?? Customer,
-            command.TotalMoney,
-            Status.Canceled
-        );
+        public Order ToOrder()
+        {
+            return new(
+                command.OrderId,
+                command.FullName ?? Customer,
+                command.TotalMoney,
+                Status.Canceled
+            );
+        }
     }
 
-    public static Order ToOrder(this PlaceOrderCommand command)
+    extension(PlaceOrderCommand command)
     {
-        return new(command.OrderId, command.FullName ?? Customer, command.TotalMoney, Status.New);
+        public Order ToOrder()
+        {
+            return new(
+                command.OrderId,
+                command.FullName ?? Customer,
+                command.TotalMoney,
+                Status.New
+            );
+        }
     }
 
-    public static Order ToOrder(this CompleteOrderCommand command)
+    extension(CompleteOrderCommand command)
     {
-        return new(
-            command.OrderId,
-            command.FullName ?? Customer,
-            command.TotalMoney,
-            Status.Completed
-        );
+        public Order ToOrder()
+        {
+            return new(
+                command.OrderId,
+                command.FullName ?? Customer,
+                command.TotalMoney,
+                Status.Completed
+            );
+        }
     }
 }

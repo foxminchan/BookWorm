@@ -1,4 +1,4 @@
-﻿using BookWorm.AI.Evaluation.Evaluators;
+using BookWorm.AI.Evaluation.Evaluators;
 using BookWorm.AI.Evaluation.Setup;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
@@ -44,7 +44,6 @@ public sealed partial class WorkflowEvaluationTests : IAsyncDisposable
         yield return new RelevanceEvaluator();
         yield return new CoherenceEvaluator();
         yield return new FluencyEvaluator();
-        yield return new CompletenessEvaluator();
         yield return new DomainRelevanceEvaluator();
         yield return new ResponseLengthEvaluator();
     }
@@ -55,7 +54,6 @@ public sealed partial class WorkflowEvaluationTests : IAsyncDisposable
         yield return new GroundednessEvaluator();
         yield return new CoherenceEvaluator();
         yield return new FluencyEvaluator();
-        yield return new CompletenessEvaluator();
         yield return new DomainRelevanceEvaluator();
         yield return new ResponseLengthEvaluator();
     }

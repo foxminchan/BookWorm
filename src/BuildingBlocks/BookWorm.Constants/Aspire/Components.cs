@@ -9,6 +9,7 @@ public static class Components
     public const string Postgres = "postgres";
     public const string KeyCloak = "keycloak";
     public const string Inspector = "inspector";
+    public const string DevUI = "devui";
     public const string VectorDb = "vectordb";
     public const string TurboRepo = "turborepo";
     public const string ContainerRegistry = "container-registry";

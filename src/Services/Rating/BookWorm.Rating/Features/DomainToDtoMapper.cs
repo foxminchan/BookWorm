@@ -2,20 +2,26 @@
 
 internal static class DomainToDtoMapper
 {
-    private static FeedbackDto ToFeedbackDto(this Feedback feedback)
+    extension(Feedback feedback)
     {
-        return new(
-            feedback.Id,
-            feedback.FirstName,
-            feedback.LastName,
-            feedback.Comment,
-            feedback.Rating,
-            feedback.BookId
-        );
+        private FeedbackDto ToFeedbackDto()
+        {
+            return new(
+                feedback.Id,
+                feedback.FirstName,
+                feedback.LastName,
+                feedback.Comment,
+                feedback.Rating,
+                feedback.BookId
+            );
+        }
     }
 
-    public static IReadOnlyList<FeedbackDto> ToFeedbackDtos(this IEnumerable<Feedback> feedbacks)
+    extension(IEnumerable<Feedback> feedbacks)
     {
-        return [.. feedbacks.Select(ToFeedbackDto)];
+        public IReadOnlyList<FeedbackDto> ToFeedbackDtos()
+        {
+            return [.. feedbacks.Select(ToFeedbackDto)];
+        }
     }
 }

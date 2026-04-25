@@ -1,4 +1,4 @@
-﻿<Project Sdk="Aspire.AppHost.Sdk/13.2.2">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.2.4">
   <Import Project="K6Integration.targets" />
   <Import Project="KeycloakifyIntegration.targets" />
   <PropertyGroup>
@@ -16,6 +16,7 @@
     <PackageReference Include="Aspire.Hosting.Qdrant" />
     <PackageReference Include="Aspire.Hosting.Keycloak" />
     <PackageReference Include="Aspire.Hosting.Kafka" />
+    <PackageReference Include="Aspire.Hosting.AgentFramework.DevUI" />
   </ItemGroup>
   <ItemGroup Label="Azure">
     <PackageReference Include="Aspire.Hosting.Azure.Redis" />
