@@ -2,8 +2,11 @@
 
 internal static class DomainToDtoMapper
 {
-    public static CustomerBasketDto ToCustomerBasketDto(this CustomerBasket model)
+    extension(CustomerBasket model)
     {
-        return new(model.Id, [.. model.Items.Select(x => new BasketItemDto(x.Id, x.Quantity))]);
+        public CustomerBasketDto ToCustomerBasketDto()
+        {
+            return new(model.Id, [.. model.Items.Select(x => new BasketItemDto(x.Id, x.Quantity))]);
+        }
     }
 }

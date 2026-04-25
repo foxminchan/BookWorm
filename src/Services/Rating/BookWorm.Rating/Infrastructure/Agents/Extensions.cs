@@ -232,6 +232,10 @@ internal static class Extensions
             app.MapAGUI(Workflows.RatingSummarizer, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
                 .WithTags(nameof(RatingAgent));
+
+            app.MapOpenAIResponses();
+
+            app.MapOpenAIConversations();
         }
     }
 }

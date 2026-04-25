@@ -2,13 +2,19 @@
 
 internal static class DomainToDtoMapper
 {
-    public static AuthorDto ToAuthorDto(this Author author)
+    extension(Author author)
     {
-        return new(author.Id, author.Name);
+        public AuthorDto ToAuthorDto()
+        {
+            return new(author.Id, author.Name);
+        }
     }
 
-    public static IReadOnlyList<AuthorDto> ToAuthorDtos(this IEnumerable<Author> authors)
+    extension(IEnumerable<Author> authors)
     {
-        return [.. authors.Select(ToAuthorDto)];
+        public IReadOnlyList<AuthorDto> ToAuthorDtos()
+        {
+            return [.. authors.Select(ToAuthorDto)];
+        }
     }
 }

@@ -67,10 +67,13 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
 
 internal static class IdempotencyEndpointFilterExtensions
 {
-    public static TBuilder WithIdempotency<TBuilder>(this TBuilder builder)
+    extension<TBuilder>(TBuilder builder)
         where TBuilder : IEndpointConventionBuilder
     {
-        builder.AddEndpointFilter(new IdempotencyEndpointFilter());
-        return builder;
+        public TBuilder WithIdempotency()
+        {
+            builder.AddEndpointFilter(new IdempotencyEndpointFilter());
+            return builder;
+        }
     }
 }

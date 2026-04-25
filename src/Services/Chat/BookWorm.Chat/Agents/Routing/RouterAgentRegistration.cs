@@ -6,37 +6,40 @@ namespace BookWorm.Chat.Agents.Routing;
 
 internal static class RouterAgentRegistration
 {
-    public static void AddRouterAgent(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        builder
-            .AddAIAgent(
-                RouterAgentDefinition.Name,
-                (sp, key) =>
-                {
-                    var chatClient = sp.GetRequiredService<IChatClient>()
-                        .AsBuilder()
-                        .UseGuardrailMiddleware()
-                        .UseGovernanceToolCall(sp, RouterAgentDefinition.Name)
-                        .Build(sp);
+        public void AddRouterAgent()
+        {
+            builder
+                .AddAIAgent(
+                    RouterAgentDefinition.Name,
+                    (sp, key) =>
+                    {
+                        var chatClient = sp.GetRequiredService<IChatClient>()
+                            .AsBuilder()
+                            .UseGuardrailMiddleware()
+                            .UseGovernanceToolCall(sp, RouterAgentDefinition.Name)
+                            .Build(sp);
 
-                    var agent = new ChatClientAgent(
-                        chatClient,
-                        options: new()
-                        {
-                            Name = key,
-                            Description = RouterAgentDefinition.Description,
-                            ChatOptions = new()
+                        var agent = new ChatClientAgent(
+                            chatClient,
+                            options: new()
                             {
-                                Instructions = RouterAgentDefinition.Instructions,
-                                Temperature = 0.1f,
-                                MaxOutputTokens = 200,
-                            },
-                        }
-                    );
+                                Name = key,
+                                Description = RouterAgentDefinition.Description,
+                                ChatOptions = new()
+                                {
+                                    Instructions = RouterAgentDefinition.Instructions,
+                                    Temperature = 0.1f,
+                                    MaxOutputTokens = 200,
+                                },
+                            }
+                        );
 
-                    return agent;
-                }
-            )
-            .AddA2AServer();
+                        return agent;
+                    }
+                )
+                .AddA2AServer();
+        }
     }
 }

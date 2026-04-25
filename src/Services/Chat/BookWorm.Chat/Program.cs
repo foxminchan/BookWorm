@@ -42,8 +42,4 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
 
-app.MapOpenAIResponses();
-
-app.MapOpenAIConversations();
-
 app.Run();

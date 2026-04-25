@@ -1,9 +1,5 @@
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chat.Agents.CustomerSupport;
-using BookWorm.Chat.Agents.LanguageTranslation;
-using BookWorm.Chat.Agents.Routing;
-using BookWorm.Chat.Agents.SentimentAnalysis;
-using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
@@ -18,21 +14,36 @@ internal static class EndpointMapping
         {
             app.MapAgentDiscovery("/agents");
 
-            Span<string> agentNames =
+            // Dynamically discover all agents that have an A2AServer registered via
+            // A2AServerServiceCollectionExtensions.AddA2AServer(), which keys each
+            // A2AServer instance by agent name in the DI container.
+            // Agents are resolved once here and reused for both A2A and chat completion mapping.
+            ReadOnlySpan<AIAgent> agents =
             [
-                QAAgentDefinition.Name,
-                RouterAgentDefinition.Name,
-                LanguageAgentDefinition.Name,
-                SummarizeAgentDefinition.Name,
-                SentimentAgentDefinition.Name,
+                .. app
+                    .Services.GetKeyedServices<AIAgent>(KeyedService.AnyKey)
+                    .Where(agent =>
+                        agent.Name is not null
+                        && app.Services.GetKeyedService<A2AServer>(agent.Name) is not null
+                    ),
             ];
 
-            // Map A2A endpoints
-            foreach (string agentName in agentNames)
+            // Map A2A endpoints and OpenAI Chat Completions in a single pass
+            foreach (var agent in agents)
             {
-                app.MapA2AJsonRpc(agentName, $"/a2a/{agentName}").WithTags(agentName);
+                var agentName = agent.Name ?? string.Empty;
 
-                app.MapA2AHttpJson(agentName, $"/a2a/{agentName}").WithTags(agentName);
+                app.MapA2AJsonRpc(agent, $"/a2a/{agentName}").WithTags(agentName);
+
+                app.MapA2AHttpJson(agent, $"/a2a/{agentName}").WithTags(agentName);
+
+                // QAAgent is handoff-only and not directly callable via chat completions
+                if (
+                    string.Compare(agentName, QAAgentDefinition.Name, StringComparison.Ordinal) != 0
+                )
+                {
+                    app.MapOpenAIChatCompletions(agent).WithTags(agentName);
+                }
             }
 
             // Map AG-UI endpoint for interactive agents (e.g. RouterAgent)
@@ -40,22 +51,9 @@ internal static class EndpointMapping
                 .WithSummary("Interactive AI Agent")
                 .WithTags(nameof(Chat));
 
-            // Map OpenAI Chat Completions
-            Span<string> chatCompletionAgentNames =
-            [
-                RouterAgentDefinition.Name,
-                LanguageAgentDefinition.Name,
-                SummarizeAgentDefinition.Name,
-                SentimentAgentDefinition.Name,
-            ];
+            app.MapOpenAIResponses();
 
-            foreach (string agentName in chatCompletionAgentNames)
-            {
-                app.MapOpenAIChatCompletions(
-                        app.Services.GetRequiredKeyedService<AIAgent>(agentName)
-                    )
-                    .WithTags(agentName);
-            }
+            app.MapOpenAIConversations();
         }
     }
 }
