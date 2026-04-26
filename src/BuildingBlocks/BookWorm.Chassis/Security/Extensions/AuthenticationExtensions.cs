@@ -1,4 +1,6 @@
-﻿using BookWorm.Chassis.Security.Settings;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using BookWorm.Chassis.Security.Settings;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
@@ -62,13 +64,32 @@ public static class AuthenticationExtensions
                     realm,
                     options =>
                     {
-                        // Uses the Keycloak account client audience.
                         options.Audience = "account";
                         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
                         options.TokenValidationParameters.ValidateAudience =
                             !builder.Environment.IsDevelopment();
                         options.TokenValidationParameters.ValidateIssuer =
                             !builder.Environment.IsDevelopment();
+
+                        options.SaveToken = true;
+                        options.Events = new()
+                        {
+                            OnTokenValidated = ctx =>
+                            {
+                                if (
+                                    ctx is
+                                    {
+                                        SecurityToken: JwtSecurityToken jwt,
+                                        Principal.Identity: ClaimsIdentity identity
+                                    }
+                                )
+                                {
+                                    identity.AddClaim(new("access_token", jwt.RawData));
+                                }
+
+                                return Task.CompletedTask;
+                            },
+                        };
                     }
                 );
 
