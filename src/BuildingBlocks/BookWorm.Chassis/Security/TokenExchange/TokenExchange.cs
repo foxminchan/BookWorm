@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text.Json;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
@@ -36,7 +36,7 @@ internal sealed class TokenExchange(
         return await GetResponseContent(response, cancellationToken);
     }
 
-    private static FormUrlEncodedContent GetRequestContent(
+    private FormUrlEncodedContent GetRequestContent(
         ClaimsPrincipal claimsPrincipal,
         string? audience = null,
         string? scope = null
@@ -51,9 +51,12 @@ internal sealed class TokenExchange(
 
         var parameters = new List<KeyValuePair<string, string>>
         {
+            new("client_id", identityOptions.ClientId),
+            new("client_secret", identityOptions.ClientSecret),
             new("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
             new("subject_token", tokenClaim.Value),
             new("subject_token_type", "urn:ietf:params:oauth:token-type:access_token"),
+            new("requested_token_type", "urn:ietf:params:oauth:token-type:access_token")
         };
 
         if (!string.IsNullOrWhiteSpace(audience))
