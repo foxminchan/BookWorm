@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel.SeedWork;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Basket.Domain;
 
@@ -9,14 +9,14 @@ public sealed class CustomerBasket() : AuditableEntity<string>
 
     public CustomerBasket(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,
-        List<BasketItem> items
+        IReadOnlyList<BasketItem> items
     )
         : this()
     {
         Id = id ?? throw new BasketDomainException("Customer ID cannot be null.");
         _basketItems =
             items.Count > 0
-                ? items
+                ? items.ToList()
                 : throw new BasketDomainException("Basket must contain at least one item.");
     }
 
@@ -27,7 +27,7 @@ public sealed class CustomerBasket() : AuditableEntity<string>
     /// </summary>
     /// <param name="requestItems">The list of basket items to replace the current items with.</param>
     /// <returns>The current instance of <see cref="CustomerBasket" /> with updated items.</returns>
-    public CustomerBasket Update(List<BasketItem> requestItems)
+    public CustomerBasket Update(IReadOnlyList<BasketItem> requestItems)
     {
         _basketItems.Clear();
         _basketItems.AddRange(requestItems);

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.OpenTelemetry;
+using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using FluentValidation;
 using FluentValidation.Results;
@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
 
-internal class ValidationBehavior<TMessage, TResponse>(
+internal sealed class ValidationBehavior<TMessage, TResponse>(
     IActivityScope activityScope,
     IEnumerable<IValidator<TMessage>> validators,
     ILogger<ValidationBehavior<TMessage, TResponse>> logger

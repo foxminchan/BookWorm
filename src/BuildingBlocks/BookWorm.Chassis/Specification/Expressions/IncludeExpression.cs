@@ -1,8 +1,8 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 
 namespace BookWorm.Chassis.Specification.Expressions;
 
-public class IncludeExpression
+public sealed class IncludeExpression
 {
     public IncludeExpression(LambdaExpression expression)
     {

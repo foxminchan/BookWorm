@@ -58,7 +58,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          queries: security-extended
+          queries: ${{ github.event_name == 'schedule' && 'security-extended' || '' }}
           dependency-caching: true
 
       - name: Setup .NET
