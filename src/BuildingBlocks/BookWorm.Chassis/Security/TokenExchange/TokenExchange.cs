@@ -56,7 +56,6 @@ internal sealed class TokenExchange(
             new("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
             new("subject_token", tokenClaim.Value),
             new("subject_token_type", "urn:ietf:params:oauth:token-type:access_token"),
-            new("requested_token_type", "urn:ietf:params:oauth:token-type:access_token")
         };
 
         if (!string.IsNullOrWhiteSpace(audience))
