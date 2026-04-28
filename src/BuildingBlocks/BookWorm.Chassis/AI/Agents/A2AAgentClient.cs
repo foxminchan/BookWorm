@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using A2A;
 using BookWorm.Chassis.Security.TokenExchange;
 using Microsoft.Agents.AI;
@@ -13,12 +13,19 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
         IServiceProvider serviceProvider,
         string agentName,
         string? agentClientId,
-        string? scope
+        string? scope,
+        CancellationToken cancellationToken = default
     )
     {
         var (card, httpClient) = ResolveClient(agentName);
 
-        await HandleAuthenticationAsync(agentClientId, scope, httpClient, serviceProvider);
+        await HandleAuthenticationAsync(
+            agentClientId,
+            scope,
+            httpClient,
+            serviceProvider,
+            cancellationToken
+        );
 
         return card.AsAIAgent(httpClient);
     }
@@ -27,7 +34,8 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
         string? agentClientId,
         string? scope,
         HttpClient httpClient,
-        IServiceProvider serviceProvider
+        IServiceProvider serviceProvider,
+        CancellationToken cancellationToken
     )
     {
         if (string.IsNullOrWhiteSpace(agentClientId) || string.IsNullOrWhiteSpace(scope))
@@ -38,7 +46,12 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
         var tokenExchange = serviceProvider.GetRequiredService<ITokenExchange>();
         var claimsPrincipal = serviceProvider.GetRequiredService<ClaimsPrincipal>();
 
-        var accessToken = await tokenExchange.ExchangeAsync(claimsPrincipal, agentClientId, scope);
+        var accessToken = await tokenExchange.ExchangeAsync(
+            claimsPrincipal,
+            agentClientId,
+            scope,
+            cancellationToken
+        );
 
         httpClient.DefaultRequestHeaders.Authorization = new(
             JwtBearerDefaults.AuthenticationScheme,

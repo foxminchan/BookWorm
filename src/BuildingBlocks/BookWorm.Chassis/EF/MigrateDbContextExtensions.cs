@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,7 +9,7 @@ namespace BookWorm.Chassis.EF;
 public static class MigrateDbContextExtensions
 {
     private const string ActivitySourceName = "DbMigrations";
-    private static readonly ActivitySource _activitySource = new(ActivitySourceName);
+    private static readonly ActivitySource _activitySource = new(ActivitySourceName, "1.0.0");
 
     private static async Task MigrateDbContextAsync<TContext>(
         this IServiceProvider services,
@@ -22,9 +22,11 @@ public static class MigrateDbContextExtensions
         var logger = scopeServices.GetRequiredService<ILogger<TContext>>();
         var context = scopeServices.GetService<TContext>();
 
-        using var activity = _activitySource.StartActivity(
-            $"Migration operation {typeof(TContext).Name}"
-        );
+        using var activity = _activitySource.HasListeners()
+            ? _activitySource.StartActivity()
+            : null;
+
+        activity?.DisplayName = $"Migration operation {typeof(TContext).Name}";
 
         try
         {
@@ -39,6 +41,8 @@ public static class MigrateDbContextExtensions
             {
                 await strategy.ExecuteAsync(() => InvokeSeeder(seeder!, context, scopeServices));
             }
+
+            activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception ex)
         {
@@ -48,7 +52,18 @@ public static class MigrateDbContextExtensions
                 typeof(TContext).Name
             );
 
-            activity?.AddException(ex);
+            if (activity is null)
+            {
+                throw new InvalidOperationException(
+                    $"Database migration failed for {typeof(TContext).Name}. See inner exception for details.",
+                    ex
+                );
+            }
+
+            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag("otel.status_code", "error");
+            activity.SetTag("otel.status_description", ex.Message);
+            activity.AddException(ex);
 
             throw new InvalidOperationException(
                 $"Database migration failed for {typeof(TContext).Name}. See inner exception for details.",
@@ -64,16 +79,30 @@ public static class MigrateDbContextExtensions
     )
         where TContext : DbContext?
     {
-        using var activity = _activitySource.StartActivity($"Migrating {typeof(TContext).Name}");
+        using var activity = _activitySource.HasListeners()
+            ? _activitySource.StartActivity()
+            : null;
+
+        activity?.DisplayName = $"Migrating {typeof(TContext).Name}";
 
         try
         {
             await context?.Database.MigrateAsync()!;
             await seeder(context, services);
+
+            activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception ex)
         {
-            activity?.AddException(ex);
+            if (activity is null)
+            {
+                throw;
+            }
+
+            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag("otel.status_code", "error");
+            activity.SetTag("otel.status_description", ex.Message);
+            activity.AddException(ex);
 
             throw;
         }

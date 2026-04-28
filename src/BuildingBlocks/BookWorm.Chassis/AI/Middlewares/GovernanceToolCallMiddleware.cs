@@ -87,16 +87,10 @@ internal static class GovernanceToolCallMiddleware
             return options;
         }
 
+        var metadata = new Dictionary<string, object> { ["agent_name"] = ctx.AgentName };
         var blockedEvaluations = tools
             .Select(tool =>
-                (
-                    Tool: tool,
-                    Result: ctx.Kernel.EvaluateToolCall(
-                        ctx.AgentDid,
-                        tool.Name,
-                        new() { ["agent_name"] = ctx.AgentName }
-                    )
-                )
+                (Tool: tool, Result: ctx.Kernel.EvaluateToolCall(ctx.AgentDid, tool.Name, metadata))
             )
             .Where(x => !x.Result.Allowed)
             .ToList();
@@ -198,7 +192,7 @@ internal static class GovernanceToolCallMiddleware
         return null;
     }
 
-    private sealed record GovernanceContext(
+    private readonly record struct GovernanceContext(
         GovernanceKernel Kernel,
         IAgentIdentityProvider IdentityProvider,
         string AgentName,

@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 
@@ -29,7 +29,7 @@ internal static class Extensions
                 HealthStatus.Degraded
             );
 
-            services.AddSingleton<IBookService, BookService>();
+            services.AddScoped<IBookService, BookService>();
         }
     }
 }

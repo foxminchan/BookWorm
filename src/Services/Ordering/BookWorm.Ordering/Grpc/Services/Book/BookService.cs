@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Caching;
 
 namespace BookWorm.Ordering.Grpc.Services.Book;
@@ -14,6 +14,7 @@ internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service,
     {
         var result = await service.GetBookAsync(
             new() { BookId = id },
+            deadline: DateTime.UtcNow.AddSeconds(10),
             cancellationToken: cancellationToken
         );
 
@@ -33,6 +34,7 @@ internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service,
             {
                 var response = await service.GetBooksAsync(
                     new() { BookIds = { sortedIds } },
+                    deadline: DateTime.UtcNow.AddSeconds(10),
                     cancellationToken: cancellationToken
                 );
                 return response;

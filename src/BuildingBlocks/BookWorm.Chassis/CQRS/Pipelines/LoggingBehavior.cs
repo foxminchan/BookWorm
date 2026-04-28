@@ -55,7 +55,7 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
 
         var start = Stopwatch.GetTimestamp();
 
-        var response = await next(message, cancellationToken).ConfigureAwait(false);
+        var response = await next(message, cancellationToken);
 
         var timeTaken = Stopwatch.GetElapsedTime(start);
 

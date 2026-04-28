@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Grpc.Services;
+using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -28,7 +28,7 @@ internal static class Extensions
                 HealthStatus.Degraded
             );
 
-            services.AddSingleton<IBookService, BookService>();
+            services.AddScoped<IBookService, BookService>();
 
             services
                 .AddGrpcServiceReference<BasketGrpcService.BasketGrpcServiceClient>(
@@ -41,7 +41,7 @@ internal static class Extensions
                 )
                 .AddAuthTokenExchange(Constants.Aspire.Services.Basket);
 
-            services.AddSingleton<IBasketService, BasketService>();
+            services.AddScoped<IBasketService, BasketService>();
         }
     }
 }

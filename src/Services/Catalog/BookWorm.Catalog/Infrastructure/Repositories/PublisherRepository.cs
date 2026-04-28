@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Infrastructure.Repositories;
+using BookWorm.Constants.Core;
+
+namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class PublisherRepository(CatalogDbContext context) : IPublisherRepository
 {
@@ -16,7 +18,10 @@ internal sealed class PublisherRepository(CatalogDbContext context) : IPublisher
 
     public async Task<IReadOnlyList<Publisher>> ListAsync(CancellationToken cancellationToken)
     {
-        return await _context.Publishers.AsNoTracking().ToListAsync(cancellationToken);
+        return await _context
+            .Publishers.AsNoTracking()
+            .Take(Pagination.DefaultQueryLimit)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Publisher?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

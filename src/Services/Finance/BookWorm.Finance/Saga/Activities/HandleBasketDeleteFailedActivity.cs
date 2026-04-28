@@ -32,7 +32,7 @@ internal sealed class HandleBasketDeleteFailedActivity(ILoggerFactory loggerFact
             context.Message.OrderId
         );
 
-        await next.Execute(context).ConfigureAwait(false);
+        await next.Execute(context);
     }
 
     public Task Faulted<TException>(

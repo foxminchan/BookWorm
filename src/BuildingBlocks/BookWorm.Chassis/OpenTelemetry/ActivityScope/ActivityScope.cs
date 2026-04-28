@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 namespace BookWorm.Chassis.OpenTelemetry.ActivityScope;
 
@@ -6,6 +6,11 @@ internal sealed class ActivityScope : IActivityScope
 {
     public Activity? Start(string name, StartActivityOptions options)
     {
+        if (!ActivitySourceProvider.Instance.HasListeners())
+        {
+            return null;
+        }
+
         return options.Parent.HasValue
             ? ActivitySourceProvider
                 .Instance.CreateActivity(
@@ -38,14 +43,21 @@ internal sealed class ActivityScope : IActivityScope
 
         try
         {
-            await run(activity, ct).ConfigureAwait(false);
+            await run(activity, ct);
 
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception ex)
         {
-            activity?.SetStatus(ActivityStatusCode.Error);
-            activity?.AddException(ex);
+            if (activity is null)
+            {
+                throw;
+            }
+
+            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag("otel.status_code", "error");
+            activity.SetTag("otel.status_description", ex.Message);
+            activity.AddException(ex);
             throw;
         }
     }
@@ -61,7 +73,7 @@ internal sealed class ActivityScope : IActivityScope
 
         try
         {
-            var result = await run(activity, ct).ConfigureAwait(false);
+            var result = await run(activity, ct);
 
             activity?.SetStatus(ActivityStatusCode.Ok);
 
@@ -69,8 +81,15 @@ internal sealed class ActivityScope : IActivityScope
         }
         catch (Exception ex)
         {
-            activity?.AddException(ex);
-            activity?.SetStatus(ActivityStatusCode.Error);
+            if (activity is null)
+            {
+                throw;
+            }
+
+            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag("otel.status_code", "error");
+            activity.SetTag("otel.status_description", ex.Message);
+            activity.AddException(ex);
             throw;
         }
     }

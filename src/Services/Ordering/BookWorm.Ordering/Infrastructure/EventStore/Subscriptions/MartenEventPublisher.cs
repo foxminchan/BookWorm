@@ -13,6 +13,9 @@ internal sealed class MartenEventPublisher(
     GlobalLogBuffer logBuffer
 ) : SubscriptionBase
 {
+    private const string ProcessEventsActivityName =
+        $"{nameof(MartenEventPublisher)}/{nameof(ProcessEventsAsync)}";
+
     public override async Task<IChangeListener> ProcessEventsAsync(
         EventRange page,
         ISubscriptionController controller,
@@ -32,7 +35,7 @@ internal sealed class MartenEventPublisher(
                 );
 
                 await activityScope.Run(
-                    $"{nameof(MartenEventPublisher)}/{nameof(ProcessEventsAsync)}",
+                    ProcessEventsActivityName,
                     async (_, ct) =>
                     {
                         using var scope = scopeFactory.CreateScope();

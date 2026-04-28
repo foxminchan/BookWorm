@@ -18,6 +18,15 @@ public static class ServiceReferenceExtensions
     {
         services
             .AddGrpcClient<Health.HealthClient>(o => o.Address = uri)
+            .ConfigurePrimaryHttpMessageHandler(() =>
+                new SocketsHttpHandler
+                {
+                    PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
+                    KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+                    KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
+                    EnableMultipleHttp2Connections = true,
+                }
+            )
             .AddStandardResilienceHandler();
         services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
     }
@@ -57,7 +66,17 @@ public static class ServiceReferenceExtensions
             }
 
             var uri = new Uri(address);
-            var builder = services.AddGrpcClient<TClient>(o => o.Address = uri);
+            var builder = services
+                .AddGrpcClient<TClient>(o => o.Address = uri)
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                    new SocketsHttpHandler
+                    {
+                        PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
+                        KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+                        KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
+                        EnableMultipleHttp2Connections = true,
+                    }
+                );
 
             builder.AddStandardResilienceHandler();
 

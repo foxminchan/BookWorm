@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Chassis.Utilities.Configurations;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SendGrid;
 
@@ -18,7 +18,8 @@ internal static class SendGridExtensions
                 .Validate(
                     o => !string.IsNullOrWhiteSpace(o.ApiKey),
                     "SendGrid API key must be provided in the configuration."
-                );
+                )
+                .ValidateOnStart();
 
             services.TryAddTransient<ISendGridClient>(resolver =>
                 resolver.GetRequiredService<InjectableSendGridClient>()

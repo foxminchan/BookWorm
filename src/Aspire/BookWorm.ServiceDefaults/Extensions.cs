@@ -2,6 +2,7 @@ using System.Diagnostics;
 using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -154,6 +155,15 @@ public static class Extensions
 
                 // Turn on service discovery by default
                 http.AddServiceDiscovery();
+            });
+
+            builder.Services.Configure<KestrelServerOptions>(options =>
+            {
+                options.Limits.Http2.MaxStreamsPerConnection = 250;
+                options.Limits.Http2.InitialConnectionWindowSize = 1024 * 1024;
+                options.Limits.Http2.InitialStreamWindowSize = 768 * 1024;
+                options.Limits.Http2.KeepAlivePingDelay = TimeSpan.FromSeconds(30);
+                options.Limits.Http2.KeepAlivePingTimeout = TimeSpan.FromSeconds(10);
             });
         }
 

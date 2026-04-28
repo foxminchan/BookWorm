@@ -37,9 +37,8 @@ internal sealed class ValidationBehavior<TMessage, TResponse>(
         var context = new ValidationContext<TMessage>(message);
 
         var validationResult = await Task.WhenAll(
-                validators.Select(v => v.ValidateAsync(context, cancellationToken))
-            )
-            .ConfigureAwait(false);
+            validators.Select(v => v.ValidateAsync(context, cancellationToken))
+        );
 
         var errors = validationResult
             .Where(result => !result.IsValid)
@@ -59,13 +58,11 @@ internal sealed class ValidationBehavior<TMessage, TResponse>(
         );
         var activityName = $"{messageType}-{validatorNames.Trim().TrimEnd(',')}";
 
-        await activityScope
-            .Run(
-                activityName,
-                (_, _) => Task.CompletedTask,
-                new() { Tags = { { TelemetryTags.Validator.Validation, messageType } } },
-                cancellationToken
-            )
-            .ConfigureAwait(false);
+        await activityScope.Run(
+            activityName,
+            (_, _) => Task.CompletedTask,
+            new() { Tags = { { TelemetryTags.Validator.Validation, messageType } } },
+            cancellationToken
+        );
     }
 }

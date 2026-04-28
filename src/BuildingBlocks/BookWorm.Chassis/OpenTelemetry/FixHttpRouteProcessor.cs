@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 
@@ -23,6 +23,12 @@ internal sealed class FixHttpRouteProcessor : BaseProcessor<Activity>
         var path = activity.GetTagItem(UrlPathTag)?.ToString();
 
         if (string.IsNullOrWhiteSpace(method) || string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var existingRoute = activity.GetTagItem(HttpRouteTag)?.ToString();
+        if (!string.IsNullOrWhiteSpace(existingRoute))
         {
             return;
         }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -61,6 +61,16 @@ public static class ConfigurationExtensions
                 .BindConfiguration(section)
                 .ValidateDataAnnotations();
 
+            if (typeof(IValidateOptions<TSetting>).IsAssignableFrom(typeof(TSetting)))
+            {
+                services.TryAddEnumerable(
+                    ServiceDescriptor.Singleton(
+                        typeof(IValidateOptions<TSetting>),
+                        typeof(TSetting)
+                    )
+                );
+            }
+
             // Expose the bound options value directly for consumers that depend on TSetting.
             services.TryAddSingleton(sp =>
             {
@@ -75,20 +85,18 @@ public static class ConfigurationExtensions
         /// </summary>
         /// <typeparam name="T">The concrete app settings type.</typeparam>
         /// <returns>The updated service collection.</returns>
-        /// <remarks>
-        ///     This helper uses <see cref="AppSettings.Parse{T}(IConfiguration)" /> to materialize
-        ///     configuration once at startup and register it for DI consumers.
-        /// </remarks>
         public IServiceCollection AddAppSettings<T>()
             where T : AppSettings, new()
         {
             var services = builder.Services;
 
-            services.AddSingleton<T>(_ =>
-            {
-                var settings = AppSettings.Parse<T>(builder.Configuration);
-                return settings;
-            });
+            services
+                .AddOptionsWithValidateOnStart<T>()
+                .Bind(builder.Configuration)
+                .ValidateDataAnnotations();
+
+            // Register the concrete type directly as a singleton instance
+            services.AddSingleton<T>(sp => sp.GetRequiredService<IOptions<T>>().Value);
 
             return services;
         }

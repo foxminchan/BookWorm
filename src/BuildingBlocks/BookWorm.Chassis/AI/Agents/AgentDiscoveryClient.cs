@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,11 +22,12 @@ internal abstract class AgentDiscoveryClient(
 
         response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         var agents =
-            JsonSerializer.Deserialize<List<AgentDiscoveryCard>>(
-                json,
-                AgentDiscoveryCardSerializationContext.Default.Options
+            await JsonSerializer.DeserializeAsync<List<AgentDiscoveryCard>>(
+                stream,
+                AgentDiscoveryCardSerializationContext.Default.Options,
+                cancellationToken
             ) ?? [];
 
         logger.LogInformation("Retrieved {AgentCount} agents from the API", agents.Count);
@@ -34,14 +35,10 @@ internal abstract class AgentDiscoveryClient(
         return agents;
     }
 
-    public sealed class AgentDiscoveryCard
-    {
-        [JsonPropertyName("name")]
-        public string? Name { get; set; }
-
-        [JsonPropertyName("description")]
-        public string? Description { get; set; }
-    }
+    public sealed record AgentDiscoveryCard(
+        [property: JsonPropertyName("name")] string? Name,
+        [property: JsonPropertyName("description")] string? Description
+    );
 }
 
 [JsonSerializable(typeof(AgentDiscoveryClient.AgentDiscoveryCard))]

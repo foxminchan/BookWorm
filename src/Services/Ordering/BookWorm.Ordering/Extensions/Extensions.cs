@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Ordering.Configurations;
@@ -30,8 +30,8 @@ internal static class Extensions
 
             services.AddCqrsInfrastructure();
 
-            services.AddSingleton(
-                new JsonSerializerOptions { Converters = { DecimalJsonConverter.Instance } }
+            services.ConfigureHttpJsonOptions(options =>
+                options.SerializerOptions.Converters.Add(DecimalJsonConverter.Instance)
             );
 
             builder.AddRateLimiting();

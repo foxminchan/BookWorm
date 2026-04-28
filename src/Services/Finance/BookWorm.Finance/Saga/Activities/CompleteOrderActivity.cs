@@ -30,7 +30,7 @@ internal sealed class CompleteOrderActivity(ILoggerFactory loggerFactory)
             context.Message.OrderId
         );
 
-        await next.Execute(context).ConfigureAwait(false);
+        await next.Execute(context);
     }
 
     public Task Faulted<TException>(

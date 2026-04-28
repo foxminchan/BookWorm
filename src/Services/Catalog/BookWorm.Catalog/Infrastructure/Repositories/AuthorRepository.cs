@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Specification.Evaluators;
+using BookWorm.Chassis.Specification.Evaluators;
+using BookWorm.Constants.Core;
 
 namespace BookWorm.Catalog.Infrastructure.Repositories;
 
@@ -19,7 +20,10 @@ internal sealed class AuthorRepository(CatalogDbContext context) : IAuthorReposi
 
     public async Task<IReadOnlyList<Author>> ListAsync(CancellationToken cancellationToken)
     {
-        return await _context.Authors.AsNoTracking().ToListAsync(cancellationToken);
+        return await _context
+            .Authors.AsNoTracking()
+            .Take(Pagination.DefaultQueryLimit)
+            .ToListAsync(cancellationToken);
     }
 
     public void Delete(Author author)

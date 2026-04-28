@@ -37,7 +37,7 @@ internal sealed class ActivityBehavior<TMessage, TResponse>(
 
         if (attr is not null)
         {
-            return await next(message, cancellationToken).ConfigureAwait(false);
+            return await next(message, cancellationToken);
         }
 
         var messageType = message.GetType().Name;
@@ -53,14 +53,12 @@ internal sealed class ActivityBehavior<TMessage, TResponse>(
 
         try
         {
-            return await activityScope
-                .Run(
-                    activityName,
-                    async (_, ct) => await next(message, ct).ConfigureAwait(false),
-                    new() { Tags = { { tagName, messageType } } },
-                    cancellationToken
-                )
-                .ConfigureAwait(false);
+            return await activityScope.Run(
+                activityName,
+                async (_, ct) => await next(message, ct),
+                new() { Tags = { { tagName, messageType } } },
+                cancellationToken
+            );
         }
         finally
         {

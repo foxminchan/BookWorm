@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 
 namespace BookWorm.Chassis.OpenTelemetry;
 
@@ -10,8 +10,8 @@ public static class TelemetryTags
         public const string CommandType = $"{Command}.type";
         private const string CommandsMeter = $"{ActivitySourceProvider.DefaultSourceName}.commands";
         private const string CommandHandling = $"{CommandsMeter}.handling";
-        public const string ActiveCommandsNumber = $"{CommandHandling}.active.number";
-        public const string TotalCommandsNumber = $"{CommandHandling}.total";
+        public const string ActiveCommandsNumber = $"{CommandHandling}.active.count";
+        public const string TotalCommandsNumber = $"{CommandHandling}.total.count";
         public const string CommandHandlingDuration = $"{CommandHandling}.duration";
     }
 
@@ -21,8 +21,8 @@ public static class TelemetryTags
         public const string QueryType = $"{Query}.type";
         private const string QueriesMeter = $"{ActivitySourceProvider.DefaultSourceName}.queries";
         private const string QueryHandling = $"{QueriesMeter}.handling";
-        public const string ActiveQueriesNumber = $"{QueryHandling}.active.number";
-        public const string TotalQueriesNumber = $"{QueryHandling}.total";
+        public const string ActiveQueriesNumber = $"{QueryHandling}.active.count";
+        public const string TotalQueriesNumber = $"{QueryHandling}.total.count";
         public const string QueryHandlingDuration = $"{QueryHandling}.duration";
     }
 

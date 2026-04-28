@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.EF;
+using BookWorm.Chassis.EF;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Repository;
 using BookWorm.Chassis.Utilities.Converters;
@@ -24,8 +24,8 @@ internal static class Extensions
             services.AddGlobalExceptionHandler();
             services.AddProblemDetails();
 
-            services.AddSingleton(
-                new JsonSerializerOptions { Converters = { DateOnlyJsonConverter.Instance } }
+            services.ConfigureHttpJsonOptions(options =>
+                options.SerializerOptions.Converters.Add(DateOnlyJsonConverter.Instance)
             );
 
             services.AddActivityScope();

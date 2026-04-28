@@ -1,4 +1,4 @@
-﻿using MailKit;
+using MailKit;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
@@ -34,36 +34,49 @@ internal static class MailKitExtensions
         {
             var services = builder.Services;
 
-            // Bind settings from configuration section
-            var settings = new MailKitSettings();
-            builder.Configuration.GetSection(sectionName).Bind(settings);
+            var rawSettings = new MailKitSettings();
+            builder.Configuration.GetSection(sectionName).Bind(rawSettings);
 
-            // Parse connection string if available
-            if (builder.Configuration.GetConnectionString(connectionName) is { } connectionString)
-            {
-                settings.ParseConnectionString(connectionString);
-            }
+            // Bind settings from configuration section and validate on start
+            services
+                .AddOptionsWithValidateOnStart<MailKitSettings>()
+                .BindConfiguration(sectionName)
+                .PostConfigure(options =>
+                {
+                    if (
+                        builder.Configuration.GetConnectionString(connectionName) is
+                        { } connectionString
+                    )
+                    {
+                        options.ParseConnectionString(connectionString);
+                    }
 
-            configureSettings?.Invoke(settings);
+                    configureSettings?.Invoke(options);
+                })
+                .ValidateDataAnnotations();
+
+            services.AddSingleton<IValidateOptions<MailKitSettings>, MailKitSettings>();
 
             // Register settings as singleton for injection
-            services.AddSingleton(settings);
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<MailKitSettings>>().Value);
 
             // Register factory as singleton to manage SMTP connection state
-            services.AddSingleton(_ => new MailKitClientFactory(settings));
+            services.AddSingleton(sp => new MailKitClientFactory(
+                sp.GetRequiredService<MailKitSettings>()
+            ));
 
             // Register both concrete type and interface for outbox pattern support
             services.AddScoped<MailKitSender>();
             services.AddScoped<ISender>(sp => sp.GetRequiredService<MailKitSender>());
 
-            if (!settings.DisableHealthChecks)
+            if (!rawSettings.DisableHealthChecks)
             {
                 services
                     .AddHealthChecks()
                     .AddCheck<MailKitHealthCheck>(nameof(MailKit), null, [connectionName]);
             }
 
-            if (!settings.DisableTracing)
+            if (!rawSettings.DisableTracing)
             {
                 services
                     .AddOpenTelemetry()
@@ -72,7 +85,7 @@ internal static class MailKitExtensions
                     );
             }
 
-            if (!settings.DisableMetrics)
+            if (!rawSettings.DisableMetrics)
             {
                 Telemetry.SmtpClient.Configure();
 

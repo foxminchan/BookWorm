@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Configurations;
+using BookWorm.Catalog.Configurations;
 using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Chassis.CQRS;
@@ -81,12 +81,10 @@ internal static class Extensions
 
             services.AddGrpcHealthChecks();
 
-            services.AddSingleton(_ =>
+            services.ConfigureHttpJsonOptions(options =>
             {
-                var options = new JsonSerializerOptions();
-                options.Converters.Add(StringTrimmerJsonConverter.Instance);
-                options.Converters.Add(DecimalJsonConverter.Instance);
-                return options;
+                options.SerializerOptions.Converters.Add(StringTrimmerJsonConverter.Instance);
+                options.SerializerOptions.Converters.Add(DecimalJsonConverter.Instance);
             });
 
             // Add database configuration

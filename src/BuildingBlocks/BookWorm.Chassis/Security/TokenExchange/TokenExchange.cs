@@ -76,8 +76,11 @@ internal sealed class TokenExchange(
         CancellationToken cancellationToken
     )
     {
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        using var tokenResponse = JsonDocument.Parse(content);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var tokenResponse = await JsonDocument.ParseAsync(
+            stream,
+            cancellationToken: cancellationToken
+        );
 
         if (
             !tokenResponse.RootElement.TryGetProperty("access_token", out var accessTokenElement)

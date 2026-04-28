@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Infrastructure.Repositories;
+using BookWorm.Constants.Core;
+
+namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class CategoryRepository(CatalogDbContext context) : ICategoryRepository
 {
@@ -20,7 +22,10 @@ internal sealed class CategoryRepository(CatalogDbContext context) : ICategoryRe
         CancellationToken cancellationToken = default
     )
     {
-        return await _context.Categories.AsNoTracking().ToListAsync(cancellationToken);
+        return await _context
+            .Categories.AsNoTracking()
+            .Take(Pagination.DefaultQueryLimit)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Category?> GetByIdAsync(
