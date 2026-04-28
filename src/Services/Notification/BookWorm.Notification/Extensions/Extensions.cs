@@ -1,12 +1,10 @@
 using BookWorm.Chassis.EF;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Repository;
-using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
-using BookWorm.ServiceDefaults.Cors;
 
 namespace BookWorm.Notification.Extensions;
 
@@ -17,16 +15,6 @@ internal static class Extensions
         public void AddApplicationServices()
         {
             var services = builder.Services;
-
-            builder.AddDefaultCors();
-
-            // Add exception handlers
-            services.AddGlobalExceptionHandler();
-            services.AddProblemDetails();
-
-            services.ConfigureHttpJsonOptions(options =>
-                options.SerializerOptions.Converters.Add(DateOnlyJsonConverter.Instance)
-            );
 
             services.AddActivityScope();
 

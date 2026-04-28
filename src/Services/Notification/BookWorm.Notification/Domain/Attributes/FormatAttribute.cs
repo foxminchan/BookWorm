@@ -5,12 +5,10 @@ namespace BookWorm.Notification.Domain.Attributes;
 [ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Property)]
 internal sealed class FormatAttribute(
-    [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format,
-    string? cultureName = null
+    [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format
 ) : Attribute
 {
     public string Format { get; } = format;
 
-    public IFormatProvider? FormatProvider { get; } =
-        cultureName is not null ? CultureInfo.GetCultureInfo(cultureName) : null;
+    public IFormatProvider? FormatProvider { get; } = CultureInfo.InvariantCulture;
 }
