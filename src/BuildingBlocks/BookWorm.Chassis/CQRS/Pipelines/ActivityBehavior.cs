@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Query;
 using BookWorm.Chassis.OpenTelemetry;
@@ -37,7 +37,7 @@ internal sealed class ActivityBehavior<TMessage, TResponse>(
 
         if (attr is not null)
         {
-            return await next(message, cancellationToken);
+            return await next(message, cancellationToken).ConfigureAwait(false);
         }
 
         var messageType = message.GetType().Name;
@@ -53,12 +53,14 @@ internal sealed class ActivityBehavior<TMessage, TResponse>(
 
         try
         {
-            return await activityScope.Run(
-                activityName,
-                async (_, ct) => await next(message, ct),
-                new() { Tags = { { tagName, messageType } } },
-                cancellationToken
-            );
+            return await activityScope
+                .Run(
+                    activityName,
+                    async (_, ct) => await next(message, ct).ConfigureAwait(false),
+                    new() { Tags = { { tagName, messageType } } },
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
         }
         finally
         {

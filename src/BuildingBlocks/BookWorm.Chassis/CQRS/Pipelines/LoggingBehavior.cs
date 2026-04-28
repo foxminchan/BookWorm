@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Reflection;
 using Mediator;
 using Microsoft.Extensions.Compliance.Classification;
@@ -55,7 +55,7 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
 
         var start = Stopwatch.GetTimestamp();
 
-        var response = await next(message, cancellationToken);
+        var response = await next(message, cancellationToken).ConfigureAwait(false);
 
         var timeTaken = Stopwatch.GetElapsedTime(start);
 
