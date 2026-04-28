@@ -77,9 +77,7 @@ internal static class Extensions
             services.AddVersioning();
             services.AddEndpoints(typeof(IBasketApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.AddDocumentTransformer<
-                    OpenApiInfoDefinitionsTransformer<BasketAppSettings>
-                >()
+                options.ApplyOpenApiInfoDefinitions<BasketAppSettings>()
             );
 
             // Configure gRPC

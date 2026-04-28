@@ -110,9 +110,7 @@ internal static class Extensions
             services.AddVersioning();
             services.AddEndpoints(typeof(IRatingApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.AddDocumentTransformer<
-                    OpenApiInfoDefinitionsTransformer<RatingAppSettings>
-                >()
+                options.ApplyOpenApiInfoDefinitions<RatingAppSettings>()
             );
 
             builder.AddAgents();

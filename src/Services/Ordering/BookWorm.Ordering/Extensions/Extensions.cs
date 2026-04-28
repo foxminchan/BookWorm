@@ -44,9 +44,7 @@ internal static class Extensions
             services.AddVersioning();
             services.AddEndpoints(typeof(IOrderingApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.AddDocumentTransformer<
-                    OpenApiInfoDefinitionsTransformer<OrderingAppSettings>
-                >()
+                options.ApplyOpenApiInfoDefinitions<OrderingAppSettings>()
             );
 
             // Add event bus configuration

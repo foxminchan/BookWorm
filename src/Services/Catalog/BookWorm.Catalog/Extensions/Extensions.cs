@@ -104,9 +104,7 @@ internal static class Extensions
             services.AddVersioning();
             services.AddEndpoints(typeof(ICatalogApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.AddDocumentTransformer<
-                    OpenApiInfoDefinitionsTransformer<CatalogAppSettings>
-                >()
+                options.ApplyOpenApiInfoDefinitions<CatalogAppSettings>()
             );
 
             // Configure Mapper

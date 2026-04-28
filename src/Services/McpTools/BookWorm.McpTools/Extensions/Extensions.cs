@@ -138,9 +138,7 @@ internal static class Extensions
                 .AddHttpContextAccessor()
                 .AddDefaultOpenApi(options =>
                 {
-                    options.AddDocumentTransformer<
-                        OpenApiInfoDefinitionsTransformer<McpToolsAppSettings>
-                    >();
+                    options.ApplyOpenApiInfoDefinitions<McpToolsAppSettings>();
                     options.AddDocumentTransformer<McpDocumentTransformer>();
                 });
         }

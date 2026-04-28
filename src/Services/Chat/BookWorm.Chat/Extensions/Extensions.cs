@@ -68,7 +68,7 @@ internal static class Extensions
             services.AddVersioning();
             services.AddEndpoints(typeof(IChatApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.AddDocumentTransformer<OpenApiInfoDefinitionsTransformer<ChatAppSettings>>()
+                options.ApplyOpenApiInfoDefinitions<ChatAppSettings>()
             );
 
             // Configure ClaimsPrincipal

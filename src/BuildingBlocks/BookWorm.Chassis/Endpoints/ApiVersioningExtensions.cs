@@ -22,11 +22,14 @@ public static class Extension
                 {
                     options.DefaultApiVersion = ApiVersions.V1;
                     options.ApiVersionReader = new UrlSegmentApiVersionReader();
+                    options.ReportApiVersions = true;
                 })
                 .AddApiExplorer(options =>
                 {
                     options.GroupNameFormat = "'v'V";
                     options.SubstituteApiVersionInUrl = true;
+                    options.DefaultApiVersionParameterDescription =
+                        "The API version, in the format 'vX' where X is the version number (e.g. v1)";
                 });
         }
     }
