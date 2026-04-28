@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chassis.Specification.Builders;
+namespace BookWorm.Chassis.Specification.Builders;
 
 internal class SpecificationBuilder<T>(Specification<T> specification) : ISpecificationBuilder<T>
     where T : class

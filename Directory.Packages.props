@@ -31,7 +31,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.9.27" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.9.28" />
     <PackageVersion Include="Aspire.Hosting.AgentFramework.DevUI" Version="$(AgentFrameworkVersion)" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
@@ -69,7 +69,7 @@
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="10.1.6" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.32.1" />
+    <PackageVersion Include="Marten.AspNetCore" Version="8.33.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
