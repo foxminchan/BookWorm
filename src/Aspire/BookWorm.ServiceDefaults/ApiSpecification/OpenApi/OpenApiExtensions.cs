@@ -40,6 +40,7 @@ public static class OpenApiExtensions
         {
             services.AddOpenApi(options =>
             {
+                options.AddOperationTransformer<DeprecatedStatusTransformer>();
                 options.AddOperationTransformer<AuthorizationChecksTransformer>();
                 options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
                 configure?.Invoke(options);
