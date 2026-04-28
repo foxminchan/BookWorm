@@ -10,5 +10,5 @@ internal sealed class FormatAttribute(
 {
     public string Format { get; } = format;
 
-    public IFormatProvider? FormatProvider { get; } = CultureInfo.InvariantCulture;
+    public IFormatProvider? FormatProvider { get; } = CultureInfo.GetCultureInfo("en-US");
 }
