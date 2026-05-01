@@ -70,8 +70,8 @@ importers:
         specifier: ^0.13.11
         version: 0.13.11(typescript@6.0.3)(valibot@1.2.0(typescript@6.0.3))(zod@4.3.6)
       '@tanstack/react-query':
-        specifier: ^5.100.1
-        version: 5.100.1(react@19.2.5)
+        specifier: ^5.100.6
+        version: 5.100.6(react@19.2.5)
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -245,8 +245,8 @@ importers:
         specifier: ^0.13.11
         version: 0.13.11(typescript@6.0.3)(valibot@1.2.0(typescript@6.0.3))(zod@4.3.6)
       '@tanstack/react-query':
-        specifier: ^5.100.1
-        version: 5.100.1(react@19.2.5)
+        specifier: ^5.100.6
+        version: 5.100.6(react@19.2.5)
       '@workspace/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
@@ -291,7 +291,7 @@ importers:
         version: 2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5)
       jotai-tanstack-query:
         specifier: ^0.11.0
-        version: 0.11.0(@tanstack/query-core@5.100.1)(@tanstack/react-query@5.100.1(react@19.2.5))(jotai@2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
+        version: 0.11.0(@tanstack/query-core@5.100.6)(@tanstack/react-query@5.100.6(react@19.2.5))(jotai@2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
       lucide-react:
         specifier: ^1.11.0
         version: 1.11.0(react@19.2.5)
@@ -436,8 +436,8 @@ importers:
   packages/api-hooks:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.100.1
-        version: 5.100.1(react@19.2.5)
+        specifier: ^5.100.6
+        version: 5.100.6(react@19.2.5)
     devDependencies:
       '@types/react':
         specifier: ^19.2.14
@@ -492,7 +492,7 @@ importers:
         version: 7.1.1(eslint@10.2.1(jiti@2.6.1))
       eslint-plugin-turbo:
         specifier: ^2.9.6
-        version: 2.9.6(eslint@10.2.1(jiti@2.6.1))(turbo@2.9.6)
+        version: 2.9.6(eslint@10.2.1(jiti@2.6.1))(turbo@2.9.7)
       globals:
         specifier: ^17.5.0
         version: 17.5.0
@@ -1735,6 +1735,12 @@ packages:
     peerDependencies:
       hono: '>=4.12.7'
 
+  '@hono/node-server@2.0.1':
+    resolution: {integrity: sha512-jI9yMDyFpqBeSighf/zlXnQG/nl9AyBc6aAgy4XtxJMyt/CNyJpvPfzDD+bCc2zAOmhhqtF6TnmIaY+xV4mIrw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: '>=4.12.7'
+
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
     peerDependencies:
@@ -2213,8 +2219,8 @@ packages:
       '@cfworker/json-schema':
         optional: true
 
-  '@mongodb-js/saslprep@1.4.9':
-    resolution: {integrity: sha512-RXSxsokhAF/4nWys8An8npsqOI33Ex1Hlzqjw2pZOO+GKtMAR2noGnUdsFiGwsaO/xXI+56mtjTmDA3JXJsvmA==}
+  '@mongodb-js/saslprep@1.4.10':
+    resolution: {integrity: sha512-DDb3OAw8ezai9p2i1F7R5wMVmyrMIuT8ixjV56R4Hl4cazCo2tOMTDyPR5rrCUcHiMbWHzCXOdife5OD6H1C8w==}
 
   '@mrleebo/prisma-ast@0.13.1':
     resolution: {integrity: sha512-XyroGQXcHrZdvmrGJvsA9KNeOOgGMg1Vg9OlheUsBOSKznLMDl+YChxbkboRHvtFYJEMRYmlV3uoo/njCw05iw==}
@@ -3727,11 +3733,11 @@ packages:
     resolution: {integrity: sha512-ZNQ1bIL6eUXVKdic0tiImvBVkWrg/IoSK6VIacTrO3d3HAGnd70qFJNJagR/YOJIOw4EKGWnodwpYZkN1pWuVQ==}
     engines: {node: '>=18'}
 
-  '@tanstack/query-core@5.100.1':
-    resolution: {integrity: sha512-awvQhOO/2TrSCHE5LKKsXcvvj6WSBncwEcMFCB/ez0Qs0b17iyyivoGArNV3HFfXryZwCpnb/olsaBBKrIbtSw==}
+  '@tanstack/query-core@5.100.6':
+    resolution: {integrity: sha512-Os2CPUr98to98RYm+D4qGqGkiffn7MGSyl2547a4MljVkHE30AMJRqTiyCqBfMwzAx/I91vCkAxp5tHSla6Twg==}
 
-  '@tanstack/react-query@5.100.1':
-    resolution: {integrity: sha512-UgWRLhQKprC37SsO6y1zRabOqDmM2gsdTNPbqTT35yl7kOOhwXU4nyfOiGHXPwoEFJV1IpSk85hjIFjNFWVpzw==}
+  '@tanstack/react-query@5.100.6':
+    resolution: {integrity: sha512-uVSrps0PV16Cxmcn2rvL+dUhwTpTUtiRW347AEeYxMZXO2pZe9ja7E24PAMGoQ5u2g89DD8u4QhOviBk+RN8RA==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -3815,8 +3821,18 @@ packages:
     cpu: [x64]
     os: [darwin]
 
+  '@turbo/darwin-64@2.9.7':
+    resolution: {integrity: sha512-wnvOWuVWJ5EUHNKxExEWiGlTeVpLG1L0PCu5MUozyC1P2SHGiWsmpW6/yAuShH91Fa2TAHOvdCRBzriZh4j4Eg==}
+    cpu: [x64]
+    os: [darwin]
+
   '@turbo/darwin-arm64@2.9.6':
     resolution: {integrity: sha512-aalBeSl4agT/QtYGDyf/XLajedWzUC9Vg/pm/YO6QQ93vkQ91Vz5uK1ta5RbVRDozQSz4njxUNqRNmOXDzW+qw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@turbo/darwin-arm64@2.9.7':
+    resolution: {integrity: sha512-mA0FIPMwwN3lodDkQYaGxj6PeT7ZaN5aCEbkKn/WB+ZB9yJdVWA4J83GH7t43jqDc5dcnVluVN5UFx3plRiXhA==}
     cpu: [arm64]
     os: [darwin]
 
@@ -3829,8 +3845,18 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@turbo/linux-64@2.9.7':
+    resolution: {integrity: sha512-fEbUYpgb5l7P+q+5tsWF2gw+/GSjUsuUTcnfm+f0lozUjgcjLKyOat6PgtAChmIFcTPchCL/8rJ3TvkBy01gfA==}
+    cpu: [x64]
+    os: [linux]
+
   '@turbo/linux-arm64@2.9.6':
     resolution: {integrity: sha512-02o/ZS69cOYEDczXvOB2xmyrtzjQ2hVFtWZK1iqxXUfzMmTjZK4UumrfNnjckSg+gqeBfnPRHa0NstA173Ik3g==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@turbo/linux-arm64@2.9.7':
+    resolution: {integrity: sha512-VkUjulo9ytfHKUHOS5gy0XPoh4CTKPXWCL8nLdrlHVi9fSut31ECeUqnm/dAbETP5D4xo9mH9XkJ+qMzGe/zmg==}
     cpu: [arm64]
     os: [linux]
 
@@ -3839,8 +3865,18 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@turbo/windows-64@2.9.7':
+    resolution: {integrity: sha512-/GWdY6/x4aIHqkYJq596Rpdk1x0MkpRPkJcLAoB3yGRwyUms0+u2F1GnV54IbyAZTeKLRWSJKzNC+QwVGdYchA==}
+    cpu: [x64]
+    os: [win32]
+
   '@turbo/windows-arm64@2.9.6':
     resolution: {integrity: sha512-1XUUyWW0W6FTSqGEhU8RHVqb2wP1SPkr7hIvBlMEwH9jr+sJQK5kqeosLJ/QaUv4ecSAd1ZhIrLoW7qslAzT4A==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@turbo/windows-arm64@2.9.7':
+    resolution: {integrity: sha512-xBBgxCC5PK2+WZ1PPRZdp+aJ0bMBcEbweXWux3RUHJvX9ZodcoQySkrW6qt+ahb+uk8ZjyQodLfDwtVSoYds1w==}
     cpu: [arm64]
     os: [win32]
 
@@ -5795,6 +5831,10 @@ packages:
     resolution: {integrity: sha512-qM0jDhFEaCBb4TxoW7f53Qrpv9RBiayUHo0S52JudprkhvpjIrGoU1mnnr29Fvd1U335ZFPZQY1wlkqgfGXyLg==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.12.16:
+    resolution: {integrity: sha512-jN0ZewiNAWSe5khM3EyCmBb250+b40wWbwNILNfEvq84VREWwOIkuUsFONk/3i3nqkz7Oe1PcpM2mwQEK2L9Kg==}
+    engines: {node: '>=16.9.0'}
+
   hosted-git-info@9.0.2:
     resolution: {integrity: sha512-M422h7o/BR3rmCQ8UHi7cyyMqKltdP9Uo+J2fXK+RSAY+wTcKOIRyhTuKv4qn+DJf3g+PL890AzId5KZpX+CBg==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -5894,6 +5934,10 @@ packages:
 
   ip-address@10.1.0:
     resolution: {integrity: sha512-XXADHxXmvT9+CRxhXg56LJovE+bmWnEWB78LB83VZTprKTmaC5QfruXocxzTZ2Kl0DNwKuBdlIhjL8LeY8Sf8Q==}
+    engines: {node: '>= 12'}
+
+  ip-address@10.1.1:
+    resolution: {integrity: sha512-1FMu8/N15Ck1BL551Jf42NYIoin2unWjLQ2Fze/DXryJRl5twqtwNHlO39qERGbIOcKYWHdgRryhOC+NG4eaLw==}
     engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
@@ -7229,8 +7273,8 @@ packages:
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
 
-  pkg-types@2.3.0:
-    resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
+  pkg-types@2.3.1:
+    resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
 
   playwright-bdd@8.5.0:
     resolution: {integrity: sha512-w/Bd5C1d6Xe5e1oREsbt2rDN0/Mcp+J2OjQwSl49/mroa2K6UZU33P7v91pLQPl1otDitMwJOaOeJsqaj7WU7w==}
@@ -8082,6 +8126,10 @@ packages:
     resolution: {integrity: sha512-VKS/ZaQhhkKFMANmAOhhXVoIfBXblQxGX1myCQ2faQrfmobMftXeJPcZGp0gS07ocvGJWDLZGyOZDadDBqYIJg==}
     engines: {node: '>=18'}
 
+  tinyexec@1.1.2:
+    resolution: {integrity: sha512-dAqSqE/RabpBKI8+h26GfLq6Vb3JVXs30XYQjdMjaj/c2tS8IYYMbIzP599KtRj7c57/wYApb3QjgRgXmrCukA==}
+    engines: {node: '>=18'}
+
   tinyglobby@0.2.16:
     resolution: {integrity: sha512-pn99VhoACYR8nFHhxqix+uvsbXineAasWm5ojXoN8xEwK5Kd3/TrhNn1wByuD52UxWRLy8pu+kRMniEi6Eq9Zg==}
     engines: {node: '>=12.0.0'}
@@ -8149,6 +8197,10 @@ packages:
 
   turbo@2.9.6:
     resolution: {integrity: sha512-+v2QJey7ZUeUiuigkU+uFfklvNUyPI2VO2vBpMYJA+a1hKFLFiKtUYlRHdb3P9CrAvMzi0upbjI4WT+zKtqkBg==}
+    hasBin: true
+
+  turbo@2.9.7:
+    resolution: {integrity: sha512-epxzqVO2s0IxcSWcgb+qKrtco8isfe7g3VtiS6hkYnEK4A9XQDZbrtavQ6MtWR1KoQn+1fUomaQth2rfRHlUlg==}
     hasBin: true
 
   tw-animate-css@1.4.0:
@@ -8363,6 +8415,7 @@ packages:
 
   uuid@10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@11.0.5:
@@ -9999,6 +10052,11 @@ snapshots:
     dependencies:
       hono: 4.12.15
 
+  '@hono/node-server@2.0.1(hono@4.12.16)':
+    dependencies:
+      hono: 4.12.16
+    optional: true
+
   '@hookform/resolvers@5.2.2(react-hook-form@7.73.1(react@19.2.5))':
     dependencies:
       '@standard-schema/utils': 0.3.0
@@ -10433,7 +10491,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@mongodb-js/saslprep@1.4.9':
+  '@mongodb-js/saslprep@1.4.10':
     dependencies:
       sparse-bitfield: 3.0.3
     optional: true
@@ -11324,13 +11382,13 @@ snapshots:
       '@electric-sql/pglite': 0.3.15
       '@electric-sql/pglite-socket': 0.0.20(@electric-sql/pglite@0.3.15)
       '@electric-sql/pglite-tools': 0.2.20(@electric-sql/pglite@0.3.15)
-      '@hono/node-server': 2.0.0(hono@4.12.15)
+      '@hono/node-server': 2.0.1(hono@4.12.16)
       '@mrleebo/prisma-ast': 0.13.1
       '@prisma/get-platform': 7.2.0
       '@prisma/query-plan-executor': 7.2.0
       foreground-child: 3.3.1
       get-port-please: 3.2.0
-      hono: 4.12.15
+      hono: 4.12.16
       http-status-codes: 2.3.0
       pathe: 2.0.3
       proper-lockfile: 4.1.2
@@ -12223,11 +12281,11 @@ snapshots:
       '@tanstack/devtools-event-client': 0.4.3
       '@tanstack/store': 0.9.3
 
-  '@tanstack/query-core@5.100.1': {}
+  '@tanstack/query-core@5.100.6': {}
 
-  '@tanstack/react-query@5.100.1(react@19.2.5)':
+  '@tanstack/react-query@5.100.6(react@19.2.5)':
     dependencies:
-      '@tanstack/query-core': 5.100.1
+      '@tanstack/query-core': 5.100.6
       react: 19.2.5
 
   '@tanstack/react-table@8.21.3(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
@@ -12301,7 +12359,13 @@ snapshots:
   '@turbo/darwin-64@2.9.6':
     optional: true
 
+  '@turbo/darwin-64@2.9.7':
+    optional: true
+
   '@turbo/darwin-arm64@2.9.6':
+    optional: true
+
+  '@turbo/darwin-arm64@2.9.7':
     optional: true
 
   '@turbo/gen@2.9.6(@types/node@25.6.0)':
@@ -12314,13 +12378,25 @@ snapshots:
   '@turbo/linux-64@2.9.6':
     optional: true
 
+  '@turbo/linux-64@2.9.7':
+    optional: true
+
   '@turbo/linux-arm64@2.9.6':
+    optional: true
+
+  '@turbo/linux-arm64@2.9.7':
     optional: true
 
   '@turbo/windows-64@2.9.6':
     optional: true
 
+  '@turbo/windows-64@2.9.7':
+    optional: true
+
   '@turbo/windows-arm64@2.9.6':
+    optional: true
+
+  '@turbo/windows-arm64@2.9.7':
     optional: true
 
   '@tybys/wasm-util@0.10.1':
@@ -13125,7 +13201,7 @@ snapshots:
       ohash: 2.0.11
       pathe: 2.0.3
       perfect-debounce: 1.0.0
-      pkg-types: 2.3.0
+      pkg-types: 2.3.1
       rc9: 2.1.2
     optional: true
 
@@ -13971,11 +14047,11 @@ snapshots:
       string.prototype.matchall: 4.0.12
       string.prototype.repeat: 1.0.0
 
-  eslint-plugin-turbo@2.9.6(eslint@10.2.1(jiti@2.6.1))(turbo@2.9.6):
+  eslint-plugin-turbo@2.9.6(eslint@10.2.1(jiti@2.6.1))(turbo@2.9.7):
     dependencies:
       dotenv: 16.0.3
       eslint: 10.2.1(jiti@2.6.1)
-      turbo: 2.9.6
+      turbo: 2.9.7
 
   eslint-scope@9.1.2:
     dependencies:
@@ -14693,6 +14769,9 @@ snapshots:
 
   hono@4.12.15: {}
 
+  hono@4.12.16:
+    optional: true
+
   hosted-git-info@9.0.2:
     dependencies:
       lru-cache: 11.3.5
@@ -14779,6 +14858,9 @@ snapshots:
   internmap@2.0.3: {}
 
   ip-address@10.1.0: {}
+
+  ip-address@10.1.1:
+    optional: true
 
   ipaddr.js@1.9.1: {}
 
@@ -14983,12 +15065,12 @@ snapshots:
 
   jose@6.2.2: {}
 
-  jotai-tanstack-query@0.11.0(@tanstack/query-core@5.100.1)(@tanstack/react-query@5.100.1(react@19.2.5))(jotai@2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5):
+  jotai-tanstack-query@0.11.0(@tanstack/query-core@5.100.6)(@tanstack/react-query@5.100.6(react@19.2.5))(jotai@2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5):
     dependencies:
-      '@tanstack/query-core': 5.100.1
+      '@tanstack/query-core': 5.100.6
       jotai: 2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5)
     optionalDependencies:
-      '@tanstack/react-query': 5.100.1(react@19.2.5)
+      '@tanstack/react-query': 5.100.6(react@19.2.5)
       react: 19.2.5
 
   jotai@2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5):
@@ -15953,7 +16035,7 @@ snapshots:
 
   mongodb@7.1.0(socks@2.8.7):
     dependencies:
-      '@mongodb-js/saslprep': 1.4.9
+      '@mongodb-js/saslprep': 1.4.10
       bson: 7.2.0
       mongodb-connection-string-url: 7.0.1
     optionalDependencies:
@@ -16135,7 +16217,7 @@ snapshots:
     dependencies:
       citty: 0.2.2
       pathe: 2.0.3
-      tinyexec: 1.1.1
+      tinyexec: 1.1.2
     optional: true
 
   object-assign@4.1.1: {}
@@ -16384,7 +16466,7 @@ snapshots:
       mlly: 1.8.2
       pathe: 2.0.3
 
-  pkg-types@2.3.0:
+  pkg-types@2.3.1:
     dependencies:
       confbox: 0.2.4
       exsolve: 1.0.8
@@ -17250,7 +17332,7 @@ snapshots:
 
   socks@2.8.7:
     dependencies:
-      ip-address: 10.1.0
+      ip-address: 10.1.1
       smart-buffer: 4.2.0
     optional: true
 
@@ -17479,6 +17561,9 @@ snapshots:
 
   tinyexec@1.1.1: {}
 
+  tinyexec@1.1.2:
+    optional: true
+
   tinyglobby@0.2.16:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.4)
@@ -17541,6 +17626,15 @@ snapshots:
       '@turbo/linux-arm64': 2.9.6
       '@turbo/windows-64': 2.9.6
       '@turbo/windows-arm64': 2.9.6
+
+  turbo@2.9.7:
+    optionalDependencies:
+      '@turbo/darwin-64': 2.9.7
+      '@turbo/darwin-arm64': 2.9.7
+      '@turbo/linux-64': 2.9.7
+      '@turbo/linux-arm64': 2.9.7
+      '@turbo/windows-64': 2.9.7
+      '@turbo/windows-arm64': 2.9.7
 
   tw-animate-css@1.4.0: {}
 
