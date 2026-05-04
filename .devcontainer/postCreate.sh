@@ -13,9 +13,9 @@ echo Installing Bun
 curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/bun-install.sh https://bun.sh/install && bash /tmp/bun-install.sh && rm /tmp/bun-install.sh
 
 echo "Installing just-cli globally using bun"
-bun install -g rust-just
+bun install -g rust-just --ignore-scripts
 
 echo "Installing Buf CLI"
-bun install -g @bufbuild/buf
+bun install -g @bufbuild/buf --ignore-scripts
 
 echo "✅ BookWorm development environment setup complete!"

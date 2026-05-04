@@ -9,7 +9,7 @@
 set -e
 
 EVENT_NAME="${1:-}"
-if [ -z "$EVENT_NAME" ]; then
+if [[ -z "$EVENT_NAME" ]]; then
     echo "Usage: $0 <event_name>" >&2
     exit 1
 fi
@@ -18,8 +18,8 @@ SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 _find_project_root() {
     local dir="$1"
-    while [ "$dir" != "/" ]; do
-        if [ -d "$dir/.specify" ] || [ -d "$dir/.git" ]; then
+    while [[ "$dir" != "/" ]]; do
+        if [[ -d "$dir/.specify" ]] || [[ -d "$dir/.git" ]]; then
             echo "$dir"
             return 0
         fi
@@ -47,7 +47,7 @@ _config_file="$REPO_ROOT/.specify/extensions/git/git-config.yml"
 _enabled=false
 _commit_msg=""
 
-if [ -f "$_config_file" ]; then
+if [[ -f "$_config_file" ]]; then
     # Parse the auto_commit section for this event.
     # Look for auto_commit.<event_name>.enabled and .message
     # Also check auto_commit.default as fallback.
@@ -72,7 +72,7 @@ if [ -f "$_config_file" ]; then
             # Check default key
             if echo "$_line" | grep -Eq "^[[:space:]]+default:[[:space:]]"; then
                 _val=$(echo "$_line" | sed 's/^[^:]*:[[:space:]]*//' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-                [ "$_val" = "true" ] && _default_enabled=true
+                [[ "$_val" = "true" ]] && _default_enabled=true
             fi
 
             # Detect our event subsection
@@ -90,8 +90,8 @@ if [ -f "$_config_file" ]; then
                 fi
                 if echo "$_line" | grep -Eq '[[:space:]]+enabled:'; then
                     _val=$(echo "$_line" | sed 's/^[^:]*:[[:space:]]*//' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-                    [ "$_val" = "true" ] && _enabled=true
-                    [ "$_val" = "false" ] && _enabled=false
+                    [[ "$_val" = "true" ]] && _enabled=true
+                    [[ "$_val" = "false" ]] && _enabled=false
                 fi
                 if echo "$_line" | grep -Eq '[[:space:]]+message:'; then
                     _commit_msg=$(echo "$_line" | sed 's/^[^:]*:[[:space:]]*//' | sed 's/^["'\'']//' | sed 's/["'\'']*$//')
@@ -101,7 +101,7 @@ if [ -f "$_config_file" ]; then
     done < "$_config_file"
 
     # If event-specific key not found, use default
-    if [ "$_enabled" = "false" ] && [ "$_default_enabled" = "true" ]; then
+    if [[ "$_enabled" = "false" ]] && [[ "$_default_enabled" = "true" ]]; then
         # Only use default if the event wasn't explicitly set to false
         # Check if event section existed at all
         if ! grep -q "^[[:space:]]*${EVENT_NAME}:" "$_config_file" 2>/dev/null; then
@@ -113,12 +113,12 @@ else
     exit 0
 fi
 
-if [ "$_enabled" != "true" ]; then
+if [[ "$_enabled" != "true" ]]; then
     exit 0
 fi
 
 # Check if there are changes to commit
-if git diff --quiet HEAD 2>/dev/null && git diff --cached --quiet 2>/dev/null && [ -z "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then
+if git diff --quiet HEAD 2>/dev/null && git diff --cached --quiet 2>/dev/null && [[ -z "$(git ls-files --others --exclude-standard 2>/dev/null)" ]]; then
     echo "[specify] No changes to commit after $EVENT_NAME" >&2
     exit 0
 fi
@@ -129,7 +129,7 @@ _command_name=$(echo "$EVENT_NAME" | sed 's/^after_//' | sed 's/^before_//')
 _phase=$(echo "$EVENT_NAME" | grep -q '^before_' && echo 'before' || echo 'after')
 
 # Use custom message if configured, otherwise default
-if [ -z "$_commit_msg" ]; then
+if [[ -z "$_commit_msg" ]]; then
     _commit_msg="[Spec Kit] Auto-commit ${_phase} ${_command_name}"
 fi
 

@@ -76,7 +76,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ env.KEYCLOAKIFY_DIR }}
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Run CI checks
         working-directory: ${{ env.KEYCLOAKIFY_DIR }}

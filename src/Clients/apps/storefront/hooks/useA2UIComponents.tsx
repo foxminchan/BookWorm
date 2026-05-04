@@ -148,7 +148,7 @@ function BookListComponent({ query, books }: BookListProps) {
       {query && (
         <p className="text-muted-foreground text-xs">
           Results for &ldquo;{query}&rdquo; — {books.length} book
-          {books.length !== 1 ? "s" : ""}
+          {books.length === 1 ? "" : "s"}
         </p>
       )}
       {books.length === 0 ? (
@@ -202,7 +202,7 @@ function BasketSummaryComponent({
       <div className="flex items-center gap-2">
         <ShoppingCart className="size-4" />
         <span className="text-sm font-semibold">
-          Your Basket ({itemCount} item{itemCount !== 1 ? "s" : ""})
+          Your Basket ({itemCount} item{itemCount === 1 ? "" : "s"})
         </span>
       </div>
       {items.length === 0 ? (
