@@ -66,7 +66,7 @@ jobs:
         working-directory: docs/docusaurus
 
       - name: Download Allure Report (Backoffice)
-        uses: dawidd6/action-download-artifact@8305c0f1062bb0d184d09ef4493ecb9288447732 # v20
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           name: allure-report-backoffice
           path: docs/docusaurus/build/reports/backoffice
@@ -78,7 +78,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: Download Allure Report (Storefront)
-        uses: dawidd6/action-download-artifact@8305c0f1062bb0d184d09ef4493ecb9288447732 # v20
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           name: allure-report-storefront
           path: docs/docusaurus/build/reports/storefront

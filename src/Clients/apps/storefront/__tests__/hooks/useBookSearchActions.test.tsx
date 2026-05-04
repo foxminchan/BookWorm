@@ -15,8 +15,8 @@ const { mockList } = vi.hoisted(() => ({
   mockList: vi.fn(),
 }));
 
-vi.mock("@copilotkit/react-core", () => ({
-  useCopilotAction: vi.fn((config) => {
+vi.mock("@copilotkit/react-core/v2", () => ({
+  useFrontendTool: vi.fn((config) => {
     registeredActions.push(config);
   }),
 }));
@@ -54,14 +54,16 @@ describe("useBookSearchActions", () => {
       search: "test",
       pageSize: 5,
     });
-    expect(result).toEqual({
-      results: [
-        { id: "1", title: "Title 1", author: "Author", price: 10 },
-        { id: "2", title: "Title 2", author: "Author", price: 12 },
-      ],
-      total: 2,
-      query: "test",
-    });
+    expect(result).toEqual(
+      JSON.stringify({
+        results: [
+          { id: "1", title: "Title 1", author: "Author", price: 10 },
+          { id: "2", title: "Title 2", author: "Author", price: 12 },
+        ],
+        total: 2,
+        query: "test",
+      }),
+    );
   });
 
   it("renders search results in render function", async () => {
@@ -73,14 +75,14 @@ describe("useBookSearchActions", () => {
 
     const component = action?.render({
       status: "complete",
-      result: {
+      result: JSON.stringify({
         results: [
           { id: "1", name: "Result 1", authors: [{ name: "A" }], price: 8 },
           { id: "2", name: "Result 2", authors: [{ name: "B" }], price: 9 },
         ],
         total: 2,
         query: "query",
-      },
+      }),
     });
 
     const { getByText } = render(component ?? <div />);

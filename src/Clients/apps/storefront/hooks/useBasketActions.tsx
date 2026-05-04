@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 
-import { useCopilotAction } from "@copilotkit/react-core";
+import { useFrontendTool } from "@copilotkit/react-core/v2";
 import { Check } from "lucide-react";
+import { z } from "zod";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
 import type { BasketItem } from "@workspace/types/basket";
@@ -22,36 +23,25 @@ export function useBasketActions() {
     clearTimerRef.current = setTimeout(() => setAnnouncement(""), 3000);
   }, []);
 
-  useCopilotAction({
+  useFrontendTool({
     name: "addToBasket",
     description:
       "Add a book to the user's shopping basket. Use this when the user expresses interest in purchasing a book. Always requires user confirmation before adding.",
-    parameters: [
-      {
-        name: "bookId",
-        type: "string",
-        description: "The unique identifier of the book to add",
-        required: true,
-      },
-      {
-        name: "quantity",
-        type: "number",
-        description: "Number of copies to add (default 1)",
-        required: false,
-      },
-      {
-        name: "bookTitle",
-        type: "string",
-        description: "The title of the book (for confirmation display)",
-        required: false,
-      },
-      {
-        name: "price",
-        type: "number",
-        description: "The price of the book (for confirmation display)",
-        required: false,
-      },
-    ],
+    parameters: z.object({
+      bookId: z.string().describe("The unique identifier of the book to add"),
+      quantity: z
+        .number()
+        .optional()
+        .describe("Number of copies to add (default 1)"),
+      bookTitle: z
+        .string()
+        .optional()
+        .describe("The title of the book (for confirmation display)"),
+      price: z
+        .number()
+        .optional()
+        .describe("The price of the book (for confirmation display)"),
+    }),
     handler: async ({ bookId, quantity = 1, bookTitle, price }) => {
       // Request user confirmation before adding to basket (Human-in-the-Loop)
       const confirmed = await requestConfirmation(
@@ -62,11 +52,7 @@ export function useBasketActions() {
       );
 
       if (!confirmed) {
-        return {
-          success: false,
-          cancelled: true,
-          message: "Action cancelled by user",
-        };
+        return "Action cancelled by user";
       }
 
       await basketApiClient.update({
@@ -77,12 +63,7 @@ export function useBasketActions() {
       const message = `Added ${quantity} ${quantity === 1 ? "copy" : "copies"}${bookSuffix} to basket`;
       announce(message);
 
-      return {
-        success: true,
-        bookId,
-        quantity,
-        message,
-      };
+      return message;
     },
     render: ({ status, result }) => {
       if (status === "executing") {
@@ -99,7 +80,7 @@ export function useBasketActions() {
           <div className="rounded-lg border bg-green-50 p-3 dark:bg-green-950">
             <div className="flex items-center gap-2">
               <Check className="size-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium">{result.message}</span>
+              <span className="text-sm font-medium">{result}</span>
             </div>
           </div>
         );
@@ -109,11 +90,11 @@ export function useBasketActions() {
     },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "viewBasket",
     description:
       "Show the current contents of the user's shopping basket with all items and total price",
-    parameters: [],
+    parameters: z.object({}),
     handler: async () => {
       const data = await basketApiClient.get();
 
@@ -122,13 +103,22 @@ export function useBasketActions() {
         0,
       );
 
-      return {
+      return JSON.stringify({
         items: data.items || [],
         totalPrice,
         itemCount: data.items?.length || 0,
-      };
+      });
     },
     render: ({ status, result }) => {
+      const parsedResult =
+        status === "complete" && result
+          ? (JSON.parse(result) as {
+              items: BasketItem[];
+              totalPrice: number;
+              itemCount: number;
+            })
+          : null;
+
       if (status === "executing") {
         return (
           <div className="flex items-center gap-2 rounded-lg border p-4">
@@ -138,21 +128,21 @@ export function useBasketActions() {
         );
       }
 
-      if (status === "complete" && result) {
+      if (status === "complete" && parsedResult) {
         return (
           <div className="space-y-3 rounded-lg border p-4">
             <h3 className="font-semibold">
-              Your Basket ({result.itemCount} item
-              {result.itemCount === 1 ? "" : "s"})
+              Your Basket ({parsedResult.itemCount} item
+              {parsedResult.itemCount === 1 ? "" : "s"})
             </h3>
-            {result.items.length === 0 ? (
+            {parsedResult.items.length === 0 ? (
               <p className="text-muted-foreground text-sm">
                 Your basket is empty
               </p>
             ) : (
               <>
                 <div className="space-y-2">
-                  {result.items.map((item: BasketItem) => (
+                  {parsedResult.items.map((item: BasketItem) => (
                     <div
                       key={item.id}
                       className="flex items-center gap-3 rounded border p-2"
@@ -175,7 +165,7 @@ export function useBasketActions() {
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>{formatPrice(result.totalPrice)}</span>
+                    <span>{formatPrice(parsedResult.totalPrice)}</span>
                   </div>
                 </div>
               </>

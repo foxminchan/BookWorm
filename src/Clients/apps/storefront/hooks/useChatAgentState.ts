@@ -1,6 +1,6 @@
 "use client";
 
-import { useCoAgent } from "@copilotkit/react-core";
+import { useAgent } from "@copilotkit/react-core/v2";
 
 import { env } from "@/env.mjs";
 
@@ -26,22 +26,22 @@ type ChatAgentState = {
 export function useChatAgentState() {
   const agentName = env.NEXT_PUBLIC_COPILOT_AGENT_NAME;
 
-  const { state, setState, running, nodeName, threadId } =
-    useCoAgent<ChatAgentState>({
-      name: agentName,
-      initialState: {
-        searchQuery: undefined,
-        searchResults: undefined,
-        lastAction: undefined,
-        conversationContext: undefined,
-      },
-    });
+  const { agent } = useAgent({
+    agentId: agentName,
+  });
+
+  const state = (agent.state as ChatAgentState | undefined) ?? {
+    searchQuery: undefined,
+    searchResults: undefined,
+    lastAction: undefined,
+    conversationContext: undefined,
+  };
 
   return {
     state,
-    setState,
-    isAgentRunning: running,
-    currentNode: nodeName,
-    threadId,
+    setState: agent.setState,
+    isAgentRunning: agent.isRunning,
+    currentNode: undefined,
+    threadId: agent.threadId,
   };
 }

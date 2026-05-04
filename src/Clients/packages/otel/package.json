@@ -1,7 +1,7 @@
 {
-  "name": "@workspace/utils",
+  "name": "@workspace/otel",
   "version": "1.0.0",
-  "description": "Shared utility functions for BookWorm frontend clients",
+  "description": "OpenTelemetry initialization and utilities for BookWorm frontend",
   "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
   "licenses": [
     {
@@ -14,7 +14,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/foxminchan/BookWorm.git",
-    "directory": "src/Clients/packages/utils"
+    "directory": "src/Clients/packages/otel"
   },
   "bugs": {
     "url": "https://github.com/foxminchan/BookWorm/issues"
@@ -24,18 +24,20 @@
     "node": ">=24.0.0"
   },
   "exports": {
+    ".": "./src/index.ts",
     "./*": "./src/*.ts"
   },
   "scripts": {
-    "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "lint": "eslint ."
   },
   "dependencies": {
-    "date-fns": "^4.1.0"
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.216.0",
+    "@opentelemetry/sdk-node": "^0.216.0",
+    "@opentelemetry/sdk-trace-node": "^2.7.1"
   },
   "devDependencies": {
-    "@types/node": "^24.12.2",
     "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
     "eslint": "^10.3.0",
     "typescript": "^6.0.3"
   }

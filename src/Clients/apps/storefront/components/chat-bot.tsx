@@ -10,8 +10,8 @@ import {
   useState,
 } from "react";
 
-import { CopilotSidebar } from "@copilotkit/react-ui";
-import "@copilotkit/react-ui/styles.css";
+import { CopilotSidebar } from "@copilotkit/react-core/v2";
+import "@copilotkit/react-core/v2/styles.css";
 import { useAtomValue } from "jotai";
 import {
   AlertCircle,
@@ -28,6 +28,7 @@ import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
 
 import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { env } from "@/env.mjs";
+import { useA2UIComponents } from "@/hooks/useA2UIComponents";
 import { useBasketActions } from "@/hooks/useBasketActions";
 import { useBasketContext } from "@/hooks/useBasketContext";
 import { useBookSearchActions } from "@/hooks/useBookSearchActions";
@@ -124,11 +125,12 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Enable copilot tools and bidirectional agent state
+  // Enable copilot tools, A2UI components, and bidirectional agent state
   useChatAgentState();
   useBasketContext();
   useUserContext();
   useBookSearchActions();
+  useA2UIComponents();
   const { ConfirmationDialog, liveRegion } = useBasketActions();
 
   // Rate limiting and offline support
@@ -310,16 +312,15 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
         </div>
       ) : (
         <CopilotSidebar
+          agentId={env.NEXT_PUBLIC_COPILOT_AGENT_NAME}
           labels={{
-            title: "BookWorm Literary Guide",
-            initial:
+            modalHeaderTitle: "BookWorm Literary Guide",
+            welcomeMessageText:
               "Hi! I'm your literary assistant. I can help you find books, manage your basket, and answer questions about our collection. What would you like to explore today?",
-            placeholder:
+            chatInputPlaceholder:
               "Ask about books, search for titles, or manage your basket...",
           }}
           defaultOpen={uiState.isOpen}
-          onSetOpen={(open) => dispatch({ type: "SET_OPEN", open })}
-          clickOutsideToClose={true}
         />
       )}
     </dialog>

@@ -17,8 +17,8 @@ const { mockRequestConfirmation, mockUpdate, mockGet } = vi.hoisted(() => ({
   mockGet: vi.fn(),
 }));
 
-vi.mock("@copilotkit/react-core", () => ({
-  useCopilotAction: vi.fn((config) => {
+vi.mock("@copilotkit/react-core/v2", () => ({
+  useFrontendTool: vi.fn((config) => {
     registeredActions.push(config);
   }),
 }));
@@ -84,11 +84,7 @@ describe("useBasketActions", () => {
       result = await action?.handler({ bookId: "book-1" });
     });
 
-    expect(result).toEqual({
-      success: false,
-      cancelled: true,
-      message: "Action cancelled by user",
-    });
+    expect(result).toEqual("Action cancelled by user");
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
@@ -104,7 +100,7 @@ describe("useBasketActions", () => {
 
     const success = action?.render({
       status: "complete",
-      result: { message: "Added item" },
+      result: "Added item",
     } as any);
 
     rerender(success ?? <div />);
@@ -129,14 +125,16 @@ describe("useBasketActions", () => {
       result = await action?.handler({});
     });
 
-    expect(result).toEqual({
-      items: [
-        { id: "1", name: "One", price: 10, quantity: 2 },
-        { id: "2", name: "Two", price: 5, priceSale: 4, quantity: 1 },
-      ],
-      totalPrice: 24,
-      itemCount: 2,
-    });
+    expect(result).toEqual(
+      JSON.stringify({
+        items: [
+          { id: "1", name: "One", price: 10, quantity: 2 },
+          { id: "2", name: "Two", price: 5, priceSale: 4, quantity: 1 },
+        ],
+        totalPrice: 24,
+        itemCount: 2,
+      }),
+    );
   });
 
   it("renders empty state for viewBasket", () => {
@@ -151,7 +149,7 @@ describe("useBasketActions", () => {
 
     const empty = action?.render({
       status: "complete",
-      result: { items: [], totalPrice: 0, itemCount: 0 },
+      result: JSON.stringify({ items: [], totalPrice: 0, itemCount: 0 }),
     } as any);
 
     rerender(empty ?? <div />);
@@ -164,14 +162,14 @@ describe("useBasketActions", () => {
 
     const action = registeredActions.find((a) => a.name === "viewBasket");
 
-    const result = {
+    const result = JSON.stringify({
       items: [
         { id: "1", name: "One", price: 10, priceSale: undefined, quantity: 2 },
         { id: "2", name: "Two", price: 5, priceSale: 4, quantity: 1 },
       ],
       totalPrice: 24,
       itemCount: 2,
-    };
+    });
 
     const view = action?.render({ status: "complete", result } as any);
 

@@ -5,18 +5,19 @@ import { useChatAgentState } from "@/hooks/useChatAgentState";
 
 const mockSetState = vi.fn();
 
-vi.mock("@copilotkit/react-core", () => ({
-  useCoAgent: vi.fn(() => ({
-    state: {
-      searchQuery: "initial",
-      searchResults: [],
-      lastAction: "start",
-      conversationContext: "context",
+vi.mock("@copilotkit/react-core/v2", () => ({
+  useAgent: vi.fn(() => ({
+    agent: {
+      state: {
+        searchQuery: "initial",
+        searchResults: [],
+        lastAction: "start",
+        conversationContext: "context",
+      },
+      setState: mockSetState,
+      isRunning: true,
+      threadId: "thread-123",
     },
-    setState: mockSetState,
-    running: true,
-    nodeName: "node-1",
-    threadId: "thread-123",
   })),
 }));
 
@@ -32,7 +33,7 @@ describe("useChatAgentState", () => {
 
     expect(result.current.state.searchQuery).toBe("initial");
     expect(result.current.isAgentRunning).toBe(true);
-    expect(result.current.currentNode).toBe("node-1");
+    expect(result.current.currentNode).toBeUndefined();
     expect(result.current.threadId).toBe("thread-123");
 
     result.current.setState({ searchQuery: "updated" });

@@ -2,7 +2,7 @@
 base = "docs/eventcatalog"
 publish = "dist"
 command = "bun install --frozen-lockfile && bun run build"
-environment = { NODE_OPTIONS = "--max-old-space-size=4096", NODE_VERSION = "25.2.1" }
+environment = { NODE_OPTIONS = "--max-old-space-size=4096", NODE_VERSION = "24" }
 
 [functions]
 directory = "docs/eventcatalog/netlify/functions"

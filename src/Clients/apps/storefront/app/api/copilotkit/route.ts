@@ -44,7 +44,7 @@ const getRuntime = async () => {
     }),
   };
 
-  return new CopilotRuntime({ agents } as any);
+  return new CopilotRuntime({ agents, a2ui: true } as any);
 };
 
 export const POST = async (req: NextRequest) => {

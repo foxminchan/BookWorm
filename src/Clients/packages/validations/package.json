@@ -21,7 +21,7 @@
   },
   "homepage": "https://foxminchan.github.io/BookWorm/",
   "engines": {
-    "node": ">=25.0.0"
+    "node": ">=24.0.0"
   },
   "exports": {
     "./catalog": {
@@ -66,11 +66,11 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^10.2.1"
+    "eslint": "^10.3.0"
   }
 }

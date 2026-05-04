@@ -60,6 +60,7 @@
   - [x] Supported Agent interactions via AG-UI Protocol
   - [x] Evaluate generative AI models and applications
   - [x] Agent governance with policy-based controls and monitoring
+  - [x] Enabled AI agents to generate rich, interactive UIs using A2UI
 - [x] Configured CI/CD with GitHub Actions
 - [x] Created comprehensive documentation:
   - [x] Used OpenAPI for REST API & AsyncAPI for event-driven endpoints

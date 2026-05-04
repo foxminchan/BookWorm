@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useUserContext } from "@/hooks/useUserContext";
 
-const mockUseCopilotReadable = vi.fn();
-vi.mock("@copilotkit/react-core", () => ({
-  useCopilotReadable: (...args: unknown[]) => mockUseCopilotReadable(...args),
+const mockUseAgentContext = vi.fn();
+vi.mock("@copilotkit/react-core/v2", () => ({
+  useAgentContext: (...args: unknown[]) => mockUseAgentContext(...args),
 }));
 
 const mockUseSession = vi.fn();
@@ -24,7 +24,7 @@ describe("useUserContext", () => {
 
     renderHook(() => useUserContext());
 
-    expect(mockUseCopilotReadable).toHaveBeenCalledWith({
+    expect(mockUseAgentContext).toHaveBeenCalledWith({
       description: "Whether the user is currently authenticated",
       value: {
         isAuthenticated: false,
@@ -45,7 +45,7 @@ describe("useUserContext", () => {
 
     renderHook(() => useUserContext());
 
-    expect(mockUseCopilotReadable).toHaveBeenCalledWith({
+    expect(mockUseAgentContext).toHaveBeenCalledWith({
       description: "Whether the user is currently authenticated",
       value: {
         isAuthenticated: true,
@@ -58,7 +58,7 @@ describe("useUserContext", () => {
 
     const { rerender } = renderHook(() => useUserContext());
 
-    expect(mockUseCopilotReadable).toHaveBeenLastCalledWith(
+    expect(mockUseAgentContext).toHaveBeenLastCalledWith(
       expect.objectContaining({
         value: expect.objectContaining({ isAuthenticated: false }),
       }),
@@ -72,7 +72,7 @@ describe("useUserContext", () => {
 
     rerender();
 
-    expect(mockUseCopilotReadable).toHaveBeenLastCalledWith(
+    expect(mockUseAgentContext).toHaveBeenLastCalledWith(
       expect.objectContaining({
         value: expect.objectContaining({
           isAuthenticated: true,
@@ -86,7 +86,7 @@ describe("useUserContext", () => {
 
     renderHook(() => useUserContext());
 
-    expect(mockUseCopilotReadable).toHaveBeenCalledWith(
+    expect(mockUseAgentContext).toHaveBeenCalledWith(
       expect.objectContaining({
         value: expect.objectContaining({ isAuthenticated: false }),
       }),

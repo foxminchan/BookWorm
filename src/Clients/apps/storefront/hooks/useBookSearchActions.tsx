@@ -1,6 +1,7 @@
 "use client";
 
-import { useCopilotAction } from "@copilotkit/react-core";
+import { useFrontendTool } from "@copilotkit/react-core/v2";
+import { z } from "zod";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
 import type { Book } from "@workspace/types/catalog/books";
@@ -15,30 +16,23 @@ import { Spinner } from "@workspace/ui/components/spinner";
 import { formatPrice } from "@workspace/utils/format";
 
 export function useBookSearchActions() {
-  useCopilotAction({
+  useFrontendTool({
     name: "searchBooks",
     description:
       "Search for books by title, author, category, or keywords. Returns a list of matching books.",
-    parameters: [
-      {
-        name: "query",
-        type: "string",
-        description: "The search query (title, author, or keywords)",
-        required: true,
-      },
-      {
-        name: "category",
-        type: "string",
-        description: "Optional category filter (fiction, non-fiction, etc.)",
-        required: false,
-      },
-      {
-        name: "maxResults",
-        type: "number",
-        description: "Maximum number of results to return (default 10)",
-        required: false,
-      },
-    ],
+    parameters: z.object({
+      query: z
+        .string()
+        .describe("The search query (title, author, or keywords)"),
+      category: z
+        .string()
+        .optional()
+        .describe("Optional category filter (fiction, non-fiction, etc.)"),
+      maxResults: z
+        .number()
+        .optional()
+        .describe("Maximum number of results to return (default 10)"),
+    }),
     handler: async ({ query, category, maxResults = 10 }) => {
       const data = await booksApiClient.list({
         search: query,
@@ -46,13 +40,22 @@ export function useBookSearchActions() {
         pageSize: maxResults,
       });
 
-      return {
+      return JSON.stringify({
         results: data.items || [],
         total: data.totalCount || 0,
         query,
-      };
+      });
     },
     render: ({ status, result }) => {
+      const parsedResult =
+        status === "complete" && result
+          ? (JSON.parse(result) as {
+              results: Book[];
+              total: number;
+              query: string;
+            })
+          : null;
+
       if (status === "executing") {
         return (
           <Card>
@@ -64,19 +67,20 @@ export function useBookSearchActions() {
         );
       }
 
-      if (status === "complete" && result) {
+      if (status === "complete" && parsedResult) {
         return (
           <Card>
             <CardHeader>
               <CardTitle>
-                Found {result.total} book{result.total === 1 ? "" : "s"}
+                Found {parsedResult.total} book
+                {parsedResult.total === 1 ? "" : "s"}
               </CardTitle>
               <CardDescription>
-                Search results for &quot;{result.query}&quot;
+                Search results for &quot;{parsedResult.query}&quot;
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              {result.results.slice(0, 5).map((book: Book) => (
+              {parsedResult.results.slice(0, 5).map((book: Book) => (
                 <div
                   key={book.id}
                   className="hover:bg-accent flex gap-3 rounded-lg border p-3 text-sm transition-colors"

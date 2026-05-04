@@ -1,6 +1,6 @@
 "use client";
 
-import { useCopilotReadable } from "@copilotkit/react-core";
+import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAtomValue } from "jotai";
 
 import { basketItemCountAtom, basketItemsAtom } from "@/atoms/basket-atom";
@@ -13,10 +13,10 @@ export function useBasketContext() {
     itemCount,
     items: basketItems.map((item) => ({
       id: item.id,
-      name: item.name,
+      name: item.name ?? null,
       quantity: item.quantity,
       price: item.price,
-      priceSale: item.priceSale,
+      priceSale: item.priceSale ?? null,
     })),
     totalPrice: basketItems.reduce(
       (sum, item) => sum + (item.priceSale || item.price) * item.quantity,
@@ -24,7 +24,7 @@ export function useBasketContext() {
     ),
   };
 
-  useCopilotReadable({
+  useAgentContext({
     description:
       "The current user's shopping basket with books they plan to purchase",
     value: basketData,

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 
-import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotKitProvider } from "@copilotkit/react-core/v2";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
@@ -57,12 +57,9 @@ export function Providers({
         enableColorScheme
       >
         {shouldShowCopilot ? (
-          <CopilotKit
-            runtimeUrl="/api/copilotkit"
-            agent={env.NEXT_PUBLIC_COPILOT_AGENT_NAME}
-          >
+          <CopilotKitProvider runtimeUrl="/api/copilotkit">
             <div className="pb-16 md:pb-0">{children}</div>
-          </CopilotKit>
+          </CopilotKitProvider>
         ) : (
           <div className="pb-16 md:pb-0">{children}</div>
         )}
