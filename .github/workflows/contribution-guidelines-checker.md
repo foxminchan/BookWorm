@@ -19,8 +19,6 @@ if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && g
 permissions: read-all
 
 network: defaults
-features:
-  disable-xpia-prompt: true
 
 safe-outputs:
   threat-detection: true

@@ -12,8 +12,6 @@ permissions:
   contents: read
   issues: read
 network: defaults
-features:
-  disable-xpia-prompt: true
 tools:
   github:
     read-only: true
@@ -36,13 +34,13 @@ You are an AI agent that triages incoming issues for the BookWorm repository - a
 
 Analyze newly opened or edited issues and apply appropriate labels to help organize and prioritize work. The repository already applies `bug` or `enhancement` labels through issue templates, but you need to add additional area-specific labels.
 
-{{#import shared/bookworm-context.md}}
+{{#runtime-import shared/bookworm-context.md}}
 
 ## Available Labels
 
 Apply these area labels based on issue content:
 
-{{#import shared/area-labels.md}}
+{{#runtime-import shared/area-labels.md}}
 
 Apply these priority labels when clearly indicated:
 

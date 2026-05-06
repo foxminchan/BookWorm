@@ -12,8 +12,6 @@ permissions:
   contents: read
   pull-requests: read
 network: defaults
-features:
-  disable-xpia-prompt: true
 tools:
   github:
     read-only: true
@@ -36,13 +34,13 @@ You are an AI agent that triages incoming pull requests for the BookWorm reposit
 
 Analyze newly opened, edited, or synchronized pull requests and apply appropriate labels to help organize and prioritize code reviews. You need to add area-specific labels based on the files changed and the PR description.
 
-{{#import shared/bookworm-context.md}}
+{{#runtime-import shared/bookworm-context.md}}
 
 ## Available Labels
 
 Apply these area labels based on PR content and files changed:
 
-{{#import shared/area-labels.md}}
+{{#runtime-import shared/area-labels.md}}
 
 Apply these size labels based on the scope of changes:
 

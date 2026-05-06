@@ -29,9 +29,33 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 | **Scheduler**    | Job scheduling (Quartz)                               |
 | **McpTools**     | MCP server exposing catalog/rating tools to LLMs      |
 
+## Commands
+
+Tasks are defined in [.justfile](../.justfile). Prefer `just` over raw `dotnet`/`pnpm` so dependencies resolve correctly:
+
+- `just restore` — restore NuGet packages + .NET tools
+- `just build` — build the solution (`BookWorm.slnx`)
+- `just test` — run all tests
+- `just run` — start the Aspire AppHost (use `aspire run` directly when iterating)
+- `just format` — format C# (CSharpier), frontend, EventCatalog, Docusaurus, k6, Keycloakify
+- `just prepare` — post-clone setup (restore + git hooks)
+
+Frontend dev: from `src/Clients/` run `pnpm i && pnpm run dev`.
+
+## Common Pitfalls
+
+- **Mediator ≠ MediatR**: this repo uses `Mediator.SourceGenerator` (source-generator-based). Same-looking interfaces, different package — do not add MediatR.
+- **Warnings = errors**: `TreatWarningsAsErrors=true` globally. Any new warning fails the build.
+- **Centralized package versions**: add NuGet versions only in [Directory.Packages.props](../Directory.Packages.props), never in individual `.csproj` files.
+- **Sealed by default**: endpoints, handlers, `DbContext`s, and test classes should be `sealed`.
+- **snake_case in PostgreSQL**: tables/columns are snake_case via `UseSnakeCaseNamingConvention()`. Match that in any raw SQL.
+- **AppHost restart**: changes to `AppHost.cs` require restarting `aspire run`; other code hot-reloads.
+- **Test project naming**: must end in `.UnitTests`, `.ContractTests`, or `.IntegrationTests` to be auto-detected.
+- **Never modify** `global.json` or `NuGet.config` unless explicitly asked.
+
 ## Coding Standards
 
-- Use latest C# 14 features; never modify `global.json` or `NuGet.config` unless asked
+- Use latest C# 14 features
 - Use `IEndpoint<TResult, TRequest>` pattern from BookWorm.Chassis for Minimal API endpoints
 - Follow DDD aggregate boundaries; business logic belongs in the domain layer
 - Use `async`/`await` end-to-end with `CancellationToken` propagation
@@ -86,6 +110,14 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 - Tests: `tests/` (architecture tests, AI evaluation), `src/Services/{Name}/BookWorm.{Name}.UnitTests/`
 - Specs: `specs/` (feature specifications)
 - Docs: `docs/docusaurus/` (architecture), `docs/eventcatalog/` (event schemas)
+
+## See Also
+
+- [CLAUDE.md](../CLAUDE.md) — full agent operating guide (Aspire flow, feature/endpoint templates, infra notes)
+- [.github/CONTRIBUTING.md](./CONTRIBUTING.md) — contribution workflow, integration-event & proto standards, PR process
+- [.github/instructions/](./instructions/) — language/tooling rules auto-applied via `applyTo` (C#, Next.js, Markdown, GitHub Actions, Context7)
+- [.github/agents/](./agents/) — specialized subagents (`.NET Expert`, `Next.js Expert`, `Code Reviewer`, `Debug`, Spec Kit chain)
+- [.github/skills/](./skills/) — on-demand skills (Aspire, Turborepo, TUnit, EventCatalog authoring, React best practices)
 
 <!-- SPECKIT START -->
 

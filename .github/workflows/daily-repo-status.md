@@ -14,8 +14,6 @@ concurrency:
 
 permissions: read-all
 network: defaults
-features:
-  disable-xpia-prompt: true
 imports:
   - shared/mcp/server-memory.md
 
@@ -41,7 +39,7 @@ timeout-minutes: 10
 
 You are an AI agent that generates daily status reports for the BookWorm repository maintainers. Your goal is to provide a comprehensive overview of repository activity to help maintainers stay informed and prioritize their work.
 
-{{#import shared/bookworm-context.md}}
+{{#runtime-import shared/bookworm-context.md}}
 
 ## Your Task
 
