@@ -40,16 +40,17 @@ public sealed class FeedbackCreatedConsumerTests
             .ReturnsAsync(_book);
 
         var @event = new FeedbackCreatedIntegrationEvent(_book.Id, _rating, _feedbackId);
-        var bus = new TestMessageContext();
-        var handler = new FeedbackCreatedIntegrationEventHandler(_repositoryMock.Object, bus);
+        var busMock = new Mock<IMessageBus>();
+        var handler = new FeedbackCreatedIntegrationEventHandler(
+            _repositoryMock.Object,
+            busMock.Object
+        );
 
         // Act
         await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvents(
-            bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
-        );
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_book.Id, It.IsAny<CancellationToken>()),
             Times.Once

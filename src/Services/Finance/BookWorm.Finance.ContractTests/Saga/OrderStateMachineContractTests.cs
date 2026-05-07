@@ -2,6 +2,7 @@ using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
 using Microsoft.Extensions.Logging;
+using Shouldly;
 
 namespace BookWorm.Finance.ContractTests.Saga;
 
@@ -37,7 +38,7 @@ public sealed class OrderStateMachineContractTests
         var (saga, messages) = OrderSaga.Start(@event, _settings, _logger);
 
         // Assert
-        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
+        await SnapshotTestHelper.VerifyCloudEvents(messages);
     }
 
     [Test]
@@ -58,7 +59,7 @@ public sealed class OrderStateMachineContractTests
         var command = saga.Handle(@event);
 
         // Assert
-        await SnapshotTestHelper.Verify(command);
+        await SnapshotTestHelper.VerifyCloudEvent(command);
     }
 
     [Test]
@@ -84,7 +85,8 @@ public sealed class OrderStateMachineContractTests
         var messages = saga.Handle(@event, _logger);
 
         // Assert
-        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
+        saga.CurrentState.ShouldBe(OrderSagaStatus.BasketDeletionFailed);
+        await SnapshotTestHelper.VerifyCloudEvents(messages);
     }
 
     [Test]
@@ -111,7 +113,8 @@ public sealed class OrderStateMachineContractTests
         var messages = saga.Handle(@event, _logger);
 
         // Assert
-        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
+        saga.CurrentState.ShouldBe(OrderSagaStatus.Completed);
+        await SnapshotTestHelper.VerifyCloudEvents(messages);
     }
 
     [Test]
@@ -138,6 +141,7 @@ public sealed class OrderStateMachineContractTests
         var messages = saga.Handle(@event, _logger);
 
         // Assert
-        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
+        saga.CurrentState.ShouldBe(OrderSagaStatus.Cancelled);
+        await SnapshotTestHelper.VerifyCloudEvents(messages);
     }
 }
