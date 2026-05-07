@@ -1,4 +1,4 @@
-FROM node@sha256:8e2c930fda481a6ec141fe5a88e8c249c69f8102fe98af505f38c081649ea749 AS base
+FROM node@sha256:d15867b60cf18766c9671e9e15bfdbde8639d1741193242aac88734937c50751 AS base
 
 # Check https://github.com/nodejs/docker-node/tree/main#nodealpine to understand why libc6-compat might be needed
 ENV PNPM_HOME="/pnpm"
@@ -33,7 +33,7 @@ RUN --mount=type=secret,id=TURBO_TOKEN \
     pnpm turbo build --filter=@bookworm/storefront
 
 # ---
-FROM node@sha256:8e2c930fda481a6ec141fe5a88e8c249c69f8102fe98af505f38c081649ea749 AS runner
+FROM node@sha256:d15867b60cf18766c9671e9e15bfdbde8639d1741193242aac88734937c50751 AS runner
 WORKDIR /app
 
 # Apply latest Alpine security updates, remove npm tooling from runtime image,
