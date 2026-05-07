@@ -1,6 +1,7 @@
 ﻿using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
@@ -8,8 +9,6 @@ using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
-using MassTransit;
-using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BookWorm.Basket.Extensions;
@@ -49,9 +48,7 @@ internal static class Extensions
 
             // Configure Mediator
             services
-                .AddMediator(
-                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-                )
+                .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
                 .ApplyLoggingBehavior()
                 .ApplyActivityBehavior()
                 .ApplyValidationBehavior()
@@ -90,7 +87,11 @@ internal static class Extensions
             );
 
             // Configure EventBus
-            builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
+            builder.AddEventBus(opts =>
+            {
+                opts.Discovery.IncludeAssembly(typeof(IBasketApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(IBasketApiMarker).Assembly);
+            });
 
             services.AddKeycloakTokenIntrospection();
         }

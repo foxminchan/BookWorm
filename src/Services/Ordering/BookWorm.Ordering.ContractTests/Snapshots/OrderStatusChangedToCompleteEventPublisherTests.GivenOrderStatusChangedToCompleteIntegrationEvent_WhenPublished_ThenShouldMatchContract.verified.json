@@ -1,33 +1,17 @@
 ﻿{
-  "Messages": [
-    {
-      "Published": "OrderStatusChangedToCompleteIntegrationEvent",
-      "MessageId": "Guid_1",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:OrderStatusChangedToCompleteIntegrationEvent",
-      "Message": {
-        "OrderId": "Guid_3",
-        "BasketId": "Guid_4",
-        "FullName": "John Doe",
-        "Email": "john.doe@example.com",
-        "TotalMoney": 149.99,
-        "Id": "Guid_5",
-        "CreationDate": "DateTime_1"
-      },
-      "Headers": [
-        {
-          "Key": "MT-Activity-Id",
-          "Value": "TraceId_Scrubbed"
-        },
-        {
-          "Key": "MT-Activity-Correlation-Context",
-          "Value": [
-            {
-              "tunit.test.id": "Guid_6"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent",
+  "source": "urn:bookworm:book-worm-ordering",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "orderId": "Guid_Scrubbed",
+    "basketId": "Guid_Scrubbed",
+    "fullName": "John Doe",
+    "email": "john.doe@example.com",
+    "totalMoney": 149.99,
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
+  }
 }

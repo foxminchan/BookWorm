@@ -1,4 +1,7 @@
-﻿using BookWorm.Constants.Aspire;
+﻿using BookWorm.Chassis.EventBus.Wolverine;
+using BookWorm.Constants.Aspire;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Finance.Extensions;
 
@@ -17,6 +20,19 @@ internal static class Extensions
             );
 
             builder.AddSagaStateMachineServices();
+
+            var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Finance);
+            builder.AddEventBus(opts =>
+            {
+                if (!string.IsNullOrWhiteSpace(postgresCs))
+                {
+                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
+                    opts.UseEntityFrameworkCoreTransactions();
+                }
+
+                opts.Discovery.IncludeAssembly(typeof(IFinanceApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(IFinanceApiMarker).Assembly);
+            });
         }
     }
 }

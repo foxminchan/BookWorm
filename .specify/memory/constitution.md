@@ -1,11 +1,16 @@
 <!--
   Sync Impact Report
   ==================
-  Version change: 1.0.0 → 1.1.0
-  Modified principles: None (no principle text changed)
-  Added sections:
-    - Development Workflow → Onboarding (new subsection codifying
-      prerequisites, post-clone setup, and first-run validation)
+  Version change: 1.1.0 → 2.0.0 (major — two binding constraints relaxed)
+  Modified principles:
+    - Principle III (Test Discipline) — temporary, scoped quarantine exception
+      added for `*.ContractTests` and `*.IntegrationTests` projects during
+      spec 003-wolverine-migration; MUST be re-enabled in spec 004.
+    - Principle IV (Event-Driven Microservices) — messaging technology
+      changed from MassTransit to WolverineFx (binding constitutional change).
+  Modified sections:
+    - Technology Stack Constraints → Messaging entry updated.
+  Added sections: None
   Removed sections: None
   Templates requiring updates:
     - .specify/templates/plan-template.md ✅ no update needed
@@ -15,9 +20,11 @@
     - .specify/templates/agent-file-template.md ✅ no update needed
   Runtime guidance cross-checked:
     - AGENTS.md ✅ consistent (delegates to CLAUDE.md)
-    - CLAUDE.md ✅ already documents the same prerequisites/commands
-    - .github/copilot-instructions.md ✅ consistent
-  Follow-up TODOs: None
+    - CLAUDE.md ⚠️ update required (T047 of spec 003-wolverine-migration)
+    - .github/copilot-instructions.md ⚠️ update required (T048)
+  Follow-up TODOs:
+    - spec 004-test-tier-restoration: re-enable quarantined ContractTests
+      and IntegrationTests projects with Wolverine equivalents.
 -->
 
 # BookWorm Constitution
@@ -68,14 +75,22 @@ IntegrationTests}` naming.
 - Minimum 85% coverage for domain and application layers.
 - Architecture tests in `tests/BookWorm.ArchTests/` MUST pass.
 
+> **Temporary exception (migration spec 003-wolverine-migration)**:
+> `*.ContractTests` and `*.IntegrationTests` projects are quarantined
+> from the active build for the duration of this migration. They MUST
+> be re-enabled in follow-up spec `004-test-tier-restoration` with
+> Wolverine-compatible equivalents.
+
 ### IV. Event-Driven Microservices
 
-Inter-service communication MUST use MassTransit with Kafka.
+Inter-service communication MUST use WolverineFx with Kafka.
 Transactional consistency MUST be maintained via outbox/inbox
 patterns. Saga orchestration MUST be used for multi-step
 business processes.
 
-- Outbox/Inbox entities MUST be registered in `OnModelCreating`.
+- Outbox/Inbox entities MUST be registered via Wolverine’s
+  `UseDurableOutboxOnAllSendingEndpoints()` and
+  `UseDurableInboxOnAllListeners()` policies.
 - Events MUST be documented in EventCatalog (`docs/eventcatalog/`).
 - gRPC MUST be used for synchronous service-to-service calls
   where event-driven patterns are not appropriate.
@@ -134,7 +149,7 @@ without a constitutional amendment:
 - **Frontend**: TypeScript 6.0+, Next.js 16.2, React 19, pnpm 10 +
   Turbo 2 monorepo (Node >= 25)
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based)
-- **Messaging**: MassTransit with Kafka
+- **Messaging**: WolverineFx with Kafka
 - **Auth**: Keycloak (Authorization Code Flow with PKCE for users;
   Token Exchange for service-to-service)
 - **Caching**: HybridCache (distributed + local tiers)

@@ -1,12 +1,9 @@
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
-using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using Wolverine;
 
 namespace BookWorm.Catalog.ContractTests.Publishers;
 
@@ -15,13 +12,11 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
     private readonly int _rating = 4;
     private Guid _bookId;
     private Guid _feedbackId;
-    private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private Mock<IBookRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _bookId = Guid.CreateVersion7();
         _feedbackId = Guid.CreateVersion7();
@@ -33,31 +28,6 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
 
         _repositoryMock = new();
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
-
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x =>
-            {
-                x.AddConsumer<FeedbackCreatedIntegrationEventHandler>();
-                x.UsingInMemory(
-                    (context, cfg) =>
-                    {
-                        cfg.UseCloudEvents();
-                        cfg.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -68,16 +38,17 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
             .Setup(x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book?)null);
 
-        var integrationEvent = new FeedbackCreatedIntegrationEvent(_bookId, _rating, _feedbackId);
+        var @event = new FeedbackCreatedIntegrationEvent(_bookId, _rating, _feedbackId);
+        var bus = new TestMessageContext();
+        var handler = new FeedbackCreatedIntegrationEventHandler(_repositoryMock.Object, bus);
 
         // Act
-        await _harness.Bus.Publish(integrationEvent);
+        await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await _harness.Consumed.Any<FeedbackCreatedIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(_harness);
-
+        await SnapshotTestHelper.VerifyCloudEvents(
+            bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
+        );
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once

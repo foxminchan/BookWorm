@@ -60,19 +60,16 @@ updates:
       semver-major-days: 14
       semver-minor-days: 5
       semver-patch-days: 3
-    ignore:
-      - dependency-name: "MassTransit.*"
-        update-types: ["version-update:semver-major"]
     groups:
       Aspire:
         patterns:
           - "Aspire.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       AspNetCore:
         patterns:
           - "Microsoft.AspNetCore.*"
           - "Microsoft.Extensions.Features"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       MicrosoftExtensions:
         patterns:
           - "Microsoft.Extensions.Caching.*"
@@ -80,39 +77,39 @@ updates:
           - "Microsoft.Extensions.Http.*"
           - "Microsoft.Extensions.ServiceDiscovery*"
           - "Microsoft.Extensions.AI.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       OpenTelemetry:
         patterns:
           - "OpenTelemetry.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       Grpc:
         patterns:
           - "Grpc.*"
-        update-types: ["minor", "patch"]
-      MassTransit:
+        update-types: [ "minor", "patch" ]
+      Wolverine:
         patterns:
-          - "MassTransit.*"
-        update-types: ["minor", "patch"]
+          - "Wolverine*"
+        update-types: [ "minor", "patch" ]
       EntityFrameworkCore:
         patterns:
           - "Microsoft.EntityFrameworkCore.*"
           - "EFCore.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       MicrosoftAgents:
         patterns:
           - "Microsoft.Agents.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       SemanticKernel:
         patterns:
           - "Microsoft.SemanticKernel.*"
       CommunityToolkit:
         patterns:
           - "CommunityToolkit.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       Quartz:
         patterns:
           - "Quartz.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       Testing:
         patterns:
           - "TUnit*"
@@ -120,20 +117,20 @@ updates:
           - "Moq"
           - "Shouldly"
           - "TngTech.ArchUnitNET.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       ContractTesting:
         patterns:
           - "Verify.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       MicrosoftTesting:
         patterns:
           - "Microsoft.Testing.*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]
       nuget-security:
         applies-to: security-updates
         patterns:
           - "*"
-        update-types: ["patch", "minor"]
+        update-types: [ "patch", "minor" ]
 
   # ── npm: Event Catalog docs ───────────────────────────────────────────
   - package-ecosystem: "npm"
@@ -301,7 +298,7 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
-        update-types: ["patch", "minor"]
+        update-types: [ "patch", "minor" ]
 
   # ── Docker ────────────────────────────────────────────────────────────
   - package-ecosystem: docker
@@ -342,4 +339,4 @@ updates:
       github-actions-minor:
         patterns:
           - "*"
-        update-types: ["minor", "patch"]
+        update-types: [ "minor", "patch" ]

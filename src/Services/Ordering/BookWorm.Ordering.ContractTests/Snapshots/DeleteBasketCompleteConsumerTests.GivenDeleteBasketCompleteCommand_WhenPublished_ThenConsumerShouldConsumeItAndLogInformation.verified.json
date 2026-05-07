@@ -1,60 +1,14 @@
 ﻿{
-  "harness": {
-    "Messages": [
-      {
-        "Published": "DeleteBasketCompleteCommand",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:DeleteBasketCompleteCommand",
-        "Message": {
-          "OrderId": "Guid_3",
-          "TotalMoney": 125.99,
-          "Id": "Guid_4",
-          "CreationDate": "DateTime_1"
-        },
-        "Headers": [
-          {
-            "Key": "MT-Activity-Id",
-            "Value": "TraceId_Scrubbed"
-          },
-          {
-            "Key": "MT-Activity-Correlation-Context",
-            "Value": [
-              {
-                "tunit.test.id": "Guid_5"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "Received": "DeleteBasketCompleteCommand",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:DeleteBasketCompleteCommand",
-        "Message": {
-          "OrderId": "Guid_3",
-          "TotalMoney": 125.99,
-          "Id": "Guid_6",
-          "CreationDate": "DateTime_2"
-        }
-      }
-    ]
-  },
-  "consumer": {
-    "Consumed": [
-      {
-        "Received": "DeleteBasketCompleteCommand",
-        "MessageId": "Guid_1",
-        "ConversationId": "Guid_2",
-        "DestinationAddress": "BookWorm.Contracts:DeleteBasketCompleteCommand",
-        "Message": {
-          "OrderId": "Guid_3",
-          "TotalMoney": 125.99,
-          "Id": "Guid_6",
-          "CreationDate": "DateTime_2"
-        }
-      }
-    ]
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.DeleteBasketCompleteCommand",
+  "source": "urn:bookworm:book-worm-ordering",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "orderId": "Guid_Scrubbed",
+    "totalMoney": 125.99,
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
   }
 }

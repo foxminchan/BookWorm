@@ -34,7 +34,7 @@
   </ItemGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('ContractTests'))">
     <PackageReference Include="Verify.TUnit" />
-    <PackageReference Include="Verify.MassTransit" />
+    <PackageReference Include="Verify.Wolverine" />
     <Compile
       Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestHelper.cs"
       Link="SnapshotTestHelper.cs"

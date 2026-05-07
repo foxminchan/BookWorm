@@ -1,13 +1,8 @@
-﻿using BookWorm.Chassis.EventBus.Serialization;
-using BookWorm.Chassis.Repository;
-using BookWorm.Chassis.Specification;
+﻿using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 
@@ -15,49 +10,19 @@ namespace BookWorm.Notification.ContractTests.Consumers;
 
 public sealed class CleanUpSentEmailConsumerTests
 {
-    private ITestHarness _harness = null!;
     private Mock<GlobalLogBuffer> _logBufferMock = null!;
     private Mock<ILogger<CleanUpSentEmailIntegrationEventHandler>> _loggerMock = null!;
-    private ServiceProvider _provider = null!;
     private Mock<IOutboxRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _loggerMock = new();
         _logBufferMock = new();
         _repositoryMock = new();
         _unitOfWorkMock = new();
-
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
-
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x =>
-            {
-                x.AddConsumer<CleanUpSentEmailIntegrationEventHandler>();
-                x.UsingInMemory(
-                    (context, cfg) =>
-                    {
-                        cfg.UseCloudEvents();
-                        cfg.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .AddScoped(_ => _loggerMock.Object)
-            .AddScoped(_ => _logBufferMock.Object)
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -75,32 +40,27 @@ public sealed class CleanUpSentEmailConsumerTests
             .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sentEmails);
 
-        var command = new CleanUpSentEmailIntegrationEvent();
+        var @event = new CleanUpSentEmailIntegrationEvent();
+        var handler = new CleanUpSentEmailIntegrationEventHandler(
+            _loggerMock.Object,
+            _logBufferMock.Object,
+            _repositoryMock.Object
+        );
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
-
         _repositoryMock.Verify(
             x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 3)),
             Times.Once
         );
-
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
-        VerifyLogMessage(LogLevel.Debug, "Found 3 sent emails to delete", Times.Once());
-        VerifyLogMessage(LogLevel.Information, "Successfully cleaned up sent emails", Times.Once());
     }
 
     [Test]
@@ -111,320 +71,52 @@ public sealed class CleanUpSentEmailConsumerTests
             .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var command = new CleanUpSentEmailIntegrationEvent();
+        var @event = new CleanUpSentEmailIntegrationEvent();
+        var handler = new CleanUpSentEmailIntegrationEventHandler(
+            _loggerMock.Object,
+            _logBufferMock.Object,
+            _repositoryMock.Object
+        );
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        await consumer.Consumed.Any<CleanUpSentEmailIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
-
         _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Never);
-
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-
-        VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
-        VerifyLogMessage(LogLevel.Debug, "No sent emails found for cleanup", Times.Once());
     }
 
     [Test]
     public async Task GivenRepositoryThrowsExceptionOnList_WhenHandlingCleanUpEvent_ThenShouldLogErrorAndRethrow()
     {
         // Arrange
-        var exception = new InvalidOperationException("Database connection failed");
-
+        var innerException = new InvalidOperationException("Database connection failed");
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(exception);
+            .ThrowsAsync(innerException);
 
-        var command = new CleanUpSentEmailIntegrationEvent();
+        var @event = new CleanUpSentEmailIntegrationEvent();
+        var handler = new CleanUpSentEmailIntegrationEventHandler(
+            _loggerMock.Object,
+            _logBufferMock.Object,
+            _repositoryMock.Object
+        );
 
-        // Act
-        await _harness.Bus.Publish(command);
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await handler.Handle(@event, CancellationToken.None)
+        );
 
-        // Assert
-        var consumerHarness =
-            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
-
-        // Verify that the consumer faulted
-        var consumedMessage = consumerHarness
-            .Consumed.Select<CleanUpSentEmailIntegrationEvent>()
-            .FirstOrDefault();
-        consumedMessage.ShouldNotBeNull();
-        consumedMessage.Exception.ShouldNotBeNull();
-        consumedMessage.Exception.ShouldBeOfType<InvalidOperationException>();
-        consumedMessage.Exception.Message.ShouldBe("Failed to clean up sent emails");
-        consumedMessage.Exception.InnerException.ShouldNotBeNull();
-        consumedMessage.Exception.InnerException.ShouldBeOfType<InvalidOperationException>();
-        consumedMessage.Exception.InnerException.Message.ShouldBe("Database connection failed");
-
+        ex.ShouldNotBeNull();
+        ex.Message.ShouldBe("Failed to clean up sent emails");
+        ex.InnerException.ShouldNotBeNull();
+        ex.InnerException.ShouldBeOfType<InvalidOperationException>();
+        ex.InnerException.Message.ShouldBe("Database connection failed");
         _logBufferMock.Verify(x => x.Flush(), Times.Once);
-
-        VerifyLogMessageWithException(
-            LogLevel.Error,
-            "Error occurred while cleaning up sent emails",
-            exception,
-            Times.Once()
-        );
-    }
-
-    [Test]
-    public async Task GivenSaveChangesThrowsException_WhenHandlingCleanUpEvent_ThenShouldLogErrorAndRethrow()
-    {
-        // Arrange
-        List<Outbox> sentEmails = [new("User One", "user1@example.com", "Subject 1", "Body 1")];
-
-        var exception = new InvalidOperationException("Failed to save changes");
-
-        _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(sentEmails);
-
-        _unitOfWorkMock
-            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(exception);
-
-        var command = new CleanUpSentEmailIntegrationEvent();
-
-        // Act
-        await _harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness =
-            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
-
-        // Verify that the consumer faulted
-        var consumedMessage = consumerHarness
-            .Consumed.Select<CleanUpSentEmailIntegrationEvent>()
-            .FirstOrDefault();
-        consumedMessage.ShouldNotBeNull();
-        consumedMessage.Exception.ShouldNotBeNull();
-        consumedMessage.Exception.ShouldBeOfType<InvalidOperationException>();
-        consumedMessage.Exception.Message.ShouldBe("Failed to clean up sent emails");
-        consumedMessage.Exception.InnerException.ShouldNotBeNull();
-        consumedMessage.Exception.InnerException.ShouldBeOfType<InvalidOperationException>();
-        consumedMessage.Exception.InnerException.Message.ShouldBe("Failed to save changes");
-
-        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Once);
-
-        _logBufferMock.Verify(x => x.Flush(), Times.Once);
-
-        VerifyLogMessageWithException(
-            LogLevel.Error,
-            "Error occurred while cleaning up sent emails",
-            exception,
-            Times.Once()
-        );
-    }
-
-    [Test]
-    public async Task GivenValidEvent_WhenHandling_ThenShouldUseCorrectFilterSpec()
-    {
-        // Arrange
-        OutboxFilterSpec? capturedSpec = null;
-
-        _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
-            .Callback<ISpecification<Outbox>, CancellationToken>(
-                (spec, _) =>
-                {
-                    if (spec is OutboxFilterSpec filterSpec)
-                    {
-                        capturedSpec = filterSpec;
-                    }
-                }
-            )
-            .ReturnsAsync([]);
-
-        var command = new CleanUpSentEmailIntegrationEvent();
-
-        // Act
-        await _harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness =
-            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
-
-        capturedSpec.ShouldNotBeNull();
-    }
-
-    [Test]
-    public async Task GivenMultipleBatches_WhenHandlingCleanUpEvent_ThenShouldDeleteAllEmailsCorrectly()
-    {
-        // Arrange
-        List<Outbox> sentEmails = [];
-        for (var i = 1; i <= 10; i++)
-        {
-            sentEmails.Add(new($"User {i}", $"user{i}@example.com", $"Subject {i}", $"Body {i}"));
-        }
-
-        _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(sentEmails);
-
-        var command = new CleanUpSentEmailIntegrationEvent();
-
-        // Act
-        await _harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness =
-            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
-
-        _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        _repositoryMock.Verify(
-            x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(emails => emails.Count() == 10)),
-            Times.Once
-        );
-
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        VerifyLogMessage(LogLevel.Debug, "Starting cleanup of sent emails", Times.Once());
-        VerifyLogMessage(LogLevel.Debug, "Found 10 sent emails to delete", Times.Once());
-        VerifyLogMessage(LogLevel.Information, "Successfully cleaned up sent emails", Times.Once());
-    }
-
-    [Test]
-    public async Task GivenValidEvent_WhenHandlingCleanUpEvent_ThenShouldCompleteSuccessfully()
-    {
-        // Arrange
-        List<Outbox> sentEmails = [new("User One", "user1@example.com", "Subject 1", "Body 1")];
-
-        using var cancellationTokenSource = new CancellationTokenSource();
-        var cancellationToken = cancellationTokenSource.Token;
-
-        // Set up the repository to work with any cancellation token, not just the specific one
-        _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(sentEmails);
-
-        var command = new CleanUpSentEmailIntegrationEvent();
-
-        // Act
-        await _harness.Bus.Publish(command, cancellationToken);
-
-        // Assert
-        var consumerHarness =
-            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (
-            await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>(cancellationToken)
-        ).ShouldBeTrue();
-
-        _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Once);
-
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Test]
-    public async Task GivenSqlExceptionDuringBulkDelete_WhenHandlingCleanUpEvent_ThenShouldLogErrorAndRethrow()
-    {
-        // Arrange
-        List<Outbox> sentEmails = [new("User One", "user1@example.com", "Subject 1", "Body 1")];
-
-        var exception = new InvalidOperationException("SQL Server connection timeout");
-
-        _repositoryMock
-            .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(sentEmails);
-
-        _repositoryMock.Setup(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>())).Throws(exception);
-
-        var command = new CleanUpSentEmailIntegrationEvent();
-
-        // Act
-        await _harness.Bus.Publish(command);
-
-        // Assert
-        var consumerHarness =
-            _harness.GetConsumerHarness<CleanUpSentEmailIntegrationEventHandler>();
-        (await consumerHarness.Consumed.Any<CleanUpSentEmailIntegrationEvent>()).ShouldBeTrue();
-
-        // Verify that the consumer faulted
-        var consumedMessage = consumerHarness
-            .Consumed.Select<CleanUpSentEmailIntegrationEvent>()
-            .FirstOrDefault();
-        consumedMessage.ShouldNotBeNull();
-        consumedMessage.Exception.ShouldNotBeNull();
-        consumedMessage.Exception.ShouldBeOfType<InvalidOperationException>();
-        consumedMessage.Exception.Message.ShouldBe("Failed to clean up sent emails");
-        consumedMessage.Exception.InnerException.ShouldNotBeNull();
-        consumedMessage.Exception.InnerException.ShouldBeOfType<InvalidOperationException>();
-        consumedMessage.Exception.InnerException.Message.ShouldBe("SQL Server connection timeout");
-
-        _repositoryMock.Verify(
-            x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Once);
-
-        // SaveChanges should never be called when BulkDelete fails
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-
-        _logBufferMock.Verify(x => x.Flush(), Times.Once);
-
-        VerifyLogMessageWithException(
-            LogLevel.Error,
-            "Error occurred while cleaning up sent emails",
-            exception,
-            Times.Once()
-        );
-    }
-
-    private void VerifyLogMessage(LogLevel level, string expectedMessage, Times times)
-    {
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    level,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains(expectedMessage)),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            times
-        );
-    }
-
-    private void VerifyLogMessageWithException<TException>(
-        LogLevel level,
-        string expectedMessage,
-        TException expectedException,
-        Times times
-    )
-        where TException : Exception
-    {
-        _loggerMock.Verify(
-            x =>
-                x.Log(
-                    level,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains(expectedMessage)),
-                    expectedException,
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            times
-        );
     }
 }

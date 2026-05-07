@@ -1,12 +1,9 @@
 ﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 internal sealed class CancelOrderCommandHandler(ISender sender, IRenderer renderer)
-    : IConsumer<CancelOrderCommand>
 {
-    public async Task Consume(ConsumeContext<CancelOrderCommand> context)
+    public async Task Handle(CancelOrderCommand message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
-
         if (string.IsNullOrWhiteSpace(message.Email))
         {
             return;
@@ -14,11 +11,7 @@ internal sealed class CancelOrderCommandHandler(ISender sender, IRenderer render
 
         var order = message.ToOrder();
 
-        var htmlBody = await renderer.RenderAsync(
-            order,
-            "Orders/OrderEmail",
-            context.CancellationToken
-        );
+        var htmlBody = await renderer.RenderAsync(order, "Orders/OrderEmail", cancellationToken);
 
         var mailMessage = OrderMimeMessageBuilder
             .Initialize()
@@ -27,17 +20,6 @@ internal sealed class CancelOrderCommandHandler(ISender sender, IRenderer render
             .WithBody(htmlBody)
             .Build();
 
-        await sender.SendAsync(mailMessage, context.CancellationToken);
-    }
-}
-
-[ExcludeFromCodeCoverage]
-internal sealed class CancelOrderCommandHandlerDefinition
-    : ConsumerDefinition<CancelOrderCommandHandler>
-{
-    public CancelOrderCommandHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "notification-cancel-order");
-        ConcurrentMessageLimit = 1;
+        await sender.SendAsync(mailMessage, cancellationToken);
     }
 }

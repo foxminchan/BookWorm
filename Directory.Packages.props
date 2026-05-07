@@ -77,9 +77,10 @@
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.Tools" Version="2.80.0" PrivateAssets="All" />
-    <!-- MassTransit -->
-    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="$(MassTransitVersion)" />
-    <PackageVersion Include="MassTransit.Kafka" Version="$(MassTransitVersion)" />
+    <!-- WolverineFx -->
+    <PackageVersion Include="WolverineFx.Kafka" Version="$(WolverineVersion)" />
+    <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="$(WolverineVersion)" />
+    <PackageVersion Include="WolverineFx.Postgresql" Version="$(WolverineVersion)" />
     <!-- Quartz -->
     <PackageVersion Include="Quartz.Plugins" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Dashboard" Version="$(QuartzVersion)" />
@@ -93,7 +94,6 @@
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.2.0" />
-    <PackageVersion Include="CloudNative.CloudEvents.SystemTextJson" Version="2.8.0" />
     <PackageVersion Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis" Version="2.6.0" />
   </ItemGroup>
   <ItemGroup Label="Testing">
@@ -104,8 +104,8 @@
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <!-- Contract Testing -->
     <PackageVersion Include="Verify.TUnit" Version="31.16.2" />
+    <PackageVersion Include="Verify.Wolverine" Version="3.0.0" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
-    <PackageVersion Include="Verify.MassTransit" Version="2.1.0" />
     <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.6.2" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />

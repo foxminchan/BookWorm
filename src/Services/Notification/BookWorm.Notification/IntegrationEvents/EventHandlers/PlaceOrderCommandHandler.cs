@@ -1,12 +1,9 @@
 ﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 internal sealed class PlaceOrderCommandHandler(ISender sender, IRenderer renderer)
-    : IConsumer<PlaceOrderCommand>
 {
-    public async Task Consume(ConsumeContext<PlaceOrderCommand> context)
+    public async Task Handle(PlaceOrderCommand message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
-
         if (string.IsNullOrWhiteSpace(message.Email))
         {
             return;
@@ -14,11 +11,7 @@ internal sealed class PlaceOrderCommandHandler(ISender sender, IRenderer rendere
 
         var order = message.ToOrder();
 
-        var htmlBody = await renderer.RenderAsync(
-            order,
-            "Orders/OrderEmail",
-            context.CancellationToken
-        );
+        var htmlBody = await renderer.RenderAsync(order, "Orders/OrderEmail", cancellationToken);
 
         var mailMessage = OrderMimeMessageBuilder
             .Initialize()
@@ -27,17 +20,6 @@ internal sealed class PlaceOrderCommandHandler(ISender sender, IRenderer rendere
             .WithBody(htmlBody)
             .Build();
 
-        await sender.SendAsync(mailMessage, context.CancellationToken);
-    }
-}
-
-[ExcludeFromCodeCoverage]
-internal sealed class PlaceOrderCommandHandlerDefinition
-    : ConsumerDefinition<PlaceOrderCommandHandler>
-{
-    public PlaceOrderCommandHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "notification-place-order");
-        ConcurrentMessageLimit = 1;
+        await sender.SendAsync(mailMessage, cancellationToken);
     }
 }

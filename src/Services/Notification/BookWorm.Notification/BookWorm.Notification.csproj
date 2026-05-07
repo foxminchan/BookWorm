@@ -13,7 +13,8 @@
     <PackageReference Include="AspNetCore.HealthChecks.SendGrid" />
   </ItemGroup>
   <ItemGroup Label="EF Core">
-    <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" />
+    <PackageReference Include="WolverineFx.Postgresql" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup>

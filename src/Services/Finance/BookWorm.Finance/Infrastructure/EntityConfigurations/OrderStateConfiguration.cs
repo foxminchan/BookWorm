@@ -3,10 +3,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Finance.Infrastructure.EntityConfigurations;
 
-internal sealed class OrderStateConfiguration : SagaClassMap<OrderState>
+internal sealed class OrderSagaConfiguration : IEntityTypeConfiguration<OrderSaga>
 {
-    protected override void Configure(EntityTypeBuilder<OrderState> entity, ModelBuilder model)
+    public void Configure(EntityTypeBuilder<OrderSaga> entity)
     {
+        entity.HasKey(p => p.Id);
+
+        entity.Property(p => p.FullName).HasMaxLength(DataSchemaLength.Large);
         entity.Property(p => p.OrderId).IsRequired();
         entity.Property(p => p.BasketId).IsRequired();
         entity.Property(p => p.TotalMoney).HasPrecision(18, 2);
@@ -16,5 +19,6 @@ internal sealed class OrderStateConfiguration : SagaClassMap<OrderState>
             .HasColumnName("xmin")
             .HasColumnType("xid")
             .IsRowVersion();
+        entity.Property(p => p.CurrentState).HasConversion<string>();
     }
 }

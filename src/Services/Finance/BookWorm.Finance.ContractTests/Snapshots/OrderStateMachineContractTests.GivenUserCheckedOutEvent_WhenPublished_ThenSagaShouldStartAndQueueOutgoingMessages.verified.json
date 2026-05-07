@@ -1,0 +1,32 @@
+﻿[
+  {
+    "specversion": "1.0",
+    "id": "Guid_Scrubbed",
+    "type": "BookWorm.Contracts.PlaceOrderCommand",
+    "source": "urn:bookworm:book-worm-finance",
+    "time": "DateTime_Scrubbed",
+    "datacontenttype": "application/json",
+    "data": {
+      "basketId": "Guid_Scrubbed",
+      "fullName": "John Doe",
+      "email": "john.doe@example.com",
+      "orderId": "Guid_Scrubbed",
+      "totalMoney": 99.99,
+      "id": "Guid_Scrubbed",
+      "creationDate": "DateTime_Scrubbed"
+    }
+  },
+  {
+    "specversion": "1.0",
+    "id": "Guid_Scrubbed",
+    "type": "BookWorm.Finance.Saga.PlaceOrderTimeout",
+    "source": "urn:bookworm:book-worm-finance",
+    "time": "DateTime_Scrubbed",
+    "datacontenttype": "application/json",
+    "data": {
+      "orderId": "Guid_Scrubbed",
+      "delay": "00:30:00",
+      "delayTime": "00:30:00"
+    }
+  }
+]

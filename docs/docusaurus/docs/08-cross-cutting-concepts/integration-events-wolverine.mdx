@@ -1,0 +1,171 @@
+---
+sidebar_position: 3.5
+title: Integration Events with Wolverine
+description:
+  Step-by-step recipe for defining, publishing, and handling integration events using WolverineFx
+  and the Kafka-backed event bus
+keywords:
+  [
+    integration events,
+    WolverineFx,
+    Kafka,
+    CloudEvents,
+    outbox pattern,
+    message handler,
+    BookWorm.Contracts,
+    MessageIdentity,
+  ]
+last_update:
+  author: Nhan Nguyen
+---
+
+# How to Add a New Integration Event with Wolverine
+
+This recipe walks you through the complete process of adding a new cross-service integration event
+to BookWorm. It follows the patterns established in `SC-007` and is fully independent of any
+MassTransit-era conventions.
+
+## 1. Define the Event Record in `BookWorm.Contracts`
+
+All integration event contracts live in the `BookWorm.Contracts` shared project. Each event is a
+plain C# record decorated with `[MessageIdentity]`:
+
+```csharp
+// src/BuildingBlocks/BookWorm.Constants/BookWorm.Contracts/Events/MyNewEvent.cs
+using Wolverine.Attributes;
+
+namespace BookWorm.Contracts;
+
+[MessageIdentity("my-new-event", Version = 1)]
+public sealed record MyNewIntegrationEvent(Guid EntityId, string SomePayload);
+```
+
+- **`[MessageIdentity]`** sets the CloudEvents `type` discriminator on the envelope.
+- Use `sealed record` — required by Wolverine's source-generated serializer.
+- Keep the record in `BookWorm.Contracts` so every service can reference it without a circular
+  dependency.
+
+## 2. Publish the Event from a Command Handler
+
+In the producing service, inject `IMessageBus` and call `PublishAsync`. The Wolverine outbox ensures
+transactional delivery when combined with a `DbContext`:
+
+```csharp
+// Inside a Wolverine command handler (or domain event handler)
+public sealed class PlaceOrderCommandHandler(IMessageBus bus, OrderingDbContext db)
+{
+    public async Task Handle(PlaceOrderCommand command, CancellationToken cancellationToken)
+    {
+        // ... business logic ...
+
+        db.Orders.Add(order);
+
+        // Publish via outbox — committed with the same transaction as the EF SaveChanges
+        await bus.PublishAsync(new MyNewIntegrationEvent(order.Id, order.Description));
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+}
+```
+
+> **Note**: `IMessageBus.PublishAsync<T>` does **not** accept a `CancellationToken`. The outbox
+> flushes the message after `SaveChangesAsync` commits.
+
+## 3. Write the Handler in the Consuming Service
+
+Create a handler class in the consuming service. Wolverine discovers handlers by convention:
+
+- The class name ends in `Handler` or has a static `Handle` / `Consume` method.
+- The first method parameter is the message type.
+
+```csharp
+// src/Services/Notification/BookWorm.Notification/Features/MyNew/MyNewEventHandler.cs
+namespace BookWorm.Notification.Features.MyNew;
+
+public sealed class MyNewIntegrationEventHandler(ILogger<MyNewIntegrationEventHandler> logger)
+{
+    public async Task Handle(
+        MyNewIntegrationEvent @event,
+        CancellationToken cancellationToken)
+    {
+        logger.LogInformation(
+            "Handling {EventType} for entity {EntityId}",
+            nameof(MyNewIntegrationEvent),
+            @event.EntityId);
+
+        // ... your handling logic ...
+
+        await Task.CompletedTask;
+    }
+}
+```
+
+### Kafka Topic Routing
+
+Wolverine routes Kafka messages by the `[MessageIdentity]` attribute's name by default. No explicit
+topic configuration is needed for standard pub/sub. For custom routing, add a `KafkaTopicAttribute`
+on the record or configure in `WolverineHostExtensions`.
+
+## 4. Register the Outbox Table for the Producing Service
+
+Wolverine's inbox/outbox tables must be present in the producing service's `DbContext`. This is done
+automatically during startup via `AddResourceSetupOnStartup()`:
+
+```csharp
+// Program.cs of the producing service
+builder.Host.UseWolverine(opts =>
+{
+    opts.UseKafkaWithCloudEvents(builder.Configuration);
+    opts.PersistMessagesWithPostgresql(connectionString, schema: "wolverine");
+    // ...
+});
+
+builder.Services.AddResourceSetupOnStartup(); // Creates schema on first boot
+```
+
+The `OnModelCreating` override in each `DbContext` registers the Wolverine entities:
+
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+    modelBuilder.MapWolverineEntities(); // Registers Wolverine outbox/inbox tables
+}
+```
+
+## 5. Write Unit Tests
+
+Test each handler in isolation — no Docker or Kafka required:
+
+```csharp
+// In BookWorm.{Service}.UnitTests/
+[Test]
+public async Task GivenValidEvent_WhenHandled_ThenShouldProcessSuccessfully()
+{
+    // Arrange
+    var logger = NullLogger<MyNewIntegrationEventHandler>.Instance;
+    var handler = new MyNewIntegrationEventHandler(logger);
+    var @event = new MyNewIntegrationEvent(Guid.NewGuid(), "test-payload");
+
+    // Act
+    var act = async () => await handler.Handle(@event, CancellationToken.None);
+
+    // Assert
+    await act.Should().NotThrowAsync();
+}
+```
+
+For handlers that publish outgoing messages, use Wolverine's in-memory `OutgoingMessages` helper
+(returned from handler methods) rather than mocking `IMessageBus`.
+
+## Checklist
+
+| Step                                                                            | Done? |
+| ------------------------------------------------------------------------------- | ----- |
+| Event record defined in `BookWorm.Contracts` with `[MessageIdentity]`           | ☐     |
+| Event published via `IMessageBus.PublishAsync` inside the outbox transaction    | ☐     |
+| Handler class created in consuming service, convention-named `*Handler`         | ☐     |
+| `AddResourceSetupOnStartup()` configured in producing service                   | ☐     |
+| Wolverine entities mapped in `OnModelCreating`                                  | ☐     |
+| Unit tests written for handler in isolation                                     | ☐     |
+| EF Core migration generated for producing service (if new outbox tables needed) | ☐     |

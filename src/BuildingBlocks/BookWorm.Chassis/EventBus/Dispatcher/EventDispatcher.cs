@@ -1,9 +1,9 @@
 ﻿using BookWorm.SharedKernel.SeedWork;
-using MassTransit;
+using Wolverine;
 
 namespace BookWorm.Chassis.EventBus.Dispatcher;
 
-internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEventDispatcher
+internal sealed class EventDispatcher(IMessageBus bus, IEventMapper eventMapper) : IEventDispatcher
 {
     public Task DispatchAsync(DomainEvent @event, CancellationToken cancellationToken = default)
     {
@@ -26,18 +26,17 @@ internal sealed class EventDispatcher(IBus bus, IEventMapper eventMapper) : IEve
 
         if (string.IsNullOrEmpty(userId))
         {
-            await bus.Publish((object)integrationEvent, cancellationToken);
+            await bus.PublishAsync((object)integrationEvent);
             return;
         }
 
-        // Propagate the user identifier through the publishing context so that the
-        // existing publishing filters (UserIdPublishFilter / KafkaPublishFilter) and
-        // the CloudEvent envelope serializer pick it up just as they would for an
-        // event originating from an HTTP request scope.
-        await bus.Publish(
-            (object)integrationEvent,
-            context => context.Headers.Set(EventBusHeaders.UserId, userId),
-            cancellationToken
-        );
+        // Propagate the user identifier through the delivery options so that the
+        // envelope rule (UserIdEnvelopeMiddleware) and the CloudEvent header policy
+        // pick it up when serializing the outbound Kafka message (FR-009).
+        var deliveryOptions = new DeliveryOptions();
+        deliveryOptions.Headers.Add(EventBusHeaders.UserId, userId);
+        deliveryOptions.Headers.Add("userid", userId);
+
+        await bus.PublishAsync((object)integrationEvent, deliveryOptions);
     }
 }

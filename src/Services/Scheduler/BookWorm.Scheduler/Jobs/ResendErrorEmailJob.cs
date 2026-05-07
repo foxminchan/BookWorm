@@ -1,15 +1,17 @@
 ﻿using BookWorm.Contracts;
+using Wolverine;
 
 namespace BookWorm.Scheduler.Jobs;
 
 [DisallowConcurrentExecution]
-internal sealed class ResendErrorEmailJob(IBus bus, ILogger<ResendErrorEmailJob> logger) : IJob
+internal sealed class ResendErrorEmailJob(IMessageBus bus, ILogger<ResendErrorEmailJob> logger)
+    : IJob
 {
     public async Task Execute(IJobExecutionContext context)
     {
         try
         {
-            await bus.Publish(new ResendErrorEmailIntegrationEvent(), context.CancellationToken);
+            await bus.PublishAsync(new ResendErrorEmailIntegrationEvent());
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -1,4 +1,4 @@
-﻿using BookWorm.Notification.Domain.Models;
+using BookWorm.Notification.Domain.Models;
 
 namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
@@ -7,11 +7,14 @@ internal sealed class ResendErrorEmailIntegrationEventHandler(
     GlobalLogBuffer logBuffer,
     IOutboxRepository repository,
     ISender sender
-) : IConsumer<ResendErrorEmailIntegrationEvent>
+)
 {
-    public async Task Consume(ConsumeContext<ResendErrorEmailIntegrationEvent> context)
+    public async Task Handle(
+        ResendErrorEmailIntegrationEvent _,
+        CancellationToken cancellationToken
+    )
     {
-        var ct = context.CancellationToken;
+        var ct = cancellationToken;
 
         var unsentEmails = await repository.ListAsync(new UnsentOutboxSpec(), ct);
 
@@ -68,16 +71,5 @@ internal sealed class ResendErrorEmailIntegrationEventHandler(
         {
             logBuffer.Flush();
         }
-    }
-}
-
-[ExcludeFromCodeCoverage]
-internal sealed class ResendErrorEmailIntegrationEventHandlerDefinition
-    : ConsumerDefinition<ResendErrorEmailIntegrationEventHandler>
-{
-    public ResendErrorEmailIntegrationEventHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "notification-resend-error-email");
-        ConcurrentMessageLimit = 1;
     }
 }

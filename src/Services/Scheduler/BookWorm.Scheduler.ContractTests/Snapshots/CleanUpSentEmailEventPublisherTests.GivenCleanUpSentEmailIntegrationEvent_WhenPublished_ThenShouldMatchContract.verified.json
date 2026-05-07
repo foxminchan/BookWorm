@@ -1,28 +1,12 @@
 ﻿{
-  "Messages": [
-    {
-      "Published": "CleanUpSentEmailIntegrationEvent",
-      "MessageId": "Guid_1",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:CleanUpSentEmailIntegrationEvent",
-      "Message": {
-        "Id": "Guid_3",
-        "CreationDate": "DateTime_1"
-      },
-      "Headers": [
-        {
-          "Key": "MT-Activity-Id",
-          "Value": "TraceId_Scrubbed"
-        },
-        {
-          "Key": "MT-Activity-Correlation-Context",
-          "Value": [
-            {
-              "tunit.test.id": "Guid_4"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.CleanUpSentEmailIntegrationEvent",
+  "source": "urn:bookworm:book-worm-scheduler",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
+  }
 }

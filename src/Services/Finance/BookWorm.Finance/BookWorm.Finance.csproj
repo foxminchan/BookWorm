@@ -7,7 +7,8 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
-    <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" />
+    <PackageReference Include="WolverineFx.Postgresql" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup>
@@ -18,5 +19,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Constracts\" />
   </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@ using BookWorm.Catalog.Configurations;
 using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
@@ -11,8 +12,9 @@ using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
-using Mediator;
 using Microsoft.AspNetCore.Authorization;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Catalog.Extensions;
 
@@ -60,9 +62,7 @@ internal static class Extensions
 
             // Configure Mediator
             services
-                .AddMediator(
-                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-                )
+                .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
                 .ApplyLoggingBehavior()
                 .ApplyActivityBehavior()
                 .ApplyValidationBehavior()
@@ -111,27 +111,18 @@ internal static class Extensions
             services.AddMapper(typeof(ICatalogApiMarker));
 
             // Configure EventBus
-            builder.AddEventBus(
-                typeof(ICatalogApiMarker),
-                cfg =>
+            var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Catalog);
+            builder.AddEventBus(opts =>
+            {
+                if (!string.IsNullOrWhiteSpace(postgresCs))
                 {
-                    cfg.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
-                    {
-                        o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                        o.UsePostgres();
-
-                        o.UseBusOutbox();
-                    });
-
-                    cfg.AddConfigureEndpointsCallback(
-                        (context, _, configurator) =>
-                            configurator.UseEntityFrameworkOutbox<CatalogDbContext>(context)
-                    );
+                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
+                    opts.UseEntityFrameworkCoreTransactions();
                 }
-            );
+
+                opts.Discovery.IncludeAssembly(typeof(ICatalogApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(ICatalogApiMarker).Assembly);
+            });
 
             services.AddKeycloakTokenIntrospection();
         }

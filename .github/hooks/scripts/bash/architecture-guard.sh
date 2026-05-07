@@ -40,14 +40,14 @@ for svc in "${SERVICES[@]}"; do
 
   # Check for using statements or direct namespace references to other services
   if echo "$CONTENT" | grep -qE "using\s+BookWorm\.$svc\.(Domain|Infrastructure|Features|Grpc)"; then
-    jq -n --arg reason "Cross-service boundary violation: $CURRENT_SERVICE service must not directly reference $svc internal namespaces. Use integration events (MassTransit), gRPC contracts, or SharedKernel instead." \
+    jq -n --arg reason "Cross-service boundary violation: $CURRENT_SERVICE service must not directly reference $svc internal namespaces. Use integration events (Wolverine), gRPC contracts, or SharedKernel instead." \
       '{permissionDecision: "deny", permissionDecisionReason: $reason}'
     exit 0
   fi
 
   # Check for direct project references to other services
   if echo "$CONTENT" | grep -qE "ProjectReference.*BookWorm\.$svc[/\\\\]"; then
-    jq -n --arg reason "Cross-service boundary violation: $CURRENT_SERVICE cannot have a direct ProjectReference to $svc. Services communicate via messaging (MassTransit/Kafka) or gRPC." \
+    jq -n --arg reason "Cross-service boundary violation: $CURRENT_SERVICE cannot have a direct ProjectReference to $svc. Services communicate via messaging (Wolverine/Kafka) or gRPC." \
       '{permissionDecision: "deny", permissionDecisionReason: $reason}'
     exit 0
   fi

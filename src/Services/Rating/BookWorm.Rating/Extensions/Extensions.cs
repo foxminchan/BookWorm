@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
@@ -9,7 +10,8 @@ using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
-using Mediator;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -51,9 +53,7 @@ internal static class Extensions
 
             // Configure Mediator
             services
-                .AddMediator(
-                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-                )
+                .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
                 .ApplyLoggingBehavior()
                 .ApplyActivityBehavior()
                 .ApplyValidationBehavior()
@@ -80,27 +80,18 @@ internal static class Extensions
             services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
             // Configure EventBus first
-            builder.AddEventBus(
-                typeof(IRatingApiMarker),
-                cfg =>
+            var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Rating);
+            builder.AddEventBus(opts =>
+            {
+                if (!string.IsNullOrWhiteSpace(postgresCs))
                 {
-                    cfg.AddEntityFrameworkOutbox<RatingDbContext>(o =>
-                    {
-                        o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                        o.UsePostgres();
-
-                        o.UseBusOutbox();
-                    });
-
-                    cfg.AddConfigureEndpointsCallback(
-                        (context, _, configurator) =>
-                            configurator.UseEntityFrameworkOutbox<RatingDbContext>(context)
-                    );
+                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
+                    opts.UseEntityFrameworkCoreTransactions();
                 }
-            );
+
+                opts.Discovery.IncludeAssembly(typeof(IRatingApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(IRatingApiMarker).Assembly);
+            });
 
             // Then register event-related services
             services.AddEventDispatcher();
