@@ -36,7 +36,7 @@ public sealed class BasketDeletedEventPublisherTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(
+        await SnapshotTestHelper.VerifyCloudEvents(
             bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
         );
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
@@ -56,7 +56,7 @@ public sealed class BasketDeletedEventPublisherTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(
+        await SnapshotTestHelper.VerifyCloudEvents(
             bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
         );
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);

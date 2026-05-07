@@ -46,7 +46,7 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
         await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(
+        await SnapshotTestHelper.VerifyCloudEvents(
             bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
         );
         _repositoryMock.Verify(

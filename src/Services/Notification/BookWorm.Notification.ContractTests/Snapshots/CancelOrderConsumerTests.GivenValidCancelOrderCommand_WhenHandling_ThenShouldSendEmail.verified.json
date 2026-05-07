@@ -1,8 +1,16 @@
 ﻿{
-  "OrderId": "Guid_1",
-  "FullName": "Test User",
-  "Email": "test@example.com",
-  "TotalMoney": 99.99,
-  "Id": "Guid_2",
-  "CreationDate": "DateTime_1"
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.CancelOrderCommand",
+  "source": "urn:bookworm:book-worm-notification",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "orderId": "Guid_Scrubbed",
+    "fullName": "Test User",
+    "email": "test@example.com",
+    "totalMoney": 99.99,
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
+  }
 }

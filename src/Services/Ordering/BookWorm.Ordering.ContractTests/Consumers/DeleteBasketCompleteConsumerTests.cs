@@ -29,6 +29,6 @@ public sealed class DeleteBasketCompleteConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(command);
+        await SnapshotTestHelper.VerifyCloudEvent(command);
     }
 }

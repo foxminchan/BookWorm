@@ -48,7 +48,7 @@ public sealed class CompleteOrderConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(command);
+        await SnapshotTestHelper.VerifyCloudEvent(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -66,7 +66,7 @@ public sealed class CompleteOrderConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(command);
+        await SnapshotTestHelper.VerifyCloudEvent(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
@@ -84,7 +84,7 @@ public sealed class CompleteOrderConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(command);
+        await SnapshotTestHelper.VerifyCloudEvent(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never

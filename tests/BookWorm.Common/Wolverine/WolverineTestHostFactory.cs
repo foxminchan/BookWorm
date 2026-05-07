@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wolverine;
@@ -11,7 +12,32 @@ namespace BookWorm.Common.Wolverine;
 public static class WolverineTestHostFactory
 {
     /// <summary>
+    ///     Registers a catch-all <see cref="ActivityListener" /> that enables sampling for all
+    ///     <see cref="ActivitySource" /> instances (including Wolverine's own source) so that
+    ///     <see cref="Activity" /> objects are created and populated during test execution.
+    ///     Call this once per test run / test class setup.
+    /// </summary>
+    /// <returns>The registered listener; dispose it when the test is torn down.</returns>
+    public static ActivityListener AddOtelListener()
+    {
+        var listener = new ActivityListener
+        {
+            ShouldListenTo = _ => true,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
+                ActivitySamplingResult.AllDataAndRecorded,
+            SampleUsingParentId = (ref ActivityCreationOptions<string> _) =>
+                ActivitySamplingResult.AllDataAndRecorded,
+        };
+
+        ActivitySource.AddActivityListener(listener);
+        return listener;
+    }
+
+    /// <summary>
     ///     Creates and starts an in-memory Wolverine host suitable for handler unit tests.
+    ///     An <see cref="ActivityListener" /> is registered automatically so that Wolverine's
+    ///     built-in OpenTelemetry instrumentation produces real (non-null) <see cref="Activity" />
+    ///     spans during the test.
     /// </summary>
     /// <param name="configure">Optional additional <see cref="WolverineOptions" /> customization.</param>
     /// <param name="includeAssemblies">
@@ -27,6 +53,10 @@ public static class WolverineTestHostFactory
         params System.Reflection.Assembly[] includeAssemblies
     )
     {
+        // Register the dummy listener before the host starts so Wolverine's ActivitySource
+        // is sampled from the very first message dispatch.
+        AddOtelListener();
+
         var host = await Host.CreateDefaultBuilder()
             .UseWolverine(opts =>
             {

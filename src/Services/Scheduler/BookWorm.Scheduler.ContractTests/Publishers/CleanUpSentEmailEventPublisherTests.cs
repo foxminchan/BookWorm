@@ -12,6 +12,6 @@ public sealed class CleanUpSentEmailEventPublisherTests
         var @event = new CleanUpSentEmailIntegrationEvent();
 
         // Assert
-        await SnapshotTestHelper.Verify(@event);
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
     }
 }

@@ -46,7 +46,7 @@ public sealed class DeleteBasketFailedConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(command);
+        await SnapshotTestHelper.VerifyCloudEvent(command);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
             Times.Once
@@ -69,7 +69,7 @@ public sealed class DeleteBasketFailedConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(command);
+        await SnapshotTestHelper.VerifyCloudEvent(command);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
             Times.Once

@@ -1,8 +1,16 @@
 ﻿{
-  "BasketId": "Guid_1",
-  "Email": "test@example.com",
-  "OrderId": "Guid_2",
-  "TotalMoney": 100.00,
-  "Id": "Guid_3",
-  "CreationDate": "DateTime_1"
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.DeleteBasketFailedCommand",
+  "source": "urn:bookworm:book-worm-ordering",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "basketId": "Guid_Scrubbed",
+    "email": "test@example.com",
+    "orderId": "Guid_Scrubbed",
+    "totalMoney": 100.00,
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
+  }
 }

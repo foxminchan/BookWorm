@@ -16,6 +16,6 @@ public sealed class FeedbackDeletedEventPublisherTests
         var @event = new FeedbackDeletedIntegrationEvent(bookId, rating, feedbackId);
 
         // Assert
-        await SnapshotTestHelper.Verify(@event);
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
     }
 }

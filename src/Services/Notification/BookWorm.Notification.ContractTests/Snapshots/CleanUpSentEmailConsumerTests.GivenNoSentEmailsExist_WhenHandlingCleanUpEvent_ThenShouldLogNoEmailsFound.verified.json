@@ -1,4 +1,12 @@
 ﻿{
-  "Id": "Guid_1",
-  "CreationDate": "DateTime_1"
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.CleanUpSentEmailIntegrationEvent",
+  "source": "urn:bookworm:book-worm-notification",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
+  }
 }

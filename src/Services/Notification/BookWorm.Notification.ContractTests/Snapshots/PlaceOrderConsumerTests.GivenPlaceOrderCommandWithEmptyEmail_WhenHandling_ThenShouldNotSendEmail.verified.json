@@ -1,9 +1,17 @@
 ﻿{
-  "BasketId": "Guid_1",
-  "FullName": "John Doe",
-  "Email": "",
-  "OrderId": "Guid_2",
-  "TotalMoney": 99.99,
-  "Id": "Guid_3",
-  "CreationDate": "DateTime_1"
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.PlaceOrderCommand",
+  "source": "urn:bookworm:book-worm-notification",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "basketId": "Guid_Scrubbed",
+    "fullName": "John Doe",
+    "email": "",
+    "orderId": "Guid_Scrubbed",
+    "totalMoney": 99.99,
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
+  }
 }

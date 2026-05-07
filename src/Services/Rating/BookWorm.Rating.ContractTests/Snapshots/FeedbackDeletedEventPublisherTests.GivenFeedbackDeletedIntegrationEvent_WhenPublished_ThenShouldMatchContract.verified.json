@@ -1,7 +1,15 @@
 ﻿{
-  "BookId": "Guid_1",
-  "Rating": 5,
-  "FeedbackId": "Guid_2",
-  "Id": "Guid_3",
-  "CreationDate": "DateTime_1"
+  "specversion": "1.0",
+  "id": "Guid_Scrubbed",
+  "type": "BookWorm.Contracts.FeedbackDeletedIntegrationEvent",
+  "source": "urn:bookworm:book-worm-rating",
+  "time": "DateTime_Scrubbed",
+  "datacontenttype": "application/json",
+  "data": {
+    "bookId": "Guid_Scrubbed",
+    "rating": 5,
+    "feedbackId": "Guid_Scrubbed",
+    "id": "Guid_Scrubbed",
+    "creationDate": "DateTime_Scrubbed"
+  }
 }

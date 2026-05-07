@@ -24,6 +24,6 @@ public sealed class OrderStatusChangedToCompleteEventPublisherTests
         );
 
         // Assert
-        await SnapshotTestHelper.Verify(@event);
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
     }
 }

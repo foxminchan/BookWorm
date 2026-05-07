@@ -1,5 +1,10 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using BookWorm.Chassis.EventBus;
+using Wolverine.Attributes;
 
 namespace BookWorm.Common;
 
@@ -28,6 +33,102 @@ public static partial class SnapshotTestHelper
             })
             .UseSnapshotDirectory(sourceFilePath);
     }
+
+    /// <summary>
+    ///     Wraps a single integration event or command in a CloudEvents 1.0 envelope shape
+    ///     and verifies it as a snapshot. Use this in publisher and consumer contract tests to
+    ///     assert the exact wire format consumed by downstream services.
+    /// </summary>
+    public static Task VerifyCloudEvent(
+        object message,
+        [CallerFilePath] string sourceFilePath = ""
+    ) => VerifyJson(BuildCloudEventJson(message), sourceFilePath);
+
+    /// <summary>
+    ///     Wraps each message in a collection in a CloudEvents 1.0 envelope shape and verifies
+    ///     them as a snapshot. Use this when a handler publishes multiple outgoing messages via
+    ///     <see cref="Wolverine.Testing.TestMessageContext" />.
+    /// </summary>
+    public static Task VerifyCloudEvents(
+        IEnumerable<object?> messages,
+        [CallerFilePath] string sourceFilePath = ""
+    )
+    {
+        var envelopes = messages
+            .Where(m => m is not null)
+            .Select(m => JsonSerializer.Deserialize<JsonElement>(BuildCloudEventJson(m!)))
+            .ToList();
+        return VerifyJson(JsonSerializer.Serialize(envelopes, _webJsonOptions), sourceFilePath);
+    }
+
+    private static readonly JsonSerializerOptions _webJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true,
+        // Keep '+' literal instead of \u002B so the DateTimeRegex scrubber matches DateTimeOffset values
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    private static string BuildCloudEventJson(object message)
+    {
+        var type = message.GetType();
+        var messageType =
+            type.GetCustomAttribute<MessageIdentityAttribute>()?.Alias
+            ?? type.FullName
+            ?? type.Name;
+
+        var assemblyName = type.Assembly.GetName().Name ?? string.Empty;
+        var source = $"urn:bookworm:{ToKebabCase(assemblyName)}";
+
+        Guid id;
+        DateTimeOffset time;
+        if (message is IntegrationEvent ie)
+        {
+            id = ie.Id;
+            time = new DateTimeOffset(ie.CreationDate, TimeSpan.Zero);
+        }
+        else
+        {
+            id = Guid.NewGuid();
+            time = DateTimeOffset.UtcNow;
+        }
+
+        // Serialize data with camelCase naming. Re-parsing to JsonElement ensures STJ
+        // writes the value inline (not as a struct) when the envelope is serialized.
+        var data = JsonSerializer.Deserialize<JsonElement>(
+            JsonSerializer.Serialize(message, type, _webJsonOptions)
+        );
+
+        return JsonSerializer.Serialize(
+            new
+            {
+                specversion = "1.0",
+                id,
+                type = messageType,
+                source,
+                time,
+                datacontenttype = "application/json",
+                data,
+            },
+            _webJsonOptions
+        );
+    }
+
+    private static Task VerifyJson(string json, string sourceFilePath) =>
+        Verifier
+            .Verify(json, "json")
+            .AddScrubber(builder =>
+            {
+                var content = builder.ToString();
+                var scrubbedContent = GuidRegex().Replace(content, "Guid_Scrubbed");
+                scrubbedContent = DateTimeRegex().Replace(scrubbedContent, "DateTime_Scrubbed");
+                scrubbedContent = TraceIdRegex().Replace(scrubbedContent, "TraceId_Scrubbed");
+                builder.Clear();
+                builder.Append(scrubbedContent);
+            })
+            .UseSnapshotDirectory(sourceFilePath);
+
+    private static string ToKebabCase(string input) =>
+        KebabCaseRegex().Replace(input.Replace(".", "-"), "-$1").ToLowerInvariant();
 
     private static SettingsTask UseSnapshotDirectory(
         this SettingsTask settingsTask,
@@ -83,4 +184,7 @@ public static partial class SnapshotTestHelper
 
     [GeneratedRegex(@"\b[0-9a-fA-F]{2}-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-[0-9a-fA-F]{2}\b")]
     private static partial Regex TraceIdRegex();
+
+    [GeneratedRegex(@"(?<=[a-z0-9])([A-Z])")]
+    private static partial Regex KebabCaseRegex();
 }

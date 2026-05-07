@@ -12,6 +12,6 @@ public sealed class ResendErrorEmailEventPublisherTests
         var @event = new ResendErrorEmailIntegrationEvent();
 
         // Assert
-        await SnapshotTestHelper.Verify(@event);
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
     }
 }

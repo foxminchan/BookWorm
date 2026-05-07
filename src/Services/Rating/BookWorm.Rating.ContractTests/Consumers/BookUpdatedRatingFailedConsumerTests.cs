@@ -42,7 +42,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(@event);
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
             Times.Once
@@ -66,7 +66,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.Verify(@event);
+        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
             Times.Once
