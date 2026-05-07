@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Encodings.Web;
@@ -108,7 +109,7 @@ public static partial class SnapshotTestHelper
         }
         else
         {
-            id = Guid.NewGuid();
+            id = Guid.CreateVersion7();
             time = DateTimeOffset.UtcNow;
         }
 
@@ -126,7 +127,7 @@ public static partial class SnapshotTestHelper
                 type = messageType,
                 source,
                 time,
-                datacontenttype = "application/json",
+                datacontenttype = MediaTypeNames.Application.Json,
                 data,
             },
             _webJsonOptions
