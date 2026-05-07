@@ -38,39 +38,45 @@ public static class WolverineHostExtensions
 
             var applicationName = builder.Environment.ApplicationName;
 
-            builder.UseWolverine(opts =>
-            {
-                // ── Durable outbox/inbox ──────────────────────────────────────────
-                opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
-                opts.Policies.UseDurableInboxOnAllListeners();
+            builder.Services.AddWolverine(
+                // Skip scanning every loaded DLL (incl. native libs like librdkafka.dll)
+                // for IWolverineExtension implementations. BookWorm uses Include<T>() /
+                // AddWolverineExtension<T>() explicitly when an extension is needed.
+                ExtensionDiscovery.ManualOnly,
+                opts =>
+                {
+                    // ── Durable outbox/inbox ──────────────────────────────────────────
+                    opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
+                    opts.Policies.UseDurableInboxOnAllListeners();
 
-                // Ensures the Wolverine schema (wolverine_incoming, wolverine_outgoing, etc.)
-                // is created on first boot without requiring a manual migration step (T040).
-                opts.Services.AddResourceSetupOnStartup();
+                    // Ensures the Wolverine schema (wolverine_incoming, wolverine_outgoing, etc.)
+                    // is created on first boot without requiring a manual migration step (T040).
+                    opts.Services.AddResourceSetupOnStartup();
 
-                // Log the start of every message execution at Debug level so OTel/structured
-                // logs capture message flow without flooding production logs (T045).
-                opts.Policies.LogMessageStarting(LogLevel.Debug);
+                    // Log the start of every message execution at Debug level so OTel/structured
+                    // logs capture message flow without flooding production logs (T045).
+                    opts.Policies.LogMessageStarting(LogLevel.Debug);
 
-                // ── Envelope rules (BookWorm header propagation) ───────────────────
-                // CloudEventHeaderPolicy stamps messagetype, destinationaddress, and
-                // responseaddress into envelope headers before the CloudEvents mapper runs.
-                opts.MetadataRules.Add(new CloudEventHeaderPolicy());
+                    // ── Envelope rules (BookWorm header propagation) ───────────────────
+                    // CloudEventHeaderPolicy stamps messagetype, destinationaddress, and
+                    // responseaddress into envelope headers before the CloudEvents mapper runs.
+                    opts.MetadataRules.Add(new CloudEventHeaderPolicy());
 
-                // UserIdEnvelopeMiddleware stamps the HTTP user ID into envelope headers.
-                // Resolves from DI so the shared IHttpContextAccessor instance is used.
-                opts.Services.AddSingleton<IEnvelopeRule, UserIdEnvelopeMiddleware>(sp =>
-                    sp.GetRequiredService<UserIdEnvelopeMiddleware>()
-                );
+                    // UserIdEnvelopeMiddleware stamps the HTTP user ID into envelope headers.
+                    // Resolves from DI so the shared IHttpContextAccessor instance is used.
+                    opts.Services.AddSingleton<IEnvelopeRule, UserIdEnvelopeMiddleware>(sp =>
+                        sp.GetRequiredService<UserIdEnvelopeMiddleware>()
+                    );
 
-                // ── Service-specific customisation ─────────────────────────────────
-                configure?.Invoke(opts);
+                    // ── Service-specific customisation ─────────────────────────────────
+                    configure?.Invoke(opts);
 
-                // ── Kafka transport with CloudEvents interop ──────────────────────
-                // Called after configure so per-service topic subscriptions can override
-                // defaults before the Kafka transport is finalized.
-                opts.UseKafkaWithCloudEvents(kafkaConnectionString, applicationName);
-            });
+                    // ── Kafka transport with CloudEvents interop ──────────────────────
+                    // Called after configure so per-service topic subscriptions can override
+                    // defaults before the Kafka transport is finalized.
+                    opts.UseKafkaWithCloudEvents(kafkaConnectionString, applicationName);
+                }
+            );
         }
     }
 

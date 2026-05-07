@@ -45,7 +45,8 @@ namespace BookWorm.Finance.Infrastructure.Migrations
                         .HasColumnName("email");
 
                     b.Property<string>("FullName")
-                        .HasColumnType("text")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("full_name");
 
                     b.Property<Guid>("OrderId")
