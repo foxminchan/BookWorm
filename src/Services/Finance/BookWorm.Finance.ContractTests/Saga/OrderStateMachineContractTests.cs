@@ -2,7 +2,6 @@ using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
 using Microsoft.Extensions.Logging;
-using Wolverine;
 
 namespace BookWorm.Finance.ContractTests.Saga;
 
@@ -11,8 +10,8 @@ public sealed class OrderStateMachineContractTests
     private const string TestFullName = "John Doe";
     private const string TestEmail = "john.doe@example.com";
     private const decimal TestTotalMoney = 99.99m;
-    private OrderStateMachineSettings _settings = null!;
     private ILogger<OrderSaga> _logger = null!;
+    private OrderStateMachineSettings _settings = null!;
 
     [Before(Test)]
     public void SetUp()
@@ -21,8 +20,10 @@ public sealed class OrderStateMachineContractTests
         _logger = Mock.Of<ILogger<OrderSaga>>();
     }
 
-    private UserCheckedOutIntegrationEvent CreateCheckedOutEvent(Guid orderId, Guid basketId) =>
-        new(orderId, basketId, TestFullName, TestEmail, TestTotalMoney);
+    private UserCheckedOutIntegrationEvent CreateCheckedOutEvent(Guid orderId, Guid basketId)
+    {
+        return new(orderId, basketId, TestFullName, TestEmail, TestTotalMoney);
+    }
 
     [Test]
     public async Task GivenUserCheckedOutEvent_WhenPublished_ThenSagaShouldStartAndQueueOutgoingMessages()

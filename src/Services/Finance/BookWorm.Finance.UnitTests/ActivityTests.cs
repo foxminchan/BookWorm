@@ -56,9 +56,7 @@ public sealed class ActivityTests
         var basketId = Guid.CreateVersion7();
         var totalMoney = 75.25m;
 
-        var command = saga.Handle(
-            new BasketDeletedCompleteIntegrationEvent(orderId, basketId, totalMoney)
-        );
+        var command = saga.Handle(new(orderId, basketId, totalMoney));
 
         saga.OrderId.ShouldBe(orderId);
         saga.BasketId.ShouldBe(basketId);

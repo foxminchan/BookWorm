@@ -19,6 +19,7 @@ internal sealed class OpenApiInfoDefinitionsTransformer<T>(T appSettings)
         {
             return Task.CompletedTask;
         }
+
         document.Info = appSettings.OpenApi;
 
         var versionedDescriptionProvider =

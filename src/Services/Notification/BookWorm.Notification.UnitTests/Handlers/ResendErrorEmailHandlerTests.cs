@@ -1,5 +1,4 @@
 using BookWorm.Chassis.Repository;
-using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
@@ -40,7 +39,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([email1, email2]);
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         email1.IsSent.ShouldBeTrue();
         email2.IsSent.ShouldBeTrue();
@@ -58,7 +57,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -82,7 +81,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ThrowsAsync(new InvalidOperationException("Send failed"))
             .Returns(Task.CompletedTask);
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         email1.IsSent.ShouldBeFalse();
         email2.IsSent.ShouldBeTrue();
@@ -107,7 +106,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Send failed"));
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         email1.IsSent.ShouldBeFalse();
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -131,7 +130,7 @@ public sealed class ResendErrorEmailHandlerTests
             .ThrowsAsync(new OperationCanceledException(cts.Token));
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
-            _handler.Handle(new ResendErrorEmailIntegrationEvent(), cts.Token)
+            _handler.Handle(new(), cts.Token)
         );
     }
 
@@ -142,7 +141,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
@@ -161,7 +160,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([unsent1, unsent2, unsent3]);
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         unsent1.IsSent.ShouldBeTrue();
         unsent2.IsSent.ShouldBeTrue();
@@ -182,7 +181,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([unsent]);
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         unsent.IsSent.ShouldBeTrue();
         _senderMock.Verify(
@@ -214,7 +213,7 @@ public sealed class ResendErrorEmailHandlerTests
             )
             .Returns(Task.CompletedTask);
 
-        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         sendOrder.Count.ShouldBe(3);
         sendOrder[0].ShouldBe("first@test.com");

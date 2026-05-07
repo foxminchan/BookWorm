@@ -1,5 +1,4 @@
 ﻿using BookWorm.Finance.Infrastructure.EntityConfigurations;
-using BookWorm.Finance.Saga;
 using Wolverine.EntityFrameworkCore;
 
 namespace BookWorm.Finance.Infrastructure;

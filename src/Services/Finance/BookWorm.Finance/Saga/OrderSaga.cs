@@ -4,16 +4,9 @@ using Wolverine;
 
 namespace BookWorm.Finance.Saga;
 
-/// <summary>
-///     Wolverine saga that orchestrates the order-placement flow, replacing the
-///     MassTransit <c>OrderStateMachine</c>. Correlation key is <c>OrderId</c>
-///     (carried by every integration event in the flow).
-/// </summary>
 internal sealed class OrderSaga : global::Wolverine.Saga
 {
-    // ── Persisted state ────────────────────────────────────────────────────
-
-    public Guid Id { get; set; }
+    public Guid Id { get; init; }
 
     public Guid OrderId { get; set; }
     public Guid BasketId { get; set; }
@@ -21,7 +14,7 @@ internal sealed class OrderSaga : global::Wolverine.Saga
     public string? Email { get; set; }
     public OrderSagaStatus CurrentState { get; set; }
     public decimal? TotalMoney { get; set; }
-    public DateTime? OrderPlacedDate { get; set; }
+    public DateTime? OrderPlacedDate { get; init; }
     public int TimeoutRetryCount { get; set; }
     public uint RowVersion { get; init; }
 
@@ -39,6 +32,10 @@ internal sealed class OrderSaga : global::Wolverine.Saga
     ///     The returned <see cref="PlaceOrderTimeout" /> is automatically
     ///     enqueued by Wolverine's saga runtime.
     /// </summary>
+    /// <param name="event">The initial event that triggers the saga, containing order details from the Basket service.</param>
+    /// <param name="settings">Configuration settings for the saga, including retry policies and timeouts.</param>
+    /// <param name="logger">Logger instance for recording saga progress and issues.</param>
+    /// <returns></returns>
     public static (OrderSaga, OutgoingMessages) Start(
         UserCheckedOutIntegrationEvent @event,
         OrderStateMachineSettings settings,
@@ -85,6 +82,9 @@ internal sealed class OrderSaga : global::Wolverine.Saga
     ///     until <see cref="OrderStateMachineSettings.MaxAttempts" /> is reached,
     ///     then cancels the order.
     /// </summary>
+    /// <param name="timeout">A timeout message triggered by Wolverine's saga runtime after the specified delay, containing the order ID.</param>
+    /// <param name="settings">Configuration settings for the saga, including retry policies and timeouts.</param>
+    /// <returns></returns>
     public OutgoingMessages Handle(PlaceOrderTimeout timeout, OrderStateMachineSettings settings)
     {
         TimeoutRetryCount++;
@@ -117,17 +117,26 @@ internal sealed class OrderSaga : global::Wolverine.Saga
 
     // ── Basket deletion response ─────────────────────────────────────────────
 
-    /// <summary>Basket deleted successfully — fire notification to Ordering service.</summary>
+    /// <summary>
+    ///     Basket deleted successfully — proceed to complete the order.
+    /// </summary>
+    /// <param name="event">An event containing successful basket deletion details from the Basket service.</param>
+    /// <returns></returns>
     public DeleteBasketCompleteCommand Handle(BasketDeletedCompleteIntegrationEvent @event)
     {
         BasketId = @event.BasketId;
         OrderId = @event.OrderId;
         TotalMoney = @event.TotalMoney;
 
-        return new DeleteBasketCompleteCommand(OrderId, EffectiveTotalMoney);
+        return new(OrderId, EffectiveTotalMoney);
     }
 
-    /// <summary>Basket deletion failed — mark terminal state.</summary>
+    /// <summary>
+    ///    Basket deletion failed — log the error, mark the saga as failed, and finalize.
+    /// </summary>
+    /// <param name="event">An event containing failed basket deletion details from the Basket service.</param>
+    /// <param name="logger">Logger instance for recording saga progress and issues.</param>
+    /// <returns></returns>
     public OutgoingMessages Handle(
         BasketDeletedFailedIntegrationEvent @event,
         ILogger<OrderSaga> logger
@@ -151,9 +160,12 @@ internal sealed class OrderSaga : global::Wolverine.Saga
         return [new DeleteBasketFailedCommand(BasketId, Email, OrderId, EffectiveTotalMoney)];
     }
 
-    // ── Order status changes ─────────────────────────────────────────────────
-
-    /// <summary>Order completed by Ordering service — notify customer and finalize.</summary>
+    /// <summary>
+    ///     Order completed by Ordering service — fire notification to customer and finalize.
+    /// </summary>
+    /// <param name="event">An event containing order completion details from the Ordering service.</param>
+    /// <param name="logger">Logger instance for recording saga progress and issues.</param>
+    /// <returns></returns>
     public OutgoingMessages Handle(
         OrderStatusChangedToCompleteIntegrationEvent @event,
         ILogger<OrderSaga> logger
@@ -185,7 +197,12 @@ internal sealed class OrderSaga : global::Wolverine.Saga
         return messages;
     }
 
-    /// <summary>Order cancelled by Ordering service — notify customer and finalize.</summary>
+    /// <summary>
+    ///     Order canceled by Ordering service — fire cancellation notification to customer and finalize.
+    /// </summary>
+    /// <param name="event">An event containing order completion details from the Ordering service.</param>
+    /// <param name="logger">Logger instance for recording saga progress and issues.</param>
+    /// <returns></returns>
     public OutgoingMessages Handle(
         OrderStatusChangedToCancelIntegrationEvent @event,
         ILogger<OrderSaga> logger
@@ -217,16 +234,5 @@ internal sealed class OrderSaga : global::Wolverine.Saga
         return messages;
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────────
-
     private bool HasExceededMaxRetries(int maxAttempts) => TimeoutRetryCount >= maxAttempts;
-}
-
-/// <summary>Represents the lifecycle state of an order saga.</summary>
-internal enum OrderSagaStatus
-{
-    Placed,
-    BasketDeletionFailed,
-    Completed,
-    Cancelled,
 }

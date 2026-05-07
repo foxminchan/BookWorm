@@ -17,10 +17,8 @@ public static class ModuleInitializer
         var listener = new ActivityListener
         {
             ShouldListenTo = _ => true,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            SampleUsingParentId = (ref ActivityCreationOptions<string> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
+            Sample = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
+            SampleUsingParentId = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
         };
 
         ActivitySource.AddActivityListener(listener);

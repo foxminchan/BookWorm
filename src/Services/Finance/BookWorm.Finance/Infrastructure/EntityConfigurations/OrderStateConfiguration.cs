@@ -1,6 +1,4 @@
 ﻿using BookWorm.Constants.Core;
-using BookWorm.Finance.Saga;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Finance.Infrastructure.EntityConfigurations;
@@ -11,6 +9,7 @@ internal sealed class OrderSagaConfiguration : IEntityTypeConfiguration<OrderSag
     {
         entity.HasKey(p => p.Id);
 
+        entity.Property(p => p.FullName).HasMaxLength(DataSchemaLength.Large);
         entity.Property(p => p.OrderId).IsRequired();
         entity.Property(p => p.BasketId).IsRequired();
         entity.Property(p => p.TotalMoney).HasPrecision(18, 2);

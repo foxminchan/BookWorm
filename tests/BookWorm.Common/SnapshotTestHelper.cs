@@ -10,6 +10,24 @@ namespace BookWorm.Common;
 
 public static partial class SnapshotTestHelper
 {
+    private static readonly JsonSerializerOptions _webJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    /// <summary>
+    ///     Verifies the JSON representation of an object against a snapshot, scrubbing out variable data
+    ///     like GUIDs and DateTime values to ensure deterministic snapshots. Use this for simple objects
+    ///     or collections that don't need to be wrapped in a CloudEvents envelope. For messages that
+    ///     represent integration events or commands, prefer the VerifyCloudEvent(s) methods to
+    ///     assert the exact wire format consumed by downstream services.
+    /// </summary>
+    /// <param name="target">The object to serialize to JSON and verify as a snapshot.</param>
+    /// <param name="sourceFilePath">
+    ///     The caller file path is used to determine the snapshot directory. It is automatically
+    ///     populated by the compiler, so you don't need to provide it when calling this method.
+    /// </param>
     public static Task Verify(object target, [CallerFilePath] string sourceFilePath = "")
     {
         return Verifier
@@ -39,16 +57,25 @@ public static partial class SnapshotTestHelper
     ///     and verifies it as a snapshot. Use this in publisher and consumer contract tests to
     ///     assert the exact wire format consumed by downstream services.
     /// </summary>
-    public static Task VerifyCloudEvent(
-        object message,
-        [CallerFilePath] string sourceFilePath = ""
-    ) => VerifyJson(BuildCloudEventJson(message), sourceFilePath);
+    /// <param name="message">The message to wrap and verify.</param>
+    /// <param name="sourceFilePath">
+    ///     The caller file path is used to determine the snapshot directory. It is automatically
+    ///     populated by the compiler, so you don't need to provide it when calling this method.
+    /// </param>
+    public static Task VerifyCloudEvent(object message, [CallerFilePath] string sourceFilePath = "")
+    {
+        return VerifyJson(BuildCloudEventJson(message), sourceFilePath);
+    }
 
     /// <summary>
     ///     Wraps each message in a collection in a CloudEvents 1.0 envelope shape and verifies
     ///     them as a snapshot. Use this when a handler publishes multiple outgoing messages via
-    ///     <see cref="Wolverine.Testing.TestMessageContext" />.
     /// </summary>
+    /// <param name="messages">The collection of messages to wrap and verify.</param>
+    /// <param name="sourceFilePath">
+    ///     The caller file path is used to determine the snapshot directory. It is automatically
+    ///     populated by the compiler, so you don't need to provide it when calling this method.
+    /// </param>
     public static Task VerifyCloudEvents(
         IEnumerable<object?> messages,
         [CallerFilePath] string sourceFilePath = ""
@@ -60,13 +87,6 @@ public static partial class SnapshotTestHelper
             .ToList();
         return VerifyJson(JsonSerializer.Serialize(envelopes, _webJsonOptions), sourceFilePath);
     }
-
-    private static readonly JsonSerializerOptions _webJsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = true,
-        // Keep '+' literal instead of \u002B so the DateTimeRegex scrubber matches DateTimeOffset values
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
 
     private static string BuildCloudEventJson(object message)
     {
@@ -84,7 +104,7 @@ public static partial class SnapshotTestHelper
         if (message is IntegrationEvent ie)
         {
             id = ie.Id;
-            time = new DateTimeOffset(ie.CreationDate, TimeSpan.Zero);
+            time = new(ie.CreationDate, TimeSpan.Zero);
         }
         else
         {
@@ -92,7 +112,7 @@ public static partial class SnapshotTestHelper
             time = DateTimeOffset.UtcNow;
         }
 
-        // Serialize data with camelCase naming. Re-parsing to JsonElement ensures STJ
+        // Serialize data with camelCase naming. Reparsing to JsonElement ensures STJ
         // writes the value inline (not as a struct) when the envelope is serialized.
         var data = JsonSerializer.Deserialize<JsonElement>(
             JsonSerializer.Serialize(message, type, _webJsonOptions)
@@ -113,8 +133,9 @@ public static partial class SnapshotTestHelper
         );
     }
 
-    private static Task VerifyJson(string json, string sourceFilePath) =>
-        Verifier
+    private static Task VerifyJson(string json, string sourceFilePath)
+    {
+        return Verifier
             .Verify(json, "json")
             .AddScrubber(builder =>
             {
@@ -126,9 +147,12 @@ public static partial class SnapshotTestHelper
                 builder.Append(scrubbedContent);
             })
             .UseSnapshotDirectory(sourceFilePath);
+    }
 
-    private static string ToKebabCase(string input) =>
-        KebabCaseRegex().Replace(input.Replace(".", "-"), "-$1").ToLowerInvariant();
+    private static string ToKebabCase(string input)
+    {
+        return KebabCaseRegex().Replace(input.Replace(".", "-"), "-$1").ToLowerInvariant();
+    }
 
     private static SettingsTask UseSnapshotDirectory(
         this SettingsTask settingsTask,

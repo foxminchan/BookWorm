@@ -1,5 +1,4 @@
 using BookWorm.Chassis.Repository;
-using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
 using Microsoft.Extensions.Diagnostics.Buffering;
@@ -34,7 +33,7 @@ public sealed class CleanUpSentEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([email1, email2]);
 
-        await _handler.Handle(new CleanUpSentEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         _repositoryMock.Verify(
             x => x.BulkDelete(It.Is<IEnumerable<Outbox>>(e => e.Count() == 2)),
@@ -50,7 +49,7 @@ public sealed class CleanUpSentEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<OutboxFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        await _handler.Handle(new CleanUpSentEmailIntegrationEvent(), CancellationToken.None);
+        await _handler.Handle(new(), CancellationToken.None);
 
         _repositoryMock.Verify(x => x.BulkDelete(It.IsAny<IEnumerable<Outbox>>()), Times.Never);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -64,7 +63,7 @@ public sealed class CleanUpSentEmailHandlerTests
             .ThrowsAsync(new InvalidOperationException("DB error"));
 
         var exception = await Should.ThrowAsync<InvalidOperationException>(() =>
-            _handler.Handle(new CleanUpSentEmailIntegrationEvent(), CancellationToken.None)
+            _handler.Handle(new(), CancellationToken.None)
         );
 
         exception.Message.ShouldBe("Failed to clean up sent emails");

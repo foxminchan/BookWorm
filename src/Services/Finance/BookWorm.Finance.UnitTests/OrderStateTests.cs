@@ -36,7 +36,7 @@ public sealed class OrderStateTests
         var saga = new OrderSaga();
 
         saga.TimeoutRetryCount.ShouldBe(0);
-        saga.CurrentState.ShouldBe(default(OrderSagaStatus));
+        saga.CurrentState.ShouldBe(default);
     }
 
     [Test]

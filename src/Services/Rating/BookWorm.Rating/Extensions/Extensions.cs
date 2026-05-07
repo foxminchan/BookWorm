@@ -9,7 +9,6 @@ using BookWorm.Rating.Infrastructure.Agents;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
-using Mediator;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
 
@@ -53,9 +52,7 @@ internal static class Extensions
 
             // Configure Mediator
             services
-                .AddMediator(
-                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-                )
+                .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
                 .ApplyLoggingBehavior()
                 .ApplyActivityBehavior()
                 .ApplyValidationBehavior()

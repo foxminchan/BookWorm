@@ -11,7 +11,6 @@ using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
-using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -62,9 +61,7 @@ internal static class Extensions
 
             // Configure Mediator
             services
-                .AddMediator(
-                    (MediatorOptions options) => options.ServiceLifetime = ServiceLifetime.Scoped
-                )
+                .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
                 .ApplyLoggingBehavior()
                 .ApplyActivityBehavior()
                 .ApplyValidationBehavior()
