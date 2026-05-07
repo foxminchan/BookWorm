@@ -34,8 +34,6 @@ public static class WolverineHostExtensions
                 return;
             }
 
-            // IHttpContextAccessor is already registered by ServiceDefaults.ConfigureOpenTelemetry;
-            // AddHttpContextAccessor uses TryAddSingleton, but we omit the redundant call here.
             builder.Services.AddSingleton<UserIdEnvelopeMiddleware>();
 
             var applicationName = builder.Environment.ApplicationName;
