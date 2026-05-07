@@ -1,4 +1,5 @@
 using BookWorm.Chassis.EF;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Repository;
 using BookWorm.Notification.Infrastructure;
@@ -61,6 +62,7 @@ internal static class Extensions
                 }
 
                 opts.Discovery.IncludeAssembly(typeof(INotificationApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(INotificationApiMarker).Assembly);
             });
         }
     }

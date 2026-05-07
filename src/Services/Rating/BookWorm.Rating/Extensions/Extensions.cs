@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
@@ -89,6 +90,7 @@ internal static class Extensions
                 }
 
                 opts.Discovery.IncludeAssembly(typeof(IRatingApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(IRatingApiMarker).Assembly);
             });
 
             // Then register event-related services

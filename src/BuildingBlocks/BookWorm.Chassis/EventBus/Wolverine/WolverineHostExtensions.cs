@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text.Json;
 using BookWorm.Constants.Aspire;
 using JasperFx.Resources;
 using Microsoft.Extensions.Configuration;
@@ -5,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Wolverine;
+using Wolverine.Attributes;
+using Wolverine.Configuration;
 using Wolverine.Kafka;
 
 namespace BookWorm.Chassis.EventBus.Wolverine;
@@ -58,9 +62,11 @@ public static class WolverineHostExtensions
                     opts.Policies.LogMessageStarting(LogLevel.Debug);
 
                     // ── Envelope rules (BookWorm header propagation) ───────────────────
-                    // CloudEventHeaderPolicy stamps messagetype, destinationaddress, and
-                    // responseaddress into envelope headers before the CloudEvents mapper runs.
-                    opts.MetadataRules.Add(new CloudEventHeaderPolicy());
+                    // CloudEventHeaderPolicy stamps messagetype, destinationaddress,
+                    // responseaddress, and the CloudEvent `source` URN (urn:bookworm:{service})
+                    // into envelope headers before the CloudEvents mapper runs.
+                    var sourceUrn = $"urn:bookworm:{KafkaTopicRouter.ToKebabCase(applicationName)}";
+                    opts.MetadataRules.Add(new CloudEventHeaderPolicy(sourceUrn));
 
                     // UserIdEnvelopeMiddleware stamps the HTTP user ID into envelope headers.
                     // Resolves from DI so the shared IHttpContextAccessor instance is used.
@@ -68,43 +74,125 @@ public static class WolverineHostExtensions
                         sp.GetRequiredService<UserIdEnvelopeMiddleware>()
                     );
 
+                    // ── Kafka transport with CloudEvents interop ──────────────────────
+                    // Registered before the per-service configure callback so listener
+                    // helpers (ListenToIntegrationEventsIn / ListenToKafkaTopic) can be
+                    // invoked from there.
+                    opts.UseKafkaWithCloudEvents(kafkaConnectionString, applicationName);
+
                     // ── Service-specific customisation ─────────────────────────────────
                     configure?.Invoke(opts);
-
-                    // ── Kafka transport with CloudEvents interop ──────────────────────
-                    // Called after configure so per-service topic subscriptions can override
-                    // defaults before the Kafka transport is finalized.
-                    opts.UseKafkaWithCloudEvents(kafkaConnectionString, applicationName);
                 }
             );
+
+            builder
+                .Services.AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddSource("Wolverine").AddSource("Confluent.Kafka"))
+                .WithMetrics(metrics => metrics.AddMeter("Wolverine"));
         }
     }
 
-    /// <summary>
-    ///     Configures the Kafka transport on <paramref name="opts" /> with
-    ///     CloudEvents interoperability applied to every endpoint and with
-    ///     the per-service <c>source</c> URN derived from the application name.
-    ///     Call this inside your <c>UseWolverineEventFramework</c> configure callback.
-    /// </summary>
-    /// <param name="opts">The <see cref="WolverineOptions" /> being configured.</param>
-    /// <param name="kafkaConnectionString">Kafka bootstrap-server connection string.</param>
-    /// <param name="applicationName">
-    ///     Used to derive the CloudEvent <c>source</c> URN
-    ///     (<c>urn:bookworm:{application-name}</c>). Typically
-    ///     <c>IHostEnvironment.ApplicationName</c>.
-    /// </param>
-    public static void UseKafkaWithCloudEvents(
-        this WolverineOptions opts,
-        string kafkaConnectionString,
-        string applicationName
-    )
+    extension(WolverineOptions opts)
     {
-        // The CloudEvent source URN per service, e.g. urn:bookworm:bookworm-catalog.
-        // Wolverine uses ServiceName as the default `source` attribute when serialising
-        // CloudEvents, so setting it to the URN form satisfies FR-003 / data-model.md § Entity 2.
-        var kebabName = KafkaTopicRouter.ToKebabCase(applicationName);
-        opts.ServiceName = $"urn:bookworm:{kebabName}";
+        private void UseKafkaWithCloudEvents(string kafkaConnectionString, string applicationName)
+        {
+            opts.ServiceName = KafkaTopicRouter.ToKebabCase(applicationName);
 
-        opts.UseKafka(kafkaConnectionString);
+            var cloudEventsJsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+            opts.UseKafka(kafkaConnectionString).AutoProvision();
+            opts.Policies.Add(
+                new LambdaEndpointPolicy<KafkaTopic>(
+                    (topic, runtime) =>
+                    {
+                        var cloudEvents = topic.BuildCloudEventsMapper(
+                            runtime,
+                            cloudEventsJsonOptions
+                        );
+                        topic.EnvelopeMapper = new CloudEventsOnlyKafkaMapper(cloudEvents);
+                        topic.DefaultSerializer = cloudEvents;
+                    }
+                )
+            );
+
+            opts.PublishAllMessages().ToKafkaTopics().TelemetryEnabled(true);
+        }
+
+        /// <summary>
+        ///     Scans the specified assemblies for public instance/static methods with a single parameter
+        ///     of type <see cref="IntegrationEvent"/> and registers a Kafka listener for each
+        ///     unique message type found. The listener will be configured to subscribe to the topic
+        ///     specified in the <see cref="MessageIdentityAttribute"/> of the message type, or
+        ///     the message type's full name if the attribute is not present.
+        /// </summary>
+        /// <param name="assemblies">List of assemblies to scan for message handler methods</param>
+        public void ListenToIntegrationEventsIn(params Assembly[] assemblies)
+        {
+            var topics = new Dictionary<string, Type>(StringComparer.Ordinal);
+
+            foreach (var assembly in assemblies)
+            {
+                Type[] types;
+                try
+                {
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    types = [.. ex.Types.Where(t => t is not null).Cast<Type>()];
+                }
+
+                foreach (var type in types)
+                {
+                    if (type.IsAbstract || type.IsInterface)
+                    {
+                        continue;
+                    }
+
+                    foreach (
+                        var method in type.GetMethods(
+                            BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static
+                        )
+                    )
+                    {
+                        if (
+                            method.Name
+                            is not ("Handle" or "HandleAsync" or "Consume" or "ConsumeAsync")
+                        )
+                        {
+                            continue;
+                        }
+
+                        var parameters = method.GetParameters();
+                        if (parameters.Length == 0)
+                        {
+                            continue;
+                        }
+
+                        var messageType = parameters[0].ParameterType;
+                        if (!typeof(IntegrationEvent).IsAssignableFrom(messageType))
+                        {
+                            continue;
+                        }
+
+                        var identity = messageType.GetCustomAttribute<MessageIdentityAttribute>();
+                        var topic = identity?.Alias ?? messageType.FullName ?? messageType.Name;
+                        topics[topic] = messageType;
+                    }
+                }
+            }
+
+            foreach (var (topic, messageType) in topics)
+            {
+                // Pre-register the message type alias so the CloudEventsMapper can resolve
+                // the incoming CloudEvent `type` field (e.g. "BookWorm.Contracts.FeedbackCreatedIntegrationEvent")
+                // back to the .NET message type. Without this, handler-discovery-driven alias
+                // registration may miss the type and the consumer throws
+                // UnknownMessageTypeNameException at deserialization time.
+                opts.RegisterMessageType(messageType, topic);
+
+                opts.ListenToKafkaTopic(topic);
+            }
+        }
     }
 }

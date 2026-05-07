@@ -1,6 +1,7 @@
 ﻿using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
@@ -89,6 +90,7 @@ internal static class Extensions
             builder.AddEventBus(opts =>
             {
                 opts.Discovery.IncludeAssembly(typeof(IBasketApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(IBasketApiMarker).Assembly);
             });
 
             services.AddKeycloakTokenIntrospection();

@@ -1,3 +1,4 @@
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Ordering.Configurations;
@@ -61,6 +62,7 @@ internal static class Extensions
                 }
 
                 opts.Discovery.IncludeAssembly(typeof(IOrderingApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(IOrderingApiMarker).Assembly);
             });
 
             // Configure gRPC

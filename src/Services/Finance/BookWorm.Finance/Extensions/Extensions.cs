@@ -1,4 +1,5 @@
-﻿using BookWorm.Constants.Aspire;
+﻿using BookWorm.Chassis.EventBus.Wolverine;
+using BookWorm.Constants.Aspire;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
 
@@ -30,6 +31,7 @@ internal static class Extensions
                 }
 
                 opts.Discovery.IncludeAssembly(typeof(IFinanceApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(IFinanceApiMarker).Assembly);
             });
         }
     }

@@ -44,7 +44,7 @@ foreach ($svc in $Services) {
     if ($Content -match "using\s+BookWorm\.$svc\.(Domain|Infrastructure|Features|Grpc)") {
         @{
             permissionDecision       = 'deny'
-            permissionDecisionReason = "Cross-service boundary violation: $CurrentService service must not directly reference $svc internal namespaces. Use integration events (MassTransit), gRPC contracts, or SharedKernel instead."
+            permissionDecisionReason = "Cross-service boundary violation: $CurrentService service must not directly reference $svc internal namespaces. Use integration events (Wolverine), gRPC contracts, or SharedKernel instead."
         } | ConvertTo-Json -Compress
         exit 0
     }
@@ -53,7 +53,7 @@ foreach ($svc in $Services) {
     if ($Content -match "ProjectReference.*BookWorm\.$svc[/\\]") {
         @{
             permissionDecision       = 'deny'
-            permissionDecisionReason = "Cross-service boundary violation: $CurrentService cannot have a direct ProjectReference to $svc. Services communicate via messaging (MassTransit/Kafka) or gRPC."
+            permissionDecisionReason = "Cross-service boundary violation: $CurrentService cannot have a direct ProjectReference to $svc. Services communicate via messaging (Wolverine/Kafka) or gRPC."
         } | ConvertTo-Json -Compress
         exit 0
     }

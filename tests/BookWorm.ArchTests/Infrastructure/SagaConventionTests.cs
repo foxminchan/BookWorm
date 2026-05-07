@@ -35,18 +35,4 @@ public sealed class SagaConventionTests : ArchUnitBaseTest
             .Because("Saga settings classes should be sealed to prevent unintended inheritance.")
             .Check(Architecture);
     }
-
-    [Test]
-    public void GivenSagaObservers_WhenCheckingModifiers_ThenShouldBeSealed()
-    {
-        Classes()
-            .That()
-            .ResideInNamespaceMatching($"{SagaNamespace}.Observers")
-            .And()
-            .HaveNameEndingWith("Observer")
-            .Should()
-            .BeSealed()
-            .Because("Saga observer classes should be sealed to prevent unintended inheritance.")
-            .Check(Architecture);
-    }
 }

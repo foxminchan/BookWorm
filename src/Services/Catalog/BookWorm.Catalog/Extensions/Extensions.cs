@@ -2,6 +2,7 @@ using BookWorm.Catalog.Configurations;
 using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
@@ -120,6 +121,7 @@ internal static class Extensions
                 }
 
                 opts.Discovery.IncludeAssembly(typeof(ICatalogApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(ICatalogApiMarker).Assembly);
             });
 
             services.AddKeycloakTokenIntrospection();
