@@ -14,7 +14,7 @@ public interface IEventDispatcher
 
     /// <summary>
     ///     Dispatches the specified domain event to its registered handlers, propagating
-    ///     the originating user identifier through the publish context headers so that
+    ///     the originating user identifier through the publishing context headers so that
     ///     it is preserved across asynchronous boundaries (e.g. Marten projections,
     ///     background daemons) where the original <c>HttpContext</c> is unavailable.
     /// </summary>

@@ -6,16 +6,13 @@ using Wolverine;
 
 namespace BookWorm.Chassis.EventBus;
 
-/// <summary>
-///     Host extension methods for the BookWorm event bus.
-/// </summary>
 public static class Extensions
 {
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
         ///     Registers and configures the event bus infrastructure for the current host
-        ///     by delegating to WolverineFx via <c>UseBookWormWolverine</c>. When the
+        ///     by delegating to WolverineFx via <c>UseWolverineEventFramework</c>. When the
         ///     broker connection string is absent the call is a no-op (FR-015).
         /// </summary>
         /// <param name="configure">
@@ -25,7 +22,7 @@ public static class Extensions
         /// </param>
         public void AddEventBus(Action<WolverineOptions>? configure = null)
         {
-            builder.UseBookWormWolverine(configure);
+            builder.UseEventFramework(configure);
         }
     }
 

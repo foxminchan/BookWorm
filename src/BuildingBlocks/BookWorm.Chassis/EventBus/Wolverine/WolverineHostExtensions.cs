@@ -1,29 +1,16 @@
-using System.Text.Json;
 using BookWorm.Constants.Aspire;
-using JasperFx;
 using JasperFx.Resources;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Wolverine;
 using Wolverine.Kafka;
-using Wolverine.Postgresql;
 
 namespace BookWorm.Chassis.EventBus.Wolverine;
 
-/// <summary>
-///     Extension methods that wire WolverineFx into a BookWorm microservice host.
-///     Replaces the MassTransit-based <c>AddEventBus</c> bootstrap (H-3 in
-///     <c>contracts/handler-conventions.md</c>).
-/// </summary>
 public static class WolverineHostExtensions
 {
-    private static readonly JsonSerializerOptions _cloudEventJsonOptions = new(
-        JsonSerializerDefaults.Web
-    );
-
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
@@ -36,25 +23,19 @@ public static class WolverineHostExtensions
         ///     Optional callback for additional <see cref="WolverineOptions" />
         ///     customization (e.g. service-specific handler discovery or endpoint overrides).
         /// </param>
-        public void UseBookWormWolverine(Action<WolverineOptions>? configure = null)
+        public void UseEventFramework(Action<WolverineOptions>? configure = null)
         {
             var kafkaConnectionString = builder.Configuration.GetConnectionString(
                 Components.Broker
             );
 
-            // Skip Wolverine/Kafka registration when no broker is configured (FR-015).
             if (string.IsNullOrWhiteSpace(kafkaConnectionString))
             {
                 return;
             }
 
-            // IHttpContextAccessor is a singleton that uses AsyncLocal internally.
-            // Adding it here ensures downstream code can inject it without a separate call.
-            builder.Services.AddHttpContextAccessor();
-
-            // UserIdEnvelopeMiddleware needs the IHttpContextAccessor singleton.
-            // HttpContextAccessor shares the same static AsyncLocal as the framework-
-            // registered instance so creating a second instance is safe.
+            // IHttpContextAccessor is already registered by ServiceDefaults.ConfigureOpenTelemetry;
+            // AddHttpContextAccessor uses TryAddSingleton, but we omit the redundant call here.
             builder.Services.AddSingleton<UserIdEnvelopeMiddleware>();
 
             var applicationName = builder.Environment.ApplicationName;
@@ -89,8 +70,8 @@ public static class WolverineHostExtensions
 
                 // ── Kafka transport with CloudEvents interop ──────────────────────
                 // Called after configure so per-service topic subscriptions can override
-                // defaults before the Kafka transport is finalised.
-                opts.UseKafkaWithCloudEvents(kafkaConnectionString!, applicationName);
+                // defaults before the Kafka transport is finalized.
+                opts.UseKafkaWithCloudEvents(kafkaConnectionString, applicationName);
             });
         }
     }
@@ -99,7 +80,7 @@ public static class WolverineHostExtensions
     ///     Configures the Kafka transport on <paramref name="opts" /> with
     ///     CloudEvents interoperability applied to every endpoint and with
     ///     the per-service <c>source</c> URN derived from the application name.
-    ///     Call this inside your <c>UseBookWormWolverine</c> configure callback.
+    ///     Call this inside your <c>UseWolverineEventFramework</c> configure callback.
     /// </summary>
     /// <param name="opts">The <see cref="WolverineOptions" /> being configured.</param>
     /// <param name="kafkaConnectionString">Kafka bootstrap-server connection string.</param>
