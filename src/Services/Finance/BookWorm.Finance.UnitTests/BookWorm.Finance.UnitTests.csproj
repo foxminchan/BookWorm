@@ -11,6 +11,12 @@
     <ProjectReference Include="..\BookWorm.Finance\BookWorm.Finance.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile
+      Include="$(SolutionDir)tests\BookWorm.Common\Wolverine\WolverineTestHostFactory.cs"
+      Link="Helpers\WolverineTestHostFactory.cs"
+    />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="Moq" />
     <Using Include="Shouldly" />
   </ItemGroup>

@@ -1,17 +1,29 @@
 ﻿using BookWorm.Contracts;
+using Wolverine.Persistence.Sagas;
 
 namespace BookWorm.Finance.Saga;
 
-internal sealed class OrderState : SagaStateMachineInstance, ISagaVersion
+/// <summary>
+///     Persisted state for the order-placement saga. Replaces the
+///     MassTransit <c>SagaStateMachineInstance</c> wrapper — the same
+///     domain fields, repackaged for Wolverine's <see cref="Saga" /> base.
+/// </summary>
+internal sealed class OrderState
 {
+    /// <summary>Correlation key — maps 1-to-1 with the saga <c>Id</c> in Wolverine.</summary>
+    [SagaIdentity]
+    public Guid Id { get; set; }
+
     public Guid OrderId { get; set; }
     public Guid BasketId { get; set; }
     public string? FullName { get; set; }
     public string? Email { get; set; }
-    public string CurrentState { get; init; } = null!;
+
+    /// <summary>Persisted as text via enum-to-string conversion for backward-readable diagnostics.</summary>
+    public OrderSagaStatus CurrentState { get; set; }
+
     public decimal? TotalMoney { get; set; }
     public DateTime? OrderPlacedDate { get; set; }
-    public Guid? PlaceOrderTimeoutTokenId { get; init; }
     public int TimeoutRetryCount { get; set; }
     public uint RowVersion { get; init; }
 
@@ -19,8 +31,6 @@ internal sealed class OrderState : SagaStateMachineInstance, ISagaVersion
         !string.IsNullOrWhiteSpace(Email) && !string.IsNullOrWhiteSpace(FullName);
 
     public decimal EffectiveTotalMoney => TotalMoney.GetValueOrDefault(0.0M);
-    public int Version { get; set; }
-    public Guid CorrelationId { get; set; }
 
     public void IncrementRetry()
     {

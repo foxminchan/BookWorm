@@ -1,11 +1,8 @@
-using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
-using BookWorm.Finance.Saga.Activities;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Wolverine;
 
 namespace BookWorm.Finance.ContractTests.Saga;
 
@@ -14,80 +11,94 @@ public sealed class OrderStateMachineContractTests
     private const string TestFullName = "John Doe";
     private const string TestEmail = "john.doe@example.com";
     private const decimal TestTotalMoney = 99.99m;
-    private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
-    private ISagaStateMachineTestHarness<OrderStateMachine, OrderState> _sagaHarness = null!;
+    private OrderStateMachineSettings _settings = null!;
+    private ILogger<OrderSaga> _logger = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
-        var settings = new OrderStateMachineSettings
-        {
-            MaxAttempts = 3,
-            MaxRetryTimeout = TimeSpan.FromMinutes(30),
-        };
-
-        _provider = new ServiceCollection()
-            .AddSingleton(settings)
-            .AddScoped<PlaceOrderActivity>()
-            .AddScoped<CancelOrderActivity>()
-            .AddScoped<CompleteOrderActivity>()
-            .AddScoped<HandleBasketDeletedActivity>()
-            .AddScoped<HandleBasketDeleteFailedActivity>()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(cfg =>
-            {
-                cfg.AddDelayedMessageScheduler();
-                cfg.AddSagaStateMachine<OrderStateMachine, OrderState>();
-                cfg.SetTestTimeouts(testInactivityTimeout: TimeSpan.FromSeconds(60));
-                cfg.UsingInMemory(
-                    (context, busCfg) =>
-                    {
-                        busCfg.UseCloudEvents();
-                        busCfg.UseDelayedMessageScheduler();
-                        busCfg.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-        _harness.TestInactivityTimeout = TimeSpan.FromSeconds(60);
-
-        _sagaHarness = _harness.GetSagaStateMachineHarness<OrderStateMachine, OrderState>();
+        _settings = new() { MaxAttempts = 3, MaxRetryTimeout = TimeSpan.FromMinutes(30) };
+        _logger = Mock.Of<ILogger<OrderSaga>>();
     }
 
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
-    }
-
-    private async Task<(Guid OrderId, Guid BasketId)> InitializeSagaAsync()
-    {
-        var orderId = Guid.CreateVersion7();
-        var basketId = Guid.CreateVersion7();
-        var initialEvent = new UserCheckedOutIntegrationEvent(
-            orderId,
-            basketId,
-            TestFullName,
-            TestEmail,
-            TestTotalMoney
-        );
-        await _harness.Bus.Publish(initialEvent);
-        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
-        return (orderId, basketId);
-    }
+    private UserCheckedOutIntegrationEvent CreateCheckedOutEvent(Guid orderId, Guid basketId) =>
+        new(orderId, basketId, TestFullName, TestEmail, TestTotalMoney);
 
     [Test]
-    public async Task GivenUserCheckedOutEvent_WhenPublished_ThenSagaShouldConsumeAndTransitionToPlacedState()
+    public async Task GivenUserCheckedOutEvent_WhenPublished_ThenSagaShouldStartAndQueueOutgoingMessages()
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
         var basketId = Guid.CreateVersion7();
+        var @event = CreateCheckedOutEvent(orderId, basketId);
 
-        var @event = new UserCheckedOutIntegrationEvent(
+        // Act
+        var (saga, messages) = OrderSaga.Start(@event, _settings, _logger);
+
+        // Assert
+        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
+    }
+
+    [Test]
+    public async Task GivenBasketDeletedCompleteEvent_WhenHandled_ThenSagaShouldReturnDeleteBasketCompleteCommand()
+    {
+        // Arrange
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        var (saga, _) = OrderSaga.Start(
+            CreateCheckedOutEvent(orderId, basketId),
+            _settings,
+            _logger
+        );
+
+        var @event = new BasketDeletedCompleteIntegrationEvent(orderId, basketId, TestTotalMoney);
+
+        // Act
+        var command = saga.Handle(@event);
+
+        // Assert
+        await SnapshotTestHelper.Verify(command);
+    }
+
+    [Test]
+    public async Task GivenBasketDeletedFailedEvent_WhenHandled_ThenSagaShouldTransitionToFailedStateAndPublishFailedCommand()
+    {
+        // Arrange
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        var (saga, _) = OrderSaga.Start(
+            CreateCheckedOutEvent(orderId, basketId),
+            _settings,
+            _logger
+        );
+
+        var @event = new BasketDeletedFailedIntegrationEvent(
+            orderId,
+            basketId,
+            TestEmail,
+            TestTotalMoney
+        );
+
+        // Act
+        var messages = saga.Handle(@event, _logger);
+
+        // Assert
+        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
+    }
+
+    [Test]
+    public async Task GivenOrderCompletedEvent_WhenHandled_ThenSagaShouldTransitionToCompletedStateAndQueueNotification()
+    {
+        // Arrange
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        var (saga, _) = OrderSaga.Start(
+            CreateCheckedOutEvent(orderId, basketId),
+            _settings,
+            _logger
+        );
+
+        var @event = new OrderStatusChangedToCompleteIntegrationEvent(
             orderId,
             basketId,
             TestFullName,
@@ -96,67 +107,25 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        await _harness.Bus.Publish(@event);
-
-        // Wait for saga to process
-        await _sagaHarness.Consumed.Any<UserCheckedOutIntegrationEvent>();
+        var messages = saga.Handle(@event, _logger);
 
         // Assert
-        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
+        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
     }
 
     [Test]
-    public async Task GivenBasketDeletedCompleteEvent_WhenPublished_ThenSagaShouldPublishDeleteBasketCompleteCommand()
+    public async Task GivenOrderCancelledEvent_WhenHandled_ThenSagaShouldTransitionToCancelledStateAndQueueNotification()
     {
-        // Arrange - Initialize saga to Placed state
-        var (orderId, basketId) = await InitializeSagaAsync();
-
-        var basketDeletedEvent = new BasketDeletedCompleteIntegrationEvent(
-            orderId,
-            basketId,
-            TestTotalMoney
+        // Arrange
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        var (saga, _) = OrderSaga.Start(
+            CreateCheckedOutEvent(orderId, basketId),
+            _settings,
+            _logger
         );
 
-        // Act
-        await _harness.Bus.Publish(basketDeletedEvent);
-
-        // Wait for saga to process
-        await _sagaHarness.Consumed.Any<BasketDeletedCompleteIntegrationEvent>();
-
-        // Assert
-        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
-    }
-
-    [Test]
-    public async Task GivenBasketDeletedFailedEvent_WhenPublished_ThenSagaShouldTransitionToFailedStateAndPublishFailedCommand()
-    {
-        // Arrange - Initialize saga to Placed state
-        var (orderId, basketId) = await InitializeSagaAsync();
-
-        var basketDeletedFailedEvent = new BasketDeletedFailedIntegrationEvent(
-            orderId,
-            basketId,
-            TestEmail,
-            TestTotalMoney
-        );
-
-        // Act
-        await _harness.Bus.Publish(basketDeletedFailedEvent);
-
-        // Wait for saga to process
-        await _sagaHarness.Consumed.Any<BasketDeletedFailedIntegrationEvent>();
-
-        // Assert
-        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
-    }
-
-    [Test]
-    public async Task GivenOrderCompletedEvent_WhenPublished_ThenSagaShouldTransitionToCompletedStateAndFinalize()
-    {
-        // Arrange - Initialize saga to Placed state
-        var (orderId, basketId) = await InitializeSagaAsync();
-
-        var orderCompletedEvent = new OrderStatusChangedToCompleteIntegrationEvent(
+        var @event = new OrderStatusChangedToCancelIntegrationEvent(
             orderId,
             basketId,
             TestFullName,
@@ -165,36 +134,9 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        await _harness.Bus.Publish(orderCompletedEvent);
-
-        // Wait for saga to process and finalize
-        await _sagaHarness.Consumed.Any<OrderStatusChangedToCompleteIntegrationEvent>();
+        var messages = saga.Handle(@event, _logger);
 
         // Assert
-        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
-    }
-
-    [Test]
-    public async Task GivenOrderCancelledEvent_WhenPublished_ThenSagaShouldTransitionToCancelledStateAndFinalize()
-    {
-        // Arrange - Initialize saga to Placed state
-        var (orderId, basketId) = await InitializeSagaAsync();
-
-        var orderCancelledEvent = new OrderStatusChangedToCancelIntegrationEvent(
-            orderId,
-            basketId,
-            TestFullName,
-            TestEmail,
-            TestTotalMoney
-        );
-
-        // Act
-        await _harness.Bus.Publish(orderCancelledEvent);
-
-        // Wait for saga to process and finalize
-        await _sagaHarness.Consumed.Any<OrderStatusChangedToCancelIntegrationEvent>();
-
-        // Assert
-        await SnapshotTestHelper.Verify(new { harness = _harness, sagaHarness = _sagaHarness });
+        await SnapshotTestHelper.Verify(new { saga.CurrentState, Messages = messages.ToList() });
     }
 }

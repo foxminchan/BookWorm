@@ -2,13 +2,13 @@ using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
-using MassTransit;
+using Wolverine;
 
 namespace BookWorm.Catalog.UnitTests.IntegrationEvents;
 
 public sealed class FeedbackCreatedIntegrationEventHandlerTests
 {
-    private readonly Mock<ConsumeContext<FeedbackCreatedIntegrationEvent>> _contextMock = new();
+    private readonly Mock<IMessageBus> _busMock = new();
     private readonly FeedbackCreatedIntegrationEventHandler _handler;
     private readonly Mock<IBookRepository> _repositoryMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
@@ -16,21 +16,18 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
     public FeedbackCreatedIntegrationEventHandlerTests()
     {
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
-        _contextMock.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
 
-        _handler = new(_repositoryMock.Object);
+        _handler = new(_repositoryMock.Object, _busMock.Object);
     }
 
     [Test]
-    public async Task GivenBookExists_WhenConsuming_ThenShouldAddRatingAndSave()
+    public async Task GivenBookExists_WhenHandling_ThenShouldAddRatingAndSave()
     {
-        // Arrange
         var bookId = Guid.CreateVersion7();
         var feedbackId = Guid.CreateVersion7();
         const int rating = 5;
 
         var @event = new FeedbackCreatedIntegrationEvent(bookId, rating, feedbackId);
-        _contextMock.Setup(x => x.Message).Returns(@event);
 
         var book = new Book(
             "Test Book",
@@ -51,27 +48,31 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
             .Setup(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(@event, CancellationToken.None);
 
-        // Assert
         _repositoryMock.Verify(
             x => x.GetByIdAsync(bookId, It.IsAny<CancellationToken>()),
             Times.Once
+        );
+        _busMock.Verify(
+            x =>
+                x.PublishAsync(
+                    It.IsAny<BookUpdatedRatingFailedIntegrationEvent>(),
+                    It.IsAny<DeliveryOptions>()
+                ),
+            Times.Never
         );
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
-    public async Task GivenBookNotFound_WhenConsuming_ThenShouldPublishFailedEventAndSave()
+    public async Task GivenBookNotFound_WhenHandling_ThenShouldPublishFailedEventAndSave()
     {
-        // Arrange
         var bookId = Guid.CreateVersion7();
         var feedbackId = Guid.CreateVersion7();
         const int rating = 3;
 
         var @event = new FeedbackCreatedIntegrationEvent(bookId, rating, feedbackId);
-        _contextMock.Setup(x => x.Message).Returns(@event);
 
         _repositoryMock
             .Setup(x => x.GetByIdAsync(bookId, It.IsAny<CancellationToken>()))
@@ -81,15 +82,13 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
             .Setup(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(@event, CancellationToken.None);
 
-        // Assert
-        _contextMock.Verify(
+        _busMock.Verify(
             x =>
-                x.Publish(
+                x.PublishAsync(
                     It.Is<BookUpdatedRatingFailedIntegrationEvent>(e => e.FeedbackId == feedbackId),
-                    It.IsAny<CancellationToken>()
+                    It.IsAny<DeliveryOptions>()
                 ),
             Times.Once
         );

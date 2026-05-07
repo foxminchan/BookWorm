@@ -3,7 +3,6 @@ using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
-using MassTransit;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
 using MimeKit;
@@ -12,7 +11,6 @@ namespace BookWorm.Notification.UnitTests.Handlers;
 
 public sealed class ResendErrorEmailHandlerTests
 {
-    private readonly Mock<ConsumeContext<ResendErrorEmailIntegrationEvent>> _contextMock = new();
     private readonly ResendErrorEmailIntegrationEventHandler _handler;
     private readonly Mock<GlobalLogBuffer> _logBufferMock = new();
     private readonly Mock<ILogger<ResendErrorEmailIntegrationEventHandler>> _loggerMock = new();
@@ -23,7 +21,6 @@ public sealed class ResendErrorEmailHandlerTests
     public ResendErrorEmailHandlerTests()
     {
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
-        _contextMock.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
 
         _handler = new(
             _loggerMock.Object,
@@ -34,9 +31,8 @@ public sealed class ResendErrorEmailHandlerTests
     }
 
     [Test]
-    public async Task GivenUnsentEmails_WhenConsuming_ThenShouldResendAndMarkAsSent()
+    public async Task GivenUnsentEmails_WhenHandling_ThenShouldResendAndMarkAsSent()
     {
-        // Arrange
         var email1 = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
         var email2 = new Outbox("User2", "user2@test.com", "Sub2", "Body2");
 
@@ -44,10 +40,8 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([email1, email2]);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert
         email1.IsSent.ShouldBeTrue();
         email2.IsSent.ShouldBeTrue();
         _senderMock.Verify(
@@ -58,17 +52,14 @@ public sealed class ResendErrorEmailHandlerTests
     }
 
     [Test]
-    public async Task GivenNoUnsentEmails_WhenConsuming_ThenShouldReturnEarlyWithoutSending()
+    public async Task GivenNoUnsentEmails_WhenHandling_ThenShouldReturnEarlyWithoutSending()
     {
-        // Arrange
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
@@ -77,9 +68,8 @@ public sealed class ResendErrorEmailHandlerTests
     }
 
     [Test]
-    public async Task GivenSendFailure_WhenConsuming_ThenShouldContinueWithRemainingEmails()
+    public async Task GivenSendFailure_WhenHandling_ThenShouldContinueWithRemainingEmails()
     {
-        // Arrange
         var email1 = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
         var email2 = new Outbox("User2", "user2@test.com", "Sub2", "Body2");
 
@@ -92,10 +82,8 @@ public sealed class ResendErrorEmailHandlerTests
             .ThrowsAsync(new InvalidOperationException("Send failed"))
             .Returns(Task.CompletedTask);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert
         email1.IsSent.ShouldBeFalse();
         email2.IsSent.ShouldBeTrue();
         _senderMock.Verify(
@@ -107,9 +95,8 @@ public sealed class ResendErrorEmailHandlerTests
     }
 
     [Test]
-    public async Task GivenAllSendsFail_WhenConsuming_ThenShouldNotSaveChanges()
+    public async Task GivenAllSendsFail_WhenHandling_ThenShouldNotSaveChanges()
     {
-        // Arrange
         var email1 = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
 
         _repositoryMock
@@ -120,23 +107,18 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Send failed"));
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert
         email1.IsSent.ShouldBeFalse();
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _logBufferMock.Verify(x => x.Flush(), Times.Once);
     }
 
     [Test]
-    public async Task GivenCancellationRequested_WhenConsuming_ThenShouldThrowOperationCancelled()
+    public async Task GivenCancellationRequested_WhenHandling_ThenShouldThrowOperationCancelled()
     {
-        // Arrange
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
-
-        _contextMock.Setup(x => x.CancellationToken).Returns(cts.Token);
 
         var email = new Outbox("User1", "user1@test.com", "Sub1", "Body1");
 
@@ -148,24 +130,20 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException(cts.Token));
 
-        // Act & Assert
         await Should.ThrowAsync<OperationCanceledException>(() =>
-            _handler.Consume(_contextMock.Object)
+            _handler.Handle(new ResendErrorEmailIntegrationEvent(), cts.Token)
         );
     }
 
     [Test]
-    public async Task GivenUnsentEmails_WhenConsuming_ThenShouldQueryWithUnsentOutboxSpec()
+    public async Task GivenUnsentEmails_WhenHandling_ThenShouldQueryWithUnsentOutboxSpec()
     {
-        // Arrange
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -173,9 +151,8 @@ public sealed class ResendErrorEmailHandlerTests
     }
 
     [Test]
-    public async Task GivenOnlyUnsentEmails_WhenConsuming_ThenShouldProcessAllReturnedEmails()
+    public async Task GivenOnlyUnsentEmails_WhenHandling_ThenShouldProcessAllReturnedEmails()
     {
-        // Arrange
         var unsent1 = new Outbox("User1", "u1@test.com", "Sub1", "Body1");
         var unsent2 = new Outbox("User2", "u2@test.com", "Sub2", "Body2");
         var unsent3 = new Outbox("User3", "u3@test.com", "Sub3", "Body3");
@@ -184,10 +161,8 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([unsent1, unsent2, unsent3]);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert
         unsent1.IsSent.ShouldBeTrue();
         unsent2.IsSent.ShouldBeTrue();
         unsent3.IsSent.ShouldBeTrue();
@@ -199,20 +174,16 @@ public sealed class ResendErrorEmailHandlerTests
     }
 
     [Test]
-    public async Task GivenAlreadySentEmailsExcludedBySpec_WhenConsuming_ThenShouldNotReprocessThem()
+    public async Task GivenAlreadySentEmailsExcludedBySpec_WhenHandling_ThenShouldNotReprocessThem()
     {
-        // Arrange - simulate that the spec already filtered out sent emails,
-        // so the repository returns only unsent ones
         var unsent = new Outbox("Unsent", "unsent@test.com", "Sub", "Body");
 
         _repositoryMock
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([unsent]);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert
         unsent.IsSent.ShouldBeTrue();
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -222,9 +193,8 @@ public sealed class ResendErrorEmailHandlerTests
     }
 
     [Test]
-    public async Task GivenSpecReturnsEmailsInOrder_WhenConsuming_ThenShouldProcessInSequence()
+    public async Task GivenSpecReturnsEmailsInOrder_WhenHandling_ThenShouldProcessInSequence()
     {
-        // Arrange - emails ordered by SequenceNumber as the spec dictates
         var first = new Outbox("First", "first@test.com", "Sub1", "Body1") { SequenceNumber = 1 };
         var second = new Outbox("Second", "second@test.com", "Sub2", "Body2")
         {
@@ -244,10 +214,8 @@ public sealed class ResendErrorEmailHandlerTests
             )
             .Returns(Task.CompletedTask);
 
-        // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(new ResendErrorEmailIntegrationEvent(), CancellationToken.None);
 
-        // Assert - processed in the order the spec returned them
         sendOrder.Count.ShouldBe(3);
         sendOrder[0].ShouldBe("first@test.com");
         sendOrder[1].ShouldBe("second@test.com");

@@ -58,11 +58,11 @@ cloud-native development practices:
 
 ### Communication Patterns
 
-| Pattern          | Technology                | Rationale                                                                    |
-| ---------------- | ------------------------- | ---------------------------------------------------------------------------- |
-| **Synchronous**  | HTTP/REST APIs            | Simple integration, excellent tooling, wide ecosystem support                |
-| **Asynchronous** | RabbitMQ with MassTransit | Reliable message delivery, event-driven architecture, decoupling             |
-| **Real-time**    | SignalR                   | Bi-directional communication, automatic transport fallback, .NET integration |
+| Pattern          | Technology             | Rationale                                                                    |
+| ---------------- | ---------------------- | ---------------------------------------------------------------------------- |
+| **Synchronous**  | HTTP/REST APIs         | Simple integration, excellent tooling, wide ecosystem support                |
+| **Asynchronous** | Kafka with WolverineFx | Reliable message delivery, event-driven architecture, decoupling             |
+| **Real-time**    | SignalR                | Bi-directional communication, automatic transport fallback, .NET integration |
 
 ---
 
@@ -127,7 +127,7 @@ graph TB
     subgraph "Cross-Cutting"
         Gateway[API Gateway<br/>Routing & Auth]
         Scheduler[Scheduler Service<br/>Background Jobs]
-        EventBus[Event Bus<br/>RabbitMQ/MassTransit]
+        EventBus[Event Bus<br/>Kafka/WolverineFx]
     end
 ```
 

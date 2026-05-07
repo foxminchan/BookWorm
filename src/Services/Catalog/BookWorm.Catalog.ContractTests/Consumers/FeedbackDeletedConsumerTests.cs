@@ -1,13 +1,9 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
-using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.ContractTests.Consumers;
 
@@ -17,13 +13,11 @@ public sealed class FeedbackDeletedConsumerTests
     private Book _book = null!;
     private Guid _bookId;
     private Guid _feedbackId;
-    private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
     private Mock<IBookRepository> _repositoryMock = null!;
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _bookId = Guid.CreateVersion7();
         _feedbackId = Guid.CreateVersion7();
@@ -36,31 +30,6 @@ public sealed class FeedbackDeletedConsumerTests
 
         _repositoryMock = new();
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
-
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x =>
-            {
-                x.AddConsumer<FeedbackDeletedIntegrationEventHandler>();
-                x.UsingInMemory(
-                    (context, cfg) =>
-                    {
-                        cfg.UseCloudEvents();
-                        cfg.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -71,17 +40,14 @@ public sealed class FeedbackDeletedConsumerTests
             .Setup(x => x.GetByIdAsync(_book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_book);
 
-        var integrationEvent = new FeedbackDeletedIntegrationEvent(_book.Id, _rating, _feedbackId);
+        var @event = new FeedbackDeletedIntegrationEvent(_book.Id, _rating, _feedbackId);
+        var handler = new FeedbackDeletedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await _harness.Bus.Publish(integrationEvent);
+        await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
-        await consumer.Consumed.Any<FeedbackDeletedIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_book.Id, It.IsAny<CancellationToken>()),
             Times.Once
@@ -97,17 +63,14 @@ public sealed class FeedbackDeletedConsumerTests
             .Setup(x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book?)null);
 
-        var integrationEvent = new FeedbackDeletedIntegrationEvent(_bookId, _rating, _feedbackId);
+        var @event = new FeedbackDeletedIntegrationEvent(_bookId, _rating, _feedbackId);
+        var handler = new FeedbackDeletedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await _harness.Bus.Publish(integrationEvent);
+        await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<FeedbackDeletedIntegrationEventHandler>();
-        await consumer.Consumed.Any<FeedbackDeletedIntegrationEvent>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once

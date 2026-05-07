@@ -1,21 +1,19 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
 using BookWorm.Contracts;
-using MassTransit;
+using Wolverine;
 
 namespace BookWorm.Basket.UnitTests.IntegrationEvents;
 
 public sealed class PlaceOrderCommandHandlerTests
 {
-    private readonly Mock<ConsumeContext<PlaceOrderCommand>> _contextMock = new();
+    private readonly Mock<IMessageBus> _busMock = new();
     private readonly PlaceOrderCommandHandler _handler;
     private readonly Mock<IBasketRepository> _repositoryMock = new();
 
     public PlaceOrderCommandHandlerTests()
     {
-        _contextMock.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
-
-        _handler = new(_repositoryMock.Object);
+        _handler = new(_repositoryMock.Object, _busMock.Object);
     }
 
     [Test]
@@ -34,29 +32,27 @@ public sealed class PlaceOrderCommandHandlerTests
             totalMoney
         );
 
-        _contextMock.Setup(x => x.Message).Returns(command);
-
         _repositoryMock.Setup(x => x.DeleteBasketAsync(basketId.ToString())).ReturnsAsync(true);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _contextMock.Verify(
+        _busMock.Verify(
             x =>
-                x.Publish(
+                x.PublishAsync(
                     It.Is<BasketDeletedCompleteIntegrationEvent>(e =>
                         e.OrderId == orderId && e.BasketId == basketId && e.TotalMoney == totalMoney
                     ),
-                    It.IsAny<CancellationToken>()
+                    It.IsAny<DeliveryOptions>()
                 ),
             Times.Once
         );
-        _contextMock.Verify(
+        _busMock.Verify(
             x =>
-                x.Publish(
+                x.PublishAsync(
                     It.IsAny<BasketDeletedFailedIntegrationEvent>(),
-                    It.IsAny<CancellationToken>()
+                    It.IsAny<DeliveryOptions>()
                 ),
             Times.Never
         );
@@ -73,32 +69,30 @@ public sealed class PlaceOrderCommandHandlerTests
 
         var command = new PlaceOrderCommand(basketId, "John Doe", email, orderId, totalMoney);
 
-        _contextMock.Setup(x => x.Message).Returns(command);
-
         _repositoryMock.Setup(x => x.DeleteBasketAsync(basketId.ToString())).ReturnsAsync(false);
 
         // Act
-        await _handler.Consume(_contextMock.Object);
+        await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _contextMock.Verify(
+        _busMock.Verify(
             x =>
-                x.Publish(
+                x.PublishAsync(
                     It.Is<BasketDeletedFailedIntegrationEvent>(e =>
                         e.OrderId == orderId
                         && e.BasketId == basketId
                         && e.Email == email
                         && e.TotalMoney == totalMoney
                     ),
-                    It.IsAny<CancellationToken>()
+                    It.IsAny<DeliveryOptions>()
                 ),
             Times.Once
         );
-        _contextMock.Verify(
+        _busMock.Verify(
             x =>
-                x.Publish(
+                x.PublishAsync(
                     It.IsAny<BasketDeletedCompleteIntegrationEvent>(),
-                    It.IsAny<CancellationToken>()
+                    It.IsAny<DeliveryOptions>()
                 ),
             Times.Never
         );

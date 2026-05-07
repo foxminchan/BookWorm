@@ -10,6 +10,8 @@ using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Mediator;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -80,27 +82,17 @@ internal static class Extensions
             services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
             // Configure EventBus first
-            builder.AddEventBus(
-                typeof(IRatingApiMarker),
-                cfg =>
+            var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Rating);
+            builder.AddEventBus(opts =>
+            {
+                if (!string.IsNullOrWhiteSpace(postgresCs))
                 {
-                    cfg.AddEntityFrameworkOutbox<RatingDbContext>(o =>
-                    {
-                        o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                        o.UsePostgres();
-
-                        o.UseBusOutbox();
-                    });
-
-                    cfg.AddConfigureEndpointsCallback(
-                        (context, _, configurator) =>
-                            configurator.UseEntityFrameworkOutbox<RatingDbContext>(context)
-                    );
+                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
+                    opts.UseEntityFrameworkCoreTransactions();
                 }
-            );
+
+                opts.Discovery.IncludeAssembly(typeof(IRatingApiMarker).Assembly);
+            });
 
             // Then register event-related services
             services.AddEventDispatcher();

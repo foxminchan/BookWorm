@@ -1,6 +1,7 @@
 ﻿using BookWorm.Chassis.Repository;
 using BookWorm.Notification.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Wolverine.EntityFrameworkCore;
 
 namespace BookWorm.Notification.Infrastructure;
 
@@ -19,9 +20,7 @@ public sealed class NotificationDbContext(DbContextOptions<NotificationDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
+        modelBuilder.MapWolverineEnvelopeStorage();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(NotificationDbContext).Assembly);
     }
 }

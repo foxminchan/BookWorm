@@ -1,37 +1,26 @@
-using BookWorm.Finance.Saga;
 using BookWorm.Finance.Saga.Observers;
-using MassTransit;
 
 namespace BookWorm.Finance.UnitTests;
 
 public sealed class OrderStateObserverTests
 {
     [Test]
-    public async Task GivenStateTransition_WhenStateChanged_ThenShouldComplete()
+    public void GivenStateTransition_WhenStateChanged_ThenShouldComplete()
     {
         // Arrange
-        var observer = new OrderStateObserver();
-        var saga = new OrderState { OrderId = Guid.CreateVersion7() };
-        var context = new Mock<BehaviorContext<OrderState>>();
-        context.Setup(c => c.Saga).Returns(saga);
-
-        var currentState = new Mock<State>();
-        currentState.Setup(s => s.Name).Returns("Placed");
-        var previousState = new Mock<State>();
-        previousState.Setup(s => s.Name).Returns("Initial");
+        var observer = new OrderSagaStateObserver();
+        var orderId = Guid.CreateVersion7();
 
         // Act & Assert — should complete without throwing
-        await observer.StateChanged(context.Object, currentState.Object, previousState.Object);
+        observer.RecordTransition(orderId, "Initial", "Placed");
     }
 
     [Test]
-    public async Task GivenMultipleTransitions_WhenStateChanged_ThenShouldCompleteEachTime()
+    public void GivenMultipleTransitions_WhenStateChanged_ThenShouldCompleteEachTime()
     {
         // Arrange
-        var observer = new OrderStateObserver();
-        var saga = new OrderState { OrderId = Guid.CreateVersion7() };
-        var context = new Mock<BehaviorContext<OrderState>>();
-        context.Setup(c => c.Saga).Returns(saga);
+        var observer = new OrderSagaStateObserver();
+        var orderId = Guid.CreateVersion7();
 
         var transitions = new (string From, string To)[]
         {
@@ -44,12 +33,7 @@ public sealed class OrderStateObserverTests
         // Act & Assert
         foreach (var (from, to) in transitions)
         {
-            var current = new Mock<State>();
-            current.Setup(s => s.Name).Returns(to);
-            var previous = new Mock<State>();
-            previous.Setup(s => s.Name).Returns(from);
-
-            await observer.StateChanged(context.Object, current.Object, previous.Object);
+            observer.RecordTransition(orderId, from, to);
         }
     }
 }

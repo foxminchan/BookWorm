@@ -2,14 +2,12 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Ordering.IntegrationEvents.EventHandlers;
 
-public sealed class DeleteBasketCompleteCommandHandler(
+internal sealed class DeleteBasketCompleteCommandHandler(
     ILogger<DeleteBasketCompleteCommandHandler> logger
-) : IConsumer<DeleteBasketCompleteCommand>
+)
 {
-    public Task Consume(ConsumeContext<DeleteBasketCompleteCommand> context)
+    public Task Handle(DeleteBasketCompleteCommand message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
-
         logger.LogInformation(
             "Basket deletion completed for Order {OrderId}, Amount: {TotalMoney}",
             message.OrderId,
@@ -17,16 +15,5 @@ public sealed class DeleteBasketCompleteCommandHandler(
         );
 
         return Task.CompletedTask;
-    }
-}
-
-[ExcludeFromCodeCoverage]
-public sealed class DeleteBasketCompleteCommandHandlerDefinition
-    : ConsumerDefinition<DeleteBasketCompleteCommandHandler>
-{
-    public DeleteBasketCompleteCommandHandlerDefinition()
-    {
-        Endpoint(x => x.Name = "basket-checkout-complete");
-        ConcurrentMessageLimit = 1;
     }
 }

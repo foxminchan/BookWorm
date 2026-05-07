@@ -9,7 +9,9 @@
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" />
-    <PackageReference Include="MassTransit.Kafka" />
+    <PackageReference Include="WolverineFx" />
+    <PackageReference Include="WolverineFx.Kafka" />
+    <PackageReference Include="WolverineFx.Postgresql" />
     <PackageReference Include="Scrutor" />
   </ItemGroup>
   <ItemGroup Label="AI">
@@ -35,5 +37,8 @@
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Constants\BookWorm.Constants.csproj" />
     <ProjectReference Include="..\BookWorm.SharedKernel\BookWorm.SharedKernel.csproj" />
+  </ItemGroup>
+  <ItemGroup Label="Test Visibility">
+    <InternalsVisibleTo Include="BookWorm.Finance.UnitTests" />
   </ItemGroup>
 </Project>

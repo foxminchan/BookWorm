@@ -1,54 +1,25 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
-using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Common;
 using BookWorm.Contracts;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using Wolverine;
 
 namespace BookWorm.Basket.ContractTests.Publishers;
 
 public sealed class BasketDeletedEventPublisherTests
 {
+    private const string Email = "test@example.com";
+    private const decimal TotalMoney = 99.99m;
     private Guid _basketId;
-    private PlaceOrderCommand _command = null!;
-    private ITestHarness _harness = null!;
-    private ServiceProvider _provider = null!;
+    private Guid _orderId;
     private Mock<IBasketRepository> _repositoryMock = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
-        var orderId = Guid.CreateVersion7();
         _basketId = Guid.CreateVersion7();
+        _orderId = Guid.CreateVersion7();
         _repositoryMock = new();
-        _command = new(_basketId, "Test User", "test@example.com", orderId, 99.99m);
-
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x =>
-            {
-                x.AddConsumer<PlaceOrderCommandHandler>();
-                x.UsingInMemory(
-                    (context, cfg) =>
-                    {
-                        cfg.UseCloudEvents();
-                        cfg.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .AddScoped(_ => _repositoryMock.Object)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -57,12 +28,17 @@ public sealed class BasketDeletedEventPublisherTests
         // Arrange
         _repositoryMock.Setup(x => x.DeleteBasketAsync(_basketId.ToString())).ReturnsAsync(true);
 
+        var command = new PlaceOrderCommand(_basketId, "Test User", Email, _orderId, TotalMoney);
+        var bus = new TestMessageContext();
+        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object, bus);
+
         // Act
-        await _harness.Bus.Publish(_command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await _harness.Consumed.Any<PlaceOrderCommand>();
-        await SnapshotTestHelper.Verify(_harness);
+        await SnapshotTestHelper.Verify(
+            bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
+        );
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 
@@ -72,12 +48,17 @@ public sealed class BasketDeletedEventPublisherTests
         // Arrange
         _repositoryMock.Setup(x => x.DeleteBasketAsync(_basketId.ToString())).ReturnsAsync(false);
 
+        var command = new PlaceOrderCommand(_basketId, "Test User", Email, _orderId, TotalMoney);
+        var bus = new TestMessageContext();
+        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object, bus);
+
         // Act
-        await _harness.Bus.Publish(_command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await _harness.Consumed.Any<PlaceOrderCommand>();
-        await SnapshotTestHelper.Verify(_harness);
+        await SnapshotTestHelper.Verify(
+            bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
+        );
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 }

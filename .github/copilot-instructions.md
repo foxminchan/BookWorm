@@ -2,7 +2,7 @@
 
 ## Project Identity
 
-BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD with Clean Architecture, and event-driven patterns (MassTransit/Kafka).
+BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD with Clean Architecture, and event-driven patterns (WolverineFx/Kafka).
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 - **Frontend**: TypeScript 6.0, Next.js 16.2, React 19, pnpm 10 + Turbo 2 monorepo (Node >= 24)
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
 - **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
-- **Messaging**: MassTransit with Kafka (outbox/inbox patterns)
+- **Messaging**: WolverineFx with Kafka (outbox/inbox patterns)
 - **AI**: Microsoft Agents AI Framework (incl. A2A), Semantic Kernel, MCP server, CopilotKit (storefront)
 - **Auth**: Keycloak with token introspection + Keycloakify theme
 - **Gateway**: YARP reverse proxy (Aspire-hosted, routes all service traffic)
@@ -86,7 +86,7 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 - UUID v7 for IDs (`UniqueIdentifierHelper.NewUuidV7`)
 - Value objects via `OwnsOne()`; soft deletes via `HasQueryFilter(x => !x.IsDeleted)`
 - `IEntityTypeConfiguration<T>` in `Infrastructure/EntityConfigurations/`
-- MassTransit Inbox/Outbox entities registered in `OnModelCreating`
+- Wolverine Inbox/Outbox entities registered in `OnModelCreating`
 - snake_case naming convention via `UseSnakeCaseNamingConvention()`
 
 ### Data Access

@@ -1,68 +1,10 @@
-﻿{
-  "Messages": [
-    {
-      "Published": "PlaceOrderCommand",
-      "MessageId": "Guid_1",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
-      "Message": {
-        "BasketId": "Guid_3",
-        "FullName": "Test User",
-        "Email": "test@example.com",
-        "OrderId": "Guid_4",
-        "TotalMoney": 99.99,
-        "Id": "Guid_5",
-        "CreationDate": "DateTime_1"
-      },
-      "Headers": [
-        {
-          "Key": "MT-Activity-Id",
-          "Value": "TraceId_Scrubbed"
-        },
-        {
-          "Key": "MT-Activity-Correlation-Context",
-          "Value": [
-            {
-              "tunit.test.id": "Guid_6"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "Received": "PlaceOrderCommand",
-      "MessageId": "Guid_1",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:PlaceOrderCommand",
-      "Message": {
-        "BasketId": "Guid_3",
-        "FullName": "Test User",
-        "Email": "test@example.com",
-        "OrderId": "Guid_4",
-        "TotalMoney": 99.99,
-        "Id": "Guid_7",
-        "CreationDate": "DateTime_2"
-      }
-    },
-    {
-      "Published": "BasketDeletedFailedIntegrationEvent",
-      "MessageId": "Guid_8",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:BasketDeletedFailedIntegrationEvent",
-      "Message": {
-        "OrderId": "Guid_4",
-        "BasketId": "Guid_3",
-        "Email": "test@example.com",
-        "TotalMoney": 99.99,
-        "Id": "Guid_9",
-        "CreationDate": "DateTime_3"
-      },
-      "Headers": [
-        {
-          "Key": "MT-Activity-Id",
-          "Value": "TraceId_Scrubbed"
-        }
-      ]
-    }
-  ]
-}
+﻿[
+  {
+    "OrderId": "Guid_1",
+    "BasketId": "Guid_2",
+    "Email": "test@example.com",
+    "TotalMoney": 99.99,
+    "Id": "Guid_3",
+    "CreationDate": "DateTime_1"
+  }
+]

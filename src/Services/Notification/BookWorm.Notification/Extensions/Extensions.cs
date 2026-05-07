@@ -5,6 +5,8 @@ using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Notification.Extensions;
 
@@ -47,27 +49,19 @@ internal static class Extensions
 
             builder.AddEmailOutbox();
 
-            builder.AddEventBus(
-                typeof(INotificationApiMarker),
-                cfg =>
-                {
-                    cfg.AddEntityFrameworkOutbox<NotificationDbContext>(o =>
-                    {
-                        o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                        o.UsePostgres();
-
-                        o.UseBusOutbox();
-                    });
-
-                    cfg.AddConfigureEndpointsCallback(
-                        (context, _, configurator) =>
-                            configurator.UseEntityFrameworkOutbox<NotificationDbContext>(context)
-                    );
-                }
+            var postgresCs = builder.Configuration.GetConnectionString(
+                Components.Database.Notification
             );
+            builder.AddEventBus(opts =>
+            {
+                if (!string.IsNullOrWhiteSpace(postgresCs))
+                {
+                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
+                    opts.UseEntityFrameworkCoreTransactions();
+                }
+
+                opts.Discovery.IncludeAssembly(typeof(INotificationApiMarker).Assembly);
+            });
         }
     }
 }

@@ -1,5 +1,8 @@
-﻿namespace BookWorm.Contracts;
+using Wolverine.Attributes;
 
+namespace BookWorm.Contracts;
+
+[MessageIdentity("BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent")]
 public sealed record OrderStatusChangedToCompleteIntegrationEvent(
     Guid OrderId,
     Guid BasketId,

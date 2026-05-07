@@ -8,7 +8,6 @@ using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
-using MassTransit;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 
@@ -90,7 +89,10 @@ internal static class Extensions
             );
 
             // Configure EventBus
-            builder.AddEventBus(typeof(IBasketApiMarker), cfg => cfg.AddInMemoryInboxOutbox());
+            builder.AddEventBus(opts =>
+            {
+                opts.Discovery.IncludeAssembly(typeof(IBasketApiMarker).Assembly);
+            });
 
             services.AddKeycloakTokenIntrospection();
         }

@@ -1,31 +1,7 @@
 ﻿{
-  "Messages": [
-    {
-      "Published": "FeedbackCreatedIntegrationEvent",
-      "MessageId": "Guid_1",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:FeedbackCreatedIntegrationEvent",
-      "Message": {
-        "BookId": "Guid_3",
-        "Rating": 4,
-        "FeedbackId": "Guid_4",
-        "Id": "Guid_5",
-        "CreationDate": "DateTime_1"
-      },
-      "Headers": [
-        {
-          "Key": "MT-Activity-Id",
-          "Value": "TraceId_Scrubbed"
-        },
-        {
-          "Key": "MT-Activity-Correlation-Context",
-          "Value": [
-            {
-              "tunit.test.id": "Guid_6"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "BookId": "Guid_1",
+  "Rating": 4,
+  "FeedbackId": "Guid_2",
+  "Id": "Guid_3",
+  "CreationDate": "DateTime_1"
 }

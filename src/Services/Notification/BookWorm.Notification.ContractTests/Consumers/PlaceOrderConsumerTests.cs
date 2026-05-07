@@ -1,28 +1,20 @@
-﻿using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
-using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
 public sealed class PlaceOrderConsumerTests
 {
-    private ITestHarness _harness = null!;
-    private MailKitSettings _mailKitSettings = null!;
-    private ServiceProvider _provider = null!;
     private Mock<IRenderer> _rendererMock = null!;
     private Mock<ISender> _senderMock = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _senderMock = new();
         _senderMock
@@ -35,35 +27,6 @@ public sealed class PlaceOrderConsumerTests
                 x.RenderAsync(It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync("Rendered order content");
-
-        _mailKitSettings = new() { From = "bookworm@example.com" };
-
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(cfg =>
-            {
-                cfg.AddConsumer<PlaceOrderCommandHandler>();
-                cfg.UsingInMemory(
-                    (context, busCfg) =>
-                    {
-                        busCfg.UseCloudEvents();
-                        busCfg.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .AddScoped(_ => _senderMock.Object)
-            .AddSingleton(_rendererMock.Object)
-            .AddSingleton(_mailKitSettings)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -77,16 +40,13 @@ public sealed class PlaceOrderConsumerTests
             Guid.CreateVersion7(),
             99.99m
         );
+        var handler = new PlaceOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-        await consumer.Consumed.Any<PlaceOrderCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -104,16 +64,13 @@ public sealed class PlaceOrderConsumerTests
             Guid.CreateVersion7(),
             99.99m
         );
+        var handler = new PlaceOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-        await consumer.Consumed.Any<PlaceOrderCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
@@ -131,16 +88,13 @@ public sealed class PlaceOrderConsumerTests
             Guid.CreateVersion7(),
             99.99m
         );
+        var handler = new PlaceOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<PlaceOrderCommandHandler>();
-        await consumer.Consumed.Any<PlaceOrderCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never

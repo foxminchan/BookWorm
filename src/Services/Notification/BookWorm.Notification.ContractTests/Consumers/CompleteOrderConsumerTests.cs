@@ -1,4 +1,3 @@
-﻿using BookWorm.Chassis.EventBus.Serialization;
 using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Exceptions;
@@ -6,11 +5,7 @@ using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Builders;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
-using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
-using MassTransit;
-using MassTransit.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
@@ -20,18 +15,14 @@ public sealed class CompleteOrderConsumerTests
     private const decimal TotalMoney = 150.99m;
     private const string FullName = "John Doe";
     private const string ValidEmail = "customer@example.com";
-    private ITestHarness _harness = null!;
-    private MailKitSettings _mailKitSettings = null!;
     private Guid _orderId;
-    private ServiceProvider _provider = null!;
     private Mock<IRenderer> _rendererMock = null!;
     private Mock<ISender> _senderMock = null!;
 
     [Before(Test)]
-    public async Task SetUpAsync()
+    public void SetUp()
     {
         _orderId = Guid.CreateVersion7();
-        _mailKitSettings = new() { From = "store@bookworm.com" };
         _senderMock = new();
         _rendererMock = new();
 
@@ -44,33 +35,6 @@ public sealed class CompleteOrderConsumerTests
                 x.RenderAsync(It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync("Rendered order content");
-
-        _provider = new ServiceCollection()
-            .AddTelemetryListener()
-            .AddMassTransitTestHarness(x =>
-            {
-                x.AddConsumer<CompleteOrderCommandHandler>();
-                x.UsingInMemory(
-                    (context, cfg) =>
-                    {
-                        cfg.UseCloudEvents();
-                        cfg.ConfigureEndpoints(context);
-                    }
-                );
-            })
-            .AddScoped(_ => _senderMock.Object)
-            .AddScoped(_ => _rendererMock.Object)
-            .AddSingleton(_ => _mailKitSettings)
-            .BuildServiceProvider(true);
-
-        _harness = await _provider.StartTestHarness();
-    }
-
-    [After(Test)]
-    public async Task TearDownAsync()
-    {
-        await _harness.Stop();
-        await _provider.DisposeAsync();
     }
 
     [Test]
@@ -78,16 +42,13 @@ public sealed class CompleteOrderConsumerTests
     {
         // Arrange
         var command = new CompleteOrderCommand(_orderId, FullName, ValidEmail, TotalMoney);
+        var handler = new CompleteOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-        await consumer.Consumed.Any<CompleteOrderCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -99,16 +60,13 @@ public sealed class CompleteOrderConsumerTests
     {
         // Arrange
         var command = new CompleteOrderCommand(_orderId, FullName, string.Empty, TotalMoney);
+        var handler = new CompleteOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-        await consumer.Consumed.Any<CompleteOrderCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
@@ -120,16 +78,13 @@ public sealed class CompleteOrderConsumerTests
     {
         // Arrange
         var command = new CompleteOrderCommand(_orderId, FullName, null, TotalMoney);
+        var handler = new CompleteOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await _harness.Bus.Publish(command);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var consumer = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-        await consumer.Consumed.Any<CompleteOrderCommand>();
-
-        await SnapshotTestHelper.Verify(new { harness = _harness, consumer });
-
+        await SnapshotTestHelper.Verify(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
@@ -140,25 +95,17 @@ public sealed class CompleteOrderConsumerTests
     public async Task GivenValidCompleteOrderCommand_WhenSmtpClientThrows_ThenShouldPropagateException()
     {
         // Arrange
-        var command = new CompleteOrderCommand(_orderId, FullName, ValidEmail, TotalMoney);
-
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new("Failed to send email"));
 
-        // Act
-        await _harness.Bus.Publish(command);
+        var command = new CompleteOrderCommand(_orderId, FullName, ValidEmail, TotalMoney);
+        var handler = new CompleteOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
-        // Assert
-        var consumerHarness = _harness.GetConsumerHarness<CompleteOrderCommandHandler>();
-        (await consumerHarness.Consumed.Any<CompleteOrderCommand>()).ShouldBeTrue();
-
-        var consumeContext = _harness.Consumed.Select<CompleteOrderCommand>().First();
-        (
-            await _harness.Consumed.Any<CompleteOrderCommand>(x =>
-                x.Context.MessageId == consumeContext.Context.MessageId
-            )
-        ).ShouldBeTrue();
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(async () =>
+            await handler.Handle(command, CancellationToken.None)
+        );
 
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
@@ -167,37 +114,15 @@ public sealed class CompleteOrderConsumerTests
     }
 
     [Test]
-    public async Task GivenOrderWithInvalidStatus_WhenHandling_ThenShouldThrowNotificationException()
+    public void GivenOrderWithInvalidStatus_WhenHandling_ThenShouldThrowNotificationException()
     {
         // Arrange
-        const Status invalidStatus = (Status)99; // Invalid status value
+        const Status invalidStatus = (Status)99;
         var order = new Order(_orderId, FullName, TotalMoney, invalidStatus);
-
-        _rendererMock
-            .Setup(x =>
-                x.RenderAsync(
-                    It.Is<Order>(o => o.Status == invalidStatus),
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync("Rendered order content");
-
-        // Create a message builder and test it directly
         var builder = OrderMimeMessageBuilder.Initialize();
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<NotificationException>(() =>
-        {
-            builder.WithSubject(order);
-            return Task.CompletedTask;
-        });
-
+        var exception = Assert.Throws<NotificationException>(() => builder.WithSubject(order));
         exception?.Message.ShouldBe($"Invalid status: {invalidStatus}");
-
-        _senderMock.Verify(
-            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
-            Times.Never
-        );
     }
 }

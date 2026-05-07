@@ -1,61 +1,7 @@
-﻿{
-  "Messages": [
-    {
-      "Published": "FeedbackCreatedIntegrationEvent",
-      "MessageId": "Guid_1",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:FeedbackCreatedIntegrationEvent",
-      "Message": {
-        "BookId": "Guid_3",
-        "Rating": 4,
-        "FeedbackId": "Guid_4",
-        "Id": "Guid_5",
-        "CreationDate": "DateTime_1"
-      },
-      "Headers": [
-        {
-          "Key": "MT-Activity-Id",
-          "Value": "TraceId_Scrubbed"
-        },
-        {
-          "Key": "MT-Activity-Correlation-Context",
-          "Value": [
-            {
-              "tunit.test.id": "Guid_6"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "Received": "FeedbackCreatedIntegrationEvent",
-      "MessageId": "Guid_1",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:FeedbackCreatedIntegrationEvent",
-      "Message": {
-        "BookId": "Guid_3",
-        "Rating": 4,
-        "FeedbackId": "Guid_4",
-        "Id": "Guid_7",
-        "CreationDate": "DateTime_2"
-      }
-    },
-    {
-      "Published": "BookUpdatedRatingFailedIntegrationEvent",
-      "MessageId": "Guid_8",
-      "ConversationId": "Guid_2",
-      "DestinationAddress": "BookWorm.Contracts:BookUpdatedRatingFailedIntegrationEvent",
-      "Message": {
-        "FeedbackId": "Guid_4",
-        "Id": "Guid_9",
-        "CreationDate": "DateTime_3"
-      },
-      "Headers": [
-        {
-          "Key": "MT-Activity-Id",
-          "Value": "TraceId_Scrubbed"
-        }
-      ]
-    }
-  ]
-}
+﻿[
+  {
+    "FeedbackId": "Guid_1",
+    "Id": "Guid_2",
+    "CreationDate": "DateTime_1"
+  }
+]

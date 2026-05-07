@@ -10,8 +10,8 @@ keywords:
     REST APIs,
     gRPC,
     message broker,
-    RabbitMQ,
-    MassTransit,
+    Kafka,
+    WolverineFx,
     asynchronous messaging,
     SignalR,
   ]
@@ -44,12 +44,13 @@ asynchronous interactions between microservices.
 
 ### Asynchronous Communication
 
-#### Message Bus (MassTransit + RabbitMQ)
+#### Message Bus (WolverineFx + Kafka)
 
 - **Integration Events** - Domain events for cross-service communication
-- **Event Dispatching** - Reliable message delivery and processing
-- **Message Patterns** - Support for publish/subscribe, request/response, and saga patterns
-- **Dead Letter Handling** - Automatic retry and error handling mechanisms
+- **Event Dispatching** - Reliable message delivery and processing via CloudEvents envelope
+- **Message Patterns** - Support for publish/subscribe, saga orchestration, and outbox/inbox
+  patterns
+- **Dead Letter Handling** - Native Kafka dead-letter queue with `EnableNativeDeadLetterQueue()`
 
 ## Service Discovery
 

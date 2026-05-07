@@ -5,6 +5,8 @@ using BookWorm.Ordering.Configurations;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -48,27 +50,19 @@ internal static class Extensions
             );
 
             // Add event bus configuration
-            builder.AddEventBus(
-                typeof(IOrderingApiMarker),
-                cfg =>
-                {
-                    cfg.AddEntityFrameworkOutbox<OrderingDbContext>(o =>
-                    {
-                        o.QueryDelay = TimeSpan.FromSeconds(1);
-
-                        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
-
-                        o.UsePostgres();
-
-                        o.UseBusOutbox();
-                    });
-
-                    cfg.AddConfigureEndpointsCallback(
-                        (context, _, configurator) =>
-                            configurator.UseEntityFrameworkOutbox<OrderingDbContext>(context)
-                    );
-                }
+            var postgresCs = builder.Configuration.GetConnectionString(
+                Components.Database.Ordering
             );
+            builder.AddEventBus(opts =>
+            {
+                if (!string.IsNullOrWhiteSpace(postgresCs))
+                {
+                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
+                    opts.UseEntityFrameworkCoreTransactions();
+                }
+
+                opts.Discovery.IncludeAssembly(typeof(IOrderingApiMarker).Assembly);
+            });
 
             // Configure gRPC
             builder.AddGrpcServices();

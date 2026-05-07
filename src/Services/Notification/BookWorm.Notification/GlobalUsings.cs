@@ -10,7 +10,6 @@ global using BookWorm.Notification.Infrastructure.Render;
 global using BookWorm.Notification.Infrastructure.Senders;
 global using BookWorm.ServiceDefaults;
 global using MailKit.Net.Smtp;
-global using MassTransit;
 global using Microsoft.Extensions.Diagnostics.Buffering;
 global using Microsoft.Extensions.Diagnostics.HealthChecks;
 global using Microsoft.Extensions.Options;
