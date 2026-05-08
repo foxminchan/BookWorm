@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.AI.Governance;
+﻿using AgentGovernance.Extensions.ModelContextProtocol;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
@@ -49,11 +49,27 @@ internal static class Extensions
                 HealthStatus.Degraded
             );
 
-            // Agent governance (policy enforcement for MCP tool calls)
-            builder.AddAgentGovernance("Policies/mcp-tools.yaml");
-
+            // Agent governance (policy enforcement for MCP tool calls) wired directly into the
+            // MCP pipeline via Microsoft.AgentGovernance.Extensions.ModelContextProtocol.
             services
                 .AddMcpServer()
+                .WithGovernance(o =>
+                {
+                    o.PolicyPaths.Add(
+                        Path.Combine(
+                            AppContext.BaseDirectory,
+                            "AI",
+                            "Governance",
+                            "Policies",
+                            "default.yaml"
+                        )
+                    );
+                    o.PolicyPaths.Add(
+                        Path.Combine(AppContext.BaseDirectory, "Policies", "mcp-tools.yaml")
+                    );
+                    o.DefaultAgentId = $"did:bookworm:{ServerInfoOptions.Name}";
+                    o.ServerName = ServerInfoOptions.Name;
+                })
                 .WithHttpTransport(o => o.Stateless = true)
                 .WithToolsFromAssembly()
                 .WithPromptsFromAssembly()

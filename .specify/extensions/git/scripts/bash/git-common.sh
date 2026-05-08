@@ -9,6 +9,7 @@ has_git() {
     { [[ -d "$repo_root/.git" ]] || [[ -f "$repo_root/.git" ]]; } && \
         command -v git >/dev/null 2>&1 && \
         git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1
+    return $?
 }
 
 # Strip a single optional path segment (e.g. gitflow "feat/004-name" -> "004-name").
@@ -20,6 +21,7 @@ spec_kit_effective_branch_name() {
     else
         printf '%s\n' "$raw"
     fi
+    return 0
 }
 
 # Validate that a branch name matches the expected feature branch pattern.

@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -18,7 +19,6 @@ internal static class RouterAgentRegistration
                         var chatClient = sp.GetRequiredService<IChatClient>()
                             .AsBuilder()
                             .UseGuardrailMiddleware()
-                            .UseGovernanceToolCall(sp, RouterAgentDefinition.Name)
                             .Build(sp);
 
                         var agent = new ChatClientAgent(
@@ -36,7 +36,7 @@ internal static class RouterAgentRegistration
                             }
                         );
 
-                        return agent;
+                        return agent.WithBookWormGovernance(sp, key);
                     }
                 )
                 .AddA2AServer();

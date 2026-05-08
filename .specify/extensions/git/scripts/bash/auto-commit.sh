@@ -101,12 +101,8 @@ if [[ -f "$_config_file" ]]; then
     done < "$_config_file"
 
     # If event-specific key not found, use default
-    if [[ "$_enabled" = "false" ]] && [[ "$_default_enabled" = "true" ]]; then
-        # Only use default if the event wasn't explicitly set to false
-        # Check if event section existed at all
-        if ! grep -q "^[[:space:]]*${EVENT_NAME}:" "$_config_file" 2>/dev/null; then
-            _enabled=true
-        fi
+    if [[ "$_enabled" = "false" ]] && [[ "$_default_enabled" = "true" ]] && ! grep -q "^[[:space:]]*${EVENT_NAME}:" "$_config_file" 2>/dev/null; then
+        _enabled=true
     fi
 else
     # No config file — auto-commit disabled by default

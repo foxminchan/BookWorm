@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -30,7 +31,6 @@ internal static class BookAgentRegistration
                         .AsBuilder()
                         .UsePIIMiddleware(sp)
                         .UseGuardrailMiddleware()
-                        .UseGovernanceToolCall(sp, BookAgentDefinition.Name)
                         .UseAIContextProviders(compactionProvider)
                         .Build(sp);
 
@@ -68,7 +68,7 @@ internal static class BookAgentRegistration
                         }
                     );
 
-                    return agent;
+                    return agent.WithBookWormGovernance(sp, key);
                 }
             );
         }

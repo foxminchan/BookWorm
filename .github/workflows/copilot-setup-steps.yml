@@ -67,11 +67,11 @@ jobs:
         run: dotnet build --configuration Debug
 
       - name: Install docusaurus dependencies
-        run: bun install --ignore-scripts
+        run: bun install --frozen-lockfile --ignore-scripts
         working-directory: docs/docusaurus
 
       - name: Install eventcatalog dependencies
-        run: bun install --ignore-scripts
+        run: bun install --frozen-lockfile --ignore-scripts
         working-directory: docs/eventcatalog
 
       - name: Install frontend dependencies
