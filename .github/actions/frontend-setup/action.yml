@@ -3,7 +3,6 @@ description: >-
   Bootstrap the BookWorm frontend development environment by installing Bun,
   pnpm, Node.js, and project dependencies
 author: BookWorm Team
-
 branding:
   icon: globe
   color: blue
@@ -20,7 +19,7 @@ inputs:
   node-version-file:
     description: Path to the .nvmrc file that specifies the Node.js version
     required: false
-    default: src/Clients/.nvmrc
+    default: .nvmrc
   pnpm-lock-path:
     description: Path to the pnpm lock file for dependency caching
     required: false

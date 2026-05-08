@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -21,7 +22,6 @@ internal static class QAAgentRegistration
                             .AsBuilder()
                             .UsePIIMiddleware(sp)
                             .UseGuardrailMiddleware()
-                            .UseGovernanceToolCall(sp, QAAgentDefinition.Name)
                             .UseAIContextProviders(compactionProvider)
                             .Build(sp);
 
@@ -46,7 +46,7 @@ internal static class QAAgentRegistration
                             }
                         );
 
-                        return agent;
+                        return agent.WithBookWormGovernance(sp, key);
                     }
                 )
                 .AddA2AServer();

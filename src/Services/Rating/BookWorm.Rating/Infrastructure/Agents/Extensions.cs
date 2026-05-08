@@ -53,7 +53,6 @@ internal static class Extensions
                         .AsBuilder()
                         .UsePIIMiddleware(sp)
                         .UseGuardrailMiddleware()
-                        .UseGovernanceToolCall(sp, RatingAgent.Name)
                         .Build(sp);
 
                     using var spScope = sp.CreateScope();
@@ -84,7 +83,7 @@ internal static class Extensions
                         }
                     );
 
-                    return agent;
+                    return agent.WithBookWormGovernance(sp, key);
                 }
             );
 

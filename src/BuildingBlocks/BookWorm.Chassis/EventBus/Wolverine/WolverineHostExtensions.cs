@@ -15,6 +15,37 @@ namespace BookWorm.Chassis.EventBus.Wolverine;
 
 public static class WolverineHostExtensions
 {
+    private static IEnumerable<Type> GetIntegrationEventTypes(IEnumerable<Assembly> assemblies)
+    {
+        return assemblies
+            .SelectMany(GetLoadableTypes)
+            .Where(t => t is { IsAbstract: false, IsInterface: false })
+            .SelectMany(t =>
+                t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+            )
+            .Where(IsMessageHandlerMethod)
+            .Select(m => m.GetParameters()[0].ParameterType)
+            .Where(t => typeof(IntegrationEvent).IsAssignableFrom(t));
+    }
+
+    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            return ex.Types.Where(t => t is not null).Cast<Type>();
+        }
+    }
+
+    private static bool IsMessageHandlerMethod(MethodInfo method)
+    {
+        return method.Name is "Handle" or "HandleAsync" or "Consume" or "ConsumeAsync"
+            && method.GetParameters().Length > 0;
+    }
+
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
@@ -120,9 +151,9 @@ public static class WolverineHostExtensions
 
         /// <summary>
         ///     Scans the specified assemblies for public instance/static methods with a single parameter
-        ///     of type <see cref="IntegrationEvent"/> and registers a Kafka listener for each
+        ///     of type <see cref="IntegrationEvent" /> and registers a Kafka listener for each
         ///     unique message type found. The listener will be configured to subscribe to the topic
-        ///     specified in the <see cref="MessageIdentityAttribute"/> of the message type, or
+        ///     specified in the <see cref="MessageIdentityAttribute" /> of the message type, or
         ///     the message type's full name if the attribute is not present.
         /// </summary>
         /// <param name="assemblies">List of assemblies to scan for message handler methods</param>
@@ -130,65 +161,15 @@ public static class WolverineHostExtensions
         {
             var topics = new Dictionary<string, Type>(StringComparer.Ordinal);
 
-            foreach (var assembly in assemblies)
+            foreach (var messageType in GetIntegrationEventTypes(assemblies))
             {
-                Type[] types;
-                try
-                {
-                    types = assembly.GetTypes();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    types = [.. ex.Types.Where(t => t is not null).Cast<Type>()];
-                }
-
-                foreach (var type in types)
-                {
-                    if (type.IsAbstract || type.IsInterface)
-                    {
-                        continue;
-                    }
-
-                    foreach (
-                        var method in type.GetMethods(
-                            BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static
-                        )
-                    )
-                    {
-                        if (
-                            method.Name
-                            is not ("Handle" or "HandleAsync" or "Consume" or "ConsumeAsync")
-                        )
-                        {
-                            continue;
-                        }
-
-                        var parameters = method.GetParameters();
-                        if (parameters.Length == 0)
-                        {
-                            continue;
-                        }
-
-                        var messageType = parameters[0].ParameterType;
-                        if (!typeof(IntegrationEvent).IsAssignableFrom(messageType))
-                        {
-                            continue;
-                        }
-
-                        var identity = messageType.GetCustomAttribute<MessageIdentityAttribute>();
-                        var topic = identity?.Alias ?? messageType.FullName ?? messageType.Name;
-                        topics[topic] = messageType;
-                    }
-                }
+                var identity = messageType.GetCustomAttribute<MessageIdentityAttribute>();
+                var topic = identity?.Alias ?? messageType.FullName ?? messageType.Name;
+                topics[topic] = messageType;
             }
 
             foreach (var (topic, messageType) in topics)
             {
-                // Pre-register the message type alias so the CloudEventsMapper can resolve
-                // the incoming CloudEvent `type` field (e.g. "BookWorm.Contracts.FeedbackCreatedIntegrationEvent")
-                // back to the .NET message type. Without this, handler-discovery-driven alias
-                // registration may miss the type and the consumer throws
-                // UnknownMessageTypeNameException at deserialization time.
                 opts.RegisterMessageType(messageType, topic);
 
                 opts.ListenToKafkaTopic(topic);

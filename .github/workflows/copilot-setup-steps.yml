@@ -47,7 +47,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version-file: "src/Clients/.nvmrc"
+          node-version-file: ".nvmrc"
           cache: "pnpm"
           cache-dependency-path: "src/Clients/pnpm-lock.yaml"
 
@@ -67,11 +67,11 @@ jobs:
         run: dotnet build --configuration Debug
 
       - name: Install docusaurus dependencies
-        run: bun install --ignore-scripts
+        run: bun install --frozen-lockfile --ignore-scripts
         working-directory: docs/docusaurus
 
       - name: Install eventcatalog dependencies
-        run: bun install --ignore-scripts
+        run: bun install --frozen-lockfile --ignore-scripts
         working-directory: docs/eventcatalog
 
       - name: Install frontend dependencies

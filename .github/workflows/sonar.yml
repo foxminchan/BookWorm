@@ -118,31 +118,41 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
-          .sonar/scanner/dotnet-sonarscanner begin /k:"foxminchan_BookWorm"
-          /o:"foxminchan" /d:sonar.token="$SONAR_TOKEN"
+          .sonar/scanner/dotnet-sonarscanner begin
+          /k:"foxminchan_BookWorm"
+          /o:"foxminchan"
+          /d:sonar.token="$SONAR_TOKEN"
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: Build
         run: >
-          dotnet build --configuration Release --no-incremental
+          dotnet build
+          --configuration Release
+          --no-incremental
           -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
       - name: Start AIMock server
-        uses: CopilotKit/aimock@d6392c8133941f030dd7ee3c98c29988845511e7 # v1.16.4
+        uses: CopilotKit/aimock@90a79078fbabcae97bcc03973b8437463fbb4541 # v1.19.1
         id: aimock
         with:
-          fixtures: tests/BookWorm.AI.Evaluation/fixtures.json
+          config: tests/BookWorm.AI.Evaluation/aimock.json
 
       - name: Test
         env:
           OPENAI_BASE_URL: ${{ steps.aimock.outputs.url }}/v1
           OPENAI_API_KEY: test
         run: >
-          dotnet test --configuration Release --report-trx --coverage
-          --coverage-settings Coverage.runsettings --results-directory
-          ./test-results --github-reporter-style full --hangdump
-          --hangdump-timeout ${{ env.HANG_TIMEOUT }} --crashdump --timeout ${{
-          env.SESSION_TIMEOUT }}
+          dotnet test
+          --configuration Release
+          --report-trx
+          --coverage
+          --coverage-settings Coverage.runsettings
+          --results-directory ./test-results
+          --github-reporter-style full
+          --hangdump
+          --hangdump-timeout ${{ env.HANG_TIMEOUT }}
+          --crashdump
+          --timeout ${{ env.SESSION_TIMEOUT }}
 
       - name: Sonarqube End
         env:

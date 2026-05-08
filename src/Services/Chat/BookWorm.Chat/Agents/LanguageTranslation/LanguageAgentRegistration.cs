@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -19,7 +20,6 @@ internal static class LanguageAgentRegistration
                             .AsBuilder()
                             .UsePIIMiddleware(sp)
                             .UseGuardrailMiddleware()
-                            .UseGovernanceToolCall(sp, LanguageAgentDefinition.Name)
                             .Build(sp);
 
                         var agent = new ChatClientAgent(
@@ -37,7 +37,7 @@ internal static class LanguageAgentRegistration
                             }
                         );
 
-                        return agent;
+                        return agent.WithBookWormGovernance(sp, key);
                     }
                 )
                 .AddA2AServer();
