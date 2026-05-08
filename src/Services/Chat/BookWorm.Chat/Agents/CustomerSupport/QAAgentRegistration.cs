@@ -42,6 +42,7 @@ internal static class QAAgentRegistration
                                     Instructions = QAAgentDefinition.Instructions,
                                     Temperature = 0.5f,
                                     MaxOutputTokens = 1000,
+                                    Reasoning = new() { Effort = ReasoningEffort.Medium },
                                 },
                             }
                         );

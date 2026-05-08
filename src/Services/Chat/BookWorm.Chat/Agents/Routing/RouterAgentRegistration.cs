@@ -32,6 +32,7 @@ internal static class RouterAgentRegistration
                                     Instructions = RouterAgentDefinition.Instructions,
                                     Temperature = 0.1f,
                                     MaxOutputTokens = 200,
+                                    Reasoning = new() { Effort = ReasoningEffort.Low },
                                 },
                             }
                         );

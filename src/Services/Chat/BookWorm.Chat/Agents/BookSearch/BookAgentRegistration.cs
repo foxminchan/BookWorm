@@ -15,6 +15,8 @@ internal static class BookAgentRegistration
         "list_authors",
     ];
 
+    private const string FileMemoryRootConfigKey = "Chat:Harness:FileMemory:Root";
+
     extension(IHostApplicationBuilder builder)
     {
         public void AddBookAgent()
@@ -49,13 +51,31 @@ internal static class BookAgentRegistration
                         loggerFactory: sp.GetService<ILoggerFactory>()
                     );
 
+                    var fileMemoryRoot = sp.GetRequiredService<IConfiguration>()
+                        .GetValue(
+                            FileMemoryRootConfigKey,
+                            Path.Combine(AppContext.BaseDirectory, "agent-files")
+                        );
+
+                    var (todoProvider, modeProvider) =
+                        HarnessProviderFactory.CreatePlanningProviders();
+                    var fileMemoryProvider = HarnessProviderFactory.CreateFileMemoryProvider(
+                        fileMemoryRoot
+                    );
+
                     var agent = new ChatClientAgent(
                         chatClient,
                         options: new()
                         {
                             Name = key,
                             Description = BookAgentDefinition.Description,
-                            AIContextProviders = [skillsProvider],
+                            AIContextProviders =
+                            [
+                                skillsProvider,
+                                todoProvider,
+                                modeProvider,
+                                fileMemoryProvider,
+                            ],
                             ChatOptions = new()
                             {
                                 Instructions = BookAgentDefinition.Instructions,
@@ -64,6 +84,7 @@ internal static class BookAgentRegistration
                                 TopP = 0.95f,
                                 AllowMultipleToolCalls = true,
                                 Tools = mcpTools,
+                                Reasoning = new() { Effort = ReasoningEffort.High },
                             },
                         }
                     );

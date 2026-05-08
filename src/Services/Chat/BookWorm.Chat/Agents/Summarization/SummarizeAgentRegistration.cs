@@ -33,6 +33,7 @@ internal static class SummarizeAgentRegistration
                                     Instructions = SummarizeAgentDefinition.Instructions,
                                     Temperature = 0.4f,
                                     MaxOutputTokens = 800,
+                                    Reasoning = new() { Effort = ReasoningEffort.Low },
                                 },
                             }
                         );

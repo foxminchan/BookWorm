@@ -33,6 +33,7 @@ internal static class SentimentAgentRegistration
                                     Instructions = SentimentAgentDefinition.Instructions,
                                     Temperature = 0.2f,
                                     MaxOutputTokens = 300,
+                                    Reasoning = new() { Effort = ReasoningEffort.Low },
                                 },
                             }
                         );

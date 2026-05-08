@@ -33,6 +33,7 @@ internal static class LanguageAgentRegistration
                                     Instructions = LanguageAgentDefinition.Instructions,
                                     Temperature = 0.3f,
                                     MaxOutputTokens = 500,
+                                    Reasoning = new() { Effort = ReasoningEffort.Low },
                                 },
                             }
                         );
