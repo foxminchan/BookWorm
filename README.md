@@ -50,7 +50,7 @@
 - [x] Set up AuthN/AuthZ with Keycloak
   - [x] Used Authorization Code Flow with PKCE for user authentication
   - [x] Enabled Token Exchange for service-to-service authentication
-- [x] Implemented caching with HybridCache
+- [x] Implemented caching with FusionCache
 - [x] Incorporated AI components:
   - [x] Text embedding with `text-embedding-3-large`
   - [x] Integrated chatbot functionality using `gpt-4o-mini`

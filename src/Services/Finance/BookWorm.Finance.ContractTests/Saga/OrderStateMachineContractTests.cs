@@ -2,7 +2,6 @@ using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
 using Microsoft.Extensions.Logging;
-using Shouldly;
 
 namespace BookWorm.Finance.ContractTests.Saga;
 

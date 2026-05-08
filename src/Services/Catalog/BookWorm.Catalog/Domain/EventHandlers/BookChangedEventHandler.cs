@@ -1,10 +1,10 @@
 ﻿using BookWorm.Catalog.Domain.Events;
-using BookWorm.Chassis.Caching;
 using Mediator;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.Domain.EventHandlers;
 
-internal sealed class BookChangedEventHandler(IHybridCache cache)
+internal sealed class BookChangedEventHandler(IFusionCache cache)
     : INotificationHandler<BookChangedEvent>
 {
     public async ValueTask Handle(
@@ -12,6 +12,6 @@ internal sealed class BookChangedEventHandler(IHybridCache cache)
         CancellationToken cancellationToken
     )
     {
-        await cache.RemoveAsync(notification.Key, cancellationToken);
+        await cache.RemoveAsync(notification.Key, token: cancellationToken);
     }
 }

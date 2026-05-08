@@ -83,7 +83,7 @@ public sealed class MyEndpoint : IEndpoint<Ok<MyResult>, MyRequest, ISender>
 
 - **Database**: Each service has its own PostgreSQL database, configured with snake_case naming and UUID v7 keys
 - **Events**: WolverineFx with Kafka; use Outbox/Inbox for transactional consistency
-- **Caching**: HybridCache (distributed + local tiers)
+- **Caching**: FusionCache (L1 in-memory + optional L2 distributed via Redis)
 - **Auth**: Keycloak with token introspection; use `.RequireAuthorization()` on endpoints
 - **API Versioning**: Asp.Versioning with `ApiVersions.V1`
 

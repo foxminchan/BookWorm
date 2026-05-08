@@ -1,10 +1,10 @@
 using BookWorm.Catalog.Grpc.Services;
-using BookWorm.Chassis.Caching;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Ordering.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service, IHybridCache cache)
+internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service, IFusionCache cache)
     : IBookService
 {
     public async Task<GetBookResponse?> GetBookByIdAsync(
@@ -28,19 +28,19 @@ internal sealed class BookService(BookGrpcService.BookGrpcServiceClient service,
     {
         var sortedIds = ids.OrderBy(x => x).ToArray();
 
-        var result = await cache.GetOrCreateAsync(
+        var result = await cache.GetOrSetAsync(
             $"books:{string.Join(",", sortedIds)}",
-            async _ =>
+            async ct =>
             {
                 var response = await service.GetBooksAsync(
                     new() { BookIds = { sortedIds } },
                     deadline: DateTime.UtcNow.AddSeconds(10),
-                    cancellationToken: cancellationToken
+                    cancellationToken: ct
                 );
                 return response;
             },
-            ["books", nameof(Catalog).ToLowerInvariant()],
-            cancellationToken
+            tags: ["books", nameof(Catalog).ToLowerInvariant()],
+            token: cancellationToken
         );
 
         return result;

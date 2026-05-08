@@ -1,6 +1,6 @@
-﻿using BookWorm.Chassis.Caching;
-using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.Features.Books.Get;
 
@@ -8,7 +8,7 @@ public sealed record GetBookQuery(Guid Id) : IQuery<BookDto>;
 
 internal sealed class GetBookHandler(
     IBookRepository repository,
-    IHybridCache cache,
+    IFusionCache cache,
     IMapper<Book, BookDto> mapper
 ) : IQueryHandler<GetBookQuery, BookDto>
 {
@@ -19,7 +19,7 @@ internal sealed class GetBookHandler(
     {
         var tag = nameof(Book).ToLowerInvariant();
 
-        var book = await cache.GetOrCreateAsync(
+        var book = await cache.GetOrSetAsync(
             $"{tag}:{request.Id}",
             async ctx =>
             {
@@ -29,8 +29,8 @@ internal sealed class GetBookHandler(
 
                 return book;
             },
-            [tag],
-            cancellationToken
+            tags: [tag],
+            token: cancellationToken
         );
 
         return mapper.Map(book);

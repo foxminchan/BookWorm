@@ -4,13 +4,18 @@
   </ItemGroup>
   <ItemGroup Label="Integration">
     <PackageReference Include="Aspire.Keycloak.Authentication" />
-    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
-    <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="WolverineFx.Kafka" />
     <PackageReference Include="WolverineFx.Postgresql" />
     <PackageReference Include="Scrutor" />
+  </ItemGroup>
+  <ItemGroup Label="Data">
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.OpenTelemetry" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" />
+    <PackageReference Include="CommunityToolkit.VectorData.Qdrant" />
   </ItemGroup>
   <ItemGroup Label="AI">
     <PackageReference Include="Aspire.Azure.AI.OpenAI" />
@@ -19,7 +24,6 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" />
     <PackageReference Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" />
     <PackageReference Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
   <ItemGroup Label="Telemetry">

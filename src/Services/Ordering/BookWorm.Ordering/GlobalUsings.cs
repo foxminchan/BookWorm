@@ -36,8 +36,6 @@ global using JasperFx;
 global using JasperFx.Events.Projections;
 global using Marten;
 global using Marten.Events.Projections;
-global using Medallion.Threading;
-global using Medallion.Threading.Redis;
 global using Microsoft.AspNetCore.Http.HttpResults;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;

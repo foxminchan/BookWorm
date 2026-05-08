@@ -1,12 +1,12 @@
 using BookWorm.Catalog.Domain.EventHandlers;
 using BookWorm.Catalog.Domain.Events;
-using BookWorm.Chassis.Caching;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.UnitTests.Domain.EventHandlers;
 
 public sealed class BookChangedEventHandlerTests
 {
-    private readonly Mock<IHybridCache> _cacheMock = new();
+    private readonly Mock<IFusionCache> _cacheMock = new();
     private readonly BookChangedEventHandler _handler;
 
     public BookChangedEventHandlerTests()
@@ -25,7 +25,15 @@ public sealed class BookChangedEventHandlerTests
         await _handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        _cacheMock.Verify(x => x.RemoveAsync(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
+        _cacheMock.Verify(
+            x =>
+                x.RemoveAsync(
+                    cacheKey,
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Test]
@@ -40,7 +48,12 @@ public sealed class BookChangedEventHandlerTests
 
         // Assert
         _cacheMock.Verify(
-            x => x.RemoveAsync("catalog:books:detail:abc123", It.IsAny<CancellationToken>()),
+            x =>
+                x.RemoveAsync(
+                    "catalog:books:detail:abc123",
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
             Times.Once
         );
     }

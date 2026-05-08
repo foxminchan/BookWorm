@@ -212,32 +212,28 @@ services.AddMediator(); // Source generator auto-discovers handlers
 
 ## Hybrid Caching Strategy
 
-BookWorm uses **Microsoft.Extensions.Caching.Hybrid** for a two-level (L1 + L2) caching strategy,
-combining in-memory and distributed caching for optimal performance.
+BookWorm uses **FusionCache** (`ZiggyCreatures.FusionCache`) for a two-level (L1 + L2) caching
+strategy, combining in-memory and distributed caching for optimal performance.
 
-### Why Hybrid Caching?
+### Why FusionCache?
 
 - **L1 (In-Memory)**: Fast local cache with microsecond access times
 - **L2 (Redis)**: Distributed cache shared across service instances
-- **Automatic Coordination**: Hybrid cache manages L1/L2 synchronization automatically
+- **Automatic Coordination**: FusionCache manages L1/L2 synchronization automatically
 - **Stampede Protection**: Built-in protection against cache stampede scenarios
-- **Serialization**: Efficient binary serialization for distributed cache
+- **Resiliency**: Fail-safe, soft/hard timeouts, eager refresh, and auto-recovery
 
 ### Implementation
 
 **Configuration** (via BookWorm.Chassis):
 
 ```csharp
-builder.Services.AddHybridCache(options =>
-{
-    options.MaximumPayloadBytes = 1024 * 1024; // 1MB max cache entry
-    options.MaximumKeyLength = 1024;
-    options.DefaultEntryOptions = new HybridCacheEntryOptions
+builder.Services
+    .AddFusionCache()
+    .WithDefaultEntryOptions(new FusionCacheEntryOptions
     {
-        Expiration = TimeSpan.FromMinutes(5),
-        LocalCacheExpiration = TimeSpan.FromMinutes(1)
-    };
-});
+        Duration = TimeSpan.FromMinutes(5),
+    });
 ```
 
 **Usage Example**:
@@ -245,15 +241,15 @@ builder.Services.AddHybridCache(options =>
 ```csharp
 public class BookService
 {
-    private readonly HybridCache _cache;
+    private readonly IFusionCache _cache;
     private readonly IBookRepository _repository;
 
     public async Task<Book> GetBookAsync(BookId id, CancellationToken ct)
     {
-        return await _cache.GetOrCreateAsync(
+        return await _cache.GetOrSetAsync(
             $"book:{id}",
-            async cancel => await _repository.GetByIdAsync(id, cancel),
-            cancellationToken: ct
+            async (_, cancel) => await _repository.GetByIdAsync(id, cancel),
+            token: ct
         );
     }
 }
@@ -275,7 +271,7 @@ public class BookService
 ```csharp
 public class BookUpdatedEventHandler : IConsumer<BookUpdatedEvent>
 {
-    private readonly HybridCache _cache;
+    private readonly IFusionCache _cache;
 
     public async Task Consume(ConsumeContext<BookUpdatedEvent> context)
     {

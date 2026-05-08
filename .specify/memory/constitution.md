@@ -152,7 +152,7 @@ without a constitutional amendment:
 - **Messaging**: WolverineFx with Kafka
 - **Auth**: Keycloak (Authorization Code Flow with PKCE for users;
   Token Exchange for service-to-service)
-- **Caching**: HybridCache (distributed + local tiers)
+- **Caching**: FusionCache (L1 in-memory + optional L2 distributed via Redis)
 - **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
 - **AI**: Microsoft Agents AI Framework, Semantic Kernel, MCP server
 - **Orchestration**: Aspire AppHost

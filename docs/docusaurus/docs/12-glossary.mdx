@@ -116,8 +116,8 @@ conversational AI features in Chat and Rating services.
 ## H
 
 **Hybrid Caching** : A two-level caching strategy combining L1 (in-memory) and L2 (distributed
-Redis) caches, implemented via Microsoft.Extensions.Caching.Hybrid. Provides fast local access with
-distributed consistency.
+Redis) caches, implemented via FusionCache (`ZiggyCreatures.FusionCache`). Provides fast local
+access with distributed consistency.
 
 **Health Check** : A mechanism to monitor the availability and status of services and their
 dependencies, integrated with Aspire for comprehensive system monitoring.
@@ -125,8 +125,9 @@ dependencies, integrated with Aspire for comprehensive system monitoring.
 **Health Check** : An endpoint or mechanism that reports the operational status of a service, used
 for monitoring and load balancing decisions.
 
-**HybridCache** : A caching solution in .NET that combines multiple caching strategies for optimal
-performance and flexibility.
+**FusionCache** : An easy-to-use, fast, and robust hybrid caching library for .NET that combines L1
+(in-memory) and optional L2 (distributed) caches with advanced resiliency features (fail-safe,
+soft/hard timeouts, eager refresh, stampede protection).
 
 ## I
 

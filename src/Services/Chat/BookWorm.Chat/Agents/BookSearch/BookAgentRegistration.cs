@@ -7,6 +7,8 @@ namespace BookWorm.Chat.Agents.BookSearch;
 
 internal static class BookAgentRegistration
 {
+    private const string FileMemoryRootConfigKey = "Chat:Harness:FileMemory:Root";
+
     private static readonly string[] _catalogToolNames =
     [
         "search_catalog",
@@ -14,8 +16,6 @@ internal static class BookAgentRegistration
         "list_categories",
         "list_authors",
     ];
-
-    private const string FileMemoryRootConfigKey = "Chat:Harness:FileMemory:Root";
 
     extension(IHostApplicationBuilder builder)
     {

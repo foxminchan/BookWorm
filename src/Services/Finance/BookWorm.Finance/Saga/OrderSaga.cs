@@ -4,7 +4,7 @@ using Wolverine;
 
 namespace BookWorm.Finance.Saga;
 
-internal sealed class OrderSaga : global::Wolverine.Saga
+internal sealed class OrderSaga : Wolverine.Saga
 {
     public Guid Id { get; init; }
 
@@ -82,7 +82,10 @@ internal sealed class OrderSaga : global::Wolverine.Saga
     ///     until <see cref="OrderStateMachineSettings.MaxAttempts" /> is reached,
     ///     then cancels the order.
     /// </summary>
-    /// <param name="timeout">A timeout message triggered by Wolverine's saga runtime after the specified delay, containing the order ID.</param>
+    /// <param name="timeout">
+    ///     A timeout message triggered by Wolverine's saga runtime after the specified delay, containing the
+    ///     order ID.
+    /// </param>
     /// <param name="settings">Configuration settings for the saga, including retry policies and timeouts.</param>
     /// <returns></returns>
     public OutgoingMessages Handle(PlaceOrderTimeout timeout, OrderStateMachineSettings settings)
@@ -132,7 +135,7 @@ internal sealed class OrderSaga : global::Wolverine.Saga
     }
 
     /// <summary>
-    ///    Basket deletion failed — log the error, mark the saga as failed, and finalize.
+    ///     Basket deletion failed — log the error, mark the saga as failed, and finalize.
     /// </summary>
     /// <param name="event">An event containing failed basket deletion details from the Basket service.</param>
     /// <param name="logger">Logger instance for recording saga progress and issues.</param>
@@ -234,5 +237,8 @@ internal sealed class OrderSaga : global::Wolverine.Saga
         return messages;
     }
 
-    private bool HasExceededMaxRetries(int maxAttempts) => TimeoutRetryCount >= maxAttempts;
+    private bool HasExceededMaxRetries(int maxAttempts)
+    {
+        return TimeoutRetryCount >= maxAttempts;
+    }
 }
