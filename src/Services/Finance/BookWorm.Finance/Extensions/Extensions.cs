@@ -30,6 +30,10 @@ internal static class Extensions
                     opts.UseEntityFrameworkCoreTransactions();
                 }
 
+                // Preserve per-order saga ordering on Kafka by routing all events that
+                // expose an OrderId to the same partition.
+                opts.MessagePartitioning.ByPropertyNamed("OrderId");
+
                 opts.Discovery.IncludeAssembly(typeof(IFinanceApiMarker).Assembly);
                 opts.ListenToIntegrationEventsIn(typeof(IFinanceApiMarker).Assembly);
             });

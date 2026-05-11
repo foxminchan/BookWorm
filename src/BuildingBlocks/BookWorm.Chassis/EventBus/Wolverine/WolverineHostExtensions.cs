@@ -74,9 +74,6 @@ public static class WolverineHostExtensions
             var applicationName = builder.Environment.ApplicationName;
 
             builder.Services.AddWolverine(
-                // Skip scanning every loaded DLL (incl. native libs like librdkafka.dll)
-                // for IWolverineExtension implementations. BookWorm uses Include<T>() /
-                // AddWolverineExtension<T>() explicitly when an extension is needed.
                 ExtensionDiscovery.ManualOnly,
                 opts =>
                 {
@@ -93,9 +90,6 @@ public static class WolverineHostExtensions
                     opts.Policies.LogMessageStarting(LogLevel.Debug);
 
                     // ── Envelope rules (BookWorm header propagation) ───────────────────
-                    // CloudEventHeaderPolicy stamps messagetype, destinationaddress,
-                    // responseaddress, and the CloudEvent `source` URN (urn:bookworm:{service})
-                    // into envelope headers before the CloudEvents mapper runs.
                     var sourceUrn = $"urn:bookworm:{KafkaTopicRouter.ToKebabCase(applicationName)}";
                     opts.MetadataRules.Add(new CloudEventHeaderPolicy(sourceUrn));
 
@@ -106,9 +100,6 @@ public static class WolverineHostExtensions
                     );
 
                     // ── Kafka transport with CloudEvents interop ──────────────────────
-                    // Registered before the per-service configure callback so listener
-                    // helpers (ListenToIntegrationEventsIn / ListenToKafkaTopic) can be
-                    // invoked from there.
                     opts.UseKafkaWithCloudEvents(kafkaConnectionString, applicationName);
 
                     // ── Service-specific customisation ─────────────────────────────────
@@ -127,11 +118,18 @@ public static class WolverineHostExtensions
     {
         private void UseKafkaWithCloudEvents(string kafkaConnectionString, string applicationName)
         {
-            opts.ServiceName = KafkaTopicRouter.ToKebabCase(applicationName);
+            var serviceName = KafkaTopicRouter.ToKebabCase(applicationName);
+            opts.ServiceName = serviceName;
 
             var cloudEventsJsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-            opts.UseKafka(kafkaConnectionString).AutoProvision();
+            // ── Native Kafka dead letter queue ────────────────────────────────
+            opts.UseKafka(kafkaConnectionString)
+                .AutoProvision()
+                .DeadLetterQueueTopicName($"bookworm-{serviceName}-dead-letter-queue");
+
+            opts.Policies.PropagateGroupIdToPartitionKey();
+
             opts.Policies.Add(
                 new LambdaEndpointPolicy<KafkaTopic>(
                     (topic, runtime) =>
@@ -172,7 +170,9 @@ public static class WolverineHostExtensions
             {
                 opts.RegisterMessageType(messageType, topic);
 
-                opts.ListenToKafkaTopic(topic);
+                // Route any message that exhausts its retry policy to the transport-level
+                // native dead letter queue topic configured in `UseKafkaWithCloudEvents`.
+                opts.ListenToKafkaTopic(topic).EnableNativeDeadLetterQueue();
             }
         }
     }

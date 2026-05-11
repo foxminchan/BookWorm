@@ -112,7 +112,7 @@ Given("I am on the Contact page", async ({ page }) => {
 });
 
 When("I fill in the contact form:", async ({ page }, dataTable: any) => {
-  const data = dataTable.rowsHash();
+  const data: Record<string, string> = dataTable.rowsHash();
   for (const [field, value] of Object.entries(data)) {
     let selector = "";
     if (field === "Name") selector = 'input[name="name"], input[id*="name"]';
@@ -122,7 +122,7 @@ When("I fill in the contact form:", async ({ page }, dataTable: any) => {
       selector = 'input[name="subject"], select[name="subject"]';
     else if (field === "Message")
       selector = 'textarea[name="message"], textarea';
-    await page.locator(selector).fill(value as string);
+    await page.locator(selector).fill(value);
   }
 });
 

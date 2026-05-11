@@ -89,6 +89,10 @@ internal static class Extensions
             // Configure EventBus
             builder.AddEventBus(opts =>
             {
+                // Preserve per-order saga ordering on Kafka by routing all events that
+                // expose an OrderId to the same partition.
+                opts.MessagePartitioning.ByPropertyNamed("OrderId");
+
                 opts.Discovery.IncludeAssembly(typeof(IBasketApiMarker).Assembly);
                 opts.ListenToIntegrationEventsIn(typeof(IBasketApiMarker).Assembly);
             });

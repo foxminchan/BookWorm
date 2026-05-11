@@ -95,7 +95,7 @@ When("I go to {string} section", async ({ page }, sectionName: string) => {
 });
 
 When("I fill in the address form:", async ({ page }, dataTable: any) => {
-  const data = dataTable.rowsHash();
+  const data: Record<string, string> = dataTable.rowsHash();
   for (const [field, value] of Object.entries(data)) {
     let selector = "";
     if (field === "Street Address")
@@ -108,7 +108,7 @@ When("I fill in the address form:", async ({ page }, dataTable: any) => {
       selector = 'input[name*="postal"], input[name*="zip"]';
     else if (field === "Country")
       selector = 'select[name*="country"], input[name*="country"]';
-    await page.locator(selector).fill(value as string);
+    await page.locator(selector).fill(value);
   }
 });
 

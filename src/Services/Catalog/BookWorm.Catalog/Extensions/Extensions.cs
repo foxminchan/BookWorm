@@ -120,6 +120,10 @@ internal static class Extensions
                     opts.UseEntityFrameworkCoreTransactions();
                 }
 
+                // Preserve per-book / per-feedback ordering on Kafka so concurrent
+                // rating updates for the same book land on a single partition.
+                opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId");
+
                 opts.Discovery.IncludeAssembly(typeof(ICatalogApiMarker).Assembly);
                 opts.ListenToIntegrationEventsIn(typeof(ICatalogApiMarker).Assembly);
             });

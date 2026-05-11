@@ -155,9 +155,7 @@ export class OrdersPage extends BasePage {
     await this.waitForPageLoad();
   }
 
-  async filterByStatus(
-    status: "New" | "Completed" | "Cancelled",
-  ): Promise<void> {
+  async filterByStatus(status: string): Promise<void> {
     await this.filterDropdown.selectOption({ label: status });
     await this.waitForPageLoad();
   }

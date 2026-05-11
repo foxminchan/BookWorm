@@ -100,7 +100,7 @@ Then(
 
 // Filter and search steps
 When("I filter orders by {string}", async ({ ordersPage }, status: string) => {
-  await ordersPage.filterByStatus(status as "New" | "Completed" | "Cancelled");
+  await ordersPage.filterByStatus(status);
 });
 
 Then("I should only see completed orders", async ({ ordersPage }) => {

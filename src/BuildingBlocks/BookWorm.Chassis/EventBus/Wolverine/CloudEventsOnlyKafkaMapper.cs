@@ -14,9 +14,13 @@ internal sealed class CloudEventsOnlyKafkaMapper(CloudEventsMapper cloudEvents)
 
     public void MapEnvelopeToOutgoing(Envelope envelope, Message<string, byte[]> outgoing)
     {
-        if (!string.IsNullOrEmpty(envelope.GroupId))
+        var partitionKey = !string.IsNullOrEmpty(envelope.PartitionKey)
+            ? envelope.PartitionKey
+            : envelope.GroupId;
+
+        if (!string.IsNullOrEmpty(partitionKey))
         {
-            outgoing.Key = envelope.GroupId;
+            outgoing.Key = partitionKey;
         }
 
         outgoing.Value = cloudEvents.WriteToBytes(envelope);

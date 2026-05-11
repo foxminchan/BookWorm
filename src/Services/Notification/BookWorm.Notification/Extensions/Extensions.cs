@@ -61,6 +61,10 @@ internal static class Extensions
                     opts.UseEntityFrameworkCoreTransactions();
                 }
 
+                // Preserve per-order saga ordering for outbound order emails by
+                // routing all events that expose an OrderId to the same partition.
+                opts.MessagePartitioning.ByPropertyNamed("OrderId");
+
                 opts.Discovery.IncludeAssembly(typeof(INotificationApiMarker).Assembly);
                 opts.ListenToIntegrationEventsIn(typeof(INotificationApiMarker).Assembly);
             });
