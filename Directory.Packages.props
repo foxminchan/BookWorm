@@ -31,7 +31,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.9.34" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.9.37" />
     <PackageVersion Include="Aspire.Hosting.AgentFramework.DevUI" Version="$(AgentFrameworkUnstableVersion)" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
@@ -57,13 +57,13 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.5.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.6.1" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.5.0-alpha.260507.1" />
-    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" Version="3.5.0" />
-    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" Version="3.5.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.6.1-alpha.260514.1" />
+    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" Version="3.6.0" />
+    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" Version="3.6.0" />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
