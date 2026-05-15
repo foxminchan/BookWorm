@@ -197,8 +197,8 @@ importers:
         specifier: ^20.9.0
         version: 20.9.0
       playwright-bdd:
-        specifier: ^8.5.0
-        version: 8.5.0(@playwright/test@1.59.1)
+        specifier: ^8.5.1
+        version: 8.5.1(@playwright/test@1.59.1)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -381,8 +381,8 @@ importers:
         specifier: ^20.9.0
         version: 20.9.0
       playwright-bdd:
-        specifier: ^8.5.0
-        version: 8.5.0(@playwright/test@1.59.1)
+        specifier: ^8.5.1
+        version: 8.5.1(@playwright/test@1.59.1)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1723,6 +1723,12 @@ packages:
 
   '@hono/node-server@2.0.1':
     resolution: {integrity: sha512-jI9yMDyFpqBeSighf/zlXnQG/nl9AyBc6aAgy4XtxJMyt/CNyJpvPfzDD+bCc2zAOmhhqtF6TnmIaY+xV4mIrw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: '>=4.12.7'
+
+  '@hono/node-server@2.0.2':
+    resolution: {integrity: sha512-tXlTi1h/4V7sDe7i97IVP+9re9ZU7wXZZggnR5ucCRclf1+AX6YhGStrR5w8bLj+3Mlyl0pKfBh9gqTqqnGKfQ==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: '>=4.12.7'
@@ -6983,8 +6989,8 @@ packages:
   pkg-types@2.3.1:
     resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
 
-  playwright-bdd@8.5.0:
-    resolution: {integrity: sha512-w/Bd5C1d6Xe5e1oREsbt2rDN0/Mcp+J2OjQwSl49/mroa2K6UZU33P7v91pLQPl1otDitMwJOaOeJsqaj7WU7w==}
+  playwright-bdd@8.5.1:
+    resolution: {integrity: sha512-lDNaDzW8RvbvsKuR8cZaP9LBnRbG9juCOE3tgwm3pr1O0W1ooGPz7X8xH7zdUbqGgHbdOQ+5XpUTlOJrvpY6Tw==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -9670,6 +9676,11 @@ snapshots:
     dependencies:
       hono: 4.12.18
 
+  '@hono/node-server@2.0.2(hono@4.12.18)':
+    dependencies:
+      hono: 4.12.18
+    optional: true
+
   '@hookform/resolvers@5.2.2(react-hook-form@7.75.0(react@19.2.6))':
     dependencies:
       '@standard-schema/utils': 0.3.0
@@ -10763,7 +10774,7 @@ snapshots:
       '@electric-sql/pglite': 0.3.15
       '@electric-sql/pglite-socket': 0.0.20(@electric-sql/pglite@0.3.15)
       '@electric-sql/pglite-tools': 0.2.20(@electric-sql/pglite@0.3.15)
-      '@hono/node-server': 2.0.1(hono@4.12.18)
+      '@hono/node-server': 2.0.2(hono@4.12.18)
       '@mrleebo/prisma-ast': 0.13.1
       '@prisma/get-platform': 7.2.0
       '@prisma/query-plan-executor': 7.2.0
@@ -15744,7 +15755,7 @@ snapshots:
       pathe: 2.0.3
     optional: true
 
-  playwright-bdd@8.5.0(@playwright/test@1.59.1):
+  playwright-bdd@8.5.1(@playwright/test@1.59.1):
     dependencies:
       '@cucumber/cucumber-expressions': 18.0.1
       '@cucumber/gherkin': 32.2.0
