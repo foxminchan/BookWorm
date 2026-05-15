@@ -71,7 +71,7 @@ runs:
         node-version-file: ".nvmrc"
 
     - name: Start AIMock server
-      uses: CopilotKit/aimock@90a79078fbabcae97bcc03973b8437463fbb4541 # v1.19.1
+      uses: CopilotKit/aimock@78c56d7249389dd399bbb0583b322a077a61f4cd # v1.24.1
       id: aimock
       with:
         config: tests/BookWorm.AI.Evaluation/aimock.json
