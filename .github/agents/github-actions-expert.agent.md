@@ -10,7 +10,9 @@ tools:
   - "search"
   - "web/githubRepo"
 model:
-  ["Claude Sonnet 4.6 (copilot)", "Claude Opus 4.6 (copilot)", "GPT-5.3-Codex"]
+  - "Claude Sonnet 4.6 (copilot)"
+  - "Claude Opus 4.7 (copilot)"
+  - "GPT-5.3-Codex"
 handoffs:
   - label: Review Workflow Changes
     agent: Code Reviewer

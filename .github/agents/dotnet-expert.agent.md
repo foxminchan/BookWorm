@@ -12,7 +12,9 @@ tools:
   - "search/usages"
   - "context7/*"
 model:
-  ["Claude Opus 4.6 (copilot)", "GPT-5.3-Codex", "Claude Sonnet 4.6 (copilot)"]
+  - "Claude Opus 4.7 (copilot)"
+  - "Claude Sonnet 4.6 (copilot)"
+  - "GPT-5.3-Codex"
 handoffs:
   - label: Request Code Review
     agent: Code Reviewer

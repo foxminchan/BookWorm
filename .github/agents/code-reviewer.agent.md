@@ -7,12 +7,10 @@ tools:
   - "search"
   - "search/usages"
 model:
-  [
-    "GPT-5.3-Codex",
-    "Claude Sonnet 4.6 (copilot)",
-    "Claude Opus 4.6 (copilot)",
-    "Claude Haiku 4.5 (copilot)",
-  ]
+  - "Claude Opus 4.7 (copilot)"
+  - "Claude Sonnet 4.6 (copilot)"
+  - "Claude Haiku 4.5 (copilot)"
+  - "GPT-5.3-Codex"
 handoffs:
   - label: Fix .NET Issues
     agent: .NET Expert

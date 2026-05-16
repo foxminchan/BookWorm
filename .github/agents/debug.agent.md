@@ -13,7 +13,9 @@ tools:
   - "search"
   - "search/usages"
 model:
-  ["Claude Opus 4.6 (copilot)", "GPT-5.3-Codex", "Claude Sonnet 4.6 (copilot)"]
+  - "Claude Opus 4.7 (copilot)"
+  - "Claude Sonnet 4.6 (copilot)"
+  - "GPT-5.3-Codex"
 handoffs:
   - label: Get C# Expert Help
     agent: .NET Expert

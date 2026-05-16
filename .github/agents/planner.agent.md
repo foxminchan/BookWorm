@@ -8,7 +8,9 @@ tools:
   - "search"
   - "search/usages"
 model:
-  ["GPT-5.3-Codex", "Claude Opus 4.6 (copilot)", "Claude Sonnet 4.6 (copilot)"]
+  - "Claude Opus 4.7 (copilot)"
+  - "Claude Sonnet 4.6 (copilot)"
+  - "GPT-5.3-Codex"
 handoffs:
   - label: Implement (.NET)
     agent: .NET Expert
