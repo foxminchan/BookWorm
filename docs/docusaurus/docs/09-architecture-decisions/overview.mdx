@@ -14,7 +14,7 @@ keywords:
     technical decisions,
   ]
 last_update:
-  date: 2025-08-16
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -40,6 +40,7 @@ gantt
     PostgreSQL             :done, data1, 2024-07-20, 30d
     Redis SignalR          :done, data2, 2024-08-15, 30d
     RabbitMQ               :done, data3, 2024-09-01, 30d
+    WolverineFx + Kafka    :done, data4, 2026-05-01, 19d
     section Security & Identity
     Keycloak Identity      :done, security1, 2024-07-25, 45d
     section Communication
@@ -48,7 +49,7 @@ gantt
     gRPC                   :done, comm3, 2024-10-01, 30d
     section AI & Intelligence
     AI Integration         :done, ai1, 2025-03-01, 45d
-    Ollama Runtime         :done, ai2, 2025-03-15, 30d
+    Ollama Runtime         :crit, ai2, 2025-03-15, 30d
     MCP Tools              :done, ai3, 2025-04-01, 30d
     A2A Communication      :done, ai4, 2025-04-15, 30d
     section Operations
@@ -75,12 +76,13 @@ gantt
 
 ### 💾 Data & Storage
 
-| ADR                                         | Title                          | Status   | Impact |
-| ------------------------------------------- | ------------------------------ | -------- | ------ |
-| [ADR-004](./adr-004-postgresql-database)    | PostgreSQL as Primary Database | Accepted | High   |
-| [ADR-010](./adr-010-redis-signalr-scale)    | Redis for SignalR Scaling      | Accepted | Medium |
-| [ADR-011](./adr-011-rabbitmq-message)       | RabbitMQ for Message Broker    | Accepted | High   |
-| [ADR-013](./adr-013-ordering-eventsoucring) | Event Sourcing for Ordering    | Accepted | Medium |
+| ADR                                         | Title                          | Status     | Impact |
+| ------------------------------------------- | ------------------------------ | ---------- | ------ |
+| [ADR-004](./adr-004-postgresql-database)    | PostgreSQL as Primary Database | Accepted   | High   |
+| [ADR-010](./adr-010-redis-signalr-scale)    | Redis for SignalR Scaling      | Deprecated | Medium |
+| [ADR-011](./adr-011-rabbitmq-message)       | RabbitMQ for Message Broker    | Superseded | High   |
+| [ADR-013](./adr-013-ordering-eventsoucring) | Event Sourcing for Ordering    | Accepted   | Medium |
+| [ADR-022](./adr-022-wolverinefx-kafka)      | WolverineFx + Kafka Messaging  | Accepted   | High   |
 
 ### 🔒 Security & Identity
 
@@ -90,21 +92,21 @@ gantt
 
 ### 🌐 Communication & Integration
 
-| ADR                                          | Title                               | Status   | Impact |
-| -------------------------------------------- | ----------------------------------- | -------- | ------ |
-| [ADR-006](./adr-006-signalr-realtime)        | SignalR for Real-time Communication | Accepted | Medium |
-| [ADR-008](./adr-008-api-gateway)             | API Gateway with YARP               | Accepted | High   |
-| [ADR-017](./adr-017-grpc)                    | gRPC for Service Communication      | Accepted | Medium |
-| [ADR-014](./adr-014-sendgrid-email-provider) | SendGrid Email Provider             | Accepted | Low    |
+| ADR                                          | Title                               | Status     | Impact |
+| -------------------------------------------- | ----------------------------------- | ---------- | ------ |
+| [ADR-006](./adr-006-signalr-realtime)        | SignalR for Real-time Communication | Deprecated | Medium |
+| [ADR-008](./adr-008-api-gateway)             | API Gateway with YARP               | Accepted   | High   |
+| [ADR-017](./adr-017-grpc)                    | gRPC for Service Communication      | Accepted   | Medium |
+| [ADR-014](./adr-014-sendgrid-email-provider) | SendGrid Email Provider             | Accepted   | Low    |
 
 ### 🤖 AI & Intelligence
 
-| ADR                                         | Title                               | Status     | Impact |
-| ------------------------------------------- | ----------------------------------- | ---------- | ------ |
-| [ADR-009](./adr-009-ai-integration)         | Azure OpenAI Integration Strategy   | Accepted   | High   |
-| [ADR-012](./adr-012-ollama-llm-runtime)     | Ollama for LLM Runtime (Deprecated) | Superseded | Medium |
-| [ADR-020](./adr-020-mcp-tools-standardize)  | MCP Tools for AI Standardization    | Accepted   | Medium |
-| [ADR-021](./adr-021-agent-to-agent-via-a2a) | Agent-to-Agent A2A Protocol         | Accepted   | Medium |
+| ADR                                         | Title                             | Status     | Impact |
+| ------------------------------------------- | --------------------------------- | ---------- | ------ |
+| [ADR-009](./adr-009-ai-integration)         | Azure OpenAI Integration Strategy | Accepted   | High   |
+| [ADR-012](./adr-012-ollama-llm-runtime)     | Ollama for LLM Runtime            | Deprecated | Medium |
+| [ADR-020](./adr-020-mcp-tools-standardize)  | MCP Tools for AI Standardization  | Accepted   | Medium |
+| [ADR-021](./adr-021-agent-to-agent-via-a2a) | Agent-to-Agent A2A Protocol       | Accepted   | Medium |
 
 ### ⚙️ Operations & Deployment
 
@@ -119,9 +121,9 @@ gantt
 
 ```mermaid
 pie title ADR Status Distribution
-    "Accepted" : 21
-    "Deprecated" : 0
-    "Superseded" : 0
+    "Accepted" : 17
+    "Deprecated" : 3
+    "Superseded" : 1
     "Proposed" : 0
 ```
 
@@ -136,7 +138,7 @@ These decisions fundamentally shape the system architecture and have wide-reachi
 - **Aspire** - Cloud-native development approach
 - **Domain-Driven Design** - Business domain alignment
 - **PostgreSQL Database** - Data persistence strategy
-- **RabbitMQ Message Broker** - Async communication backbone
+- **WolverineFx + Kafka** - Async communication backbone
 - **Keycloak Identity** - Security and authentication foundation
 - **API Gateway** - External interface and routing
 - **AI Integration Strategy** - Intelligence capabilities framework
@@ -145,11 +147,10 @@ These decisions fundamentally shape the system architecture and have wide-reachi
 
 These decisions significantly affect specific aspects or components:
 
-- **Redis SignalR Scaling** - Real-time communication scalability
-- **SignalR Realtime** - Bi-directional communication capability
+- **Redis SignalR Scaling** - Real-time communication scalability (Deprecated)
 - **Event Sourcing** - Audit trail and temporal queries
 - **gRPC Communication** - High-performance inter-service calls
-- **Ollama Runtime** - Local LLM execution environment
+- **WolverineFx + Kafka** - Kafka-based async messaging
 - **MCP Tools** - AI agent standardization
 - **A2A Communication** - Agent interaction protocols
 - **GitHub Actions CI/CD** - Deployment automation
@@ -168,7 +169,8 @@ These decisions address specific functional requirements:
 graph TD
     A[ADR-001: Microservices] --> B[ADR-002: Event-Driven CQRS]
     A --> C[ADR-016: Domain-Driven Design]
-    B --> D[ADR-011: RabbitMQ]
+    B --> D[ADR-022: WolverineFx + Kafka]
+    D -->|supersedes| D011[ADR-011: RabbitMQ]
     B --> E[ADR-013: Event Sourcing]
     C --> F[ADR-004: PostgreSQL]
 
@@ -188,6 +190,7 @@ graph TD
     style B fill:#ffcdd2
     style G fill:#ffcdd2
     style L fill:#e1f5fe
+    style D011 fill:#eeeeee
 ```
 
 ## Key Architectural Principles
@@ -210,12 +213,12 @@ Based on the ADR decisions, BookWorm follows these core principles:
 
 - **Integrated AI Strategy** makes intelligence a core system capability
 - **Standardized Tools** ensure consistent AI agent interactions
-- **Local Runtime** provides control over AI model execution
+- **Azure OpenAI** provides enterprise-grade model execution
 
 ### ⚡ Performance & Quality
 
-- **Async Communication** via events and messaging
-- **Real-time Capabilities** through SignalR connections
+- **Async Communication** via events and Kafka messaging
+- **Real-time Capabilities** through SSE streaming endpoints
 - **Comprehensive Testing** with automated performance validation
 
 ## ADR Process

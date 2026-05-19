@@ -14,6 +14,7 @@ keywords:
     domain layer,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -44,7 +45,7 @@ C4Component
 
         Container_Boundary(infrastructure, "Infrastructure") {
             ComponentDb(storageSystem, "Storage System", "Azure Blob Storage", "Stores book files and resources")
-            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentQueue(eventBus, "Event Bus", "Kafka", "Handles async communication (WolverineFx)")
             ComponentDb(cacheSystem, "Cache System", "Redis", "Hybrid caching (L1: memory, L2: Redis)")
 
             Container_Boundary(ai, "AI Infrastructure") {
@@ -162,7 +163,7 @@ C4Component
 
         Container_Boundary(infrastructure, "Infrastructure") {
             ComponentDb(orderDb, "Order DB", "PostgreSQL", "Stores order information and history")
-            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentQueue(eventBus, "Event Bus", "Kafka", "Handles async communication (WolverineFx)")
         }
     }
 
@@ -223,7 +224,7 @@ C4Component
         }
 
         Container_Boundary(infrastructure, "Infrastructure") {
-            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentQueue(eventBus, "Event Bus", "Kafka", "Handles async communication (WolverineFx)")
             ComponentDb(financeDb, "Finance DB", "PostgreSQL", "Stores financial records and transactions")
         }
     }
@@ -277,11 +278,11 @@ C4Component
             ComponentDb(chatDb, "Chat Database", "PostgreSQL", "Stores chat sessions and history")
 
             Container_Boundary(ai, "AI") {
-                Component(ollama, "Ollama", "Ollama", "Get and run models")
+                Component(azureOpenAI, "Azure OpenAI", "Managed AI Service", "GPT-4o-mini for conversations")
                 Component(mcp, "MCP Server", "MCP C# SDK", "Get and run tools")
 
                 Container_Boundary(model, "Model") {
-                    Component(chatModel, "Chat Model", "Gemma 3", "Handles chat interactions")
+                    Component(chatModel, "GPT-4o-mini", "Chat Model", "Handles chat interactions")
                 }
             }
         }
@@ -290,10 +291,10 @@ C4Component
     Rel(chatEndpoint, chatFacade, "Uses", "Internal")
     Rel(chatFacade, llmService, "Uses", "Internal")
 
-    Rel(ollama, chatModel, "Uses", "Internal")
+    Rel(azureOpenAI, chatModel, "Uses", "Internal")
     Rel(mcp, llmService, "Uses", "MCP")
 
-    Rel(llmService, ollama, "Uses", "Internal")
+    Rel(llmService, azureOpenAI, "Uses", "HTTPS")
 
     Rel(llmService, chatDb, "Reads/Writes", "Internal")
 
@@ -351,7 +352,7 @@ C4Component
 
       Container_Boundary(infrastructure, "Infrastructure") {
         ComponentDb(basketDb, "Basket DB", "Redis", "Stores basket data")
-        ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+        ComponentQueue(eventBus, "Event Bus", "Kafka", "Handles async communication (WolverineFx)")
       }
     }
 
@@ -379,7 +380,7 @@ C4Component
 
         Container_Boundary(infrastructure, "Infrastructure") {
             ComponentDb(ratingDb, "Rating DB", "PostgreSQL", "Stores user feedback and ratings")
-            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentQueue(eventBus, "Event Bus", "Kafka", "Handles async communication (WolverineFx)")
         }
     }
 
@@ -406,8 +407,8 @@ C4Component
         }
 
         Container_Boundary(infrastructure, "Infrastructure") {
-            ComponentDb(notificationDb, "Notification DB", "Azure Table Storage", "Stores notification records")
-            ComponentQueue(eventBus, "Event Bus", "RabbitMQ", "Handles async communication")
+            ComponentDb(notificationDb, "Notification DB", "PostgreSQL", "Stores notification records")
+            ComponentQueue(eventBus, "Event Bus", "Kafka", "Handles async communication (WolverineFx)")
         }
     }
 
@@ -504,13 +505,13 @@ C4Container
     Container_Boundary(order, "Order Service") {
         Component(api, "Order API", "ASP.NET Core", "Order management endpoints")
         Component(workflow, "Order Workflow", "Workflow Engine", "Order state management")
-        Component(saga, "Saga Orchestrator", "MassTransit", "Distributed transaction coordination")
+        Component(saga, "Saga Orchestrator", "WolverineFx", "Distributed transaction coordination")
         Component(validation, "Order Validator", "C#", "Order validation logic")
         Component(pricing, "Pricing Engine", "C#", "Price calculation and discounts")
     }
 
     ContainerDb(orderDb, "Order Database", "PostgreSQL", "Order data")
-    SystemQueue(eventBus, "Event Bus", "RabbitMQ", "Domain events")
+    SystemQueue(eventBus, "Event Bus", "Kafka", "Domain events")
     System_Ext(catalog, "Catalog Service", "Product validation")
     System_Ext(finance, "Finance Service", "Payment processing")
 
@@ -518,7 +519,7 @@ C4Container
     Rel(api, pricing, "Calculates")
     Rel(api, workflow, "Manages")
     Rel(workflow, saga, "Coordinates")
-    Rel(saga, eventBus, "Publishes/Subscribes", "AMQP")
+    Rel(saga, eventBus, "Publishes/Subscribes", "Kafka")
     Rel(validation, catalog, "Validates products", "gRPC")
     Rel(saga, finance, "Processes payment", "Events")
 

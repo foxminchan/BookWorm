@@ -16,6 +16,7 @@ keywords:
     cloud-native,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -226,8 +227,8 @@ communications.
 **Service Discovery** : A mechanism that enables services in a distributed system to find and
 communicate with each other without hardcoded addresses.
 
-**SignalR** : A library for adding real-time web functionality to applications, enabling server-side
-code to push content to clients instantly.
+**SSE (Server-Sent Events)** : A one-way streaming protocol used by BookWorm's storefront
+(CopilotKit) to receive token-by-token LLM responses from the Chat service over HTTP.
 
 ## T
 
@@ -254,6 +255,10 @@ specific bounded context in Domain-Driven Design.
 **Unit Test** : Testing individual components or modules in isolation to verify they work correctly
 according to their specifications.
 
+**UUID v7** : A time-ordered UUID variant (RFC 9562) used as primary keys in BookWorm services
+(`UniqueIdentifierHelper.NewUuidV7`). Provides monotonically increasing values friendly to B-tree
+indexes while remaining globally unique.
+
 ## V
 
 **Vertical Slice Architecture** : An architectural approach that organizes code by feature rather
@@ -263,6 +268,10 @@ than by technical layer, grouping all code for a feature together.
 
 **WebSocket** : A communication protocol that provides full-duplex communication channels over a
 single TCP connection, used for real-time features.
+
+**WolverineFx** : A .NET messaging and command-handling framework used in BookWorm as the primary
+async messaging library with Kafka transport. Provides transactional outbox/inbox patterns, saga
+orchestration, and at-least-once delivery guarantees.
 
 ## Y
 

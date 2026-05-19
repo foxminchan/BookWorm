@@ -14,6 +14,7 @@ keywords:
     scalability,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -55,15 +56,15 @@ boundaries:
 | Service             | Purpose                                                      | Database   | Key Dependencies                                            |
 | ------------------- | ------------------------------------------------------------ | ---------- | ----------------------------------------------------------- |
 | **Catalog Service** | Book and author management, product metadata, inventory      | PostgreSQL | Qdrant (vector search), Redis (caching), Azure Blob Storage |
-| **Rating Service**  | Book reviews, ratings, and feedback management               | PostgreSQL | Event Bus (RabbitMQ)                                        |
-| **Chat Service**    | AI-powered conversational interface for book recommendations | PostgreSQL | SignalR, MCP Tools, Ollama (LLM runtime)                    |
+| **Rating Service**  | Book reviews, ratings, and feedback management               | PostgreSQL | Event Bus (Kafka / WolverineFx)                             |
+| **Chat Service**    | AI-powered conversational interface for book recommendations | PostgreSQL | Azure OpenAI (GPT-4o-mini), MCP Tools                       |
 
 #### Order Domain Services
 
 | Service                  | Purpose                                            | Database   | Key Dependencies              |
 | ------------------------ | -------------------------------------------------- | ---------- | ----------------------------- |
 | **Basket Service**       | Shopping cart functionality and session management | Redis      | Catalog Service (gRPC)        |
-| **Ordering Service**     | Order lifecycle management and event sourcing      | PostgreSQL | Event Bus, SignalR            |
+| **Ordering Service**     | Order lifecycle management and event sourcing      | PostgreSQL | Event Bus                     |
 | **Finance Service**      | Payment processing and saga orchestration          | PostgreSQL | Event Bus (saga coordination) |
 | **Notification Service** | Transactional emails and user communications       | PostgreSQL | MailPit/SendGrid, Event Bus   |
 | **Scheduler Service**    | Background job processing and task scheduling      | PostgreSQL | TickerQ Dashboard             |
@@ -111,7 +112,7 @@ graph TB
     subgraph "Store Domain"
         Catalog[Catalog Service<br/>Books & Authors<br/>PostgreSQL + Qdrant]
         Rating[Rating Service<br/>Reviews & Ratings<br/>PostgreSQL]
-        Chat[Chat Service<br/>AI Support<br/>PostgreSQL + Ollama]
+        Chat[Chat Service<br/>AI Support<br/>PostgreSQL + Azure OpenAI]
     end
 
     subgraph "Order Domain"
@@ -123,9 +124,8 @@ graph TB
     end
 
     subgraph "Infrastructure"
-        EventBus[Event Bus<br/>RabbitMQ]
+        EventBus[Event Bus<br/>Kafka / WolverineFx]
         Cache[Redis Cache]
-        SignalR[SignalR Hubs]
     end
 
     Basket -.->|gRPC| Catalog
@@ -133,8 +133,6 @@ graph TB
     Finance -.->|Saga Events| EventBus
     EventBus -.->|Events| Notification
     EventBus -.->|Events| Rating
-    Chat -.->|Real-time| SignalR
-    Order -.->|Real-time| SignalR
 ```
 
 ## Consequences
@@ -174,8 +172,8 @@ graph TB
 ### Service Communication
 
 - **Synchronous**: HTTP/REST APIs for direct service-to-service communication
-- **Asynchronous**: Event-driven architecture using RabbitMQ with MassTransit
-- **Real-time**: SignalR for bidirectional communication (Chat and Order updates)
+- **Asynchronous**: Event-driven architecture using Kafka with WolverineFx (durable outbox/inbox)
+- **Streaming AI**: Server-Sent Events for token-by-token LLM responses (Chat service)
 - **Internal**: gRPC for high-performance internal service communication
 
 ### Data Management

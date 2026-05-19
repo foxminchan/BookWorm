@@ -12,10 +12,12 @@ keywords:
     Azure,
     Docker,
     PostgreSQL,
-    RabbitMQ,
+    Kafka,
+    WolverineFx,
     development constraints,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -29,16 +31,16 @@ architectural drift, and make explicit the trade-offs that were accepted.
 
 ## Technical Constraints
 
-| Constraint               | Description                        | Rationale                                                                      | Impact                                                      | Negotiable | Trade-offs                                                                |
-| ------------------------ | ---------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------- |
-| **.NET 10**              | Target framework (net10.0)         | Latest .NET with enhanced performance, C# preview features, native AOT support | Modern runtime with cutting-edge capabilities               | Low        | Requires staying current with .NET releases, preview features may change  |
-| **C# Preview Features**  | LangVersion=preview                | Access to latest language innovations and patterns                             | Modern syntax and improved developer productivity           | Medium     | Preview features may change before final release                          |
-| **Aspire**               | Cloud-native application framework | Simplified development, built-in observability, service discovery              | Foundation for service orchestration, telemetry integration | Low        | Ecosystem still evolving, fewer samples/community resources               |
-| **Azure Container Apps** | Primary deployment target          | Managed container service with auto-scaling, serverless capabilities           | Streamlined Azure-native deployments                        | Medium     | Vendor lock-in to Azure, less portability to other clouds                 |
-| **Docker**               | Containerization platform          | Consistent deployments, environment parity, isolation                          | Developer experience, portability                           | Low        | Adds local complexity for onboarding and toolchain setup                  |
-| **PostgreSQL**           | Primary database system            | ACID compliance, JSON support, open source, strong ecosystem                   | Robust persistence layer                                    | Medium     | Horizontal scaling harder than NoSQL, requires tuning for very high loads |
-| **RabbitMQ**             | Message broker                     | Reliable message delivery, mature ecosystem, clustering support                | Enables event-driven architecture                           | Medium     | Operational overhead, monitoring complexity                               |
-| **Azure Cloud Platform** | Core cloud provider                | Managed services, integration capabilities, cost optimization                  | Seamless integration with Aspire & Azure services           | Low        | Ties system to Azure cloud ecosystem                                      |
+| Constraint               | Description                        | Rationale                                                                              | Impact                                                         | Negotiable | Trade-offs                                                                 |
+| ------------------------ | ---------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| **.NET 10**              | Target framework (net10.0)         | Latest .NET with enhanced performance, C# preview features, native AOT support         | Modern runtime with cutting-edge capabilities                  | Low        | Requires staying current with .NET releases, preview features may change   |
+| **C# Preview Features**  | LangVersion=preview                | Access to latest language innovations and patterns                                     | Modern syntax and improved developer productivity              | Medium     | Preview features may change before final release                           |
+| **Aspire**               | Cloud-native application framework | Simplified development, built-in observability, service discovery                      | Foundation for service orchestration, telemetry integration    | Low        | Ecosystem still evolving, fewer samples/community resources                |
+| **Azure Container Apps** | Primary deployment target          | Managed container service with auto-scaling, serverless capabilities                   | Streamlined Azure-native deployments                           | Medium     | Vendor lock-in to Azure, less portability to other clouds                  |
+| **Docker**               | Containerization platform          | Consistent deployments, environment parity, isolation                                  | Developer experience, portability                              | Low        | Adds local complexity for onboarding and toolchain setup                   |
+| **PostgreSQL**           | Primary database system            | ACID compliance, JSON support, open source, strong ecosystem                           | Robust persistence layer                                       | Medium     | Horizontal scaling harder than NoSQL, requires tuning for very high loads  |
+| **Kafka + WolverineFx**  | Message broker + async messaging   | Durable, ordered event streams; WolverineFx outbox/inbox for transactional consistency | Enables event-driven microservices with at-least-once delivery | Medium     | Operational overhead (Kafka cluster), schema evolution discipline required |
+| **Azure Cloud Platform** | Core cloud provider                | Managed services, integration capabilities, cost optimization                          | Seamless integration with Aspire & Azure services              | Low        | Ties system to Azure cloud ecosystem                                       |
 
 ---
 

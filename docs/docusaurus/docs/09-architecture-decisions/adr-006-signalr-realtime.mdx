@@ -3,7 +3,9 @@ sidebar_position: 7
 title: ADR-006 - SignalR for Real-time Communication
 description: Use of SignalR for real-time bidirectional communication and WebSocket connections
 keywords: [ADR-006, SignalR, real-time communication, WebSocket, chat, notifications, bidirectional]
+status: Deprecated
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -11,7 +13,11 @@ last_update:
 
 ## Status
 
-**Accepted** - July 2024
+**Deprecated** - May 2026
+
+:::warning Deprecated — May 2026 SignalR was removed from BookWorm. Real-time chat is now handled by
+Server-Sent Events (SSE) via ASP.NET Core streaming endpoints, and push notifications are delivered
+through WolverineFx event handlers. This ADR is kept for historical reference. :::
 
 ## Context
 

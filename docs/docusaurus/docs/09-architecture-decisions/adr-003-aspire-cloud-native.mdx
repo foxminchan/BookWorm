@@ -4,6 +4,7 @@ title: ADR-003 - Aspire for Cloud-Native Development
 description: Selection of Aspire for cloud-native orchestration and built-in observability
 keywords: [ADR-003, Aspire, cloud-native, service orchestration, observability, telemetry]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -57,15 +58,15 @@ Shared configuration package providing:
 
 ### Service Integration Strategy
 
-| Component         | Aspire Integration                        | Configuration Benefits            |
-| ----------------- | ----------------------------------------- | --------------------------------- |
-| **Microservices** | Service discovery and health checks       | Automatic endpoint resolution     |
-| **PostgreSQL**    | Built-in database container orchestration | Connection string management      |
-| **Redis**         | Cache and session store integration       | Distributed caching configuration |
-| **RabbitMQ**      | Message broker orchestration              | Event bus connection management   |
-| **Qdrant**        | Vector database integration               | AI search service configuration   |
-| **Keycloak**      | Identity provider orchestration           | Authentication service setup      |
-| **SignalR**       | Real-time communication hubs              | Hub discovery and scaling         |
+| Component         | Aspire Integration                        | Configuration Benefits                        |
+| ----------------- | ----------------------------------------- | --------------------------------------------- |
+| **Microservices** | Service discovery and health checks       | Automatic endpoint resolution                 |
+| **PostgreSQL**    | Built-in database container orchestration | Connection string management                  |
+| **Redis**         | Cache and session store integration       | Distributed caching configuration             |
+| **Kafka**         | Message broker orchestration              | Event bus connection management (WolverineFx) |
+| **Qdrant**        | Vector database integration               | AI search service configuration               |
+| **Keycloak**      | Identity provider orchestration           | Authentication service setup                  |
+| **Azure OpenAI**  | Managed LLM and embedding service         | GPT-4o-mini and text-embedding-3-large        |
 
 ## Rationale
 
@@ -96,7 +97,7 @@ graph TB
     subgraph "Local Development"
         DevDashboard[Aspire Dashboard<br/>Service Health & Logs]
         DevServices[Local Services<br/>Hot Reload & Debug]
-        DevResources[Local Resources<br/>PostgreSQL, Redis, RabbitMQ]
+        DevResources[Local Resources<br/>PostgreSQL, Redis, Kafka]
     end
 
     subgraph "Cloud Deployment"
@@ -123,7 +124,7 @@ The `BookWorm.AppHost` project orchestrates the entire system topology:
 // Core Infrastructure Services
 var postgres = builder.AddPostgreSQL("postgres");
 var redis = builder.AddRedis("redis");
-var rabbitmq = builder.AddRabbitMQ("eventbus");
+var kafka = builder.AddKafka("eventbus");
 var qdrant = builder.AddQdrant("qdrant");
 
 // Identity and Security
@@ -141,7 +142,7 @@ var basket = builder.AddProject<Projects.BookWorm_Basket>("basket")
 
 var ordering = builder.AddProject<Projects.BookWorm_Ordering>("ordering")
     .WithReference(postgres)
-    .WithReference(rabbitmq);
+    .WithReference(kafka);
 ```
 
 ### Service Defaults Implementation
@@ -180,8 +181,8 @@ The `BookWorm.ServiceDefaults` package provides:
 
 #### Message Broker Setup
 
-- RabbitMQ container provisioning
-- Exchange and queue declarations
+- Kafka broker provisioning
+- Topic declarations and consumer group configuration (WolverineFx)
 - Dead letter queue configuration
 - Message retry policies
 

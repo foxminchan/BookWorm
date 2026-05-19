@@ -134,18 +134,18 @@ preventing all user authentication and authorization.
 
 ---
 
-#### RISK-005: SignalR Scaling Challenges 🟡
+#### RISK-005: AI Streaming Scalability 🟡
 
 - **Risk Level**: MEDIUM
 - **Probability**: Medium (30-50%)
 - **Impact**: Medium - Chat functionality degradation
 
-**Description**: SignalR with custom Redis backplane may face scaling challenges under high
-concurrent chat loads, affecting real-time communication.
+**Description**: Server-Sent Events streaming of LLM responses (Azure OpenAI via CopilotKit) may
+face scaling challenges under high concurrent chat loads, affecting real-time AI interactions.
 
 **Mitigation Strategies**:
 
-- Custom Redis backplane optimization
+- Backpressure handling on the storefront client
 - Connection monitoring and management
 - Load testing for concurrent chat sessions
 - Graceful connection handling and reconnection logic
@@ -153,7 +153,7 @@ concurrent chat loads, affecting real-time communication.
 **Contingency Plan**:
 
 - Connection limit enforcement
-- Fallback to polling-based communication
+- Fallback to non-streaming completions
 - Chat service horizontal scaling
 
 ### Low-Priority Risks

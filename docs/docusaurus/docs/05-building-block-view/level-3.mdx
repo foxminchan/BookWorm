@@ -14,6 +14,7 @@ keywords:
     semantic search,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -41,12 +42,12 @@ C4Container
     }
 
     ContainerDb(sagaDb, "Saga State Store", "PostgreSQL", "Saga execution state")
-    SystemQueue(eventBus, "Event Bus", "RabbitMQ", "Service communication")
+    SystemQueue(eventBus, "Event Bus", "Kafka", "Service communication (WolverineFx)")
 
     Rel(definition, state, "Initializes")
     Rel(state, coordinator, "Executes steps")
-    Rel(coordinator, eventBus, "Sends commands", "AMQP")
-    Rel(eventBus, state, "Receives events", "AMQP")
+    Rel(coordinator, eventBus, "Sends commands", "Kafka")
+    Rel(eventBus, state, "Receives events", "Kafka")
     Rel(state, compensator, "Triggers on failure")
     Rel(state, timeout, "Manages timeouts")
     Rel(state, persistence, "Persists state")

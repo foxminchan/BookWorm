@@ -5,6 +5,7 @@ description: Adoption of event-driven architecture with CQRS pattern for scalabi
 keywords:
   [ADR-002, event-driven architecture, CQRS, Mediator, event sourcing, command query separation]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -62,7 +63,7 @@ Implement asynchronous communication through domain and integration events:
 | ---------------- | --------------------------------------- | -------------------------------------------- | ------------------------------- |
 | **Catalog**      | Full CQRS with vector search queries    | Domain events for catalog changes            | PostgreSQL + Qdrant (vector DB) |
 | **Rating**       | CQRS with feedback aggregation          | Integration events to update catalog ratings | PostgreSQL                      |
-| **Chat**         | Query-focused with conversation history | Real-time events via SignalR                 | PostgreSQL                      |
+| **Chat**         | Query-focused with conversation history | Streaming AI responses via SSE               | PostgreSQL                      |
 | **Basket**       | Command-heavy with session state        | Checkout events to ordering                  | Redis (in-memory)               |
 | **Ordering**     | Full Event Sourcing + CQRS              | Complete event history with snapshots        | PostgreSQL (event store)        |
 | **Finance**      | Saga orchestration with CQRS            | Compensation events for rollbacks            | PostgreSQL                      |
@@ -107,7 +108,7 @@ graph TB
     end
 
     subgraph "Event Bus"
-        EB[RabbitMQ + MassTransit]
+        EB[Kafka + WolverineFx]
     end
 
     DE1 --> IE1
@@ -181,8 +182,8 @@ sequenceDiagram
 
 ### Event Infrastructure
 
-- **Message Broker**: RabbitMQ for reliable message delivery
-- **Event Framework**: MassTransit for .NET integration and patterns
+- **Message Broker**: Kafka for durable, ordered, replayable message delivery
+- **Event Framework**: WolverineFx for .NET integration, outbox/inbox, and saga patterns
 - **Event Store**: PostgreSQL for event sourcing implementation
 - **Serialization**: System.Text.Json for event payloads
 

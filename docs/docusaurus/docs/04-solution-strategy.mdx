@@ -16,6 +16,7 @@ keywords:
     cloud-native,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -58,11 +59,11 @@ cloud-native development practices:
 
 ### Communication Patterns
 
-| Pattern          | Technology             | Rationale                                                                    |
-| ---------------- | ---------------------- | ---------------------------------------------------------------------------- |
-| **Synchronous**  | HTTP/REST APIs         | Simple integration, excellent tooling, wide ecosystem support                |
-| **Asynchronous** | Kafka with WolverineFx | Reliable message delivery, event-driven architecture, decoupling             |
-| **Real-time**    | SignalR                | Bi-directional communication, automatic transport fallback, .NET integration |
+| Pattern          | Technology             | Rationale                                                                |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------ |
+| **Synchronous**  | HTTP/REST APIs         | Simple integration, excellent tooling, wide ecosystem support            |
+| **Asynchronous** | Kafka with WolverineFx | Reliable message delivery, event-driven architecture, decoupling         |
+| **Streaming AI** | Server-Sent Events     | Token-by-token streaming of LLM responses to the storefront (CopilotKit) |
 
 ---
 
@@ -157,8 +158,7 @@ integration.
 
 - **Command Processing**:
   - _In-process_: Mediator for local command handling.
-  - _Cross-service_: Message bus (e.g., Kafka, RabbitMQ, Azure Service Bus) for distributed
-    commands.
+  - _Cross-service_: **Kafka with WolverineFx** for distributed commands and integration events.
 
 - **Event Publishing**:
   - Use the **Transactional Outbox pattern** to ensure reliable event delivery as part of the
@@ -169,8 +169,8 @@ integration.
     retries.
 
 - **Saga Orchestration**:
-  - Manage long-running or multi-service workflows using orchestration engines (e.g., MassTransit,
-    NServiceBus, Dapr Workflows).
+  - Manage long-running or multi-service workflows using **WolverineFx** (saga orchestration with
+    Kafka transport and PostgreSQL-backed outbox/inbox).
 
 ---
 
@@ -334,7 +334,7 @@ mindmap
         Integration Tests
             Service boundaries
             Database interactions
-            MassTransit messaging
+            WolverineFx messaging
             📝 Medium Coverage
         E2E Tests
             Critical user journeys
