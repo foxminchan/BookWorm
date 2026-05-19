@@ -9,13 +9,14 @@ keywords:
     AI integration,
     RAG,
     Agent Framework,
-    Ollama,
+    Azure OpenAI,
     MCP,
     vector search,
     semantic search,
     embedding generation,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -30,7 +31,8 @@ and automated decision-making across the system.
 ### Agent Framework Integration
 
 - **Microsoft Agents Framework** - AI orchestration and plugin framework
-- **Ollama Integration** - Local AI model hosting and inference
+- **Azure OpenAI Integration** - Managed LLM service (GPT-4o-mini) and embeddings
+  (text-embedding-3-large)
 - **Agent Framework** - Multi-agent collaboration and orchestration
 - **Function Calling** - AI-driven function execution and tool usage
 
@@ -94,28 +96,30 @@ and automated decision-making across the system.
 - **Resource Allocation** - Manage computational resources for agent execution
 - **Performance Monitoring** - Track agent performance and effectiveness
 
-## Ollama Integration
+## Azure OpenAI Integration
 
-### Local AI Models
+### Managed AI Models
 
-- **Model Management** - Download and manage AI models locally
-- **Performance Optimization** - Optimize model execution for local hardware
-- **Model Switching** - Support for multiple models based on use case
-- **Resource Management** - Efficient GPU/CPU utilization for inference
+- **Model Selection** - GPT-4o-mini for conversational AI; text-embedding-3-large (3072 dims) for
+  embeddings
+- **Responses & Conversations APIs** - `AddOpenAIResponses()` and `AddOpenAIConversations()` for
+  stateful chat
+- **Token Management** - Per-request token budgets and usage telemetry via OpenTelemetry
+- **Cost Control** - Centralized provisioning via Aspire and Azure Key Vault for keys
 
 ### Chat Completion Service
 
-- **Streaming Responses** - Real-time streaming of AI responses
-- **Context Management** - Maintain conversation history and context
+- **Streaming Responses** - Server-Sent Events stream tokens to the storefront (CopilotKit)
+- **Context Management** - Maintain conversation history via Conversations API
 - **Temperature Control** - Adjust response creativity and consistency
 - **Token Management** - Optimize token usage and response length
 
 ### Embedding Service
 
-- **Text Embeddings** - Generate vector embeddings for text content
+- **Text Embeddings** - Generate 3072-dimensional vectors via `text-embedding-3-large`
 - **Batch Processing** - Process multiple texts efficiently
-- **Dimensionality** - Support for different embedding dimensions
-- **Model Selection** - Choose appropriate embedding models for different tasks
+- **Catalog Indexing** - Embeddings stored in Qdrant for semantic book search
+- **Model Selection** - Standardized on Azure OpenAI for production parity
 
 ## AI-Powered Features
 

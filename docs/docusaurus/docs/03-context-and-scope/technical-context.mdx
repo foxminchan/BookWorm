@@ -12,11 +12,13 @@ keywords:
     HTTPS,
     WebSocket,
     Keycloak,
-    RabbitMQ,
+    Kafka,
+    WolverineFx,
     PostgreSQL,
     Redis,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -154,12 +156,14 @@ last_update:
 - **Blob Storage**: HTTPS REST API with SAS tokens
 - **Vector Database**: HTTP API with embeddings storage
 
-#### Message Broker (RabbitMQ)
+#### Message Broker (Kafka + WolverineFx)
 
-- **Protocol**: AMQP 0.9.1 on port 5672
-- **Authentication**: Username/password with virtual hosts
-- **Queues**: Durable queues with dead letter exchanges
-- **Patterns**: Publish/subscribe and request/reply
+- **Protocol**: Apache Kafka binary protocol on port 9092 (PLAINTEXT/SASL)
+- **Messaging Library**: WolverineFx with `WolverineFx.Kafka` transport
+- **Delivery**: At-least-once delivery with durable outbox (PostgreSQL-backed) for transactional
+  consistency
+- **Patterns**: Publish/subscribe via Kafka topics; Wolverine inbox for idempotent consumers
+- **Dev Environment**: Kafka + KafkaUI via Aspire (`AddKafka().WithKafkaUI()`)
 
 ## Network Architecture
 
@@ -205,7 +209,7 @@ graph TB
     Gateway -->|HTTP| Services
     Services -->|TCP:6379| Cache
     Services -->|TCP:5432| Database
-    Services -->|TCP:5672| MessageBroker
+    Services -->|TCP:9092| MessageBroker
     Services -->|HTTPS| Storage
 
     Services --> Metrics

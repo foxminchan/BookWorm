@@ -4,6 +4,7 @@ title: ADR-007 - Azure Container Apps Deployment
 description: Deployment to Azure Container Apps for managed container services and auto-scaling
 keywords: [ADR-007, Azure Container Apps, deployment, managed containers, auto-scaling, serverless]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -55,7 +56,7 @@ Each microservice deploys as a separate Container App:
 
 - **Catalog/Chat**: Public ingress for external access
 - **Other Services**: Internal-only for service-to-service communication
-- **Azure Resources**: PostgreSQL, Redis, SignalR, Storage provisioned as Azure services
+- **Azure Resources**: PostgreSQL, Redis, Kafka, Storage provisioned as Azure services
 - **Keycloak**: Containerized identity provider with custom realm
 
 ## Benefits

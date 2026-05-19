@@ -14,6 +14,7 @@ keywords:
     readiness probes,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -64,9 +65,9 @@ checks, providing real-time insights into service availability and dependencies.
 
 ### Message Bus Health
 
-- **RabbitMQ Connectivity** - Message broker connection status
-- **Queue Status** - Queue depth and processing rates
-- **Publisher Confirmation** - Message delivery confirmation
+- **Kafka Connectivity** - Broker connection status (WolverineFx)
+- **Topic / Consumer Group Status** - Consumer lag and processing rates
+- **Publisher Confirmation** - Message delivery confirmation via outbox
 - **Consumer Health** - Message processing capability
 
 ### External Service Health

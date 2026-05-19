@@ -4,7 +4,9 @@ title: ADR-010 - Redis for SignalR Scale
 description: Use of Redis backplane for SignalR horizontal scaling and distributed caching
 keywords:
   [ADR-010, Redis, SignalR, horizontal scaling, backplane, distributed caching, session management]
+status: Deprecated
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -12,7 +14,12 @@ last_update:
 
 ## Status
 
-**Accepted** - March 2025
+**Deprecated** - May 2026
+
+:::warning Deprecated — May 2026 The SignalR backplane use case for this ADR is no longer relevant
+after SignalR was removed (see ADR-006). Redis remains in BookWorm as a hybrid L1/L2 cache via
+FusionCache, but no longer serves as a SignalR backplane. This ADR is kept for historical reference.
+:::
 
 ## Context
 

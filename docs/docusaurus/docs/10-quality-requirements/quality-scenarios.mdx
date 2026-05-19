@@ -12,6 +12,7 @@ keywords:
     stimulus response,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -47,8 +48,8 @@ Response Measure.
 
 - **Source**: 200 concurrent chat sessions
 - **Stimulus**: Real-time message exchange between users and AI
-- **Environment**: Production with SignalR hub scaling
-- **Artifact**: Chat service and WebSocket connections
+- **Environment**: Production with horizontally scaled Chat service
+- **Artifact**: Chat service and SSE streaming connections
 - **Response**: Messages delivered in real-time with AI responses
 - **Response Measure**: Message delivery latency < 100ms, AI response < 3s
 
@@ -65,7 +66,7 @@ Response Measure.
 
 ### R-2: External Service Degradation
 
-- **Source**: AI service (Ollama) experiencing high latency
+- **Source**: AI service (Azure OpenAI) experiencing high latency
 - **Stimulus**: AI chat requests timing out or responding slowly
 - **Environment**: Production during chat operations
 - **Artifact**: Chat service AI integration

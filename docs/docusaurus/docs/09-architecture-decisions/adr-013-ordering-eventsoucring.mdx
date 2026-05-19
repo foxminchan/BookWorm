@@ -4,6 +4,7 @@ title: ADR-013 - Event Sourcing for Ordering Service
 description: Implementation of event sourcing pattern for order management and audit trail
 keywords: [ADR-013, event sourcing, ordering service, audit trail, event store, CQRS, domain events]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -49,14 +50,13 @@ framework, leveraging **PostgreSQL** as the event store with **projections** for
 
 - **PostgreSQL Event Store**: Uses PostgreSQL JSONB for efficient event storage and querying
 - **Async Daemon**: Background processing for projections and subscriptions
-- **Event Publishing**: Automatic event publishing to RabbitMQ via MassTransit
-- **Real-time Notifications**: SignalR integration for live updates
+- **Event Publishing**: Automatic event publishing to Kafka via WolverineFx
 - **OpenTelemetry**: Comprehensive observability and distributed tracing
 
 #### Core Components
 
 - **Domain Events**: Simple domain events published when aggregate state changes
-- **Event Subscriptions**: MartenEventPublisher handles integration events and SignalR notifications
+- **Event Subscriptions**: MartenEventPublisher forwards events as integration messages
 - **Projections**: OrderSummary projections for efficient querying
 - **Telemetry Integration**: Full observability with OpenTelemetry tracing and metrics
 
@@ -83,8 +83,8 @@ framework, leveraging **PostgreSQL** as the event store with **projections** for
 1. **Audit Trail**: Complete history of order state changes for compliance
 2. **Performance**: Optimized event appending with PostgreSQL JSONB storage
 3. **Scalability**: Async projections and subscriptions for high throughput
-4. **Integration**: Automatic event publishing to RabbitMQ for service communication
-5. **Real-time Updates**: SignalR integration for live order status updates
+4. **Integration**: Automatic event publishing to Kafka for service communication
+5. **Replayable Streams**: Kafka retention enables consumer replay for downstream services
 6. **Time Travel Debugging**: Debug issues by replaying events with Marten's event replay features
 7. **Historical Analytics**: Analyze business trends using Marten's projection rebuilding
    capabilities
@@ -140,7 +140,7 @@ graph TB
 
     subgraph "Integration Layer"
         MartenEvents[Marten Event Publishing<br/>Built-in Publishers]
-        EventBus[RabbitMQ<br/>Event Bus]
+        EventBus[Kafka<br/>Event Bus]
         IntegrationEvents[Integration Events<br/>Cross-Service Communication]
 
         MartenStore --> MartenEvents

@@ -4,7 +4,10 @@ title: ADR-011 - RabbitMQ for Message Broker
 description: Selection of RabbitMQ as message broker for reliable asynchronous communication
 keywords:
   [ADR-011, RabbitMQ, message broker, asynchronous messaging, MassTransit, event bus, messaging]
+status: Superseded
+superseded_by: ADR-022
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -12,7 +15,12 @@ last_update:
 
 ## Status
 
-**Accepted** - July 2024
+**Superseded** - May 2026
+
+:::warning Superseded by [ADR-022](./adr-022-wolverinefx-kafka) — May 2026 BookWorm migrated from
+RabbitMQ + MassTransit to **Kafka + WolverineFx**. The Kafka-based stack provides durable, ordered
+event streams with WolverineFx outbox/inbox for transactional consistency. This ADR is kept for
+historical reference. :::
 
 ## Context
 

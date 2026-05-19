@@ -14,6 +14,7 @@ keywords:
     basket service,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -60,7 +61,7 @@ C4Container
       }
 
       System_Boundary(infrastructure, "Infrastructure") {
-        SystemQueue(eventBus, "Event Bus", "RabbitMQ with MassTransit")
+        SystemQueue(eventBus, "Event Bus", "Kafka / WolverineFx")
         ContainerDb(redis, "Redis Cache", "Azure Managed Redis", "Hybrid caching and sessions")
 
         System_Boundary(database, "Database") {
@@ -105,13 +106,13 @@ C4Container
     Rel(notificationSvc, notificationDb, "Reads/Writes", "TCP")
     Rel(notificationSvc, email, "Sends emails", "SMTP")
 
-    BiRel(catalogSvc, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(orderSvc, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(basketSvc, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(financeSvc, eventBus, "Publishes/Subscribes", "AMQP")
-    BiRel(ratingSvc, eventBus, "Publishes/Subscribes", "AMQP")
-    Rel(eventBus, notificationSvc, "Subscribes", "AMQP")
-    Rel(eventBus, scheduler, "Subscribes", "AMQP")
+    BiRel(catalogSvc, eventBus, "Publishes/Subscribes", "Kafka")
+    BiRel(orderSvc, eventBus, "Publishes/Subscribes", "Kafka")
+    BiRel(basketSvc, eventBus, "Publishes/Subscribes", "Kafka")
+    BiRel(financeSvc, eventBus, "Publishes/Subscribes", "Kafka")
+    BiRel(ratingSvc, eventBus, "Publishes/Subscribes", "Kafka")
+    Rel(eventBus, notificationSvc, "Subscribes", "Kafka")
+    Rel(eventBus, scheduler, "Subscribes", "Kafka")
 
     Rel(basketSvc, catalogSvc, "Retrieves products", "HTTP")
     Rel(orderSvc, catalogSvc, "Retrieves products", "HTTP")
@@ -139,7 +140,7 @@ C4Container
 | -------------------- | ------------ | ------------------------------------------------------ |
 | HTTP REST APIs       | HTTPS        | Synchronous communication between gateway and services |
 | gRPC                 | gRPC/HTTP2   | High-performance inter-service communication           |
-| Event Bus            | AMQP         | Asynchronous messaging for domain events               |
+| Event Bus            | Kafka        | Asynchronous messaging for domain events               |
 | Database Connections | TCP          | Data persistence layer connections                     |
 
 ## Building Block Descriptions
@@ -212,7 +213,7 @@ Qdrant vector database, and Azure OpenAI for semantic search and content enrichm
 - Azure Blob Storage for scalable file management
 - Hybrid caching (in-memory + Redis) for performance
 - Real-time vector index updates
-- Event-driven architecture with RabbitMQ
+- Event-driven architecture with Kafka + WolverineFx
 
 ### Order Service
 

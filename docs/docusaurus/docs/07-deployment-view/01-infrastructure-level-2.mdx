@@ -12,10 +12,11 @@ keywords:
     resource allocation,
     PostgreSQL,
     Redis,
-    RabbitMQ,
+    Kafka,
     Qdrant,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -41,14 +42,13 @@ and deployment specifications.
 
 ### Infrastructure Components
 
-| Component      | Image             | Version    | Persistence | Configuration  |
-| -------------- | ----------------- | ---------- | ----------- | -------------- |
-| **PostgreSQL** | postgres          | latest     | Data volume | Multi-database |
-| **Redis**      | redis             | latest     | None        | Memory cache   |
-| **RabbitMQ**   | rabbitmq          | management | Data volume | Management UI  |
-| **Qdrant**     | qdrant/qdrant     | v1.15.1    | Data volume | Vector storage |
-| **Keycloak**   | keycloak/keycloak | latest     | Data volume | Custom theme   |
-| **Ollama**     | ollama/ollama     | latest     | Model cache | GPU optional   |
+| Component      | Image                 | Version | Persistence | Configuration      |
+| -------------- | --------------------- | ------- | ----------- | ------------------ |
+| **PostgreSQL** | postgres              | latest  | Data volume | Multi-database     |
+| **Redis**      | redis                 | latest  | None        | Memory cache       |
+| **Kafka**      | confluentinc/cp-kafka | latest  | Data volume | WolverineFx broker |
+| **Qdrant**     | qdrant/qdrant         | v1.15.1 | Data volume | Vector storage     |
+| **Keycloak**   | keycloak/keycloak     | latest  | Data volume | Custom theme       |
 
 ## Container Configuration Details
 
@@ -96,7 +96,7 @@ erDiagram
 - **Monitoring**: Local health checks only
 - **Scaling**: Single replica per service
 - **Storage**: Local volumes
-- **AI Models**: Lightweight (Gemma 3 1B)
+- **AI Models**: Azure OpenAI (GPT-4o-mini, text-embedding-3-large)
 
 #### Production Environment
 
@@ -105,7 +105,7 @@ erDiagram
 - **Monitoring**: Azure Monitor integration
 - **Scaling**: Auto-scaling enabled
 - **Storage**: Azure managed services
-- **AI Models**: Full capability (Gemma 3 4B)
+- **AI Models**: Azure OpenAI (GPT-4o-mini, text-embedding-3-large)
 
 ## Network Architecture
 
@@ -140,7 +140,7 @@ graph TB
     end
 
     subgraph "Message Broker"
-        RabbitMQ[RabbitMQ]
+        Kafka[Kafka / WolverineFx]
     end
 
     Client --> Gateway
@@ -157,10 +157,10 @@ graph TB
     Ordering --> Basket
     Rating --> Chat
 
-    Catalog --> RabbitMQ
-    Ordering --> RabbitMQ
-    Finance --> RabbitMQ
-    Notification --> RabbitMQ
+    Catalog --> Kafka
+    Ordering --> Kafka
+    Finance --> Kafka
+    Notification --> Kafka
 ```
 
 ### Port Allocation Strategy
@@ -170,7 +170,7 @@ graph TB
 | **API Services** | 8080 | 8443  | -     | 5000+ |
 | **PostgreSQL**   | -    | -     | -     | 5432  |
 | **Redis**        | -    | -     | -     | 6379  |
-| **RabbitMQ**     | 5672 | -     | 15672 | -     |
+| **Kafka**        | 9092 | -     | -     | -     |
 | **Qdrant**       | 6333 | -     | 6334  | -     |
 | **Keycloak**     | 8080 | 8443  | 9990  | -     |
 

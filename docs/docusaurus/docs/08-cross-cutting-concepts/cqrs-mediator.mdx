@@ -6,6 +6,7 @@ description:
 keywords:
   [CQRS, Mediator, command query separation, pipeline behaviors, validation, logging, handlers]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -26,9 +27,11 @@ behaviors for cross-cutting concerns.
 
 ### Mediator Integration
 
-- **IRequest Interface** - Base contract for all commands and queries
-- **IRequestHandler** - Handler implementation contract
-- **Dependency Injection** - Automatic handler discovery and registration
+- **`ICommand<T>` / `IQuery<T>`** - Base contracts for commands and queries (source-generated via
+  `Mediator.SourceGenerator`)
+- **`ICommandHandler<TCommand, TResult>` / `IQueryHandler<TQuery, TResult>`** - Handler
+  implementation contracts
+- **Dependency Injection** - Automatic handler discovery and registration at compile time
 - **Pipeline Behaviors** - Cross-cutting concern implementation
 
 ## Pipeline Behaviors

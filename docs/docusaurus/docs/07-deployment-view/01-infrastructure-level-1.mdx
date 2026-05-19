@@ -14,6 +14,7 @@ keywords:
     Azure Container Apps,
   ]
 last_update:
+  date: "2026-05-19"
   author: Nhan Nguyen
 ---
 
@@ -51,10 +52,8 @@ C4Context
                     ContainerDb(postgres_dev, "PostgreSQL", "Container", "Multi-tenant database")
                     ContainerDb(redis_dev, "Redis", "Container", "Cache and session store")
                     ContainerDb(qdrant_dev, "Qdrant", "Container", "Vector database for AI")
-                    Container(rabbitmq_dev, "RabbitMQ", "Container", "Message broker")
+                    Container(kafka_dev, "Kafka", "Container", "Message broker (WolverineFx)")
                     Container(azurite_dev, "Azurite", "Container", "Local blob storage emulator")
-                    Container(signalr_dev, "SignalR Emulator", "Container", "Real-time communication")
-                    Container(ollama_dev, "Ollama", "Container", "LLM server (Gemma 3 1B)")
                 }
             }
         }
@@ -78,9 +77,8 @@ C4Context
                         Container(scheduler_prod, "Scheduler Service", ".NET", "Single replica")
                     }
 
-                    Container(rabbitmq_prod, "RabbitMQ", "Container App", "Persistent message broker")
+                    Container(kafka_prod, "Kafka", "Container App", "Persistent message broker (WolverineFx)")
                     ContainerDb(qdrant_prod, "Qdrant", "Container App", "Vector database cluster")
-                    Container(ollama_prod, "Ollama", "Container App", "GPU-enabled LLM server (Gemma 3 4B)")
 
                     Container(health_prod, "Health Checks UI", "Container App", "Service monitoring dashboard")
                 }
@@ -89,7 +87,6 @@ C4Context
                     ContainerDb(postgres_prod, "Azure PostgreSQL", "Flexible Server", "Multi-database managed service")
                     ContainerDb(redis_prod, "Azure Cache for Redis", "Premium", "Managed cache service")
                     Container(storage_prod, "Azure Blob Storage", "Storage Account", "Hot tier blob storage")
-                    Container(signalr_prod, "Azure SignalR Service", "Standard", "Managed real-time service")
                     Container(insights_prod, "Application Insights", "Azure Monitor", "APM and logging service")
                     Container(keyvault_prod, "Azure Key Vault", "Secret Management", "Secrets and certificates")
                 }
@@ -109,12 +106,10 @@ C4Context
     Rel(catalog_dev, postgres_dev, "Reads/Writes")
     Rel(catalog_dev, redis_dev, "Caches")
     Rel(catalog_dev, qdrant_dev, "Vector ops")
-    Rel(catalog_dev, rabbitmq_dev, "Publishes")
+    Rel(catalog_dev, kafka_dev, "Publishes")
     Rel(catalog_dev, azurite_dev, "Stores files")
 
     Rel(chat_dev, postgres_dev, "Reads/Writes")
-    Rel(chat_dev, signalr_dev, "Real-time")
-    Rel(chat_dev, ollama_dev, "AI requests")
 
     Rel(gateway_prod, catalog_prod, "Routes to")
     Rel(gateway_prod, chat_prod, "Routes to")
@@ -124,16 +119,13 @@ C4Context
     Rel(catalog_prod, postgres_prod, "Reads/Writes")
     Rel(catalog_prod, redis_prod, "Caches")
     Rel(catalog_prod, qdrant_prod, "Vector ops")
-    Rel(catalog_prod, rabbitmq_prod, "Publishes")
+    Rel(catalog_prod, kafka_prod, "Publishes")
     Rel(catalog_prod, storage_prod, "Stores files")
 
     Rel(chat_prod, postgres_prod, "Reads/Writes")
-    Rel(chat_prod, signalr_prod, "Real-time")
-    Rel(chat_prod, ollama_prod, "AI requests")
 
     Rel(ordering_prod, postgres_prod, "Reads/Writes")
-    Rel(ordering_prod, rabbitmq_prod, "Publishes")
-    Rel(ordering_prod, signalr_prod, "Updates")
+    Rel(ordering_prod, kafka_prod, "Publishes")
 
     Rel(catalog_prod, insights_prod, "Telemetry")
     Rel(chat_prod, insights_prod, "Telemetry")
@@ -163,31 +155,30 @@ C4Context
 
 Eight independent services handling specific business domains:
 
-| Service          | Purpose             | Database   | Key Dependencies           |
-| ---------------- | ------------------- | ---------- | -------------------------- |
-| **Catalog**      | Product management  | PostgreSQL | Qdrant, Redis, Azure Blob  |
-| **Chat**         | Real-time messaging | PostgreSQL | SignalR, MCP Tools, Ollama |
-| **Basket**       | Shopping cart       | Redis      | Catalog API                |
-| **Ordering**     | Order processing    | PostgreSQL | Basket, Catalog, SignalR   |
-| **Rating**       | Reviews & ratings   | PostgreSQL | Chat API                   |
-| **Finance**      | Payment processing  | PostgreSQL | RabbitMQ                   |
-| **Notification** | Email/SMS           | PostgreSQL | MailPit, RabbitMQ          |
-| **Scheduler**    | Background jobs     | PostgreSQL | TickerQ dashboard          |
+| Service          | Purpose             | Database   | Key Dependencies          |
+| ---------------- | ------------------- | ---------- | ------------------------- |
+| **Catalog**      | Product management  | PostgreSQL | Qdrant, Redis, Azure Blob |
+| **Chat**         | Real-time messaging | PostgreSQL | Azure OpenAI, MCP Tools   |
+| **Basket**       | Shopping cart       | Redis      | Catalog API               |
+| **Ordering**     | Order processing    | PostgreSQL | Basket, Catalog           |
+| **Rating**       | Reviews & ratings   | PostgreSQL | Chat API                  |
+| **Finance**      | Payment processing  | PostgreSQL | Kafka                     |
+| **Notification** | Email/SMS           | PostgreSQL | MailPit, Kafka            |
+| **Scheduler**    | Background jobs     | PostgreSQL | TickerQ dashboard         |
 
 ### Data Layer
 
 - **PostgreSQL**: Primary relational database (9 databases)
-- **Redis**: Caching and session storage
+- **Redis**: Caching and session storage (FusionCache L2)
 - **Qdrant**: Vector database for AI-powered search
-- **RabbitMQ**: Message queue for async communication
+- **Kafka**: Message broker for async communication (WolverineFx)
 - **Azure Blob**: File and media storage
-- **Azure SignalR**: Real-time communication
 
 ### AI Services
 
-- **Ollama**: Model management and serving
-- **Gemma 3**: Chat interactions (1B dev, 4B prod)
-- **Nomic Embed Text**: Text embedding generation
+- **Azure OpenAI**: GPT-4o-mini for conversational AI, text-embedding-3-large for semantic search
+- **Semantic Kernel**: Orchestration layer for AI pipelines
+- **Microsoft Agents AI**: Multi-agent orchestration (A2A protocol)
 
 ### Monitoring & Tools
 

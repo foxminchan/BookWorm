@@ -1,0 +1,147 @@
+---
+sidebar_position: 23
+title: ADR-022 - Messaging on WolverineFx + Kafka
+description:
+  Migration from MassTransit + RabbitMQ to WolverineFx + Kafka for durable, ordered event streaming
+  with transactional outbox/inbox guarantees
+keywords:
+  [
+    ADR-022,
+    WolverineFx,
+    Kafka,
+    message broker,
+    event streaming,
+    outbox,
+    inbox,
+    async messaging,
+    MassTransit,
+    RabbitMQ,
+  ]
+status: Accepted
+supersedes: ADR-011
+last_update:
+  date: "2026-05-19"
+  author: Nhan Nguyen
+---
+
+# ADR-022: Messaging on WolverineFx + Kafka
+
+## Status
+
+**Accepted** - May 2026
+
+Supersedes [ADR-011](./adr-011-rabbitmq-message) (RabbitMQ for Message Broker).
+
+## Context
+
+BookWorm's event-driven microservices architecture initially adopted RabbitMQ with MassTransit
+(ADR-011) for asynchronous inter-service communication. As the system grew, several limitations
+emerged:
+
+- **Message ordering**: RabbitMQ queues do not guarantee strict ordering across multiple consumers
+  without complex partitioning schemes.
+- **Durability and replay**: RabbitMQ messages are removed after consumption; replaying past events
+  requires external tooling or event-sourcing workarounds.
+- **Schema evolution**: MassTransit's opinionated message envelope added coupling to consumer
+  implementations.
+- **Ecosystem alignment**: WolverineFx emerged as a first-class .NET messaging framework that
+  natively integrates with PostgreSQL (already used by all services) for transactional outbox/inbox,
+  removing the need for a separate infrastructure component during development.
+- **Operational overhead**: Running a dedicated RabbitMQ cluster added complexity with limited
+  observability compared to Kafka's native tooling (Kafka UI, consumer group offsets).
+
+The engineering team evaluated **WolverineFx with Kafka transport** as a replacement:
+
+- Apache Kafka provides durable, ordered, partitioned event streams with configurable retention,
+  enabling event replay and consumer group offset management.
+- WolverineFx provides a developer-friendly abstraction over Kafka topics, with built-in
+  transactional outbox (`WolverineFx.EntityFrameworkCore`, `WolverineFx.Postgresql`) and inbox
+  patterns that integrate with EF Core's `SaveChangesAsync` lifecycle.
+- The Aspire `AddKafka().WithKafkaUI()` integration makes local development ergonomic.
+
+## Decision
+
+Adopt **WolverineFx** (with **Kafka transport**) as the exclusive async messaging stack for
+BookWorm, replacing MassTransit + RabbitMQ.
+
+### Messaging Architecture
+
+#### Transport Layer
+
+- **Broker**: Apache Kafka (`WolverineFx.Kafka` transport)
+- **Local dev**: Kafka container provisioned by Aspire (`builder.AddKafka("kafka").WithKafkaUI()`)
+- **Production**: Managed Kafka cluster (Azure Event Hubs Kafka-compatible endpoint or self-managed)
+- **Protocol**: Kafka binary protocol on port 9092 (PLAINTEXT for dev, SASL/TLS for production)
+
+#### Outbox / Inbox Patterns
+
+All services use **PostgreSQL-backed outbox** via `WolverineFx.Postgresql` /
+`WolverineFx.EntityFrameworkCore`:
+
+```csharp
+// AppHost registration (per service)
+services.AddWolverine(opts =>
+{
+    opts.UseKafka(connectionString);
+    opts.PersistMessagesWithPostgresql(connStr, schema: "wolverine");
+});
+```
+
+- **Outbox**: Messages are written to the `wolverine.outgoing_envelopes` table inside the same EF
+  Core `SaveChangesAsync` transaction as domain changes, guaranteeing at-least-once delivery even if
+  the broker is temporarily unavailable.
+- **Inbox**: Incoming messages are idempotency-checked against `wolverine.incoming_envelopes` using
+  the `[MessageIdentity]` attribute on message types, preventing duplicate processing on retries.
+
+#### Message Identity
+
+All integration event types MUST declare a stable `[MessageIdentity]` attribute to support
+idempotent inbox processing:
+
+```csharp
+[MessageIdentity("book-published-v1")]
+public sealed record BookPublishedIntegrationEvent(Guid BookId, string Title, decimal Price);
+```
+
+#### Naming Conventions
+
+- Kafka topics follow `bookworm.{service}.{event-name}` convention (kebab-case).
+- PostgreSQL outbox/inbox tables use snake_case (consistent with `UseSnakeCaseNamingConvention()`).
+
+### Saga Orchestration
+
+Long-running workflows (e.g., order payment saga in Finance service) use WolverineFx's built-in saga
+support with PostgreSQL persistence, replacing the previous MassTransit Saga Orchestrator.
+
+## Consequences
+
+### Positive
+
+- **Durable, ordered streams**: Kafka partitions guarantee message ordering within a partition;
+  consumer groups allow independent replay.
+- **Simplified infrastructure**: Single PostgreSQL dependency for transactional outbox/inbox removes
+  the RabbitMQ cluster requirement during development.
+- **Event replay**: Retained Kafka topics allow replay for projections or new consumer onboarding.
+- **First-class .NET integration**: WolverineFx integrates with EF Core, Aspire, and OpenTelemetry
+  natively.
+- **Observability**: Kafka UI (Aspire-provisioned) + OpenTelemetry traces provide full visibility.
+
+### Negative / Risks
+
+- **Kafka operational complexity**: Running a Kafka cluster in production requires more ops
+  discipline than RabbitMQ (partition rebalancing, retention tuning, consumer lag monitoring).
+- **Schema evolution discipline**: Kafka's schema registry is not enforced by default; teams must
+  version message types via `[MessageIdentity]` and avoid breaking changes in payload contracts.
+- **At-least-once delivery**: Consumers must be idempotent; the inbox pattern mitigates but does not
+  eliminate duplicate-processing risk for non-WolverineFx consumers.
+- **Test isolation**: Integration tests must quarantine the Kafka broker (use `TestcontainersKafka`
+  or Aspire test resources); do not share topic partitions between parallel test runs.
+
+## Alternatives Considered
+
+| Option                    | Rejected because                                                    |
+| ------------------------- | ------------------------------------------------------------------- |
+| Keep MassTransit/RabbitMQ | Ordering gaps, replay limitations, MassTransit coupling             |
+| Azure Service Bus         | Cloud-vendor lock-in; harder local dev story without Aspire support |
+| Dapr Pub/Sub              | Additional sidecar complexity; WolverineFx is lighter weight        |
+| NServiceBus               | License cost; heavier abstraction than needed                       |
