@@ -41,11 +41,11 @@ var catalogContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
     .WithAzureStorageExplorer();
 
-var ratingDb = postgres.AddDatabase(Components.Database.Rating);
-var catalogDb = postgres.AddDatabase(Components.Database.Catalog);
-var financeDb = postgres.AddDatabase(Components.Database.Finance);
-var orderingDb = postgres.AddDatabase(Components.Database.Ordering);
-var notificationDb = postgres.AddDatabase(Components.Database.Notification);
+var ratingDb = postgres.AddDatabase(Components.Database.Rating).WithPostgresMcp();
+var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMcp();
+var financeDb = postgres.AddDatabase(Components.Database.Finance).WithPostgresMcp();
+var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
+var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 
 var openai = builder.AddOpenAI(Components.OpenAI.Resource);
 
