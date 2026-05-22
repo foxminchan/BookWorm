@@ -57,11 +57,11 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.6.1" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.6.2" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.6.1-alpha.260514.1" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.6.2-alpha.260521.1" />
     <PackageVersion Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" Version="3.7.0" />
     <PackageVersion Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" Version="3.7.0" />
     <!-- Miscellaneous -->
@@ -70,7 +70,7 @@
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="10.1.6" />
-    <PackageVersion Include="Marten.AspNetCore" Version="8.37.1" />
+    <PackageVersion Include="Marten.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
@@ -106,7 +106,7 @@
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.3" />
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.16.3" />
+    <PackageVersion Include="Verify.TUnit" Version="31.17.0" />
     <PackageVersion Include="Verify.Wolverine" Version="3.0.0" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <!-- Microsoft Testing Platform -->

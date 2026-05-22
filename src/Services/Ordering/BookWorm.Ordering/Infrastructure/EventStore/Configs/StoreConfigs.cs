@@ -1,5 +1,5 @@
 ﻿using JasperFx.Events;
-using Marten.Services;
+using JasperFx.OpenTelemetry;
 using Weasel.Core;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Configs;
