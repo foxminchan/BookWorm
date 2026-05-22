@@ -106,7 +106,7 @@ jobs:
 If you can't use remote cache, cache Turborepo's local cache directory:
 
 ```yaml
-- uses: actions/cache@v5
+- uses: actions/cache@v4
   with:
     path: .turbo
     key: turbo-${{ runner.os }}-${{ hashFiles('**/turbo.json', '**/package-lock.json') }}

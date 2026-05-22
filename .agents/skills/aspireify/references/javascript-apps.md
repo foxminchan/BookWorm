@@ -6,13 +6,14 @@ Use this reference when wiring JavaScript/TypeScript services into the AppHost o
 
 The `Aspire.Hosting.JavaScript` package provides three resource types. Pick the right one:
 
-| Signal | Use | Example |
-|--------|-----|---------|
-| Vite app (has `vite.config.*`) | `AddViteApp(name, dir)` | Frontend SPA, Vite + React/Vue/Svelte |
-| App runs via package.json script only | `AddJavaScriptApp(name, dir, { runScriptName })` | CRA app, Next.js, monorepo root scripts |
-| App has a specific Node entry file (`.js`/`.ts`) and uses a dev script like `ts-node-dev` | `AddNodeApp(name, dir, "entry.js")` + `.WithRunScript("start:dev")` | Express/Fastify API, Socket.IO server |
+| Signal                                                                                    | Use                                                                 | Example                                 |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------- |
+| Vite app (has `vite.config.*`)                                                            | `AddViteApp(name, dir)`                                             | Frontend SPA, Vite + React/Vue/Svelte   |
+| App runs via package.json script only                                                     | `AddJavaScriptApp(name, dir, { runScriptName })`                    | CRA app, Next.js, monorepo root scripts |
+| App has a specific Node entry file (`.js`/`.ts`) and uses a dev script like `ts-node-dev` | `AddNodeApp(name, dir, "entry.js")` + `.WithRunScript("start:dev")` | Express/Fastify API, Socket.IO server   |
 
 **Key distinctions:**
+
 - `AddNodeApp` is for apps that run a **specific file** with Node (e.g., an Express server at `src/index.ts`). Use `.WithRunScript("start:dev")` to override the dev-time command (e.g., `ts-node-dev`).
 - `AddJavaScriptApp` runs a **package.json script** — simpler, good when the script handles everything.
 - `AddViteApp` is `AddJavaScriptApp` with Vite-specific defaults (auto-HTTPS config augmentation, `dev` as default script).
@@ -24,27 +25,25 @@ Use `.WithRunScript()` to control which package.json script runs during developm
 ```typescript
 // Express API with TypeScript: uses ts-node-dev for hot reload in dev
 const api = await builder
-    .addNodeApp("api", "./api", "src/index.ts")
-    .withRunScript("start:dev")                      // runs "yarn start:dev" (ts-node-dev)
-    .withYarn()
-    .withHttpEndpoint({ env: "PORT" });
+  .addNodeApp("api", "./api", "src/index.ts")
+  .withRunScript("start:dev") // runs "yarn start:dev" (ts-node-dev)
+  .withYarn()
+  .withHttpEndpoint({ env: "PORT" });
 
 // Vite frontend: default "dev" script is fine, just add yarn
-const web = await builder
-    .addViteApp("web", "./frontend")
-    .withYarn();
+const web = await builder.addViteApp("web", "./frontend").withYarn();
 ```
 
 ## Framework-specific port binding
 
 Not all frameworks read ports from env vars the same way:
 
-| Framework | Port mechanism | AppHost pattern |
-|-----------|---------------|-----------------|
-| Express/Fastify | `process.env.PORT` | `.withHttpEndpoint({ env: "PORT" })` |
-| Vite | `--port` CLI arg or `server.port` in config | `.withHttpEndpoint({ env: "PORT" })` — Aspire's Vite integration handles this automatically |
-| Next.js | `PORT` env or `--port` | `.withHttpEndpoint({ env: "PORT" })` |
-| CRA | `PORT` env | `.withHttpEndpoint({ env: "PORT" })` |
+| Framework       | Port mechanism                              | AppHost pattern                                                                             |
+| --------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Express/Fastify | `process.env.PORT`                          | `.withHttpEndpoint({ env: "PORT" })`                                                        |
+| Vite            | `--port` CLI arg or `server.port` in config | `.withHttpEndpoint({ env: "PORT" })` — Aspire's Vite integration handles this automatically |
+| Next.js         | `PORT` env or `--port`                      | `.withHttpEndpoint({ env: "PORT" })`                                                        |
+| CRA             | `PORT` env                                  | `.withHttpEndpoint({ env: "PORT" })`                                                        |
 
 When the framework supports reading the port from an env var or Aspire already handles it, **prefer that over pinning a fixed port**. Managed ports make repeated local runs more reliable and work better when multiple services or multiple Aspire apps are running.
 
@@ -62,20 +61,21 @@ In monorepos that use **yarn workspaces** or **pnpm workspaces**, all workspace 
 
 ```typescript
 // ❌ WRONG for workspace monorepos — concurrent installs cause file locking errors
-const app = await builder.addViteApp("app", "./packages/frontend")
-    .withYarn();  // triggers yarn install at startup → EPERM on Windows
+const app = await builder.addViteApp("app", "./packages/frontend").withYarn(); // triggers yarn install at startup → EPERM on Windows
 
-const api = await builder.addNodeApp("api", "./packages/api", "src/index.ts")
-    .withYarn();  // second concurrent yarn install → file lock conflict
+const api = await builder
+  .addNodeApp("api", "./packages/api", "src/index.ts")
+  .withYarn(); // second concurrent yarn install → file lock conflict
 
 // ✅ CORRECT for workspace monorepos — deps already installed at root
 const app = await builder.addViteApp("app", "./packages/frontend");
 
-const api = await builder.addNodeApp("api", "./packages/api", "src/index.ts")
-    .withRunScript("start:dev");
+const api = await builder
+  .addNodeApp("api", "./packages/api", "src/index.ts")
+  .withRunScript("start:dev");
 ```
 
-Tell the user: *"This is a yarn workspace monorepo — I'll skip `.withYarn()` on individual resources since dependencies are shared at the root. Make sure to run `yarn` at the root before `aspire start`."*
+Tell the user: _"This is a yarn workspace monorepo — I'll skip `.withYarn()` on individual resources since dependencies are shared at the root. Make sure to run `yarn` at the root before `aspire start`."_
 
 **This only applies to workspace monorepos with shared `node_modules`.** For standalone apps or apps with independent `node_modules` directories, `.withYarn()` / `.withPnpm()` is correct and should be used — it ensures deps are installed before the resource starts.
 

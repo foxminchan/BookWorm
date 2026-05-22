@@ -14,11 +14,11 @@ npm install @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node @o
 Create an instrumentation file (e.g., `instrumentation.ts` or `instrumentation.js`):
 
 ```typescript
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-otlp-grpc';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-otlp-grpc';
-import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-otlp-grpc";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-otlp-grpc";
+import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
 const sdk = new NodeSDK({
   traceExporter: new OTLPTraceExporter(),

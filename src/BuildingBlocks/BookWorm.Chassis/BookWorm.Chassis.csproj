@@ -6,7 +6,8 @@
     <PackageReference Include="Aspire.Keycloak.Authentication" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="WolverineFx.Kafka" />
-    <PackageReference Include="WolverineFx.Postgresql" />
+    <PackageReference Include="WolverineFx.Http.Marten" />
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" />
     <PackageReference Include="Scrutor" />
   </ItemGroup>
   <ItemGroup Label="Data">

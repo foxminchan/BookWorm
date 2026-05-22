@@ -1,342 +1,353 @@
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-# https://containers.dev/guide/dependabot
-
-version: 2
 enable-beta-ecosystems: true
 registries:
   public-nuget:
     type: nuget-feed
     url: https://api.nuget.org/v3/index.json
 updates:
-  # ── .NET SDK (global.json) ────────────────────────────────────────────
-  - package-ecosystem: dotnet-sdk
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
-    labels:
-      - "dependencies"
-      - "dotnet"
-    commit-message:
-      prefix: ".NET SDK"
+  - commit-message:
       include: scope
-
-  # ── Dev Containers ────────────────────────────────────────────────────
-  - package-ecosystem: devcontainers
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
+      prefix: .NET SDK
+    directory: /
     labels:
-      - "dependencies"
-      - "devcontainers"
-    commit-message:
-      prefix: "Devcontainer"
-      include: scope
-
-  # ── NuGet (.NET) ──────────────────────────────────────────────────────
-  - package-ecosystem: nuget
-    directory: "/"
-    registries:
-      - public-nuget
+      - dependencies
+      - dotnet
+    package-ecosystem: dotnet-sdk
     schedule:
-      interval: weekly
       day: friday
+      interval: weekly
       time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
-    labels:
-      - "dependencies"
-      - "dotnet"
-    commit-message:
-      prefix: "NuGet"
+      timezone: Asia/Ho_Chi_Minh
+  - commit-message:
       include: scope
-    open-pull-requests-limit: 15
+      prefix: Devcontainer
+    directory: /
+    labels:
+      - dependencies
+      - devcontainers
+    package-ecosystem: devcontainers
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
+  - commit-message:
+      include: scope
+      prefix: NuGet
     cooldown:
       default-days: 5
       semver-major-days: 14
       semver-minor-days: 5
       semver-patch-days: 3
+    directory: /
     groups:
-      Aspire:
-        patterns:
-          - "Aspire.*"
-        update-types: [ "minor", "patch" ]
       AspNetCore:
         patterns:
-          - "Microsoft.AspNetCore.*"
-          - "Microsoft.Extensions.Features"
-        update-types: [ "minor", "patch" ]
-      MicrosoftExtensions:
+          - Microsoft.AspNetCore.*
+          - Microsoft.Extensions.Features
+        update-types:
+          - minor
+          - patch
+      Aspire:
         patterns:
-          - "Microsoft.Extensions.Caching.*"
-          - "Microsoft.Extensions.Compliance.*"
-          - "Microsoft.Extensions.Http.*"
-          - "Microsoft.Extensions.ServiceDiscovery*"
-          - "Microsoft.Extensions.AI.*"
-        update-types: [ "minor", "patch" ]
-      OpenTelemetry:
-        patterns:
-          - "OpenTelemetry.*"
-        update-types: [ "minor", "patch" ]
-      Grpc:
-        patterns:
-          - "Grpc.*"
-        update-types: [ "minor", "patch" ]
-      Wolverine:
-        patterns:
-          - "Wolverine*"
-        update-types: [ "minor", "patch" ]
-      EntityFrameworkCore:
-        patterns:
-          - "Microsoft.EntityFrameworkCore.*"
-          - "EFCore.*"
-        update-types: [ "minor", "patch" ]
-      MicrosoftAgents:
-        patterns:
-          - "Microsoft.Agents.*"
-        update-types: [ "minor", "patch" ]
-      SemanticKernel:
-        patterns:
-          - "Microsoft.SemanticKernel.*"
+          - Aspire.*
+        update-types:
+          - minor
+          - patch
       CommunityToolkit:
         patterns:
-          - "CommunityToolkit.*"
-        update-types: [ "minor", "patch" ]
-      Quartz:
-        patterns:
-          - "Quartz.*"
-        update-types: [ "minor", "patch" ]
-      Testing:
-        patterns:
-          - "TUnit*"
-          - "Bogus"
-          - "Moq"
-          - "Shouldly"
-          - "TngTech.ArchUnitNET.*"
-        update-types: [ "minor", "patch" ]
+          - CommunityToolkit.*
+        update-types:
+          - minor
+          - patch
       ContractTesting:
         patterns:
-          - "Verify.*"
-        update-types: [ "minor", "patch" ]
+          - Verify.*
+        update-types:
+          - minor
+          - patch
+      EntityFrameworkCore:
+        patterns:
+          - Microsoft.EntityFrameworkCore.*
+          - EFCore.*
+        update-types:
+          - minor
+          - patch
+      Grpc:
+        patterns:
+          - Grpc.*
+        update-types:
+          - minor
+          - patch
+      MicrosoftAgents:
+        patterns:
+          - Microsoft.Agents.*
+        update-types:
+          - minor
+          - patch
+      MicrosoftExtensions:
+        patterns:
+          - Microsoft.Extensions.Caching.*
+          - Microsoft.Extensions.Compliance.*
+          - Microsoft.Extensions.Http.*
+          - Microsoft.Extensions.ServiceDiscovery*
+          - Microsoft.Extensions.AI.*
+        update-types:
+          - minor
+          - patch
       MicrosoftTesting:
         patterns:
-          - "Microsoft.Testing.*"
-        update-types: [ "minor", "patch" ]
+          - Microsoft.Testing.*
+        update-types:
+          - minor
+          - patch
+      OpenTelemetry:
+        patterns:
+          - OpenTelemetry.*
+        update-types:
+          - minor
+          - patch
+      Quartz:
+        patterns:
+          - Quartz.*
+        update-types:
+          - minor
+          - patch
+      SemanticKernel:
+        patterns:
+          - Microsoft.SemanticKernel.*
+      Testing:
+        patterns:
+          - TUnit*
+          - Bogus
+          - Moq
+          - Shouldly
+          - TngTech.ArchUnitNET.*
+        update-types:
+          - minor
+          - patch
+      Wolverine:
+        patterns:
+          - Wolverine*
+        update-types:
+          - minor
+          - patch
       nuget-security:
         applies-to: security-updates
         patterns:
           - "*"
-        update-types: [ "patch", "minor" ]
-
-  # ── npm: Event Catalog docs ───────────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/docs/eventcatalog"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
+        update-types:
+          - patch
+          - minor
     labels:
-      - "dependencies"
-      - "javascript"
-      - "documentation"
-    commit-message:
-      prefix: "Node (Event Catalog)"
+      - dependencies
+      - dotnet
+    open-pull-requests-limit: 15
+    package-ecosystem: nuget
+    registries:
+      - public-nuget
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
+  - commit-message:
       include: scope
-    open-pull-requests-limit: 10
-    versioning-strategy: increase
+      prefix: Node (Event Catalog)
+    directory: /docs/eventcatalog
     groups:
       eventcatalog:
         patterns:
           - "@eventcatalog/*"
-
-  # ── npm: Docusaurus docs ──────────────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/docs/docusaurus"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
     labels:
-      - "dependencies"
-      - "javascript"
-      - "documentation"
-    commit-message:
-      prefix: "Node (Docusaurus)"
-      include: scope
+      - dependencies
+      - javascript
+      - documentation
     open-pull-requests-limit: 10
+    package-ecosystem: npm
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
     versioning-strategy: increase
+  - commit-message:
+      include: scope
+      prefix: Node (Docusaurus)
+    directory: /docs/docusaurus
     groups:
       docusaurus:
         patterns:
           - "@docusaurus/*"
       react:
         patterns:
-          - "react"
-          - "react-dom"
+          - react
+          - react-dom
           - "@types/react*"
-
-  # ── npm: k6 load tests ───────────────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/src/Aspire/BookWorm.AppHost/Container/k6"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
     labels:
-      - "dependencies"
-      - "javascript"
-      - "testing"
-    commit-message:
-      prefix: "Node (k6)"
-      include: scope
+      - dependencies
+      - javascript
+      - documentation
     open-pull-requests-limit: 10
+    package-ecosystem: npm
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
     versioning-strategy: increase
+  - commit-message:
+      include: scope
+      prefix: Node (k6)
+    directory: /src/Aspire/BookWorm.AppHost/Container/k6
     groups:
       babel:
         patterns:
           - "@babel/*"
       build-tools:
         patterns:
-          - "webpack*"
+          - webpack*
           - "*-loader"
-
-  # ── npm: Keycloakify ──────────────────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
     labels:
-      - "dependencies"
-      - "javascript"
-    commit-message:
-      prefix: "Node (Keycloakify)"
-      include: scope
+      - dependencies
+      - javascript
+      - testing
     open-pull-requests-limit: 10
+    package-ecosystem: npm
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
     versioning-strategy: increase
-    ignore:
-      - dependency-name: "tailwindcss"
+  - commit-message:
+      include: scope
+      prefix: Node (Keycloakify)
+    directory: /src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
     groups:
-      react:
-        patterns:
-          - "react"
-          - "react-dom"
-          - "@types/react*"
       keycloakify:
         patterns:
-          - "keycloakify"
+          - keycloakify
           - "@keycloakify/*"
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react*"
       storybook:
         patterns:
           - "@storybook/*"
-          - "storybook"
-
-  # ── npm: Frontend (pnpm monorepo) ────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/src/Clients"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
+          - storybook
+    ignore:
+      - dependency-name: "tailwindcss"
     labels:
-      - "dependencies"
-      - "javascript"
-      - "frontend"
-    commit-message:
-      prefix: "Node (Frontend)"
-      include: scope
-    open-pull-requests-limit: 15
+      - dependencies
+      - javascript
+    open-pull-requests-limit: 10
+    package-ecosystem: npm
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
     versioning-strategy: increase
+  - commit-message:
+      include: scope
+      prefix: Node (Frontend)
     cooldown:
       default-days: 3
       semver-major-days: 14
       semver-minor-days: 5
       semver-patch-days: 2
+    directory: /src/Clients
     groups:
-      nextjs:
-        patterns:
-          - "next"
-          - "@next/*"
-          - "eslint-config-next"
-      react:
-        patterns:
-          - "react"
-          - "react-dom"
-          - "@types/react*"
-      tanstack:
-        patterns:
-          - "@tanstack/*"
-      radix:
-        patterns:
-          - "@radix-ui/*"
       better-auth:
         patterns:
-          - "better-auth"
-      turbo:
-        patterns:
-          - "turbo"
-          - "@turbo/*"
-      typescript:
-        patterns:
-          - "typescript"
-          - "@types/*"
+          - better-auth
       eslint:
         patterns:
-          - "eslint*"
+          - eslint*
           - "@typescript-eslint/*"
       frontend-security:
         applies-to: security-updates
         patterns:
           - "*"
-        update-types: [ "patch", "minor" ]
-
-  # ── Docker ────────────────────────────────────────────────────────────
-  - package-ecosystem: docker
-    directories:
-      - "/src/Clients/apps/storefront"
-      - "/src/Clients/apps/backoffice"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
+        update-types:
+          - patch
+          - minor
+      nextjs:
+        patterns:
+          - next
+          - "@next/*"
+          - eslint-config-next
+      radix:
+        patterns:
+          - "@radix-ui/*"
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      turbo:
+        patterns:
+          - turbo
+          - "@turbo/*"
+      typescript:
+        patterns:
+          - typescript
+          - "@types/*"
     labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "Docker"
-      include: scope
-
-  # ── GitHub Actions ────────────────────────────────────────────────────
-  - package-ecosystem: github-actions
-    directories:
-      - "/"
-      - "/.github/actions/*"
+      - dependencies
+      - javascript
+      - frontend
+    open-pull-requests-limit: 15
+    package-ecosystem: npm
     schedule:
-      interval: weekly
       day: friday
+      interval: weekly
       time: "10:00"
-      timezone: "Asia/Ho_Chi_Minh"
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "GitHub Actions"
+      timezone: Asia/Ho_Chi_Minh
+    versioning-strategy: increase
+  - commit-message:
       include: scope
-    ignore:
-      - dependency-name: "github/gh-aw-actions"
+      prefix: Docker
+    directories:
+      - /src/Clients/apps/storefront
+      - /src/Clients/apps/backoffice
+    labels:
+      - dependencies
+      - docker
+    package-ecosystem: docker
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
+  - commit-message:
+      include: scope
+      prefix: GitHub Actions
+    directories:
+      - /
+      - /.github/actions/*
     groups:
       github-actions-minor:
         patterns:
           - "*"
-        update-types: [ "minor", "patch" ]
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "github/gh-aw-actions"
+      - dependency-name: "github/gh-aw-actions/**" # Managed by gh aw compile. Version-locked to the gh-aw compiler; do not bump.
+    labels:
+      - dependencies
+      - github-actions
+    package-ecosystem: github-actions
+    schedule:
+      day: friday
+      interval: weekly
+      time: "10:00"
+      timezone: Asia/Ho_Chi_Minh
+version: 2

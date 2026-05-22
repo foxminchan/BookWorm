@@ -14,22 +14,22 @@ Before writing AppHost code for an unfamiliar resource type or integration, **al
 
 Packages named `Aspire.Hosting.*` — maintained by the Aspire team and ship with every release. Examples:
 
-| Package | Unlocks |
-|---------|---------|
-| `Aspire.Hosting.Python` | `AddPythonApp()`, `AddUvicornApp()` |
+| Package                     | Unlocks                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| `Aspire.Hosting.Python`     | `AddPythonApp()`, `AddUvicornApp()`                                                |
 | `Aspire.Hosting.JavaScript` | `AddJavaScriptApp()`, `AddNodeApp()`, `AddViteApp()`, `.WithYarn()`, `.WithPnpm()` |
-| `Aspire.Hosting.PostgreSQL` | `AddPostgres()`, `AddDatabase()` |
-| `Aspire.Hosting.Redis` | `AddRedis()` |
+| `Aspire.Hosting.PostgreSQL` | `AddPostgres()`, `AddDatabase()`                                                   |
+| `Aspire.Hosting.Redis`      | `AddRedis()`                                                                       |
 
 #### Tier 2: Community Toolkit packages (use when no first-party exists)
 
 Packages named `CommunityToolkit.Aspire.Hosting.*` — maintained by the community, documented on aspire.dev, and installable via `aspire add`. Examples:
 
-| Package | Unlocks |
-|---------|---------|
+| Package                                  | Unlocks                                                      |
+| ---------------------------------------- | ------------------------------------------------------------ |
 | `CommunityToolkit.Aspire.Hosting.Golang` | `AddGolangApp()` — handles `go run .`, working dir, PORT env |
-| `CommunityToolkit.Aspire.Hosting.Rust` | `AddRustApp()` |
-| `CommunityToolkit.Aspire.Hosting.Java` | Java hosting support |
+| `CommunityToolkit.Aspire.Hosting.Rust`   | `AddRustApp()`                                               |
+| `CommunityToolkit.Aspire.Hosting.Java`   | Java hosting support                                         |
 
 These provide typed APIs with proper endpoint handling, health checks, and dashboard integration — significantly better than raw executables.
 
@@ -79,14 +79,14 @@ Look for the **"Connection properties"** section — it lists what the integrati
 
 Common auto-managed values (do NOT model these manually):
 
-| Integration | Auto-managed |
-|-------------|-------------|
-| `AddPostgres()` | Password, host, port, connection string |
-| `AddSqlServer()` | SA password, host, port, connection string |
-| `AddRedis()` | Connection string, port |
-| `AddMySql()` | Root password, host, port, connection string |
-| `AddRabbitMQ()` | Username, password, host, port, connection string |
-| `AddMongoDB()` | Connection string, port |
+| Integration      | Auto-managed                                      |
+| ---------------- | ------------------------------------------------- |
+| `AddPostgres()`  | Password, host, port, connection string           |
+| `AddSqlServer()` | SA password, host, port, connection string        |
+| `AddRedis()`     | Connection string, port                           |
+| `AddMySql()`     | Root password, host, port, connection string      |
+| `AddRabbitMQ()`  | Username, password, host, port, connection string |
+| `AddMongoDB()`   | Connection string, port                           |
 
 To add an integration package (which unlocks typed builder methods):
 
@@ -126,11 +126,11 @@ var frontend = builder.AddCSharpApp("web", "../src/Web")
 ```typescript
 // TypeScript equivalent
 const db = await builder.addPostgres("pg").addDatabase("mydb");
-const api = await builder.addCSharpApp("api", "./src/Api")
-    .withReference(db);
+const api = await builder.addCSharpApp("api", "./src/Api").withReference(db);
 ```
 
 **How services consume references**: Services receive connection info as environment variables. The naming convention is:
+
 - Connection strings: `ConnectionStrings__<resourceName>` (e.g., `ConnectionStrings__mydb=Host=...`)
 - Service URLs: `services__<resourceName>__<endpointName>__0` (e.g., `services__api__http__0=http://localhost:5123`)
 
@@ -143,6 +143,7 @@ var api = builder.AddCSharpApp("api", "../src/Api")
 ```
 
 **When to use which:**
+
 - Connecting service A to service B or a database/cache/queue → `WithReference()`
 - Passing configuration values, feature flags, API keys → `WithEnvironment()`
 - Never manually construct connection strings with `WithEnvironment()` when `WithReference()` would work
@@ -219,6 +220,7 @@ var frontend = builder.AddViteApp("frontend", "../frontend")
 ```
 
 **Port injection**: Many frameworks (Express, Vite, Flask) need to know which port to listen on. Use the `env:` parameter:
+
 - `withHttpsEndpoint({ env: "PORT" })` (TypeScript)
 - `.WithHttpsEndpoint(env: "PORT")` (C#)
 
@@ -329,13 +331,12 @@ This prevents data loss when restarting the AppHost — the container stays runn
 **TypeScript equivalent:**
 
 ```typescript
-const db = await builder.addPostgres("pg")
-    .withLifetime("persistent");
+const db = await builder.addPostgres("pg").withLifetime("persistent");
 ```
 
 Recommend persistent lifetime for databases and caches during local development.
 
-**⚠️ Stale persistent volumes can cause auth failures.** Typed integrations like `AddSqlServer()`, `AddPostgres()`, `AddRedis()`, and `AddMySql()` auto-generate passwords on first run. Those passwords are stored inside the container's data volume. If the AppHost is recreated or its user-secrets are reset, Aspire generates a *new* password — but the persistent volume still has the *old* one. The symptom is repeated `Login failed` or `password authentication failed` errors in the container logs.
+**⚠️ Stale persistent volumes can cause auth failures.** Typed integrations like `AddSqlServer()`, `AddPostgres()`, `AddRedis()`, and `AddMySql()` auto-generate passwords on first run. Those passwords are stored inside the container's data volume. If the AppHost is recreated or its user-secrets are reset, Aspire generates a _new_ password — but the persistent volume still has the _old_ one. The symptom is repeated `Login failed` or `password authentication failed` errors in the container logs.
 
 To fix: stop the AppHost, remove the stale container and its volume (`docker rm -f <name>; docker volume rm <volume>`), then restart. Aspire will recreate both with a matching password. Mention this to the user if they see auth failures on persistent infrastructure containers after recreating the AppHost.
 
@@ -388,6 +389,5 @@ var db = builder.AddPostgres("pg")
 ```
 
 ```typescript
-const db = await builder.addPostgres("pg")
-    .withDataVolume("pg-data");
+const db = await builder.addPostgres("pg").withDataVolume("pg-data");
 ```

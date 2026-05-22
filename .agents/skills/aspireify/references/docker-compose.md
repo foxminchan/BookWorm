@@ -35,7 +35,7 @@ services:
 When profiles are present:
 
 1. **List them clearly** — show the user which profiles exist and what services each activates
-2. **Ask which to target** — *"Your docker-compose has profiles: cloud, mssql, postgres, storage, redis, mail. Which ones represent your typical local dev stack?"*
+2. **Ask which to target** — _"Your docker-compose has profiles: cloud, mssql, postgres, storage, redis, mail. Which ones represent your typical local dev stack?"_
 3. **Model only selected profiles** — services in unselected profiles are skipped entirely
 4. **Services without profiles always run** — if a service has no `profiles:` key, include it regardless of profile selection
 5. **Profile-specific infrastructure implies choices** — `mssql` vs `postgres` profiles often mean the repo supports multiple database backends. Ask which one to model in the AppHost.
@@ -46,17 +46,17 @@ Prefer typed Aspire integrations over raw `AddContainer()`. Use `aspire docs sea
 
 Common mappings:
 
-| Compose image | Aspire integration | Method |
-|---------------|-------------------|--------|
-| `postgres:*` | `Aspire.Hosting.PostgreSQL` | `AddPostgres()` |
-| `mcr.microsoft.com/mssql/server:*` | `Aspire.Hosting.SqlServer` | `AddSqlServer()` |
-| `mysql:*` / `mariadb:*` | `Aspire.Hosting.MySql` | `AddMySql()` |
-| `redis:*` | `Aspire.Hosting.Redis` | `AddRedis()` |
-| `rabbitmq:*` | `Aspire.Hosting.RabbitMQ` | `AddRabbitMQ()` |
-| `mongo:*` | `Aspire.Hosting.MongoDB` | `AddMongoDB()` |
-| `mcr.microsoft.com/azure-storage/azurite:*` | `Aspire.Hosting.Azure.Storage` | `AddAzureStorage().RunAsEmulator()` |
-| `kafka`, `confluentinc/cp-kafka:*` | `Aspire.Hosting.Kafka` | `AddKafka()` |
-| `nats:*` | `Aspire.Hosting.Nats` | `AddNats()` |
+| Compose image                                             | Aspire integration                | Method                                 |
+| --------------------------------------------------------- | --------------------------------- | -------------------------------------- |
+| `postgres:*`                                              | `Aspire.Hosting.PostgreSQL`       | `AddPostgres()`                        |
+| `mcr.microsoft.com/mssql/server:*`                        | `Aspire.Hosting.SqlServer`        | `AddSqlServer()`                       |
+| `mysql:*` / `mariadb:*`                                   | `Aspire.Hosting.MySql`            | `AddMySql()`                           |
+| `redis:*`                                                 | `Aspire.Hosting.Redis`            | `AddRedis()`                           |
+| `rabbitmq:*`                                              | `Aspire.Hosting.RabbitMQ`         | `AddRabbitMQ()`                        |
+| `mongo:*`                                                 | `Aspire.Hosting.MongoDB`          | `AddMongoDB()`                         |
+| `mcr.microsoft.com/azure-storage/azurite:*`               | `Aspire.Hosting.Azure.Storage`    | `AddAzureStorage().RunAsEmulator()`    |
+| `kafka`, `confluentinc/cp-kafka:*`                        | `Aspire.Hosting.Kafka`            | `AddKafka()`                           |
+| `nats:*`                                                  | `Aspire.Hosting.Nats`             | `AddNats()`                            |
 | `mcr.microsoft.com/azure-messaging/servicebus-emulator:*` | `Aspire.Hosting.Azure.ServiceBus` | `AddAzureServiceBus().RunAsEmulator()` |
 
 For images not in this list, use `aspire docs search` to check, then fall back to `AddContainer()`.
@@ -95,12 +95,12 @@ When you see a `${VAR}` pattern in compose:
 
 ## Volume mapping
 
-| Compose volume type | Aspire equivalent | Notes |
-|--------------------|--------------------|-------|
-| Named volume (`mssql_data:/var/opt/mssql`) | `WithDataVolume()` | Preferred — Aspire manages lifecycle |
-| Named volume (custom name) | `WithDataVolume(name: "custom")` | Preserves the name for familiarity |
-| Bind mount (`./data:/app/data`) | `WithBindMount("./data", "/app/data")` | Use for config files, scripts, or shared data |
-| Bind mount for config (`./config.json:/etc/config.json`) | `WithBindMount(...)` | Preserve for config injection |
+| Compose volume type                                      | Aspire equivalent                      | Notes                                         |
+| -------------------------------------------------------- | -------------------------------------- | --------------------------------------------- |
+| Named volume (`mssql_data:/var/opt/mssql`)               | `WithDataVolume()`                     | Preferred — Aspire manages lifecycle          |
+| Named volume (custom name)                               | `WithDataVolume(name: "custom")`       | Preserves the name for familiarity            |
+| Bind mount (`./data:/app/data`)                          | `WithBindMount("./data", "/app/data")` | Use for config files, scripts, or shared data |
+| Bind mount for config (`./config.json:/etc/config.json`) | `WithBindMount(...)`                   | Preserve for config injection                 |
 
 **Tip:** If the compose file mounts migration scripts or SQL files into a database container, those are likely init scripts. See "Init and setup scripts" below.
 
@@ -163,7 +163,7 @@ Repos often have setup scripts alongside their compose files:
 **Present the user with options for how to handle these:**
 
 1. **Model as a lifecycle command on the relevant resource** — for example, a database migration script can be a startup command on the database resource. This runs automatically when the resource starts.
-   → *"Your repo has a migrate.ps1 that runs SQL migrations against the database. I can model this as a startup lifecycle hook on the database resource so migrations run automatically when you `aspire start`. Want that?"*
+   → _"Your repo has a migrate.ps1 that runs SQL migrations against the database. I can model this as a startup lifecycle hook on the database resource so migrations run automatically when you `aspire start`. Want that?"_
 
 2. **Model as a standalone executable resource** — for scripts that don't map cleanly to a single resource, use `AddExecutable()` with `WaitForCompletion()` so dependent services wait for the script to finish.
 

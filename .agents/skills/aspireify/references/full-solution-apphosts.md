@@ -32,14 +32,14 @@ When a solution contains more than a handful of projects, don't try to model eve
 
 For every `.csproj` in the solution, determine its role:
 
-| Classification | How to detect | Action |
-|---------------|---------------|--------|
-| **Runnable service** | `OutputType` = `Exe` or `WinExe`, not a test project, not the AppHost | Candidate for AppHost modeling |
-| **Class library** | `OutputType` = `Library` | Skip — these are dependencies, not services |
-| **Test project** | References xUnit/NUnit/MSTest, or name ends in `.Test`/`.Tests`/`.IntegrationTest` | Skip |
-| **Migration runner** | Name contains `Migrat`, or references `DbUp`/`FluentMigrator`/EF migrations tooling | Special handling — see below |
-| **Utility/tool** | Located in `util/`, `tools/`, or `scripts/` directories; not a long-running service | Skip unless user requests |
-| **AppHost** | `IsAspireHost` = `true` | Skip — this is the host itself |
+| Classification       | How to detect                                                                       | Action                                      |
+| -------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------- |
+| **Runnable service** | `OutputType` = `Exe` or `WinExe`, not a test project, not the AppHost               | Candidate for AppHost modeling              |
+| **Class library**    | `OutputType` = `Library`                                                            | Skip — these are dependencies, not services |
+| **Test project**     | References xUnit/NUnit/MSTest, or name ends in `.Test`/`.Tests`/`.IntegrationTest`  | Skip                                        |
+| **Migration runner** | Name contains `Migrat`, or references `DbUp`/`FluentMigrator`/EF migrations tooling | Special handling — see below                |
+| **Utility/tool**     | Located in `util/`, `tools/`, or `scripts/` directories; not a long-running service | Skip unless user requests                   |
+| **AppHost**          | `IsAspireHost` = `true`                                                             | Skip — this is the host itself              |
 
 Run `dotnet msbuild <project> -getProperty:OutputType` to classify. For large solutions, batch these calls.
 
@@ -57,9 +57,9 @@ Scan all directories in the solution, not just `src/`. If you find projects outs
 
 Group runnable services by category and present them concisely. For a repo with 60+ projects, show something like:
 
-> *"I found 8 runnable web services (Api, Admin, Identity, Billing, Events, EventsProcessor, Icons, Notifications), 5 class libraries (Core, SharedWeb, Infrastructure.Dapper, Infrastructure.EntityFramework, Sql), 3 migration runners (Migrator, MsSqlMigratorUtility, PostgresMigrations), and 40+ test projects.*
+> _"I found 8 runnable web services (Api, Admin, Identity, Billing, Events, EventsProcessor, Icons, Notifications), 5 class libraries (Core, SharedWeb, Infrastructure.Dapper, Infrastructure.EntityFramework, Sql), 3 migration runners (Migrator, MsSqlMigratorUtility, PostgresMigrations), and 40+ test projects._
 >
-> *I recommend starting with the core services. Which of the 8 web services should I include in the AppHost?"*
+> _I recommend starting with the core services. Which of the 8 web services should I include in the AppHost?"_
 
 **Do not dump a flat list of 60+ projects.** Classify, summarize, and let the user choose.
 
@@ -76,7 +76,7 @@ The core loop is typically:
 
 Present this explicitly:
 
-> *"You have 8 services. I recommend wiring the core loop first — Api, Identity, and the database — so we can validate `aspire start` works. Then we'll add the remaining services. Sound good?"*
+> _"You have 8 services. I recommend wiring the core loop first — Api, Identity, and the database — so we can validate `aspire start` works. Then we'll add the remaining services. Sound good?"_
 
 **After the core loop succeeds with `aspire start`:**
 
@@ -88,7 +88,7 @@ Present this explicitly:
 
 Present progress to the user as you go:
 
-> *"Core loop is working (Api + Identity + Postgres + Redis). Adding the next batch: Admin, Billing, and Events..."*
+> _"Core loop is working (Api + Identity + Postgres + Redis). Adding the next batch: Admin, Billing, and Events..."_
 
 Do not consider the skill complete until all services the user selected in Step 3 are wired and `aspire start` runs with all of them healthy. The core loop is a risk-reduction strategy, not an excuse to stop early.
 
@@ -127,7 +127,7 @@ Check `global.json` for `msbuild-sdks` entries beyond the standard Microsoft one
 When you find a custom MSBuild SDK:
 
 - **Don't assume project properties are reliable** — the custom SDK may override `OutputType`, inject implicit references, or modify build behavior in ways you can't see
-- **Note it to the user** — *"This repo uses a custom MSBuild SDK (Bitwarden.Server.Sdk). I'll classify projects based on their directory structure and names as well as MSBuild properties, since the custom SDK may affect property evaluation."*
+- **Note it to the user** — _"This repo uses a custom MSBuild SDK (Bitwarden.Server.Sdk). I'll classify projects based on their directory structure and names as well as MSBuild properties, since the custom SDK may affect property evaluation."_
 - **Cross-reference with directory structure** — if `OutputType` says `Library` but the project is in `src/Api/` and has a `Program.cs` and `Startup.cs`, it's likely a runnable service whose OutputType is set by the custom SDK
 
 ## Conditional compilation
@@ -144,7 +144,7 @@ Some repos use `#if` / `#endif` to maintain multiple build variants from the sam
 
 When you detect conditional compilation in `Program.cs` or `Startup.cs`:
 
-1. **Surface it early** — *"Your services use `#if OSS` conditional compilation, which means the app behaves differently depending on the build configuration. Which variant should the AppHost target — OSS or commercial?"*
+1. **Surface it early** — _"Your services use `#if OSS` conditional compilation, which means the app behaves differently depending on the build configuration. Which variant should the AppHost target — OSS or commercial?"_
 2. **Don't try to model both** — pick the variant the user selects and wire accordingly
 3. **Note the other variant** — leave a comment in the AppHost: `// This AppHost targets the OSS build. For commercial, adjust service registrations.`
 
@@ -251,7 +251,7 @@ There are exactly two options. Present them clearly:
 
 **When multiple services share the same legacy pattern, batch the decision.** If 8 services all use `Host.CreateDefaultBuilder` + `UseStartup<T>`, don't ask 8 times. Ask once:
 
-> *"All 8 of your web services use the legacy IHostBuilder + Startup pattern. I can either (a) model them all in the AppHost without ServiceDefaults for now — they'll appear in the dashboard and get environment wiring but won't have health checks or service discovery — or (b) modernize each service's bootstrap to the WebApplicationBuilder pattern so ServiceDefaults works fully. Which approach do you prefer? You can also mix — modernize a few key services and leave the rest."*
+> _"All 8 of your web services use the legacy IHostBuilder + Startup pattern. I can either (a) model them all in the AppHost without ServiceDefaults for now — they'll appear in the dashboard and get environment wiring but won't have health checks or service discovery — or (b) modernize each service's bootstrap to the WebApplicationBuilder pattern so ServiceDefaults works fully. Which approach do you prefer? You can also mix — modernize a few key services and leave the rest."_
 
 If the repo is conservative or large, default to **asking**, not migrating automatically.
 

@@ -10,7 +10,6 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
-    <PackageReference Include="Marten.AspNetCore" />
     <PackageReference Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis" />
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Aspire.Microsoft.Azure.StackExchangeRedis" />
@@ -20,8 +19,6 @@
   </ItemGroup>
   <ItemGroup Label="EF Core">
     <PackageReference Include="Aspire.Azure.Npgsql" />
-    <PackageReference Include="WolverineFx.EntityFrameworkCore" />
-    <PackageReference Include="WolverineFx.Postgresql" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
   <ItemGroup>

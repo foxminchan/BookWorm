@@ -1,13 +1,13 @@
 # React Best Practices
 
-**Version 1.0.0**
-Vercel Engineering
+**Version 1.0.0**  
+Vercel Engineering  
 January 2026
 
-> **Note:**
-> This document is mainly for agents and LLMs to follow when maintaining,
-> generating, or refactoring React and Next.js codebases. Humans
-> may also find it useful, but guidance here is optimized for automation
+> **Note:**  
+> This document is mainly for agents and LLMs to follow when maintaining,  
+> generating, or refactoring React and Next.js codebases. Humans  
+> may also find it useful, but guidance here is optimized for automation  
 > and consistency by AI-assisted workflows.
 
 ---
