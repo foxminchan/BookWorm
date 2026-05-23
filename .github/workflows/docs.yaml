@@ -28,7 +28,7 @@ env:
 
 jobs:
   build:
-    name: Build Documentation
+    name: 📚 Build Documentation
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
@@ -38,15 +38,15 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Bun
+      - name: 🍞 Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.0.2
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
-      - name: Cache Bun dependencies
+      - name: 💾 Cache Bun dependencies
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.bun/install/cache
@@ -54,18 +54,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
-      - name: Setup Pages
+      - name: 📄 Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
         working-directory: docs/docusaurus
 
-      - name: Build documentation
+      - name: 🔨 Build documentation
         run: bun run build
         working-directory: docs/docusaurus
 
-      - name: Download Allure Report (Backoffice)
+      - name: ⬇️ Download Allure Report (Backoffice)
         uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           name: allure-report-backoffice
@@ -77,7 +77,7 @@ jobs:
           search_artifacts: true
           if_no_artifact_found: warn
 
-      - name: Download Allure Report (Storefront)
+      - name: ⬇️ Download Allure Report (Storefront)
         uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           name: allure-report-storefront
@@ -89,13 +89,13 @@ jobs:
           search_artifacts: true
           if_no_artifact_found: warn
 
-      - name: Upload artifact
+      - name: ⬆️ Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: docs/docusaurus/build
 
   deploy:
-    name: Deploy to GitHub Pages
+    name: 🚀 Deploy to GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -105,6 +105,6 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Deploy to GitHub Pages
+      - name: 🚀 Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

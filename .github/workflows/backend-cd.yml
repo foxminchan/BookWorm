@@ -28,7 +28,7 @@ permissions:
 jobs:
   aspire_deploy:
     runs-on: ubuntu-latest
-    name: Deploy BookWorm to ACA from GHCR
+    name: 🚀 Deploy BookWorm to ACA from GHCR
     permissions:
       id-token: write
       contents: read
@@ -36,44 +36,44 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     timeout-minutes: 30
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Setup .NET Core
+      - name: 🔧 Setup .NET Core
         uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
-      - name: Install Aspire CLI
+      - name: 🛠️ Install Aspire CLI
         run: |
           curl -sSL https://aspire.dev/install.sh | bash
           echo "$HOME/.aspire/bin" >> $GITHUB_PATH
 
-      - name: Verify Aspire Installation
+      - name: ✅ Verify Aspire Installation
         run: aspire --version
 
-      - name: Login to GitHub Container Registry
+      - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Azure Login
+      - name: 🔐 Azure Login
         uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Normalize repository name
+      - name: 🔤 Normalize repository name
         id: normalize
         run: |
           echo "repository=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy with Aspire
+      - name: 🚀 Deploy with Aspire
         run: |
           aspire deploy \
             --environment ${{ github.event.inputs.environment }}

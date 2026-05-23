@@ -12,61 +12,61 @@ env:
 
 jobs:
   format:
-    name: Format
+    name: 💅 Format
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Format
+      - name: 💅 Format
         uses: ./.github/actions/format
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   style:
-    name: Style
+    name: 💅 Style
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Style
+      - name: 💅 Style
         uses: ./.github/actions/style
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   analyzers:
-    name: Analyzers
+    name: 🔎 Analyzers
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Analyzers
+      - name: 🧪 Analyzers
         uses: ./.github/actions/analyzers
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   build:
-    name: Build
+    name: 🔨 Build
     runs-on: ubuntu-latest
     needs:
       - format
@@ -76,19 +76,19 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Build
+      - name: 🔨 Build
         uses: ./.github/actions/build
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
   test:
-    name: Test
+    name: 🧪 Test
     runs-on: ubuntu-latest
     needs:
       - format
@@ -99,12 +99,12 @@ jobs:
       contents: read
       checks: write
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Test
+      - name: 🧪 Test
         uses: ./.github/actions/test
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}

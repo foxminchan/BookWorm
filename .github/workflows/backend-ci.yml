@@ -53,7 +53,7 @@ concurrency:
 
 jobs:
   ci:
-    name: CI Pipeline
+    name: 🚀 CI Pipeline
     uses: ./.github/workflows/backend-shared.yml
     permissions:
       contents: read
@@ -62,7 +62,7 @@ jobs:
       checks: write
 
   publish:
-    name: Publish Artifacts
+    name: 📦 Publish Artifacts
     if: >-
       github.event_name == 'workflow_dispatch' && github.event.inputs.publish ==
       'true'
@@ -77,12 +77,12 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Validate required secrets
+      - name: 🔐 Validate required secrets
         run: |
           missing=()
           [[ -z "$AZURE_CLIENT_ID" ]] && missing+=("AZURE_CLIENT_ID")
@@ -97,21 +97,21 @@ jobs:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Login to GitHub Container Registry
+      - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Azure Login
+      - name: 🔐 Azure Login
         uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Publish Service
+      - name: 🚀 Publish Service
         uses: ./.github/actions/publish
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
@@ -122,13 +122,13 @@ jobs:
           enable-debug-logging: |
             ${{ inputs.enable_debug_logging && 'true' || runner.debug == '1' && 'true' || 'false' }}
 
-      - name: Trigger container security scan
+      - name: 📣 Trigger container security scan
         uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.1.0
         with:
           event-type: backend-container-images-published
 
   attest-backend:
-    name: Attest
+    name: 📝 Attest
     needs:
       - publish
     runs-on: ubuntu-latest
@@ -152,20 +152,20 @@ jobs:
           - finance
           - scheduler
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: .github/actions/dotnet-attest
           fetch-depth: 1
 
-      - name: Login to GitHub Container Registry
+      - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Attest ${{ matrix.service }} image
+      - name: 📝 Attest ${{ matrix.service }} image
         uses: ./.github/actions/dotnet-attest
         with:
           service: ${{ matrix.service }}

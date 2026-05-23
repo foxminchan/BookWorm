@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   release:
-    name: Create Signed Release
+    name: 🎉 Create Signed Release
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -32,31 +32,31 @@ jobs:
       VERSION: ${{ inputs.version }}
       PRERELEASE: ${{ inputs.prerelease }}
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
-      - name: Validate version format
+      - name: ✅ Validate version format
         run: |
           if [[ ! "$VERSION" =~ ^(v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?|dotnet[0-9]+\.[0-9]+)$ ]]; then
             echo "::error::Version must match semver format (e.g., v1.0.0, v1.0.0-rc.1, or dotnet8.0)"
             exit 1
           fi
 
-      - name: Generate source archive
+      - name: 📦 Generate source archive
         run: |
           git archive --format=tar.gz --prefix="BookWorm-${VERSION}/" HEAD \
             > "BookWorm-${VERSION}.tar.gz"
           sha256sum "BookWorm-${VERSION}.tar.gz" \
             > "BookWorm-${VERSION}.tar.gz.sha256"
 
-      - name: Attest build provenance
+      - name: 📝 Attest build provenance
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: BookWorm-${{ env.VERSION }}.tar.gz
 
-      - name: Create GitHub Release
+      - name: 🎉 Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

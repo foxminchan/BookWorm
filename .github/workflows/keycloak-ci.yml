@@ -36,7 +36,7 @@ env:
 
 jobs:
   build:
-    name: Build Keycloak Theme
+    name: 🔑 Build Keycloak Theme
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: >-
@@ -44,28 +44,28 @@ jobs:
           github.event.inputs.environment || 'development' }}
 
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Set up JDK
+      - name: ☕ Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.0.0
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Verify Maven installation
+      - name: ✅ Verify Maven installation
         run: |
           mvn --version
           java -version
 
-      - name: Setup Bun
+      - name: 🍞 Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.0.2
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
-      - name: Cache Bun dependencies
+      - name: 💾 Cache Bun dependencies
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.bun/install/cache
@@ -74,26 +74,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-keycloakify-
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         working-directory: ${{ env.KEYCLOAKIFY_DIR }}
         run: bun install --frozen-lockfile --ignore-scripts
 
-      - name: Run CI checks
+      - name: 🧪 Run CI checks
         working-directory: ${{ env.KEYCLOAKIFY_DIR }}
         run: bun run ci
 
-      - name: Build Keycloak theme
+      - name: 🔨 Build Keycloak theme
         working-directory: ${{ env.KEYCLOAKIFY_DIR }}
         run: bun run build-keycloak-theme
 
-      - name: List generated files
+      - name: 📋 List generated files
         working-directory: ${{ env.KEYCLOAK_DIR }}
         run: |
           echo "=== Generated theme files ==="
           find themes -name "*.jar" -type f || echo "No JAR files found"
           ls -R themes/ || echo "themes directory not found"
 
-      - name: Get theme version
+      - name: 🔢 Get theme version
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: theme-version
         working-directory: ${{ env.KEYCLOAKIFY_DIR }}
@@ -102,7 +102,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Theme version: $VERSION"
 
-      - name: Prepare JAR artifacts
+      - name: 📦 Prepare JAR artifacts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: ${{ env.KEYCLOAK_DIR }}
         run: |
@@ -112,7 +112,7 @@ jobs:
           echo "=== JAR files ready for upload ==="
           ls -lah jar-artifacts/
 
-      - name: Upload JAR artifacts
+      - name: ⬆️ Upload JAR artifacts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

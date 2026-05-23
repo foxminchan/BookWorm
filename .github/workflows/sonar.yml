@@ -41,24 +41,24 @@ env:
 
 jobs:
   frontend-test:
-    name: Frontend tests
+    name: 🧪 Frontend tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Frontend
+      - name: 🎨 Setup Frontend
         uses: ./.github/actions/frontend-setup
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
-      - name: Frontend test with coverage
+      - name: 🧪 Frontend test with coverage
         working-directory: src/Clients
         run: pnpm turbo run test:coverage
 
-      - name: Upload frontend coverage
+      - name: ⬆️ Upload frontend coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-coverage
@@ -69,7 +69,7 @@ jobs:
           if-no-files-found: warn
 
   analyze:
-    name: Build and analyze
+    name: 🔍 Build and analyze
     needs:
       - frontend-test
     if: ${{ !cancelled() && needs.frontend-test.result != 'failure' }}
@@ -79,23 +79,23 @@ jobs:
       checks: write
       pull-requests: write
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
+      - name: ☕ Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.0.0
         with:
           distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Setup .NET Core
+      - name: 🔧 Setup .NET Core
         uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
-      - name: Cache NuGet Packages
+      - name: 💾 Cache NuGet Packages
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.nuget/packages
@@ -104,17 +104,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Download frontend coverage
+      - name: ⬇️ Download frontend coverage
         if: needs.frontend-test.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: frontend-coverage
           path: ${{ github.workspace }}/src/Clients/apps
 
-      - name: Setup SonarQube Scanner
+      - name: 🔍 Setup SonarQube Scanner
         uses: ./.github/actions/sonar-scanner-setup
 
-      - name: Sonarqube Begin
+      - name: 🔍 Sonarqube Begin
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
@@ -124,20 +124,20 @@ jobs:
           /d:sonar.token="$SONAR_TOKEN"
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
-      - name: Build
+      - name: 🔨 Build
         run: >
           dotnet build
           --configuration Release
           --no-incremental
           -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
-      - name: Start AIMock server
+      - name: 🤖 Start AIMock server
         uses: CopilotKit/aimock@19b27033245578603db18b3c4a4a72cd2442ef94 # v1.27.0
         id: aimock
         with:
           config: tests/BookWorm.AI.Evaluation/aimock.json
 
-      - name: Test
+      - name: 🧪 Test
         env:
           OPENAI_BASE_URL: ${{ steps.aimock.outputs.url }}/v1
           OPENAI_API_KEY: test
@@ -154,7 +154,7 @@ jobs:
           --crashdump
           --timeout ${{ env.SESSION_TIMEOUT }}
 
-      - name: Sonarqube End
+      - name: 🔍 Sonarqube End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >

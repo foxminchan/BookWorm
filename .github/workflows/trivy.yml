@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   vulnerability-scan:
-    name: Vulnerability Scan
+    name: 🛡️ Vulnerability Scan
     if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -43,12 +43,12 @@ jobs:
       security-events: write
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Run Trivy vulnerability scanner
+      - name: 🛡️ Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -57,7 +57,7 @@ jobs:
           output: trivy-fs-results.sarif
           severity: ${{ inputs.severity || 'CRITICAL,HIGH,MEDIUM' }}
 
-      - name: Upload vulnerability scan results
+      - name: ⬆️ Upload vulnerability scan results
         if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
@@ -67,7 +67,7 @@ jobs:
           sha: ${{ github.sha }}
 
   misconfig-scan:
-    name: Misconfiguration Scan
+    name: 🛡️ Misconfiguration Scan
     if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -76,12 +76,12 @@ jobs:
       security-events: write
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Run Trivy misconfiguration scanner
+      - name: 🛡️ Run Trivy misconfiguration scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: config
@@ -90,7 +90,7 @@ jobs:
           output: trivy-config-results.sarif
           severity: ${{ inputs.severity || 'CRITICAL,HIGH,MEDIUM' }}
 
-      - name: Upload misconfiguration scan results
+      - name: ⬆️ Upload misconfiguration scan results
         if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
@@ -100,7 +100,7 @@ jobs:
           sha: ${{ github.sha }}
 
   container-scan-setup:
-    name: Resolve Container Images
+    name: 🔎 Resolve Container Images
     if: github.event_name == 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -108,7 +108,7 @@ jobs:
     outputs:
       images: ${{ steps.resolve.outputs.images }}
     steps:
-      - name: Resolve image list
+      - name: 🔎 Resolve image list
         id: resolve
         env:
           EVENT_ACTION: ${{ github.event.action }}
@@ -135,7 +135,7 @@ jobs:
           echo "images=[${json}]" >> "$GITHUB_OUTPUT"
 
   container-scan:
-    name: Container Scan
+    name: 🛡️ Container Scan
     if: github.event_name == 'repository_dispatch'
     needs:
       - container-scan-setup
@@ -153,19 +153,19 @@ jobs:
       matrix:
         image: ${{ fromJson(needs.container-scan-setup.outputs.images) }}
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Login to GitHub Container Registry
+      - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Resolve image digest
+      - name: 🔎 Resolve image digest
         id: image-digest
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
@@ -175,7 +175,7 @@ jobs:
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "image_ref=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}@${DIGEST}" >> "$GITHUB_OUTPUT"
 
-      - name: Run Trivy scanner
+      - name: 🛡️ Run Trivy scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: image
@@ -184,12 +184,12 @@ jobs:
           output: trivy-image-results.sarif
           severity: CRITICAL,HIGH,MEDIUM
 
-      - name: Create filesystem-safe image slug
+      - name: 🔤 Create filesystem-safe image slug
         id: image-slug
         run: |
           echo "value=${{ matrix.image }}" | sed 's|/|-|g' >> "$GITHUB_OUTPUT"
 
-      - name: Upload container scan results
+      - name: ⬆️ Upload container scan results
         if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
@@ -198,7 +198,7 @@ jobs:
           ref: ${{ github.ref }}
           sha: ${{ github.sha }}
 
-      - name: Generate CycloneDX SBOM
+      - name: 📝 Generate CycloneDX SBOM
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: image
@@ -206,7 +206,7 @@ jobs:
           format: cyclonedx
           output: sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json
 
-      - name: Attest SBOM
+      - name: 📝 Attest SBOM
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
@@ -214,7 +214,7 @@ jobs:
           sbom-path: sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json
           push-to-registry: true
 
-      - name: Upload SBOM
+      - name: ⬆️ Upload SBOM
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -223,7 +223,7 @@ jobs:
           retention-days: 7
 
   sbom:
-    name: SBOM Generation
+    name: 📝 SBOM Generation
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -233,12 +233,12 @@ jobs:
       attestations: write
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
-      - name: Generate CycloneDX SBOM for attestation
+      - name: 📝 Generate CycloneDX SBOM for attestation
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -246,7 +246,7 @@ jobs:
           format: cyclonedx
           output: sbom.cyclonedx.json
 
-      - name: Submit dependency snapshot to GitHub Dependency Graph
+      - name: 📤 Submit dependency snapshot to GitHub Dependency Graph
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -255,12 +255,12 @@ jobs:
           output: dependency-results.sbom.json
           github-pat: ${{ github.token }}
 
-      - name: Attest SBOM
+      - name: 📝 Attest SBOM
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: sbom.cyclonedx.json
 
-      - name: Upload CycloneDX SBOM
+      - name: ⬆️ Upload CycloneDX SBOM
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

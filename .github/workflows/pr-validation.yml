@@ -33,7 +33,7 @@ concurrency:
 
 jobs:
   changes:
-    name: Detect Changes
+    name: 🔍 Detect Changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -43,7 +43,7 @@ jobs:
       backend: ${{ steps.detect.outputs.backend }}
       frontend: ${{ steps.detect.outputs.frontend }}
     steps:
-      - name: Detect changed paths
+      - name: 🔍 Detect changed paths
         id: detect
         env:
           GH_TOKEN: ${{ github.token }}
@@ -66,7 +66,7 @@ jobs:
           echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
 
   backend:
-    name: Backend CI
+    name: ⚙️ Backend CI
     needs:
       - changes
     if: needs.changes.outputs.backend == 'true'
@@ -78,7 +78,7 @@ jobs:
       checks: write
 
   frontend:
-    name: Frontend CI
+    name: 🎨 Frontend CI
     needs:
       - changes
     if: needs.changes.outputs.frontend == 'true'
@@ -93,23 +93,23 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
   dependency-review:
-    name: Dependency Review
+    name: 🔒 Dependency Review
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Dependency Review
+      - name: 🔍 Dependency Review
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           config-file: "./.github/dependency-review-config.yml"
 
   status:
-    name: PR Status
+    name: ✅ PR Status
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs:
@@ -120,7 +120,7 @@ jobs:
     if: ${{ !cancelled() }}
     permissions: {}
     steps:
-      - name: Check results
+      - name: ✅ Check results
         env:
           BACKEND: ${{ needs.backend.result }}
           FRONTEND: ${{ needs.frontend.result }}

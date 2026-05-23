@@ -17,7 +17,7 @@ permissions: {}
 
 jobs:
   lint-build-test:
-    name: Lint, Build & Test
+    name: 🧪 Lint, Build & Test
     timeout-minutes: 15
     runs-on: ubuntu-latest
     permissions:
@@ -38,29 +38,29 @@ jobs:
         working-directory: src/Clients
 
     steps:
-      - name: Check out code
+      - name: 📥 Check out code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           # fetch-depth: 0 ensures the base SHA from pull_request/push events is always available
           fetch-depth: 0
 
-      - name: Setup Frontend
+      - name: 🎨 Setup Frontend
         uses: ./.github/actions/frontend-setup
 
-      - name: Lint
+      - name: 🧹 Lint
         run: pnpm turbo run lint --affected
 
-      - name: Build
+      - name: 🔨 Build
         run: pnpm turbo run build --affected
 
-      - name: Test
+      - name: 🧪 Test
         run: pnpm turbo run test --affected
 
-      - name: Generate Allure Reports
+      - name: 📊 Generate Allure Reports
         if: ${{ !cancelled() }}
         run: pnpm turbo run allure:generate --affected --continue
 
-      - name: Upload Allure Report (Backoffice)
+      - name: ⬆️ Upload Allure Report (Backoffice)
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -69,7 +69,7 @@ jobs:
           retention-days: ${{ inputs.retention-days }}
           if-no-files-found: ignore
 
-      - name: Upload Allure Report (Storefront)
+      - name: ⬆️ Upload Allure Report (Storefront)
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -78,7 +78,7 @@ jobs:
           retention-days: ${{ inputs.retention-days }}
           if-no-files-found: ignore
 
-      - name: Post Allure Summary (Backoffice)
+      - name: 📊 Post Allure Summary (Backoffice)
         if: |
           ${{ !cancelled() && hashFiles('src/Clients/apps/backoffice/allure-report/index.html') != '' }}
         uses: allure-framework/allure-action@b9200013eff7f16624c5ad1c61d4fdde803cea27 # v0.3.0
@@ -86,7 +86,7 @@ jobs:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-report
           github-token: ${{ github.token }}
 
-      - name: Post Allure Summary (Storefront)
+      - name: 📊 Post Allure Summary (Storefront)
         if: |
           ${{ !cancelled() && hashFiles('src/Clients/apps/storefront/allure-report/index.html') != '' }}
         uses: allure-framework/allure-action@b9200013eff7f16624c5ad1c61d4fdde803cea27 # v0.3.0
