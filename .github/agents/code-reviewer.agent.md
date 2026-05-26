@@ -1,16 +1,14 @@
 ---
 name: Code Reviewer
-description: "Review code changes for quality, security, and best practices compliance."
+description: Review code changes for quality, security, and best practices compliance
 tools:
-  - "search/codebase"
-  - "web/githubRepo"
-  - "search"
-  - "search/usages"
+  - search
+  - web/githubRepo
 model:
-  - "Claude Opus 4.7 (copilot)"
-  - "Claude Sonnet 4.6 (copilot)"
-  - "Claude Haiku 4.5 (copilot)"
-  - "GPT-5.3-Codex"
+  - Claude Opus 4.7 (copilot)
+  - Claude Sonnet 4.6 (copilot)
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5.3-Codex
 handoffs:
   - label: Fix .NET Issues
     agent: .NET Expert

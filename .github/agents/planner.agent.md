@@ -1,16 +1,15 @@
 ---
 name: Planner
-description: "Generate an implementation plan for new features or refactoring existing code."
+description: Generate an implementation plan for new features or refactoring existing code
 tools:
-  - "search/codebase"
-  - "web/fetch"
-  - "web/githubRepo"
-  - "search"
-  - "search/usages"
+  - search
+  - web/fetch
+  - web/githubRepo
+  - context7/*
 model:
-  - "Claude Opus 4.7 (copilot)"
-  - "Claude Sonnet 4.6 (copilot)"
-  - "GPT-5.3-Codex"
+  - Claude Opus 4.7 (copilot)
+  - Claude Sonnet 4.6 (copilot)
+  - GPT-5.3-Codex
 handoffs:
   - label: Implement (.NET)
     agent: .NET Expert

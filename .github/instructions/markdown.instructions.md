@@ -1,5 +1,6 @@
 ---
-description: "Markdown formatting aligned to the CommonMark specification (0.31.2)"
+name: CommonMark Markdown Instructions
+description: Markdown formatting aligned to the CommonMark specification (0.31.2)
 applyTo: "**/*.md"
 ---
 

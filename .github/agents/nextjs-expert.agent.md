@@ -1,23 +1,21 @@
 ---
-description: "Implement, debug, and optimize Next.js 16 App Router code with TypeScript, Server/Client Components, Cache Components, and Turbopack."
-name: "Next.js Expert"
+name: Next.js Expert
+description: Implement, debug, and optimize Next.js 16 App Router code with TypeScript, Server/Client Components, Cache Components, and Turbopack
 model:
-  - "Claude Opus 4.7 (copilot)"
-  - "Claude Sonnet 4.6 (copilot)"
-  - "GPT-5.3-Codex"
+  - Claude Opus 4.7 (copilot)
+  - Claude Sonnet 4.6 (copilot)
+  - GPT-5.3-Codex
 tools:
-  - "search/codebase"
-  - "edit/editFiles"
-  - "web/fetch"
-  - "web/githubRepo"
-  - "execute/runInTerminal"
-  - "execute/getTerminalOutput"
-  - "read/terminalLastCommand"
-  - "read/problems"
-  - "execute/runTests"
-  - "search"
-  - "search/usages"
-  - "context7/*"
+  - search
+  - web/fetch
+  - web/githubRepo
+  - read/problems
+  - read/terminalLastCommand
+  - context7/*
+  - edit/editFiles
+  - execute/runInTerminal
+  - execute/getTerminalOutput
+  - execute/runTests
 handoffs:
   - label: Request Code Review
     agent: Code Reviewer

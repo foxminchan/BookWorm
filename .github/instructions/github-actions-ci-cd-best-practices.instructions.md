@@ -1,7 +1,7 @@
 ---
-applyTo: ".github/workflows/*.yml,.github/workflows/*.yaml"
-description: "Comprehensive guide for building robust, secure, and efficient CI/CD pipelines using GitHub Actions. Covers workflow structure, jobs, steps, environment variables, secret management, caching, matrix strategies, testing, and deployment strategies."
 name: GitHub Actions CI/CD Best Practices
+description: Comprehensive guide for building robust, secure, and efficient CI/CD pipelines using GitHub Actions. Covers workflow structure, jobs, steps, environment variables, secret management, caching, matrix strategies, testing, and deployment strategies
+applyTo: ".github/workflows/*.yml,.github/workflows/*.yaml"
 ---
 
 # GitHub Actions CI/CD Best Practices

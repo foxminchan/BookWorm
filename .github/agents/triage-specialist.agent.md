@@ -1,10 +1,7 @@
 ---
 name: Triage Specialist
-description: "Classify incoming issues and pull requests with concise, conservative triage decisions."
-model:
-  - "Claude Sonnet 4.6 (copilot)"
-  - "Claude Haiku 4.5 (copilot)"
-  - "GPT-5.4"
+description: Classify incoming issues and pull requests with concise, conservative triage decisions
+target: github-copilot
 ---
 
 # Triage Specialist Instructions

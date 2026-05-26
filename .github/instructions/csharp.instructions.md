@@ -1,7 +1,7 @@
 ---
-description: "Guidelines for building C# applications"
+name: C# Style Guide
+description: Guidelines for building C# applications
 applyTo: "**/*.cs"
-name: CSharp-Development
 ---
 
 # C# Development

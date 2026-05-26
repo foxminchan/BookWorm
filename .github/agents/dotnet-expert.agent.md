@@ -1,20 +1,18 @@
 ---
 name: .NET Expert
-description: "Implement, refactor, and optimize C#/.NET code following project conventions, SOLID principles, and modern C# 14 patterns."
+description: Implement, refactor, and optimize C#/.NET code following project conventions, SOLID principles, and modern C# 14 patterns
 tools:
-  - "search/codebase"
-  - "edit/editFiles"
-  - "web/githubRepo"
-  - "execute/runInTerminal"
-  - "read/terminalLastCommand"
-  - "web/fetch"
-  - "search"
-  - "search/usages"
-  - "context7/*"
+  - search
+  - web/fetch
+  - web/githubRepo
+  - context7/*
+  - read/terminalLastCommand
+  - edit/editFiles
+  - execute/runInTerminal
 model:
-  - "Claude Opus 4.7 (copilot)"
-  - "Claude Sonnet 4.6 (copilot)"
-  - "GPT-5.3-Codex"
+  - Claude Opus 4.7 (copilot)
+  - Claude Sonnet 4.6 (copilot)
+  - GPT-5.3-Codex
 handoffs:
   - label: Request Code Review
     agent: Code Reviewer

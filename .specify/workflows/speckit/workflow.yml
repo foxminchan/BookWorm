@@ -9,7 +9,7 @@ workflow:
 requires:
   speckit_version: ">=0.7.2"
   integrations:
-    any: [ "copilot", "claude", "gemini" ]
+    any: ["copilot", "claude", "gemini"]
 
 inputs:
   spec:
@@ -23,7 +23,7 @@ inputs:
   scope:
     type: string
     default: "full"
-    enum: [ "full", "backend-only", "frontend-only" ]
+    enum: ["full", "backend-only", "frontend-only"]
 
 steps:
   - id: specify
@@ -35,7 +35,7 @@ steps:
   - id: review-spec
     type: gate
     message: "Review the generated spec before planning."
-    options: [ approve, reject ]
+    options: [approve, reject]
     on_reject: abort
 
   - id: plan
@@ -47,7 +47,7 @@ steps:
   - id: review-plan
     type: gate
     message: "Review the plan before generating tasks."
-    options: [ approve, reject ]
+    options: [approve, reject]
     on_reject: abort
 
   - id: tasks

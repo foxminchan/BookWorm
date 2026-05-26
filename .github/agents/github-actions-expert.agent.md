@@ -1,18 +1,18 @@
 ---
-name: "GitHub Actions Expert"
-description: "GitHub Actions specialist focused on secure CI/CD workflows, action pinning, OIDC authentication, permissions least privilege, and supply-chain security"
+name: GitHub Actions Expert
+description: GitHub Actions specialist focused on secure CI/CD workflows, action pinning, OIDC authentication, permissions least privilege, and supply-chain security
 tools:
-  - "search/codebase"
-  - "edit/editFiles"
-  - "read/terminalSelection"
-  - "execute/runInTerminal"
-  - "execute/getTerminalOutput"
-  - "search"
-  - "web/githubRepo"
+  - search
+  - web/githubRepo
+  - read/terminalSelection
+  - context7/*
+  - edit/editFiles
+  - execute/runInTerminal
+  - execute/getTerminalOutput
 model:
-  - "Claude Sonnet 4.6 (copilot)"
-  - "Claude Opus 4.7 (copilot)"
-  - "GPT-5.3-Codex"
+  - Claude Opus 4.7 (copilot)
+  - Claude Sonnet 4.6 (copilot)
+  - GPT-5.3-Codex
 handoffs:
   - label: Review Workflow Changes
     agent: Code Reviewer

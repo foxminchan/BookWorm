@@ -35,7 +35,7 @@ New-Item -ItemType Directory -Path $paths.FEATURE_DIR -Force | Out-Null
 
 # Copy plan template if it exists, otherwise note it or create empty file
 $template = Resolve-Template -TemplateName 'plan-template' -RepoRoot $paths.REPO_ROOT
-if ($template -and (Test-Path $template)) {
+if ($template -and (Test-Path $template)) { 
     # Read the template content and write it to the implementation plan file with UTF-8 encoding without BOM
     $content = [System.IO.File]::ReadAllText($template)
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
@@ -48,7 +48,7 @@ if ($template -and (Test-Path $template)) {
 
 # Output results
 if ($Json) {
-    $result = [PSCustomObject]@{
+    $result = [PSCustomObject]@{ 
         FEATURE_SPEC = $paths.FEATURE_SPEC
         IMPL_PLAN = $paths.IMPL_PLAN
         SPECS_DIR = $paths.FEATURE_DIR

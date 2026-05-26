@@ -1,21 +1,19 @@
 ---
 name: Debug
-description: "Debug your application to find and fix a bug"
+description: Debug your application to find and fix a bug
 tools:
-  - "search/codebase"
-  - "edit/editFiles"
-  - "web/githubRepo"
-  - "execute/getTerminalOutput"
-  - "execute/runInTerminal"
-  - "read/terminalLastCommand"
-  - "read/terminalSelection"
-  - "web/fetch"
-  - "search"
-  - "search/usages"
+  - search
+  - web/fetch
+  - web/githubRepo
+  - read/terminalLastCommand
+  - read/terminalSelection
+  - edit/editFiles
+  - execute/getTerminalOutput
+  - execute/runInTerminal
 model:
-  - "Claude Opus 4.7 (copilot)"
-  - "Claude Sonnet 4.6 (copilot)"
-  - "GPT-5.3-Codex"
+  - Claude Opus 4.7 (copilot)
+  - Claude Sonnet 4.6 (copilot)
+  - GPT-5.3-Codex
 handoffs:
   - label: Get C# Expert Help
     agent: .NET Expert
