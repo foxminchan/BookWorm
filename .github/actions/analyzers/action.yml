@@ -3,7 +3,6 @@ description: >-
   Run static analysis checks on the BookWorm repository using Husky-managed
   analyzers to enforce code quality standards
 author: BookWorm Team
-
 branding:
   icon: search
   color: purple
@@ -14,9 +13,9 @@ inputs:
     required: false
     default: global.json
   bun-version-file:
-    description: Path to the .bun-version file that specifies the Bun runtime version
+    description: Path to the package.json file containing the packageManager field that specifies the Bun runtime version
     required: false
-    default: .bun-version
+    default: src/Clients/package.json
 
 runs:
   using: composite

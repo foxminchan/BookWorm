@@ -5,24 +5,25 @@
 **File:** `index.mdx` inside a domain folder
 **Location:** `domains/{DomainName}/index.mdx`
 
-Domains can contain subdomains, services, flows, and other resources nested inside them.
+Domains can contain subdomains, services, agents, flows, and other resources nested inside them.
 
 ## Frontmatter Fields
 
-| Field           | Required | Description                                                                                    |
-| --------------- | -------- | ---------------------------------------------------------------------------------------------- |
-| `id`            | Yes      | Unique identifier (e.g., `E-Commerce`, `Payment`)                                              |
-| `name`          | Yes      | Human-readable name                                                                            |
-| `version`       | Yes      | Semver string (e.g., `0.0.1`)                                                                  |
-| `summary`       | Yes      | Description of the domain's purpose and scope                                                  |
-| `owners`        | Yes      | Array of team or user IDs                                                                      |
-| `domains`       | No       | Array of subdomain references (`id`)                                                           |
-| `services`      | No       | Array of service references (only needed for flat structure, nested folders are auto-detected) |
-| `data-products` | No       | Array of data product references                                                               |
-| `badges`        | No       | Array of badge objects                                                                         |
-| `repository`    | No       | Object with `language` and `url`                                                               |
-| `sends`         | No       | Messages sent at the domain level                                                              |
-| `receives`      | No       | Messages received at the domain level                                                          |
+| Field           | Required | Description                                       |
+| --------------- | -------- | ------------------------------------------------- |
+| `id`            | Yes      | Unique identifier (e.g., `E-Commerce`, `Payment`) |
+| `name`          | Yes      | Human-readable name                               |
+| `version`       | Yes      | Semver string (e.g., `0.0.1`)                     |
+| `summary`       | Yes      | Description of the domain's purpose and scope     |
+| `owners`        | Yes      | Array of team or user IDs                         |
+| `domains`       | No       | Array of subdomain references (`id`)              |
+| `services`      | No       | Array of service references                       |
+| `agents`        | No       | Array of agent references                         |
+| `data-products` | No       | Array of data product references                  |
+| `badges`        | No       | Array of badge objects                            |
+| `repository`    | No       | Object with `language` and `url`                  |
+| `sends`         | No       | Messages sent at the domain level                 |
+| `receives`      | No       | Messages received at the domain level             |
 
 ## Nested Folder Structure
 
@@ -41,10 +42,15 @@ domains/E-Commerce/
             OrderCreated/index.mdx
           commands/
             PlaceOrder/index.mdx
+      agents/
+        OrderSupportAgent/
+          index.mdx
     Payment/
       index.mdx
       services/
         PaymentService/index.mdx
+      agents/
+        FraudReviewAgent/index.mdx
 ```
 
 ## Example: Domain with Subdomains and Rich Content
@@ -62,6 +68,9 @@ domains:
   - id: Orders
   - id: Payment
   - id: Subscriptions
+agents:
+  - id: OrderSupportAgent
+  - id: FraudReviewAgent
 data-products:
   - id: order-analytics
 badges:
@@ -86,7 +95,7 @@ receives:
 
 ## Domain Overview
 
-The E-Commerce domain encapsulates all the core business logic for the FlowMart e-commerce platform. It is built on event-driven microservices architecture with key services like [[service|OrdersService]], [[service|InventoryService]], and [[service|PaymentService]].
+The E-Commerce domain encapsulates all the core business logic for the FlowMart e-commerce platform. It is built on event-driven microservices architecture with key services like [[service|OrdersService]], [[service|InventoryService]], and [[service|PaymentService]], plus agents like [[agent|OrderSupportAgent]].
 
 <NodeGraph mode="full" search="false" legend="false" />
 
@@ -118,8 +127,9 @@ FlowMart's E-Commerce domain enables:
 
 ## Key Conventions
 
-- Use `domains` field (not `services`) when a domain has subdomains
-- Use `[[service|ServiceName]]` and `[[domain|DomainName]]` syntax to create links
+- Use `domains` field when a domain has subdomains
+- Use `services` and `agents` fields to list the services and agents that belong to this domain
+- Use `[[service|ServiceName]]`, `[[agent|AgentName]]`, and `[[domain|DomainName]]` syntax to create links
 - Use `<NodeGraph mode="full" />` for a comprehensive domain visualization
 - Include sequence diagrams (`mermaid`) for complex flows
 - Domains can have their own `sends`/`receives` to show domain-level message flow

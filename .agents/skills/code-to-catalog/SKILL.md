@@ -1,6 +1,6 @@
 ---
 name: code-to-catalog
-description: Turns a codebase into EventCatalog documentation through an evidence-based interview. Scans the code first, proposes an architectural model (domains, services, messages, channels), grills the user on the structural decisions, produces a reviewable plan file, then hands off to catalog-documentation-creator. Use when user says "document my codebase in EventCatalog", "turn this repo into a catalog", "model my code as a catalog", "grill me on my architecture", "update my catalog from the code", "reconcile my catalog with my code", or "I don't know where to start documenting this codebase". Works for brand-new catalogs AND for updating existing catalogs that have drifted from the code.
+description: Turns a codebase into EventCatalog documentation through an evidence-based interview. Scans the code first, proposes an architectural model (domains, services, agents, messages, channels), grills the user on the structural decisions, produces a reviewable plan file, then hands off to catalog-documentation-creator. Use when user says "document my codebase in EventCatalog", "turn this repo into a catalog", "model my code as a catalog", "document my agents", "document my AI agents", "grill me on my architecture", "update my catalog from the code", "reconcile my catalog with my code", or "I don't know where to start documenting this codebase". Works for brand-new catalogs AND for updating existing catalogs that have drifted from the code.
 license: MIT
 metadata:
   author: eventcatalog
@@ -51,9 +51,9 @@ Ask the user: **"Do you already have an EventCatalog project, or do you want to 
 
 **If they already have one:**
 
-- Ask for the path. Verify it's an EventCatalog project by checking for `eventcatalog.config.js` or the standard directories (`services/`, `events/`, `commands/`, `queries/`, `domains/`, `channels/`, `flows/`).
+- Ask for the path. Verify it's an EventCatalog project by checking for `eventcatalog.config.js` or the standard directories (`services/`, `agents/`, `events/`, `commands/`, `queries/`, `domains/`, `channels/`, `flows/`).
 - Build an inventory of what already exists. If the EventCatalog MCP server is connected, use `getResources`, `getResource`, `findResourcesByOwner`. Otherwise read the filesystem directly and parse the frontmatter of each `index.md`/`index.mdx`.
-- Record for each resource: `id`, `name`, `version`, `type`, `summary`, and (for services) `sends` / `receives` relationships.
+- Record for each resource: `id`, `name`, `version`, `type`, `summary`, and (for services and agents) `sends` / `receives` relationships.
 - Note the catalog's conventions: nested (`domains/X/services/Y/events/Z`) vs flat, PascalCase vs kebab-case IDs, existing owners, schema formats in use.
 
 **If they do not have a catalog:**
@@ -72,7 +72,7 @@ Detect:
 ### Project structure
 
 - Monorepo vs single service (look for workspace configs: `pnpm-workspace.yaml`, `package.json` with `workspaces`, `nx.json`, `turbo.json`, `lerna.json`, multiple top-level service directories with their own manifests).
-- Language and framework per service.
+- Language and framework per service or agent.
 - Build/deploy units (Dockerfiles, Helm charts, `serverless.yml`, `cdk` stacks, k8s manifests).
 
 ### Service boundaries
@@ -85,6 +85,18 @@ A service is an independently-deployable, independently-ownable unit. Signals:
 - Consumed by others over a network boundary (HTTP, message bus)
 
 When in doubt, mark as a **candidate** and grill the user in Phase 4.
+
+### Agent boundaries
+
+An agent is an AI/LLM-powered runtime or worker that reasons, calls tools, or automates decisions. Signals:
+
+- Explicit names: `*Agent`, `*Assistant`, `*Copilot`, `*Worker` with LLM/tool orchestration
+- LLM SDK usage: OpenAI, Anthropic, Gemini, Vercel AI SDK, LangChain, LlamaIndex, Mastra, CrewAI, AutoGen
+- Tool registries or callable tools: MCP clients/servers, `tools`, `function_call`, `tool_choice`, `executeTool`
+- Agent frameworks: `Agent`, `createAgent`, `runAgent`, graph/workflow nodes using an LLM
+- Memory/state stores used by the agent: vector DBs, Redis, Postgres, Supabase, Pinecone, Qdrant, Chroma
+
+Do not classify a plain service as an agent just because it calls an LLM once. Treat it as an agent when the code owns a durable assistant/worker boundary, tool set, model policy, memory, or autonomous workflow.
 
 ### Messages (events, commands, queries)
 
@@ -140,6 +152,7 @@ domains:
   - name: <candidate>
     confidence: high|medium|low
     services: [...]
+    agents: [...]
 services:
   - name: <candidate>
     path: <dir>
@@ -147,12 +160,22 @@ services:
     receives: [...]
     channels: [...]
     containers: [...]
+agents:
+  - name: <candidate>
+    path: <dir>
+    model: <provider/name/version if found>
+    tools: [...]
+    sends: [...]
+    receives: [...]
+    channels: [...]
+    containers: [...]
+    flows: [...]
 messages:
   - name: <candidate>
     classification: event|command|query|uncertain
     evidence: <file:line>
-    producer: <service>
-    consumer: <service or unknown>
+    producer: <service or agent>
+    consumer: <service, agent, or unknown>
 channels: [...]
 containers: [...]
 ```
@@ -176,6 +199,7 @@ For `update` items, capture **what specifically drifted**:
 
 - `OrderService` in catalog sends `[OrderPlaced]`, code also sends `OrderCancelled` → drift: new send.
 - `PaymentService` schema field renamed `amount_cents` → `amountCents` → drift: schema change.
+- `OrderSupportAgent` in catalog has no tools, code defines `orderLookup` and `zendeskNotes` MCP tools → drift: new tools.
 
 This categorization drives Phase 4 — you only grill on `update`, ambiguous `new`, and `investigate` items. `unchanged` resources are silent.
 
@@ -191,9 +215,9 @@ Walk the topics in this order. Dependencies flow downward — resolve earlier to
 
 Ask about domain groupings first, because service placement depends on it.
 
-- If you detected clear domain candidates: present each with its recommended services and ask the user to confirm.
+- If you detected clear domain candidates: present each with its recommended services and agents, then ask the user to confirm.
 - If you detected none: propose "single domain for the whole codebase" and ask whether they want to split.
-- For any ambiguous service ("does `NotificationService` belong to `Orders` or its own `Notifications` domain?"), grill it.
+- For any ambiguous service or agent ("does `OrderSupportAgent` belong to `Orders` or its own `Support` domain?"), grill it.
 
 ### Topic 2: Service boundaries
 
@@ -201,7 +225,13 @@ Ask about domain groupings first, because service placement depends on it.
 - For ambiguous cases ("this module could be its own service or part of another"), grill with a recommended answer.
 - Handle monorepo edge cases: is the shared `lib/` package a service? (Probably not — it's infrastructure.)
 
-### Topic 3: Message classification
+### Topic 3: Agent boundaries
+
+- Confirm each agent candidate. Present its evidence (LLM SDK usage, model configuration, tool registry, MCP tools, memory store, entrypoint).
+- For ambiguous cases ("this service calls an LLM once; should it be a service with an LLM integration or a first-class agent?"), grill with a recommended answer.
+- Capture model/provider and tool names as evidence, but avoid grilling on every prompt or low-level tool parameter.
+
+### Topic 4: Message classification
 
 This is the most commonly-wrong call. Grill it hard.
 
@@ -213,7 +243,7 @@ For messages with high-confidence classification, present them for quick bulk co
 
 > I identified these as events (based on past-tense naming + pub/sub pattern): `OrderPlaced`, `OrderCancelled`, `PaymentProcessed`. Any you'd reclassify?
 
-### Topic 4: Drift reconciliation _(only if existing catalog)_
+### Topic 5: Drift reconciliation _(only if existing catalog)_
 
 For each `update` item:
 
@@ -229,6 +259,7 @@ Do not propose deletions. Only surface.
 
 - Summary text for each resource
 - Owner / team assignments (unless discovered from `CODEOWNERS` and ambiguous)
+- Prompt wording and low-level tool parameters for agents
 - Schema field-level detail
 - Badges, visual customizations
 - Flow diagrams (that's `flow-wizard`)
@@ -263,6 +294,7 @@ Use this exact structure:
 
 - **Orders** (status: new)
   - Services: OrderService, ShippingService
+  - Agents: OrderSupportAgent
   - Rationale: both deal with the order lifecycle; confirmed with user
 
 - **Payments** (status: unchanged)
@@ -285,6 +317,25 @@ Use this exact structure:
 - Path in code: /services/payments
 - Drift: code emits new PaymentRefunded event not in catalog
 - Sends (after update): PaymentProcessed, PaymentRefunded
+
+## Agents
+
+### OrderSupportAgent (status: new)
+
+- Domain: Orders
+- Path in code: /agents/order-support
+- Model: OpenAI / gpt-4.1-mini
+- Tools: order-lookup (mcp), support-case-notes (mcp)
+- Receives: OrderConfirmed, OrderCancelled
+- Reads from: orders-db
+- Flows: PlaceOrderFlow
+
+### FraudReviewAgent (status: update)
+
+- Domain: Payments
+- Path in code: /agents/fraud-review
+- Drift: code added fraud-case-queue MCP tool not in catalog
+- Receives (after update): PaymentInitiated, RiskScoreCalculated, FraudDetected
 
 ## Messages
 
@@ -351,10 +402,10 @@ Let the user know:
 Before finishing, verify:
 
 1. The plan file exists at the agreed path.
-2. Every domain, service, message, channel, and container has a status: `new` / `update` / `unchanged` / `investigate`.
+2. Every domain, service, agent, message, channel, and container has a status: `new` / `update` / `unchanged` / `investigate`.
 3. Every `update` item lists what specifically drifted.
 4. Every `investigate` item is flagged, not deleted.
 5. Message classifications (event / command / query) were either confirmed by the user or clearly recommended with evidence.
-6. Service-to-domain mapping is explicit for every service.
+6. Service-to-domain and agent-to-domain mapping is explicit for every service and agent.
 7. No per-resource grilling happened (summaries, owners, schemas — those are for `catalog-documentation-creator`).
 8. If handing off, `catalog-documentation-creator` has the plan path and instructions to skip `unchanged`.

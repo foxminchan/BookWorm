@@ -54,12 +54,12 @@ aspire docs api search "AddRedis" --language csharp
 aspire docs api search "AddViteApp" --language typescript
 aspire docs api get "<id-from-api-search>"
 
-# List ALL available integrations (first-party and community toolkit)
-# Note: requires the Aspire MCP server to be connected. If this fails, use aspire docs search instead.
-aspire list integrations
+# List or search available integrations before mutating the AppHost
+aspire integration list --format Json
+aspire integration search postgres --format Json
 ```
 
-Use `aspire docs search` / `aspire docs get` to find the right builder methods, configuration options, and patterns. Use `aspire docs api search` / `aspire docs api get` when you need the exact reference entry (parameter shapes, return types, overloads) for the API you are about to call. Use `aspire list integrations` to discover packages you might not have known about.
+Use `aspire docs search` / `aspire docs get` to find the right builder methods, configuration options, and patterns. Use `aspire docs api search` / `aspire docs api get` when you need the exact reference entry (parameter shapes, return types, overloads) for the API you are about to call. Use `aspire integration list` and `aspire integration search <query>` to discover packages you might not have known about.
 
 **Don't invent APIs** — if docs search and integration list don't return it, it doesn't exist. Fall back to Tier 3 and note the limitation to the user. **API shapes differ between C# and TypeScript** — always check the correct language docs.
 

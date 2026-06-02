@@ -3,7 +3,6 @@ description: >-
   Bootstrap the BookWorm development environment by installing .NET SDK, Bun
   runtime, dotnet tools, and configuring Husky git hooks
 author: BookWorm Team
-
 branding:
   icon: settings
   color: gray-dark
@@ -14,9 +13,9 @@ inputs:
     required: false
     default: global.json
   bun-version-file:
-    description: Path to the .bun-version file that specifies the Bun runtime version
+    description: Path to the package.json file containing the packageManager field that specifies the Bun runtime version
     required: false
-    default: .bun-version
+    default: src/Clients/package.json
 
 runs:
   using: composite

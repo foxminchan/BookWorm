@@ -15,6 +15,7 @@
 | `name`                    | Yes      | Human-readable team name                             |
 | `summary`                 | Yes      | Brief team description                               |
 | `members`                 | No       | Array of user IDs                                    |
+| `ownedAgents`             | No       | Array of agent IDs owned by this team                |
 | `email`                   | No       | Team email address                                   |
 | `slackDirectMessageUrl`   | No       | Slack channel URL                                    |
 | `msTeamsDirectMessageUrl` | No       | MS Teams channel URL                                 |
@@ -63,6 +64,7 @@ The Full Stack Team is responsible for developing and maintaining both the front
 | `role`                    | No       | Job title/role                                   |
 | `avatarUrl`               | No       | URL to profile image                             |
 | `email`                   | No       | Email address                                    |
+| `ownedAgents`             | No       | Array of agent IDs owned by this user            |
 | `slackDirectMessageUrl`   | No       | Slack DM URL                                     |
 | `msTeamsDirectMessageUrl` | No       | MS Teams DM URL                                  |
 
@@ -95,6 +97,7 @@ With over a decade of experience in the tech industry, I focus on building scala
 
 - Teams and users use a SINGLE `.mdx` file, NOT an `index.mdx` inside a folder
 - IDs should be kebab-case
-- User IDs are referenced in `owners` arrays across services, events, domains, etc.
+- User IDs are referenced in `owners` arrays across agents, services, events, domains, etc.
 - Team IDs are also valid in `owners` arrays
 - `members` in a team reference user IDs
+- Use `ownedAgents` when you want a team or user page to explicitly list owned agent resources

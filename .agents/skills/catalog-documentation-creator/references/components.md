@@ -11,6 +11,7 @@ Use double square brackets to create inline links to any resource. These render 
 | Resource Type | Syntax                           | Example                            |
 | ------------- | -------------------------------- | ---------------------------------- |
 | Service       | `[[service\|Name]]`              | `[[service\|OrdersService]]`       |
+| Agent         | `[[agent\|Name]]`                | `[[agent\|OrderSupportAgent]]`     |
 | Event         | `[[event\|Name]]`                | `[[event\|OrderCreated]]`          |
 | Command       | `[[command\|Name]]`              | `[[command\|CreateOrder]]`         |
 | Query         | `[[query\|Name]]`                | `[[query\|GetOrderStatus]]`        |
@@ -32,7 +33,8 @@ Use double square brackets to create inline links to any resource. These render 
 ```markdown
 The [[service|OrdersService]] handles all order processing and publishes
 [[event|OrderCreated]] when an order is placed. It integrates with
-[[service|PaymentService]] for payment processing and writes to the
+[[service|PaymentService]] for payment processing, works with
+[[agent|OrderSupportAgent]] for support workflows, and writes to the
 [[container|orders-db]] database.
 ```
 
@@ -143,6 +145,16 @@ Renders a table of messages (events, commands, queries) that a service sends and
 ```
 
 **Use in:** Services and domains to show message summary.
+
+### `<AgentTools />`
+
+Renders a table of tools configured on an agent.
+
+```markdown
+<AgentTools />
+```
+
+**Use in:** Agents only. Include when the agent frontmatter has a `tools` array.
 
 ### `<ChannelInformation />`
 
@@ -269,6 +281,7 @@ Renders an OpenAPI/Swagger specification.
 | Show message flow sequence      | Mermaid sequence diagram             |
 | Show database schema            | Mermaid ER diagram or PlantUML       |
 | List service messages           | `<MessageTable />`                   |
+| List agent tools                | `<AgentTools />`                     |
 | Show channel details            | `<ChannelInformation />`             |
 | Multi-language code examples    | `<Tabs />`                           |
 | Step-by-step integration guide  | `<Steps />`                          |

@@ -1,6 +1,6 @@
 ---
 name: catalog-documentation-creator
-description: Generates EventCatalog documentation files (services, events, commands, queries, domains, flows, channels, containers) with correct frontmatter, folder structure, and best practices. Use when user asks to "document a service", "create EventCatalog files", "add an event to the catalog", "document my architecture", "generate catalog documentation", "create documentation for my microservice", or "document a database".
+description: Generates EventCatalog documentation files (services, agents, events, commands, queries, domains, flows, channels, containers) with correct frontmatter, folder structure, and best practices. Use when user asks to "document a service", "document an agent", "document an AI agent", "create EventCatalog files", "add an event to the catalog", "document my architecture", "generate catalog documentation", "create documentation for my microservice", or "document a database".
 license: MIT
 metadata:
   author: eventcatalog
@@ -23,8 +23,8 @@ Before generating any files, ask the user: **"Do you already have an EventCatalo
   - A repo they've cloned locally (e.g., `~/projects/my-catalog/`)
   - A folder on their machine
   - A monorepo with the catalog in a subdirectory
-- Verify it looks like an EventCatalog project by checking for an `eventcatalog.config.js` file or known directories (`services/`, `events/`, `domains/`, etc.)
-- Read the existing structure to understand whether they use **nested** (domains/services/events) or **flat** (top-level services/, events/) organization
+- Verify it looks like an EventCatalog project by checking for an `eventcatalog.config.js` file or known directories (`services/`, `agents/`, `events/`, `domains/`, etc.)
+- Read the existing structure to understand whether they use **nested** (domains/services/agents/events) or **flat** (top-level services/, agents/, events/) organization
 
 **If they don't have a catalog yet:**
 
@@ -43,10 +43,10 @@ CRITICAL: All generated files must be written to the user's catalog directory, n
 
 Ask the user what they want to document. Common scenarios:
 
-- A single service and its messages
+- A single service or agent and its messages
 - An event, command, or query
 - A full domain with nested services
-- A business flow across services
+- A business flow across services and agents
 - A channel (Kafka topic, RabbitMQ queue, etc.)
 - A container (database, cache, queue)
 
@@ -57,9 +57,10 @@ Gather this information before generating:
 - Message relationships (what it sends/receives)
 - Channel routing (what channels messages flow through)
 - Containers (what databases/caches the service reads from or writes to)
+- Agent model/provider and tools when documenting agents
 - Schema format if applicable (JSON Schema, Avro, Protobuf)
 
-If the user points you at a codebase (not the catalog), analyze it to extract services, messages, schemas, and relationships — then generate the corresponding catalog documentation.
+If the user points you at a codebase (not the catalog), analyze it to extract services, agents, messages, schemas, and relationships — then generate the corresponding catalog documentation.
 
 ### Step 3: Check the Existing Catalog
 
@@ -87,6 +88,7 @@ This ensures new documentation is consistent with what's already in the catalog.
 Generate files following the resource-specific references. Consult the appropriate reference file for the resource type:
 
 - `references/services.md` — Services with sends/receives, channel routing, containers
+- `references/agents.md` — Agents with model metadata, tools, sends/receives, containers, and flows
 - `references/events.md` — Events with schemas, payload examples, producer/consumer code
 - `references/commands.md` — Commands with REST operations and schemas
 - `references/queries.md` — Queries with REST operations and response schemas
@@ -106,16 +108,18 @@ Every resource file MUST include:
 - `version` as semantic version string
 - `summary` as a concise 1-2 sentence description
 
-CRITICAL: Always use `index.mdx` as the filename for resources (services, events, commands, queries, domains, flows, channels). Teams and users use `{id}.mdx` files directly. Place files in the correct folder path following the nested structure pattern:
+CRITICAL: Always use `index.mdx` as the filename for resources (services, agents, events, commands, queries, domains, flows, channels). Teams and users use `{id}.mdx` files directly. Place files in the correct folder path following the nested structure pattern:
 
 ```
 domains/{DomainName}/services/{ServiceName}/events/{EventName}/index.mdx
+domains/{DomainName}/agents/{AgentName}/index.mdx
 ```
 
 Or flat structure if the catalog uses that pattern:
 
 ```
 services/{ServiceName}/index.mdx
+agents/{AgentName}/index.mdx
 events/{EventName}/index.mdx
 ```
 
@@ -145,27 +149,40 @@ When a user says "document my payment service that receives OrderCreated events 
 5. Add example payload sections for each message
 6. Place files in the correct nested folder structure
 
+### Documenting an Agent
+
+When a user says "document my support agent that reads order data and uses Zendesk":
+
+1. Generate the agent `index.mdx` with `model`, `tools`, `receives`/`sends`, `readsFrom`/`writesTo`, and `flows` where known
+2. Generate or reference events/commands/queries the agent consumes or produces
+3. Generate containers for data stores the agent reads or writes
+4. Include `<AgentTools />` when tools are documented
+5. Include `<NodeGraph />` so the agent appears in architecture visualizations
+6. If the agent belongs to a domain, add it to the domain's `agents` frontmatter
+
 ### Documenting a Domain
 
-CRITICAL: A domain MUST have at least one service. Never create a domain without services in it. If the user describes a domain, ensure services are identified and generated for it.
+CRITICAL: A domain MUST have at least one service or agent. Never create an empty domain. If the user describes a domain, ensure services or agents are identified and generated for it.
 
 When a user wants to document a full domain:
 
-1. Identify the services that belong to this domain. If the user hasn't specified services, ask them: "What services belong to this domain?" Do NOT create a domain without services.
-2. Generate the domain `index.mdx` with the `services` field listing every service
-3. Generate each service within the domain
-4. Generate each message referenced by the services
+1. Identify the services and agents that belong to this domain. If the user hasn't specified any, ask them: "What services or agents belong to this domain?" Do NOT create an empty domain.
+2. Generate the domain `index.mdx` with the `services` field listing every service and the `agents` field listing every agent
+3. Generate each service and agent within the domain
+4. Generate each message referenced by the services and agents
 5. Generate channels if the user describes messaging infrastructure
-6. Use the nested folder structure: `domains/{Domain}/services/{Service}/events/{Event}/`
-7. Generate a `ubiquitous-language.mdx` file for the domain by extracting domain-specific terms from service names, event/command names, entities, and business processes. Place it at `domains/{Domain}/ubiquitous-language.mdx`. See `references/ubiquitous-language.md` for format and examples.
-8. CRITICAL: After generating all files, verify the domain's frontmatter `services` field lists every service that belongs to it. Every service created under a domain MUST be referenced in the domain's `index.mdx`:
+6. Use the nested folder structure: `domains/{Domain}/services/{Service}/events/{Event}/` and `domains/{Domain}/agents/{Agent}/`
+7. Generate a `ubiquitous-language.mdx` file for the domain by extracting domain-specific terms from service names, agent names, event/command names, entities, and business processes. Place it at `domains/{Domain}/ubiquitous-language.mdx`. See `references/ubiquitous-language.md` for format and examples.
+8. CRITICAL: After generating all files, verify the domain's frontmatter `services` field lists every service and `agents` lists every agent that belongs to it. Every service or agent created under a domain MUST be referenced in the domain's `index.mdx`:
    ```yaml
    services:
      - id: OrdersService
      - id: InventoryService
      - id: PaymentService
+   agents:
+     - id: OrderSupportAgent
    ```
-   If a service is nested inside the domain folder but not listed in the domain's `services` frontmatter, it will not appear as part of that domain. Always cross-check.
+   If a service or agent is nested inside the domain folder but not listed in the domain's frontmatter, it will not appear as part of that domain. Always cross-check.
 
 ### Documenting a Business Flow
 
@@ -173,7 +190,7 @@ When a user describes a multi-step process:
 
 1. Identify distinct steps (user actions, service calls, message exchanges, external systems)
 2. Generate the flow `index.mdx` with `steps` array
-3. Each step should have `id`, `title`, and appropriate type (`actor`, `service`, `message`, `externalSystem`)
+3. Each step should have `id`, `title`, and appropriate type (`actor`, `service`, `agent`, `message`, `externalSystem`)
 4. Connect steps with `next_step` or `next_steps` for branching
 
 ### Documenting Channel Routing
@@ -181,8 +198,8 @@ When a user describes a multi-step process:
 When a user describes how messages flow through infrastructure:
 
 1. Generate channel `index.mdx` files with `routes` for channel-to-channel routing
-2. Update service `sends`/`receives` with `to`/`from` fields pointing to channels
-3. The full picture should show: Service A sends → Channel → routes to → Channel → Service B receives
+2. Update service or agent `sends`/`receives` with `to`/`from` fields pointing to channels
+3. The full picture should show: Service or agent sends → Channel → routes to → Channel → service or agent receives
 
 ## Quality Checklist
 
@@ -203,17 +220,17 @@ Before delivering documentation to the user, verify every file against this chec
 9. Folder structure follows catalog conventions
 10. No duplicate resources (checked against existing catalog)
 11. File is named `index.mdx` (not `index.md`, `README.md`, or anything else)
-12. Every domain has at least one service — never create an empty domain
-13. Domain `services` frontmatter lists every service that belongs to that domain
-14. Every domain has a `ubiquitous-language.mdx` file with relevant domain terms extracted from services, events, commands, and business processes
+12. Every domain has at least one service or agent — never create an empty domain
+13. Domain `services` and `agents` frontmatter lists every service and agent that belongs to that domain
+14. Every domain has a `ubiquitous-language.mdx` file with relevant domain terms extracted from services, agents, events, commands, and business processes
 
 ## Troubleshooting
 
 ### Messages Not Showing in Visualizer
 
-If generated events/commands don't appear in the service's node graph:
+If generated events/commands don't appear in the service or agent node graph:
 
-- Verify the `sends`/`receives` arrays in the service frontmatter reference the exact `id` of the message
+- Verify the `sends`/`receives` arrays in the service or agent frontmatter reference the exact `id` of the message
 - Ensure the message has its own `index.mdx` file
 
 ### Schema Not Rendering
@@ -228,11 +245,11 @@ If `<Schema />` or `<SchemaViewer />` components show errors:
 If resources don't appear in EventCatalog:
 
 - Verify the file is named exactly `index.mdx` (not `INDEX.mdx` or `readme.md`)
-- Verify the folder is inside a recognized collection directory (`services/`, `events/`, `domains/`, etc.)
+- Verify the folder is inside a recognized collection directory (`services/`, `agents/`, `events/`, `domains/`, etc.)
 
 ### Channel Routing Not Visible
 
 If channel connections don't appear in the visualizer:
 
 - Verify the `routes` field in the channel frontmatter references valid channel IDs
-- Verify the `to`/`from` fields in service sends/receives reference valid channel IDs
+- Verify the `to`/`from` fields in service or agent sends/receives reference valid channel IDs

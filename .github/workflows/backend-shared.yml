@@ -8,7 +8,7 @@ permissions: {}
 
 env:
   GLOBAL_JSON_PATH: global.json
-  BUN_VERSION_FILE: .bun-version
+  BUN_VERSION_FILE: src/Clients/package.json
 
 jobs:
   format:

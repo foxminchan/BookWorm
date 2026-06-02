@@ -107,7 +107,7 @@ update-keycloakify:
 # Update frontend packages
 
 update-fe:
-    cd src/Clients && pnpm update --recursive --filter=*
+    cd src/Clients && bun update --recursive --filter=*
 
 # Update all packages
 

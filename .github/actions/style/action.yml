@@ -3,7 +3,6 @@ description: >-
   Enforce coding style conventions across the BookWorm repository using
   Husky-managed style rules for consistent code appearance
 author: BookWorm Team
-
 branding:
   icon: eye
   color: orange
@@ -14,9 +13,9 @@ inputs:
     required: false
     default: ./global.json
   bun-version-file:
-    description: Path to the .bun-version file that specifies the Bun runtime version
+    description: Path to the package.json file containing the packageManager field that specifies the Bun runtime version
     required: false
-    default: .bun-version
+    default: src/Clients/package.json
 
 runs:
   using: composite
