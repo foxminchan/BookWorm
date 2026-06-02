@@ -87,7 +87,7 @@
 ### Prerequisites
 
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Node.js](https://nodejs.org/en/download/)
+- [Node.js LTS](https://nodejs.org/en/download/)
 - [Docker](https://www.docker.com/get-started)
 - [Bun](https://bun.sh/)
 - [Just](https://github.com/casey/just)
