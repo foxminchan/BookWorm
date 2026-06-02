@@ -30,7 +30,7 @@ concurrency:
 
 env:
   JAVA_VERSION: "25"
-  BUN_VERSION_FILE: src/Clients/package.json
+  BUN_VERSION_FILE: .bun-version
   KEYCLOAK_DIR: src/Aspire/BookWorm.AppHost/Container/keycloak
   KEYCLOAKIFY_DIR: src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
 

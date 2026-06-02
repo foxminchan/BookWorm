@@ -35,7 +35,7 @@ permissions: {}
 env:
   JAVA_VERSION: "25"
   GLOBAL_JSON_PATH: global.json
-  BUN_VERSION_FILE: src/Clients/package.json
+  BUN_VERSION_FILE: .bun-version
   HANG_TIMEOUT: 7m
   SESSION_TIMEOUT: 15m
 

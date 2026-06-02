@@ -9,9 +9,9 @@ branding:
 
 inputs:
   bun-version-file:
-    description: Path to the package.json file containing the packageManager field that specifies the Bun runtime version
+    description: Path to the .bun-version file specifying the Bun runtime version
     required: false
-    default: src/Clients/package.json
+    default: .bun-version
   bun-lock-path:
     description: Path to the bun.lock file for dependency caching
     required: false
