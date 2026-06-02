@@ -49,17 +49,17 @@ jobs:
         uses: ./.github/actions/frontend-setup
 
       - name: 🧹 Lint
-        run: ./node_modules/.bin/turbo run lint --affected
+        run: bunx turbo run lint --affected
 
       - name: 🔨 Build
-        run: ./node_modules/.bin/turbo run build --affected
+        run: bunx turbo run build --affected
 
       - name: 🧪 Test
-        run: ./node_modules/.bin/turbo run test --affected
+        run: bunx turbo run test --affected
 
       - name: 📊 Generate Allure Reports
         if: ${{ !cancelled() }}
-        run: ./node_modules/.bin/turbo run allure:generate --affected --continue
+        run: bunx turbo run allure:generate --affected --continue
 
       - name: ⬆️ Upload Allure Report (Backoffice)
         if: ${{ !cancelled() }}
