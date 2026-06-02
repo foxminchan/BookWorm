@@ -82,7 +82,7 @@ jobs:
       - name: 📊 Post Allure Summary (Backoffice)
         if: |
           ${{ !cancelled() && hashFiles('src/Clients/apps/backoffice/allure-report/index.html') != '' }}
-        uses: allure-framework/allure-action@b9200013eff7f16624c5ad1c61d4fdde803cea27 # v0.3.0
+        uses: allure-framework/allure-action@e423746d05c43b4bea93d994acaac64a40521ccf # v0.3.0
         with:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-report
           github-token: ${{ github.token }}
@@ -90,7 +90,7 @@ jobs:
       - name: 📊 Post Allure Summary (Storefront)
         if: |
           ${{ !cancelled() && hashFiles('src/Clients/apps/storefront/allure-report/index.html') != '' }}
-        uses: allure-framework/allure-action@b9200013eff7f16624c5ad1c61d4fdde803cea27 # v0.3.0
+        uses: allure-framework/allure-action@e423746d05c43b4bea93d994acaac64a40521ccf # v0.3.0
         with:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report
           github-token: ${{ github.token }}
