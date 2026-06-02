@@ -92,13 +92,13 @@ jobs:
 
 - **Principle:** Steps should be atomic, well-defined, and actions should be versioned for stability and security.
 - **Deeper Dive:**
-  - **`uses`:** Referencing marketplace actions (e.g., `actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2`) or custom actions. Always pin to a full-length commit SHA for maximum security and immutability. Tags and branches are mutable references — a malicious actor who gains write access to an action's repository can silently move a tag (e.g., `@v4`) to a compromised commit, executing arbitrary code in your workflow (a supply chain attack). A commit SHA is immutable and cannot be redirected. Add the version as a comment (e.g., `# v4.3.1`) for human readability. Avoid mutable references like `@main`, `@latest`, or major version tags (e.g., `@v4`).
+  - **`uses`:** Referencing marketplace actions (e.g., `actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3`) or custom actions. Always pin to a full-length commit SHA for maximum security and immutability. Tags and branches are mutable references — a malicious actor who gains write access to an action's repository can silently move a tag (e.g., `@v4`) to a compromised commit, executing arbitrary code in your workflow (a supply chain attack). A commit SHA is immutable and cannot be redirected. Add the version as a comment (e.g., `# v4.3.1`) for human readability. Avoid mutable references like `@main`, `@latest`, or major version tags (e.g., `@v4`).
   - **`name`:** Essential for clear logging and debugging. Make step names descriptive.
   - **`run`:** For executing shell commands. Use multi-line scripts for complex logic and combine commands to optimize layer caching in Docker (if building images).
   - **`env`:** Define environment variables at the step or job level. Do not hardcode sensitive data here.
   - **`with`:** Provide inputs to actions. Ensure all required inputs are present.
 - **Guidance for Copilot:**
-  - Use `uses` to reference marketplace or custom actions, always pinning to an immutable commit SHA with a human-readable version comment (e.g., `uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2`). This is especially critical for third-party actions where you have no control over whether a tag gets moved.
+  - Use `uses` to reference marketplace or custom actions, always pinning to an immutable commit SHA with a human-readable version comment (e.g., `uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3`). This is especially critical for third-party actions where you have no control over whether a tag gets moved.
   - Use `name` for each step for readability in logs and easier debugging.
   - Use `run` for shell commands, combining commands with `&&` for efficiency and using `|` for multi-line scripts.
   - Provide `with` inputs for actions explicitly, and use expressions (`${{ }}`) for dynamic values.
