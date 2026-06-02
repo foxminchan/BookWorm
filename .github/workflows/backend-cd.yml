@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 1
 
       - name: 🔧 Setup .NET Core
-        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
@@ -55,7 +55,7 @@ jobs:
         run: aspire --version
 
       - name: 🔐 Login to GitHub Container Registry
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}

@@ -1,6 +1,6 @@
 ---
 name: flow-wizard
-description: Guides users through documenting business flows step-by-step in EventCatalog. Use when user asks to "document a flow", "map a business process", "create a flow diagram", "walk through a process", "document an end-to-end flow", or "map out how something works in my architecture".
+description: Guides users through documenting business flows step-by-step in EventCatalog, including services, agents, messages, actors, and external systems. Use when user asks to "document a flow", "map a business process", "create a flow diagram", "walk through a process", "document an end-to-end flow", "map an agent workflow", or "map out how something works in my architecture".
 license: MIT
 metadata:
   author: eventcatalog
@@ -19,13 +19,13 @@ Before anything else, you need to find the user's EventCatalog project so you ca
 
 Ask: **"Do you have an EventCatalog project I can look at? If so, where is it?"**
 
-- If they provide a path, verify it's an EventCatalog project by checking for `eventcatalog.config.js` or known directories (`services/`, `events/`, `domains/`, `flows/`).
+- If they provide a path, verify it's an EventCatalog project by checking for `eventcatalog.config.js` or known directories (`services/`, `agents/`, `events/`, `domains/`, `flows/`).
 - If they have the EventCatalog MCP server connected, use `getResources` to discover what's in the catalog.
 - If they don't have one, that's fine — you'll document steps as plain text descriptions without resource references. Let them know they can still create a useful flow and add resource links later.
 
 Once located, scan the catalog to build an inventory of existing resources:
 
-- Read existing services, events, commands, queries, domains, channels, and flows
+- Read existing services, agents, events, commands, queries, domains, channels, and flows
 - Note their IDs, names, and versions — you'll use these to suggest matches as the user walks through their flow
 
 ### Step 2: Ask What Flow They Want to Document
@@ -37,6 +37,7 @@ Let the user describe the flow in their own words. Examples:
 - "User signs up, gets a welcome email, and is added to our CRM"
 - "Order is placed, payment is processed, inventory is reserved, and the order is shipped"
 - "A customer submits a support ticket, it gets triaged, assigned to an agent, and resolved"
+- "A support agent receives an order event, looks up order context, and updates the support case"
 
 From their description, break the flow into **sections** (high-level stages). Present these sections back to the user for confirmation:
 
@@ -68,6 +69,7 @@ From their description, determine which flow step type(s) this section involves:
 
 - **Actor** — a person or role does something (e.g., "the user clicks sign up", "the admin approves")
 - **Service** — a service in their architecture processes something (e.g., "our auth service handles registration")
+- **Agent** — an AI agent reasons, invokes tools, or automates part of the process (e.g., "the refund agent reviews the case")
 - **Message** — an event, command, or query is exchanged (e.g., "a UserRegistered event is fired")
 - **External System** — a third-party system is involved (e.g., "we call Stripe for payment", "Twilio sends the SMS")
 
@@ -78,9 +80,10 @@ A single section may produce multiple steps (e.g., a user action triggers a comm
 For each step the user describes, search their EventCatalog (if available) for matching resources:
 
 1. **Services** — Does the service they mention exist in the catalog? Search by name, ID, or similar terms.
-2. **Events/Commands/Queries** — Does the message they describe match something already documented? Look for exact matches and close matches (e.g., user says "order created event" → search for `OrderCreated`, `OrderPlaced`, etc.).
-3. **Channels** — Are there channels relevant to how this message flows?
-4. **Domains** — Does this step fall within a documented domain?
+2. **Agents** — Does the AI agent, assistant, copilot, or autonomous worker they mention exist in the catalog?
+3. **Events/Commands/Queries** — Does the message they describe match something already documented? Look for exact matches and close matches (e.g., user says "order created event" → search for `OrderCreated`, `OrderPlaced`, etc.).
+4. **Channels** — Are there channels relevant to how this message flows?
+5. **Domains** — Does this step fall within a documented domain?
 
 **If you find a match**, tell the user:
 
@@ -100,6 +103,7 @@ If they say yes, use the resource's actual `id` and `version` in the flow step.
 **If you find no match**, that's perfectly fine. Document it as a descriptive step:
 
 - If it sounds like a service, use `service` type with a suggested ID and note it's not yet in the catalog
+- If it sounds like an AI agent, use `agent` type with a suggested ID and note it's not yet in the catalog
 - If it sounds like a message, use `message` type with a suggested ID
 - If it's a person/role, use `actor` type
 - If it's a third-party tool/API, use `externalSystem` type
@@ -116,8 +120,9 @@ After processing a section, summarize what you've captured for that section and 
 >
 > 1. `ProcessPayment` command is sent (matched to your existing `ProcessPayment` command v0.0.1)
 > 2. `PaymentService` handles the payment (matched to your existing `PaymentService` v1.2.0)
-> 3. Calls **Stripe** (external system) to charge the card
-> 4. `PaymentProcessed` event is emitted (not in your catalog yet — I'll use a placeholder)
+> 3. `FraudReviewAgent` reviews fraud signals (matched to your existing `FraudReviewAgent` v0.0.1)
+> 4. Calls **Stripe** (external system) to charge the card
+> 5. `PaymentProcessed` event is emitted (not in your catalog yet — I'll use a placeholder)
 >
 > Does that look right? Anything to add or change?
 
@@ -181,6 +186,16 @@ Once the user confirms, generate the flow `index.mdx` file following the format 
        version: "1.2.0"
    ```
 
+   Agent steps use the `agent` field:
+
+   ```yaml
+   - id: "fraud_review"
+     title: "Fraud Review Agent"
+     agent:
+       id: "FraudReviewAgent"
+       version: "0.0.1"
+   ```
+
 3. For **unmatched resources** (not in catalog), use descriptive IDs and version `0.0.1`:
 
    ```yaml
@@ -237,7 +252,7 @@ After writing, let the user know:
 
 - Where the file was saved
 - Which resources were matched from their catalog
-- Which resources are new/unmatched — suggest they can document these later using the `catalog-documentation-creator` skill
+- Which resources are new/unmatched — suggest they can document these later using the `catalog-documentation-creator` skill, especially new agents
 - They can view the flow visualization in EventCatalog by running their dev server
 
 ## Conversation Guidelines
@@ -258,6 +273,7 @@ When searching for matching resources, use these strategies:
 2. **Fuzzy match** — search for variations (e.g., "orders service" → try `OrdersService`, `OrderService`, `orders-service`)
 3. **Semantic match** — if the user says "the thing that handles payments", search for services with "payment" in the name or summary
 4. **Browse by type** — if you know it's an event, search events specifically
+5. **Agent terms** — if the user says "assistant", "copilot", "worker", "reviewer", or "agent", search `agents/` before treating it as an external system
 
 If the EventCatalog MCP server is available:
 
@@ -267,7 +283,7 @@ If the EventCatalog MCP server is available:
 
 If reading the filesystem directly:
 
-- Look in `services/`, `events/`, `commands/`, `queries/`, `domains/`, `flows/`, `channels/` directories
+- Look in `services/`, `agents/`, `events/`, `commands/`, `queries/`, `domains/`, `flows/`, `channels/` directories
 - Read `index.mdx` files to check `id`, `name`, `version`, and `summary` fields
 
 ## Quality Checklist
@@ -276,7 +292,7 @@ Before delivering the flow file:
 
 1. Every step has a unique `id`
 2. Every step has a `title`
-3. Every step has exactly one type (`actor`, `service`, `message`, or `externalSystem`)
+3. Every step has exactly one type (`actor`, `service`, `agent`, `message`, or `externalSystem`)
 4. All `next_step` and `next_steps` references point to valid step IDs within the flow
 5. No orphaned steps (every step is reachable from the first step, except via branching)
 6. Matched resources use correct `id` and `version` from the catalog

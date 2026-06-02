@@ -1,6 +1,6 @@
 # Discovery Heuristics
 
-Patterns for detecting services, messages, channels, domains, and containers across languages and frameworks. Use these to form the internal draft map in Phase 2 of the skill.
+Patterns for detecting services, agents, messages, channels, domains, and containers across languages and frameworks. Use these to form the internal draft map in Phase 2 of the skill.
 
 Each section is organized as: **what to look for** → **where to find it** → **what to classify it as**.
 
@@ -8,6 +8,7 @@ Each section is organized as: **what to look for** → **where to find it** → 
 
 - [Project structure](#project-structure)
 - [Service boundaries](#service-boundaries)
+- [Agent boundaries](#agent-boundaries)
 - [Messages: Node.js / TypeScript](#messages-nodejs--typescript)
 - [Messages: Python](#messages-python)
 - [Messages: Go](#messages-go)
@@ -54,6 +55,33 @@ A service is an independently-deployable, independently-ownable unit. Positive s
 - Lambda / serverless handlers: a group of handlers under one service boundary often counts as one service, not one service per handler. Look at the deployment config.
 - "Sidecar" services (auth-proxy, logger): list them but confirm with the user — they may or may not belong in the catalog.
 
+## Agent boundaries
+
+An agent is an AI/LLM-powered runtime that owns a durable role, model policy, tool set, memory, or autonomous workflow. Positive signals:
+
+- Names like `*Agent`, `*Assistant`, `*Copilot`, `*Planner`, `*Researcher`, `*Reviewer`, or `*Worker` paired with LLM/tool orchestration
+- LLM SDK calls: OpenAI, Anthropic, Gemini, Vercel AI SDK, LangChain, LlamaIndex, Mastra, CrewAI, AutoGen
+- Agent abstractions: `new Agent(...)`, `createAgent(...)`, `runAgent(...)`, graph/workflow nodes that call an LLM
+- Tool registration: `tools`, `tool_choice`, `function_call`, `executeTool`, `MCP`, `mcpServers`, `createMcpClient`
+- Memory/retrieval: vector stores, embeddings, retrievers, conversation history, Redis/Postgres/Supabase memory
+- Scheduled or event-driven autonomous work: queue consumers or cron jobs that invoke an LLM and tools
+
+Capture for each agent:
+
+- Model provider/name/version if configured
+- Tool names, types, URLs, and descriptions when available
+- Messages the agent sends/receives
+- Containers it reads from or writes to
+- Flows it participates in
+
+Do not classify these as agents without confirmation:
+
+- A normal service that calls an LLM once for enrichment
+- A helper module with prompt templates but no runtime boundary
+- Shared SDK wrappers around an LLM provider
+
+When ambiguous, record it as a candidate and grill the user.
+
 ## Messages: Node.js / TypeScript
 
 ### Message-bus clients
@@ -75,6 +103,12 @@ A service is an independently-deployable, independently-ownable unit. Positive s
 - `EventEmitter` usage — these are usually internal, not catalog-worthy. Skip unless the project clearly treats them as domain events.
 - `nestjs/cqrs` — `@EventsHandler()`, `@CommandHandler()`, `@QueryHandler()` — **very strong** explicit classification, use these directly.
 - Framework-level event buses (`tsed`, `midwayjs`): check project docs.
+
+### Agent-related message signals
+
+- Agents may consume domain events to update context or trigger work.
+- Agents may send commands or events when they recommend, create, or complete an action.
+- MCP or tool calls are usually **tools**, not EventCatalog messages, unless the call is an architectural contract other systems depend on.
 
 ### DTO / type definitions
 
@@ -206,13 +240,14 @@ Domains are the hardest to detect mechanically. Good signals:
 - **Bounded-context language in READMEs** — "the Orders domain", "Payments bounded context".
 - **`CODEOWNERS`** — teams listed against directory groups often correlate with domains.
 - **Monorepo workspace names** — `@company/orders-service`, `@company/payments-service`.
+- **Agent names/tooling** — `orders-agent`, `payment-review-agent`, or tool names scoped to a business capability.
 
 **When to propose domains:** only if you have ≥2 clear clusters. Otherwise propose "single domain for the whole codebase" and let the user split in grilling.
 
 **Do not:**
 
 - Invent domain names the user has never used. If you see `src/orders/`, call the domain `Orders` (match the folder name).
-- Collapse services into a single domain just because they share code — shared code is infrastructure.
+- Collapse services or agents into a single domain just because they share code — shared code is infrastructure.
 
 ## Classification rules
 

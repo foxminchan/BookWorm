@@ -40,15 +40,15 @@ dictionary:
 
 ## When to Generate Ubiquitous Language
 
-When documenting a domain, analyze the services, events, commands, and codebase to identify domain-specific terms that have precise meaning within that bounded context. Look for:
+When documenting a domain, analyze the services, agents, events, commands, and codebase to identify domain-specific terms that have precise meaning within that bounded context. Look for:
 
 - **Nouns in event/command names** — `Order`, `Payment`, `Shipment`, `Subscription` are likely domain terms
-- **Business concepts referenced in service descriptions** — `Fulfillment`, `Consignment`, `Invoice`
+- **Business concepts referenced in service or agent descriptions** — `Fulfillment`, `Consignment`, `Invoice`
 - **Entities and aggregates** — `Customer`, `Product`, `Cart`, `SKU`
 - **Processes and workflows** — `Checkout`, `Return`, `Refund`, `Settlement`
 - **Technical terms with domain-specific meaning** — terms that mean something specific in this context vs. general usage
 
-CRITICAL: Always generate a `ubiquitous-language.mdx` file when creating a domain. Extract terms from the services, events, commands, and any codebase or documentation the user provides.
+CRITICAL: Always generate a `ubiquitous-language.mdx` file when creating a domain. Extract terms from the services, agents, events, commands, and any codebase or documentation the user provides.
 
 ## Example: Orders Domain
 

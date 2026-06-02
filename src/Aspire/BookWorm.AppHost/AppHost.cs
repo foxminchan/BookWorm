@@ -201,7 +201,7 @@ var turbo = builder
         Components.TurboRepo,
         Path.GetFullPath("../../Clients", builder.AppHostDirectory)
     )
-    .WithPnpm(true)
+    .WithBun(true)
     .WithPackageManagerLaunch();
 
 var storefront = turbo

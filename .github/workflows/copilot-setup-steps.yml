@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 1
 
       - name: 🔧 Setup .NET Core
-        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
@@ -39,23 +39,11 @@ jobs:
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
-        with:
-          package_json_file: src/Clients/package.json
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "pnpm"
-          cache-dependency-path: "src/Clients/pnpm-lock.yaml"
-
       - name: ⚡ Setup Just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v3.0.0
 
       - name: 🐳 Setup Docker
-        uses: docker/setup-docker-action@b2189fbf2a6592b51fee7cdd93ee2bfaeba733db # v5.1.0
+        uses: docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23 # v5.2.0
 
       - name: 🛠️ Install Tools
         run: dotnet tool restore
@@ -75,5 +63,5 @@ jobs:
         working-directory: docs/eventcatalog
 
       - name: 📦 Install frontend dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: bun install --frozen-lockfile --ignore-scripts
         working-directory: src/Clients

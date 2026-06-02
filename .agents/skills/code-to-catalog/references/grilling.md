@@ -14,8 +14,9 @@ The user confirms, corrects, or overrides. Move to the next question.
 
 - [Topic 1: Domains & boundaries](#topic-1-domains--boundaries)
 - [Topic 2: Service boundaries](#topic-2-service-boundaries)
-- [Topic 3: Message classification](#topic-3-message-classification)
-- [Topic 4: Drift reconciliation](#topic-4-drift-reconciliation)
+- [Topic 3: Agent boundaries](#topic-3-agent-boundaries)
+- [Topic 4: Message classification](#topic-4-message-classification)
+- [Topic 5: Drift reconciliation](#topic-5-drift-reconciliation)
 - [Handling disagreement](#handling-disagreement)
 - [Things NOT to grill on](#things-not-to-grill-on)
 
@@ -32,6 +33,10 @@ The user confirms, corrects, or overrides. Move to the next question.
 ### When a service could belong to two domains
 
 > `NotificationService` has code dealing with order notifications (`src/notifications/orders.ts`) and payment notifications (`src/notifications/payments.ts`). It could live under **Orders**, under **Payments**, or in its own **Notifications** domain. My recommendation: own domain — it's cross-cutting and has its own lifecycle. Thoughts?
+
+### When an agent could belong to two domains
+
+> `OrderSupportAgent` reads order state (`src/agents/order-support/tools/order-lookup.ts`) but writes support case notes (`src/agents/order-support/tools/zendesk.ts`). I'd place it in **Orders** because its reasoning is centered on order lifecycle questions, with Support as tooling. Does that match how your team owns it?
 
 ### When code structure and team structure might disagree
 
@@ -68,7 +73,25 @@ The user confirms, corrects, or overrides. Move to the next question.
 
 > Catalog has **`LegacyInventoryService`** (v1.2.0). I couldn't find it in this codebase. It might live in another repo, or it might be deprecated. I'll flag it as `investigate` in the plan — not delete. Sound right?
 
-## Topic 3: Message classification
+## Topic 3: Agent boundaries
+
+### Confirming a detected agent
+
+> I see an agent at `agents/order-support/` — it configures `gpt-4.1-mini`, registers `orderLookup` and `supportCaseNotes` tools, and has its own worker entrypoint at `src/worker.ts`. I'd document this as **OrderSupportAgent**. Confirm?
+
+### LLM usage inside a service
+
+> `PaymentService` calls OpenAI in `src/payments/risk-summary.ts:42`, but I don't see a standalone runtime, tool registry, or memory. I'd keep this as a **service with an LLM integration**, not a first-class agent. Agree?
+
+### Agent vs workflow
+
+> `RefundReviewAgent` runs only as one deterministic workflow step and has no model/tool choice at runtime. I'd still document it as an **agent** if the team owns it as an AI reviewer; otherwise it can remain part of `RefundService`. Which matches your mental model?
+
+### Agent tools
+
+> `FraudReviewAgent` registers two MCP tools: `riskProfileLookup` and `fraudCaseQueue` at `src/agents/fraud/tools.ts:12`. I'll capture them as agent tools in the plan, not as separate EventCatalog resources. OK?
+
+## Topic 4: Message classification
 
 ### Confident event (bulk confirmation)
 
@@ -98,7 +121,7 @@ The user confirms, corrects, or overrides. Move to the next question.
 
 > Your codebase uses MediatR — `INotification` for events, `IRequest<T>` for queries/commands. I'll trust the interface classification directly. Any messages you know are misclassified in the code?
 
-## Topic 4: Drift reconciliation
+## Topic 5: Drift reconciliation
 
 ### New send detected
 
@@ -107,6 +130,14 @@ The user confirms, corrects, or overrides. Move to the next question.
 ### New receive detected
 
 > Catalog says `OrderService` receives `[PlaceOrder]`. Code at `src/orders/handlers.ts:88` also consumes `CancelOrder`. Add `CancelOrder` to its receives?
+
+### Agent tool drift
+
+> Catalog says `OrderSupportAgent` has one MCP tool: `Order lookup`. Code at `src/agents/order-support/tools.ts:31` also registers `supportCaseNotes`. Add that tool to the agent?
+
+### Agent message drift
+
+> Catalog says `FraudReviewAgent` receives `[PaymentInitiated]`. Code at `src/agents/fraud/events.ts:18` also subscribes to `RiskScoreCalculated`. Add `RiskScoreCalculated` to its receives?
 
 ### Schema drift
 
@@ -149,6 +180,7 @@ These pass through to `catalog-documentation-creator` with defaults. Do **not** 
 
 - **Summary text** for each resource — the next skill writes these.
 - **Owners / teams** — unless they're already in `CODEOWNERS` and ambiguous. If ambiguous, one quick question is fine; otherwise leave it for the next skill.
+- **Prompt wording or low-level tool parameters** — capture tool names and purpose, but don't grill on every prompt or API field.
 - **Schema details** — field types, nullability, descriptions. That's schema-authoring work, not architectural work.
 - **Badges, visual styling** — not structural.
 - **Flow diagrams** — that's `flow-wizard`.

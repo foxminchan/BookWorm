@@ -57,13 +57,13 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.6.2" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.8.0" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.6.2-alpha.260521.1" />
-    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" Version="3.7.0" />
-    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" Version="3.7.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.8.0-alpha.260528.1" />
+    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" Version="4.0.0" />
+    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" Version="4.0.0" />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
@@ -76,7 +76,7 @@
     <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
-    <PackageVersion Include="Grpc.Tools" Version="2.80.0" PrivateAssets="All" />
+    <PackageVersion Include="Grpc.Tools" Version="2.81.0" PrivateAssets="All" />
     <!-- WolverineFx -->
     <PackageVersion Include="WolverineFx.Kafka" Version="$(WolverineVersion)" />
     <PackageVersion Include="WolverineFx.Http.Marten" Version="$(WolverineVersion)" />
@@ -89,7 +89,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.15.1-beta.1" />
     <!-- Email & Messaging -->
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
-    <PackageVersion Include="MailKit" Version="4.16.0" />
+    <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="Mjml.Net" Version="4.11.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
@@ -105,7 +105,7 @@
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.3" />
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.17.0" />
+    <PackageVersion Include="Verify.TUnit" Version="31.19.0" />
     <PackageVersion Include="Verify.Wolverine" Version="3.0.0" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <!-- Microsoft Testing Platform -->

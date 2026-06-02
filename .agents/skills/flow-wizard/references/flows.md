@@ -18,14 +18,15 @@
 
 ## Step Types
 
-Each step has an `id`, `title`, and one of four types:
+Each step has an `id`, `title`, and one of five types:
 
-| Type            | Field                                    | Use When                                        |
-| --------------- | ---------------------------------------- | ----------------------------------------------- |
-| Actor           | `actor: { name }`                        | A person or external entity initiates an action |
-| Message         | `message: { id, version }`               | An event, command, or query is exchanged        |
-| Service         | `service: { id, version }`               | A service processes something                   |
-| External System | `externalSystem: { name, summary, url }` | A third-party system is involved                |
+| Type            | Field                                    | Use When                                                             |
+| --------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| Actor           | `actor: { name }`                        | A person or external entity initiates an action                      |
+| Message         | `message: { id, version }`               | An event, command, or query is exchanged                             |
+| Service         | `service: { id, version }`               | A service processes something                                        |
+| Agent           | `agent: { id, version }`                 | An AI agent reasons, invokes tools, or automates part of the process |
+| External System | `externalSystem: { name, summary, url }` | A third-party system is involved                                     |
 
 ## Step Transitions
 
@@ -96,6 +97,15 @@ steps:
 
   - id: "subscription_rejected"
     title: "Subscription cancellation has been rejected"
+    next_step:
+      id: "subscription_recovery_agent"
+      label: "Ask agent to suggest recovery path"
+
+  - id: "subscription_recovery_agent"
+    title: "Subscription Recovery Agent"
+    agent:
+      id: "SubscriptionRecoveryAgent"
+      version: "0.0.1"
 
   - id: "notification_service"
     title: "Notifications Service"
@@ -115,3 +125,4 @@ steps:
 - The body is typically just `<NodeGraph />` — the flow visualization is auto-generated from the steps
 - Message IDs in steps must match actual event/command/query IDs in the catalog
 - Service IDs in steps must match actual service IDs in the catalog
+- Agent IDs in steps must match actual agent IDs in the catalog
