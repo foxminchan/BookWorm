@@ -13,8 +13,9 @@ public static class PresidioAnalyzerResourceBuilderExtensions
         /// <param name="name">The name of the resource.</param>
         /// <param name="httpPort">The optional host port for the HTTP endpoint. Defaults to container port 3000.</param>
         /// <returns>An <see cref="IResourceBuilder{PresidioAnalyzerResource}" /> for further configuration.</returns>
+        [AspireExport]
         public IResourceBuilder<PresidioAnalyzerResource> AddPresidioAnalyzer(
-            string name,
+            [ResourceName] string name,
             int? httpPort = null
         )
         {
@@ -44,8 +45,9 @@ public static class PresidioAnonymizerResourceBuilderExtensions
         /// <param name="name">The name of the resource.</param>
         /// <param name="httpPort">The optional host port for the HTTP endpoint. Defaults to container port 3000.</param>
         /// <returns>An <see cref="IResourceBuilder{PresidioAnonymizerResource}" /> for further configuration.</returns>
+        [AspireExport]
         public IResourceBuilder<PresidioAnonymizerResource> AddPresidioAnonymizer(
-            string name,
+            [ResourceName] string name,
             int? httpPort = null
         )
         {

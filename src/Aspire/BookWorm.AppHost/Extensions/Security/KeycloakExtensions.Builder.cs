@@ -18,7 +18,6 @@ internal static partial class KeycloakExtensions
                 .AddKeycloak(name)
                 .WithDataVolume()
                 .WithOtlpExporter()
-                .WithArgs("--health-enabled=true")
                 .WithIconName("LockClosedRibbon")
                 .WithCustomTheme(_defaultLocalKeycloakName)
                 .WithImagePullPolicy(ImagePullPolicy.Always)
