@@ -66,7 +66,7 @@ runs:
           core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
 
     - name: Start AIMock server
-      uses: CopilotKit/aimock@46a996c0542fc8f879874dea66cd742a81386bf9 # v1.27.3
+      uses: CopilotKit/aimock@b4e8c17a8378659b31225f735381460cf5279291 # v1.29.0
       id: aimock
       with:
         config: tests/BookWorm.AI.Evaluation/aimock.json
