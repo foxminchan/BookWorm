@@ -17,37 +17,70 @@
     <PackageVersion Include="Aspire.Hosting.Yarp" Version="$(AspireVersion)" />
     <!-- Client -->
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
+    <PackageVersion
+      Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL"
+      Version="$(AspireVersion)"
+    />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstableVersion)" />
-    <PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="$(AspireUnstableVersion)" />
+    <PackageVersion
+      Include="Aspire.Microsoft.Azure.StackExchangeRedis"
+      Version="$(AspireUnstableVersion)"
+    />
     <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <!-- Community Toolkit -->
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Azure.Extensions" Version="$(ToolKitVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" Version="$(ToolKitVersion)" />
+    <PackageVersion
+      Include="CommunityToolkit.Aspire.Hosting.McpInspector"
+      Version="$(ToolKitVersion)"
+    />
+    <PackageVersion
+      Include="CommunityToolkit.Aspire.Hosting.Azure.Extensions"
+      Version="$(ToolKitVersion)"
+    />
+    <PackageVersion
+      Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions"
+      Version="$(ToolKitVersion)"
+    />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
     <PackageVersion Include="Scalar.Aspire" Version="0.9.37" />
-    <PackageVersion Include="Aspire.Hosting.AgentFramework.DevUI" Version="$(AgentFrameworkUnstableVersion)" />
+    <PackageVersion
+      Include="Aspire.Hosting.AgentFramework.DevUI"
+      Version="$(AgentFrameworkUnstableVersion)"
+    />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
     <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Quality" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Evaluation.Reporting" Version="$(MsExtVersion)" />
+    <PackageVersion
+      Include="Microsoft.Extensions.AI.Evaluation.Quality"
+      Version="$(MsExtVersion)"
+    />
+    <PackageVersion
+      Include="Microsoft.Extensions.AI.Evaluation.Reporting"
+      Version="$(MsExtVersion)"
+    />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.0.0-rc.1" />
-    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.Middleware" Version="$(MsExtVersion)" />
+    <PackageVersion
+      Include="Microsoft.AspNetCore.Diagnostics.Middleware"
+      Version="$(MsExtVersion)"
+    />
     <!-- Data -->
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="$(DotnetPackagesVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="$(DotnetPackagesVersion)" />
+    <PackageVersion
+      Include="Microsoft.EntityFrameworkCore.Tools"
+      Version="$(DotnetPackagesVersion)"
+    />
+    <PackageVersion
+      Include="Microsoft.Extensions.Caching.StackExchangeRedis"
+      Version="$(DotnetPackagesVersion)"
+    />
     <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.0-preview.3" />
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
@@ -57,19 +90,31 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.8.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.9.0" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="$(AgentFrameworkUnstableVersion)" />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.8.0-alpha.260528.1" />
-    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" Version="4.0.0" />
-    <PackageVersion Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" Version="4.0.0" />
+    <PackageVersion
+      Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
+      Version="$(AgentFrameworkUnstableVersion)"
+    />
+    <PackageVersion
+      Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore"
+      Version="$(AgentFrameworkUnstableVersion)"
+    />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.9.0-alpha.260603.1" />
+    <PackageVersion
+      Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
+      Version="4.0.0"
+    />
+    <PackageVersion
+      Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol"
+      Version="4.0.0"
+    />
     <!-- Miscellaneous -->
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="10.1.6" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="11.0.1" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
@@ -93,10 +138,19 @@
     <PackageVersion Include="Mjml.Net" Version="4.11.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.3.0" />
-    <PackageVersion Include="ZiggyCreatures.FusionCache.OpenTelemetry" Version="$(FusionCacheVersion)" />
-    <PackageVersion Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis" Version="$(FusionCacheVersion)" />
-    <PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="$(FusionCacheVersion)" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.4.0" />
+    <PackageVersion
+      Include="ZiggyCreatures.FusionCache.OpenTelemetry"
+      Version="$(FusionCacheVersion)"
+    />
+    <PackageVersion
+      Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis"
+      Version="$(FusionCacheVersion)"
+    />
+    <PackageVersion
+      Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson"
+      Version="$(FusionCacheVersion)"
+    />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Bogus" Version="35.6.5" />

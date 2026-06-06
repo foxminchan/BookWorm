@@ -19,8 +19,7 @@
 </div>
 
 > [!WARNING]
->
-> **Disclaimer**: This example is for demo use only. It’s not production-ready and may omit important features.
+> This project is for demo purposes only and is not production-ready.
 
 ## Introduction
 
@@ -76,7 +75,7 @@
   - [x] Performed load testing with k6
   - [x] Implemented frontend unit tests and component tests
   - [x] Conducted end-to-end testing with BDD
-  - [ ] Planned integration tests
+  - [ ] Planned integration tests _(planned)_
 
 ## Project Architecture
 
@@ -86,26 +85,25 @@
 
 ### Prerequisites
 
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Node.js LTS](https://nodejs.org/en/download/)
-- [Docker](https://www.docker.com/get-started)
-- [Bun](https://bun.sh/)
-- [Just](https://github.com/casey/just)
-- [Aspire CLI](https://aspire.dev/get-started/install-cli/)
-- Optional: [Buf CLI](https://docs.buf.build/installation)
-- Optional: [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-- Optional: [Spec-Kit](https://github.com/github/spec-kit)
-- Optional: [GitHub Copilot CLI](https://github.com/github/copilot-cli)
+**Required**
+
+- [mise](https://mise.jdx.dev/) — tool version manager
+- [Docker](https://www.docker.com/get-started) — container runtime _(must be running before starting the app)_
+- [Aspire CLI](https://aspire.dev/get-started/install-cli/) — app orchestration
+
+**Optional**
+
+- [Buf CLI](https://docs.buf.build/installation) — gRPC schema & codegen
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) — Azure auth & deploy
+- [Spec-Kit](https://github.com/github/spec-kit) — spec-driven development
+- [GitHub Copilot CLI](https://github.com/github/copilot-cli) — AI-assisted development
 
 > [!NOTE]
 >
-> - 🤖 Ensure you have an [OpenAI API key](https://platform.openai.com/api-keys) to use the AI features
-> - 📧 Email services use [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
-> - 🐳 Docker Desktop must be running before starting the application
+> - **AI features** require an [OpenAI API key](https://platform.openai.com/api-keys)
+> - **Email** uses [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
 
-### Run the Application
-
-Follow these steps to get BookWorm running locally:
+### Run locally
 
 ```sh
 # 1. Clone the repository
@@ -114,42 +112,46 @@ git clone git@github.com:foxminchan/BookWorm.git
 # 2. Navigate to the project directory
 cd BookWorm
 
-# 3. First-time setup
-just prepare
+# 3. Install tools (.NET SDK, Bun, JDK — skip if already installed globally)
+mise install
 
-# 4. Run the application
-just run
+# 4. First-time setup
+mise run prepare
+
+# 5. Start the application
+mise run run
 ```
 
 > [!NOTE]
 >
-> On first run, you'll be prompted to enter necessary environment variables
+> On first run, you'll be prompted to enter the required environment variables.
 
-### Deploy the Application
+### Self-Deploy the Azure
 
-To deploy BookWorm to Azure Container Apps, follow these steps:
-
-1. **Authenticate with Azure**:
+1. **Authenticate with Azure**
 
 ```sh
 az login
 ```
 
-2. **Deploy the application**:
+2. **Deploy**
 
 ```sh
 aspire deploy
 ```
 
-3. **Verify the deployment**:
-
-After deployment completes, get the application URL:
+3. **Get the app URL**
 
 ```sh
-az containerapp show --name <app-name> --resource-group <resource-group> --query properties.configuration.ingress.fqdn --output tsv
+az containerapp show --name <app-name> --resource-group <resource-group> \
+  --query properties.configuration.ingress.fqdn --output tsv
 ```
 
-Replace `<app-name>` and `<resource-group>` with the values you specified during deployment.
+4. **Clean up resources**
+
+```sh
+az group delete --name <resource-group> --yes --no-wait
+```
 
 4. **Clean up resources**:
 
@@ -159,21 +161,16 @@ To remove all deployed resources and avoid charges:
 az group delete --name <resource-group> --yes --no-wait
 ```
 
-### Documentation
+## Documentation
 
-For comprehensive project documentation, visit our [GitHub Wiki](https://github.com/foxminchan/BookWorm/wiki).
+For full documentation, visit the [GitHub Wiki](https://github.com/foxminchan/BookWorm/wiki).
 
-## Contribution
+## Contributing
 
-Thanks to all [contributors](https://github.com/foxminchan/BookWorm/graphs/contributors), your help is greatly appreciated!
+Contributions are welcome — see [CONTRIBUTING](./.github/CONTRIBUTING.md) and [CODE OF CONDUCT](./.github/CODE-OF-CONDUCT.md) for details. Thanks to all [contributors](https://github.com/foxminchan/BookWorm/graphs/contributors)!
 
-Contributions are welcome! Please read the [contribution guidelines](./.github/CONTRIBUTING.md) and [code of conduct](./.github/CODE-OF-CONDUCT.md) to learn how to participate.
-
-## Support
-
-- If you like this project, please give it a ⭐ star.
-- If you have any issues or feature requests, please [create an issue](https://github.com/foxminchan/BookWorm/issues/new/choose).
+For bugs or feature requests, [open an issue](https://github.com/foxminchan/BookWorm/issues/new/choose).
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details.

@@ -1,0 +1,114 @@
+[tools]
+bun = "1.3"
+node = "24"
+dotnet = "10"
+java = "temurin-25"
+
+[settings]
+task.run_auto_install = false
+idiomatic_version_file_enable_tools = ['bun', 'dotnet']
+
+[tasks.restore]
+description = "Restore NuGet packages and tools"
+run = ["dotnet restore", "dotnet tool restore"]
+
+[tasks.build]
+description = "Build the solution"
+depends = ["restore"]
+run = "dotnet build BookWorm.slnx"
+
+[tasks.test]
+description = "Run tests"
+depends = ["build"]
+run = "dotnet test BookWorm.slnx"
+
+[tasks."format:cs"]
+description = "Format C# code"
+run = "dnx csharpier format ."
+
+[tasks."format:fe"]
+description = "Format frontend code"
+run = "bun run format"
+dir = "src/Clients"
+
+[tasks."format:eventcatalog"]
+description = "Format EventCatalog"
+run = "bun run format"
+dir = "docs/eventcatalog"
+
+[tasks."format:docusaurus"]
+description = "Format Docusaurus"
+run = "bun run format"
+dir = "docs/docusaurus"
+
+[tasks."format:k6"]
+description = "Format K6 scripts"
+run = "bun run format"
+dir = "src/Aspire/BookWorm.AppHost/Container/k6"
+
+[tasks."format:keycloakify"]
+description = "Format Keycloakify"
+run = "bun run format"
+dir = "src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify"
+
+[tasks.format]
+description = "Format all code"
+depends = [
+  "format:cs",
+  "format:fe",
+  "format:eventcatalog",
+  "format:docusaurus",
+  "format:k6",
+  "format:keycloakify",
+]
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "dotnet clean BookWorm.slnx"
+
+[tasks.hook]
+description = "Setup pre-commit hooks"
+run = "git config core.hooksPath .husky"
+
+[tasks.prepare]
+description = "First-time setup after cloning (restore + git hooks)"
+depends = ["restore", "hook"]
+
+[tasks.run]
+description = "Run the application with Aspire"
+run = "aspire start"
+
+[tasks."update:eventcatalog"]
+description = "Update EventCatalog bun packages"
+run = "bun update"
+dir = "docs/eventcatalog"
+
+[tasks."update:docusaurus"]
+description = "Update Docusaurus bun packages"
+run = "bun update"
+dir = "docs/docusaurus"
+
+[tasks."update:k6"]
+description = "Update K6 bun packages"
+run = "bun update"
+dir = "src/Aspire/BookWorm.AppHost/Container/k6"
+
+[tasks."update:keycloakify"]
+description = "Update Keycloakify bun packages"
+run = "bun update"
+dir = "src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify"
+
+[tasks."update:fe"]
+description = "Update frontend bun packages"
+run = "bun update --recursive"
+dir = "src/Clients"
+
+[tasks.update]
+description = "Update all packages"
+depends = [
+  "update:eventcatalog",
+  "update:docusaurus",
+  "update:k6",
+  "update:keycloakify",
+  "update:fe",
+]
