@@ -39,8 +39,8 @@ jobs:
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
-      - name: ⚡ Setup Just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v3.0.0
+      - name: ⚡ Setup Mise
+        uses: jdx/mise-action@vdba19683ed58901619b14f395a24841710cb4925 # v4.1.0
 
       - name: 🐳 Setup Docker
         uses: docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23 # v5.2.0

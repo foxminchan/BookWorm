@@ -31,14 +31,14 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 
 ## Commands
 
-Tasks are defined in [.justfile](../.justfile). Prefer `just` over raw `dotnet`/`pnpm` so dependencies resolve correctly:
+Tasks are defined in [mise.toml](../mise.toml). Prefer `mise run` over raw `dotnet`/`pnpm` so dependencies resolve correctly:
 
-- `just restore` — restore NuGet packages + .NET tools
-- `just build` — build the solution (`BookWorm.slnx`)
-- `just test` — run all tests
-- `just run` — start the Aspire AppHost (use `aspire run` directly when iterating)
-- `just format` — format C# (CSharpier), frontend, EventCatalog, Docusaurus, k6, Keycloakify
-- `just prepare` — post-clone setup (restore + git hooks)
+- `mise run restore` — restore NuGet packages + .NET tools
+- `mise run build` — build the solution (`BookWorm.slnx`)
+- `mise run test` — run all tests
+- `mise run run` — start the Aspire AppHost (use `aspire start` directly when iterating)
+- `mise run format` — format C# (CSharpier), frontend, EventCatalog, Docusaurus, k6, Keycloakify
+- `mise run prepare` — post-clone setup (restore + git hooks)
 
 Frontend dev: from `src/Clients/` run `pnpm i && pnpm run dev`.
 
@@ -117,9 +117,11 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 - [.github/CONTRIBUTING.md](./CONTRIBUTING.md) — contribution workflow, integration-event & proto standards, PR process
 - [.github/instructions/](./instructions/) — language/tooling rules auto-applied via `applyTo` (C#, Next.js, Markdown, GitHub Actions, Context7)
 - [.github/agents/](./agents/) — specialized subagents (`.NET Expert`, `Next.js Expert`, `Code Reviewer`, `Debug`, Spec Kit chain)
-- [.github/skills/](./skills/) — on-demand skills (Aspire, Turborepo, TUnit, EventCatalog authoring, React best practices)
+- [.agents/skills/](../.agents/skills/) — on-demand skills (Aspire, Turborepo, TUnit, EventCatalog authoring, React best practices)
 
 <!-- SPECKIT START -->
+
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
+
 <!-- SPECKIT END -->

@@ -9,22 +9,22 @@
 
 ## Getting Started
 
-The project uses a `.justfile` for common tasks. Run these commands:
+The project uses [mise](https://mise.jdx.dev) as the task runner and tool version manager. Run `mise install` once after cloning, then use these commands:
 
-- **Restore dependencies**: `just restore` (or `dotnet restore && dotnet tool restore`)
-- **Build solution**: `just build` (or `dotnet build`)
-- **Run with Aspire**: `just run` (handles setup + runs Aspire)
-- **Run tests**: `just test` (or `dotnet test`)
-- **Format code**: `just format` (formats C#, frontend, eventcatalog, docusaurus, k6, keycloakify)
-- **Clean build**: `just clean`
-- **Post-clone setup**: `just prepare` (restore + git hooks)
+- **Restore dependencies**: `mise run restore` (or `dotnet restore && dotnet tool restore`)
+- **Build solution**: `mise run build` (or `dotnet build`)
+- **Run with Aspire**: `mise run run` (handles setup + runs Aspire)
+- **Run tests**: `mise run test` (or `dotnet test`)
+- **Format code**: `mise run format` (formats C#, frontend, eventcatalog, docusaurus, k6, keycloakify)
+- **Clean build**: `mise run clean`
+- **Post-clone setup**: `mise run prepare` (restore + git hooks)
 
 If there is already an instance of the application running it will prompt to stop the existing instance. You only need to restart the application if code in `apphost.cs` is changed, but if you experience problems it can be useful to reset everything to the starting state.
 
 ## Local Development Flow
 
-1. **Prerequisites**: .NET SDK (per `global.json`), Node.js, Docker for AppHost resources.
-2. **Restore & build**: `just restore` then `just build`, or `dotnet restore && dotnet build`.
+1. **Prerequisites**: [mise](https://mise.jdx.dev) (manages .NET SDK + Bun), Docker for AppHost resources. Run `mise install` once after cloning.
+2. **Restore & build**: `mise run restore` then `mise run build`, or `dotnet restore && dotnet build`.
 3. **Run the system**: Launch Aspire AppHost — inspect the dashboard URL from console output.
 4. **Frontend**: From `src/Clients/`: `pnpm i`, then `pnpm run dev`.
 5. **Secrets**: Use User Secrets or environment variables for API keys. Never commit secrets.
