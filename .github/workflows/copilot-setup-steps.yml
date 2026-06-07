@@ -9,6 +9,7 @@ permissions: {}
 env:
   GLOBAL_JSON_PATH: global.json
   BUN_VERSION_FILE: .bun-version
+  MISE_EXPERIMENTAL: true
 
 jobs:
   # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
