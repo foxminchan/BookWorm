@@ -336,10 +336,10 @@ function Get-FeaturePathsEnv {
 function Test-FileExists {
     param([string]$Path, [string]$Description)
     if (Test-Path -Path $Path -PathType Leaf) {
-        Write-Output "  ✓ $Description"
+        Write-Output "  [OK] $Description"
         return $true
     } else {
-        Write-Output "  ✗ $Description"
+        Write-Output "  [FAIL] $Description"
         return $false
     }
 }
@@ -347,12 +347,64 @@ function Test-FileExists {
 function Test-DirHasFiles {
     param([string]$Path, [string]$Description)
     if ((Test-Path -Path $Path -PathType Container) -and (Get-ChildItem -Path $Path -ErrorAction SilentlyContinue | Where-Object { -not $_.PSIsContainer } | Select-Object -First 1)) {
-        Write-Output "  ✓ $Description"
+        Write-Output "  [OK] $Description"
         return $true
     } else {
-        Write-Output "  ✗ $Description"
+        Write-Output "  [FAIL] $Description"
         return $false
     }
+}
+
+function Get-InvokeSeparator {
+    param([string]$RepoRoot = (Get-RepoRoot))
+
+    if ($null -eq $script:SpecKitInvokeSeparatorCache) {
+        $script:SpecKitInvokeSeparatorCache = @{}
+    }
+    if ($script:SpecKitInvokeSeparatorCache.ContainsKey($RepoRoot)) {
+        return $script:SpecKitInvokeSeparatorCache[$RepoRoot]
+    }
+
+    $separator = '.'
+    $integrationJson = Join-Path $RepoRoot '.specify/integration.json'
+    if (Test-Path -LiteralPath $integrationJson -PathType Leaf) {
+        try {
+            $state = Get-Content -LiteralPath $integrationJson -Raw | ConvertFrom-Json
+            $key = if ($state.default_integration) { [string]$state.default_integration } elseif ($state.integration) { [string]$state.integration } else { '' }
+            if ($key -and $state.integration_settings) {
+                $settingProperty = $state.integration_settings.PSObject.Properties[$key]
+                if ($settingProperty) {
+                    $setting = $settingProperty.Value
+                    if ($setting -and ($setting.invoke_separator -eq '.' -or $setting.invoke_separator -eq '-')) {
+                        $separator = [string]$setting.invoke_separator
+                    }
+                }
+            }
+        } catch {
+            $separator = '.'
+        }
+    }
+
+    $script:SpecKitInvokeSeparatorCache[$RepoRoot] = $separator
+    return $separator
+}
+
+function Format-SpecKitCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$CommandName,
+        [string]$RepoRoot = (Get-RepoRoot)
+    )
+
+    $separator = Get-InvokeSeparator -RepoRoot $RepoRoot
+    $name = $CommandName.TrimStart('/')
+    if ($name.StartsWith('speckit.')) {
+        $name = $name.Substring(8)
+    } elseif ($name.StartsWith('speckit-')) {
+        $name = $name.Substring(8)
+    }
+    $name = $name -replace '\.', $separator
+
+    return "/speckit$separator$name"
 }
 
 # Find a usable Python 3 executable (python3, python, or py -3).
@@ -591,7 +643,7 @@ except Exception:
 
     if ($layerPaths.Count -eq 0) { return $null }
 
-    # If the top (highest-priority) layer is replace, it wins entirely —
+    # If the top (highest-priority) layer is replace, it wins entirely --
     # lower layers are irrelevant regardless of their strategies.
     if ($layerStrategies[0] -eq 'replace') {
         return (Get-Content $layerPaths[0] -Raw)

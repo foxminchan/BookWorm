@@ -18,6 +18,26 @@
       },
       "registered_skills": [],
       "installed_at": "2026-04-21T13:20:59.463740+00:00"
+    },
+    "agent-context": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:9a1dc02d2d0139bb03860392ecacef79183be2c442feda2f9ccaa4e5907b1e47",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "agy": [
+          "speckit.agent-context.update"
+        ],
+        "codex": [
+          "speckit.agent-context.update"
+        ],
+        "copilot": [
+          "speckit.agent-context.update"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-06-07T09:48:26.013590+00:00"
     }
   }
 }
