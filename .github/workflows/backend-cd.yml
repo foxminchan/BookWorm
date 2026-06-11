@@ -19,6 +19,9 @@ on:
 
 env:
   GLOBAL_JSON_PATH: global.json
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
 
 permissions:
   id-token: write
@@ -46,13 +49,30 @@ jobs:
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
-      - name: 🛠️ Install Aspire CLI
+      - name: 🔍 Resolve Aspire version
+        id: aspire-version
         run: |
-          curl -sSL https://aspire.dev/install.sh | bash
-          echo "$HOME/.aspire/bin" >> $GITHUB_PATH
+          ASPIRE_VERSION="$(dotnet msbuild Versions.props -nologo -v:q -getProperty:AspireVersion)"
+          echo "version=${ASPIRE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "cli-version=${ASPIRE_VERSION%%-*}" >> "$GITHUB_OUTPUT"
 
-      - name: ✅ Verify Aspire Installation
-        run: aspire --version
+      - name: 🛠️ Install Aspire CLI
+        uses: timheuer/setup-aspire@fec3fa825218461aa07fed28fa97a600d5d88b14 # v0.1.0
+        with:
+          version: ${{ steps.aspire-version.outputs.version }}
+
+      - name: ✅ Verify Aspire CLI version
+        env:
+          EXPECTED_ASPIRE_CLI_VERSION: ${{ steps.aspire-version.outputs.cli-version }}
+        run: |
+          INSTALLED_ASPIRE_CLI_VERSION="$(aspire --version)"
+          case "${INSTALLED_ASPIRE_CLI_VERSION}" in
+            "${EXPECTED_ASPIRE_CLI_VERSION}"|"${EXPECTED_ASPIRE_CLI_VERSION}"+*) ;;
+            *)
+              echo "Expected Aspire CLI version ${EXPECTED_ASPIRE_CLI_VERSION}, but found ${INSTALLED_ASPIRE_CLI_VERSION}."
+              exit 1
+              ;;
+          esac
 
       - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
