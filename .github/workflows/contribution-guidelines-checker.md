@@ -33,15 +33,10 @@ tools:
   github:
     read-only: true
     toolsets: [default, pull_requests]
-    # If in a public repo, setting `lockdown: false` allows
-    # reading issues, pull requests and comments from 3rd-parties
-    # If in a private repo this has no particular effect.
-    #
-    # This is important for this workflow to be able to read contribution guidelines
     lockdown: false
 
-rate-limit:
-  max: 5
+user-rate-limit:
+  max-runs-per-window: 5
   window: 60
 
 timeout-minutes: 10

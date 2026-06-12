@@ -1,29 +1,38 @@
 ---
 description: Automatically triage incoming pull requests by analyzing content and applying appropriate labels
+
 on:
   pull_request:
     types: [opened, edited, synchronize]
   roles: all
+
 concurrency:
   group: gh-aw-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
+
 permissions:
   contents: read
   pull-requests: read
+
 network: defaults
+
 tools:
   github:
     read-only: true
     lockdown: false
     toolsets: [pull_requests]
-rate-limit:
-  max: 5
+
+user-rate-limit:
+  max-runs-per-window: 5
   window: 60
+
+timeout-minutes: 10
+
 imports:
   - ../agents/triage-specialist.agent.md
   - shared/triage-safe-outputs.md
-timeout-minutes: 10
 ---
 
 # Pull Request Triage

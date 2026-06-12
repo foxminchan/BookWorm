@@ -120,26 +120,26 @@ internal static class Extensions
                         };
 
                         options.ServerInstructions = """
-                        This is the BookWorm MCP server. It exposes tools and resources for
-                        interacting with the BookWorm bookstore platform.
+                            This is the BookWorm MCP server. It exposes tools and resources for
+                            interacting with the BookWorm bookstore platform.
 
-                        Available capabilities:
-                        - search_catalog: Search books by description or keyword
-                        - get_book: Retrieve full details for a specific book by ID
-                        - list_categories: List all book categories
-                        - list_authors: List all authors in the catalog
-                        - get_book_reviews: Retrieve customer reviews for a specific book
+                            Available capabilities:
+                            - search_catalog: Search books by description or keyword
+                            - get_book: Retrieve full details for a specific book by ID
+                            - list_categories: List all book categories
+                            - list_authors: List all authors in the catalog
+                            - get_book_reviews: Retrieve customer reviews for a specific book
 
-                        Resources (stable URIs for ambient context):
-                        - bookworm://catalog/categories — all book categories
-                        - bookworm://catalog/authors — all authors
-                        - bookworm://catalog/books/{id} — single book details
-                        - bookworm://ratings/{bookId}/reviews — reviews for a book
+                            Resources (stable URIs for ambient context):
+                            - bookworm://catalog/categories — all book categories
+                            - bookworm://catalog/authors — all authors
+                            - bookworm://catalog/books/{id} — single book details
+                            - bookworm://ratings/{bookId}/reviews — reviews for a book
 
-                        Prompts:
-                        - recommend_books: Generate a structured recommendation request
-                        - analyze_book_quality: Classify a book as Best Seller / Good / Bad / No Data
-                        """;
+                            Prompts:
+                            - recommend_books: Generate a structured recommendation request
+                            - analyze_book_quality: Classify a book as Best Seller / Good / Bad / No Data
+                            """;
 
                         options.Capabilities = new() { Logging = new() };
                     }
