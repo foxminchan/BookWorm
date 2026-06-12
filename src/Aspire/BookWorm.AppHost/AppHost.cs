@@ -237,7 +237,6 @@ if (builder.ExecutionContext.IsRunMode)
 {
     builder
         .AddScalar(keycloak)
-        .WithOpenAPI(mcp)
         .WithOpenAPI(chatApi)
         .WithOpenAPI(basketApi)
         .WithOpenAPI(ratingApi)

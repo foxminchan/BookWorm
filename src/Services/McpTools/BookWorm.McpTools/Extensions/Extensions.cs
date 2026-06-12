@@ -4,7 +4,6 @@ using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.McpTools.Configurations;
 using BookWorm.McpTools.Options;
-using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Protocol;
@@ -25,6 +24,8 @@ internal static class Extensions
             builder.AddDefaultCors();
 
             builder.AddAppSettings<McpToolsAppSettings>();
+
+            services.AddHttpContextAccessor();
 
             // Add exception handlers
             services.AddGlobalExceptionHandler();
@@ -149,14 +150,6 @@ internal static class Extensions
                 .AddOpenTelemetry()
                 .WithMetrics(m => m.AddMeter(ActivitySourceName))
                 .WithTracing(t => t.AddSource(ActivitySourceName));
-
-            services
-                .AddHttpContextAccessor()
-                .AddDefaultOpenApi(options =>
-                {
-                    options.ApplyOpenApiInfoDefinitions<McpToolsAppSettings>();
-                    options.AddDocumentTransformer<McpDocumentTransformer>();
-                });
         }
     }
 }
