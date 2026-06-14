@@ -1,29 +1,38 @@
 ---
 description: Automatically triage incoming issues by analyzing content and applying appropriate labels
+
 on:
   issues:
     types: [opened, edited]
   roles: all
+
 concurrency:
   group: gh-aw-${{ github.workflow }}-${{ github.event.issue.number }}
   cancel-in-progress: false
+
 if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
+
 permissions:
   contents: read
   issues: read
+
 network: defaults
+
 tools:
   github:
     read-only: true
     lockdown: false
     toolsets: [issues]
-rate-limit:
-  max: 5
+
+user-rate-limit:
+  max-runs-per-window: 5
   window: 60
+
+timeout-minutes: 10
+
 imports:
   - ../agents/triage-specialist.agent.md
   - shared/triage-safe-outputs.md
-timeout-minutes: 10
 ---
 
 # Issue Triage

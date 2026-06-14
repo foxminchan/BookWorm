@@ -20,11 +20,8 @@
     - .specify/templates/agent-file-template.md ✅ no update needed
   Runtime guidance cross-checked:
     - AGENTS.md ✅ consistent (delegates to CLAUDE.md)
-    - CLAUDE.md ⚠️ update required (T047 of spec 003-wolverine-migration)
-    - .github/copilot-instructions.md ⚠️ update required (T048)
-  Follow-up TODOs:
-    - spec 004-test-tier-restoration: re-enable quarantined ContractTests
-      and IntegrationTests projects with Wolverine equivalents.
+    - CLAUDE.md ✅ consistent (no direct references to specific principles or technologies)
+    - .github/copilot-instructions.md ✅ consistent (general coding standards, no specific principle references)
 -->
 
 # BookWorm Constitution

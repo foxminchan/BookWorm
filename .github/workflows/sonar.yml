@@ -136,7 +136,7 @@ jobs:
           -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
       - name: 🤖 Start AIMock server
-        uses: CopilotKit/aimock@b4e8c17a8378659b31225f735381460cf5279291 # v1.29.0
+        uses: CopilotKit/aimock@27695ee7adc31a62524ce4ff3f59bd29874643af # v1.31.0
         id: aimock
         with:
           config: tests/BookWorm.AI.Evaluation/aimock.json
