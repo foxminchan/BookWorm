@@ -1,20 +1,21 @@
 <Project>
   <PropertyGroup Label="Package Versions">
     <!-- Core Libraries -->
-    <AspireVersion>13.4.3</AspireVersion>
-    <AspireUnstableVersion>13.4.3-preview.1.26305.13</AspireUnstableVersion>
+    <AspireVersion>13.4.4</AspireVersion>
+    <AspireUnstableVersion>$(AspireVersion)-preview.1.26314.3</AspireUnstableVersion>
     <DotnetPackagesVersion>10.0.9</DotnetPackagesVersion>
     <GrpcVersion>2.80.0</GrpcVersion>
     <!-- Integration Libraries -->
-    <WolverineVersion>6.8.0</WolverineVersion>
-    <TUnitVersion>1.54.0</TUnitVersion>
+    <WolverineVersion>6.10.0</WolverineVersion>
+    <TUnitVersion>1.56.0</TUnitVersion>
     <QuartzVersion>3.18.1</QuartzVersion>
     <FusionCacheVersion>2.6.0</FusionCacheVersion>
     <!-- Microsoft Packages -->
     <MsExtVersion>10.7.0</MsExtVersion>
     <MsTestVersion>2.2.3</MsTestVersion>
     <ToolKitVersion>13.4.0</ToolKitVersion>
-    <AgentFrameworkUnstableVersion>1.10.0-preview.260610.1</AgentFrameworkUnstableVersion>
+    <AgentFrameworkVersion>1.10.0</AgentFrameworkVersion>
+    <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.260610.1</AgentFrameworkUnstableVersion>
     <!-- Observability & Health -->
     <HealthChecksVersion>9.0.0</HealthChecksVersion>
   </PropertyGroup>

@@ -90,7 +90,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <!-- AI -->
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.10.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
@@ -100,7 +100,7 @@
       Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore"
       Version="$(AgentFrameworkUnstableVersion)"
     />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.10.0-alpha.260610.1" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="$(AgentFrameworkVersion)-alpha.260610.1" />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
       Version="4.0.0"
