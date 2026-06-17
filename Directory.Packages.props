@@ -46,7 +46,7 @@
     />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.10.3" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.10.4" />
     <PackageVersion
       Include="Aspire.Hosting.AgentFramework.DevUI"
       Version="$(AgentFrameworkUnstableVersion)"
@@ -114,7 +114,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="11.0.1" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="11.1.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
