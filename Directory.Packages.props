@@ -100,7 +100,10 @@
       Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore"
       Version="$(AgentFrameworkUnstableVersion)"
     />
-    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="$(AgentFrameworkVersion)-alpha.260610.1" />
+    <PackageVersion
+      Include="Microsoft.Agents.AI.Hosting.OpenAI"
+      Version="$(AgentFrameworkVersion)-alpha.260610.1"
+    />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
       Version="4.0.0"
