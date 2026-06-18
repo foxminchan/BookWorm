@@ -8,7 +8,7 @@
   <Property Name="sonar.scanner.scanAll">true</Property>
   <Property Name="sonar.sourceEncoding">UTF-8</Property>
   <Property Name="sonar.exclusions">
-    docs/**,src/Services/**/**/Infrastructure/Migrations/**,**/node_modules/**,**/.next/**,**/.turbo/**,**/dist/**,**/out/**,src/Clients/packages/ui/src/components/**,**/mockServiceWorker.js,.github/workflows/*.lock.yml,src/Clients/packages/ui/src/styles/globals.css,.specify/**
+    docs/**,src/Services/**/**/Infrastructure/Migrations/**,**/node_modules/**,**/.next/**,**/.turbo/**,**/dist/**,**/out/**,src/Clients/packages/ui/src/components/**,**/mockServiceWorker.js,.github/workflows/*.lock.yml,.github/workflows/agentics-maintenance.yml,src/Clients/packages/ui/src/styles/globals.css,.specify/**
   </Property>
   <Property Name="sonar.cpd.exclusions">
     **/Program.cs,src/Aspire/BookWorm.AppHost/Container/**,**/Agents/**,**/*Extensions.cs
