@@ -1,6 +1,6 @@
 ---
 name: catalog-documentation-creator
-description: Generates EventCatalog documentation files (services, agents, events, commands, queries, domains, flows, channels, containers) with correct frontmatter, folder structure, and best practices. Use when user asks to "document a service", "document an agent", "document an AI agent", "create EventCatalog files", "add an event to the catalog", "document my architecture", "generate catalog documentation", "create documentation for my microservice", or "document a database".
+description: Generates EventCatalog documentation files (services, agents, events, commands, queries, domains, flows, channels, containers, ADRs, data products, entities, diagrams) with correct frontmatter, folder structure, and best practices. Use when user asks to "document a service", "document an agent", "document an AI agent", "create EventCatalog files", "add an event to the catalog", "document my architecture", "generate catalog documentation", "create documentation for my microservice", "document a database", "create an ADR", "document a data product", or "document an entity".
 license: MIT
 metadata:
   author: eventcatalog
@@ -23,7 +23,7 @@ Before generating any files, ask the user: **"Do you already have an EventCatalo
   - A repo they've cloned locally (e.g., `~/projects/my-catalog/`)
   - A folder on their machine
   - A monorepo with the catalog in a subdirectory
-- Verify it looks like an EventCatalog project by checking for an `eventcatalog.config.js` file or known directories (`services/`, `agents/`, `events/`, `domains/`, etc.)
+- Verify it looks like an EventCatalog project by checking for an `eventcatalog.config.js` file or known directories (`services/`, `agents/`, `events/`, `domains/`, `adrs/`, `data-products/`, `entities/`, etc.)
 - Read the existing structure to understand whether they use **nested** (domains/services/agents/events) or **flat** (top-level services/, agents/, events/) organization
 
 **If they don't have a catalog yet:**
@@ -49,6 +49,10 @@ Ask the user what they want to document. Common scenarios:
 - A business flow across services and agents
 - A channel (Kafka topic, RabbitMQ queue, etc.)
 - A container (database, cache, queue)
+- An architecture decision record (ADR)
+- A data product for analytics, reporting, ML features, or operational data outputs
+- A domain entity or aggregate
+- A reusable diagram resource
 
 Gather this information before generating:
 
@@ -57,6 +61,10 @@ Gather this information before generating:
 - Message relationships (what it sends/receives)
 - Channel routing (what channels messages flow through)
 - Containers (what databases/caches the service reads from or writes to)
+- ADR links (what resources a decision applies to, and whether it supersedes/amends another ADR)
+- Data product lineage (inputs, outputs, contracts, freshness/SLA expectations)
+- Entities and relationships (identifier, properties, references, aggregate root)
+- Diagram notation (Mermaid, PlantUML, or other supported fenced diagram formats)
 - Agent model/provider and tools when documenting agents
 - Schema format if applicable (JSON Schema, Avro, Protobuf)
 
@@ -96,9 +104,14 @@ Generate files following the resource-specific references. Consult the appropria
 - `references/flows.md` — Business flows with steps, branching, and external systems
 - `references/channels.md` — Channels with routing, protocols, and parameters
 - `references/containers.md` — Containers (databases, caches, queues) with data classification
+- `references/adrs.md` — Architecture decision records with status, date, decision makers, appliesTo, and relationships
+- `references/data-products.md` — Data products with inputs, outputs, data contracts, lineage, and SLAs
+- `references/entities.md` — DDD/domain entities with identifiers, properties, relationships, and aggregate roots
+- `references/diagrams.md` — Reusable diagram resources (Mermaid, PlantUML, architecture diagrams)
 - `references/ubiquitous-language.md` — Ubiquitous language terms per domain (DDD glossary/dictionary)
 - `references/teams-and-users.md` — Teams and users (ownership)
 - `references/components.md` — Components (NodeGraph, Schema, Mermaid, Tabs, etc.) and resource references (`[[type|Name]]` wiki-style links)
+- `references/supporting-collections.md` — Changelogs, resource docs, custom docs, schemas, and Studio designs
 
 Every resource file MUST include:
 
@@ -108,11 +121,14 @@ Every resource file MUST include:
 - `version` as semantic version string
 - `summary` as a concise 1-2 sentence description
 
-CRITICAL: Always use `index.mdx` as the filename for resources (services, agents, events, commands, queries, domains, flows, channels). Teams and users use `{id}.mdx` files directly. Place files in the correct folder path following the nested structure pattern:
+CRITICAL: Always use `index.mdx` as the filename for versioned resources (services, agents, events, commands, queries, domains, flows, channels, containers, ADRs, data products, entities, diagrams). Teams and users use `{id}.mdx` files directly. Changelogs use `changelog.mdx` or `changelog.md`. Ubiquitous language uses `ubiquitous-language.mdx`. Place files in the correct folder path following the nested structure pattern:
 
 ```
 domains/{DomainName}/services/{ServiceName}/events/{EventName}/index.mdx
 domains/{DomainName}/agents/{AgentName}/index.mdx
+domains/{DomainName}/data-products/{DataProductName}/index.mdx
+domains/{DomainName}/entities/{EntityName}/index.mdx
+domains/{DomainName}/diagrams/{DiagramName}/index.mdx
 ```
 
 Or flat structure if the catalog uses that pattern:
@@ -121,7 +137,13 @@ Or flat structure if the catalog uses that pattern:
 services/{ServiceName}/index.mdx
 agents/{AgentName}/index.mdx
 events/{EventName}/index.mdx
+adrs/{adr-id}/index.mdx
+data-products/{DataProductName}/index.mdx
+entities/{EntityName}/index.mdx
+diagrams/{DiagramName}/index.mdx
 ```
+
+Do not generate `schemas` collection entries directly. Generate or reference schema files from events, commands, or queries using `schemaPath` or `schemas`; EventCatalog creates the `schemas` collection from those references. Do not hand-author `designs` unless the user explicitly provides `.ecstudio` content from EventCatalog Studio.
 
 ### Step 5: Validate the Output
 
@@ -146,8 +168,9 @@ When a user says "document my payment service that receives OrderCreated events 
 2. If messages flow through channels, add `to`/`from` fields to the sends/receives
 3. Generate each event `index.mdx` if they don't already exist in the catalog
 4. Include `<NodeGraph />` in the service body to show message flow
-5. Add example payload sections for each message
-6. Place files in the correct nested folder structure
+5. Generate related entities if the service owns important domain objects
+6. Add example payload sections for each message
+7. Place files in the correct nested folder structure
 
 ### Documenting an Agent
 
@@ -168,12 +191,13 @@ When a user wants to document a full domain:
 
 1. Identify the services and agents that belong to this domain. If the user hasn't specified any, ask them: "What services or agents belong to this domain?" Do NOT create an empty domain.
 2. Generate the domain `index.mdx` with the `services` field listing every service and the `agents` field listing every agent
-3. Generate each service and agent within the domain
-4. Generate each message referenced by the services and agents
-5. Generate channels if the user describes messaging infrastructure
-6. Use the nested folder structure: `domains/{Domain}/services/{Service}/events/{Event}/` and `domains/{Domain}/agents/{Agent}/`
-7. Generate a `ubiquitous-language.mdx` file for the domain by extracting domain-specific terms from service names, agent names, event/command names, entities, and business processes. Place it at `domains/{Domain}/ubiquitous-language.mdx`. See `references/ubiquitous-language.md` for format and examples.
-8. CRITICAL: After generating all files, verify the domain's frontmatter `services` field lists every service and `agents` lists every agent that belongs to it. Every service or agent created under a domain MUST be referenced in the domain's `index.mdx`:
+3. Include `entities`, `data-products`, `flows`, and `diagrams` fields when those resources belong to the domain
+4. Generate each service and agent within the domain
+5. Generate each message referenced by the services and agents
+6. Generate entities, data products, diagrams, and channels if the user describes them
+7. Use the nested folder structure: `domains/{Domain}/services/{Service}/events/{Event}/`, `domains/{Domain}/agents/{Agent}/`, `domains/{Domain}/entities/{Entity}/`, and `domains/{Domain}/data-products/{DataProduct}/`
+8. Generate a `ubiquitous-language.mdx` file for the domain by extracting domain-specific terms from service names, agent names, event/command names, entities, and business processes. Place it at `domains/{Domain}/ubiquitous-language.mdx`. See `references/ubiquitous-language.md` for format and examples.
+9. CRITICAL: After generating all files, verify the domain's frontmatter `services` field lists every service and `agents` lists every agent that belongs to it. Every service or agent created under a domain MUST be referenced in the domain's `index.mdx`:
    ```yaml
    services:
      - id: OrdersService
@@ -183,6 +207,49 @@ When a user wants to document a full domain:
      - id: OrderSupportAgent
    ```
    If a service or agent is nested inside the domain folder but not listed in the domain's frontmatter, it will not appear as part of that domain. Always cross-check.
+
+### Documenting an ADR
+
+When a user describes an architecture decision:
+
+1. Generate `adrs/{adr-id}/index.mdx`
+2. Use one of the supported statuses: `proposed`, `accepted`, `rejected`, `deprecated`, or `superseded`
+3. Include a `date` in `YYYY-MM-DD` format
+4. Add `decisionMakers` and `owners` using existing team/user IDs where known
+5. Use `appliesTo` to link the decision to impacted resources (`service`, `event`, `domain`, `flow`, `data-product`, `entity`, etc.)
+6. Use `supersedes`, `supersededBy`, `amends`, `amendedBy`, or `related` when linking ADRs together
+7. Structure the body with `Context`, `Decision`, and `Consequences`
+
+### Documenting a Data Product
+
+When a user describes analytics, reporting, BI, ML feature, or derived operational data:
+
+1. Generate `data-products/{DataProductName}/index.mdx` or nest it under the relevant domain/subdomain
+2. Add `inputs` for upstream messages, services, containers, channels, or other resources
+3. Add `outputs` for produced messages, services, containers, channels, or contracts
+4. If an output has a data contract, include `contract.path`, `contract.name`, and `contract.type`
+5. Include `<NodeGraph />` and any relevant `<SchemaViewer />` for contract files
+6. Document lineage, freshness, ownership, access patterns, and SLAs
+
+### Documenting an Entity
+
+When a user describes a domain model, aggregate, data object, or business concept with properties:
+
+1. Generate `entities/{EntityName}/index.mdx`, `domains/{Domain}/entities/{EntityName}/index.mdx`, or `services/{Service}/entities/{EntityName}/index.mdx` depending on catalog structure
+2. Include `identifier` and `aggregateRoot: true` when applicable
+3. Add `properties` with `name`, `type`, `required`, and `description`
+4. Use `references`, `referencesIdentifier`, and `relationType` for relationships to other entities
+5. Include `<EntityPropertiesTable />` in the body to render the property table
+6. Link entities from domain/service frontmatter using `entities`
+
+### Documenting a Diagram
+
+When a user provides or asks for a reusable architecture, sequence, flow, or model diagram:
+
+1. Generate `diagrams/{DiagramName}/index.mdx` or nest it under the relevant domain/subdomain
+2. Include `id`, `name`, `version`, and `summary`
+3. Put the diagram in the body as a fenced `mermaid`, `plantuml`, or other supported diagram block
+4. Reference the diagram from related resources using the `diagrams` frontmatter field
 
 ### Documenting a Business Flow
 
@@ -215,14 +282,17 @@ Before delivering documentation to the user, verify every file against this chec
 4. `summary` is concise and meaningful (not generic)
 5. Message relationships (`sends`/`receives`) include `id`
 6. Channel routing (`to`/`from`) references valid channel IDs
-7. Body includes `<NodeGraph />` for visualization
+7. Body includes `<NodeGraph />` for visualization when the resource has graph relationships
 8. Schema references point to real files
 9. Folder structure follows catalog conventions
 10. No duplicate resources (checked against existing catalog)
-11. File is named `index.mdx` (not `index.md`, `README.md`, or anything else)
+11. Versioned resources use `index.mdx` (or match the catalog's existing `.md`/`.mdx` convention); teams and users use `{id}.mdx`; changelogs use `changelog.mdx`/`changelog.md`
 12. Every domain has at least one service or agent — never create an empty domain
 13. Domain `services` and `agents` frontmatter lists every service and agent that belongs to that domain
-14. Every domain has a `ubiquitous-language.mdx` file with relevant domain terms extracted from services, agents, events, commands, and business processes
+14. Domain `entities`, `data-products`, `flows`, and `diagrams` frontmatter lists nested resources when present
+15. Every domain has a `ubiquitous-language.mdx` file with relevant domain terms extracted from services, agents, events, commands, entities, data products, and business processes
+16. ADRs have a valid status, date, decision makers when known, and `appliesTo` references for impacted resources
+17. Data product contract files referenced in `outputs.contract.path` exist when generated
 
 ## Troubleshooting
 

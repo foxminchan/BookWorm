@@ -20,6 +20,9 @@ Domains can contain subdomains, services, agents, flows, and other resources nes
 | `services`      | No       | Array of service references                       |
 | `agents`        | No       | Array of agent references                         |
 | `data-products` | No       | Array of data product references                  |
+| `entities`      | No       | Array of entity references                        |
+| `flows`         | No       | Array of flow references                          |
+| `diagrams`      | No       | Array of diagram references                       |
 | `badges`        | No       | Array of badge objects                            |
 | `repository`    | No       | Object with `language` and `url`                  |
 | `sends`         | No       | Messages sent at the domain level                 |
@@ -73,6 +76,13 @@ agents:
   - id: FraudReviewAgent
 data-products:
   - id: order-analytics
+entities:
+  - id: Order
+  - id: Customer
+flows:
+  - id: PlaceOrder
+diagrams:
+  - id: target-architecture
 badges:
   - content: Core domain
     backgroundColor: blue
@@ -129,6 +139,7 @@ FlowMart's E-Commerce domain enables:
 
 - Use `domains` field when a domain has subdomains
 - Use `services` and `agents` fields to list the services and agents that belong to this domain
+- Use `entities`, `data-products`, `flows`, and `diagrams` when those resources belong to the domain
 - Use `[[service|ServiceName]]`, `[[agent|AgentName]]`, and `[[domain|DomainName]]` syntax to create links
 - Use `<NodeGraph mode="full" />` for a comprehensive domain visualization
 - Include sequence diagrams (`mermaid`) for complex flows
