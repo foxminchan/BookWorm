@@ -21,6 +21,8 @@
 | `specifications` | No       | Array of spec objects with `type`, `path`, `name`               |
 | `writesTo`       | No       | Array of containers/databases the service writes to             |
 | `readsFrom`      | No       | Array of containers/databases the service reads from            |
+| `entities`       | No       | Array of entities this service owns or exposes                  |
+| `flows`          | No       | Array of business flows this service participates in            |
 | `badges`         | No       | Array of badge objects                                          |
 | `deprecated`     | No       | Object with `date` and `message` for deprecated services        |
 
