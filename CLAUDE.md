@@ -26,7 +26,7 @@ If there is already an instance of the application running it will prompt to sto
 1. **Prerequisites**: [mise](https://mise.jdx.dev) (manages .NET SDK + Bun), Docker for AppHost resources. Run `mise install` once after cloning.
 2. **Restore & build**: `mise run restore` then `mise run build`, or `dotnet restore && dotnet build`.
 3. **Run the system**: Launch Aspire AppHost — inspect the dashboard URL from console output.
-4. **Frontend**: From `src/Clients/`: `pnpm i`, then `pnpm run dev`.
+4. **Frontend**: From `src/Clients/`: `bun i`, then `bun run dev`.
 5. **Secrets**: Use User Secrets or environment variables for API keys. Never commit secrets.
 6. **Tests**: `dotnet test` from the solution root or specific test projects.
 
@@ -91,6 +91,7 @@ public sealed class MyEndpoint : IEndpoint<Ok<MyResult>, MyRequest, ISender>
 
 - **CQRS library**: Use `Mediator.SourceGenerator` (source-gen based), NOT MediatR. The interface names look similar but the packages differ.
 - **snake_case DB**: PostgreSQL columns/tables are snake_case via `UseSnakeCaseNamingConvention()`. Don't use PascalCase in raw SQL.
+- **Frontend uses Bun**: `src/Clients/` is a Bun monorepo (`bun@1.3.x`, `bun.lock`). Use `bun install`/`bun run`, never `pnpm`/`npm`/`yarn` — they create a conflicting lockfile.
 - **Sealed classes**: All endpoints, handlers, tests, and DbContexts should be `sealed`.
 - **Warnings = Errors**: `TreatWarningsAsErrors=true` — the build will fail on any warning.
 - **Package versions**: Centralized in `Directory.Packages.props` — don't add version numbers in individual `.csproj` files.

@@ -43,7 +43,7 @@ You are an expert Next.js 16 / React 19 developer. You build performant, type-sa
 - Use `next/image` for images, `next/font` for fonts, `<Suspense>` for streaming.
 - Use Turbopack (default in v16) — no manual bundler config needed.
 - React Compiler is stable — avoid manual `useMemo`/`useCallback` unless measured.
-- Follow project conventions in `src/Clients/` (Turbo monorepo with pnpm).
+- Follow project conventions in `src/Clients/` (Turbo monorepo with Bun).
 
 ## Caching & Data Fetching
 

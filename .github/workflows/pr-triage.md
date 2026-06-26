@@ -112,7 +112,7 @@ Apply these type labels when clearly indicated:
 
 5. **Identify dependency updates** when:
    - Changes to `Directory.Packages.props`, `Versions.props`, `*.csproj` package references
-   - Changes to `package.json`, `pnpm-lock.yaml`
+   - Changes to `package.json`, `bun.lock`
    - Changes to `global.json`, `NuGet.config`
 
 ## Safe Outputs
