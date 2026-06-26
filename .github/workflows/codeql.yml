@@ -14,6 +14,7 @@ on:
       - "**/*.mdx"
       - "**/*.txt"
       - "**/*.json"
+      - "docs/**"
   schedule:
     # Runs every Wednesday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
     - cron: 0 3 * * 3
