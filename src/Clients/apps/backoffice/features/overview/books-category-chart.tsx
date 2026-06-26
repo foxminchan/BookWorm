@@ -40,9 +40,7 @@ export function BooksCategoryChart({
   const renderSector = useCallback(
     (props: PieSectorShapeProps, index?: string | number) => {
       const i = typeof index === "number" ? index : 0;
-      return (
-        <Sector {...props} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-      );
+      return <Sector {...props} fill={CHART_COLORS[i % CHART_COLORS.length]} />;
     },
     [],
   );
