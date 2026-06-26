@@ -310,7 +310,7 @@ describe("BooksFilters", () => {
     const lastCall =
       mockOnFiltersChange.mock.calls[
         mockOnFiltersChange.mock.calls.length - 1
-      ][0];
-    expect(lastCall.authorId).toBeUndefined();
+      ]?.[0];
+    expect(lastCall?.authorId).toBeUndefined();
   });
 });

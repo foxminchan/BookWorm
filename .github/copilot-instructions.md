@@ -7,7 +7,7 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 ## Tech Stack
 
 - **Backend**: C# 14 (`LangVersion=preview`), .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + PostgreSQL (snake_case)
-- **Frontend**: TypeScript 6.0, Next.js 16.2, React 19, pnpm 10 + Turbo 2 monorepo (Node >= 24)
+- **Frontend**: TypeScript 6.0, Next.js 16.2, React 19, Bun 1.3 + Turbo 2 monorepo (Node >= 24)
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
 - **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
 - **Messaging**: WolverineFx with Kafka (outbox/inbox patterns)
@@ -31,7 +31,7 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 
 ## Commands
 
-Tasks are defined in [mise.toml](../mise.toml). Prefer `mise run` over raw `dotnet`/`pnpm` so dependencies resolve correctly:
+Tasks are defined in [mise.toml](../mise.toml). Prefer `mise run` over raw `dotnet`/`bun` so dependencies resolve correctly:
 
 - `mise run restore` — restore NuGet packages + .NET tools
 - `mise run build` — build the solution (`BookWorm.slnx`)
@@ -40,7 +40,7 @@ Tasks are defined in [mise.toml](../mise.toml). Prefer `mise run` over raw `dotn
 - `mise run format` — format C# (CSharpier), frontend, EventCatalog, Docusaurus, k6, Keycloakify
 - `mise run prepare` — post-clone setup (restore + git hooks)
 
-Frontend dev: from `src/Clients/` run `pnpm i && pnpm run dev`.
+Frontend dev: from `src/Clients/` run `bun i && bun run dev`.
 
 ## Common Pitfalls
 
@@ -49,7 +49,8 @@ Frontend dev: from `src/Clients/` run `pnpm i && pnpm run dev`.
 - **Centralized package versions**: add NuGet versions only in [Directory.Packages.props](../Directory.Packages.props), never in individual `.csproj` files.
 - **Sealed by default**: endpoints, handlers, `DbContext`s, and test classes should be `sealed`.
 - **snake_case in PostgreSQL**: tables/columns are snake_case via `UseSnakeCaseNamingConvention()`. Match that in any raw SQL.
-- **AppHost restart**: changes to `AppHost.cs` require restarting `aspire run`; other code hot-reloads.
+- **Frontend uses Bun, not pnpm/npm**: `src/Clients/` is managed by Bun (`bun@1.3.x`, `bun.lock`). Use `bun install`/`bun run`; running `pnpm`/`npm`/`yarn` creates a conflicting lockfile.
+- **AppHost restart**: changes to `AppHost.cs` require restarting the AppHost (`aspire start`); other code hot-reloads.
 - **Test project naming**: must end in `.UnitTests`, `.ContractTests`, or `.IntegrationTests` to be auto-detected.
 - **Never modify** `global.json` or `NuGet.config` unless explicitly asked.
 
@@ -120,6 +121,8 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 - [.agents/skills/](../.agents/skills/) — on-demand skills (Aspire, Turborepo, TUnit, EventCatalog authoring, React best practices)
 
 <!-- SPECKIT START -->
+
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
+
 <!-- SPECKIT END -->

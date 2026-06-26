@@ -40,7 +40,7 @@ runs:
   using: composite
   steps:
     - name: Cache NuGet Packages
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
       with:
         path: ~/.nuget/packages
         key: |
@@ -66,7 +66,7 @@ runs:
           core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
 
     - name: Start AIMock server
-      uses: CopilotKit/aimock@27695ee7adc31a62524ce4ff3f59bd29874643af # v1.31.0
+      uses: CopilotKit/aimock@6aead88aa0e4e86795c1504c4f917e0c5e9ca43d # v1.34.0
       id: aimock
       with:
         config: tests/BookWorm.AI.Evaluation/aimock.json

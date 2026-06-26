@@ -46,7 +46,7 @@
     />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.10.4" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.0" />
     <PackageVersion
       Include="Aspire.Hosting.AgentFramework.DevUI"
       Version="$(AgentFrameworkUnstableVersion)"
@@ -85,9 +85,9 @@
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.15.1-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.16.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <!-- AI -->
     <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="$(AgentFrameworkVersion)" />
@@ -102,7 +102,7 @@
     />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.OpenAI"
-      Version="$(AgentFrameworkVersion)-alpha.260610.1"
+      Version="$(AgentFrameworkVersion)-alpha.260625.1"
     />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
@@ -117,7 +117,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="11.2.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="12.0.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">

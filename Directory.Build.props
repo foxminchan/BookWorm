@@ -20,6 +20,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <IsTestProject>true</IsTestProject>
+    <!-- Suppress CS0436: transitive ReactiveUI.Primitives.R3Bridge source generator
+         produces PrimitivesR3BridgeGeneratedAttribute in both test projects and their
+         referenced service projects, causing a benign type conflict. -->
+    <NoWarn>$(NoWarn);CS0436</NoWarn>
   </PropertyGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('IntegrationTests'))">
     <PackageReference Include="TUnit.Aspire" />

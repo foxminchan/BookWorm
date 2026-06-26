@@ -1,7 +1,11 @@
 {
   "extends": "@workspace/typescript-config/react-library.json",
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "types": ["node", "react", "react-dom"],
     "paths": {
       "@workspace/ui/*": ["./src/*"]
     }

@@ -4,6 +4,7 @@ using BookWorm.McpTools.Resources;
 using BookWorm.McpTools.Services;
 using ModelContextProtocol;
 using Refit;
+using static BookWorm.McpTools.UnitTests.HttpResponseMessageHelper;
 
 namespace BookWorm.McpTools.UnitTests.Resources;
 
@@ -22,7 +23,7 @@ public sealed class CatalogResourceProviderTests
     {
         // Arrange
         var response = new ApiResponse<List<Category>>(
-            new(HttpStatusCode.InternalServerError),
+            CreateResponse(HttpStatusCode.InternalServerError),
             null,
             new()
         );
@@ -40,7 +41,11 @@ public sealed class CatalogResourceProviderTests
     public async Task GivenApiReturnsEmptyList_WhenGetCategories_ThenShouldReturnEmptyArray()
     {
         // Arrange
-        var response = new ApiResponse<List<Category>>(new(HttpStatusCode.OK), [], new());
+        var response = new ApiResponse<List<Category>>(
+            CreateResponse(HttpStatusCode.OK),
+            [],
+            new()
+        );
 
         _catalogApi.Setup(x => x.ListCategoriesAsync()).ReturnsAsync(response);
 
@@ -61,7 +66,11 @@ public sealed class CatalogResourceProviderTests
             new(Guid.CreateVersion7(), "Fantasy"),
         };
 
-        var response = new ApiResponse<List<Category>>(new(HttpStatusCode.OK), categories, new());
+        var response = new ApiResponse<List<Category>>(
+            CreateResponse(HttpStatusCode.OK),
+            categories,
+            new()
+        );
 
         _catalogApi.Setup(x => x.ListCategoriesAsync()).ReturnsAsync(response);
 
@@ -78,7 +87,7 @@ public sealed class CatalogResourceProviderTests
     {
         // Arrange
         var response = new ApiResponse<List<Author>>(
-            new(HttpStatusCode.InternalServerError),
+            CreateResponse(HttpStatusCode.InternalServerError),
             null,
             new()
         );
@@ -102,7 +111,11 @@ public sealed class CatalogResourceProviderTests
             new(Guid.CreateVersion7(), "Isaac Asimov"),
         };
 
-        var response = new ApiResponse<List<Author>>(new(HttpStatusCode.OK), authors, new());
+        var response = new ApiResponse<List<Author>>(
+            CreateResponse(HttpStatusCode.OK),
+            authors,
+            new()
+        );
 
         _catalogApi.Setup(x => x.ListAuthorsAsync()).ReturnsAsync(response);
 
@@ -133,7 +146,7 @@ public sealed class CatalogResourceProviderTests
             120
         );
 
-        var response = new ApiResponse<Book>(new(HttpStatusCode.OK), book, new());
+        var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.OK), book, new());
 
         _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
 
@@ -151,7 +164,7 @@ public sealed class CatalogResourceProviderTests
     {
         // Arrange
         var id = Guid.CreateVersion7();
-        var response = new ApiResponse<Book>(new(HttpStatusCode.NotFound), null, new());
+        var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.NotFound), null, new());
 
         _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
 
@@ -164,7 +177,7 @@ public sealed class CatalogResourceProviderTests
     {
         // Arrange
         var id = Guid.CreateVersion7();
-        var response = new ApiResponse<Book>(new(HttpStatusCode.OK), null, new());
+        var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.OK), null, new());
 
         _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
 

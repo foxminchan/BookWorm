@@ -4,6 +4,7 @@ using BookWorm.McpTools.Resources;
 using BookWorm.McpTools.Services;
 using ModelContextProtocol;
 using Refit;
+using static BookWorm.McpTools.UnitTests.HttpResponseMessageHelper;
 
 namespace BookWorm.McpTools.UnitTests.Resources;
 
@@ -23,7 +24,7 @@ public sealed class RatingResourceProviderTests
     {
         // Arrange
         var response = new ApiResponse<List<Feedback>>(
-            new(HttpStatusCode.InternalServerError),
+            CreateResponse(HttpStatusCode.InternalServerError),
             null,
             new()
         );
@@ -38,7 +39,11 @@ public sealed class RatingResourceProviderTests
     public async Task GivenApiReturnsEmptyList_WhenGetBookReviews_ThenShouldReturnEmptyArray()
     {
         // Arrange
-        var response = new ApiResponse<List<Feedback>>(new(HttpStatusCode.OK), [], new());
+        var response = new ApiResponse<List<Feedback>>(
+            CreateResponse(HttpStatusCode.OK),
+            [],
+            new()
+        );
 
         _ratingApi.Setup(x => x.ListFeedbacksAsync(It.IsAny<Guid>())).ReturnsAsync(response);
 
@@ -59,7 +64,11 @@ public sealed class RatingResourceProviderTests
             new(Guid.CreateVersion7(), "Jane", "Smith", "Good read", 4, _validBookId),
         };
 
-        var response = new ApiResponse<List<Feedback>>(new(HttpStatusCode.OK), feedbacks, new());
+        var response = new ApiResponse<List<Feedback>>(
+            CreateResponse(HttpStatusCode.OK),
+            feedbacks,
+            new()
+        );
 
         _ratingApi.Setup(x => x.ListFeedbacksAsync(_validBookId)).ReturnsAsync(response);
 
