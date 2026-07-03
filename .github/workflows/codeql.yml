@@ -55,7 +55,7 @@ jobs:
           fetch-depth: 1
 
       - name: 🛡️ Initialize CodeQL
-        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        uses: github/codeql-action/init@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -70,7 +70,7 @@ jobs:
 
       - name: 💾 Cache NuGet Packages
         if: matrix.build-mode == 'manual'
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: |
@@ -88,6 +88,6 @@ jobs:
           -p:SkipKeycloakifyBuild=true
 
       - name: 🛡️ Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        uses: github/codeql-action/analyze@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
         with:
           category: "/language:${{ matrix.language }}"
