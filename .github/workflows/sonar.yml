@@ -89,7 +89,7 @@ jobs:
           fetch-depth: 0
 
       - name: ☕ Set up JDK
-        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
         with:
           distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
@@ -136,7 +136,7 @@ jobs:
           -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
       - name: 🤖 Start AIMock server
-        uses: CopilotKit/aimock@589d3f4b7ae13fc69ec0af33c7f6879f66f40138 # v1.35.1
+        uses: CopilotKit/aimock@b633111042d31059fcc81abb4c86cf879589e5a1 # v1.37.1
         id: aimock
         with:
           config: tests/BookWorm.AI.Evaluation/aimock.json
