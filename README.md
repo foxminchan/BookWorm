@@ -100,7 +100,7 @@
 
 > [!NOTE]
 >
-> - **AI features** require an [OpenAI API key](https://platform.openai.com/api-keys)
+> - **Azure Subscription** is required.
 > - **Email** uses [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
 
 ### Run locally

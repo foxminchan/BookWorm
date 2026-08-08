@@ -1,8 +1,9 @@
-using System.ClientModel;
+using Azure;
+using Azure.AI.OpenAI;
+using Azure.Identity;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
-using OpenAI;
 
 namespace BookWorm.AI.Evaluation.Setup;
 
@@ -17,19 +18,14 @@ internal static class TestSetup
             return s_chatConfiguration;
         }
 
-        var openAiClientOptions = EnvironmentVariables.OpenAIBaseUrl is { } baseUrl
-            ? new OpenAIClientOptions { Endpoint = new(baseUrl) }
-            : null;
+        var endpoint = new Uri(EnvironmentVariables.AzureOpenAIEndpoint);
 
-        var openAiClient = openAiClientOptions is not null
-            ? new OpenAIClient(
-                new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey),
-                openAiClientOptions
-            )
-            : new OpenAIClient(new ApiKeyCredential(EnvironmentVariables.OpenAIApiKey));
+        var azureClient = EnvironmentVariables.AzureOpenAIApiKey is { } apiKey
+            ? new AzureOpenAIClient(endpoint, new AzureKeyCredential(apiKey))
+            : new AzureOpenAIClient(endpoint, new DefaultAzureCredential());
 
-        var chatClient = openAiClient
-            .GetChatClient(Components.OpenAI.OpenAIGpt4oMini)
+        var chatClient = azureClient
+            .GetChatClient(Components.OpenAI.OpenAIGpt56Sol)
             .AsIChatClient();
 
         s_chatConfiguration = new(chatClient);
