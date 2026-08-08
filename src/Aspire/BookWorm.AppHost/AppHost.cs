@@ -47,15 +47,19 @@ var financeDb = postgres.AddDatabase(Components.Database.Finance).WithPostgresMc
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
 var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 
-var openai = builder.AddOpenAI(Components.OpenAI.Resource);
+var openai = builder.AddAzureOpenAI(Components.OpenAI.Resource);
 
-var chat = openai
-    .AddModel(Components.OpenAI.Chat, Components.OpenAI.OpenAIGpt4oMini)
-    .WithHealthCheck();
+var chat = openai.AddDeployment(
+    Components.OpenAI.Chat,
+    Components.OpenAI.OpenAIGpt56Sol,
+    Components.OpenAI.OpenAIGpt56SolVersion
+);
 
-var embedding = openai
-    .AddModel(Components.OpenAI.Embedding, Components.OpenAI.TextEmbedding3Large)
-    .WithHealthCheck();
+var embedding = openai.AddDeployment(
+    Components.OpenAI.Embedding,
+    Components.OpenAI.TextEmbeddingAda002,
+    Components.OpenAI.TextEmbeddingAda002Version
+);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)

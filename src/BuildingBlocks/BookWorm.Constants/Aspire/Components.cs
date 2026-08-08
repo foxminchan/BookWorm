@@ -25,8 +25,10 @@ public static class Components
 
     public static class OpenAI
     {
-        public const string OpenAIGpt4oMini = "gpt-4o-mini";
-        public const string TextEmbedding3Large = "text-embedding-3-large";
+        public const string OpenAIGpt56Sol = "gpt-5.6-sol";
+        public const string OpenAIGpt56SolVersion = "2026-07-09";
+        public const string TextEmbeddingAda002 = "text-embedding-ada-002";
+        public const string TextEmbeddingAda002Version = "2";
         public const string Resource = "openai";
         public const string Chat = "chat";
         public const string Embedding = "embedding";
