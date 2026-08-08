@@ -1,6 +1,6 @@
 ---
 name: catalog-documentation-creator
-description: Generates EventCatalog documentation files (services, agents, events, commands, queries, domains, flows, channels, containers, ADRs, data products, entities, diagrams) with correct frontmatter, folder structure, and best practices. Use when user asks to "document a service", "document an agent", "document an AI agent", "create EventCatalog files", "add an event to the catalog", "document my architecture", "generate catalog documentation", "create documentation for my microservice", "document a database", "create an ADR", "document a data product", or "document an entity".
+description: Generates EventCatalog documentation files (systems, services, agents, events, commands, queries, domains, flows, channels, containers, ADRs, data products, entities, diagrams) with correct frontmatter, folder structure, and best practices. Use when user asks to "document a system", "document a service", "document an agent", "document an AI agent", "create EventCatalog files", "add an event to the catalog", "document my architecture", "generate catalog documentation", "create documentation for my microservice", "document a database", "create an ADR", "document a data product", or "document an entity".
 license: MIT
 metadata:
   author: eventcatalog
@@ -23,7 +23,7 @@ Before generating any files, ask the user: **"Do you already have an EventCatalo
   - A repo they've cloned locally (e.g., `~/projects/my-catalog/`)
   - A folder on their machine
   - A monorepo with the catalog in a subdirectory
-- Verify it looks like an EventCatalog project by checking for an `eventcatalog.config.js` file or known directories (`services/`, `agents/`, `events/`, `domains/`, `adrs/`, `data-products/`, `entities/`, etc.)
+- Verify it looks like an EventCatalog project by checking for an `eventcatalog.config.js` file or known directories (`systems/`, `services/`, `agents/`, `events/`, `domains/`, `adrs/`, `data-products/`, `entities/`, etc.)
 - Read the existing structure to understand whether they use **nested** (domains/services/agents/events) or **flat** (top-level services/, agents/, events/) organization
 
 **If they don't have a catalog yet:**
@@ -44,6 +44,7 @@ CRITICAL: All generated files must be written to the user's catalog directory, n
 Ask the user what they want to document. Common scenarios:
 
 - A single service or agent and its messages
+- A system that groups services, containers, flows, entities, actors, and related systems
 - An event, command, or query
 - A full domain with nested services
 - A business flow across services and agents
@@ -58,6 +59,7 @@ Gather this information before generating:
 
 - Resource name and purpose
 - Version (default to `0.0.1` for new resources)
+- System boundary, scope (`internal` or `external`), actors, relationships, and contained resources when documenting systems
 - Message relationships (what it sends/receives)
 - Channel routing (what channels messages flow through)
 - Containers (what databases/caches the service reads from or writes to)
@@ -96,6 +98,7 @@ This ensures new documentation is consistent with what's already in the catalog.
 Generate files following the resource-specific references. Consult the appropriate reference file for the resource type:
 
 - `references/services.md` — Services with sends/receives, channel routing, containers
+- `references/systems.md` — Systems with scope, services, containers, flows, entities, actors, and system relationships
 - `references/agents.md` — Agents with model metadata, tools, sends/receives, containers, and flows
 - `references/events.md` — Events with schemas, payload examples, producer/consumer code
 - `references/commands.md` — Commands with REST operations and schemas
@@ -121,9 +124,12 @@ Every resource file MUST include:
 - `version` as semantic version string
 - `summary` as a concise 1-2 sentence description
 
-CRITICAL: Always use `index.mdx` as the filename for versioned resources (services, agents, events, commands, queries, domains, flows, channels, containers, ADRs, data products, entities, diagrams). Teams and users use `{id}.mdx` files directly. Changelogs use `changelog.mdx` or `changelog.md`. Ubiquitous language uses `ubiquitous-language.mdx`. Place files in the correct folder path following the nested structure pattern:
+CRITICAL: Always use `index.mdx` as the filename for versioned resources (systems, services, agents, events, commands, queries, domains, flows, channels, containers, ADRs, data products, entities, diagrams). Teams and users use `{id}.mdx` files directly. Changelogs use `changelog.mdx` or `changelog.md`. Ubiquitous language uses `ubiquitous-language.mdx`. Place files in the correct folder path following the nested structure pattern:
 
 ```
+domains/{DomainName}/systems/{SystemName}/index.mdx
+domains/{DomainName}/systems/{SystemName}/services/{ServiceName}/index.mdx
+domains/{DomainName}/systems/{SystemName}/containers/{ContainerName}/index.mdx
 domains/{DomainName}/services/{ServiceName}/events/{EventName}/index.mdx
 domains/{DomainName}/agents/{AgentName}/index.mdx
 domains/{DomainName}/data-products/{DataProductName}/index.mdx
@@ -134,6 +140,7 @@ domains/{DomainName}/diagrams/{DiagramName}/index.mdx
 Or flat structure if the catalog uses that pattern:
 
 ```
+systems/{SystemName}/index.mdx
 services/{ServiceName}/index.mdx
 agents/{AgentName}/index.mdx
 events/{EventName}/index.mdx
@@ -153,6 +160,8 @@ Before presenting the files to the user, verify:
 - All `id` fields are consistent (no spaces, match folder name)
 - All `version` fields are valid semver strings (e.g., `0.0.1`)
 - All message references in `sends`/`receives` include `id` and optionally `version`
+- System `services`, `containers`, `flows`, `entities`, `relationships`, and domain `systems` references include `id` and optionally `version`
+- System `scope` is either `internal` or `external`, and actor `direction` is either `inbound` or `outbound`
 - Channel routing uses `to`/`from` fields correctly in sends/receives
 - Schema files referenced in `schemaPath` actually exist or are generated
 - `<NodeGraph />` component is included for architecture visualization
@@ -172,6 +181,27 @@ When a user says "document my payment service that receives OrderCreated events 
 6. Add example payload sections for each message
 7. Place files in the correct nested folder structure
 
+### Documenting a System
+
+When a user describes a capability, subsystem, product capability, or external system:
+
+1. Decide whether the system belongs inside a domain (`domains/{Domain}/systems/{System}/index.mdx`) or should live at the catalog root (`systems/{System}/index.mdx`) because it is shared, external, or not owned by one domain
+2. Generate the system `index.mdx` with `scope`, `owners`, and references to its `services`, `containers`, `flows`, `entities`, and `diagrams` where known
+3. Add `relationships` for one-directional links to other systems, using a short `label` for the edge
+4. Add `actors` for people, roles, or external participants, using `direction: inbound` when the actor interacts with the system and `direction: outbound` when the system reaches out to the actor
+5. Include `<ContextDiagram />` to show actors and system-to-system relationships
+6. Include `<NodeGraph />` to show the resources inside the system
+7. Generate nested resources under the system folder when they are owned by that system, for example `domains/{Domain}/systems/{System}/services/{Service}/index.mdx`
+8. If the system is nested under a domain, add it to the domain's `systems` frontmatter. Every system nested inside a domain MUST be referenced in that domain's `index.mdx`:
+   ```yaml
+   systems:
+     - id: cart-system
+       version: 1.0.0
+     - id: promotion-system
+       version: 1.0.0
+   ```
+9. If ADRs apply to the system boundary, persistence, integration pattern, or ownership model, link them with `appliesTo: [{ type: system, id: ... }]`
+
 ### Documenting an Agent
 
 When a user says "document my support agent that reads order data and uses Zendesk":
@@ -185,20 +215,22 @@ When a user says "document my support agent that reads order data and uses Zende
 
 ### Documenting a Domain
 
-CRITICAL: A domain MUST have at least one service or agent. Never create an empty domain. If the user describes a domain, ensure services or agents are identified and generated for it.
+CRITICAL: A domain MUST have at least one system, service, or agent. Never create an empty domain. If the user describes a domain, ensure systems, services, or agents are identified and generated for it.
 
 When a user wants to document a full domain:
 
-1. Identify the services and agents that belong to this domain. If the user hasn't specified any, ask them: "What services or agents belong to this domain?" Do NOT create an empty domain.
-2. Generate the domain `index.mdx` with the `services` field listing every service and the `agents` field listing every agent
-3. Include `entities`, `data-products`, `flows`, and `diagrams` fields when those resources belong to the domain
-4. Generate each service and agent within the domain
+1. Identify the systems, services, and agents that belong to this domain. If the user hasn't specified any, ask them: "What systems, services, or agents belong to this domain?" Do NOT create an empty domain.
+2. Generate the domain `index.mdx` with the `systems` field listing every system, the `services` field listing every direct domain service, and the `agents` field listing every direct domain agent
+3. Include `entities`, `data-products`, `flows`, and `diagrams` fields when those resources belong directly to the domain
+4. Generate each system, service, and agent within the domain
 5. Generate each message referenced by the services and agents
 6. Generate entities, data products, diagrams, and channels if the user describes them
-7. Use the nested folder structure: `domains/{Domain}/services/{Service}/events/{Event}/`, `domains/{Domain}/agents/{Agent}/`, `domains/{Domain}/entities/{Entity}/`, and `domains/{Domain}/data-products/{DataProduct}/`
+7. Use the nested folder structure: `domains/{Domain}/systems/{System}/`, `domains/{Domain}/systems/{System}/services/{Service}/events/{Event}/`, `domains/{Domain}/services/{Service}/events/{Event}/`, `domains/{Domain}/agents/{Agent}/`, `domains/{Domain}/entities/{Entity}/`, and `domains/{Domain}/data-products/{DataProduct}/`
 8. Generate a `ubiquitous-language.mdx` file for the domain by extracting domain-specific terms from service names, agent names, event/command names, entities, and business processes. Place it at `domains/{Domain}/ubiquitous-language.mdx`. See `references/ubiquitous-language.md` for format and examples.
-9. CRITICAL: After generating all files, verify the domain's frontmatter `services` field lists every service and `agents` lists every agent that belongs to it. Every service or agent created under a domain MUST be referenced in the domain's `index.mdx`:
+9. CRITICAL: After generating all files, verify the domain's frontmatter `systems` field lists every system, `services` lists every direct domain service, and `agents` lists every direct domain agent that belongs to it. Every system, service, or agent created directly under a domain MUST be referenced in the domain's `index.mdx`:
    ```yaml
+   systems:
+     - id: CheckoutSystem
    services:
      - id: OrdersService
      - id: InventoryService
@@ -206,7 +238,7 @@ When a user wants to document a full domain:
    agents:
      - id: OrderSupportAgent
    ```
-   If a service or agent is nested inside the domain folder but not listed in the domain's frontmatter, it will not appear as part of that domain. Always cross-check.
+   If a system, service, or agent is nested inside the domain folder but not listed in the domain's frontmatter, it will not appear as part of that domain. Always cross-check.
 
 ### Documenting an ADR
 
@@ -216,7 +248,7 @@ When a user describes an architecture decision:
 2. Use one of the supported statuses: `proposed`, `accepted`, `rejected`, `deprecated`, or `superseded`
 3. Include a `date` in `YYYY-MM-DD` format
 4. Add `decisionMakers` and `owners` using existing team/user IDs where known
-5. Use `appliesTo` to link the decision to impacted resources (`service`, `event`, `domain`, `flow`, `data-product`, `entity`, etc.)
+5. Use `appliesTo` to link the decision to impacted resources (`system`, `service`, `event`, `domain`, `flow`, `data-product`, `entity`, etc.)
 6. Use `supersedes`, `supersededBy`, `amends`, `amendedBy`, or `related` when linking ADRs together
 7. Structure the body with `Context`, `Decision`, and `Consequences`
 
@@ -287,12 +319,13 @@ Before delivering documentation to the user, verify every file against this chec
 9. Folder structure follows catalog conventions
 10. No duplicate resources (checked against existing catalog)
 11. Versioned resources use `index.mdx` (or match the catalog's existing `.md`/`.mdx` convention); teams and users use `{id}.mdx`; changelogs use `changelog.mdx`/`changelog.md`
-12. Every domain has at least one service or agent — never create an empty domain
-13. Domain `services` and `agents` frontmatter lists every service and agent that belongs to that domain
+12. Every domain has at least one system, service, or agent — never create an empty domain
+13. Domain `systems`, `services`, and `agents` frontmatter lists every direct system, service, and agent that belongs to that domain
 14. Domain `entities`, `data-products`, `flows`, and `diagrams` frontmatter lists nested resources when present
 15. Every domain has a `ubiquitous-language.mdx` file with relevant domain terms extracted from services, agents, events, commands, entities, data products, and business processes
 16. ADRs have a valid status, date, decision makers when known, and `appliesTo` references for impacted resources
-17. Data product contract files referenced in `outputs.contract.path` exist when generated
+17. System `scope`, relationship pointers, and actor directions are valid when systems are generated
+18. Data product contract files referenced in `outputs.contract.path` exist when generated
 
 ## Troubleshooting
 
@@ -315,7 +348,16 @@ If `<Schema />` or `<SchemaViewer />` components show errors:
 If resources don't appear in EventCatalog:
 
 - Verify the file is named exactly `index.mdx` (not `INDEX.mdx` or `readme.md`)
-- Verify the folder is inside a recognized collection directory (`services/`, `agents/`, `events/`, `domains/`, etc.)
+- Verify the folder is inside a recognized collection directory (`systems/`, `services/`, `agents/`, `events/`, `domains/`, etc.)
+
+### System Context Diagram Not Showing Actors or Relationships
+
+If `<ContextDiagram />` does not show expected system context:
+
+- Verify the system frontmatter has `relationships` or `actors`
+- Verify `relationships` point to valid system IDs and include useful `label` values
+- Verify actor `direction` is `inbound` or `outbound`
+- If viewing a domain context diagram, verify the domain `systems` frontmatter references the relevant systems
 
 ### Channel Routing Not Visible
 

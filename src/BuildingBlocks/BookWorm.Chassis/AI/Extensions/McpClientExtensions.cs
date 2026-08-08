@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Utilities;
+﻿using BookWorm.Chassis.Security.TokenExchange;
+using BookWorm.Chassis.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -28,10 +29,15 @@ public static class McpClientExtensions
         public void AddMcpClient(string serviceName, string relativePath = "/mcp")
         {
             var services = builder.Services;
+            var transportName = $"{serviceName}-Transport";
+
+            services.AddHttpContextAccessor();
+            services.AddHttpClient(transportName).AddAuthTokenExchange(serviceName);
 
             services.AddSingleton(sp =>
             {
                 var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
 
                 var url = HttpUtilities
                     .AsUrlBuilder()
@@ -41,12 +47,17 @@ public static class McpClientExtensions
 
                 HttpClientTransportOptions transportOptions = new()
                 {
-                    Name = $"{serviceName}-Transport",
+                    Name = transportName,
                     TransportMode = HttpTransportMode.StreamableHttp,
                     Endpoint = new(url),
                 };
 
-                HttpClientTransport transport = new(transportOptions, loggerFactory);
+                HttpClientTransport transport = new(
+                    transportOptions,
+                    httpClientFactory.CreateClient(transportName),
+                    loggerFactory,
+                    ownsHttpClient: true
+                );
 
                 return McpClient
                     .CreateAsync(transport, loggerFactory: loggerFactory)

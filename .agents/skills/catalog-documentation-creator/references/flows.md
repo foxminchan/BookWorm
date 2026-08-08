@@ -3,7 +3,7 @@
 ## Format
 
 **File:** `index.mdx` inside a flow folder
-**Location:** `flows/{FlowName}/index.mdx` or nested under a domain `domains/{Domain}/flows/{FlowName}/index.mdx`
+**Location:** `flows/{FlowName}/index.mdx`, nested under a domain `domains/{Domain}/flows/{FlowName}/index.mdx`, or nested under a system (`systems/{System}/flows/{FlowName}/index.mdx`, `domains/{Domain}/systems/{System}/flows/{FlowName}/index.mdx`)
 
 ## Frontmatter Fields
 
@@ -126,3 +126,4 @@ steps:
 - Message IDs in steps must match actual event/command/query IDs in the catalog
 - Service IDs in steps must match actual service IDs in the catalog
 - Agent IDs in steps must match actual agent IDs in the catalog
+- When a flow belongs to a system, add it to the system's `flows` frontmatter

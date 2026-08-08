@@ -5,7 +5,7 @@
 **File:** `index.mdx` inside a domain folder
 **Location:** `domains/{DomainName}/index.mdx`
 
-Domains can contain subdomains, services, agents, flows, and other resources nested inside them.
+Domains can contain subdomains, systems, services, agents, flows, and other resources nested inside them.
 
 ## Frontmatter Fields
 
@@ -17,6 +17,7 @@ Domains can contain subdomains, services, agents, flows, and other resources nes
 | `summary`       | Yes      | Description of the domain's purpose and scope     |
 | `owners`        | Yes      | Array of team or user IDs                         |
 | `domains`       | No       | Array of subdomain references (`id`)              |
+| `systems`       | No       | Array of system references                        |
 | `services`      | No       | Array of service references                       |
 | `agents`        | No       | Array of agent references                         |
 | `data-products` | No       | Array of data product references                  |
@@ -38,6 +39,11 @@ domains/E-Commerce/
   subdomains/
     Orders/
       index.mdx                      # Subdomain definition
+      systems/
+        CheckoutSystem/
+          index.mdx
+          services/
+            CheckoutAPI/index.mdx
       services/
         OrdersService/
           index.mdx
@@ -71,6 +77,8 @@ domains:
   - id: Orders
   - id: Payment
   - id: Subscriptions
+systems:
+  - id: checkout-system
 agents:
   - id: OrderSupportAgent
   - id: FraudReviewAgent
@@ -105,7 +113,7 @@ receives:
 
 ## Domain Overview
 
-The E-Commerce domain encapsulates all the core business logic for the FlowMart e-commerce platform. It is built on event-driven microservices architecture with key services like [[service|OrdersService]], [[service|InventoryService]], and [[service|PaymentService]], plus agents like [[agent|OrderSupportAgent]].
+The E-Commerce domain encapsulates all the core business logic for the FlowMart e-commerce platform. It is built around systems like [[system|checkout-system]], key services like [[service|OrdersService]], [[service|InventoryService]], and [[service|PaymentService]], plus agents like [[agent|OrderSupportAgent]].
 
 <NodeGraph mode="full" search="false" legend="false" />
 
@@ -138,9 +146,11 @@ FlowMart's E-Commerce domain enables:
 ## Key Conventions
 
 - Use `domains` field when a domain has subdomains
-- Use `services` and `agents` fields to list the services and agents that belong to this domain
+- Use `systems` to list systems that belong to this domain
+- Use `services` and `agents` fields to list direct domain services and agents that are not nested under a system
 - Use `entities`, `data-products`, `flows`, and `diagrams` when those resources belong to the domain
-- Use `[[service|ServiceName]]`, `[[agent|AgentName]]`, and `[[domain|DomainName]]` syntax to create links
+- Use `[[system|SystemName]]`, `[[service|ServiceName]]`, `[[agent|AgentName]]`, and `[[domain|DomainName]]` syntax to create links
 - Use `<NodeGraph mode="full" />` for a comprehensive domain visualization
+- Include `<ContextDiagram />` when a domain's systems define actors or relationships
 - Include sequence diagrams (`mermaid`) for complex flows
 - Domains can have their own `sends`/`receives` to show domain-level message flow

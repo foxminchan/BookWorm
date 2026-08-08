@@ -1,3 +1,5 @@
+using BookWorm.ServiceDefaults.Cors;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -10,6 +12,8 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
 
-app.MapMcp("/mcp");
+app.UseDefaultCors();
+
+app.MapMcp("/mcp").RequireAuthorization();
 
 app.Run();

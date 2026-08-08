@@ -97,6 +97,7 @@ var catalogApi = builder
 var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
+    .WithKeycloak(keycloak)
     .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 

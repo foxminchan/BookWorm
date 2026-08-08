@@ -3,7 +3,7 @@
 ## Format
 
 **File:** `index.mdx` inside a service folder
-**Location:** `services/{ServiceName}/index.mdx` or `domains/{Domain}/services/{ServiceName}/index.mdx`
+**Location:** `services/{ServiceName}/index.mdx`, `domains/{Domain}/services/{ServiceName}/index.mdx`, `systems/{System}/services/{ServiceName}/index.mdx`, or `domains/{Domain}/systems/{System}/services/{ServiceName}/index.mdx`
 
 ## Frontmatter Fields
 
@@ -213,8 +213,10 @@ architecture-beta
 - Use `[[service|ServiceName]]` syntax to link to other services in the body
 - Use `[[event|EventName]]` syntax to link to events
 - Use `[[domain|DomainName]]` syntax to link to domains
+- Use `[[system|SystemName]]` syntax to link to the owning system when applicable
 - Use `[[entity|EntityName]]` syntax to link to entities
 - Include `<NodeGraph />` for architecture visualization
 - Include `<MessageTable />` to show sends/receives in a table
 - Version references in `sends`/`receives` can use semver ranges like `1.x`
+- When a service belongs to a system, add it to the system's `services` frontmatter
 ```

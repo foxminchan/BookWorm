@@ -23,17 +23,17 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.101.2"
+    "@tanstack/react-query": "^5.101.4"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "@types/react": "^19.2.17",
+    "@types/react": "^19.2.18",
     "@workspace/api-client": "workspace:*",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/types": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^10.7.0",
-    "react": "^19.2.7"
+    "eslint": "^10.8.1",
+    "react": "^19.2.8"
   },
   "peerDependencies": {
     "@workspace/api-client": "workspace:*",

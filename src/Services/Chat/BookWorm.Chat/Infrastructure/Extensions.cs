@@ -15,7 +15,7 @@ internal static class Extensions
             builder.AddPresidio();
             builder.AddMcpClient(Services.McpTools);
 
-            services.AddAGUI();
+            services.AddAGUIServer();
             services.AddOpenAIResponses();
             services.AddOpenAIConversations();
         }
