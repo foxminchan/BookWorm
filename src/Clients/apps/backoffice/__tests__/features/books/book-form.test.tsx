@@ -63,6 +63,7 @@ describe("BookForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseRouter.mockReturnValue({
+      bfcacheId: "test-route",
       push: mockPush,
       back: vi.fn(),
       forward: vi.fn(),

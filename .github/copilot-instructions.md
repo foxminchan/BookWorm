@@ -7,7 +7,7 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 ## Tech Stack
 
 - **Backend**: C# 14 (`LangVersion=preview`), .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + PostgreSQL (snake_case)
-- **Frontend**: TypeScript 6.0, Next.js 16.2, React 19, Bun 1.3 + Turbo 2 monorepo (Node >= 24)
+- **Frontend**: TypeScript 7.0, Next.js 16.3, React 19, Bun 1.3 + Turbo 2 monorepo (Node >= 20)
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
 - **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
 - **Messaging**: WolverineFx with Kafka (outbox/inbox patterns)

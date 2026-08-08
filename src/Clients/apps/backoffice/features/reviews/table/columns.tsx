@@ -9,9 +9,17 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 
+import { backofficeTableFeatures } from "@/lib/table";
+
 import { CellAction } from "./cell-action";
 
-function CustomerCell({ row }: Readonly<CellContext<Feedback, unknown>>) {
+type FeedbackCellContext = CellContext<
+  typeof backofficeTableFeatures,
+  Feedback,
+  unknown
+>;
+
+function CustomerCell({ row }: Readonly<FeedbackCellContext>) {
   const firstName = row.getValue<string>("firstName");
   const lastName = row.original.lastName;
   return (
@@ -23,7 +31,7 @@ function CustomerCell({ row }: Readonly<CellContext<Feedback, unknown>>) {
   );
 }
 
-function RatingCell({ row }: Readonly<CellContext<Feedback, unknown>>) {
+function RatingCell({ row }: Readonly<FeedbackCellContext>) {
   const rating = row.getValue<number>("rating");
   return (
     <div className="flex items-center gap-1">
@@ -36,7 +44,7 @@ function RatingCell({ row }: Readonly<CellContext<Feedback, unknown>>) {
   );
 }
 
-function CommentCell({ row }: Readonly<CellContext<Feedback, unknown>>) {
+function CommentCell({ row }: Readonly<FeedbackCellContext>) {
   const comment = row.getValue<string>("comment");
   if (!comment) {
     return <div className="text-muted-foreground text-sm">No comment</div>;
@@ -57,11 +65,14 @@ function CommentCell({ row }: Readonly<CellContext<Feedback, unknown>>) {
   );
 }
 
-function ActionsCell({ row }: Readonly<CellContext<Feedback, unknown>>) {
+function ActionsCell({ row }: Readonly<FeedbackCellContext>) {
   return <CellAction feedback={row.original} />;
 }
 
-export const reviewsColumns: ColumnDef<Feedback>[] = [
+export const reviewsColumns: ColumnDef<
+  typeof backofficeTableFeatures,
+  Feedback
+>[] = [
   { accessorKey: "firstName", header: "Customer", cell: CustomerCell },
   { accessorKey: "rating", header: "Rating", cell: RatingCell },
   { accessorKey: "comment", header: "Comment", cell: CommentCell },

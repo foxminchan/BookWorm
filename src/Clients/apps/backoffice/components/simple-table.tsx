@@ -3,11 +3,7 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
 import { Edit, Trash2 } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
@@ -27,6 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+
+import { backofficeTableFeatures } from "@/lib/table";
 
 import { ConfirmDialog } from "./confirm-dialog";
 import { SimpleTableSkeleton } from "./loading-skeleton";
@@ -58,7 +56,7 @@ type SimpleTableMeta = Readonly<{
 }>;
 
 function getTableMeta(
-  context: CellContext<BaseItem, unknown>,
+  context: CellContext<typeof backofficeTableFeatures, BaseItem, unknown>,
 ): SimpleTableMeta {
   return context.table.options.meta as SimpleTableMeta;
 }
@@ -67,11 +65,17 @@ function NumberHeader() {
   return <div className="w-1">#</div>;
 }
 
-function NumberCell({ row }: Readonly<CellContext<BaseItem, unknown>>) {
+function NumberCell({
+  row,
+}: Readonly<CellContext<typeof backofficeTableFeatures, BaseItem, unknown>>) {
   return <div className="text-muted-foreground w-1">{row.index + 1}</div>;
 }
 
-function NameCell(context: Readonly<CellContext<BaseItem, unknown>>) {
+function NameCell(
+  context: Readonly<
+    CellContext<typeof backofficeTableFeatures, BaseItem, unknown>
+  >,
+) {
   const { editingId, editValue, setEditValue, handleEditSave, cancelEditing } =
     getTableMeta(context);
   const item = context.row.original;
@@ -110,7 +114,11 @@ function ActionsHeader() {
   return <div className="text-right">Actions</div>;
 }
 
-function ActionsCell(context: Readonly<CellContext<BaseItem, unknown>>) {
+function ActionsCell(
+  context: Readonly<
+    CellContext<typeof backofficeTableFeatures, BaseItem, unknown>
+  >,
+) {
   const {
     editingId,
     isSubmitting,
@@ -162,7 +170,7 @@ function ActionsCell(context: Readonly<CellContext<BaseItem, unknown>>) {
   );
 }
 
-const TABLE_COLUMNS: ColumnDef<BaseItem>[] = [
+const TABLE_COLUMNS: ColumnDef<typeof backofficeTableFeatures, BaseItem>[] = [
   { id: "number", header: NumberHeader, cell: NumberCell },
   { accessorKey: "name", header: "Name", cell: NameCell },
   { id: "actions", header: ActionsHeader, cell: ActionsCell },
@@ -276,10 +284,10 @@ export function SimpleTable<T extends BaseItem>({
     [],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: backofficeTableFeatures,
     data: items,
-    columns: TABLE_COLUMNS as ColumnDef<T>[],
-    getCoreRowModel: getCoreRowModel(),
+    columns: TABLE_COLUMNS as ColumnDef<typeof backofficeTableFeatures, T>[],
     meta: {
       editingId: state.editingId,
       editValue: state.editValue,

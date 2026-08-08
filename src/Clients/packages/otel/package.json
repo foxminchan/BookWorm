@@ -31,14 +31,14 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.220.0",
-    "@opentelemetry/sdk-node": "^0.220.0",
-    "@opentelemetry/sdk-trace-node": "^2.9.0"
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.221.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
+    "@opentelemetry/sdk-trace-node": "^2.10.0"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^10.7.0",
-    "typescript": "^6.0.3"
+    "eslint": "^10.8.1",
+    "typescript": "npm:typescript@^6.0.2"
   }
 }

@@ -28,7 +28,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
     "date-fns": "^4.4.0"
@@ -36,7 +36,7 @@
   "devDependencies": {
     "@types/node": "^24.13.3",
     "@workspace/eslint-config": "workspace:*",
-    "eslint": "^10.7.0",
-    "typescript": "^6.0.3"
+    "eslint": "^10.8.1",
+    "typescript": "npm:typescript@^6.0.2"
   }
 }

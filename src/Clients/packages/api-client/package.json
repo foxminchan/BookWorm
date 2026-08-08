@@ -25,17 +25,17 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
-    "axios": "^1.18.1",
+    "axios": "^1.19.0",
     "axios-retry": "^4.5.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^10.7.0"
+    "eslint": "^10.8.1"
   },
   "peerDependencies": {
     "@workspace/types": "workspace:*"

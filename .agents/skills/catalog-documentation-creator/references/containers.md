@@ -5,7 +5,7 @@ Containers represent infrastructure components that services interact with — d
 ## Format
 
 **File:** `index.mdx` inside a container folder
-**Location:** Nested under a service: `services/{ServiceName}/containers/{ContainerName}/index.mdx`
+**Location:** `containers/{ContainerName}/index.mdx`, nested under a service (`services/{ServiceName}/containers/{ContainerName}/index.mdx`), or nested under a system (`systems/{System}/containers/{ContainerName}/index.mdx`, `domains/{Domain}/systems/{System}/containers/{ContainerName}/index.mdx`)
 
 ## Frontmatter Fields
 
@@ -38,6 +38,14 @@ readsFrom:
   - id: inventory-db
     version: 0.0.1
   - id: inventory-readmodel
+    version: 0.0.1
+```
+
+When a container belongs to a system, also add it to the system's `containers` frontmatter:
+
+```yaml
+containers:
+  - id: inventory-db
     version: 0.0.1
 ```
 
@@ -207,7 +215,7 @@ Payments DB is the authoritative database for all payment transactions, payment 
 
 ## Key Conventions
 
-- Containers are always nested under the service that owns them
+- Containers can be root-level, nested under the service that owns them, or nested under the system that owns the data store
 - Use `<NodeGraph />` to show which services read from and write to this container
 - Document "Who writes to it?" and "Who reads from it?" for clear ownership
 - Include common SQL queries when applicable

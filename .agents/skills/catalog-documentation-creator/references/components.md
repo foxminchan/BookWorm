@@ -16,6 +16,7 @@ Use double square brackets to create inline links to any resource. These render 
 | Command       | `[[command\|Name]]`              | `[[command\|CreateOrder]]`                    |
 | Query         | `[[query\|Name]]`                | `[[query\|GetOrderStatus]]`                   |
 | Domain        | `[[domain\|Name]]`               | `[[domain\|E-Commerce]]`                      |
+| System        | `[[system\|Name]]`               | `[[system\|checkout-system]]`                 |
 | Flow          | `[[flow\|Name]]`                 | `[[flow\|PaymentFlow]]`                       |
 | Channel       | `[[channel\|Name]]`              | `[[channel\|OrderChannel]]`                   |
 | Entity        | `[[entity\|Name]]` or `[[Name]]` | `[[entity\|Order]]` or `[[Order]]`            |
@@ -36,7 +37,8 @@ Use double square brackets to create inline links to any resource. These render 
 ```markdown
 The [[service|OrdersService]] handles all order processing and publishes
 [[event|OrderCreated]] when an order is placed. It integrates with
-[[service|PaymentService]] for payment processing, works with
+[[service|PaymentService]] for payment processing, belongs to
+[[system|checkout-system]], works with
 [[agent|OrderSupportAgent]] for support workflows, and writes to the
 [[container|orders-db]] database. See [[adr|adr-001-choose-event-driven-orders]]
 for the architecture decision and [[diagram|order-flow]] for the sequence diagram.
@@ -123,6 +125,16 @@ Props:
 - Can render a specific resource: `<NodeGraph id="Orders" version="0.0.3" type="domain" />`
 
 **Use in:** Every resource type. This is the primary visualization component.
+
+### `<ContextDiagram />`
+
+Renders a system context diagram showing systems, system-to-system relationships, and actors.
+
+```markdown
+<ContextDiagram />
+```
+
+**Use in:** Systems and domains. Include on system pages when `relationships` or `actors` are defined. Include on domain pages when the domain references systems that define relationships or actors.
 
 ### `<Schema />` and `<SchemaViewer />`
 

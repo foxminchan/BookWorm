@@ -3,19 +3,19 @@
     <!-- Core Libraries -->
     <AspireVersion>13.4.6</AspireVersion>
     <AspireUnstableVersion>$(AspireVersion)-preview.1.26319.6</AspireUnstableVersion>
-    <DotnetPackagesVersion>10.0.9</DotnetPackagesVersion>
-    <GrpcVersion>2.80.0</GrpcVersion>
+    <DotnetPackagesVersion>10.0.10</DotnetPackagesVersion>
+    <GrpcVersion>2.83.0</GrpcVersion>
     <!-- Integration Libraries -->
-    <WolverineVersion>6.17.1</WolverineVersion>
-    <TUnitVersion>1.58.0</TUnitVersion>
-    <QuartzVersion>3.18.2</QuartzVersion>
+    <WolverineVersion>6.25.0</WolverineVersion>
+    <TUnitVersion>1.63.25</TUnitVersion>
+    <QuartzVersion>3.19.1</QuartzVersion>
     <FusionCacheVersion>2.6.0</FusionCacheVersion>
     <!-- Microsoft Packages -->
-    <MsExtVersion>10.7.0</MsExtVersion>
-    <MsTestVersion>2.3.1</MsTestVersion>
+    <MsExtVersion>10.8.0</MsExtVersion>
+    <MsTestVersion>2.3.3</MsTestVersion>
     <ToolKitVersion>13.4.0</ToolKitVersion>
-    <AgentFrameworkVersion>1.13.0</AgentFrameworkVersion>
-    <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.260703.1</AgentFrameworkUnstableVersion>
+    <AgentFrameworkVersion>1.17.0</AgentFrameworkVersion>
+    <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.260804.1</AgentFrameworkUnstableVersion>
     <!-- Observability & Health -->
     <HealthChecksVersion>9.0.0</HealthChecksVersion>
   </PropertyGroup>

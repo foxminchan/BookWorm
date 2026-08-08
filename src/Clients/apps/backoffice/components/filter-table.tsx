@@ -2,16 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type {
-  ColumnDef,
-  SortingState,
-  VisibilityState,
-} from "@tanstack/react-table";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import type { ColumnDef, RowData, SortingState } from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
@@ -39,11 +31,12 @@ import {
 } from "@workspace/ui/components/table";
 
 import { PAGE_SIZES } from "@/lib/constants";
+import { backofficeTableFeatures } from "@/lib/table";
 
 import { FilterTableSkeleton } from "./loading-skeleton";
 
-type FilterTableProps<TData> = Readonly<{
-  columns: ColumnDef<TData>[];
+type FilterTableProps<TData extends RowData> = Readonly<{
+  columns: ColumnDef<typeof backofficeTableFeatures, TData>[];
   data: TData[];
   title: string;
   description?: string;
@@ -57,7 +50,7 @@ type FilterTableProps<TData> = Readonly<{
   getRowId?: (row: TData) => string;
 }>;
 
-export function FilterTable<TData>({
+export function FilterTable<TData extends RowData>({
   columns,
   data,
   title,
@@ -72,7 +65,9 @@ export function FilterTable<TData>({
   getRowId,
 }: FilterTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<string, boolean>
+  >({});
 
   const handleSortingChange = useCallback(
     (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
@@ -88,17 +83,16 @@ export function FilterTable<TData>({
     [onSortingChange],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: backofficeTableFeatures,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
     onSortingChange: handleSortingChange,
     onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
       columnVisibility,
     },
-    manualPagination: true,
     manualSorting: true,
   });
 

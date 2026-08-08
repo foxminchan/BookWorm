@@ -26,12 +26,12 @@ jobs:
     # If you do not check out your code, Copilot will do this for you.
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
       - name: 🔧 Setup .NET Core
-        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
@@ -41,10 +41,10 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: ⚡ Setup Mise
-        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
 
       - name: 🐳 Setup Docker
-        uses: docker/setup-docker-action@6d7cfa65f60a9dda7b46e5513fa982536f3c9877 # v5.3.0
+        uses: docker/setup-docker-action@77e84dbf09b47d1e29270283c22f16145aa85ca1 # v5.4.0
 
       - name: 🛠️ Install Tools
         run: dotnet tool restore

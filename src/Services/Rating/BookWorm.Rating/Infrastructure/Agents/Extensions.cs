@@ -228,7 +228,7 @@ internal static class Extensions
         {
             app.MapAgentDiscovery("/agents");
 
-            app.MapAGUI(Workflows.RatingSummarizer, "/ag-ui")
+            app.MapAGUIServer(Workflows.RatingSummarizer, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
                 .WithTags(nameof(RatingAgent));
 

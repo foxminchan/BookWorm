@@ -347,6 +347,16 @@
           "attributes": {}
         }
       ],
+      "${CLIENT_MCPTOOLS_ID}": [
+        {
+          "id": "44aa630f-3e82-4bc0-a552-f5384c2307de",
+          "name": "uma_protection",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "6d9f5c4e-893a-4e26-84d0-7d0be672a4c9",
+          "attributes": {}
+        }
+      ],
       "security-admin-console": [],
       "${CLIENT_ORDERING_ID}": [
         {
@@ -604,6 +614,23 @@
       "realmRoles": ["default-roles-${REALM_NAME}"],
       "clientRoles": {
         "${CLIENT_RATING_ID}": ["uma_protection"]
+      },
+      "notBefore": 0,
+      "groups": []
+    },
+    {
+      "id": "bd13657e-6d37-483d-937a-f9f63a0d65f7",
+      "username": "service-account-${CLIENT_MCPTOOLS_ID}",
+      "emailVerified": false,
+      "createdTimestamp": 1786180000000,
+      "enabled": true,
+      "totp": false,
+      "serviceAccountClientId": "${CLIENT_MCPTOOLS_ID}",
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
+      "clientRoles": {
+        "${CLIENT_MCPTOOLS_ID}": ["uma_protection"]
       },
       "notBefore": 0,
       "groups": []
@@ -1036,6 +1063,7 @@
       "optionalClientScopes": [
         "${CLIENT_CHATTING_ID}_read",
         "${CLIENT_CHATTING_ID}_write",
+        "${CLIENT_MCPTOOLS_ID}_read",
         "address",
         "phone",
         "organization",
@@ -1184,6 +1212,81 @@
       "optionalClientScopes": [
         "${CLIENT_RATING_ID}_read",
         "${CLIENT_RATING_ID}_write",
+        "${CLIENT_MCPTOOLS_ID}_read",
+        "address",
+        "phone",
+        "organization",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "id": "6d9f5c4e-893a-4e26-84d0-7d0be672a4c9",
+      "clientId": "${CLIENT_MCPTOOLS_ID}",
+      "name": "${CLIENT_MCPTOOLS_NAME}",
+      "description": "Exposes governed BookWorm catalog and rating capabilities through the Model Context Protocol",
+      "rootUrl": "${CLIENT_MCPTOOLS_URL}",
+      "adminUrl": "${CLIENT_MCPTOOLS_URL_CONTAINERHOST}",
+      "baseUrl": "/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${CLIENT_MCPTOOLS_SECRET}",
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "request.object.signature.alg": "any",
+        "post.logout.redirect.uris": "*",
+        "frontchannel.logout.session.required": "true",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "use.refresh.tokens": "true",
+        "realm_client": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "client_credentials.use_refresh_token": "false",
+        "require.pushed.authorization.requests": "false",
+        "request.object.encryption.enc": "any",
+        "pkce.code.challenge.method": "S256",
+        "client.secret.creation.time": "1786180000",
+        "request.object.encryption.alg": "any",
+        "client.introspection.response.allow.jwt.claim.enabled": "false",
+        "standard.token.exchange.enabled": "true",
+        "login_theme": "${THEME_NAME}",
+        "client.use.lightweight.access.token.enabled": "false",
+        "request.object.required": "not required",
+        "access.token.header.type.rfc9068": "false",
+        "tls.client.certificate.bound.access.tokens": "false",
+        "acr.loa.map": "{}",
+        "display.on.consent.screen": "false",
+        "token.response.type.bearer.lower-case": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [
+        "service_account",
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "${CLIENT_MCPTOOLS_ID}_read",
+        "${CLIENT_MCPTOOLS_ID}_write",
         "address",
         "phone",
         "organization",
@@ -1695,6 +1798,30 @@
       "id": "21db6734-7284-4684-9581-3affab293866",
       "name": "${CLIENT_RATING_ID}_write",
       "description": "Write for ${CLIENT_RATING_NAME}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      }
+    },
+    {
+      "id": "b945211e-4cbb-4b9c-aa5d-1984ab7d89d8",
+      "name": "${CLIENT_MCPTOOLS_ID}_read",
+      "description": "Read for ${CLIENT_MCPTOOLS_NAME}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      }
+    },
+    {
+      "id": "ac871d66-9837-46a0-93f7-909289c6e097",
+      "name": "${CLIENT_MCPTOOLS_ID}_write",
+      "description": "Write for ${CLIENT_MCPTOOLS_NAME}",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",

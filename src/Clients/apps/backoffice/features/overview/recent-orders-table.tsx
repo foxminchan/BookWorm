@@ -6,8 +6,7 @@ import {
   type CellContext,
   type ColumnDef,
   flexRender,
-  getCoreRowModel,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -32,26 +31,33 @@ import {
 import { RecentOrdersTableSkeleton } from "@/components/loading-skeleton";
 import { currencyFormatter } from "@/lib/constants";
 import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
+import { backofficeTableFeatures } from "@/lib/table";
 
 type RecentOrdersTableProps = Readonly<{
   orders: Order[];
   isLoading: boolean;
 }>;
 
-function OrderIdCell({ row }: Readonly<CellContext<Order, unknown>>) {
+type OrderCellContext = CellContext<
+  typeof backofficeTableFeatures,
+  Order,
+  unknown
+>;
+
+function OrderIdCell({ row }: Readonly<OrderCellContext>) {
   return <div className="font-medium">#{row.original.id.slice(0, 8)}</div>;
 }
 
-function AmountCell({ row }: Readonly<CellContext<Order, unknown>>) {
+function AmountCell({ row }: Readonly<OrderCellContext>) {
   return <div>{currencyFormatter.format(row.original.total ?? 0)}</div>;
 }
 
-function StatusCell({ row }: Readonly<CellContext<Order, unknown>>) {
+function StatusCell({ row }: Readonly<OrderCellContext>) {
   const status = row.original.status as OrderStatus;
   return <Badge className={getOrderStatusStyle(status)}>{status}</Badge>;
 }
 
-function DateCell({ row }: Readonly<CellContext<Order, unknown>>) {
+function DateCell({ row }: Readonly<OrderCellContext>) {
   return (
     <div className="text-muted-foreground">
       {format(new Date(row.original.date), "MMM dd, yyyy")}
@@ -59,7 +65,7 @@ function DateCell({ row }: Readonly<CellContext<Order, unknown>>) {
   );
 }
 
-const columns: ColumnDef<Order>[] = [
+const columns: ColumnDef<typeof backofficeTableFeatures, Order>[] = [
   { accessorKey: "id", header: "Order ID", cell: OrderIdCell },
   { accessorKey: "total", header: "Amount", cell: AmountCell },
   { accessorKey: "status", header: "Status", cell: StatusCell },
@@ -72,10 +78,10 @@ export function RecentOrdersTable({
 }: RecentOrdersTableProps) {
   const recentOrders = useMemo(() => orders.slice(-5), [orders]);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: backofficeTableFeatures,
     data: recentOrders,
     columns,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   if (isLoading) {

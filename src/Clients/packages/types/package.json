@@ -63,11 +63,11 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^10.7.0"
+    "eslint": "^10.8.1"
   }
 }

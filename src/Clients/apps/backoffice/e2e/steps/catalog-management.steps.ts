@@ -84,8 +84,7 @@ Then(
   "I should see the new book in the list",
   async ({ booksPage, scenarioData }) => {
     const createdBook = scenarioData.createdBook as
-      | { title: string }
-      | undefined;
+      { title: string } | undefined;
     if (createdBook) {
       const exists = await booksPage.bookExists(createdBook.title);
       expect(exists).toBeTruthy();

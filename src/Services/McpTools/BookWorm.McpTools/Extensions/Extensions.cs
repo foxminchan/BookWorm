@@ -1,10 +1,13 @@
 ﻿using AgentGovernance.Extensions.ModelContextProtocol;
+using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.McpTools.Configurations;
 using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.Cors;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -25,7 +28,21 @@ internal static class Extensions
 
             builder.AddAppSettings<McpToolsAppSettings>();
 
+            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+
+            services
+                .AddAuthorizationBuilder()
+                .SetDefaultPolicy(
+                    new AuthorizationPolicyBuilder()
+                        .RequireAuthenticatedUser()
+                        .RequireScope(
+                            $"{Constants.Aspire.Services.McpTools}_{Authorization.Actions.Read}"
+                        )
+                        .Build()
+                );
+
             services.AddHttpContextAccessor();
+            services.AddKeycloakTokenIntrospection();
 
             // Add exception handlers
             services.AddGlobalExceptionHandler();
@@ -68,30 +85,15 @@ internal static class Extensions
                     o.PolicyPaths.Add(
                         Path.Combine(AppContext.BaseDirectory, "Policies", "mcp-tools.yaml")
                     );
+                    o.RequireAuthenticatedAgentId = false;
                     o.DefaultAgentId = $"did:bookworm:{ServerInfoOptions.Name}";
                     o.ServerName = ServerInfoOptions.Name;
                 })
                 .WithHttpTransport(o => o.Stateless = true)
+                .AddAuthorizationFilters()
                 .WithToolsFromAssembly()
                 .WithPromptsFromAssembly()
-                .WithResourcesFromAssembly()
-                .WithSetLoggingLevelHandler(
-                    async (ctx, ct) =>
-                    {
-                        await ctx.Server.SendNotificationAsync(
-                            "notifications/message",
-                            new
-                            {
-                                Level = nameof(LogLevel.Debug).ToLowerInvariant(),
-                                Logger = ServerInfoOptions.Name,
-                                Data = $"Logging level set to {ctx.Params.Level}",
-                            },
-                            cancellationToken: ct
-                        );
-
-                        return new();
-                    }
-                );
+                .WithResourcesFromAssembly();
 
             builder.Configure<ServerInfoOptions>(ServerInfoOptions.ConfigurationSection);
 
@@ -141,8 +143,6 @@ internal static class Extensions
                             - recommend_books: Generate a structured recommendation request
                             - analyze_book_quality: Classify a book as Best Seller / Good / Bad / No Data
                             """;
-
-                        options.Capabilities = new() { Logging = new() };
                     }
                 );
 
