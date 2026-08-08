@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"module": "CommonJS",
+		"module": "ESNext",
 		"lib": ["ESNext", "DOM"],
 		"declaration": false,
 		"outDir": "./dist",
@@ -15,7 +15,7 @@
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"exactOptionalPropertyTypes": false,
-		"moduleResolution": "node",
+		"moduleResolution": "Bundler",
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
@@ -23,13 +23,12 @@
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
-		"baseUrl": "./src",
 		"paths": {
-			"@/*": ["./*"],
-			"@config/*": ["./config/*"],
-			"@scenarios/*": ["./scenarios/*"],
-			"@utils/*": ["./utils/*"],
-			"@types/*": ["./types/*"]
+			"@/*": ["./src/*"],
+			"@config/*": ["./src/config/*"],
+			"@scenarios/*": ["./src/scenarios/*"],
+			"@utils/*": ["./src/utils/*"],
+			"@types/*": ["./src/types/*"]
 		},
 		"types": ["k6"],
 		"typeRoots": ["./node_modules/@types", "./src/types"]

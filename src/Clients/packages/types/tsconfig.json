@@ -4,8 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "rootDir": "src",
-    "baseUrl": ".",
-    "ignoreDeprecations": "6.0"
+    "noEmit": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
