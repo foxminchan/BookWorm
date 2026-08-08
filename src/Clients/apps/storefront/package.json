@@ -26,7 +26,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "check-types": "tsc --noEmit",
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -104,7 +104,7 @@
     "fast-check": "^4.9.0",
     "happy-dom": "^20.11.2",
     "playwright-bdd": "^9.2.0",
-    "typescript": "7.0.2",
+    "typescript": "npm:typescript@^6.0.2",
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
   },

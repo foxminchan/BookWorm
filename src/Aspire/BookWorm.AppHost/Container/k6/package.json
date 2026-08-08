@@ -22,7 +22,7 @@
 	"type": "commonjs",
 	"scripts": {
 		"prepare": "allow-scripts",
-		"build": "webpack",
+		"build": "bun ./node_modules/@typescript/native/bin/tsc --noEmit && webpack",
 		"build:watch": "webpack --watch",
 		"deploy": "bun run build && echo 'TypeScript build completed successfully'",
 		"format": "prettier --write .",
@@ -49,8 +49,8 @@
 		"eslint-config-prettier": "^10.1.8",
 		"globals": "^17.9.0",
 		"prettier": "^3.9.6",
-		"ts-loader": "^9.6.2",
-		"typescript": "7.0.2",
+		"@typescript/native": "npm:typescript@^7.0.2",
+		"typescript": "npm:typescript@^6.0.2",
 		"typescript-eslint": "^8.66.0",
 		"webpack": "^5.109.2",
 		"webpack-cli": "^7.2.2"

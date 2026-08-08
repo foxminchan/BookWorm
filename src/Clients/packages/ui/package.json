@@ -22,7 +22,7 @@
   "homepage": "https://foxminchan.github.io/BookWorm/",
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -66,7 +66,7 @@
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^10.8.1",
     "tailwindcss": "^4.3.3",
-    "typescript": "7.0.2"
+    "typescript": "npm:typescript@^6.0.2"
   },
   "exports": {
     "./globals.css": "./src/styles/globals.css",

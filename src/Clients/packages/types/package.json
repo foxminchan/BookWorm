@@ -63,7 +63,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
