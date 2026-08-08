@@ -42,6 +42,7 @@ internal static class Extensions
                 );
 
             services.AddHttpContextAccessor();
+            services.AddKeycloakTokenIntrospection();
 
             // Add exception handlers
             services.AddGlobalExceptionHandler();
