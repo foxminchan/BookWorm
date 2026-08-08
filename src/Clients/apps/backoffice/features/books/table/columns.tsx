@@ -3,13 +3,21 @@ import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import type { Book } from "@workspace/types/catalog/books";
 import { formatPrice } from "@workspace/utils/format";
 
+import { backofficeTableFeatures } from "@/lib/table";
+
 import { CellAction } from "./cell-action";
 
-function TitleCell({ row }: Readonly<CellContext<Book, unknown>>) {
+type BookCellContext = CellContext<
+  typeof backofficeTableFeatures,
+  Book,
+  unknown
+>;
+
+function TitleCell({ row }: Readonly<BookCellContext>) {
   return <div className="font-medium">{row.original.name}</div>;
 }
 
-function AuthorsCell({ row }: Readonly<CellContext<Book, unknown>>) {
+function AuthorsCell({ row }: Readonly<BookCellContext>) {
   return (
     <div className="text-sm">
       {row.original.authors.map((author) => author.name).join(", ")}
@@ -17,15 +25,15 @@ function AuthorsCell({ row }: Readonly<CellContext<Book, unknown>>) {
   );
 }
 
-function CategoryCell({ row }: Readonly<CellContext<Book, unknown>>) {
+function CategoryCell({ row }: Readonly<BookCellContext>) {
   return <div className="text-sm">{row.original.category?.name ?? "-"}</div>;
 }
 
-function PublisherCell({ row }: Readonly<CellContext<Book, unknown>>) {
+function PublisherCell({ row }: Readonly<BookCellContext>) {
   return <div className="text-sm">{row.original.publisher?.name ?? "-"}</div>;
 }
 
-function PriceCell({ row }: Readonly<CellContext<Book, unknown>>) {
+function PriceCell({ row }: Readonly<BookCellContext>) {
   const { price, priceSale } = row.original;
   return (
     <div className="text-sm">
@@ -43,7 +51,7 @@ function PriceCell({ row }: Readonly<CellContext<Book, unknown>>) {
   );
 }
 
-function StatusCell({ row }: Readonly<CellContext<Book, unknown>>) {
+function StatusCell({ row }: Readonly<BookCellContext>) {
   const isInStock = row.original.status === "InStock";
   return (
     <output
@@ -67,7 +75,7 @@ function StatusCell({ row }: Readonly<CellContext<Book, unknown>>) {
   );
 }
 
-function RatingCell({ row }: Readonly<CellContext<Book, unknown>>) {
+function RatingCell({ row }: Readonly<BookCellContext>) {
   const rating = row.original.averageRating.toFixed(1);
   const reviews = row.original.totalReviews;
   return (
@@ -82,11 +90,11 @@ function RatingCell({ row }: Readonly<CellContext<Book, unknown>>) {
   );
 }
 
-function ActionsCell({ row }: Readonly<CellContext<Book, unknown>>) {
+function ActionsCell({ row }: Readonly<BookCellContext>) {
   return <CellAction book={row.original} />;
 }
 
-export const columns: ColumnDef<Book>[] = [
+export const columns: ColumnDef<typeof backofficeTableFeatures, Book>[] = [
   { accessorKey: "name", header: "Title", cell: TitleCell },
   { accessorKey: "authors", header: "Authors", cell: AuthorsCell },
   { accessorKey: "category", header: "Category", cell: CategoryCell },
