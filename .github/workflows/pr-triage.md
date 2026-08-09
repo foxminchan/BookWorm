@@ -1,6 +1,8 @@
 ---
 description: Automatically triage incoming pull requests by analyzing content and applying appropriate labels
 
+max-daily-ai-credits: -1
+
 on:
   pull_request:
     types: [opened, edited, synchronize]

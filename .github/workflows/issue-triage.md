@@ -1,6 +1,8 @@
 ---
 description: Automatically triage incoming issues by analyzing content and applying appropriate labels
 
+max-daily-ai-credits: -1
+
 on:
   issues:
     types: [opened, edited]

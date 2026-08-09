@@ -21,15 +21,6 @@ The project uses [mise](https://mise.jdx.dev) as the task runner and tool versio
 
 If there is already an instance of the application running it will prompt to stop the existing instance. You only need to restart the application if code in `apphost.cs` is changed, but if you experience problems it can be useful to reset everything to the starting state.
 
-## Local Development Flow
-
-1. **Prerequisites**: [mise](https://mise.jdx.dev) (manages .NET SDK + Bun), Docker for AppHost resources. Run `mise install` once after cloning.
-2. **Restore & build**: `mise run restore` then `mise run build`, or `dotnet restore && dotnet build`.
-3. **Run the system**: Launch Aspire AppHost — inspect the dashboard URL from console output.
-4. **Frontend**: From `src/Clients/`: `bun i`, then `bun run dev`.
-5. **Secrets**: Use User Secrets or environment variables for API keys. Never commit secrets.
-6. **Tests**: `dotnet test` from the solution root or specific test projects.
-
 ## Project Structure
 
 - `src/Aspire/`: Aspire host and service defaults

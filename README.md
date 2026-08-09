@@ -51,8 +51,7 @@
   - [x] Enabled Token Exchange for service-to-service authentication
 - [x] Implemented caching with FusionCache
 - [x] Incorporated AI components:
-  - [x] Text embedding with `text-embedding-3-large`
-  - [x] Integrated chatbot functionality using `gpt-4o-mini`
+  - [x] Use Azure OpenAI for LLM and embeddings
   - [x] Orchestrated multi-agent workflows using Agent Framework
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Enabled agent-to-agent communication via A2A Protocol
@@ -90,17 +89,17 @@
 - [mise](https://mise.jdx.dev/) — tool version manager
 - [Docker](https://www.docker.com/get-started) — container runtime _(must be running before starting the app)_
 - [Aspire CLI](https://aspire.dev/get-started/install-cli/) — app orchestration
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) — Azure auth & deploy
 
 **Optional**
 
 - [Buf CLI](https://docs.buf.build/installation) — gRPC schema & codegen
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) — Azure auth & deploy
 - [Spec-Kit](https://github.com/github/spec-kit) — spec-driven development
 - [GitHub Copilot CLI](https://github.com/github/copilot-cli) — AI-assisted development
 
 > [!NOTE]
 >
-> - **Azure Subscription** is required.
+> - **Azure Subscription** is required for deploying to Azure Container Apps and using Azure OpenAI.
 > - **Email** uses [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
 
 ### Run locally
@@ -115,10 +114,14 @@ cd BookWorm
 # 3. Install tools (.NET SDK, Bun, JDK — skip if already installed globally)
 mise install
 
-# 4. First-time setup
+# 4. Setup Azure subscription and location for deployment
+aspire secret set "Azure:SubscriptionId" "your-subscription-id"
+aspire secret set "Azure:Location" "your-location"
+
+# 5. First-time setup
 mise run prepare
 
-# 5. Start the application
+# 6. Start the application
 mise run run
 ```
 
@@ -126,7 +129,7 @@ mise run run
 >
 > On first run, you'll be prompted to enter the required environment variables.
 
-### Self-Deploy the Azure
+### Self-Deploy to Azure
 
 1. **Authenticate with Azure**
 
@@ -153,7 +156,7 @@ az containerapp show --name <app-name> --resource-group <resource-group> \
 az group delete --name <resource-group> --yes --no-wait
 ```
 
-4. **Clean up resources**:
+5. **Clean up resources**:
 
 To remove all deployed resources and avoid charges:
 

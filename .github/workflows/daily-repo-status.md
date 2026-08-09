@@ -4,8 +4,10 @@ description: |
   activity including open PRs, new issues, merged changes, CI health, and
   contributor activity. Posts a summary issue to help maintainers stay informed.
 
+max-daily-ai-credits: -1
+
 on:
-  schedule: 0 9 * * 1-5
+  schedule: daily around 9am
   workflow_dispatch:
 
 concurrency:
@@ -22,6 +24,7 @@ tools:
     read-only: true
     lockdown: false
     toolsets: [repos, issues, pull_requests, actions]
+  cache-memory:
 
 safe-outputs:
   threat-detection: true
@@ -31,8 +34,6 @@ safe-outputs:
     close-older-issues: true
     max: 1
   noop:
-
-timeout-minutes: 10
 ---
 
 # Daily Repository Status Report

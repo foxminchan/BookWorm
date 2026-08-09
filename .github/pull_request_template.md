@@ -9,6 +9,7 @@
 - [ ] 💥 Breaking change
 - [ ] 📝 Docs
 - [ ] ♻️ Refactor
+- [ ] ⚙️ Dependencies
 
 ## Checklist
 

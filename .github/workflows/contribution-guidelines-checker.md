@@ -5,6 +5,8 @@ description: |
   labels the PR as ready or provides constructive feedback on what needs to be
   improved to meet the guidelines.
 
+max-daily-ai-credits: -1
+
 on:
   pull_request:
     types: [opened, edited, synchronize]
