@@ -7,6 +7,7 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
+    <PackageReference Include="Asp.Versioning.Grpc" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />

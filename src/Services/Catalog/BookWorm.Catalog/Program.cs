@@ -36,7 +36,7 @@ var apiVersionSet = app.NewApiVersionSet()
 
 app.MapEndpoints(apiVersionSet);
 
-app.MapGrpcService<BookService>();
+app.NewVersionedApi("Catalog gRPC").MapGrpcService<BookService>().HasApiVersion(ApiVersions.V1);
 
 app.MapGrpcHealthChecksService();
 

@@ -12,6 +12,7 @@ internal static class Extensions
         {
             var services = builder.Services;
 
+            services.AddApiVersioning().AddGrpc();
             services.AddGrpc(options =>
             {
                 options.EnableDetailedErrors = builder.Environment.IsDevelopment();

@@ -46,7 +46,7 @@
     />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.11.13" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.15" />
     <PackageVersion
       Include="Aspire.Hosting.AgentFramework.DevUI"
       Version="$(AgentFrameworkUnstableVersion)"
@@ -66,7 +66,8 @@
       Version="$(MsExtVersion)"
     />
     <!-- ASP.NET Core -->
-    <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.2.1" />
+    <PackageVersion Include="Asp.Versioning.Grpc" Version="10.2.0-preview.1" />
+    <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.2.2" />
     <PackageVersion
       Include="Microsoft.AspNetCore.Diagnostics.Middleware"
       Version="$(MsExtVersion)"
@@ -117,7 +118,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="15.0.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="15.1.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
@@ -141,7 +142,7 @@
     <PackageVersion Include="Mjml.Net" Version="4.14.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.1.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageVersion
       Include="ZiggyCreatures.FusionCache.OpenTelemetry"
       Version="$(FusionCacheVersion)"
@@ -166,7 +167,7 @@
     <PackageVersion Include="Verify.Wolverine" Version="3.1.0" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <!-- Microsoft Testing Platform -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.10.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="$(MsTestVersion)" />

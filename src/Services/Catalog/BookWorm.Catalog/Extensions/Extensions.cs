@@ -73,6 +73,7 @@ internal static class Extensions
 
             builder.AddRateLimiting();
 
+            services.AddApiVersioning().AddGrpc();
             services.AddGrpc(options =>
             {
                 options.EnableDetailedErrors = builder.Environment.IsDevelopment();

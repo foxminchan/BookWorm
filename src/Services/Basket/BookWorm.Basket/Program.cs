@@ -36,7 +36,7 @@ var apiVersionSet = app.NewApiVersionSet()
 
 app.MapEndpoints(apiVersionSet, "baskets");
 
-app.MapGrpcService<BasketService>();
+app.NewVersionedApi("Basket gRPC").MapGrpcService<BasketService>().HasApiVersion(ApiVersions.V1);
 
 app.MapGrpcHealthChecksService();
 
