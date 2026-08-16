@@ -45,7 +45,7 @@ internal sealed class CreateOrderHandler(
 
                 Guard.Against.NotFound(book, item.Id);
 
-                var bookPrice = book.PriceSale ?? book.Price;
+                decimal? bookPrice = book.PriceSale ?? book.Price;
 
                 return new OrderItem(
                     Guid.Parse(book.Id),
