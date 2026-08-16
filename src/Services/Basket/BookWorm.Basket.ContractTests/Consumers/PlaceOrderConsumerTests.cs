@@ -36,9 +36,9 @@ public sealed class PlaceOrderConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvents(
-            bus.AllOutgoing.Select(e => ((Envelope)e).Message).ToList()
-        );
+        await SnapshotTestHelper.VerifyCloudEvents([
+            .. bus.AllOutgoing.Select(e => ((Envelope)e).Message),
+        ]);
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 }

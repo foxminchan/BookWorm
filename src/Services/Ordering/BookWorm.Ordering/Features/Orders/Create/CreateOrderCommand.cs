@@ -47,7 +47,11 @@ internal sealed class CreateOrderHandler(
 
                 var bookPrice = book.PriceSale ?? book.Price;
 
-                return new OrderItem(Guid.Parse(book.Id), item.Quantity, (decimal)bookPrice!);
+                return new OrderItem(
+                    Guid.Parse(book.Id),
+                    item.Quantity,
+                    Convert.ToDecimal(bookPrice)
+                );
             }),
         ];
 

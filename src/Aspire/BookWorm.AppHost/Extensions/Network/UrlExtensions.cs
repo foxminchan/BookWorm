@@ -27,7 +27,7 @@ internal static class UrlExtensions
 
                 var endpoint = endpointNames
                     .Where(name => name is not null)
-                    .Select(c.GetEndpoint!)
+                    .Select(name => c.GetEndpoint(name ?? string.Empty))
                     .FirstOrDefault(e => e?.Exists ?? false);
 
                 if (endpoint is null)

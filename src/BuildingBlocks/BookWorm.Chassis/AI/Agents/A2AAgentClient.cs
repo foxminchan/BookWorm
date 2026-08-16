@@ -67,7 +67,7 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
             Timeout = TimeSpan.FromMinutes(2),
         };
 
-        var endpointUrl = new Uri(httpClient.BaseAddress!, $"/{path?.TrimStart('/')}/{agentName}");
+        var endpointUrl = new Uri(httpClient.BaseAddress, $"/{path?.TrimStart('/')}/{agentName}");
 
         var card = new AgentCard
         {

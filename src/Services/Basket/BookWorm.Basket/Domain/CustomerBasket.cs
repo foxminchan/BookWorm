@@ -16,7 +16,7 @@ public sealed class CustomerBasket() : AuditableEntity<string>
         Id = id ?? throw new BasketDomainException("Customer ID cannot be null.");
         _basketItems =
             items.Count > 0
-                ? items.ToList()
+                ? [.. items]
                 : throw new BasketDomainException("Basket must contain at least one item.");
     }
 

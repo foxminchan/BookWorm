@@ -35,10 +35,12 @@ internal sealed class OrderEvaluator : IEvaluator
             (queryable, orderExpression) =>
                 orderExpression!.OrderType switch
                 {
-                    OrderType.OrderBy => queryable?.OrderBy(orderExpression.KeySelector),
-                    OrderType.OrderByDescending => queryable?.OrderByDescending(
-                        orderExpression.KeySelector
-                    ),
+                    OrderType.OrderBy => queryable is null
+                        ? query.OrderBy(orderExpression.KeySelector)
+                        : queryable.ThenBy(orderExpression.KeySelector),
+                    OrderType.OrderByDescending => queryable is null
+                        ? query.OrderByDescending(orderExpression.KeySelector)
+                        : queryable.ThenByDescending(orderExpression.KeySelector),
                     OrderType.ThenBy => queryable?.ThenBy(orderExpression.KeySelector),
                     OrderType.ThenByDescending => queryable?.ThenByDescending(
                         orderExpression.KeySelector

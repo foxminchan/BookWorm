@@ -138,9 +138,9 @@ public sealed class GetOrderQueryTests
         SetupAdminUser();
 
         var orderItems = _order.OrderItems.ToList();
-        for (var i = 0; i < orderItems.Count; i++)
+        foreach (var orderItem in orderItems)
         {
-            orderItems[i].Id = Guid.CreateVersion7();
+            orderItem.Id = Guid.CreateVersion7();
         }
 
         _orderRepositoryMock
@@ -184,9 +184,9 @@ public sealed class GetOrderQueryTests
         SetupAdminUser();
 
         var orderItems = _order.OrderItems.ToList();
-        for (var i = 0; i < orderItems.Count; i++)
+        foreach (var orderItem in orderItems)
         {
-            orderItems[i].Id = Guid.CreateVersion7();
+            orderItem.Id = Guid.CreateVersion7();
         }
 
         _orderRepositoryMock

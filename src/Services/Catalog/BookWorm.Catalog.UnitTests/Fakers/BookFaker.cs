@@ -28,7 +28,7 @@ public sealed class BookFaker : Faker<Book>
                 f.Random.Bool(0.3f) ? decimal.Parse(f.Commerce.Price(1, 80)) : null,
                 f.PickRandom(categories).Id,
                 f.PickRandom(publishers).Id,
-                [.. f.Random.ArrayElements(authors.Select(a => a.Id).ToArray(), f.Random.Int(1, 3))]
+                [.. f.Random.ArrayElements([.. authors.Select(a => a.Id)], f.Random.Int(1, 3))]
             )
         );
     }

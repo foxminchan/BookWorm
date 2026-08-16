@@ -2,10 +2,10 @@
 
 ## General recommendations for working with Aspire
 
-1. Before making any changes always run the apphost using `aspire run` and inspect the state of resources to make sure you are building from a known state.
-1. Changes to the _AppHost.cs_ file will require a restart of the application to take effect.
-1. Make changes incrementally and run the aspire application using the `aspire run` command to validate changes.
-1. Use the Aspire MCP tools to check the status of resources and debug issues.
+1. Do not start or run the Aspire AppHost unless the user explicitly asks you to do so.
+1. Validate routine changes with the smallest relevant build, test, lint, or type-check command instead.
+1. If the user explicitly requests Aspire validation, use the Aspire CLI and MCP tools to inspect resource status and debug issues.
+1. Changes to _AppHost.cs_ require restarting the application when Aspire is already running or when the user requests Aspire validation.
 
 ## Getting Started
 
