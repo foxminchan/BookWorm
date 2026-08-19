@@ -69,6 +69,8 @@ internal static class BookAgentRegistration
                         {
                             Name = key,
                             Description = BookAgentDefinition.Description,
+                            // Catalog tools are read-only queries, safe to run concurrently.
+                            AllowConcurrentInvocation = true,
                             AIContextProviders =
                             [
                                 skillsProvider,

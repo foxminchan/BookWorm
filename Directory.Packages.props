@@ -103,7 +103,7 @@
     />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.OpenAI"
-      Version="$(AgentFrameworkVersion)-alpha.260804.1"
+      Version="$(AgentFrameworkVersion)-alpha.260818.1"
     />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
@@ -118,7 +118,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="15.1.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="15.2.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">

@@ -88,7 +88,6 @@
 
 - [mise](https://mise.jdx.dev/) — tool version manager
 - [Docker](https://www.docker.com/get-started) — container runtime _(must be running before starting the app)_
-- [Aspire CLI](https://aspire.dev/get-started/install-cli/) — app orchestration
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) — Azure auth & deploy
 
 **Optional**

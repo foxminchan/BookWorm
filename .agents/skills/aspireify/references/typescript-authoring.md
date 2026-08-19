@@ -146,10 +146,12 @@ await builder
   .publishAsStaticWebsite({ apiPath: "/api", apiTarget: api });
 
 // Pre-bundled Node server (TanStack Start, SvelteKit)
-await builder.addViteApp("web", "../web").publishAsNodeServer({
-  entryPoint: ".output/server/index.mjs",
-  outputPath: ".output",
-});
+await builder
+  .addViteApp("web", "../web")
+  .publishAsNodeServer({
+    entryPoint: ".output/server/index.mjs",
+    outputPath: ".output",
+  });
 
 // package-script SSR (Remix, Astro, full Nitro Next.js)
 await builder

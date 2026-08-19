@@ -1,0 +1,51 @@
+name: Setup Aspire CLI
+description: >-
+  Resolve the Aspire version pinned in Directory.Build.props, install the
+  matching Aspire CLI, and verify the installed version matches
+author: BookWorm Team
+
+branding:
+  icon: terminal
+  color: purple
+
+inputs:
+  directory-build-props:
+    description: Path to the Directory.Build.props file that pins the AspireVersion property
+    required: false
+    default: Directory.Build.props
+
+outputs:
+  version:
+    description: The resolved Aspire version that was installed
+    value: ${{ steps.aspire-version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: 🔍 Resolve Aspire version
+      shell: bash
+      id: aspire-version
+      run: |
+        ASPIRE_VERSION="$(dotnet msbuild "$INPUT_DIRECTORY_BUILD_PROPS" -nologo -v:q -getProperty:AspireVersion)"
+        echo "version=${ASPIRE_VERSION}" >> "$GITHUB_OUTPUT"
+      env:
+        INPUT_DIRECTORY_BUILD_PROPS: ${{ inputs.directory-build-props }}
+
+    - name: 🛠️ Install Aspire CLI
+      uses: timheuer/setup-aspire@fec3fa825218461aa07fed28fa97a600d5d88b14 # v0.1.0
+      with:
+        version: ${{ steps.aspire-version.outputs.version }}
+
+    - name: ✅ Verify Aspire CLI version
+      shell: bash
+      env:
+        EXPECTED_ASPIRE_CLI_VERSION: ${{ steps.aspire-version.outputs.version }}
+      run: |
+        INSTALLED_ASPIRE_CLI_VERSION="$(aspire --version)"
+        case "${INSTALLED_ASPIRE_CLI_VERSION}" in
+          "${EXPECTED_ASPIRE_CLI_VERSION}"|"${EXPECTED_ASPIRE_CLI_VERSION}"+*) ;;
+          *)
+            echo "Expected Aspire CLI version ${EXPECTED_ASPIRE_CLI_VERSION}, but found ${INSTALLED_ASPIRE_CLI_VERSION}."
+            exit 1
+            ;;
+        esac
