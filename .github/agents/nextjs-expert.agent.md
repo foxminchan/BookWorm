@@ -2,9 +2,10 @@
 name: Next.js Expert
 description: Implement, debug, and optimize Next.js 16 App Router code with TypeScript, Server/Client Components, Cache Components, and Turbopack
 model:
-  - Claude Opus 4.7 (copilot)
+  - Claude Fable 5 (copilot)
+  - Claude Opus 4.8 (copilot)
   - Claude Sonnet 4.6 (copilot)
-  - GPT-5.3-Codex
+  - GPT-5.6 Sol (copilot)
 tools:
   - search
   - web/fetch
