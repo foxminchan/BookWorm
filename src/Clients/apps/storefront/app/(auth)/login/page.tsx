@@ -9,8 +9,8 @@ import { signIn } from "@/lib/auth-client";
 export default function LoginPage() {
   useEffect(() => {
     const login = async () => {
-      await signIn.oauth2({
-        providerId: "keycloak",
+      await signIn.social({
+        provider: "keycloak",
         callbackURL: "/",
       });
     };
