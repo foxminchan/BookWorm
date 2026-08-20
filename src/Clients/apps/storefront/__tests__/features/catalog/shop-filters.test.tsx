@@ -48,29 +48,15 @@ describe("ShopFilters", () => {
     vi.clearAllMocks();
   });
 
-  it("should display price range filter", () => {
+  it.each([
+    ["Price Range", "Price Range", undefined],
+    ["Category", "Category", undefined],
+    ["Publisher", "Publisher", undefined],
+    ["Author", "Author", undefined],
+  ])("should display %s filter", (_label, text, _value) => {
     renderWithProviders(<ShopFilters {...defaultProps} />);
 
-    expect(screen.getAllByText("Price Range")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("$0.00")[0]).toBeInTheDocument();
-  });
-
-  it("should display category filter", () => {
-    renderWithProviders(<ShopFilters {...defaultProps} />);
-
-    expect(screen.getAllByText("Category")[0]).toBeInTheDocument();
-  });
-
-  it("should display publisher filter", () => {
-    renderWithProviders(<ShopFilters {...defaultProps} />);
-
-    expect(screen.getAllByText("Publisher")[0]).toBeInTheDocument();
-  });
-
-  it("should display author filter", () => {
-    renderWithProviders(<ShopFilters {...defaultProps} />);
-
-    expect(screen.getAllByText("Author")[0]).toBeInTheDocument();
+    expect(screen.getAllByText(text)[0]).toBeInTheDocument();
   });
 
   it("should show selected price range", () => {

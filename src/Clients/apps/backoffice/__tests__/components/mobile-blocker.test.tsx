@@ -36,8 +36,29 @@ describe("MobileBlocker", () => {
     vi.restoreAllMocks();
   });
 
-  it("should render children on desktop (width >= 1024px)", () => {
-    mockMatchMedia(false);
+  it.each([
+    {
+      name: "desktop width (>= 1024px)",
+      matches: false,
+      shouldRenderChildren: true,
+    },
+    {
+      name: "mobile width (< 1024px)",
+      matches: true,
+      shouldRenderChildren: false,
+    },
+    {
+      name: "small tablet width (800px)",
+      matches: true,
+      shouldRenderChildren: false,
+    },
+    {
+      name: "exact desktop breakpoint (1024px)",
+      matches: false,
+      shouldRenderChildren: true,
+    },
+  ])("should handle $name", ({ matches, shouldRenderChildren }) => {
+    mockMatchMedia(matches);
 
     render(
       <MobileBlocker>
@@ -45,18 +66,11 @@ describe("MobileBlocker", () => {
       </MobileBlocker>,
     );
 
-    expect(screen.getByText("Desktop Content")).toBeInTheDocument();
-    expect(screen.queryByText("Desktop Only")).not.toBeInTheDocument();
-  });
-
-  it("should show mobile blocker message on mobile (width < 1024px)", () => {
-    mockMatchMedia(true);
-
-    render(
-      <MobileBlocker>
-        <div>Desktop Content</div>
-      </MobileBlocker>,
-    );
+    if (shouldRenderChildren) {
+      expect(screen.getByText("Desktop Content")).toBeInTheDocument();
+      expect(screen.queryByText("Desktop Only")).not.toBeInTheDocument();
+      return;
+    }
 
     expect(screen.getByText("Desktop Only")).toBeInTheDocument();
     expect(
@@ -69,45 +83,6 @@ describe("MobileBlocker", () => {
         /Please access this portal from a device with a screen width of at least 1024px/,
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Desktop Content")).not.toBeInTheDocument();
-  });
-
-  it("should show mobile blocker on small tablet (width = 800px)", () => {
-    mockMatchMedia(true);
-
-    render(
-      <MobileBlocker>
-        <div>Desktop Content</div>
-      </MobileBlocker>,
-    );
-
-    expect(screen.getByText("Desktop Only")).toBeInTheDocument();
-    expect(screen.queryByText("Desktop Content")).not.toBeInTheDocument();
-  });
-
-  it("should render children on exactly 1024px width", () => {
-    mockMatchMedia(false);
-
-    render(
-      <MobileBlocker>
-        <div>Desktop Content</div>
-      </MobileBlocker>,
-    );
-
-    expect(screen.getByText("Desktop Content")).toBeInTheDocument();
-    expect(screen.queryByText("Desktop Only")).not.toBeInTheDocument();
-  });
-
-  it("should show mobile blocker on 1023px width", () => {
-    mockMatchMedia(true);
-
-    render(
-      <MobileBlocker>
-        <div>Desktop Content</div>
-      </MobileBlocker>,
-    );
-
-    expect(screen.getByText("Desktop Only")).toBeInTheDocument();
     expect(screen.queryByText("Desktop Content")).not.toBeInTheDocument();
   });
 

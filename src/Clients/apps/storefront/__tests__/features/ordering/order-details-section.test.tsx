@@ -13,24 +13,57 @@ describe("OrderDetailsSection", () => {
     buyerAddress: "123 Main St, New York, NY 10001",
   };
 
-  it("should display shipping address heading", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
+  it.each([
+    [
+      "Shipping Address heading",
+      <OrderDetailsSection {...defaultProps} />,
+      "Shipping Address",
+    ],
+    ["buyer name", <OrderDetailsSection {...defaultProps} />, "John Doe"],
+    [
+      "buyer address",
+      <OrderDetailsSection {...defaultProps} />,
+      "123 Main St, New York, NY 10001",
+    ],
+    [
+      "order status heading",
+      <OrderDetailsSection {...defaultProps} />,
+      "Order Status",
+    ],
+    [
+      "status badge text",
+      <OrderDetailsSection {...defaultProps} />,
+      "Completed",
+    ],
+    [
+      "different status text",
+      <OrderDetailsSection {...defaultProps} status="New" />,
+      "New",
+    ],
+    [
+      "order total heading",
+      <OrderDetailsSection {...defaultProps} />,
+      "Order Total",
+    ],
+    [
+      "formatted total price",
+      <OrderDetailsSection {...defaultProps} />,
+      "$59.98",
+    ],
+    [
+      "amount paid label",
+      <OrderDetailsSection {...defaultProps} />,
+      "Amount Paid",
+    ],
+    [
+      "current status label",
+      <OrderDetailsSection {...defaultProps} />,
+      "Current Status",
+    ],
+  ])("should display %s", (_label, element, text) => {
+    renderWithProviders(element);
 
-    expect(screen.getByText("Shipping Address")).toBeInTheDocument();
-  });
-
-  it("should display buyer name", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
-  });
-
-  it("should display buyer address", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(
-      screen.getByText("123 Main St, New York, NY 10001"),
-    ).toBeInTheDocument();
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   it("should display 'No address set' when address is missing", () => {
@@ -43,47 +76,5 @@ describe("OrderDetailsSection", () => {
     );
 
     expect(screen.getByText("No address set")).toBeInTheDocument();
-  });
-
-  it("should display order status heading", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(screen.getByText("Order Status")).toBeInTheDocument();
-  });
-
-  it("should display status badge with status text", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(screen.getByText("Completed")).toBeInTheDocument();
-  });
-
-  it("should display different status values", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} status="New" />);
-
-    expect(screen.getByText("New")).toBeInTheDocument();
-  });
-
-  it("should display order total heading", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(screen.getByText("Order Total")).toBeInTheDocument();
-  });
-
-  it("should display formatted total price", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(screen.getByText("$59.98")).toBeInTheDocument();
-  });
-
-  it("should display amount paid label", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(screen.getByText("Amount Paid")).toBeInTheDocument();
-  });
-
-  it("should display current status label", () => {
-    renderWithProviders(<OrderDetailsSection {...defaultProps} />);
-
-    expect(screen.getByText("Current Status")).toBeInTheDocument();
   });
 });
