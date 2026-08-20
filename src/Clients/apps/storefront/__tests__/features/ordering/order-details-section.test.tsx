@@ -16,48 +16,56 @@ describe("OrderDetailsSection", () => {
   it.each([
     [
       "Shipping Address heading",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="Shipping Address heading" {...defaultProps} />,
       "Shipping Address",
     ],
-    ["buyer name", <OrderDetailsSection {...defaultProps} />, "John Doe"],
+    [
+      "buyer name",
+      <OrderDetailsSection key="buyer name" {...defaultProps} />,
+      "John Doe",
+    ],
     [
       "buyer address",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="buyer address" {...defaultProps} />,
       "123 Main St, New York, NY 10001",
     ],
     [
       "order status heading",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="order status heading" {...defaultProps} />,
       "Order Status",
     ],
     [
       "status badge text",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="status badge text" {...defaultProps} />,
       "Completed",
     ],
     [
       "different status text",
-      <OrderDetailsSection {...defaultProps} status="New" />,
+      <OrderDetailsSection
+        key="different status text"
+        {...defaultProps}
+        status="New"
+      />,
       "New",
     ],
     [
       "order total heading",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="order total heading" {...defaultProps} />,
       "Order Total",
     ],
     [
       "formatted total price",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="formatted total price" {...defaultProps} />,
       "$59.98",
     ],
     [
       "amount paid label",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="amount paid label" {...defaultProps} />,
       "Amount Paid",
     ],
     [
       "current status label",
-      <OrderDetailsSection {...defaultProps} />,
+      <OrderDetailsSection key="current status label" {...defaultProps} />,
       "Current Status",
     ],
   ])("should display %s", (_label, element, text) => {
