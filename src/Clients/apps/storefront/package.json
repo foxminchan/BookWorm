@@ -20,6 +20,9 @@
     "url": "https://github.com/foxminchan/BookWorm/issues"
   },
   "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -46,8 +49,8 @@
   },
   "dependencies": {
     "@ag-ui/client": "^0.0.58",
-    "@copilotkit/react-core": "^1.68.3",
-    "@copilotkit/runtime": "^1.68.3",
+    "@copilotkit/react-core": "^1.69.0",
+    "@copilotkit/runtime": "^1.69.0",
     "@hookform/resolvers": "^5.9.1",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-query": "^5.101.4",
@@ -68,12 +71,12 @@
     "jotai": "^2.20.2",
     "jotai-tanstack-query": "^0.11.0",
     "lucide-react": "^1.33.0",
-    "next": "^16.3.1",
+    "next": "^16.3.2",
     "next-themes": "^0.4.6",
     "openai": "^7.5.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-hook-form": "^7.85.0",
+    "react-hook-form": "^7.86.0",
     "shiki": "^4.4.3",
     "tailwind-merge": "^3.6.0",
     "ts-pattern": "^5.9.0",
@@ -87,7 +90,7 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.5",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
@@ -99,7 +102,7 @@
     "allure": "^3.15.0",
     "allure-playwright": "^3.10.2",
     "allure-vitest": "^3.10.2",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "fast-check": "^4.9.0",
     "happy-dom": "^20.11.6",

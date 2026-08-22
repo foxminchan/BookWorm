@@ -20,6 +20,9 @@
     "url": "https://github.com/foxminchan/BookWorm/issues"
   },
   "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "exports": {
     "./base": "./base.js",
     "./next-js": "./next.js",
@@ -27,10 +30,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@next/eslint-plugin-next": "^16.3.1",
+    "@next/eslint-plugin-next": "^16.3.2",
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.67.0",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-only-warn": "^1.2.1",
     "eslint-plugin-react": "^7.37.5",
