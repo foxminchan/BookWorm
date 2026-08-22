@@ -10,37 +10,24 @@ import {
 
 describe("format utils", () => {
   describe("formatPrice", () => {
-    it("should format price with dollar sign", () => {
-      expect(formatPrice(19.99)).toBe("$19.99");
-    });
-
-    it("should format whole numbers", () => {
-      expect(formatPrice(50)).toBe("$50.00");
-    });
-
-    it("should format large numbers with commas", () => {
-      expect(formatPrice(1234.56)).toBe("$1,234.56");
-    });
-
-    it("should handle zero", () => {
-      expect(formatPrice(0)).toBe("$0.00");
-    });
-
-    it("should handle negative numbers", () => {
-      expect(formatPrice(-15.5)).toBe("-$15.50");
+    it.each([
+      ["price with dollar sign", 19.99, "$19.99"],
+      ["whole numbers", 50, "$50.00"],
+      ["large numbers with commas", 1234.56, "$1,234.56"],
+      ["zero", 0, "$0.00"],
+      ["negative numbers", -15.5, "-$15.50"],
+    ])("should %s", (_label, value, expected) => {
+      expect(formatPrice(value)).toBe(expected);
     });
   });
 
   describe("formatDate", () => {
-    it("should format date string", () => {
-      const result = formatDate("2024-01-15");
-      expect(result).toBe("January 15, 2024");
-    });
-
-    it("should format Date object", () => {
-      const date = new Date("2024-12-25");
-      const result = formatDate(date);
-      expect(result).toBe("December 25, 2024");
+    it.each([
+      ["date string", "2024-01-15", "January 15, 2024"],
+      ["Date object", new Date("2024-12-25"), "December 25, 2024"],
+    ])("should %s", (_label, value, expected) => {
+      const result = formatDate(value as string | Date);
+      expect(result).toBe(expected);
     });
 
     it("should handle ISO date strings", () => {
@@ -51,84 +38,55 @@ describe("format utils", () => {
   });
 
   describe("formatCompactDate", () => {
-    it("should format date in compact style", () => {
-      const result = formatCompactDate("2024-01-15");
-      expect(result).toBe("Jan 15, 2024");
-    });
-
-    it("should format Date object compactly", () => {
-      const date = new Date("2024-12-25");
-      const result = formatCompactDate(date);
-      expect(result).toBe("Dec 25, 2024");
-    });
-
-    it("should use abbreviated month names", () => {
-      const result = formatCompactDate("2024-09-01");
-      expect(result).toBe("Sep 1, 2024");
+    it.each([
+      ["date in compact style", "2024-01-15", "Jan 15, 2024"],
+      ["Date object compactly", new Date("2024-12-25"), "Dec 25, 2024"],
+      ["abbreviated month names", "2024-09-01", "Sep 1, 2024"],
+    ])("should %s", (_label, value, expected) => {
+      const result = formatCompactDate(value as string | Date);
+      expect(result).toBe(expected);
     });
   });
 
   describe("truncateText", () => {
-    it("should truncate long text", () => {
-      const text = "This is a very long text that needs to be truncated";
-      const result = truncateText(text, 20);
-      expect(result).toBe("This is a very long...");
-    });
-
-    it("should not truncate short text", () => {
-      const text = "Short text";
-      const result = truncateText(text, 20);
-      expect(result).toBe("Short text");
-    });
-
-    it("should handle exact length", () => {
-      const text = "Exactly 20 chars txt";
-      const result = truncateText(text, 20);
-      expect(result).toBe("Exactly 20 chars txt");
-    });
-
-    it("should trim whitespace before adding ellipsis", () => {
-      const text = "Text with spaces   that needs truncation";
-      const result = truncateText(text, 16);
-      expect(result).toBe("Text with spaces...");
-    });
-
-    it("should handle very short maxLength", () => {
-      const text = "Hello World";
-      const result = truncateText(text, 5);
-      expect(result).toBe("Hello...");
+    it.each([
+      [
+        "truncate long text",
+        "This is a very long text that needs to be truncated",
+        20,
+        "This is a very long...",
+      ],
+      ["not truncate short text", "Short text", 20, "Short text"],
+      [
+        "handle exact length",
+        "Exactly 20 chars txt",
+        20,
+        "Exactly 20 chars txt",
+      ],
+      [
+        "trim whitespace before adding ellipsis",
+        "Text with spaces   that needs truncation",
+        16,
+        "Text with spaces...",
+      ],
+      ["handle very short maxLength", "Hello World", 5, "Hello..."],
+    ])("should %s", (_label, text, maxLength, expected) => {
+      const result = truncateText(text, maxLength);
+      expect(result).toBe(expected);
     });
   });
 
   describe("calculateDiscount", () => {
-    it("should calculate percentage discount", () => {
-      const result = calculateDiscount(100, 75);
-      expect(result).toBe(25);
-    });
-
-    it("should calculate 50% discount", () => {
-      const result = calculateDiscount(50, 25);
-      expect(result).toBe(50);
-    });
-
-    it("should round to nearest integer", () => {
-      const result = calculateDiscount(100, 66.67);
-      expect(result).toBe(33);
-    });
-
-    it("should handle zero discount", () => {
-      const result = calculateDiscount(50, 50);
-      expect(result).toBe(0);
-    });
-
-    it("should handle small discounts", () => {
-      const result = calculateDiscount(100, 99);
-      expect(result).toBe(1);
-    });
-
-    it("should handle large discounts", () => {
-      const result = calculateDiscount(100, 10);
-      expect(result).toBe(90);
+    it.each([
+      ["calculate percentage discount", 100, 75, 25],
+      ["calculate 50% discount", 50, 25, 50],
+      ["round to nearest integer", 100, 66.67, 33],
+      ["handle zero discount", 50, 50, 0],
+      ["handle small discounts", 100, 99, 1],
+      ["handle large discounts", 100, 10, 90],
+    ])("should %s", (_label, originalPrice, discountedPrice, expected) => {
+      const result = calculateDiscount(originalPrice, discountedPrice);
+      expect(result).toBe(expected);
     });
   });
 });

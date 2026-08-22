@@ -20,6 +20,9 @@
     "url": "https://github.com/foxminchan/BookWorm/issues"
   },
   "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -45,7 +48,7 @@
     "allure:serve": "allure serve allure-results"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.9.0",
+    "@hookform/resolvers": "^5.9.1",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-table": "^9.1.2",
@@ -57,14 +60,14 @@
     "@workspace/ui": "workspace:*",
     "@workspace/utils": "workspace:*",
     "@workspace/validations": "workspace:*",
-    "better-auth": "^1.6.29",
+    "better-auth": "^1.7.1",
     "date-fns": "^4.4.0",
-    "lucide-react": "^1.31.0",
-    "next": "^16.3.1",
+    "lucide-react": "^1.33.0",
+    "next": "^16.3.2",
     "next-themes": "^0.4.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-hook-form": "^7.85.0",
+    "react-hook-form": "^7.86.0",
     "recharts": "^3.10.1",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.6.0",
@@ -79,25 +82,25 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.4",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.0.5",
-    "@vitest/coverage-v8": "^4.1.10",
-    "@vitest/ui": "^4.1.10",
+    "@vitejs/plugin-react": "^6.1.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/ui": "^4.1.11",
     "@workspace/eslint-config": "workspace:^",
     "@workspace/typescript-config": "workspace:*",
     "allure": "^3.15.0",
     "allure-playwright": "^3.10.2",
     "allure-vitest": "^3.10.2",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
-    "happy-dom": "^20.11.2",
+    "happy-dom": "^20.11.6",
     "playwright-bdd": "^9.2.0",
     "typescript": "npm:typescript@^6.0.3",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.10"
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
   },
   "msw": {
     "workerDirectory": [

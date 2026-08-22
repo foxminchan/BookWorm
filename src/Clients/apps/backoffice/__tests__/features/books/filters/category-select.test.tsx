@@ -18,26 +18,40 @@ describe("CategorySelect", () => {
     createMockCategory({ name: "Science" }),
   ];
 
-  it("renders category label", () => {
+  it.each([
+    {
+      name: "category label",
+      categories: mockCategories,
+      value: undefined,
+      expectedText: "Category",
+    },
+    {
+      name: "placeholder",
+      categories: mockCategories,
+      value: undefined,
+      expectedText: "All Categories",
+    },
+    {
+      name: "empty categories list",
+      categories: [],
+      value: undefined,
+      expectedText: "All Categories",
+    },
+    {
+      name: "undefined categories data",
+      categories: undefined,
+      value: undefined,
+      expectedText: "All Categories",
+    },
+  ])("renders $name", ({ categories, value, expectedText }) => {
     mockUseCategories.mockReturnValue({
-      data: mockCategories,
+      data: categories,
       isLoading: false,
     });
 
-    render(<CategorySelect value={undefined} onChange={vi.fn()} />);
+    render(<CategorySelect value={value} onChange={vi.fn()} />);
 
-    expect(screen.getByText("Category")).toBeInTheDocument();
-  });
-
-  it("renders select with placeholder", () => {
-    mockUseCategories.mockReturnValue({
-      data: mockCategories,
-      isLoading: false,
-    });
-
-    render(<CategorySelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("All Categories")).toBeInTheDocument();
+    expect(screen.getByText(expectedText)).toBeInTheDocument();
   });
 
   it("displays selected category", () => {
@@ -49,30 +63,7 @@ describe("CategorySelect", () => {
     render(<CategorySelect value={mockCategories[0]!.id} onChange={vi.fn()} />);
 
     const select = screen.getByRole("combobox");
-    // Verify the select is rendered (Radix UI controls the text display internally)
     expect(select).toBeInTheDocument();
-  });
-
-  it("handles empty categories list", () => {
-    mockUseCategories.mockReturnValue({
-      data: [],
-      isLoading: false,
-    });
-
-    render(<CategorySelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("All Categories")).toBeInTheDocument();
-  });
-
-  it("handles undefined categories data", () => {
-    mockUseCategories.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-    });
-
-    render(<CategorySelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("All Categories")).toBeInTheDocument();
   });
 
   it("has proper label association", () => {
@@ -118,16 +109,5 @@ describe("CategorySelect", () => {
     await user.click(select);
 
     expect(onChange).toBeDefined();
-  });
-
-  it("displays category label", () => {
-    mockUseCategories.mockReturnValue({
-      data: mockCategories,
-      isLoading: false,
-    });
-
-    render(<CategorySelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("Category")).toBeInTheDocument();
   });
 });

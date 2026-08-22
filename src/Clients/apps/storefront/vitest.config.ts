@@ -114,23 +114,35 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./"),
-      "@workspace/ui": path.resolve(__dirname, "../../packages/ui/src"),
+      "@": path.resolve(import.meta.dirname, "./"),
+      "@workspace/ui": path.resolve(
+        import.meta.dirname,
+        "../../packages/ui/src",
+      ),
       "@workspace/api-hooks": path.resolve(
-        __dirname,
+        import.meta.dirname,
         "../../packages/api-hooks/src",
       ),
-      "@workspace/types": path.resolve(__dirname, "../../packages/types/src"),
+      "@workspace/types": path.resolve(
+        import.meta.dirname,
+        "../../packages/types/src",
+      ),
       "@workspace/api-client": path.resolve(
-        __dirname,
+        import.meta.dirname,
         "../../packages/api-client/src",
       ),
       "@workspace/validations": path.resolve(
-        __dirname,
+        import.meta.dirname,
         "../../packages/validations/src",
       ),
-      "@workspace/mocks": path.resolve(__dirname, "../../packages/mocks/src"),
-      "@workspace/utils": path.resolve(__dirname, "../../packages/utils/src"),
+      "@workspace/mocks": path.resolve(
+        import.meta.dirname,
+        "../../packages/mocks/src",
+      ),
+      "@workspace/utils": path.resolve(
+        import.meta.dirname,
+        "../../packages/utils/src",
+      ),
     },
   },
 });

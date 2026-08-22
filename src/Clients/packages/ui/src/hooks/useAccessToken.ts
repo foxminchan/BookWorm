@@ -10,8 +10,11 @@ import { AUTH } from "@workspace/utils/constants";
  * Only the subset of the Better Auth client used by this hook.
  */
 type AuthClientLike = {
+  listAccounts(): Promise<{
+    data?: { id: string; providerId: string }[] | null;
+  }>;
   getAccessToken(opts: {
-    providerId: string;
+    accountId: string;
   }): Promise<{ data?: { accessToken?: string } | null }>;
 };
 
@@ -45,8 +48,17 @@ export function useAccessToken(
     }
 
     try {
+      const { data: accounts } = await authClient.listAccounts();
+      const account = accounts?.find(
+        (account) => account.providerId === AUTH.PROVIDER,
+      );
+
+      if (!account) {
+        return null;
+      }
+
       const { data } = await authClient.getAccessToken({
-        providerId: AUTH.PROVIDER,
+        accountId: account.id,
       });
 
       return data?.accessToken ?? null;
