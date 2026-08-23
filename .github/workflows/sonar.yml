@@ -135,16 +135,7 @@ jobs:
           --no-incremental
           -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
-      - name: 🤖 Start AIMock server
-        uses: CopilotKit/aimock@9096f39ea31e0a3393817b6fa01e0adccf0940e5 # v1.39.0
-        id: aimock
-        with:
-          config: tests/BookWorm.AI.Evaluation/aimock.json
-
       - name: 🧪 Test
-        env:
-          OPENAI_BASE_URL: ${{ steps.aimock.outputs.url }}/v1
-          OPENAI_API_KEY: test
         run: >
           dotnet test
           --configuration Release

@@ -57,17 +57,9 @@
     <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MsExtVersion)" />
-    <PackageVersion
-      Include="Microsoft.Extensions.AI.Evaluation.Quality"
-      Version="$(MsExtVersion)"
-    />
-    <PackageVersion
-      Include="Microsoft.Extensions.AI.Evaluation.Reporting"
-      Version="$(MsExtVersion)"
-    />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Asp.Versioning.Grpc" Version="10.2.0-preview.1" />
-    <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.2.2" />
+    <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.2.3" />
     <PackageVersion
       Include="Microsoft.AspNetCore.Diagnostics.Middleware"
       Version="$(MsExtVersion)"
@@ -103,7 +95,7 @@
     />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.OpenAI"
-      Version="$(AgentFrameworkVersion)-alpha.260818.1"
+      Version="$(AgentFrameworkVersion)-alpha.260822.1"
     />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
