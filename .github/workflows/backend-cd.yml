@@ -49,30 +49,8 @@ jobs:
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
-      - name: 🔍 Resolve Aspire version
-        id: aspire-version
-        run: |
-          ASPIRE_VERSION="$(dotnet msbuild Versions.props -nologo -v:q -getProperty:AspireVersion)"
-          echo "version=${ASPIRE_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "cli-version=${ASPIRE_VERSION%%-*}" >> "$GITHUB_OUTPUT"
-
-      - name: 🛠️ Install Aspire CLI
-        uses: timheuer/setup-aspire@fec3fa825218461aa07fed28fa97a600d5d88b14 # v0.1.0
-        with:
-          version: ${{ steps.aspire-version.outputs.version }}
-
-      - name: ✅ Verify Aspire CLI version
-        env:
-          EXPECTED_ASPIRE_CLI_VERSION: ${{ steps.aspire-version.outputs.cli-version }}
-        run: |
-          INSTALLED_ASPIRE_CLI_VERSION="$(aspire --version)"
-          case "${INSTALLED_ASPIRE_CLI_VERSION}" in
-            "${EXPECTED_ASPIRE_CLI_VERSION}"|"${EXPECTED_ASPIRE_CLI_VERSION}"+*) ;;
-            *)
-              echo "Expected Aspire CLI version ${EXPECTED_ASPIRE_CLI_VERSION}, but found ${INSTALLED_ASPIRE_CLI_VERSION}."
-              exit 1
-              ;;
-          esac
+      - name: 🔧 Setup Aspire CLI
+        uses: ./.github/actions/setup-aspire-cli
 
       - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0

@@ -18,26 +18,40 @@ describe("PublisherSelect", () => {
     createMockPublisher(),
   ];
 
-  it("renders publisher label", () => {
-    mockUsePublishers.mockReturnValue({
+  it.each([
+    {
+      name: "publisher label",
       data: mockPublishers,
+      value: undefined,
+      expectedText: "Publisher",
+    },
+    {
+      name: "placeholder",
+      data: mockPublishers,
+      value: undefined,
+      expectedText: "All Publishers",
+    },
+    {
+      name: "empty publishers list",
+      data: [],
+      value: undefined,
+      expectedText: "All Publishers",
+    },
+    {
+      name: "undefined publishers data",
+      data: undefined,
+      value: undefined,
+      expectedText: "All Publishers",
+    },
+  ])("renders $name", ({ data, value, expectedText }) => {
+    mockUsePublishers.mockReturnValue({
+      data,
       isLoading: false,
     });
 
-    render(<PublisherSelect value={undefined} onChange={vi.fn()} />);
+    render(<PublisherSelect value={value} onChange={vi.fn()} />);
 
-    expect(screen.getByText("Publisher")).toBeInTheDocument();
-  });
-
-  it("renders select with placeholder", () => {
-    mockUsePublishers.mockReturnValue({
-      data: mockPublishers,
-      isLoading: false,
-    });
-
-    render(<PublisherSelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("All Publishers")).toBeInTheDocument();
+    expect(screen.getByText(expectedText)).toBeInTheDocument();
   });
 
   it("displays selected publisher", () => {
@@ -50,30 +64,7 @@ describe("PublisherSelect", () => {
       <PublisherSelect value={mockPublishers[0]!.id} onChange={vi.fn()} />,
     );
 
-    // Check that combobox is rendered with some value (MSW might provide different data)
     expect(screen.getByRole("combobox")).toBeInTheDocument();
-  });
-
-  it("handles empty publishers list", () => {
-    mockUsePublishers.mockReturnValue({
-      data: [],
-      isLoading: false,
-    });
-
-    render(<PublisherSelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("All Publishers")).toBeInTheDocument();
-  });
-
-  it("handles undefined publishers data", () => {
-    mockUsePublishers.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-    });
-
-    render(<PublisherSelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("All Publishers")).toBeInTheDocument();
   });
 
   it("has proper label association", () => {
@@ -119,16 +110,5 @@ describe("PublisherSelect", () => {
     await user.click(select);
 
     expect(onChange).toBeDefined();
-  });
-
-  it("displays publisher label", () => {
-    mockUsePublishers.mockReturnValue({
-      data: mockPublishers,
-      isLoading: false,
-    });
-
-    render(<PublisherSelect value={undefined} onChange={vi.fn()} />);
-
-    expect(screen.getByText("Publisher")).toBeInTheDocument();
   });
 });

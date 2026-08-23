@@ -38,52 +38,18 @@ describe("LogoutButton", () => {
     });
   });
 
-  it("should have full width", () => {
+  it.each([
+    ["full width", "w-full"],
+    ["border styling", "border-border/40"],
+    ["transparent background", "bg-transparent"],
+    ["hover effects", "hover:bg-secondary/20"],
+    ["medium font weight", "font-medium"],
+    ["center content", "justify-center"],
+    ["proper height", "h-12"],
+  ])("should have %s", (_label, className) => {
     renderWithProviders(<LogoutButton />);
 
     const button = screen.getByRole("button", { name: /logout/i });
-    expect(button).toHaveClass("w-full");
-  });
-
-  it("should have border styling", () => {
-    renderWithProviders(<LogoutButton />);
-
-    const button = screen.getByRole("button", { name: /logout/i });
-    expect(button).toHaveClass("border-border/40");
-  });
-
-  it("should have transparent background", () => {
-    renderWithProviders(<LogoutButton />);
-
-    const button = screen.getByRole("button", { name: /logout/i });
-    expect(button).toHaveClass("bg-transparent");
-  });
-
-  it("should have hover effects", () => {
-    renderWithProviders(<LogoutButton />);
-
-    const button = screen.getByRole("button", { name: /logout/i });
-    expect(button).toHaveClass("hover:bg-secondary/20");
-  });
-
-  it("should have medium font weight", () => {
-    renderWithProviders(<LogoutButton />);
-
-    const button = screen.getByRole("button", { name: /logout/i });
-    expect(button).toHaveClass("font-medium");
-  });
-
-  it("should center content", () => {
-    renderWithProviders(<LogoutButton />);
-
-    const button = screen.getByRole("button", { name: /logout/i });
-    expect(button).toHaveClass("justify-center");
-  });
-
-  it("should have proper height", () => {
-    renderWithProviders(<LogoutButton />);
-
-    const button = screen.getByRole("button", { name: /logout/i });
-    expect(button).toHaveClass("h-12");
+    expect(button).toHaveClass(className);
   });
 });

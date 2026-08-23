@@ -18,6 +18,9 @@
 		"url": "https://github.com/foxminchan/BookWorm/issues"
 	},
 	"homepage": "https://github.com/foxminchan/BookWorm#readme",
+	"engines": {
+		"node": ">=24.0.0"
+	},
 	"main": "dist/main.js",
 	"type": "commonjs",
 	"scripts": {
@@ -42,10 +45,10 @@
 		"@babel/preset-typescript": "^8.0.1",
 		"@eslint/js": "^10.0.1",
 		"@lavamoat/allow-scripts": "^5.1.0",
-		"@types/k6": "^2.0.1",
+		"@types/k6": "^2.2.0",
 		"babel-loader": "^10.1.1",
 		"core-js": "^3.50.0",
-		"eslint": "^10.8.1",
+		"eslint": "^10.9.0",
 		"eslint-config-prettier": "^10.1.8",
 		"globals": "^17.11.0",
 		"prettier": "^3.9.6",

@@ -58,7 +58,7 @@ describe("AuthorsFilter", () => {
     const authorButtons = buttons.filter((btn) =>
       btn.getAttribute("aria-label")?.includes("filter"),
     );
-    expect(authorButtons.length).toBe(2);
+    expect(authorButtons).toHaveLength(2);
   });
 
   it("shows clear button when authors are selected", () => {
@@ -155,7 +155,7 @@ describe("AuthorsFilter", () => {
     expect(screen.getByText("Authors")).toBeInTheDocument();
   });
 
-  it("calls onClear when clear button clicked", async () => {
+  it("calls onClear when clear button clicked using button role", async () => {
     const user = userEvent.setup();
     const onClear = vi.fn();
     mockUseAuthors.mockReturnValue({

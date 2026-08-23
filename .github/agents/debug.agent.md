@@ -11,9 +11,9 @@ tools:
   - execute/getTerminalOutput
   - execute/runInTerminal
 model:
-  - Claude Opus 4.7 (copilot)
-  - Claude Sonnet 4.6 (copilot)
-  - GPT-5.3-Codex
+  - Claude Fable 5 (copilot)
+  - Claude Opus 4.8 (copilot)
+  - GPT-5.6 Sol (copilot)
 handoffs:
   - label: Get C# Expert Help
     agent: .NET Expert

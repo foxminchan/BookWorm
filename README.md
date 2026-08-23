@@ -56,7 +56,6 @@
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Enabled agent-to-agent communication via A2A Protocol
   - [x] Supported Agent interactions via AG-UI Protocol
-  - [x] Evaluate generative AI models and applications
   - [x] Agent governance with policy-based controls and monitoring
   - [x] Enabled AI agents to generate rich, interactive UIs using A2UI
 - [x] Configured CI/CD with GitHub Actions
@@ -88,8 +87,6 @@
 
 - [mise](https://mise.jdx.dev/) — tool version manager
 - [Docker](https://www.docker.com/get-started) — container runtime _(must be running before starting the app)_
-- [Aspire CLI](https://aspire.dev/get-started/install-cli/) — app orchestration
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) — Azure auth & deploy
 
 **Optional**
 
@@ -111,7 +108,7 @@ git clone git@github.com:foxminchan/BookWorm.git
 # 2. Navigate to the project directory
 cd BookWorm
 
-# 3. Install tools (.NET SDK, Bun, JDK — skip if already installed globally)
+# 3. Install tools (.NET SDK, Bun, JDK & tools — skip if already installed globally)
 mise install
 
 # 4. Setup Azure subscription and location for deployment

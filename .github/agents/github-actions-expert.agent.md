@@ -10,9 +10,10 @@ tools:
   - execute/runInTerminal
   - execute/getTerminalOutput
 model:
-  - Claude Opus 4.7 (copilot)
+  - Claude Fable 5 (copilot)
+  - Claude Opus 4.8 (copilot)
   - Claude Sonnet 4.6 (copilot)
-  - GPT-5.3-Codex
+  - GPT-5.6 Sol (copilot)
 handoffs:
   - label: Review Workflow Changes
     agent: Code Reviewer

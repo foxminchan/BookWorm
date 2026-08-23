@@ -72,6 +72,8 @@ internal static class Extensions
                         {
                             Name = key,
                             Description = RatingAgent.Description,
+                            // Review lookup tools are read-only queries, safe to run concurrently.
+                            AllowConcurrentInvocation = true,
                             ChatOptions = new()
                             {
                                 Instructions = RatingAgent.Instructions,

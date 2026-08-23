@@ -7,11 +7,29 @@ description: "Enforces Behavior Driven Development. Use when: implementing new f
 
 ## Phase 0: BDD Necessity Check
 
-For every user-requested task that may affect product behavior, first determine whether the change should be specified or updated in BDD scenarios.
+For every user-requested task, first decide whether the requested outcome needs to be specified in new or updated BDD scenarios. Base this decision on changes to observable product behavior, not on the size of the code change or the number of files involved.
 
-- If the task is pure refactoring or a minor implementation change, continue with the task without creating or modifying any `.feature` files.
-- Otherwise, **ask the user whether BDD scenarios should be added or updated for this change and wait for confirmation**.
-- If it is unclear whether the change requires new or updated BDD scenarios, always ask.
+BDD feature-file changes are needed when the task:
+
+- Explicitly requests adding, updating or removing BDD scenarios.
+- Adds, removes, or changes user-observable behavior or an end-to-end user outcome.
+- Changes a user flow, acceptance criterion, validation rule, permission, or user-visible error behavior.
+- Fixes a bug whose expected behavior is missing from, or inaccurately described by, the existing scenarios.
+
+BDD feature-file changes are not needed when the task:
+
+- Refactors or reorganizes implementation while preserving existing observable behavior.
+- Changes documentation, comments, formatting, tooling, or other development infrastructure without changing product behavior.
+- Makes presentation-only visual or geometric adjustments without changing user interaction or meaning.
+- Implements or fixes behavior that is already accurately specified by existing scenarios and does not require their wording or coverage to change.
+- Changes only step definitions or test infrastructure while leaving the specified product behavior unchanged.
+
+After making this assessment:
+
+- If BDD feature-file changes are needed, continue directly to Phase 1 without asking for confirmation.
+- If BDD feature-file changes are not needed, continue with the user's task immediately without creating or modifying any `.feature` files and without stopping for confirmation.
+- If the assessment is genuinely unclear, ask only: **"Is BDD scenarios update needed for this change?"** Then wait for the user's answer. Do not explain why the question is being asked or provide any details, reasoning, or recommendation with it.
+- If the user answers yes, continue to Phase 1. If the user answers no, continue with the user's task without changing `.feature` files.
 
 ## Phase 1: Planning
 
@@ -104,7 +122,6 @@ Steps defined inside `features/@homepage/steps.ts` are automatically scoped to f
 
 ```gherkin
 Feature: Shopping cart
-
   Customers can collect products they intend to buy and review the current cart contents.
 
   Scenario: Add item to cart

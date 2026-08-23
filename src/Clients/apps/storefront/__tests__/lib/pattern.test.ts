@@ -9,68 +9,38 @@ import {
 
 describe("pattern utils", () => {
   describe("getShopSortParams", () => {
-    it("should return correct params for price-low", () => {
-      const result = getShopSortParams("price-low");
-      expect(result).toEqual({ orderBy: "price", isDescending: false });
-    });
-
-    it("should return correct params for price-high", () => {
-      const result = getShopSortParams("price-high");
-      expect(result).toEqual({ orderBy: "price", isDescending: true });
-    });
-
-    it("should return correct params for rating", () => {
-      const result = getShopSortParams("rating");
-      expect(result).toEqual({ orderBy: "averageRating", isDescending: true });
-    });
-
-    it("should return correct params for name", () => {
-      const result = getShopSortParams("name");
-      expect(result).toEqual({ orderBy: "name", isDescending: false });
-    });
-
-    it("should return default params for unknown value", () => {
-      const result = getShopSortParams("invalid");
-      expect(result).toEqual({ orderBy: "name", isDescending: false });
+    it.each([
+      ["price-low", "price-low", { orderBy: "price", isDescending: false }],
+      ["price-high", "price-high", { orderBy: "price", isDescending: true }],
+      ["rating", "rating", { orderBy: "averageRating", isDescending: true }],
+      ["name", "name", { orderBy: "name", isDescending: false }],
+      ["unknown value", "invalid", { orderBy: "name", isDescending: false }],
+    ])("should return correct params for %s", (_label, value, expected) => {
+      const result = getShopSortParams(value as any);
+      expect(result).toEqual(expected);
     });
   });
 
   describe("getReviewSortParams", () => {
-    it("should return correct params for newest", () => {
-      const result = getReviewSortParams("newest");
-      expect(result).toEqual({ orderBy: "createdAt", isDescending: true });
-    });
-
-    it("should return correct params for highest", () => {
-      const result = getReviewSortParams("highest");
-      expect(result).toEqual({ orderBy: "rating", isDescending: true });
-    });
-
-    it("should return correct params for lowest", () => {
-      const result = getReviewSortParams("lowest");
-      expect(result).toEqual({ orderBy: "rating", isDescending: false });
+    it.each([
+      ["newest", "newest", { orderBy: "createdAt", isDescending: true }],
+      ["highest", "highest", { orderBy: "rating", isDescending: true }],
+      ["lowest", "lowest", { orderBy: "rating", isDescending: false }],
+    ])("should return correct params for %s", (_label, value, expected) => {
+      const result = getReviewSortParams(value as any);
+      expect(result).toEqual(expected);
     });
   });
 
   describe("getOrderStatusColor", () => {
-    it("should return green classes for Completed", () => {
-      const result = getOrderStatusColor("Completed");
-      expect(result).toContain("green");
-    });
-
-    it("should return red classes for Cancelled", () => {
-      const result = getOrderStatusColor("Cancelled");
-      expect(result).toContain("red");
-    });
-
-    it("should return blue classes for New", () => {
-      const result = getOrderStatusColor("New");
-      expect(result).toContain("blue");
-    });
-
-    it("should return gray classes for unknown status", () => {
-      const result = getOrderStatusColor("Unknown" as any);
-      expect(result).toContain("gray");
+    it.each([
+      ["Completed", "Completed", "green"],
+      ["Cancelled", "Cancelled", "red"],
+      ["New", "New", "blue"],
+      ["unknown status", "Unknown" as any, "gray"],
+    ])("should return %s classes for %s", (_label, status, expectedColor) => {
+      const result = getOrderStatusColor(status);
+      expect(result).toContain(expectedColor);
     });
 
     it("should include dark mode classes", () => {
@@ -80,31 +50,27 @@ describe("pattern utils", () => {
   });
 
   describe("getOrderStatusColorBordered", () => {
-    it("should return green bordered classes for Completed", () => {
-      const result = getOrderStatusColorBordered("Completed");
-      expect(result).toContain("green");
-      expect(result).toContain("border");
-    });
-
-    it("should return red bordered classes for Cancelled", () => {
-      const result = getOrderStatusColorBordered("Cancelled");
-      expect(result).toContain("red");
-      expect(result).toContain("border");
-    });
-
-    it("should return blue bordered classes for New", () => {
-      const result = getOrderStatusColorBordered("New");
-      expect(result).toContain("blue");
-      expect(result).toContain("border");
-    });
+    it.each([
+      ["Completed", "Completed", "green"],
+      ["Cancelled", "Cancelled", "red"],
+      ["New", "New", "blue"],
+    ])(
+      "should return %s bordered classes for %s",
+      (_label, status, expectedColor) => {
+        const result = getOrderStatusColorBordered(status as any);
+        expect(result).toContain(expectedColor);
+        expect(result).toContain("border");
+      },
+    );
 
     it("should return gray classes for unknown status", () => {
       const result = getOrderStatusColorBordered("Unknown" as any);
       expect(result).toContain("gray");
+      expect(result).not.toContain("border");
     });
 
     it("should include dark mode classes", () => {
-      const result = getOrderStatusColorBordered("Completed");
+      const result = getOrderStatusColorBordered("Completed" as any);
       expect(result).toContain("dark:");
     });
   });

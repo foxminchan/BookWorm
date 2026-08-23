@@ -50,15 +50,8 @@ runs:
         global-json-file: ${{ inputs.global-json-file }}
         bun-version-file: ${{ inputs.bun-version-file }}
 
-    - name: Install Aspire CLI
-      shell: bash
-      run: |
-        curl -sSL https://aspire.dev/install.sh | bash
-        echo "$HOME/.aspire/bin" >> $GITHUB_PATH
-
-    - name: Verify Aspire Installation
-      shell: bash
-      run: aspire --version
+    - name: Setup Aspire CLI
+      uses: ./.github/actions/setup-aspire-cli
 
     - name: Normalize repository name
       id: normalize

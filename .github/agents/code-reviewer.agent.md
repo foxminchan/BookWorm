@@ -5,10 +5,8 @@ tools:
   - search
   - web/githubRepo
 model:
-  - Claude Opus 4.7 (copilot)
   - Claude Sonnet 4.6 (copilot)
   - Claude Haiku 4.5 (copilot)
-  - GPT-5.3-Codex
 handoffs:
   - label: Fix .NET Issues
     agent: .NET Expert
