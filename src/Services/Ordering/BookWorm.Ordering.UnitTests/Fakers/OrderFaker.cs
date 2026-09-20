@@ -10,12 +10,13 @@ public sealed class OrderFaker : Faker<Order>
     {
         Randomizer.Seed = new(Seeder.DefaultSeed);
         CustomInstantiator(f =>
-            new(
-                BuyerId.From(f.Random.Guid()),
-                f.Random.String2(1, 100),
-                [.. new OrderItemFaker().Generate()]
+                new(
+                    BuyerId.From(f.Random.Guid()),
+                    f.Random.String2(1, 100),
+                    [.. new OrderItemFaker().Generate()]
+                )
             )
-        );
+            .RuleFor(order => order.Id, _ => OrderId.From(Guid.CreateVersion7()));
     }
 
     public Order[] Generate()

@@ -12,7 +12,7 @@ public sealed class AuditableEntityTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .AreAssignableTo(typeof(AuditableEntity))
+            .AreAssignableTo(typeof(AuditableEntity<>))
             .And()
             .DoNotHaveName(nameof(AuditableEntity))
             .And()
@@ -30,7 +30,7 @@ public sealed class AuditableEntityTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .AreAssignableTo(typeof(AuditableEntity))
+            .AreAssignableTo(typeof(AuditableEntity<>))
             .And()
             .DoNotHaveName(nameof(AuditableEntity))
             .And()
@@ -48,7 +48,7 @@ public sealed class AuditableEntityTests : ArchUnitBaseTest
     {
         Classes()
             .That()
-            .AreAssignableTo(typeof(AuditableEntity))
+            .AreAssignableTo(typeof(AuditableEntity<>))
             .And()
             .DoNotHaveName(nameof(AuditableEntity))
             .And()

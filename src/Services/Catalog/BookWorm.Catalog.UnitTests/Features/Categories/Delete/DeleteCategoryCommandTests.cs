@@ -1,8 +1,10 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+﻿using System.Reflection;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Features.Categories.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Chassis.Repository;
+using BookWorm.SharedKernel.SeedWork;
 using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.Delete;
@@ -224,6 +226,12 @@ public sealed class DeleteCategoryCommandTests
         // Arrange
         const string expectedCategoryName = "Technology Books";
         var category = new Category(expectedCategoryName);
+        typeof(Entity<CategoryId>)
+            .GetProperty(
+                nameof(Entity<CategoryId>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(category, CategoryId.From(Guid.CreateVersion7()));
         var command = new DeleteCategoryCommand((Guid)category.Id);
 
         _repositoryMock

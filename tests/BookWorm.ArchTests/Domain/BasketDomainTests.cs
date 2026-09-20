@@ -16,6 +16,10 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .DoNotHaveNameStartingWith("__")
+            .And()
+            .AreNotNested()
             .Should()
             .BeSealed()
             .Because(
@@ -30,6 +34,8 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .BePublic()
             .Because(
@@ -44,6 +50,10 @@ public sealed class BasketDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .DoNotHaveNameStartingWith("__")
+            .And()
+            .AreNotNested()
             .Should()
             .NotBeAbstract()
             .Check(Architecture);

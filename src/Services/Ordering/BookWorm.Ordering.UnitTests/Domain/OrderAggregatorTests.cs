@@ -152,7 +152,7 @@ public sealed class OrderAggregatorTests
 
         // Assert
         orderItem.Order.ShouldBeNull();
-        ((Guid)orderItem.OrderId).ShouldBe(Guid.Empty);
+        orderItem.OrderId.IsInitialized().ShouldBeFalse();
     }
 
     [Test]

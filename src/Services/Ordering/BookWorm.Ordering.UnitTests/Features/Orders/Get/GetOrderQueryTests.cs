@@ -1,12 +1,15 @@
-﻿using System.Security.Claims;
+﻿using System.Reflection;
+using System.Security.Claims;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Constants.Core;
+using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.UnitTests.Fakers;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Get;
 
@@ -34,8 +37,16 @@ public sealed class GetOrderQueryTests
         _order = orderFaker.Generate()[0];
 
         // Replace it with our specific IDs for testing
-        _order.GetType().GetProperty("Id")?.SetValue(_order, _id);
-        _order.GetType().GetProperty("BuyerId")?.SetValue(_order, _buyerId);
+        typeof(Entity<OrderId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(_order, OrderId.From(_id));
+        _order
+            .GetType()
+            .GetProperty(nameof(Order.BuyerId))
+            ?.SetValue(_order, BuyerId.From(_buyerId));
 
         _handler = new(
             _orderRepositoryMock.Object,

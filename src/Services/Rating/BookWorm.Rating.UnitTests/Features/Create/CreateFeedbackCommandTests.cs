@@ -1,5 +1,7 @@
-﻿using BookWorm.Rating.Domain.FeedbackAggregator;
+﻿using System.Reflection;
+using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.Features.Create;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Rating.UnitTests.Features.Create;
 
@@ -43,7 +45,12 @@ public sealed class CreateFeedbackCommandTests
         var expectedId = Guid.CreateVersion7();
 
         // Use reflection to set the ID since it's likely not directly settable
-        typeof(Feedback).GetProperty("Id")?.SetValue(feedbackWithId, expectedId);
+        typeof(Entity<FeedbackId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(feedbackWithId, FeedbackId.From(expectedId));
 
         _repositoryMock
             .Setup(r => r.AddAsync(It.IsAny<Feedback>(), It.IsAny<CancellationToken>()))
@@ -83,7 +90,12 @@ public sealed class CreateFeedbackCommandTests
         var feedback = CreateFeedbackFromCommand(command);
 
         // Use reflection to set the ID since it's likely not directly settable
-        typeof(Feedback).GetProperty("Id")?.SetValue(feedback, expectedId);
+        typeof(Entity<FeedbackId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(feedback, FeedbackId.From(expectedId));
 
         _repositoryMock
             .Setup(r => r.AddAsync(It.IsAny<Feedback>(), It.IsAny<CancellationToken>()))
