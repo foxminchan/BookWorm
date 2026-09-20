@@ -46,6 +46,7 @@ var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMc
 var financeDb = postgres.AddDatabase(Components.Database.Finance).WithPostgresMcp();
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
 var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
+var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
 
 var openai = builder.AddAzureOpenAI(Components.OpenAI.Resource);
 
@@ -188,6 +189,8 @@ builder
     .AddProject<BookWorm_Scheduler>(Services.Scheduler)
     .WithReference(queue)
     .WaitFor(queue)
+    .WithReference(schedulerDb)
+    .WaitFor(schedulerDb)
     .WithContainerRegistry(registry)
     .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();

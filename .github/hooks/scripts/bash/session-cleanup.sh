@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # BookWorm — Session end cleanup hook
 # Cleans up temporary resources and logs session summary.
 set -eo pipefail

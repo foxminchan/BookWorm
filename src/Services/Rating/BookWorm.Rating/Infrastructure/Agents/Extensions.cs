@@ -49,10 +49,15 @@ internal static class Extensions
                 RatingAgent.Name,
                 (sp, key) =>
                 {
+                    var compactionProvider = RatingCompactionPipelineFactory.Create(
+                        sp.GetRequiredService<IChatClient>()
+                    );
+
                     var chatClient = sp.GetRequiredService<IChatClient>()
                         .AsBuilder()
                         .UsePIIMiddleware(sp)
                         .UseGuardrailMiddleware()
+                        .UseAIContextProviders(compactionProvider)
                         .Build(sp);
 
                     using var spScope = sp.CreateScope();

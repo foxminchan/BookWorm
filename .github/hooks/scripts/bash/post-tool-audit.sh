@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # BookWorm — Post-tool audit trail hook
 # Logs all tool executions for traceability and debugging.
 set -e

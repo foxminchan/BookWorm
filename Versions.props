@@ -1,22 +1,24 @@
 <Project>
   <PropertyGroup Label="Package Versions">
     <!-- Core Libraries -->
-    <AspireVersion>13.5.2</AspireVersion>
-    <AspireUnstableVersion>$(AspireVersion)-preview.1.26421.6</AspireUnstableVersion>
-    <DotnetPackagesVersion>10.0.11</DotnetPackagesVersion>
+    <AspireVersion>13.5.4</AspireVersion>
+    <AspireUnstableVersion>$(AspireVersion)-preview.1.26464.4</AspireUnstableVersion>
+    <DotnetPackagesVersion>10.0.12</DotnetPackagesVersion>
     <GrpcVersion>2.83.0</GrpcVersion>
     <!-- Integration Libraries -->
-    <WolverineVersion>6.29.2</WolverineVersion>
-    <TUnitVersion>1.65.38</TUnitVersion>
-    <QuartzVersion>3.19.1</QuartzVersion>
-    <FusionCacheVersion>2.7.0</FusionCacheVersion>
+    <WolverineVersion>6.39.1</WolverineVersion>
+    <TUnitVersion>1.68.17</TUnitVersion>
+    <QuartzVersion>4.1.1</QuartzVersion>
+    <FusionCacheVersion>2.8.0</FusionCacheVersion>
     <!-- Microsoft Packages -->
-    <MsExtVersion>10.9.0</MsExtVersion>
-    <MsTestVersion>2.3.3</MsTestVersion>
-    <ToolKitVersion>13.5.0-beta.730</ToolKitVersion>
-    <AgentFrameworkVersion>1.19.0</AgentFrameworkVersion>
-    <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.260822.1</AgentFrameworkUnstableVersion>
+    <MsExtVersion>10.10.0</MsExtVersion>
+    <MsTestVersion>2.4.1</MsTestVersion>
+    <ToolKitVersion>13.5.0</ToolKitVersion>
+    <AgentFrameworkVersion>1.22.0</AgentFrameworkVersion>
+    <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.260918.1</AgentFrameworkUnstableVersion>
     <!-- Observability & Health -->
     <HealthChecksVersion>9.0.0</HealthChecksVersion>
+    <OtelVersion>1.19.0</OtelVersion>
+    <OtelUnstableVersion>$(OtelVersion)-beta.1</OtelUnstableVersion>
   </PropertyGroup>
 </Project>

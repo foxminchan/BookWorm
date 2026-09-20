@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # BookWorm — Architecture boundary guard pre-tool hook
 # Enforces microservice boundaries by preventing cross-service internal references.
 set -e

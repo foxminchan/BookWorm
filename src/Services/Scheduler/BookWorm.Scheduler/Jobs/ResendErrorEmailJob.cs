@@ -7,7 +7,10 @@ namespace BookWorm.Scheduler.Jobs;
 internal sealed class ResendErrorEmailJob(IMessageBus bus, ILogger<ResendErrorEmailJob> logger)
     : IJob
 {
-    public async Task Execute(IJobExecutionContext context)
+    public async ValueTask Execute(
+        IJobExecutionContext context,
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
@@ -20,7 +23,7 @@ internal sealed class ResendErrorEmailJob(IMessageBus bus, ILogger<ResendErrorEm
                 "Failed to publish {EventName}",
                 nameof(ResendErrorEmailIntegrationEvent)
             );
-            throw new JobExecutionException(ex, false);
+            throw new JobExecutionException(ex);
         }
     }
 }

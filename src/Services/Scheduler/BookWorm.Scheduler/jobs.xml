@@ -48,5 +48,27 @@
         <time-zone>UTC</time-zone>
       </cron>
     </trigger>
+
+    <job>
+      <name>HeartbeatJob</name>
+      <group>Scheduler</group>
+      <description>Emits a periodic scheduler heartbeat for observability</description>
+      <job-type>BookWorm.Scheduler.Jobs.HeartbeatJob, BookWorm.Scheduler</job-type>
+      <durable>true</durable>
+      <recover>false</recover>
+    </job>
+
+    <trigger>
+      <cron>
+        <name>HeartbeatTrigger</name>
+        <group>Scheduler</group>
+        <description>Fires every 30 seconds to record scheduler activity</description>
+        <job-name>HeartbeatJob</job-name>
+        <job-group>Scheduler</job-group>
+        <misfire-instruction>FireOnceNow</misfire-instruction>
+        <cron-expression>0/30 * * * * ?</cron-expression>
+        <time-zone>UTC</time-zone>
+      </cron>
+    </trigger>
   </schedule>
 </job-scheduling-data>

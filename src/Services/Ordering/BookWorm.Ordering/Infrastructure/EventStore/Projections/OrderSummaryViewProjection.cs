@@ -35,7 +35,17 @@ internal sealed class OrderSummaryViewProjection : MultiStreamProjection<OrderSu
         Identity<OrderCompletedEvent>(e => e.Order.Id);
     }
 
-    public static OrderSummaryView Create(OrderSummaryView view, OrderPlacedEvent @event)
+    public static OrderSummaryView Create(OrderPlacedEvent @event)
+    {
+        return new()
+        {
+            Id = @event.Order.Id,
+            Status = Status.New,
+            TotalPrice = @event.Order.TotalPrice,
+        };
+    }
+
+    public static OrderSummaryView Apply(OrderSummaryView view, OrderPlacedEvent @event)
     {
         view.Id = @event.Order.Id;
         view.Status = Status.New;
