@@ -26,16 +26,14 @@ env:
 permissions:
   id-token: write
   contents: read
-  packages: read
 
 jobs:
   aspire_deploy:
     runs-on: ubuntu-latest
-    name: 🚀 Deploy BookWorm to ACA from GHCR
+    name: 🚀 Deploy BookWorm to ACA from ACR
     permissions:
       id-token: write
       contents: read
-      packages: read
     environment: ${{ github.event.inputs.environment }}
     timeout-minutes: 30
     steps:
@@ -52,24 +50,12 @@ jobs:
       - name: 🔧 Setup Aspire CLI
         uses: ./.github/actions/setup-aspire-cli
 
-      - name: 🔐 Login to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
       - name: 🔐 Azure Login
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: 🔤 Normalize repository name
-        id: normalize
-        run: |
-          echo "repository=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: 🚀 Deploy with Aspire
         run: |
@@ -85,8 +71,6 @@ jobs:
           DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
           Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           Azure__Location: ${{ secrets.AZURE_LOCATION || 'southeastasia' }}
-          Parameters__container_endpoint: ghcr.io
-          Parameters__container_repository: ${{ steps.normalize.outputs.repository }}
           Parameters__openai_openai_apikey: ${{ secrets.OPENAI_APIKEY }}
           Parameters__kc_url: ${{ secrets.KC_URL }}
           Parameters__kc_realm: ${{ secrets.KC_REALM }}

@@ -1,8 +1,8 @@
-﻿var builder = DistributedApplication.CreateBuilder(args);
+﻿using BookWorm.AppHost.Extensions.Frontend;
+
+var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
-
-var registry = builder.AddContainerRegistry();
 
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
@@ -93,7 +93,6 @@ var catalogApi = builder
     .WaitFor(catalogContainer)
     .WithReference(chat)
     .WithReference(embedding)
-    .WithContainerRegistry(registry)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -105,7 +104,6 @@ var mcp = builder
     .AddProject<BookWorm_McpTools>(Services.McpTools)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 var basketApi = builder
@@ -116,7 +114,6 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 var orderingApi = builder
@@ -131,7 +128,6 @@ var orderingApi = builder
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 var chatApi = builder
@@ -144,7 +140,6 @@ var chatApi = builder
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 var ratingApi = builder
@@ -163,7 +158,6 @@ var ratingApi = builder
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls();
 
 mcp.WithReference(ratingApi);
@@ -175,7 +169,6 @@ builder
     .WaitFor(queue)
     .WithReference(notificationDb)
     .WaitFor(notificationDb)
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
@@ -184,7 +177,6 @@ builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
@@ -193,7 +185,6 @@ builder
     .WaitFor(queue)
     .WithReference(schedulerDb)
     .WaitFor(schedulerDb)
-    .WithContainerRegistry(registry)
     .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 
@@ -206,42 +197,7 @@ var gateway = builder
     .WithService(catalogApi, true)
     .Build();
 
-var turbo = builder
-    .AddTurborepoApp(
-        Components.TurboRepo,
-        Path.GetFullPath("../../Clients", builder.AppHostDirectory)
-    )
-    .WithBun(true)
-    .WithPackageManagerLaunch();
-
-var storefront = turbo
-    .AddApp(Clients.StoreFront, Clients.StoreFrontTurboApp)
-    .WithOtlpExporter()
-    .WithHttpEndpoint(env: "PORT")
-    .WithMappedEndpointPort()
-    .WithHttpHealthCheck()
-    .WithExternalHttpEndpoints()
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
-    .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
-    .WaitFor(gateway)
-    .WithKeycloak(keycloak);
-
-storefront.WithEnvironment("NEXT_PUBLIC_APP_URL", storefront.GetEndpoint(Uri.UriSchemeHttp));
-
-var backoffice = turbo
-    .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)
-    .WithOtlpExporter()
-    .WithHttpEndpoint(env: "PORT")
-    .WithMappedEndpointPort()
-    .WithHttpHealthCheck()
-    .WithExternalHttpEndpoints()
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
-    .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
-    .WaitFor(gateway)
-    .WithKeycloak(keycloak);
-
-backoffice.WithEnvironment("NEXT_PUBLIC_APP_URL", backoffice.GetEndpoint(Uri.UriSchemeHttp));
+builder.AddFrontendApps(gateway, keycloak);
 
 if (builder.ExecutionContext.IsRunMode)
 {
