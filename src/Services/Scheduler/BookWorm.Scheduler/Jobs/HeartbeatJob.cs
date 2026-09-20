@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace BookWorm.Scheduler.Jobs;
 
+[ExcludeFromCodeCoverage]
 internal sealed class HeartbeatJob(ILogger<HeartbeatJob> logger) : IJob
 {
     public ValueTask Execute(
