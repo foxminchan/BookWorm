@@ -7,7 +7,10 @@ namespace BookWorm.Scheduler.Jobs;
 internal sealed class CleanUpSentEmailJob(IMessageBus bus, ILogger<CleanUpSentEmailJob> logger)
     : IJob
 {
-    public async Task Execute(IJobExecutionContext context)
+    public async ValueTask Execute(
+        IJobExecutionContext context,
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
@@ -20,7 +23,7 @@ internal sealed class CleanUpSentEmailJob(IMessageBus bus, ILogger<CleanUpSentEm
                 "Failed to publish {EventName}",
                 nameof(CleanUpSentEmailIntegrationEvent)
             );
-            throw new JobExecutionException(ex, false);
+            throw new JobExecutionException(ex);
         }
     }
 }

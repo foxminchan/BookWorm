@@ -1,19 +1,17 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Quartz.Listener;
 
 namespace BookWorm.Scheduler.Jobs.Listeners;
 
 [ExcludeFromCodeCoverage]
-internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger)
-    : JobListenerSupport
+internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger) : IJobListener
 {
     private static readonly ConcurrentDictionary<string, long> _jobStartTimestamps = new();
 
-    public override string Name => nameof(JobTelemetryListener);
+    public string Name => nameof(JobTelemetryListener);
 
-    public override Task JobToBeExecuted(
+    public ValueTask JobToBeExecuted(
         IJobExecutionContext context,
         CancellationToken cancellationToken = default
     )
@@ -28,10 +26,10 @@ internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger)
             context.ScheduledFireTimeUtc
         );
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public override Task JobExecutionVetoed(
+    public ValueTask JobExecutionVetoed(
         IJobExecutionContext context,
         CancellationToken cancellationToken = default
     )
@@ -45,10 +43,10 @@ internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger)
             context.FireInstanceId
         );
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public override Task JobWasExecuted(
+    public ValueTask JobWasExecuted(
         IJobExecutionContext context,
         JobExecutionException? jobException,
         CancellationToken cancellationToken = default
@@ -81,6 +79,6 @@ internal sealed class JobTelemetryListener(ILogger<JobTelemetryListener> logger)
             );
         }
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 }

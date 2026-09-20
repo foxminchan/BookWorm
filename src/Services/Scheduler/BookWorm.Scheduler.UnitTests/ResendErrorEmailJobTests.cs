@@ -48,7 +48,7 @@ public sealed class ResendErrorEmailJobTests
         // Act
         var tasks = Enumerable
             .Range(0, numberOfExecutions)
-            .Select(_ => job.Execute(context))
+            .Select(_ => job.Execute(context).AsTask())
             .ToArray();
 
         await Task.WhenAll(tasks);
@@ -85,7 +85,9 @@ public sealed class ResendErrorEmailJobTests
             .ThrowsAsync(new InvalidOperationException("Bus failure"));
 
         // Act
-        var exception = await Should.ThrowAsync<JobExecutionException>(() => job.Execute(context));
+        var exception = await Should.ThrowAsync<JobExecutionException>(() =>
+            job.Execute(context).AsTask()
+        );
 
         // Assert
         exception.InnerException.ShouldBeOfType<InvalidOperationException>();

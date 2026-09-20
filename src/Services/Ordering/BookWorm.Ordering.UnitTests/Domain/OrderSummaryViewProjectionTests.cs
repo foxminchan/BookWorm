@@ -27,7 +27,7 @@ public sealed class OrderSummaryViewProjectionTests
         var orderPlacedEvent = new OrderPlacedEvent(order);
 
         // Act
-        var result = OrderSummaryViewProjection.Create(info, orderPlacedEvent);
+        var result = OrderSummaryViewProjection.Apply(info, orderPlacedEvent);
 
         // Assert
         result.Id.ShouldBe(order.Id);
@@ -81,7 +81,7 @@ public sealed class OrderSummaryViewProjectionTests
         var orderPlacedEvent = new OrderPlacedEvent(order);
 
         // Act
-        var result = OrderSummaryViewProjection.Create(info, orderPlacedEvent);
+        var result = OrderSummaryViewProjection.Apply(info, orderPlacedEvent);
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object

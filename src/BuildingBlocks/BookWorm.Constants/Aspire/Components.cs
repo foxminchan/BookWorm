@@ -21,6 +21,7 @@ public static class Components
         public const string Catalog = "catalogdb";
         public const string Ordering = "orderingdb";
         public const string Notification = "notificationdb";
+        public const string Scheduler = "schedulerdb";
     }
 
     public static class OpenAI

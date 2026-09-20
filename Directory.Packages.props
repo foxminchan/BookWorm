@@ -46,7 +46,7 @@
     />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.11.17" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.22" />
     <PackageVersion
       Include="Aspire.Hosting.AgentFramework.DevUI"
       Version="$(AgentFrameworkUnstableVersion)"
@@ -58,7 +58,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MsExtVersion)" />
     <!-- ASP.NET Core -->
-    <PackageVersion Include="Asp.Versioning.Grpc" Version="10.2.0-preview.1" />
+    <PackageVersion Include="Asp.Versioning.Grpc" Version="10.2.0" />
     <PackageVersion Include="Asp.Versioning.OpenApi" Version="10.2.3" />
     <PackageVersion
       Include="Microsoft.AspNetCore.Diagnostics.Middleware"
@@ -76,12 +76,18 @@
     />
     <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.0" />
     <!-- Observability -->
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.18.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.18.0" />
+    <PackageVersion
+      Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"
+      Version="$(OtelVersion)"
+    />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OtelVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OtelVersion)" />
+    <PackageVersion
+      Include="OpenTelemetry.Instrumentation.GrpcNetClient"
+      Version="$(OtelUnstableVersion)"
+    />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OtelVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OtelVersion)" />
     <!-- AI -->
     <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
@@ -95,7 +101,7 @@
     />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.OpenAI"
-      Version="$(AgentFrameworkVersion)-alpha.260822.1"
+      Version="$(AgentFrameworkVersion)-alpha.260918.1"
     />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
@@ -110,28 +116,27 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="15.2.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="16.0.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
     <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
-    <PackageVersion Include="Grpc.Tools" Version="2.83.0" PrivateAssets="All" />
+    <PackageVersion Include="Grpc.Tools" Version="2.84.0" PrivateAssets="All" />
     <!-- WolverineFx -->
     <PackageVersion Include="WolverineFx.Kafka" Version="$(WolverineVersion)" />
     <PackageVersion Include="WolverineFx.Http.Marten" Version="$(WolverineVersion)" />
     <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="$(WolverineVersion)" />
     <!-- Quartz -->
+    <PackageVersion Include="Quartz.Aspire" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Plugins" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Dashboard" Version="$(QuartzVersion)" />
-    <PackageVersion Include="Quartz.AspNetCore" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="$(QuartzVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Quartz" Version="1.18.0-beta.1" />
     <!-- Email & Messaging -->
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
-    <PackageVersion Include="MailKit" Version="4.17.0" />
-    <PackageVersion Include="Mjml.Net" Version="4.14.0" />
+    <PackageVersion Include="MailKit" Version="4.18.0" />
+    <PackageVersion Include="Mjml.Net" Version="4.15.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
@@ -155,8 +160,8 @@
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="31.28.0" />
-    <PackageVersion Include="Verify.Wolverine" Version="3.1.0" />
+    <PackageVersion Include="Verify.TUnit" Version="32.0.1" />
+    <PackageVersion Include="Verify.Wolverine" Version="3.2.0" />
     <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
     <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />

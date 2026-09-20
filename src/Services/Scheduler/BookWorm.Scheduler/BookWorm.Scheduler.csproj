@@ -10,11 +10,10 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Quartz">
+    <PackageReference Include="Quartz.Aspire" />
     <PackageReference Include="Quartz.Plugins" />
     <PackageReference Include="Quartz.Dashboard" />
-    <PackageReference Include="Quartz.AspNetCore" />
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Quartz" />
   </ItemGroup>
   <ItemGroup Label="Quartz XML Config">
     <None Update="jobs.xml" CopyToOutputDirectory="PreserveNewest" />
