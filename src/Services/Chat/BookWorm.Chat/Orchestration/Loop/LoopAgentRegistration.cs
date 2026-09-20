@@ -75,7 +75,7 @@ internal static class LoopAgentRegistration
 
         var evaluator = new AIJudgeLoopEvaluator(
             judgeClient,
-            new AIJudgeLoopEvaluatorOptions
+            new()
             {
                 Criteria = _qualityCriteria,
                 FeedbackMessageTemplate =
@@ -85,7 +85,7 @@ internal static class LoopAgentRegistration
         var loopAgent = new LoopAgent(
             workflowAgent,
             evaluator,
-            new LoopAgentOptions
+            new()
             {
                 MaxIterations = options.MaxIterations,
                 ExcludeOnBehalfOfMessages = true,

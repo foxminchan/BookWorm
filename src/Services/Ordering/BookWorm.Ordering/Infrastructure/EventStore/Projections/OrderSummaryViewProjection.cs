@@ -1,6 +1,4 @@
-﻿using Marten.Schema;
-
-namespace BookWorm.Ordering.Infrastructure.EventStore.Projections;
+﻿namespace BookWorm.Ordering.Infrastructure.EventStore.Projections;
 
 internal sealed class OrderSummaryView
 {

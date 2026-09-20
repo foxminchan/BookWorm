@@ -1,7 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
-using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
-
-namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 
 [ExcludeFromCodeCoverage]
 internal sealed class BookData : List<Book>

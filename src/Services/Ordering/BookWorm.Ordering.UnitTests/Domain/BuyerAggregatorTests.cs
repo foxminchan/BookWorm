@@ -17,10 +17,10 @@ public sealed class BuyerAggregateTests
         const string province = "Readland";
 
         // Act
-        var buyer = new Buyer(BuyerId.From((Guid)id), name, street, city, province);
+        var buyer = new Buyer(BuyerId.From(id), name, street, city, province);
 
         // Assert
-        ((Guid)buyer.Id).ShouldBe((Guid)id);
+        ((Guid)buyer.Id).ShouldBe(id);
         buyer.Name.ShouldBe(name);
         buyer.Address.ShouldNotBeNull();
         buyer.Address!.Street.ShouldBe(street);

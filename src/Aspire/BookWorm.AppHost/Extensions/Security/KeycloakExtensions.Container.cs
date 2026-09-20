@@ -5,7 +5,10 @@ internal static partial class KeycloakExtensions
     public static IResourceBuilder<ContainerResource> ConfigureContainerKeycloak(
         IResourceBuilder<ContainerResource> builder,
         IResourceBuilder<IResource> keycloak
-    ) => WithKeycloak(builder, keycloak);
+    )
+    {
+        return builder.WithKeycloak(keycloak);
+    }
 
     extension(IResourceBuilder<ContainerResource> builder)
     {

@@ -1,7 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
-using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
-using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
-using BookWorm.Chassis.CQRS;
+﻿using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 

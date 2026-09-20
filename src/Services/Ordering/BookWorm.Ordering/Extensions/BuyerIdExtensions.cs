@@ -2,8 +2,6 @@
 
 namespace BookWorm.Ordering.Extensions;
 
-using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
-
 internal static class BuyerIdExtensions
 {
     extension(string? userId)
