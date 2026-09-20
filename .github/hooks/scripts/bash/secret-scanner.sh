@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # BookWorm — Secret scanner pre-tool hook
 # Detects potential secrets, API keys, and tokens in commands and file content.
 set -e

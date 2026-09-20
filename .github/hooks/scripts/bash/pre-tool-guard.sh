@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # BookWorm — Pre-tool use guard hook
 # Blocks modifications to protected files and dangerous commands.
 set -e

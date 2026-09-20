@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # BookWorm — Session start environment validation hook
 # Validates that the development environment is properly configured.
 set -e

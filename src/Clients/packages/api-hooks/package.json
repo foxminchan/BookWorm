@@ -23,21 +23,21 @@
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.102.0"
+    "@tanstack/react-query": "^5.103.1"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.18",
+    "@types/node": "^24.13.6",
+    "@types/react": "^19.3.0",
     "@workspace/api-client": "workspace:*",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/types": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^10.9.0",
-    "react": "^19.2.8"
+    "eslint": "^10.11.0",
+    "react": "^19.3.0"
   },
   "peerDependencies": {
     "@workspace/api-client": "workspace:*",
-    "react": "^19.2.6"
+    "react": "^19.3.0"
   },
   "exports": {
     "./keys": "./src/keys.ts",
