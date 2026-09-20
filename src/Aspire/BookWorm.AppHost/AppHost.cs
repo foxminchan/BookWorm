@@ -48,18 +48,20 @@ var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgres
 var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
 
-var openai = builder.AddAzureOpenAI(Components.OpenAI.Resource);
+var foundry = builder.AddFoundry(Components.Foundry.Resource);
 
-var chat = openai.AddDeployment(
-    Components.OpenAI.Chat,
-    Components.OpenAI.OpenAIGpt56Sol,
-    Components.OpenAI.OpenAIGpt56SolVersion
+var chat = foundry.AddDeployment(
+    Components.Foundry.Chat,
+    Components.Foundry.OpenAIGpt56Sol,
+    Components.Foundry.OpenAIGpt56SolVersion,
+    Components.Foundry.Provider
 );
 
-var embedding = openai.AddDeployment(
-    Components.OpenAI.Embedding,
-    Components.OpenAI.TextEmbeddingAda002,
-    Components.OpenAI.TextEmbeddingAda002Version
+var embedding = foundry.AddDeployment(
+    Components.Foundry.Embedding,
+    Components.Foundry.TextEmbeddingAda002,
+    Components.Foundry.TextEmbeddingAda002Version,
+    Components.Foundry.Provider
 );
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode

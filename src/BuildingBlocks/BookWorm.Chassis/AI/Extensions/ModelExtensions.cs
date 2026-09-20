@@ -29,24 +29,24 @@ public static class ModelExtensions
         {
             if (
                 !string.IsNullOrWhiteSpace(
-                    builder.Configuration.GetConnectionString(Components.OpenAI.Chat)
+                    builder.Configuration.GetConnectionString(Components.Foundry.Chat)
                 )
             )
             {
                 builder
-                    .AddOpenAIClientFromConfiguration(Components.OpenAI.Chat)
+                    .AddOpenAIClientFromConfiguration(Components.Foundry.Chat)
                     .AddChatClient()
                     .UseFunctionInvocation();
             }
 
             if (
                 !string.IsNullOrWhiteSpace(
-                    builder.Configuration.GetConnectionString(Components.OpenAI.Embedding)
+                    builder.Configuration.GetConnectionString(Components.Foundry.Embedding)
                 )
             )
             {
                 builder
-                    .AddOpenAIClientFromConfiguration(Components.OpenAI.Embedding)
+                    .AddOpenAIClientFromConfiguration(Components.Foundry.Embedding)
                     .AddEmbeddingGenerator();
             }
 

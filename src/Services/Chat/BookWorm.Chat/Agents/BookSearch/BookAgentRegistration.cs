@@ -2,6 +2,7 @@ using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI.Mcp;
 
 namespace BookWorm.Chat.Agents.BookSearch;
 
@@ -38,12 +39,10 @@ internal static class BookAgentRegistration
 
                     var mcpClient = sp.GetRequiredService<McpClient>();
                     var mcpTools = mcpClient
-                        .ListToolsAsync()
-                        .Preserve()
+                        .ListAgentToolsWithTasksAsync()
                         .GetAwaiter()
                         .GetResult()
                         .Where(t => _catalogToolNames.Contains(t.Name))
-                        .Cast<AITool>()
                         .ToArray();
 
                     var skillsProvider = new AgentSkillsProvider(
