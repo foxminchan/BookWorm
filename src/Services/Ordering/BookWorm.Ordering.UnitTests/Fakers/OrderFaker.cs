@@ -1,4 +1,5 @@
 ﻿using BookWorm.Constants.Other;
+using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
 namespace BookWorm.Ordering.UnitTests.Fakers;
@@ -9,7 +10,11 @@ public sealed class OrderFaker : Faker<Order>
     {
         Randomizer.Seed = new(Seeder.DefaultSeed);
         CustomInstantiator(f =>
-            new(f.Random.Guid(), f.Random.String2(1, 100), [.. new OrderItemFaker().Generate()])
+            new(
+                BuyerId.From(f.Random.Guid()),
+                f.Random.String2(1, 100),
+                [.. new OrderItemFaker().Generate()]
+            )
         );
     }
 

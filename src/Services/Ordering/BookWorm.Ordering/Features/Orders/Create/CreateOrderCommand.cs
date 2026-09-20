@@ -80,7 +80,7 @@ internal sealed class CreateOrderHandler(
 
             var result = await repository.AddAsync(order, cancellationToken);
             await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-            return result.Id;
+            return (Guid)result.Id;
         }
         finally
         {

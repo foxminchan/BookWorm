@@ -31,7 +31,7 @@ public sealed class GetBookQueryTests
         var bookFaker = new BookFaker();
         var book = bookFaker.Generate(1)[0];
         var expectedBookDto = new BookDto(
-            book.Id,
+            (Guid)book.Id,
             book.Name,
             book.Description,
             book.Image,
@@ -46,18 +46,18 @@ public sealed class GetBookQueryTests
         );
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
         _mapperMock.Setup(m => m.Map(book)).Returns(expectedBookDto);
 
         // Act
-        var result = await _handler.Handle(new(book.Id), CancellationToken.None);
+        var result = await _handler.Handle(new((Guid)book.Id), CancellationToken.None);
 
         // Assert
         result.ShouldNotBeNull();
         result.ShouldBe(expectedBookDto);
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _mapperMock.Verify(m => m.Map(book), Times.Once);

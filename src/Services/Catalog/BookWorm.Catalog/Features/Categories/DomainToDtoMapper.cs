@@ -6,7 +6,7 @@ internal static class DomainToDtoMapper
     {
         public CategoryDto ToCategoryDto()
         {
-            return new(category.Id, category.Name);
+            return new((Guid)category.Id, category.Name);
         }
     }
 

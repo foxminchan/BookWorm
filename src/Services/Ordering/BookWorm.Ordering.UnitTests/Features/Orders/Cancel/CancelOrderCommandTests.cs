@@ -32,7 +32,7 @@ public sealed class CancelOrderCommandTests
 
         // Create a test order using the OrderFaker
         _order = new OrderFaker().Generate(1)[0];
-        _orderId = _order.Id;
+        _orderId = (Guid)_order.Id;
     }
 
     [Test]
@@ -91,7 +91,7 @@ public sealed class CancelOrderCommandTests
         var cancelledOrder = new OrderFaker().Generate(1)[0];
         typeof(Order).GetProperty(nameof(Order.Status))!.SetValue(cancelledOrder, Status.Cancelled);
 
-        var command = new CancelOrderCommand(cancelledOrder.Id);
+        var command = new CancelOrderCommand((Guid)cancelledOrder.Id);
 
         _orderRepositoryMock
             .Setup(r =>
@@ -105,7 +105,7 @@ public sealed class CancelOrderCommandTests
         );
 
         // Assert
-        exception.Message.ShouldBe($"Order with id {cancelledOrder.Id} not found.");
+        exception.Message.ShouldBe($"Order with id {(Guid)cancelledOrder.Id} not found.");
         _orderRepositoryMock.Verify(
             r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Never
@@ -119,7 +119,7 @@ public sealed class CancelOrderCommandTests
         var completedOrder = new OrderFaker().Generate(1)[0];
         typeof(Order).GetProperty(nameof(Order.Status))!.SetValue(completedOrder, Status.Completed);
 
-        var command = new CancelOrderCommand(completedOrder.Id);
+        var command = new CancelOrderCommand((Guid)completedOrder.Id);
 
         _orderRepositoryMock
             .Setup(r =>
@@ -133,7 +133,7 @@ public sealed class CancelOrderCommandTests
         );
 
         // Assert
-        exception.Message.ShouldBe($"Order with id {completedOrder.Id} not found.");
+        exception.Message.ShouldBe($"Order with id {(Guid)completedOrder.Id} not found.");
         _orderRepositoryMock.Verify(
             r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Never

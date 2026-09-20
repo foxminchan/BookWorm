@@ -1,5 +1,8 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Catalog.UnitTests.Grpc.Context;
 using Grpc.Core;
@@ -34,12 +37,12 @@ public sealed class BookServiceTests
             "test-image.jpg",
             29.99m,
             19.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
         // Use reflection to set the id property since it's not settable directly
-        typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
+        typeof(Book).GetProperty("Id")!.SetValue(book, BookId.From(bookId));
 
         _bookRepositoryMock
             .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
@@ -102,12 +105,12 @@ public sealed class BookServiceTests
             "test-image.jpg",
             29.99m,
             null,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
         // Use reflection to set the id and Status properties
-        typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
+        typeof(Book).GetProperty("Id")!.SetValue(book, BookId.From(bookId));
         typeof(Book).GetProperty("Status")!.SetValue(book, Status.OutOfStock);
 
         _bookRepositoryMock
@@ -142,9 +145,9 @@ public sealed class BookServiceTests
                 "test-image.jpg",
                 29.99m,
                 19.99m,
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
-                [Guid.CreateVersion7()]
+                CategoryId.From(Guid.CreateVersion7()),
+                PublisherId.From(Guid.CreateVersion7()),
+                [AuthorId.From(Guid.CreateVersion7())]
             ),
             new(
                 "Test Book 2",
@@ -152,14 +155,14 @@ public sealed class BookServiceTests
                 "test-image.jpg",
                 29.99m,
                 19.99m,
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
-                [Guid.CreateVersion7()]
+                CategoryId.From(Guid.CreateVersion7()),
+                PublisherId.From(Guid.CreateVersion7()),
+                [AuthorId.From(Guid.CreateVersion7())]
             ),
         ];
         // Use reflection to set the id properties since they're not settable directly
-        typeof(Book).GetProperty("Id")!.SetValue(books[0], bookIds[0]);
-        typeof(Book).GetProperty("Id")!.SetValue(books[1], bookIds[1]);
+        typeof(Book).GetProperty("Id")!.SetValue(books[0], BookId.From(bookIds[0]));
+        typeof(Book).GetProperty("Id")!.SetValue(books[1], BookId.From(bookIds[1]));
 
         _bookRepositoryMock
             .Setup(repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None))
@@ -210,11 +213,11 @@ public sealed class BookServiceTests
             "test-image.jpg",
             29.99m,
             19.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
-        typeof(Book).GetProperty("Id")!.SetValue(book, bookId);
+        typeof(Book).GetProperty("Id")!.SetValue(book, BookId.From(bookId));
 
         _bookRepositoryMock
             .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
@@ -267,9 +270,9 @@ public sealed class BookServiceTests
                 "test-image.jpg",
                 29.99m,
                 19.99m,
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
-                [Guid.CreateVersion7()]
+                CategoryId.From(Guid.CreateVersion7()),
+                PublisherId.From(Guid.CreateVersion7()),
+                [AuthorId.From(Guid.CreateVersion7())]
             ),
             new(
                 "Test Book 2",
@@ -277,13 +280,13 @@ public sealed class BookServiceTests
                 "test-image.jpg",
                 29.99m,
                 19.99m,
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
-                [Guid.CreateVersion7()]
+                CategoryId.From(Guid.CreateVersion7()),
+                PublisherId.From(Guid.CreateVersion7()),
+                [AuthorId.From(Guid.CreateVersion7())]
             ),
         ];
-        typeof(Book).GetProperty("Id")!.SetValue(books[0], bookIds[0]);
-        typeof(Book).GetProperty("Id")!.SetValue(books[1], bookIds[1]);
+        typeof(Book).GetProperty("Id")!.SetValue(books[0], BookId.From(bookIds[0]));
+        typeof(Book).GetProperty("Id")!.SetValue(books[1], BookId.From(bookIds[1]));
 
         _bookRepositoryMock
             .Setup(repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None))

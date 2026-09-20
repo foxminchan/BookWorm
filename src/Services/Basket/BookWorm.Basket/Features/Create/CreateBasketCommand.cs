@@ -21,7 +21,8 @@ internal sealed class CreateBasketHandler(
 
         var result = await repository.CreateOrUpdateBasketAsync(basket);
 
-        return result?.Id
-            ?? throw new BasketCreatedException("An error occurred while creating the basket.");
+        return result is not null
+            ? (string)result.Id
+            : throw new BasketCreatedException("An error occurred while creating the basket.");
     }
 }

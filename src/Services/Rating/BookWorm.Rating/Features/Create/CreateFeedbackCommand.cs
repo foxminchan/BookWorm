@@ -33,6 +33,6 @@ internal sealed class CreateFeedbackHandler(IFeedbackRepository repository)
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-        return result.Id;
+        return (Guid)result.Id;
     }
 }

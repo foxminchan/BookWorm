@@ -15,7 +15,7 @@ internal sealed class BookUpsertEmbeddingHandler(
         CancellationToken cancellationToken
     )
     {
-        BookApiTrace.LogBookCreated(logger, notification.Book.Id);
+        BookApiTrace.LogBookCreated(logger, (Guid)notification.Book.Id);
         await ingestion.IngestDataAsync(notification.Book, cancellationToken);
     }
 
@@ -24,7 +24,7 @@ internal sealed class BookUpsertEmbeddingHandler(
         CancellationToken cancellationToken
     )
     {
-        BookApiTrace.LogBookUpdated(logger, notification.Book.Id);
+        BookApiTrace.LogBookUpdated(logger, (Guid)notification.Book.Id);
         await ingestion.IngestDataAsync(notification.Book, cancellationToken);
     }
 }

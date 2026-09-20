@@ -21,7 +21,7 @@ public sealed class CreateCategoryCommandTests
     {
         // Arrange
         var command = _faker.Generate();
-        var categoryId = Guid.CreateVersion7();
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
         var category = new Category(command.Name) { Id = categoryId };
 
         _repositoryMock
@@ -35,7 +35,7 @@ public sealed class CreateCategoryCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(categoryId);
+        result.ShouldBe((Guid)categoryId);
         _repositoryMock.Verify(
             r =>
                 r.AddAsync(

@@ -24,11 +24,11 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
-        var command = new DeletePublisherCommand(publisherId);
+        var publisherId = (Guid)publisher.Id;
+        var command = new DeletePublisherCommand((Guid)publisherId);
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)publisherId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(publisher);
 
         _repositoryMock
@@ -41,7 +41,7 @@ public sealed class DeletePublisherCommandTests
         // Assert
         result.ShouldBe(Unit.Value);
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)publisherId, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _repositoryMock.Verify(r => r.Delete(publisher), Times.Once);
@@ -85,7 +85,7 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
+        var publisherId = (Guid)publisher.Id;
         var command = new DeletePublisherCommand(publisherId);
         var cancellationToken = CancellationToken.None;
 
@@ -141,7 +141,7 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
+        var publisherId = (Guid)publisher.Id;
         var command = new DeletePublisherCommand(publisherId);
         var expectedException = new InvalidOperationException("Failed to save changes");
 
@@ -221,7 +221,7 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
+        var publisherId = (Guid)publisher.Id;
         var command = new DeletePublisherCommand(publisherId);
         var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;

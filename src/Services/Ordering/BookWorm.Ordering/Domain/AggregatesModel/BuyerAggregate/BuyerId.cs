@@ -1,0 +1,6 @@
+using Vogen;
+
+namespace BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
+
+[ValueObject<Guid>(conversions: Conversions.SystemTextJson | Conversions.EfCoreValueConverter)]
+public readonly partial record struct BuyerId;

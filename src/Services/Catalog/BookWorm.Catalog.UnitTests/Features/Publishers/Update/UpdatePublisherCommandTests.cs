@@ -27,10 +27,10 @@ public sealed class UpdatePublisherCommandTests
         var publisherId = publisher.Id;
         const string newName = "Updated Publisher Name";
 
-        var command = new UpdatePublisherCommand(publisherId, newName);
+        var command = new UpdatePublisherCommand((Guid)publisherId, newName);
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)publisherId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(publisher);
 
         _repositoryMock
@@ -44,7 +44,7 @@ public sealed class UpdatePublisherCommandTests
         result.ShouldBe(Unit.Value);
         publisher.Name.ShouldBe(newName);
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)publisherId, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _repositoryMock.Verify(

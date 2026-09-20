@@ -23,7 +23,7 @@ public sealed class DomainToDtoMapperTests
         // Assert
         result.Count.ShouldBe(1);
         var dto = result[0];
-        dto.Id.ShouldBe(feedback.Id);
+        dto.Id.ShouldBe((Guid)feedback.Id);
         dto.FirstName.ShouldBe(firstName);
         dto.LastName.ShouldBe(lastName);
         dto.Comment.ShouldBe(comment);
@@ -44,7 +44,7 @@ public sealed class DomainToDtoMapperTests
         result.Count.ShouldBe(feedbacks.Length);
         for (var i = 0; i < feedbacks.Length; i++)
         {
-            result[i].Id.ShouldBe(feedbacks[i].Id);
+            result[i].Id.ShouldBe((Guid)feedbacks[i].Id);
             result[i].BookId.ShouldBe(feedbacks[i].BookId);
             result[i].Rating.ShouldBe(feedbacks[i].Rating);
             result[i].FirstName.ShouldBe(feedbacks[i].FirstName);

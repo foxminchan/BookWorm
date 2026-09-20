@@ -30,16 +30,16 @@ internal sealed class OrderSummaryViewProjection : MultiStreamProjection<OrderSu
 
         // Tell the projection how to group the events
         // by the aggregate id
-        Identity<OrderPlacedEvent>(e => e.Order.Id);
-        Identity<OrderCancelledEvent>(e => e.Order.Id);
-        Identity<OrderCompletedEvent>(e => e.Order.Id);
+        Identity<OrderPlacedEvent>(e => (Guid)e.Order.Id);
+        Identity<OrderCancelledEvent>(e => (Guid)e.Order.Id);
+        Identity<OrderCompletedEvent>(e => (Guid)e.Order.Id);
     }
 
     public static OrderSummaryView Create(OrderPlacedEvent @event)
     {
         return new()
         {
-            Id = @event.Order.Id,
+            Id = (Guid)@event.Order.Id,
             Status = Status.New,
             TotalPrice = @event.Order.TotalPrice,
         };
@@ -47,7 +47,7 @@ internal sealed class OrderSummaryViewProjection : MultiStreamProjection<OrderSu
 
     public static OrderSummaryView Apply(OrderSummaryView view, OrderPlacedEvent @event)
     {
-        view.Id = @event.Order.Id;
+        view.Id = (Guid)@event.Order.Id;
         view.Status = Status.New;
         view.TotalPrice = @event.Order.TotalPrice;
         return view;

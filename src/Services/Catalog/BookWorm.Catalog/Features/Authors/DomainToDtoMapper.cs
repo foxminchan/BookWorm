@@ -6,7 +6,7 @@ internal static class DomainToDtoMapper
     {
         public AuthorDto ToAuthorDto()
         {
-            return new(author.Id, author.Name);
+            return new((Guid)author.Id, author.Name);
         }
     }
 

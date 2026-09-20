@@ -1,4 +1,7 @@
+using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Domain.EventHandlers;
 using BookWorm.Catalog.Domain.Events;
 using BookWorm.Chassis.AI.Ingestion;
@@ -27,9 +30,9 @@ public sealed class BookUpsertEmbeddingHandlerTests
             "image.jpg",
             44.99m,
             39.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
         var @event = new BookCreatedEvent(book);
 
@@ -53,9 +56,9 @@ public sealed class BookUpsertEmbeddingHandlerTests
             "refactoring.jpg",
             49.99m,
             44.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
         var @event = new BookUpdatedEvent(book);
 

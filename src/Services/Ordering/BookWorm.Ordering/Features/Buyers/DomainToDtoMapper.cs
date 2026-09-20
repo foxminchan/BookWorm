@@ -6,7 +6,7 @@ internal static class DomainToDtoMapper
     {
         public BuyerDto ToBuyerDto()
         {
-            return new(buyer.Id, buyer.Name, buyer.FullAddress);
+            return new((Guid)buyer.Id, buyer.Name, buyer.FullAddress);
         }
     }
 

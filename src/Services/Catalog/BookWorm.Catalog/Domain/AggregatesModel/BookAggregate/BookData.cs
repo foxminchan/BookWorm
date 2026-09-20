@@ -1,4 +1,7 @@
-﻿namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+
+namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 
 [ExcludeFromCodeCoverage]
 internal sealed class BookData : List<Book>
@@ -36,6 +39,15 @@ internal sealed class BookData : List<Book>
         string? description = null
     )
     {
-        return new(name, description, null, price, priceSale, Guid.Empty, Guid.Empty, []);
+        return new(
+            name,
+            description,
+            null,
+            price,
+            priceSale,
+            CategoryId.From(Guid.Empty),
+            PublisherId.From(Guid.Empty),
+            []
+        );
     }
 }

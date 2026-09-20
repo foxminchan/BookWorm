@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 
-public sealed class Category() : Entity, IAggregateRoot
+public sealed class Category() : Entity<CategoryId>, IAggregateRoot
 {
     public Category(string name)
         : this()

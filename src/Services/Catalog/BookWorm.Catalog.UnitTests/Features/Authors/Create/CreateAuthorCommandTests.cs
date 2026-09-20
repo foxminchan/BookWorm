@@ -33,7 +33,7 @@ public sealed class CreateAuthorCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(author.Id);
+        result.ShouldBe((Guid)author.Id);
         _repositoryMock.Verify(
             r =>
                 r.AddAsync(

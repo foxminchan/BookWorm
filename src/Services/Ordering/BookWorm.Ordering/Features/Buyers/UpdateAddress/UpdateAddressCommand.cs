@@ -22,9 +22,9 @@ internal sealed class UpdateAddressHandler(
     {
         var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
-        var buyer = await repository.GetByIdAsync(userId, cancellationToken);
+        var buyer = await repository.GetByIdAsync((Guid)userId, cancellationToken);
 
-        Guard.Against.NotFound(buyer, userId);
+        Guard.Against.NotFound(buyer, (Guid)userId);
 
         buyer.UpdateAddress(request.Street, request.City, request.Province);
 

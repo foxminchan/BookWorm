@@ -1,6 +1,7 @@
 using BookWorm.Chassis.Repository;
 using BookWorm.Common;
 using BookWorm.Contracts;
+using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
 
@@ -34,7 +35,7 @@ public sealed class DeleteBasketFailedConsumerTests
     public async Task GivenDeleteBasketFailedCommand_WhenPublished_ThenConsumerShouldConsumeItAndDeleteOrder()
     {
         // Arrange
-        var order = new Order(_orderId, null, []);
+        var order = new Order(BuyerId.From(_orderId), null, []);
         _repositoryMock
             .Setup(x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);

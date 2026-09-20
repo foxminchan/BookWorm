@@ -15,7 +15,7 @@ public sealed class CustomerBasketTests
         var basket = new CustomerBasket(id, items);
 
         // Assert
-        basket.Id.ShouldBe(id);
+        basket.Id.ShouldBe(CustomerId.From(id));
         basket.Items.Count.ShouldBe(2);
         basket.Items.ShouldContain(i => i.Id == "book-1" && i.Quantity == 2);
         basket.Items.ShouldContain(i => i.Id == "book-2" && i.Quantity == 1);
@@ -28,7 +28,7 @@ public sealed class CustomerBasketTests
         var basket = new CustomerBasket();
 
         // Assert
-        basket.Id.ShouldBeNull();
+        basket.Id.IsInitialized().ShouldBeFalse();
         basket.Items.ShouldBeEmpty();
     }
 

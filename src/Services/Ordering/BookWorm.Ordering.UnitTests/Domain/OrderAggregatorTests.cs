@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
 using BookWorm.Ordering.Domain.Exceptions;
 
@@ -86,7 +87,7 @@ public sealed class OrderAggregatorTests
     public void GivenNewlyCreatedOrder_WhenCheckingStatus_ThenShouldBeNew()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Act
         var status = order.Status;
@@ -99,7 +100,7 @@ public sealed class OrderAggregatorTests
     public void GivenCompletedOrder_WhenCancelling_ThenShouldThrowDomainException()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
         order.MarkAsCompleted();
 
         // Act & Assert
@@ -111,7 +112,7 @@ public sealed class OrderAggregatorTests
     public void GivenNewOrder_WhenCompleting_ThenStatusShouldBeCompleted()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Act
         order.MarkAsCompleted();
@@ -124,7 +125,7 @@ public sealed class OrderAggregatorTests
     public void GivenNewOrder_WhenCreating_ThenShouldRegisterOrderPlacedEvent()
     {
         // Arrange
-        var buyerId = Guid.CreateVersion7();
+        var buyerId = BuyerId.From(Guid.CreateVersion7());
         const string note = "Test order";
         List<OrderItem> orderItems = [new(Guid.CreateVersion7(), 1, 29.99m)];
 
@@ -151,14 +152,14 @@ public sealed class OrderAggregatorTests
 
         // Assert
         orderItem.Order.ShouldBeNull();
-        orderItem.OrderId.ShouldBe(Guid.Empty);
+        ((Guid)orderItem.OrderId).ShouldBe(Guid.Empty);
     }
 
     [Test]
     public void GivenOrder_WhenCreating_ThenShouldInitializeBuyerProperty()
     {
         // Arrange
-        var buyerId = Guid.CreateVersion7();
+        var buyerId = BuyerId.From(Guid.CreateVersion7());
 
         // Act
         var order = new Order(buyerId, null, []);
@@ -172,7 +173,7 @@ public sealed class OrderAggregatorTests
     public void GivenCancelledOrder_WhenCompleting_ThenShouldThrowDomainException()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
         order.MarkAsCanceled();
 
         // Act & Assert
@@ -201,7 +202,7 @@ public sealed class OrderAggregatorTests
     public void GivenOrderWithItems_WhenCalculatingTotalPrice_ThenShouldReturnSumOfAllItems()
     {
         // Arrange
-        var buyerId = Guid.CreateVersion7();
+        var buyerId = BuyerId.From(Guid.CreateVersion7());
         List<OrderItem> orderItems =
         [
             new(Guid.CreateVersion7(), 2, 10.00m), // 20.00
@@ -221,7 +222,7 @@ public sealed class OrderAggregatorTests
     public void GivenNewOrder_WhenMarkingAsCompleted_ThenShouldReturnSameInstance()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Act
         var result = order.MarkAsCompleted();
@@ -234,7 +235,7 @@ public sealed class OrderAggregatorTests
     public void GivenCompletedOrder_WhenMarkingAsCompleted_ThenShouldThrowDomainException()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
         order.MarkAsCompleted(); // Make it completed first
 
         // Act & Assert
@@ -245,7 +246,7 @@ public sealed class OrderAggregatorTests
     public void GivenNewOrder_WhenMarkingAsCanceled_ThenShouldReturnSameInstance()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Act
         var result = order.MarkAsCanceled();
@@ -258,7 +259,7 @@ public sealed class OrderAggregatorTests
     public void GivenCompletedOrder_WhenMarkingAsCanceled_ThenShouldThrowDomainException()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
         order.MarkAsCompleted(); // Make it completed first
 
         // Act & Assert

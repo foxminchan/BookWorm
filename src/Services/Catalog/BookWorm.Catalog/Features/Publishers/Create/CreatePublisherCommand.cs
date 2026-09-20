@@ -16,6 +16,6 @@ internal sealed class CreatePublisherHandler(IPublisherRepository repository)
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-        return result.Id;
+        return (Guid)result.Id;
     }
 }

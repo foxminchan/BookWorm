@@ -18,9 +18,13 @@ public sealed class BookAggregatorTests
         const string image = "example.jpg";
         const decimal originalPrice = 44.99m;
         const decimal salePrice = 39.99m;
-        var categoryId = Guid.CreateVersion7();
-        var publisherId = Guid.CreateVersion7();
-        Guid[] authorIds = [Guid.CreateVersion7(), Guid.CreateVersion7()];
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
+        var publisherId = PublisherId.From(Guid.CreateVersion7());
+        AuthorId[] authorIds =
+        [
+            AuthorId.From(Guid.CreateVersion7()),
+            AuthorId.From(Guid.CreateVersion7()),
+        ];
 
         // Act
         var book = new Book(
@@ -57,9 +61,9 @@ public sealed class BookAggregatorTests
         const string image = "test.jpg";
         const decimal price = 19.99m;
         decimal? priceSale = 15.99m;
-        var categoryId = Guid.CreateVersion7();
-        var publisherId = Guid.CreateVersion7();
-        Guid[] authorIds = [Guid.CreateVersion7()];
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
+        var publisherId = PublisherId.From(Guid.CreateVersion7());
+        AuthorId[] authorIds = [AuthorId.From(Guid.CreateVersion7())];
 
         // Act & Assert
         Should
@@ -88,9 +92,9 @@ public sealed class BookAggregatorTests
             "original.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         const string newName = "Updated Name";
@@ -98,9 +102,13 @@ public sealed class BookAggregatorTests
         const decimal newPrice = 29.99m;
         decimal? newPriceSale = 24.99m;
         const string newImage = "updated.jpg";
-        var newCategoryId = Guid.CreateVersion7();
-        var newPublisherId = Guid.CreateVersion7();
-        var newAuthorIds = new[] { Guid.CreateVersion7(), Guid.CreateVersion7() };
+        var newCategoryId = CategoryId.From(Guid.CreateVersion7());
+        var newPublisherId = PublisherId.From(Guid.CreateVersion7());
+        var newAuthorIds = new[]
+        {
+            AuthorId.From(Guid.CreateVersion7()),
+            AuthorId.From(Guid.CreateVersion7()),
+        };
 
         // Act
         book.Update(
@@ -139,9 +147,9 @@ public sealed class BookAggregatorTests
             "original.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Act & Assert
@@ -153,9 +161,9 @@ public sealed class BookAggregatorTests
                     29.99m,
                     24.99m,
                     "updated.jpg",
-                    Guid.CreateVersion7(),
-                    Guid.CreateVersion7(),
-                    [Guid.CreateVersion7()]
+                    CategoryId.From(Guid.CreateVersion7()),
+                    PublisherId.From(Guid.CreateVersion7()),
+                    [AuthorId.From(Guid.CreateVersion7())]
                 )
             )
             .Message.ShouldBe("Book name is required.");
@@ -171,9 +179,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Act
@@ -194,9 +202,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
         book.AddRating(5);
 
@@ -218,9 +226,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Add some ratings
@@ -246,9 +254,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Add one rating
@@ -273,9 +281,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Act
@@ -297,9 +305,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Add multiple ratings: 5, 4, 3, 2, 1 (average = 3.0)
@@ -328,9 +336,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Act
@@ -350,15 +358,19 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         const string description = "Test Description";
-        var categoryId = Guid.CreateVersion7();
-        var publisherId = Guid.CreateVersion7();
-        Guid[] authorIds = [Guid.CreateVersion7(), Guid.CreateVersion7()];
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
+        var publisherId = PublisherId.From(Guid.CreateVersion7());
+        AuthorId[] authorIds =
+        [
+            AuthorId.From(Guid.CreateVersion7()),
+            AuthorId.From(Guid.CreateVersion7()),
+        ];
 
         // Act
         book.SetMetadata(description, categoryId, publisherId, authorIds);
@@ -388,12 +400,12 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
-        var bookAuthor = new BookAuthor(Guid.CreateVersion7());
+        var bookAuthor = new BookAuthor(AuthorId.From(Guid.CreateVersion7()));
 
         // Act
         // Note: In a real scenario, EF Core would set these
@@ -420,15 +432,15 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         const string description = "New Description";
-        var categoryId = Guid.CreateVersion7();
-        var publisherId = Guid.CreateVersion7();
-        Guid[] authorIds = [Guid.CreateVersion7()];
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
+        var publisherId = PublisherId.From(Guid.CreateVersion7());
+        AuthorId[] authorIds = [AuthorId.From(Guid.CreateVersion7())];
 
         // Act
         var result = book.SetMetadata(description, categoryId, publisherId, authorIds);
@@ -447,9 +459,9 @@ public sealed class BookAggregatorTests
             "original.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Act
@@ -459,9 +471,9 @@ public sealed class BookAggregatorTests
             29.99m,
             24.99m,
             "new.jpg",
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Assert
@@ -478,9 +490,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         // Act
@@ -500,9 +512,9 @@ public sealed class BookAggregatorTests
             "test.jpg",
             19.99m,
             15.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         book.AddRating(5); // Add a rating first

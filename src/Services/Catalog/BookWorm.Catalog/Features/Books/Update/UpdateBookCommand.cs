@@ -1,4 +1,7 @@
-﻿using BookWorm.Chassis.CQRS;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 using Mediator;
 
@@ -42,9 +45,9 @@ internal sealed class UpdateBookHandler(IBookRepository repository)
             request.Price,
             request.PriceSale,
             imageName,
-            request.CategoryId,
-            request.PublisherId,
-            request.AuthorIds
+            CategoryId.From(request.CategoryId),
+            PublisherId.From(request.PublisherId),
+            [.. request.AuthorIds.Select(AuthorId.From)]
         );
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);

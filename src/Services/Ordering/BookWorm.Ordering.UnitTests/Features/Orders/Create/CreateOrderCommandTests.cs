@@ -134,7 +134,7 @@ public sealed class CreateOrderCommandTests
         var result = await _handler.Handle(_command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(expectedOrder.Id);
+        result.ShouldBe((Guid)expectedOrder.Id);
         _repositoryMock.Verify(
             x =>
                 x.AddAsync(

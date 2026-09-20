@@ -16,6 +16,6 @@ internal sealed class CreateAuthorHandler(IAuthorRepository repository)
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-        return result.Id;
+        return (Guid)result.Id;
     }
 }

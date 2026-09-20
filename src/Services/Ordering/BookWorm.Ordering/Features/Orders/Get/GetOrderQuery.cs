@@ -31,7 +31,7 @@ internal sealed class GetOrderHandler(
             var buyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
             order = await repository.FirstOrDefaultAsync(
-                new OrderFilterSpec(request.Id, buyerId),
+                new OrderFilterSpec(request.Id, (Guid)buyerId),
                 cancellationToken
             );
         }

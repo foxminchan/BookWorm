@@ -1,4 +1,7 @@
-﻿using BookWorm.Chassis.CQRS;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Chassis.CQRS;
 using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Create;
@@ -33,15 +36,15 @@ internal sealed class CreateBookHandler(IBookRepository repository)
             request.ImageName,
             request.Price,
             request.PriceSale,
-            request.CategoryId,
-            request.PublisherId,
-            request.AuthorIds
+            CategoryId.From(request.CategoryId),
+            PublisherId.From(request.PublisherId),
+            [.. request.AuthorIds.Select(AuthorId.From)]
         );
 
         var result = await repository.AddAsync(book, cancellationToken);
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-        return result.Id;
+        return (Guid)result.Id;
     }
 }

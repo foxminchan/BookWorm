@@ -1,3 +1,4 @@
+using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
 using BookWorm.Ordering.Domain.Exceptions;
@@ -10,7 +11,7 @@ public sealed class OrderDomainEventTests
     public void GivenNewOrder_WhenCompleted_ThenShouldRegisterOrderCompletedEvent()
     {
         // Arrange
-        var buyerId = Guid.CreateVersion7();
+        var buyerId = BuyerId.From(Guid.CreateVersion7());
         var order = new Order(buyerId, "Test order", [new(Guid.CreateVersion7(), 1, 10.00m)]);
         order.ClearDomainEvents();
 
@@ -28,7 +29,7 @@ public sealed class OrderDomainEventTests
     public void GivenNewOrder_WhenCancelled_ThenShouldRegisterOrderCancelledEvent()
     {
         // Arrange
-        var buyerId = Guid.CreateVersion7();
+        var buyerId = BuyerId.From(Guid.CreateVersion7());
         var order = new Order(buyerId, "Test order", [new(Guid.CreateVersion7(), 1, 10.00m)]);
         order.ClearDomainEvents();
 
@@ -46,7 +47,7 @@ public sealed class OrderDomainEventTests
     public void GivenOrder_WhenDeleted_ThenIsDeletedShouldBeTrue()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Act
         order.Delete();
@@ -59,7 +60,7 @@ public sealed class OrderDomainEventTests
     public void GivenNewOrder_WhenCreated_ThenIsDeletedShouldBeFalse()
     {
         // Arrange & Act
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Assert
         order.IsDeleted.ShouldBeFalse();
@@ -72,7 +73,7 @@ public sealed class OrderDomainEventTests
         const string note = "Please deliver before 5 PM";
 
         // Act
-        var order = new Order(Guid.CreateVersion7(), note, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), note, []);
 
         // Assert
         order.Note.ShouldBe(note);
@@ -82,7 +83,7 @@ public sealed class OrderDomainEventTests
     public void GivenOrderWithNullNote_WhenCreated_ThenNoteShouldBeNull()
     {
         // Arrange & Act
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Assert
         order.Note.ShouldBeNull();
@@ -92,7 +93,7 @@ public sealed class OrderDomainEventTests
     public void GivenOrderWithNoItems_WhenCalculatingTotalPrice_ThenShouldBeZero()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
 
         // Act
         var totalPrice = order.TotalPrice;
@@ -105,7 +106,11 @@ public sealed class OrderDomainEventTests
     public void GivenOrderWithSingleItem_WhenCalculatingTotalPrice_ThenShouldReturnItemTotal()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, [new(Guid.CreateVersion7(), 2, 25.00m)]);
+        var order = new Order(
+            BuyerId.From(Guid.CreateVersion7()),
+            null,
+            [new(Guid.CreateVersion7(), 2, 25.00m)]
+        );
 
         // Act
         var totalPrice = order.TotalPrice;
@@ -119,7 +124,7 @@ public sealed class OrderDomainEventTests
     {
         // Arrange
         List<OrderItem> items = [new(Guid.CreateVersion7(), 1, 10.00m)];
-        var order = new Order(Guid.CreateVersion7(), null, items);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, items);
 
         // Act
         var orderItems = order.OrderItems;
@@ -134,7 +139,7 @@ public sealed class OrderDomainEventTests
     public void GivenCancelledOrder_WhenCancelling_ThenShouldThrowDomainException()
     {
         // Arrange
-        var order = new Order(Guid.CreateVersion7(), null, []);
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
         order.MarkAsCanceled();
 
         // Act & Assert

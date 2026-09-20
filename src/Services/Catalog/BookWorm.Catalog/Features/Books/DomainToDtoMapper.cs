@@ -12,7 +12,7 @@ internal sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book
         var imageUrl = book.Image is not null ? blobService.GetFileSasUrl(book.Image) : null;
 
         return new(
-            book.Id,
+            (Guid)book.Id,
             book.Name,
             book.Description,
             imageUrl,

@@ -24,10 +24,10 @@ public sealed class DeleteAuthorCommandTests
     {
         // Arrange
         var author = _faker.Generate()[0];
-        var command = new DeleteAuthorCommand(author.Id);
+        var command = new DeleteAuthorCommand((Guid)author.Id);
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(author.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)author.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(author);
 
         _repositoryMock.Setup(r => r.Delete(author));

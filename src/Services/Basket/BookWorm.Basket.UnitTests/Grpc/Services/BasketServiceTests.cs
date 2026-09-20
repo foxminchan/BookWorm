@@ -35,7 +35,7 @@ public sealed class BasketServiceTests
         var context = TestServerCallContext.Create();
         var httpContext = new DefaultHttpContext
         {
-            User = new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, basket.Id)])),
+            User = new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, (string)basket.Id)])),
         };
         context.SetUserState("__HttpContext", httpContext);
 

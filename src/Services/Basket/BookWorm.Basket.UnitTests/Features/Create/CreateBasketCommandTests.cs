@@ -46,7 +46,7 @@ public sealed class CreateBasketCommandTests
             x =>
                 x.CreateOrUpdateBasketAsync(
                     It.Is<CustomerBasket>(b =>
-                        b.Id == _userId && b.Items.Count == command.Items.Count
+                        b.Id == CustomerId.From(_userId) && b.Items.Count == command.Items.Count
                     )
                 ),
             Times.Once
@@ -96,12 +96,12 @@ public sealed class CreateBasketCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(basket.Id);
+        result.ShouldBe((string)basket.Id);
         _mockBasketRepository.Verify(
             x =>
                 x.CreateOrUpdateBasketAsync(
                     It.Is<CustomerBasket>(b =>
-                        b.Id == _userId && b.Items.Count == command.Items.Count
+                        b.Id == CustomerId.From(_userId) && b.Items.Count == command.Items.Count
                     )
                 ),
             Times.Once

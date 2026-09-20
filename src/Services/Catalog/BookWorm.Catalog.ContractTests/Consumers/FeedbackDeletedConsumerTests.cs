@@ -37,10 +37,10 @@ public sealed class FeedbackDeletedConsumerTests
     {
         // Arrange
         _repositoryMock
-            .Setup(x => x.GetByIdAsync(_book.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)_book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_book);
 
-        var @event = new FeedbackDeletedIntegrationEvent(_book.Id, _rating, _feedbackId);
+        var @event = new FeedbackDeletedIntegrationEvent((Guid)_book.Id, _rating, _feedbackId);
         var handler = new FeedbackDeletedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
@@ -49,7 +49,7 @@ public sealed class FeedbackDeletedConsumerTests
         // Assert
         await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
-            x => x.GetByIdAsync(_book.Id, It.IsAny<CancellationToken>()),
+            x => x.GetByIdAsync((Guid)_book.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);

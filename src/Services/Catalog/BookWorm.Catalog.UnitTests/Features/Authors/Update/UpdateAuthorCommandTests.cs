@@ -23,10 +23,10 @@ public sealed class UpdateAuthorCommandTests
     {
         // Arrange
         var author = _faker.Generate()[0];
-        var command = new UpdateAuthorCommand(author.Id, "New Author Name");
+        var command = new UpdateAuthorCommand((Guid)author.Id, "New Author Name");
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(author.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)author.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(author);
 
         _repositoryMock

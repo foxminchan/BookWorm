@@ -20,7 +20,7 @@ internal sealed class OrderEventHandler(
         CancellationToken cancellationToken
     )
     {
-        OrderingTrace.LogOrderCancelled(logger, notification.Order.Id, Status.Cancelled);
+        OrderingTrace.LogOrderCancelled(logger, (Guid)notification.Order.Id, Status.Cancelled);
         documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
@@ -35,7 +35,7 @@ internal sealed class OrderEventHandler(
         CancellationToken cancellationToken
     )
     {
-        OrderingTrace.LogOrderCompleted(logger, notification.Order.Id, Status.Completed);
+        OrderingTrace.LogOrderCompleted(logger, (Guid)notification.Order.Id, Status.Completed);
         documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.GetAndUpdate<OrderSummary>(
             Guid.CreateVersion7(),
@@ -50,7 +50,7 @@ internal sealed class OrderEventHandler(
         CancellationToken cancellationToken
     )
     {
-        OrderingTrace.LogOrderPlaced(logger, notification.Order.Id, Status.New);
+        OrderingTrace.LogOrderPlaced(logger, (Guid)notification.Order.Id, Status.New);
         documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.Add<OrderSummary>(
             Guid.CreateVersion7(),

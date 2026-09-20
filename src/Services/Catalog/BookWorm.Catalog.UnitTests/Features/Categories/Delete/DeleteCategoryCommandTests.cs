@@ -28,10 +28,10 @@ public sealed class DeleteCategoryCommandTests
     {
         // Arrange
         var category = _categoryFaker.Generate(1)[0];
-        var command = new DeleteCategoryCommand(category.Id);
+        var command = new DeleteCategoryCommand((Guid)category.Id);
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(category.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(category);
         _unitOfWorkMock
             .Setup(u => u.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
@@ -43,7 +43,7 @@ public sealed class DeleteCategoryCommandTests
         // Assert
         result.ShouldBe(Unit.Value);
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(category.Id, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _repositoryMock.Verify(r => r.Delete(category), Times.Once);
@@ -140,11 +140,11 @@ public sealed class DeleteCategoryCommandTests
     {
         // Arrange
         var category = _categoryFaker.Generate(1)[0];
-        var command = new DeleteCategoryCommand(category.Id);
+        var command = new DeleteCategoryCommand((Guid)category.Id);
         var expectedException = new InvalidOperationException("Database save failed");
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(category.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(category);
         _unitOfWorkMock
             .Setup(u => u.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
@@ -157,7 +157,7 @@ public sealed class DeleteCategoryCommandTests
 
         exception.Message.ShouldBe("Database save failed");
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(category.Id, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _repositoryMock.Verify(r => r.Delete(category), Times.Once);
@@ -169,12 +169,12 @@ public sealed class DeleteCategoryCommandTests
     {
         // Arrange
         var category = _categoryFaker.Generate(1)[0];
-        var command = new DeleteCategoryCommand(category.Id);
+        var command = new DeleteCategoryCommand((Guid)category.Id);
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(category.Id, cancellationToken))
+            .Setup(r => r.GetByIdAsync((Guid)category.Id, cancellationToken))
             .ReturnsAsync(category);
         _unitOfWorkMock.Setup(u => u.SaveEntitiesAsync(cancellationToken)).ReturnsAsync(true);
 
@@ -183,7 +183,10 @@ public sealed class DeleteCategoryCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
-        _repositoryMock.Verify(r => r.GetByIdAsync(category.Id, cancellationToken), Times.Once);
+        _repositoryMock.Verify(
+            r => r.GetByIdAsync((Guid)category.Id, cancellationToken),
+            Times.Once
+        );
         _unitOfWorkMock.Verify(u => u.SaveEntitiesAsync(cancellationToken), Times.Once);
     }
 
@@ -221,10 +224,10 @@ public sealed class DeleteCategoryCommandTests
         // Arrange
         const string expectedCategoryName = "Technology Books";
         var category = new Category(expectedCategoryName);
-        var command = new DeleteCategoryCommand(category.Id);
+        var command = new DeleteCategoryCommand((Guid)category.Id);
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(category.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(category);
         _unitOfWorkMock
             .Setup(u => u.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
@@ -249,12 +252,12 @@ public sealed class DeleteCategoryCommandTests
     {
         // Arrange
         var categories = _categoryFaker.Generate(3);
-        var commands = categories.Select(c => new DeleteCategoryCommand(c.Id)).ToArray();
+        var commands = categories.Select(c => new DeleteCategoryCommand((Guid)c.Id)).ToArray();
 
         foreach (var category in categories)
         {
             _repositoryMock
-                .Setup(r => r.GetByIdAsync(category.Id, It.IsAny<CancellationToken>()))
+                .Setup(r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(category);
         }
 
@@ -277,7 +280,7 @@ public sealed class DeleteCategoryCommandTests
         foreach (var category in categories)
         {
             _repositoryMock.Verify(
-                r => r.GetByIdAsync(category.Id, It.IsAny<CancellationToken>()),
+                r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()),
                 Times.Once
             );
             _repositoryMock.Verify(r => r.Delete(category), Times.Once);

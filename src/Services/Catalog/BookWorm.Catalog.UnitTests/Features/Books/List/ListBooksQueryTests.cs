@@ -34,7 +34,7 @@ public sealed class ListBooksQueryTests
         _bookDtos =
         [
             .. _books.Select(b => new BookDto(
-                b.Id,
+                (Guid)b.Id,
                 b.Name,
                 b.Description,
                 b.Image,

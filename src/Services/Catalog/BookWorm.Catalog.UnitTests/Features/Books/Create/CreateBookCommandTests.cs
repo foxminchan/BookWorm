@@ -45,8 +45,8 @@ public sealed class CreateBookCommandTests
                         && b.Image == command.ImageName
                         && b.Price!.OriginalPrice == command.Price
                         && b.Price!.DiscountPrice == command.PriceSale
-                        && b.CategoryId == command.CategoryId
-                        && b.PublisherId == command.PublisherId
+                        && (Guid)b.CategoryId! == command.CategoryId
+                        && (Guid)b.PublisherId! == command.PublisherId
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -87,7 +87,7 @@ public sealed class CreateBookCommandTests
 
         foreach (var authorId in command.AuthorIds)
         {
-            capturedBook!.BookAuthors.ShouldContain(ba => ba.AuthorId == authorId);
+            capturedBook!.BookAuthors.ShouldContain(ba => (Guid)ba.AuthorId == authorId);
         }
     }
 }
