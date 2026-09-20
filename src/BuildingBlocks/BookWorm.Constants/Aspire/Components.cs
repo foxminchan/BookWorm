@@ -12,7 +12,6 @@ public static class Components
     public const string DevUI = "devui";
     public const string VectorDb = "vectordb";
     public const string TurboRepo = "turborepo";
-    public const string ContainerRegistry = "container-registry";
 
     public static class Database
     {

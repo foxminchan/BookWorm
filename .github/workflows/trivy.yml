@@ -20,11 +20,6 @@ on:
           CRITICAL,HIGH,MEDIUM,LOW)
         required: false
         default: "CRITICAL,HIGH,MEDIUM"
-  repository_dispatch:
-    types:
-      - backend-container-images-published
-      - frontend-container-images-published
-
 permissions: {}
 
 concurrency:
@@ -35,7 +30,6 @@ concurrency:
 jobs:
   vulnerability-scan:
     name: 🛡️ Vulnerability Scan
-    if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -68,7 +62,6 @@ jobs:
 
   misconfig-scan:
     name: 🛡️ Misconfiguration Scan
-    if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -98,129 +91,6 @@ jobs:
           category: trivy-misconfig-scan
           ref: ${{ github.ref }}
           sha: ${{ github.sha }}
-
-  container-scan-setup:
-    name: 🔎 Resolve Container Images
-    if: github.event_name == 'repository_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    outputs:
-      images: ${{ steps.resolve.outputs.images }}
-    steps:
-      - name: 🔎 Resolve image list
-        id: resolve
-        env:
-          EVENT_ACTION: ${{ github.event.action }}
-        run: |
-          if [[ "$EVENT_ACTION" == "backend-container-images-published" ]]; then
-            images=(
-              "bookworm/basket"
-              "bookworm/catalog"
-              "bookworm/chatting"
-              "bookworm/finance"
-              "bookworm/mcptools"
-              "bookworm/notification"
-              "bookworm/ordering"
-              "bookworm/rating"
-              "bookworm/scheduler"
-            )
-          else
-            images=(
-              "bookworm/storefront"
-              "bookworm/backoffice"
-            )
-          fi
-          json=$(printf '"%s",' "${images[@]}" | sed 's/,$//')
-          echo "images=[${json}]" >> "$GITHUB_OUTPUT"
-
-  container-scan:
-    name: 🛡️ Container Scan
-    if: github.event_name == 'repository_dispatch'
-    needs:
-      - container-scan-setup
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-      id-token: write
-      attestations: write
-    strategy:
-      fail-fast: false
-      max-parallel: 5
-      matrix:
-        image: ${{ fromJson(needs.container-scan-setup.outputs.images) }}
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 1
-
-      - name: 🔐 Login to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: 🔎 Resolve image digest
-        id: image-digest
-        env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
-        run: |
-          docker pull "${IMAGE}"
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}" | cut -d@ -f2)
-          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "image_ref=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}@${DIGEST}" >> "$GITHUB_OUTPUT"
-
-      - name: 🛡️ Run Trivy scanner
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: image
-          image-ref: ${{ steps.image-digest.outputs.image_ref }}
-          format: sarif
-          output: trivy-image-results.sarif
-          severity: CRITICAL,HIGH,MEDIUM
-
-      - name: 🔤 Create filesystem-safe image slug
-        id: image-slug
-        run: |
-          echo "value=${{ matrix.image }}" | sed 's|/|-|g' >> "$GITHUB_OUTPUT"
-
-      - name: ⬆️ Upload container scan results
-        if: ${{ !cancelled() }}
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
-        with:
-          sarif_file: trivy-image-results.sarif
-          category: trivy-container-scan-${{ matrix.image }}
-          ref: ${{ github.ref }}
-          sha: ${{ github.sha }}
-
-      - name: 📝 Generate CycloneDX SBOM
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: image
-          image-ref: ${{ steps.image-digest.outputs.image_ref }}
-          format: cyclonedx
-          output: sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json
-
-      - name: 📝 Attest SBOM
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
-          subject-digest: ${{ steps.image-digest.outputs.digest }}
-          sbom-path: sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json
-          push-to-registry: true
-
-      - name: ⬆️ Upload SBOM
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: sbom-${{ steps.image-slug.outputs.value }}
-          path: "sbom-${{ steps.image-slug.outputs.value }}.cyclonedx.json"
-          retention-days: 7
 
   sbom:
     name: 📝 SBOM Generation

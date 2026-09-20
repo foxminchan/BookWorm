@@ -78,7 +78,7 @@ deployment targets.
    - Style checking (dotnet format)
    - Static analysis (Roslyn analyzers)
 3. **Build & Test**: Service compilation and comprehensive test execution
-4. **Container Publishing**: Multi-service Docker image publishing to GitHub Container Registry
+4. **Container Publishing**: Multi-service Docker image publishing to Azure Container Registry
 
 ## Rationale
 
@@ -128,8 +128,7 @@ deployment targets.
 1. **Code Quality**: SonarQube integration for technical debt and quality metrics
 2. **Security Scanning**: Snyk for vulnerability scanning and dependency analysis, Betterleaks for
    secrets detection
-3. **Container Management**: GitHub Container Registry (GHCR) for image storage with automated
-   tagging
+3. **Container Management**: Azure Container Registry (ACR) for image storage with automated tagging
 4. **Development Tools**: Husky for commit hooks, dotnet format for code consistency
 5. **Monitoring Integration**: GitHub Actions native monitoring with custom timeout configurations
 
@@ -163,7 +162,7 @@ deployment targets.
 │   ├── format/                     # Code formatting validation
 │   ├── style/                      # Style checking
 │   ├── analyzers/                  # Static code analysis
-│   └── publish/                    # Container publishing to GHCR
+│   └── publish/                    # Container publication is handled by ACR
 └── dependencies/
     ├── dependabot.yml              # Automated dependency updates
     └── CODEOWNERS                  # Code ownership configuration
@@ -172,7 +171,7 @@ deployment targets.
 ### Service Publishing Matrix
 
 ```yaml
-# Actual services published to GitHub Container Registry
+# Services published to Azure Container Registry
 services:
   - Basket: foxminchan/bookworm/basket
   - Catalog: foxminchan/bookworm/catalog
@@ -207,7 +206,7 @@ services:
 
 #### Container Publishing
 
-- **GitHub Container Registry** (ghcr.io) integration
+- **Azure Container Registry** integration
 - **Linux x64 runtime** targeting for container optimization
 - **PublishContainer** target for .NET container publishing
 - **Automatic tagging** with version/latest tag management
