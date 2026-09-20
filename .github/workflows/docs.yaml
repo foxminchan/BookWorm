@@ -66,7 +66,7 @@ jobs:
         working-directory: docs/docusaurus
 
       - name: ⬇️ Download Allure Report (Backoffice)
-        uses: dawidd6/action-download-artifact@57aa996fc1713cc1579039614f4645a7f4841fd4 # v23
+        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
         with:
           name: allure-report-backoffice
           path: docs/docusaurus/build/reports/backoffice
@@ -78,7 +78,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: ⬇️ Download Allure Report (Storefront)
-        uses: dawidd6/action-download-artifact@57aa996fc1713cc1579039614f4645a7f4841fd4 # v23
+        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
         with:
           name: allure-report-storefront
           path: docs/docusaurus/build/reports/storefront
@@ -107,4 +107,4 @@ jobs:
     steps:
       - name: 🚀 Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
