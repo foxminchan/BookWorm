@@ -51,7 +51,7 @@
   - [x] Enabled Token Exchange for service-to-service authentication
 - [x] Implemented caching with FusionCache
 - [x] Incorporated AI components:
-  - [x] Use Azure OpenAI for LLM and embeddings
+  - [x] Use Microsoft Foundry for LLM and embeddings
   - [x] Orchestrated multi-agent workflows using Agent Framework
   - [x] Standardized AI tooling with Model Context Protocol (MCP)
   - [x] Enabled agent-to-agent communication via A2A Protocol
@@ -96,7 +96,7 @@
 
 > [!NOTE]
 >
-> - **Azure Subscription** is required for deploying to Azure Container Apps and using Azure OpenAI.
+> - **Azure Subscription** is required for deploying to Azure Container Apps and using Microsoft Foundry.
 > - **Email** uses [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
 
 ### Run locally
