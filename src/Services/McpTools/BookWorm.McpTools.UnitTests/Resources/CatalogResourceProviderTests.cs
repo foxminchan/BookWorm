@@ -62,8 +62,8 @@ public sealed class CatalogResourceProviderTests
         // Arrange
         var categories = new List<Category>
         {
-            new(Guid.CreateVersion7(), "Science Fiction"),
-            new(Guid.CreateVersion7(), "Fantasy"),
+            new(CategoryId.From(Guid.CreateVersion7()), "Science Fiction"),
+            new(CategoryId.From(Guid.CreateVersion7()), "Fantasy"),
         };
 
         var response = new ApiResponse<List<Category>>(
@@ -107,8 +107,8 @@ public sealed class CatalogResourceProviderTests
         // Arrange
         var authors = new List<Author>
         {
-            new(Guid.CreateVersion7(), "Frank Herbert"),
-            new(Guid.CreateVersion7(), "Isaac Asimov"),
+            new(AuthorId.From(Guid.CreateVersion7()), "Frank Herbert"),
+            new(AuthorId.From(Guid.CreateVersion7()), "Isaac Asimov"),
         };
 
         var response = new ApiResponse<List<Author>>(
@@ -133,22 +133,22 @@ public sealed class CatalogResourceProviderTests
         // Arrange
         var id = Guid.CreateVersion7();
         var book = new Book(
-            id,
+            BookId.From(id),
             "Dune",
             "Epic sci-fi",
             null,
             29.99m,
             null,
-            new(Guid.CreateVersion7(), "Sci-Fi"),
-            new(Guid.CreateVersion7(), "Publisher A"),
-            [new(Guid.CreateVersion7(), "Frank Herbert")],
+            new(CategoryId.From(Guid.CreateVersion7()), "Sci-Fi"),
+            new(PublisherId.From(Guid.CreateVersion7()), "Publisher A"),
+            [new(AuthorId.From(Guid.CreateVersion7()), "Frank Herbert")],
             4.8,
             120
         );
 
         var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.OK), book, new());
 
-        _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
+        _catalogApi.Setup(x => x.GetBookAsync(BookId.From(id))).ReturnsAsync(response);
 
         // Act
         var result = await _sut.GetBookAsync(id);
@@ -166,7 +166,7 @@ public sealed class CatalogResourceProviderTests
         var id = Guid.CreateVersion7();
         var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.NotFound), null, new());
 
-        _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
+        _catalogApi.Setup(x => x.GetBookAsync(BookId.From(id))).ReturnsAsync(response);
 
         // Act & Assert
         await Should.ThrowAsync<McpException>(() => _sut.GetBookAsync(id));
@@ -179,7 +179,7 @@ public sealed class CatalogResourceProviderTests
         var id = Guid.CreateVersion7();
         var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.OK), null, new());
 
-        _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
+        _catalogApi.Setup(x => x.GetBookAsync(BookId.From(id))).ReturnsAsync(response);
 
         // Act & Assert
         await Should.ThrowAsync<McpException>(() => _sut.GetBookAsync(id));

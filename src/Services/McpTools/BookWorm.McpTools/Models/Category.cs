@@ -1,3 +1,3 @@
 ﻿namespace BookWorm.McpTools.Models;
 
-public sealed record Category(Guid Id, string? Name);
+public sealed record Category(CategoryId Id, string? Name);

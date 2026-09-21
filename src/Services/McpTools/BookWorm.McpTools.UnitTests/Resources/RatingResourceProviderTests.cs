@@ -29,7 +29,7 @@ public sealed class RatingResourceProviderTests
             new()
         );
 
-        _ratingApi.Setup(x => x.ListFeedbacksAsync(It.IsAny<Guid>())).ReturnsAsync(response);
+        _ratingApi.Setup(x => x.ListFeedbacksAsync(It.IsAny<BookId>())).ReturnsAsync(response);
 
         // Act & Assert
         await Should.ThrowAsync<McpException>(() => _sut.GetBookReviewsAsync(_validBookId));
@@ -45,7 +45,7 @@ public sealed class RatingResourceProviderTests
             new()
         );
 
-        _ratingApi.Setup(x => x.ListFeedbacksAsync(It.IsAny<Guid>())).ReturnsAsync(response);
+        _ratingApi.Setup(x => x.ListFeedbacksAsync(It.IsAny<BookId>())).ReturnsAsync(response);
 
         // Act
         var result = await _sut.GetBookReviewsAsync(_validBookId);
@@ -60,8 +60,22 @@ public sealed class RatingResourceProviderTests
         // Arrange
         var feedbacks = new List<Feedback>
         {
-            new(Guid.CreateVersion7(), "John", "Doe", "Great book!", 5, _validBookId),
-            new(Guid.CreateVersion7(), "Jane", "Smith", "Good read", 4, _validBookId),
+            new(
+                FeedbackId.From(Guid.CreateVersion7()),
+                "John",
+                "Doe",
+                "Great book!",
+                5,
+                BookId.From(_validBookId)
+            ),
+            new(
+                FeedbackId.From(Guid.CreateVersion7()),
+                "Jane",
+                "Smith",
+                "Good read",
+                4,
+                BookId.From(_validBookId)
+            ),
         };
 
         var response = new ApiResponse<List<Feedback>>(
@@ -70,7 +84,9 @@ public sealed class RatingResourceProviderTests
             new()
         );
 
-        _ratingApi.Setup(x => x.ListFeedbacksAsync(_validBookId)).ReturnsAsync(response);
+        _ratingApi
+            .Setup(x => x.ListFeedbacksAsync(BookId.From(_validBookId)))
+            .ReturnsAsync(response);
 
         // Act
         var result = await _sut.GetBookReviewsAsync(_validBookId);

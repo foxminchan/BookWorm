@@ -39,7 +39,7 @@ public sealed class Product(ICatalogApi catalogApi)
         [Description("The unique identifier of the book to retrieve")] Guid id
     )
     {
-        var response = await catalogApi.GetBookAsync(id);
+        var response = await catalogApi.GetBookAsync(BookId.From(id));
 
         if (!response.IsSuccessStatusCode)
         {

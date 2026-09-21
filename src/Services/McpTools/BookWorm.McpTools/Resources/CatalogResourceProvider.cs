@@ -66,7 +66,7 @@ public sealed class CatalogResourceProvider(ICatalogApi catalogApi)
         [Description("The unique identifier of the book")] Guid id
     )
     {
-        var response = await catalogApi.GetBookAsync(id);
+        var response = await catalogApi.GetBookAsync(BookId.From(id));
 
         if (!response.IsSuccessStatusCode)
         {

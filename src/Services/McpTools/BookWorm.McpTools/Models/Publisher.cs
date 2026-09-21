@@ -1,3 +1,3 @@
 ﻿namespace BookWorm.McpTools.Models;
 
-public sealed record Publisher(Guid Id, string? Name);
+public sealed record Publisher(PublisherId Id, string? Name);
