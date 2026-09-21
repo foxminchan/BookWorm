@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Authors.Update;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Features.Authors.Update;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -15,7 +16,7 @@ public sealed class UpdateAuthorEndpointTests
     {
         _senderMock = new();
         _endpoint = new();
-        var authorId = Guid.CreateVersion7();
+        var authorId = AuthorId.From(Guid.CreateVersion7());
         _authorName = "Updated Author Name";
         _command = new(authorId, _authorName);
     }
@@ -44,8 +45,8 @@ public sealed class UpdateAuthorEndpointTests
     public async Task GivenCommandWithDifferentId_WhenHandlingUpdateAuthor_ThenShouldUpdateCommandId()
     {
         // Arrange
-        var originalId = Guid.CreateVersion7();
-        var updatedId = Guid.CreateVersion7();
+        var originalId = AuthorId.From(Guid.CreateVersion7());
+        var updatedId = AuthorId.From(Guid.CreateVersion7());
         var commandWithDifferentId = new UpdateAuthorCommand(originalId, _authorName);
 
         _senderMock

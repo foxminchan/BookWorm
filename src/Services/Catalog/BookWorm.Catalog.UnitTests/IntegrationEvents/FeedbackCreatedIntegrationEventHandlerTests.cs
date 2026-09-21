@@ -1,4 +1,7 @@
+using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
@@ -35,9 +38,9 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
             "test.jpg",
             29.99m,
             24.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
 
         _repositoryMock

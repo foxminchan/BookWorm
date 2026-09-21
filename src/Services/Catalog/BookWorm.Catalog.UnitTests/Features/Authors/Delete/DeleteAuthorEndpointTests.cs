@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Authors.Delete;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Features.Authors.Delete;
 using BookWorm.Chassis.Exceptions;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,7 +8,7 @@ namespace BookWorm.Catalog.UnitTests.Features.Authors.Delete;
 
 public sealed class DeleteAuthorEndpointTests
 {
-    private readonly Guid _authorId = Guid.CreateVersion7();
+    private readonly AuthorId _authorId = AuthorId.From(Guid.CreateVersion7());
     private readonly DeleteAuthorEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();
 

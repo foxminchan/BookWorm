@@ -5,7 +5,7 @@ using Mediator;
 namespace BookWorm.Basket.Features.Create;
 
 internal sealed class CreateBasketEndpoint
-    : IEndpoint<Created<string>, CreateBasketCommand, ISender, LinkGenerator>
+    : IEndpoint<Created<CustomerId>, CreateBasketCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -14,7 +14,7 @@ internal sealed class CreateBasketEndpoint
                 async (CreateBasketCommand command, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(command, sender, linker)
             )
-            .ProducesPost<string>()
+            .ProducesPost<CustomerId>()
             .WithTags(nameof(Basket))
             .WithName(nameof(CreateBasketEndpoint))
             .WithSummary("Create Basket")
@@ -24,7 +24,7 @@ internal sealed class CreateBasketEndpoint
             .RequirePerUserRateLimit();
     }
 
-    public async Task<Created<string>> HandleAsync(
+    public async Task<Created<CustomerId>> HandleAsync(
         CreateBasketCommand command,
         ISender sender,
         LinkGenerator linker,

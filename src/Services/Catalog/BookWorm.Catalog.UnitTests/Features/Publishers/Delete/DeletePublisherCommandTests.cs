@@ -24,7 +24,7 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
+        var publisherId = (Guid)publisher.Id;
         var command = new DeletePublisherCommand(publisherId);
 
         _repositoryMock
@@ -85,7 +85,7 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
+        var publisherId = (Guid)publisher.Id;
         var command = new DeletePublisherCommand(publisherId);
         var cancellationToken = CancellationToken.None;
 
@@ -141,7 +141,7 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
+        var publisherId = (Guid)publisher.Id;
         var command = new DeletePublisherCommand(publisherId);
         var expectedException = new InvalidOperationException("Failed to save changes");
 
@@ -221,7 +221,7 @@ public sealed class DeletePublisherCommandTests
     {
         // Arrange
         var publisher = _faker.Generate(1)[0];
-        var publisherId = publisher.Id;
+        var publisherId = (Guid)publisher.Id;
         var command = new DeletePublisherCommand(publisherId);
         var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;

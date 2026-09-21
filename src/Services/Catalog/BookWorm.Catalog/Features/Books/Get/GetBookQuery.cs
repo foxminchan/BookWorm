@@ -4,7 +4,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.Features.Books.Get;
 
-public sealed record GetBookQuery(Guid Id) : IQuery<BookDto>;
+public sealed record GetBookQuery(BookId Id) : IQuery<BookDto>;
 
 internal sealed class GetBookHandler(
     IBookRepository repository,
@@ -23,9 +23,9 @@ internal sealed class GetBookHandler(
             $"{tag}:{request.Id}",
             async ctx =>
             {
-                var book = await repository.GetByIdAsync(request.Id, ctx);
+                var book = await repository.GetByIdAsync((Guid)request.Id, ctx);
 
-                Guard.Against.NotFound(book, request.Id);
+                Guard.Against.NotFound(book, (Guid)request.Id);
 
                 return book;
             },

@@ -1,4 +1,5 @@
-﻿using BookWorm.Basket.Features;
+﻿using BookWorm.Basket.Domain;
+using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -15,7 +16,7 @@ public sealed class GetBasketEndpointTests
     public void Setup()
     {
         _customerBasketDto = new(
-            Guid.CreateVersion7().ToString(),
+            CustomerId.From(Guid.CreateVersion7().ToString()),
             [
                 new("book-1", 2)
                 {

@@ -19,7 +19,7 @@ internal sealed class OrderRepository(OrderingDbContext context) : IOrderReposit
 
     public async Task<Order?> GetByIdAsync(Guid orderId, CancellationToken cancellationToken)
     {
-        return await _context.Orders.FindAsync([orderId], cancellationToken);
+        return await _context.Orders.FindAsync([OrderId.From(orderId)], cancellationToken);
     }
 
     public async Task<Order?> FirstOrDefaultAsync(

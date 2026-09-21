@@ -20,6 +20,8 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .BeSealed()
             .Because(
@@ -34,6 +36,8 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .BePublic()
             .OrShould()

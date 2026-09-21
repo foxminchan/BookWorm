@@ -7,7 +7,7 @@ internal static class DomainToDtoMapper
         private FeedbackDto ToFeedbackDto()
         {
             return new(
-                feedback.Id,
+                (Guid)feedback.Id,
                 feedback.FirstName,
                 feedback.LastName,
                 feedback.Comment,

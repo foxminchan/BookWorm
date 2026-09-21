@@ -10,7 +10,7 @@ public sealed class DeleteOrderCommandTests
 {
     private readonly DeleteOrderHandler _handler;
     private readonly Order _order;
-    private readonly Guid _orderId;
+    private readonly OrderId _orderId;
     private readonly Mock<IOrderRepository> _repositoryMock;
 
     public DeleteOrderCommandTests()
@@ -33,7 +33,7 @@ public sealed class DeleteOrderCommandTests
     {
         // Arrange
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)_orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_order);
 
         // Act
@@ -53,7 +53,7 @@ public sealed class DeleteOrderCommandTests
     {
         // Arrange
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)_orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order)null!);
 
         // Act
@@ -73,9 +73,9 @@ public sealed class DeleteOrderCommandTests
     public async Task GivenInvalidId_WhenHandlingDeleteCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var invalidOrderId = Guid.CreateVersion7();
+        var invalidOrderId = OrderId.From(Guid.CreateVersion7());
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(invalidOrderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)invalidOrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order)null!);
 
         // Act
@@ -92,7 +92,7 @@ public sealed class DeleteOrderCommandTests
     {
         // Arrange
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)_orderId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert

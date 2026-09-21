@@ -13,7 +13,7 @@ internal sealed class BuyerRepository(OrderingDbContext context) : IBuyerReposit
 
     public async Task<Buyer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Buyers.FindAsync([id], cancellationToken);
+        return await _context.Buyers.FindAsync([BuyerId.From(id)], cancellationToken);
     }
 
     public async Task<Buyer> AddAsync(Buyer buyer, CancellationToken cancellationToken = default)

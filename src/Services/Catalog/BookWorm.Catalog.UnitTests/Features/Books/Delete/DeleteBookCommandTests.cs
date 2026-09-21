@@ -24,10 +24,10 @@ public sealed class DeleteBookCommandTests
     {
         // Arrange
         var book = _faker.Generate(1)[0];
-        var command = new DeleteBookCommand(book.Id);
+        var command = new DeleteBookCommand((Guid)book.Id);
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         _repositoryMock
@@ -40,7 +40,7 @@ public sealed class DeleteBookCommandTests
         // Assert
         result.ShouldBe(Unit.Value);
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _repositoryMock.Verify(

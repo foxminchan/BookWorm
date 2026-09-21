@@ -64,7 +64,7 @@ internal static class Extensions
             services.AddSingleton<IBasketRepository, BasketRepository>();
 
             // Configure FluentValidation
-            services.AddValidatorsFromAssemblyContaining<IBasketApiMarker>(
+            services.AddValidatorsFromAssemblyContaining<BasketApiMarker>(
                 includeInternalTypes: true
             );
 
@@ -72,9 +72,11 @@ internal static class Extensions
 
             // Configure endpoints
             services.AddVersioning();
-            services.AddEndpoints(typeof(IBasketApiMarker));
+            services.AddEndpoints(typeof(BasketApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.ApplyOpenApiInfoDefinitions<BasketAppSettings>()
+                options
+                    .MapVogenTypesInBasketApiMarker()
+                    .ApplyOpenApiInfoDefinitions<BasketAppSettings>()
             );
 
             // Configure gRPC
@@ -93,8 +95,8 @@ internal static class Extensions
                 // expose an OrderId to the same partition.
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
 
-                opts.Discovery.IncludeAssembly(typeof(IBasketApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(IBasketApiMarker).Assembly);
+                opts.Discovery.IncludeAssembly(typeof(BasketApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(BasketApiMarker).Assembly);
             });
 
             services.AddKeycloakTokenIntrospection();

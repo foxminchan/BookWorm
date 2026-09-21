@@ -16,7 +16,7 @@ public sealed class OrderFilterSpec : Specification<Order>
 
         if (buyerId.HasValue)
         {
-            Query.Where(x => x.BuyerId == buyerId.Value);
+            Query.Where(x => (Guid)x.BuyerId == buyerId.Value);
         }
 
         if (status.HasValue)
@@ -27,11 +27,11 @@ public sealed class OrderFilterSpec : Specification<Order>
 
     public OrderFilterSpec(Guid orderId, Status orderStatus)
     {
-        Query.AsTracking().Where(x => x.Id == orderId && x.Status == orderStatus);
+        Query.AsTracking().Where(x => (Guid)x.Id == orderId && x.Status == orderStatus);
     }
 
     public OrderFilterSpec(Guid orderId, Guid buyerId)
     {
-        Query.AsTracking().Where(x => x.Id == orderId && x.BuyerId == buyerId);
+        Query.AsTracking().Where(x => (Guid)x.Id == orderId && (Guid)x.BuyerId == buyerId);
     }
 }

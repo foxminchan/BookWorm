@@ -1,12 +1,15 @@
-﻿using System.Security.Claims;
+﻿using System.Reflection;
+using System.Security.Claims;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Constants.Core;
+using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.UnitTests.Fakers;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Get;
 
@@ -16,7 +19,7 @@ public sealed class GetOrderQueryTests
     private readonly Guid _buyerId;
     private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly GetOrderHandler _handler;
-    private readonly Guid _id;
+    private readonly OrderId _id;
     private readonly Order _order;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
 
@@ -26,7 +29,7 @@ public sealed class GetOrderQueryTests
         _claimsPrincipalMock = new();
         _bookServiceMock = new();
 
-        _id = Guid.CreateVersion7();
+        _id = OrderId.From(Guid.CreateVersion7());
         _buyerId = Guid.CreateVersion7();
 
         // Create a sample order using the faker
@@ -34,8 +37,16 @@ public sealed class GetOrderQueryTests
         _order = orderFaker.Generate()[0];
 
         // Replace it with our specific IDs for testing
-        _order.GetType().GetProperty("Id")?.SetValue(_order, _id);
-        _order.GetType().GetProperty("BuyerId")?.SetValue(_order, _buyerId);
+        typeof(Entity<OrderId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(_order, _id);
+        _order
+            .GetType()
+            .GetProperty(nameof(Order.BuyerId))
+            ?.SetValue(_order, BuyerId.From(_buyerId));
 
         _handler = new(
             _orderRepositoryMock.Object,
@@ -50,7 +61,7 @@ public sealed class GetOrderQueryTests
         // Arrange
         SetupAdminUser();
         _orderRepositoryMock
-            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)_id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_order);
 
         // Act
@@ -60,7 +71,7 @@ public sealed class GetOrderQueryTests
         result.ShouldNotBeNull();
         result.Id.ShouldBe(_id);
         _orderRepositoryMock.Verify(
-            r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)_id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _orderRepositoryMock.Verify(
@@ -90,7 +101,7 @@ public sealed class GetOrderQueryTests
         result.Total.ShouldBe(_order.TotalPrice);
         result.Status.ShouldBe(_order.Status);
         _orderRepositoryMock.Verify(
-            r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)_id, It.IsAny<CancellationToken>()),
             Times.Never
         );
         _orderRepositoryMock.Verify(
@@ -122,7 +133,7 @@ public sealed class GetOrderQueryTests
         // Arrange
         SetupAdminUser();
         _orderRepositoryMock
-            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)_id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Order)null!);
 
         // Act & Assert
@@ -144,7 +155,7 @@ public sealed class GetOrderQueryTests
         }
 
         _orderRepositoryMock
-            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)_id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_order);
 
         var booksResponse = new GetBooksResponse();
@@ -190,7 +201,7 @@ public sealed class GetOrderQueryTests
         }
 
         _orderRepositoryMock
-            .Setup(r => r.GetByIdAsync(_id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)_id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_order);
 
         var firstItem = orderItems[0];

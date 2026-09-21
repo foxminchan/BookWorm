@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 
-public sealed class Author() : Entity, IAggregateRoot
+public sealed class Author() : Entity<AuthorId>, IAggregateRoot
 {
     private readonly List<BookAuthor> _bookAuthors = [];
 

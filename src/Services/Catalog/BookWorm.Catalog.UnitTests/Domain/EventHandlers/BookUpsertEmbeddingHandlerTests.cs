@@ -1,7 +1,12 @@
+using System.Reflection;
+using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Domain.EventHandlers;
 using BookWorm.Catalog.Domain.Events;
 using BookWorm.Chassis.AI.Ingestion;
+using BookWorm.SharedKernel.SeedWork;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Catalog.UnitTests.Domain.EventHandlers;
@@ -27,10 +32,16 @@ public sealed class BookUpsertEmbeddingHandlerTests
             "image.jpg",
             44.99m,
             39.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
+        typeof(Entity<BookId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(book, BookId.From(Guid.CreateVersion7()));
         var @event = new BookCreatedEvent(book);
 
         // Act
@@ -53,10 +64,16 @@ public sealed class BookUpsertEmbeddingHandlerTests
             "refactoring.jpg",
             49.99m,
             44.99m,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            [Guid.CreateVersion7()]
+            CategoryId.From(Guid.CreateVersion7()),
+            PublisherId.From(Guid.CreateVersion7()),
+            [AuthorId.From(Guid.CreateVersion7())]
         );
+        typeof(Entity<BookId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(book, BookId.From(Guid.CreateVersion7()));
         var @event = new BookUpdatedEvent(book);
 
         // Act

@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Authors.Delete;
 
-public sealed record DeleteAuthorCommand(Guid Id) : ICommand;
+public sealed record DeleteAuthorCommand(AuthorId Id) : ICommand;
 
 internal sealed class DeleteAuthorHandler(IAuthorRepository repository)
     : ICommandHandler<DeleteAuthorCommand>
@@ -13,9 +13,9 @@ internal sealed class DeleteAuthorHandler(IAuthorRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var author = await repository.GetByIdAsync(request.Id, cancellationToken);
+        var author = await repository.GetByIdAsync((Guid)request.Id, cancellationToken);
 
-        Guard.Against.NotFound(author, request.Id);
+        Guard.Against.NotFound(author, (Guid)request.Id);
 
         repository.Delete(author);
 

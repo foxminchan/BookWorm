@@ -1,5 +1,7 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using System.Reflection;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Features.Books.Create;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Create;
 
@@ -20,7 +22,12 @@ public sealed class CreateBookCommandTests
             .ReturnsAsync(
                 (Book b, CancellationToken _) =>
                 {
-                    typeof(Book).GetProperty("Id")?.SetValue(b, bookId);
+                    typeof(Entity<BookId>)
+                        .GetProperty(
+                            nameof(Entity<>.Id),
+                            BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+                        )!
+                        .SetValue(b, BookId.From(bookId));
                     return b;
                 }
             );
@@ -35,7 +42,7 @@ public sealed class CreateBookCommandTests
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(bookId);
+        result.ShouldBe(BookId.From(bookId));
         mockRepo.Verify(
             r =>
                 r.AddAsync(
@@ -45,8 +52,8 @@ public sealed class CreateBookCommandTests
                         && b.Image == command.ImageName
                         && b.Price!.OriginalPrice == command.Price
                         && b.Price!.DiscountPrice == command.PriceSale
-                        && b.CategoryId == command.CategoryId
-                        && b.PublisherId == command.PublisherId
+                        && (Guid)b.CategoryId! == command.CategoryId
+                        && (Guid)b.PublisherId! == command.PublisherId
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -70,7 +77,18 @@ public sealed class CreateBookCommandTests
         mockRepo
             .Setup(r => r.AddAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()))
             .Callback<Book, CancellationToken>((book, _) => capturedBook = book)
-            .ReturnsAsync((Book b, CancellationToken _) => b);
+            .ReturnsAsync(
+                (Book b, CancellationToken _) =>
+                {
+                    typeof(Entity<BookId>)
+                        .GetProperty(
+                            nameof(Entity<>.Id),
+                            BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+                        )!
+                        .SetValue(b, BookId.From(Guid.CreateVersion7()));
+                    return b;
+                }
+            );
 
         mockRepo
             .Setup(r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
@@ -87,7 +105,7 @@ public sealed class CreateBookCommandTests
 
         foreach (var authorId in command.AuthorIds)
         {
-            capturedBook!.BookAuthors.ShouldContain(ba => ba.AuthorId == authorId);
+            capturedBook!.BookAuthors.ShouldContain(ba => (Guid)ba.AuthorId == authorId);
         }
     }
 }

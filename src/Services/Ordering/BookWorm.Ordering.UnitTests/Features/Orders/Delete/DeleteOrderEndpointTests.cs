@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Features.Orders.Delete;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Ordering.Features.Orders.Delete;
 using Mediator;
 using Microsoft.AspNetCore.Http;
 
@@ -7,7 +8,7 @@ namespace BookWorm.Ordering.UnitTests.Features.Orders.Delete;
 public sealed class DeleteOrderEndpointTests
 {
     private readonly DeleteOrderEndpoint _endpoint = new();
-    private readonly Guid _orderId = Guid.CreateVersion7();
+    private readonly OrderId _orderId = OrderId.From(Guid.CreateVersion7());
     private readonly Mock<ISender> _senderMock = new();
 
     [Test]
@@ -17,7 +18,7 @@ public sealed class DeleteOrderEndpointTests
         _senderMock
             .Setup(s =>
                 s.Send(
-                    It.Is<DeleteOrderCommand>(c => c.Id == _orderId),
+                    It.Is<DeleteOrderCommand>(c => c.Id == (Guid)_orderId),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -33,7 +34,7 @@ public sealed class DeleteOrderEndpointTests
         _senderMock.Verify(
             s =>
                 s.Send(
-                    It.Is<DeleteOrderCommand>(c => c.Id == _orderId),
+                    It.Is<DeleteOrderCommand>(c => c.Id == (Guid)_orderId),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once

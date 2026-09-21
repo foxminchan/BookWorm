@@ -4,7 +4,7 @@ using Mediator;
 namespace BookWorm.Catalog.Features.Books.Create;
 
 [Transactional]
-public sealed class CreateBookCommand : ICommand<Guid>
+public sealed class CreateBookCommand : ICommand<BookId>
 {
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
@@ -20,9 +20,9 @@ public sealed class CreateBookCommand : ICommand<Guid>
 }
 
 internal sealed class CreateBookHandler(IBookRepository repository)
-    : ICommandHandler<CreateBookCommand, Guid>
+    : ICommandHandler<CreateBookCommand, BookId>
 {
-    public async ValueTask<Guid> Handle(
+    public async ValueTask<BookId> Handle(
         CreateBookCommand request,
         CancellationToken cancellationToken
     )
@@ -33,9 +33,9 @@ internal sealed class CreateBookHandler(IBookRepository repository)
             request.ImageName,
             request.Price,
             request.PriceSale,
-            request.CategoryId,
-            request.PublisherId,
-            request.AuthorIds
+            CategoryId.From(request.CategoryId),
+            PublisherId.From(request.PublisherId),
+            [.. request.AuthorIds.Select(AuthorId.From)]
         );
 
         var result = await repository.AddAsync(book, cancellationToken);

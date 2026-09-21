@@ -9,7 +9,7 @@ namespace BookWorm.Ordering.UnitTests.Features.Buyers.Delete;
 public sealed class DeleteBuyerCommandTests
 {
     private readonly Buyer _buyer;
-    private readonly Guid _buyerId;
+    private readonly BuyerId _buyerId;
     private readonly DeleteBuyerHandler _handler;
     private readonly Mock<IBuyerRepository> _repositoryMock;
 
@@ -31,7 +31,7 @@ public sealed class DeleteBuyerCommandTests
     {
         // Arrange
         _repositoryMock
-            .Setup(x => x.GetByIdAsync(_buyerId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)_buyerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_buyer);
 
         // Act
@@ -47,7 +47,7 @@ public sealed class DeleteBuyerCommandTests
     {
         // Arrange
         _repositoryMock
-            .Setup(x => x.GetByIdAsync(_buyerId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)_buyerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_buyer);
 
         // Act
@@ -64,9 +64,9 @@ public sealed class DeleteBuyerCommandTests
     public async Task GivenNonExistingBuyer_WhenHandlingDeleteCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var nonExistingId = Guid.CreateVersion7();
+        var nonExistingId = BuyerId.From(Guid.CreateVersion7());
         _repositoryMock
-            .Setup(x => x.GetByIdAsync(nonExistingId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)nonExistingId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Buyer?)null!);
 
         // Act

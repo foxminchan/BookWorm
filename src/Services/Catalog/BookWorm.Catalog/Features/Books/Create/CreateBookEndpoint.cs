@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BookWorm.Catalog.Features.Books.Create;
 
 internal sealed class CreateBookEndpoint
-    : IEndpoint<Created<Guid>, CreateBookCommand, ISender, LinkGenerator>
+    : IEndpoint<Created<BookId>, CreateBookCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -19,7 +19,7 @@ internal sealed class CreateBookEndpoint
                 ) => await HandleAsync(command, sender, linker)
             )
             .Accepts<CreateBookCommand>(MediaTypeNames.Multipart.FormData)
-            .ProducesPost<Guid>()
+            .ProducesPost<BookId>()
             .WithTags(nameof(Book))
             .WithName(nameof(CreateBookEndpoint))
             .WithSummary("Create Book")
@@ -30,7 +30,7 @@ internal sealed class CreateBookEndpoint
             .RequirePerUserRateLimit();
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Created<BookId>> HandleAsync(
         CreateBookCommand command,
         ISender sender,
         LinkGenerator linker,

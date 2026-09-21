@@ -8,7 +8,7 @@ using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
 namespace BookWorm.Ordering.Features.Orders.Create;
 
 [Transactional]
-public sealed record CreateOrderCommand : ICommand<Guid>;
+public sealed record CreateOrderCommand : ICommand<OrderId>;
 
 internal sealed class CreateOrderHandler(
     IOrderRepository repository,
@@ -17,11 +17,11 @@ internal sealed class CreateOrderHandler(
     ILogger<CreateOrderHandler> logger,
     IBasketService basketService,
     IBookService bookService
-) : ICommandHandler<CreateOrderCommand, Guid>
+) : ICommandHandler<CreateOrderCommand, OrderId>
 {
     private const string CacheName = "ordering";
 
-    public async ValueTask<Guid> Handle(
+    public async ValueTask<OrderId> Handle(
         CreateOrderCommand request,
         CancellationToken cancellationToken
     )

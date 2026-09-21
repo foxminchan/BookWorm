@@ -10,7 +10,7 @@ namespace BookWorm.Catalog.UnitTests.Features.Books.Get;
 public sealed class GetBookEndpointTests
 {
     private readonly BookDto _bookDto;
-    private readonly Guid _bookId;
+    private readonly BookId _bookId;
     private readonly GetBookEndpoint _endpoint;
     private readonly Mock<ISender> _senderMock;
 
@@ -18,7 +18,7 @@ public sealed class GetBookEndpointTests
     {
         _senderMock = new();
         _endpoint = new();
-        _bookId = Guid.CreateVersion7();
+        _bookId = BookId.From(Guid.CreateVersion7());
 
         // Create a sample BookDto with minimal required fields
         _bookDto = new(

@@ -1,4 +1,5 @@
-﻿using BookWorm.Rating.Features.Delete;
+﻿using BookWorm.Rating.Domain.FeedbackAggregator;
+using BookWorm.Rating.Features.Delete;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -7,7 +8,7 @@ namespace BookWorm.Rating.UnitTests.Features.Delete;
 public sealed class DeleteFeedbackEndpointTests
 {
     private readonly DeleteFeedbackEndpoint _endpoint = new();
-    private readonly Guid _feedbackId = Guid.CreateVersion7();
+    private readonly FeedbackId _feedbackId = FeedbackId.From(Guid.CreateVersion7());
     private readonly Mock<ISender> _senderMock = new();
 
     [Test]

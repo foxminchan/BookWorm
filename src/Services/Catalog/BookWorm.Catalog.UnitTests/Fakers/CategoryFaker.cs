@@ -9,7 +9,7 @@ public sealed class CategoryFaker : Faker<Category>
     {
         Randomizer.Seed = new(Seeder.DefaultSeed);
         CustomInstantiator(f => new(f.Commerce.Categories(1)[0]))
-            .RuleFor(c => c.Id, _ => Guid.CreateVersion7());
+            .RuleFor(c => c.Id, _ => CategoryId.From(Guid.CreateVersion7()));
     }
 
     public Category[] Generate()

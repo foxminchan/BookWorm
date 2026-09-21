@@ -56,7 +56,7 @@ public static class McpClientExtensions
                     transportOptions,
                     httpClientFactory.CreateClient(transportName),
                     loggerFactory,
-                    ownsHttpClient: true
+                    true
                 );
 
                 return McpClient

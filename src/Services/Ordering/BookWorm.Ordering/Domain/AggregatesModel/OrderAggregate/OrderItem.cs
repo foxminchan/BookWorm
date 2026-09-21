@@ -19,7 +19,7 @@ public sealed class OrderItem() : Entity
     public int Quantity { get; }
     public decimal Price { get; }
     public Guid BookId { get; private set; }
-    public Guid OrderId { get; private set; }
+    public OrderId OrderId { get; private set; }
     public Order? Order { get; private set; } = null!;
 
     public decimal GetTotalPrice()

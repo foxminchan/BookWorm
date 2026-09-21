@@ -36,6 +36,15 @@ internal sealed class BookData : List<Book>
         string? description = null
     )
     {
-        return new(name, description, null, price, priceSale, Guid.Empty, Guid.Empty, []);
+        return new(
+            name,
+            description,
+            null,
+            price,
+            priceSale,
+            CategoryId.From(Guid.Empty),
+            PublisherId.From(Guid.Empty),
+            []
+        );
     }
 }

@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Categories.Delete;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Features.Categories.Delete;
 using BookWorm.Chassis.Endpoints;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -9,7 +10,7 @@ public sealed class DeleteCategoryEndpointTests
 {
     private readonly DeleteCategoryEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();
-    private readonly Guid _validCategoryId = Guid.CreateVersion7();
+    private readonly CategoryId _validCategoryId = CategoryId.From(Guid.CreateVersion7());
 
     [Test]
     public async Task GivenValidCategoryId_WhenHandlingDeleteCategory_ThenShouldCallSenderAndReturnNoContent()
@@ -68,7 +69,7 @@ public sealed class DeleteCategoryEndpointTests
     public async Task GivenEmptyGuidCategoryId_WhenHandlingDeleteCategory_ThenShouldSendCommandWithEmptyGuid()
     {
         // Arrange
-        var emptyGuid = Guid.Empty;
+        var emptyGuid = CategoryId.From(Guid.Empty);
         _senderMock
             .Setup(s => s.Send(It.IsAny<DeleteCategoryCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Unit.Value);
@@ -117,9 +118,9 @@ public sealed class DeleteCategoryEndpointTests
     public async Task GivenMultipleSequentialRequests_WhenHandlingDeleteCategory_ThenShouldHandleEachRequestIndependently()
     {
         // Arrange
-        var categoryId1 = Guid.CreateVersion7();
-        var categoryId2 = Guid.CreateVersion7();
-        var categoryId3 = Guid.CreateVersion7();
+        var categoryId1 = CategoryId.From(Guid.CreateVersion7());
+        var categoryId2 = CategoryId.From(Guid.CreateVersion7());
+        var categoryId3 = CategoryId.From(Guid.CreateVersion7());
 
         _senderMock
             .Setup(s => s.Send(It.IsAny<DeleteCategoryCommand>(), It.IsAny<CancellationToken>()))
@@ -167,9 +168,9 @@ public sealed class DeleteCategoryEndpointTests
         // Arrange
         var categoryIds = new[]
         {
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
+            CategoryId.From(Guid.CreateVersion7()),
+            CategoryId.From(Guid.CreateVersion7()),
+            CategoryId.From(Guid.CreateVersion7()),
         };
 
         _senderMock
@@ -245,7 +246,7 @@ public sealed class DeleteCategoryEndpointTests
 
         // Assert
         capturedCommand.ShouldNotBeNull();
-        capturedCommand.Id.ShouldBe(_validCategoryId);
+        capturedCommand.Id.ShouldBe((Guid)_validCategoryId);
     }
 
     [Test]
@@ -255,17 +256,17 @@ public sealed class DeleteCategoryEndpointTests
         var endpoint = new DeleteCategoryEndpoint();
 
         // Assert
-        endpoint.ShouldBeAssignableTo<IEndpoint<NoContent, Guid, ISender>>();
+        endpoint.ShouldBeAssignableTo<IEndpoint<NoContent, CategoryId, ISender>>();
     }
 
     [Test]
     public void GivenCategoryId_WhenCreatingDeleteCategoryCommand_ThenPropertiesShouldBeCorrectlyInitialized()
     {
         // Arrange & Act
-        var command = new DeleteCategoryCommand(_validCategoryId);
+        var command = new DeleteCategoryCommand((Guid)_validCategoryId);
 
         // Assert
-        command.Id.ShouldBe(_validCategoryId);
+        command.Id.ShouldBe((Guid)_validCategoryId);
         command.ShouldBeAssignableTo<ICommand>();
     }
 
@@ -273,8 +274,8 @@ public sealed class DeleteCategoryEndpointTests
     public void GivenTwoDeleteCategoryCommandsWithSameId_WhenComparing_ThenShouldBeEqual()
     {
         // Arrange
-        var command1 = new DeleteCategoryCommand(_validCategoryId);
-        var command2 = new DeleteCategoryCommand(_validCategoryId);
+        var command1 = new DeleteCategoryCommand((Guid)_validCategoryId);
+        var command2 = new DeleteCategoryCommand((Guid)_validCategoryId);
 
         // Act & Assert
         command1.ShouldBe(command2);
@@ -318,7 +319,7 @@ public sealed class DeleteCategoryEndpointTests
     public async Task GivenSpecificGuidVersion_WhenHandlingDeleteCategory_ThenShouldHandleCorrectly()
     {
         // Arrange
-        var version7Guid = Guid.CreateVersion7();
+        var version7Guid = CategoryId.From(Guid.CreateVersion7());
         _senderMock
             .Setup(s => s.Send(It.IsAny<DeleteCategoryCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Unit.Value);

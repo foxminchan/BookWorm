@@ -19,7 +19,7 @@ internal sealed class GetBuyerHandler(IBuyerRepository repository, ClaimsPrincip
     {
         var buyerId = claimsPrincipal.HasRole(Authorization.Roles.Admin)
             ? request.Id
-            : claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+            : (Guid)claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
         var result = await repository.GetByIdAsync(buyerId, cancellationToken);
 

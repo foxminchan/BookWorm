@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Update;
 
-public sealed record UpdateCategoryCommand(Guid Id, string Name) : ICommand;
+public sealed record UpdateCategoryCommand(CategoryId Id, string Name) : ICommand;
 
 internal sealed class UpdateCategoryHandler(ICategoryRepository repository)
     : ICommandHandler<UpdateCategoryCommand>
@@ -13,9 +13,9 @@ internal sealed class UpdateCategoryHandler(ICategoryRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var category = await repository.GetByIdAsync(request.Id, cancellationToken);
+        var category = await repository.GetByIdAsync((Guid)request.Id, cancellationToken);
 
-        Guard.Against.NotFound(category, request.Id);
+        Guard.Against.NotFound(category, (Guid)request.Id);
 
         category.UpdateName(request.Name);
 

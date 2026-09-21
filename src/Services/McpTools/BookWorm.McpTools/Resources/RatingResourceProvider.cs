@@ -20,7 +20,7 @@ public sealed class RatingResourceProvider(IRatingApi ratingApi)
         [Description("The unique identifier of the book")] Guid bookId
     )
     {
-        var response = await ratingApi.ListFeedbacksAsync(bookId);
+        var response = await ratingApi.ListFeedbacksAsync(BookId.From(bookId));
 
         if (!response.IsSuccessStatusCode)
         {

@@ -14,23 +14,23 @@ internal sealed class EventMapper(ClaimsPrincipal claimsPrincipal) : IEventMappe
         return @event switch
         {
             OrderPlacedEvent orderPlacedEvent => new UserCheckedOutIntegrationEvent(
-                orderPlacedEvent.Order.Id,
-                orderPlacedEvent.Order.BuyerId,
+                (Guid)orderPlacedEvent.Order.Id,
+                (Guid)orderPlacedEvent.Order.BuyerId,
                 fullName,
                 email,
                 orderPlacedEvent.Order.TotalPrice
             ),
             OrderCancelledEvent orderCancelledEvent =>
                 new OrderStatusChangedToCancelIntegrationEvent(
-                    orderCancelledEvent.Order.Id,
-                    orderCancelledEvent.Order.BuyerId,
+                    (Guid)orderCancelledEvent.Order.Id,
+                    (Guid)orderCancelledEvent.Order.BuyerId,
                     fullName,
                     email,
                     orderCancelledEvent.Order.TotalPrice
                 ),
             OrderCompletedEvent completedEvent => new OrderStatusChangedToCompleteIntegrationEvent(
-                completedEvent.Order.Id,
-                completedEvent.Order.BuyerId,
+                (Guid)completedEvent.Order.Id,
+                (Guid)completedEvent.Order.BuyerId,
                 fullName,
                 email,
                 completedEvent.Order.TotalPrice

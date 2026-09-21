@@ -30,7 +30,7 @@ public sealed class UpdatePublisherCommandTests
         var command = new UpdatePublisherCommand(publisherId, newName);
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)publisherId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(publisher);
 
         _repositoryMock
@@ -44,7 +44,7 @@ public sealed class UpdatePublisherCommandTests
         result.ShouldBe(Unit.Value);
         publisher.Name.ShouldBe(newName);
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)publisherId, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _repositoryMock.Verify(
@@ -57,11 +57,11 @@ public sealed class UpdatePublisherCommandTests
     public async Task GivenNonExistingPublisher_WhenHandlingUpdatePublisherCommand_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var publisherId = Guid.CreateVersion7();
+        var publisherId = PublisherId.From(Guid.CreateVersion7());
         var command = new UpdatePublisherCommand(publisherId, "Any Name");
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)publisherId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Publisher)null!);
 
         // Act & Assert

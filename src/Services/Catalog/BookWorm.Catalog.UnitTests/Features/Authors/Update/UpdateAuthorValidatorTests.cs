@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Authors.Update;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Features.Authors.Update;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 
@@ -12,7 +13,10 @@ public sealed class UpdateAuthorValidatorTests
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveAnyValidationErrors()
     {
         // Arrange
-        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), "Valid Author Name");
+        var command = new UpdateAuthorCommand(
+            AuthorId.From(Guid.CreateVersion7()),
+            "Valid Author Name"
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -25,7 +29,7 @@ public sealed class UpdateAuthorValidatorTests
     public void GivenEmptyId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateAuthorCommand(Guid.Empty, "Valid Author Name");
+        var command = new UpdateAuthorCommand(AuthorId.From(Guid.Empty), "Valid Author Name");
 
         // Act
         var result = _validator.TestValidate(command);
@@ -41,7 +45,7 @@ public sealed class UpdateAuthorValidatorTests
     public void GivenEmptyOrNullName_WhenValidating_ThenShouldHaveValidationError(string? name)
     {
         // Arrange
-        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), name!);
+        var command = new UpdateAuthorCommand(AuthorId.From(Guid.CreateVersion7()), name!);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -55,7 +59,7 @@ public sealed class UpdateAuthorValidatorTests
     {
         // Arrange
         var longName = new string('a', DataSchemaLength.Large + 1);
-        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), longName);
+        var command = new UpdateAuthorCommand(AuthorId.From(Guid.CreateVersion7()), longName);
 
         // Act
         var result = _validator.TestValidate(command);

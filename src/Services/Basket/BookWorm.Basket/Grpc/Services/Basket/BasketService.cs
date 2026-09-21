@@ -43,7 +43,7 @@ internal sealed class BasketService(IBasketRepository repository, ILogger<Basket
 
     private static GetBasketResponse MapToBasketResponse(CustomerBasket basket)
     {
-        var response = new GetBasketResponse { Id = basket.Id };
+        var response = new GetBasketResponse { Id = (string)basket.Id };
         var items = basket.Items.Select(item => new Item
         {
             Id = item.Id,

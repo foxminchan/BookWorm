@@ -1,11 +1,16 @@
+using Aspire.Hosting.Yarp;
+
 namespace BookWorm.AppHost.Extensions.Frontend;
 
 internal static class FrontendExtensions
 {
+    private const string AppUrlEnvironmentVariable = "NEXT_PUBLIC_APP_URL";
+    private const string BuildStage = "build";
+
     extension(IDistributedApplicationBuilder builder)
     {
         public void AddFrontendApps(
-            IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+            IResourceBuilder<YarpResource> gateway,
             IResourceBuilder<IResource> keycloak
         )
         {
@@ -21,7 +26,7 @@ internal static class FrontendExtensions
 
     private static void AddTurborepoApps(
         IDistributedApplicationBuilder builder,
-        IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+        IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak
     )
     {
@@ -47,7 +52,7 @@ internal static class FrontendExtensions
             .WithKeycloak(keycloak);
 
         storefront.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             storefront.GetEndpoint(Uri.UriSchemeHttp)
         );
 
@@ -64,14 +69,14 @@ internal static class FrontendExtensions
             .WithKeycloak(keycloak);
 
         backoffice.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             backoffice.GetEndpoint(Uri.UriSchemeHttp)
         );
     }
 
     private static void AddPublishedContainerApps(
         IDistributedApplicationBuilder builder,
-        IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+        IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak
     )
     {
@@ -84,11 +89,11 @@ internal static class FrontendExtensions
             ),
             gateway,
             keycloak,
-            includeCopilot: true
+            true
         );
 
         storefront.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             storefront.GetEndpoint(Uri.UriSchemeHttp)
         );
 
@@ -104,14 +109,14 @@ internal static class FrontendExtensions
         );
 
         backoffice.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             backoffice.GetEndpoint(Uri.UriSchemeHttp)
         );
     }
 
     private static IResourceBuilder<ContainerResource> ConfigurePublishedFrontend(
         IResourceBuilder<ContainerResource> frontend,
-        IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+        IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak,
         bool includeCopilot = false
     )
@@ -148,7 +153,7 @@ internal static class FrontendExtensions
             context =>
             {
                 context
-                    .Builder.From("oven/bun:1", "build")
+                    .Builder.From("oven/bun:1", BuildStage)
                     .WorkDir("/app")
                     .Copy(".", ".")
                     .Run("bun install --frozen-lockfile")
@@ -157,13 +162,13 @@ internal static class FrontendExtensions
                 context
                     .Builder.From("oven/bun:1-alpine", "runtime")
                     .WorkDir("/app")
-                    .CopyFrom("build", $"/app/apps/{appName}/.next/standalone", ".")
+                    .CopyFrom(BuildStage, $"/app/apps/{appName}/.next/standalone", ".")
                     .CopyFrom(
-                        "build",
+                        BuildStage,
                         $"/app/apps/{appName}/.next/static",
                         $"./apps/{appName}/.next/static"
                     )
-                    .CopyFrom("build", $"/app/apps/{appName}/public", $"./apps/{appName}/public")
+                    .CopyFrom(BuildStage, $"/app/apps/{appName}/public", $"./apps/{appName}/public")
                     .Env("NODE_ENV", "production")
                     .Env("NEXT_TELEMETRY_DISABLED", "1")
                     .Env("HOSTNAME", "0.0.0.0")
@@ -172,7 +177,7 @@ internal static class FrontendExtensions
 
                 return Task.CompletedTask;
             },
-            stage: "runtime"
+            "runtime"
         );
     }
 }

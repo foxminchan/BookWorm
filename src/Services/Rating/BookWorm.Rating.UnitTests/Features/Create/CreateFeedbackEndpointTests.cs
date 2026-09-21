@@ -1,4 +1,5 @@
-﻿using BookWorm.Rating.Features.Create;
+﻿using BookWorm.Rating.Domain.FeedbackAggregator;
+using BookWorm.Rating.Features.Create;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -7,7 +8,7 @@ namespace BookWorm.Rating.UnitTests.Features.Create;
 public sealed class CreateFeedbackEndpointTests
 {
     private readonly CreateFeedbackEndpoint _endpoint;
-    private readonly Guid _resultId;
+    private readonly FeedbackId _resultId;
     private readonly Mock<ISender> _senderMock;
     private readonly CreateFeedbackCommand _validCommand;
 
@@ -16,7 +17,7 @@ public sealed class CreateFeedbackEndpointTests
         _senderMock = new();
         _endpoint = new();
         var testBookId = Guid.CreateVersion7();
-        _resultId = Guid.CreateVersion7();
+        _resultId = FeedbackId.From(Guid.CreateVersion7());
 
         _validCommand = new(testBookId, "John", "Doe", "Great book!", 5);
     }
@@ -33,7 +34,7 @@ public sealed class CreateFeedbackEndpointTests
         var result = await _endpoint.HandleAsync(_validCommand, _senderMock.Object);
 
         // Assert
-        result.ShouldBeOfType<Ok<Guid>>();
+        result.ShouldBeOfType<Ok<FeedbackId>>();
         result.Value.ShouldBe(_resultId);
         _senderMock.Verify(x => x.Send(_validCommand, It.IsAny<CancellationToken>()), Times.Once);
     }

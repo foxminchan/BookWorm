@@ -3,7 +3,8 @@ using Mediator;
 
 namespace BookWorm.Rating.Features.Create;
 
-internal sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbackCommand, ISender>
+internal sealed class CreateFeedbackEndpoint
+    : IEndpoint<Ok<FeedbackId>, CreateFeedbackCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -12,7 +13,7 @@ internal sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbac
                 async (CreateFeedbackCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .ProducesPostWithoutLocation<Guid>()
+            .ProducesPostWithoutLocation<FeedbackId>()
             .WithTags(nameof(Feedback))
             .WithName(nameof(CreateFeedbackEndpoint))
             .WithSummary("Create Feedback")
@@ -20,7 +21,7 @@ internal sealed class CreateFeedbackEndpoint : IEndpoint<Ok<Guid>, CreateFeedbac
             .MapToApiVersion(ApiVersions.V1);
     }
 
-    public async Task<Ok<Guid>> HandleAsync(
+    public async Task<Ok<FeedbackId>> HandleAsync(
         CreateFeedbackCommand command,
         ISender sender,
         CancellationToken cancellationToken = default

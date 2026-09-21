@@ -12,14 +12,14 @@ public sealed class CancelOrderEndpointTests
 {
     private readonly CancelOrderEndpoint _endpoint;
     private readonly OrderDetailDto _orderDetailDto;
-    private readonly Guid _orderId;
+    private readonly OrderId _orderId;
     private readonly Mock<ISender> _senderMock;
 
     public CancelOrderEndpointTests()
     {
         _senderMock = new();
         _endpoint = new();
-        _orderId = Guid.CreateVersion7();
+        _orderId = OrderId.From(Guid.CreateVersion7());
 
         // Create a sample OrderDetailDto to return from the sender
         _orderDetailDto = new(_orderId, DateTimeHelper.UtcNow(), 100.0m, Status.Cancelled, []);
@@ -32,7 +32,7 @@ public sealed class CancelOrderEndpointTests
         _senderMock
             .Setup(x =>
                 x.Send(
-                    It.Is<CancelOrderCommand>(c => c.OrderId == _orderId),
+                    It.Is<CancelOrderCommand>(c => c.OrderId == (Guid)_orderId),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -48,7 +48,7 @@ public sealed class CancelOrderEndpointTests
         _senderMock.Verify(
             x =>
                 x.Send(
-                    It.Is<CancelOrderCommand>(c => c.OrderId == _orderId),
+                    It.Is<CancelOrderCommand>(c => c.OrderId == (Guid)_orderId),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -62,7 +62,7 @@ public sealed class CancelOrderEndpointTests
         _senderMock
             .Setup(x =>
                 x.Send(
-                    It.Is<CancelOrderCommand>(c => c.OrderId == _orderId),
+                    It.Is<CancelOrderCommand>(c => c.OrderId == (Guid)_orderId),
                     It.IsAny<CancellationToken>()
                 )
             )

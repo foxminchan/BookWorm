@@ -5,7 +5,7 @@ using BookWorm.Catalog.Features.Publishers;
 namespace BookWorm.Catalog.Features.Books;
 
 public sealed record BookDto(
-    Guid Id,
+    BookId Id,
     string? Name,
     string? Description,
     string? ImageUrl,

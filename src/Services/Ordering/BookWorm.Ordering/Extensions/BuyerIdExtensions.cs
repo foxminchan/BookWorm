@@ -6,13 +6,13 @@ internal static class BuyerIdExtensions
 {
     extension(string? userId)
     {
-        public Guid ToBuyerId()
+        public BuyerId ToBuyerId()
         {
             userId = Guard.Against.NotAuthenticated(userId);
 
             return !Guid.TryParse(userId, out var buyerId)
                 ? throw new ArgumentException("Invalid Buyer ID format.", nameof(userId))
-                : buyerId;
+                : BuyerId.From(buyerId);
         }
     }
 }

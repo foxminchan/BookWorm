@@ -19,6 +19,8 @@ public sealed class RatingDomainTests : ArchUnitBaseTest
             .ResideInNamespaceMatching(DomainNamespace)
             .And()
             .AreNot(typeof(FeedbackFilterSpec))
+            .And()
+            .AreNotNested()
             .Should()
             .BeSealed()
             .Because(
@@ -33,6 +35,8 @@ public sealed class RatingDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .BePublic()
             .OrShould()
@@ -144,6 +148,8 @@ public sealed class RatingDomainTests : ArchUnitBaseTest
         Types()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .NotDependOnAny(
                 Types()

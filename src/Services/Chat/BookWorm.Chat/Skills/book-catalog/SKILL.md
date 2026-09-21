@@ -43,5 +43,5 @@ Use the `search_catalog` tool to find books. The catalog supports:
 - Emotional feedback or complaints → hand off to SentimentAgent.
 - Complete ongoing book task before any handoff.
 
-For catalog browsing tips and genre descriptions, see [references/CATALOG_GUIDE.md](references/CATALOG_GUIDE.md).
-For a sample book listing template, see [assets/book-listing-template.md](assets/book-listing-template.md).
+For catalog browsing tips and genre descriptions, see [references/CATALOG_GUIDE.md](references/CATALOG_GUIDE.md). For a
+sample book listing template, see [assets/book-listing-template.md](assets/book-listing-template.md).

@@ -3,7 +3,7 @@ using BookWorm.Rating.Domain.Exceptions;
 
 namespace BookWorm.Rating.Domain.FeedbackAggregator;
 
-public sealed class Feedback() : AuditableEntity, IAggregateRoot
+public sealed class Feedback() : AuditableEntity<FeedbackId>, IAggregateRoot
 {
     public Feedback(Guid bookId, string? firstName, string? lastName, string? comment, int rating)
         : this()
@@ -11,7 +11,7 @@ public sealed class Feedback() : AuditableEntity, IAggregateRoot
         // Generate the Id client-side (UUID v7) so the FeedbackCreatedEvent below carries
         // the real identifier. The EF configuration falls back to the Postgres `uuidv7()`
         // default only when Id is Guid.Empty, so this assignment is honoured on insert.
-        Id = Guid.CreateVersion7();
+        Id = FeedbackId.From(Guid.CreateVersion7());
         BookId = bookId;
         FirstName = firstName;
         LastName = lastName;
@@ -19,7 +19,7 @@ public sealed class Feedback() : AuditableEntity, IAggregateRoot
         Rating = rating is < 0 or > 5
             ? throw new RatingDomainException("Rating must be between 0 and 5.")
             : rating;
-        RegisterDomainEvent(new FeedbackCreatedEvent(BookId, Rating, Id));
+        RegisterDomainEvent(new FeedbackCreatedEvent(BookId, Rating, (Guid)Id));
     }
 
     public Guid BookId { get; }
@@ -34,7 +34,7 @@ public sealed class Feedback() : AuditableEntity, IAggregateRoot
     /// <returns>The current instance of <see cref="Feedback" /> after registering the deletion event.</returns>
     public Feedback Remove()
     {
-        RegisterDomainEvent(new FeedbackDeletedEvent(BookId, Rating, Id));
+        RegisterDomainEvent(new FeedbackDeletedEvent(BookId, Rating, (Guid)Id));
         return this;
     }
 }

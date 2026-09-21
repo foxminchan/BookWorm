@@ -11,14 +11,14 @@ public sealed class CompleteOrderEndpointTests
 {
     private readonly CompleteOrderEndpoint _endpoint;
     private readonly OrderDetailDto _orderDetailDto;
-    private readonly Guid _orderId;
+    private readonly OrderId _orderId;
     private readonly Mock<ISender> _senderMock;
 
     public CompleteOrderEndpointTests()
     {
         _endpoint = new();
         _senderMock = new();
-        _orderId = Guid.CreateVersion7();
+        _orderId = OrderId.From(Guid.CreateVersion7());
 
         // Create a sample OrderDetailDto for testing
         _orderDetailDto = new(
@@ -37,7 +37,7 @@ public sealed class CompleteOrderEndpointTests
         _senderMock
             .Setup(x =>
                 x.Send(
-                    It.Is<CompleteOrderCommand>(c => c.OrderId == _orderId),
+                    It.Is<CompleteOrderCommand>(c => c.OrderId == (Guid)_orderId),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -53,7 +53,7 @@ public sealed class CompleteOrderEndpointTests
         _senderMock.Verify(
             x =>
                 x.Send(
-                    It.Is<CompleteOrderCommand>(c => c.OrderId == _orderId),
+                    It.Is<CompleteOrderCommand>(c => c.OrderId == (Guid)_orderId),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once

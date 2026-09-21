@@ -6,6 +6,6 @@ internal static class HttpResponseMessageHelper
 {
     internal static HttpResponseMessage CreateResponse(HttpStatusCode statusCode)
     {
-        return new(statusCode) { RequestMessage = new HttpRequestMessage() };
+        return new(statusCode) { RequestMessage = new() };
     }
 }

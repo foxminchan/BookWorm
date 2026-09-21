@@ -1,3 +1,3 @@
 ﻿namespace BookWorm.Catalog.Features.Authors;
 
-public sealed record AuthorDto(Guid Id, string? Name);
+public sealed record AuthorDto(AuthorId Id, string? Name);

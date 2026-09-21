@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Reflection;
+using System.Security.Claims;
 using BookWorm.Basket.Grpc.Services;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
@@ -6,6 +7,7 @@ using BookWorm.Ordering.Extensions;
 using BookWorm.Ordering.Features.Orders.Create;
 using BookWorm.Ordering.Grpc.Services.Basket;
 using BookWorm.Ordering.Grpc.Services.Book;
+using BookWorm.SharedKernel.SeedWork;
 using Microsoft.Extensions.Logging;
 using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
 
@@ -105,6 +107,12 @@ public sealed class CreateOrderCommandTests
             null,
             [new(Guid.CreateVersion7(), 2, 10.99m)]
         );
+        typeof(Entity<OrderId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(expectedOrder, OrderId.From(Guid.CreateVersion7()));
         var lockHandle = new object();
 
         _distributedLockerMock

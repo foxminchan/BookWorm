@@ -17,10 +17,10 @@ public sealed class BuyerAggregateTests
         const string province = "Readland";
 
         // Act
-        var buyer = new Buyer(id, name, street, city, province);
+        var buyer = new Buyer(BuyerId.From(id), name, street, city, province);
 
         // Assert
-        buyer.Id.ShouldBe(id);
+        ((Guid)buyer.Id).ShouldBe(id);
         buyer.Name.ShouldBe(name);
         buyer.Address.ShouldNotBeNull();
         buyer.Address!.Street.ShouldBe(street);
@@ -44,7 +44,9 @@ public sealed class BuyerAggregateTests
 
         // Act & Assert
         Should
-            .Throw<OrderingDomainException>(() => new Buyer(id, name!, street, city, province))
+            .Throw<OrderingDomainException>(() =>
+                new Buyer(BuyerId.From(id), name!, street, city, province)
+            )
             .Message.ShouldBe("Name is required");
     }
 
@@ -93,7 +95,7 @@ public sealed class BuyerAggregateTests
     {
         // Arrange
         var buyer = new Buyer(
-            Guid.CreateVersion7(),
+            BuyerId.From(Guid.CreateVersion7()),
             "John Doe",
             "123 Main St",
             "Bookville",
@@ -121,7 +123,13 @@ public sealed class BuyerAggregateTests
         const string street = "123 Main St";
         const string city = "Bookville";
         const string province = "Readland";
-        var buyer = new Buyer(Guid.CreateVersion7(), "John Doe", street, city, province);
+        var buyer = new Buyer(
+            BuyerId.From(Guid.CreateVersion7()),
+            "John Doe",
+            street,
+            city,
+            province
+        );
 
         // Act
         var fullAddress = buyer.FullAddress;
@@ -158,7 +166,7 @@ public sealed class BuyerAggregateTests
     {
         // Arrange
         var buyer = new Buyer(
-            Guid.CreateVersion7(),
+            BuyerId.From(Guid.CreateVersion7()),
             "John Doe",
             "123 Main St",
             "Bookville",
@@ -179,7 +187,7 @@ public sealed class BuyerAggregateTests
     {
         // Arrange
         var buyer = new Buyer(
-            Guid.CreateVersion7(),
+            BuyerId.From(Guid.CreateVersion7()),
             "John Doe",
             "123 Main St",
             "Bookville",

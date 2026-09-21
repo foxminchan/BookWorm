@@ -11,7 +11,7 @@ public interface ICatalogApi
     Task<ApiResponse<PagedResult<Book>>> ListBooksAsync(string? search);
 
     [Get("/api/v1/books/{id}")]
-    Task<ApiResponse<Book>> GetBookAsync(Guid id);
+    Task<ApiResponse<Book>> GetBookAsync(BookId id);
 
     [Get("/api/v1/categories")]
     Task<ApiResponse<List<Category>>> ListCategoriesAsync();
