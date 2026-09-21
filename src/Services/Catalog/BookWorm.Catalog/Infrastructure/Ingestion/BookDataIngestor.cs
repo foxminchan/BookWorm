@@ -25,7 +25,7 @@ internal sealed class BookDataIngestor(
 
         var record = new TextSnippet
         {
-            Id = data.Id,
+            Id = (Guid)data.Id,
             Content = content,
             Vector = embeddings,
         };

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 
-public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
+public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelete
 {
     private readonly List<BookAuthor> _bookAuthors = [];
 
@@ -12,9 +12,9 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         string? image,
         decimal price,
         decimal? priceSale,
-        Guid categoryId,
-        Guid publisherId,
-        Guid[] authorIds
+        CategoryId categoryId,
+        PublisherId publisherId,
+        AuthorId[] authorIds
     )
         : this()
     {
@@ -41,9 +41,9 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     public Status Status { get; private set; }
     public double AverageRating { get; private set; }
     public int TotalReviews { get; private set; }
-    public Guid? CategoryId { get; private set; }
+    public CategoryId? CategoryId { get; private set; }
     public Category? Category { get; private set; } = null!;
-    public Guid? PublisherId { get; private set; }
+    public PublisherId? PublisherId { get; private set; }
     public Publisher? Publisher { get; private set; } = null!;
 
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();
@@ -64,9 +64,9 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
     /// <param name="authorIds">The list of author IDs associated with the book.</param>
     public Book SetMetadata(
         string? description,
-        Guid categoryId,
-        Guid publisherId,
-        Guid[] authorIds
+        CategoryId categoryId,
+        PublisherId publisherId,
+        AuthorId[] authorIds
     )
     {
         Description = !string.IsNullOrWhiteSpace(description)
@@ -96,9 +96,9 @@ public sealed class Book() : AuditableEntity, IAggregateRoot, ISoftDelete
         decimal price,
         decimal? priceSale,
         string? image,
-        Guid categoryId,
-        Guid publisherId,
-        Guid[] authorIds
+        CategoryId categoryId,
+        PublisherId publisherId,
+        AuthorId[] authorIds
     )
     {
         var isChanged =

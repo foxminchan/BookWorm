@@ -5,7 +5,7 @@ using Mediator;
 namespace BookWorm.Rating.Features.Delete;
 
 [Transactional]
-public sealed record DeleteFeedbackCommand(Guid Id) : ICommand;
+public sealed record DeleteFeedbackCommand(FeedbackId Id) : ICommand;
 
 internal sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
     : ICommandHandler<DeleteFeedbackCommand>
@@ -15,9 +15,9 @@ internal sealed class DeleteFeedbackHandler(IFeedbackRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var feedback = await repository.GetByIdAsync(request.Id, cancellationToken);
+        var feedback = await repository.GetByIdAsync((Guid)request.Id, cancellationToken);
 
-        Guard.Against.NotFound(feedback, request.Id);
+        Guard.Against.NotFound(feedback, (Guid)request.Id);
 
         feedback.Remove();
 

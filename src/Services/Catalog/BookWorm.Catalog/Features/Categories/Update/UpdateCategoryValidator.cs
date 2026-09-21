@@ -6,7 +6,7 @@ internal sealed class UpdateCategoryValidator : AbstractValidator<UpdateCategory
 {
     public UpdateCategoryValidator()
     {
-        RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Id).Must(id => (Guid)id != Guid.Empty);
 
         RuleFor(x => x.Name).NotEmpty().MaximumLength(DataSchemaLength.Medium);
     }

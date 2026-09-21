@@ -30,7 +30,7 @@ public sealed class OrderSummaryViewProjectionTests
         var result = OrderSummaryViewProjection.Apply(info, orderPlacedEvent);
 
         // Assert
-        result.Id.ShouldBe(order.Id);
+        result.Id.ShouldBe((Guid)order.Id);
         result.Status.ShouldBe(Status.New);
         result.TotalPrice.ShouldBe(order.TotalPrice);
     }
@@ -85,7 +85,7 @@ public sealed class OrderSummaryViewProjectionTests
 
         // Assert
         result.ShouldBeSameAs(info); // Should modify the same object
-        result.Id.ShouldBe(order.Id);
+        result.Id.ShouldBe((Guid)order.Id);
         result.Status.ShouldBe(Status.New);
         result.TotalPrice.ShouldBe(order.TotalPrice);
     }

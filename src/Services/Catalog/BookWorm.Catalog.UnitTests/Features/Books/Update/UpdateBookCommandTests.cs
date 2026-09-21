@@ -1,4 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
@@ -16,7 +18,7 @@ public sealed class UpdateBookCommandTests
 
         var repository = new Mock<IBookRepository>();
         repository
-            .Setup(x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
         repository
             .Setup(x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
@@ -24,7 +26,7 @@ public sealed class UpdateBookCommandTests
 
         var command = new UpdateBookCommand
         {
-            Id = book.Id,
+            Id = (Guid)book.Id,
             Name = "Updated Name",
             Description = "Updated Description",
             Price = 19.99m,
@@ -44,9 +46,9 @@ public sealed class UpdateBookCommandTests
         book.Description.ShouldBe("Updated Description");
         book.Price!.OriginalPrice.ShouldBe(19.99m);
         book.Price.DiscountPrice.ShouldBe(9.99m);
-        book.CategoryId.ShouldBe(command.CategoryId);
-        book.PublisherId.ShouldBe(command.PublisherId);
-        book.BookAuthors.Select(x => x.AuthorId).ShouldBe(command.AuthorIds);
+        ((Guid)book.CategoryId!).ShouldBe(command.CategoryId);
+        ((Guid)book.PublisherId!).ShouldBe(command.PublisherId);
+        book.BookAuthors.Select(x => (Guid)x.AuthorId).ShouldBe(command.AuthorIds);
         repository.Verify(
             x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Once
@@ -98,14 +100,14 @@ public sealed class UpdateBookCommandTests
             book.Price!.OriginalPrice,
             book.Price.DiscountPrice,
             "existing-image.jpg",
-            (Guid)book.CategoryId!,
-            (Guid)book.PublisherId!,
+            CategoryId.From((Guid)book.CategoryId!),
+            PublisherId.From((Guid)book.PublisherId!),
             [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
         var repository = new Mock<IBookRepository>();
         repository
-            .Setup(x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         repository
@@ -114,14 +116,14 @@ public sealed class UpdateBookCommandTests
 
         var command = new UpdateBookCommand
         {
-            Id = book.Id,
+            Id = (Guid)book.Id,
             Name = book.Name!,
             Description = book.Description!,
             Price = book.Price!.OriginalPrice,
             PriceSale = book.Price.DiscountPrice,
             CategoryId = (Guid)book.CategoryId,
             PublisherId = (Guid)book.PublisherId,
-            AuthorIds = [.. book.BookAuthors.Select(x => x.AuthorId)],
+            AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
             IsRemoveImage = true,
         };
 
@@ -146,14 +148,14 @@ public sealed class UpdateBookCommandTests
             book.Price!.OriginalPrice,
             book.Price.DiscountPrice,
             "existing-image.jpg",
-            (Guid)book.CategoryId!,
-            (Guid)book.PublisherId!,
+            CategoryId.From((Guid)book.CategoryId!),
+            PublisherId.From((Guid)book.PublisherId!),
             [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
         var repository = new Mock<IBookRepository>();
         repository
-            .Setup(x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         repository
@@ -162,14 +164,14 @@ public sealed class UpdateBookCommandTests
 
         var command = new UpdateBookCommand
         {
-            Id = book.Id,
+            Id = (Guid)book.Id,
             Name = book.Name!,
             Description = book.Description!,
             Price = book.Price!.OriginalPrice,
             PriceSale = book.Price.DiscountPrice,
             CategoryId = (Guid)book.CategoryId!,
             PublisherId = (Guid)book.PublisherId!,
-            AuthorIds = [.. book.BookAuthors.Select(x => x.AuthorId)],
+            AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
             ImageUrn = "new-image.jpg",
         }; // Simulating a new image upload
 
@@ -194,14 +196,14 @@ public sealed class UpdateBookCommandTests
             book.Price!.OriginalPrice,
             book.Price.DiscountPrice,
             "existing-image.jpg",
-            (Guid)book.CategoryId!,
-            (Guid)book.PublisherId!,
+            CategoryId.From((Guid)book.CategoryId!),
+            PublisherId.From((Guid)book.PublisherId!),
             [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
         var repository = new Mock<IBookRepository>();
         repository
-            .Setup(x => x.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
 
         repository
@@ -210,14 +212,14 @@ public sealed class UpdateBookCommandTests
 
         var command = new UpdateBookCommand
         {
-            Id = book.Id,
+            Id = (Guid)book.Id,
             Name = book.Name!,
             Description = book.Description!,
             Price = book.Price!.OriginalPrice,
             PriceSale = book.Price.DiscountPrice,
             CategoryId = (Guid)book.CategoryId,
             PublisherId = (Guid)book.PublisherId,
-            AuthorIds = [.. book.BookAuthors.Select(x => x.AuthorId)],
+            AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
         };
 
         var handler = new UpdateBookHandler(repository.Object);

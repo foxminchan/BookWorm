@@ -16,6 +16,6 @@ internal sealed class CreateCategoryHandler(ICategoryRepository repository)
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-        return result.Id;
+        return (Guid)result.Id;
     }
 }

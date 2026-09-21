@@ -42,9 +42,9 @@ internal sealed class UpdateBookHandler(IBookRepository repository)
             request.Price,
             request.PriceSale,
             imageName,
-            request.CategoryId,
-            request.PublisherId,
-            request.AuthorIds
+            CategoryId.From(request.CategoryId),
+            PublisherId.From(request.PublisherId),
+            [.. request.AuthorIds.Select(AuthorId.From)]
         );
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);

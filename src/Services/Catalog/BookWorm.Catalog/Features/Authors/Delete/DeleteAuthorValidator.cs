@@ -10,7 +10,7 @@ internal sealed class DeleteAuthorValidator : AbstractValidator<DeleteAuthorComm
     }
 }
 
-internal sealed class AuthorValidator : AbstractValidator<Guid>
+internal sealed class AuthorValidator : AbstractValidator<AuthorId>
 {
     private readonly IAuthorRepository _repository;
 
@@ -23,10 +23,10 @@ internal sealed class AuthorValidator : AbstractValidator<Guid>
             .WithMessage("Author has books and cannot be deleted");
     }
 
-    private async Task<bool> IsNotAuthorBook(Guid authorId, CancellationToken cancellationToken)
+    private async Task<bool> IsNotAuthorBook(AuthorId authorId, CancellationToken cancellationToken)
     {
         var author = await _repository.FirstOrDefaultAsync(
-            new BookAuthorFilterSpec(authorId),
+            new BookAuthorFilterSpec((Guid)authorId),
             cancellationToken
         );
 

@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Features.Orders.Create;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Ordering.Features.Orders.Create;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
@@ -9,7 +10,7 @@ public sealed class CreateOrderEndpointTests
 {
     private readonly CreateOrderEndpoint _endpoint = new();
     private readonly LinkGenerator _linkGenerator = Mock.Of<LinkGenerator>();
-    private readonly Guid _orderId = Guid.CreateVersion7();
+    private readonly OrderId _orderId = OrderId.From(Guid.CreateVersion7());
     private readonly Mock<ISender> _senderMock = new();
 
     [Test]
@@ -28,7 +29,7 @@ public sealed class CreateOrderEndpointTests
         );
 
         // Assert
-        result.ShouldBeOfType<Created<Guid>>();
+        result.ShouldBeOfType<Created<OrderId>>();
         result.Value.ShouldBe(_orderId);
 
         // Verify the command was sent
@@ -75,7 +76,7 @@ public sealed class CreateOrderEndpointTests
         );
 
         // Assert
-        result.ShouldBeOfType<Created<Guid>>();
+        result.ShouldBeOfType<Created<OrderId>>();
         result.Value.ShouldBe(_orderId);
 
         // Verify the cancellation token was passed
@@ -101,7 +102,7 @@ public sealed class CreateOrderEndpointTests
         );
 
         // Assert
-        result.ShouldBeOfType<Created<Guid>>();
+        result.ShouldBeOfType<Created<OrderId>>();
         result.Value.ShouldBe(_orderId);
     }
 }

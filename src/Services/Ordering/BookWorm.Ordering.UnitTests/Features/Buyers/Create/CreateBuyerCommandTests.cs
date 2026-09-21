@@ -1,8 +1,10 @@
-﻿using System.Security.Claims;
+﻿using System.Reflection;
+using System.Security.Claims;
 using BookWorm.Chassis.Repository;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Create;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Create;
 
@@ -51,7 +53,12 @@ public sealed class CreateBuyerCommandTests
             .ReturnsAsync(
                 (Buyer buyer, CancellationToken _) =>
                 {
-                    buyer.GetType().GetProperty("Id")?.SetValue(buyer, buyerId);
+                    typeof(Entity<BuyerId>)
+                        .GetProperty(
+                            nameof(Entity<>.Id),
+                            BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+                        )!
+                        .SetValue(buyer, BuyerId.From(buyerId));
                     return buyer;
                 }
             );
@@ -60,7 +67,7 @@ public sealed class CreateBuyerCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(buyerId);
+        result.ShouldBe(BuyerId.From(buyerId));
         buyerEntity.ShouldNotBeNull();
         buyerEntity.Name.ShouldBe(_userName);
         buyerEntity.Address!.Street.ShouldBe("123 Main St");

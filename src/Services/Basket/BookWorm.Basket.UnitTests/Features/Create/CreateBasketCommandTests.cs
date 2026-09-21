@@ -46,7 +46,7 @@ public sealed class CreateBasketCommandTests
             x =>
                 x.CreateOrUpdateBasketAsync(
                     It.Is<CustomerBasket>(b =>
-                        b.Id == _userId && b.Items.Count == command.Items.Count
+                        b.Id == CustomerId.From(_userId) && b.Items.Count == command.Items.Count
                     )
                 ),
             Times.Once
@@ -101,7 +101,7 @@ public sealed class CreateBasketCommandTests
             x =>
                 x.CreateOrUpdateBasketAsync(
                     It.Is<CustomerBasket>(b =>
-                        b.Id == _userId && b.Items.Count == command.Items.Count
+                        b.Id == CustomerId.From(_userId) && b.Items.Count == command.Items.Count
                     )
                 ),
             Times.Once

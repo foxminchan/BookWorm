@@ -1,7 +1,7 @@
 ﻿namespace BookWorm.McpTools.Models;
 
 public sealed record Book(
-    Guid Id,
+    BookId Id,
     string? Name,
     string? Description,
     string? ImageUrl,

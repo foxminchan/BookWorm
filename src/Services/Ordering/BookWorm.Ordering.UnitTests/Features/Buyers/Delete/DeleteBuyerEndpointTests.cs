@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Delete;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,7 +8,7 @@ namespace BookWorm.Ordering.UnitTests.Features.Buyers.Delete;
 
 public sealed class DeleteBuyerEndpointTests
 {
-    private readonly Guid _buyerId = Guid.CreateVersion7();
+    private readonly BuyerId _buyerId = BuyerId.From(Guid.CreateVersion7());
     private readonly DeleteBuyerEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();
 
@@ -27,7 +28,7 @@ public sealed class DeleteBuyerEndpointTests
         _senderMock.Verify(
             x =>
                 x.Send(
-                    It.Is<DeleteBuyerCommand>(c => c.Id == _buyerId),
+                    It.Is<DeleteBuyerCommand>(c => c.Id == (Guid)_buyerId),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once

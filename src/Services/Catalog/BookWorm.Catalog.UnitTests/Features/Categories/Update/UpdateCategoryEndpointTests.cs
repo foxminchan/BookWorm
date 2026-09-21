@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Categories.Update;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Features.Categories.Update;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -14,7 +15,7 @@ public sealed class UpdateCategoryEndpointTests
     {
         _senderMock = new();
         _endpoint = new();
-        var categoryId = Guid.CreateVersion7();
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
         _command = new(categoryId, "Updated Category Name");
     }
 

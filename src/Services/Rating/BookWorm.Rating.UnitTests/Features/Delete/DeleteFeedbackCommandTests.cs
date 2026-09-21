@@ -25,7 +25,7 @@ public sealed class DeleteFeedbackCommandTests
         // Arrange
         var command = new DeleteFeedbackCommand(_feedback.Id);
         _repositoryMock
-            .Setup(x => x.GetByIdAsync(_feedback.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)_feedback.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_feedback);
         _repositoryMock
             .Setup(x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
@@ -48,7 +48,7 @@ public sealed class DeleteFeedbackCommandTests
     {
         // Arrange
         var feedbackId = Guid.CreateVersion7();
-        var command = new DeleteFeedbackCommand(feedbackId);
+        var command = new DeleteFeedbackCommand(FeedbackId.From(feedbackId));
         _repositoryMock
             .Setup(x => x.GetByIdAsync(feedbackId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Feedback?)null);

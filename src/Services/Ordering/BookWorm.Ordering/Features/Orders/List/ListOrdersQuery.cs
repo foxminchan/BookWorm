@@ -35,7 +35,8 @@ internal sealed class ListOrdersHandler(
         {
             request = request with
             {
-                BuyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId(),
+                BuyerId = (Guid)
+                    claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId(),
             };
         }
 

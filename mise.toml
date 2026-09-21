@@ -4,7 +4,8 @@ node = "24"
 dotnet = "10"
 java = "temurin-25"
 aspire = "13"
-azure-cli = "2"
+uv = "latest"
+azure-cli = { version = "2", depends = ["uv"] }
 github-cli = "2"
 
 [settings]

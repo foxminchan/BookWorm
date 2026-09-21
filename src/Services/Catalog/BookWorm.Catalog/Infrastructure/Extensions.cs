@@ -29,7 +29,7 @@ internal static class Extensions
                         services.AddMigration<CatalogDbContext>();
                     }
 
-                    services.AddRepositories(typeof(ICatalogApiMarker));
+                    services.AddRepositories(typeof(CatalogApiMarker));
                 }
             );
 

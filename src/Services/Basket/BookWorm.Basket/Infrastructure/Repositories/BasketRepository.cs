@@ -32,11 +32,11 @@ internal sealed class BasketRepository(
             BasketSerializationContext.Default.CustomerBasket
         );
 
-        var created = await database.StringSetAsync(GetBasketKey(basket.Id), json);
+        var created = await database.StringSetAsync(GetBasketKey((string)basket.Id), json);
 
         if (created)
         {
-            return await GetBasketAsync(basket.Id);
+            return await GetBasketAsync((string)basket.Id);
         }
 
         logger.LogError("[{Repository}] Failed to update basket", nameof(BasketRepository));

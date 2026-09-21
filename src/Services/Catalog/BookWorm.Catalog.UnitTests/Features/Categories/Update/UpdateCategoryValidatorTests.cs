@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Categories.Update;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Features.Categories.Update;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 
@@ -14,7 +15,7 @@ public sealed class UpdateCategoryValidatorTests
     {
         // Arrange
         var command = new UpdateCategoryCommand(
-            Guid.CreateVersion7(),
+            CategoryId.From(Guid.CreateVersion7()),
             _faker.Commerce.Categories(1)[0]
         );
 
@@ -29,7 +30,10 @@ public sealed class UpdateCategoryValidatorTests
     public void GivenEmptyId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateCategoryCommand(Guid.Empty, _faker.Commerce.Categories(1)[0]);
+        var command = new UpdateCategoryCommand(
+            CategoryId.From(Guid.Empty),
+            _faker.Commerce.Categories(1)[0]
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -45,7 +49,7 @@ public sealed class UpdateCategoryValidatorTests
     public void GivenEmptyName_WhenValidating_ThenShouldHaveValidationError(string? name)
     {
         // Arrange
-        var command = new UpdateCategoryCommand(Guid.CreateVersion7(), name!);
+        var command = new UpdateCategoryCommand(CategoryId.From(Guid.CreateVersion7()), name!);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -59,7 +63,7 @@ public sealed class UpdateCategoryValidatorTests
     {
         // Arrange
         var command = new UpdateCategoryCommand(
-            Guid.CreateVersion7(),
+            CategoryId.From(Guid.CreateVersion7()),
             new('a', DataSchemaLength.Medium + 1)
         );
 

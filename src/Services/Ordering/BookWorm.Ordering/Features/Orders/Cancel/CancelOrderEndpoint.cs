@@ -3,18 +3,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Cancel;
 
-internal sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
+internal sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, OrderId, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPatch(
-                "/orders/{orderId:guid}/cancel",
+                "/orders/{orderId}/cancel",
                 async (
                     [FromHeader(Name = Http.RequestIdHeader)]
                     [Description("The idempotency key of the order to be cancelled")]
                         string key,
                     [Description("The unique identifier of the order to be cancelled")]
-                        Guid orderId,
+                        OrderId orderId,
                     ISender sender
                 ) => await HandleAsync(orderId, sender)
             )
@@ -30,12 +30,12 @@ internal sealed class CancelOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, 
     }
 
     public async Task<Ok<OrderDetailDto>> HandleAsync(
-        Guid orderId,
+        OrderId orderId,
         ISender request,
         CancellationToken cancellationToken = default
     )
     {
-        var result = await request.Send(new CancelOrderCommand(orderId), cancellationToken);
+        var result = await request.Send(new CancelOrderCommand((Guid)orderId), cancellationToken);
 
         return TypedResults.Ok(result);
     }

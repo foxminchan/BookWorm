@@ -18,7 +18,7 @@ public sealed class OrderSummaryTests
         var result = OrderSummary.Create(orderPlacedEvent);
 
         // Assert
-        result.Id.ShouldBe(order.Id);
+        result.Id.ShouldBe((Guid)order.Id);
         result.Status.ShouldBe(Status.New);
         result.TotalPrice.ShouldBe(order.TotalPrice);
     }
@@ -34,7 +34,7 @@ public sealed class OrderSummaryTests
         var result = OrderSummary.Apply(cancelledEvent);
 
         // Assert
-        result.Id.ShouldBe(order.Id);
+        result.Id.ShouldBe((Guid)order.Id);
         result.Status.ShouldBe(Status.Cancelled);
         result.TotalPrice.ShouldBe(order.TotalPrice);
     }
@@ -50,7 +50,7 @@ public sealed class OrderSummaryTests
         var result = OrderSummary.Apply(completedEvent);
 
         // Assert
-        result.Id.ShouldBe(order.Id);
+        result.Id.ShouldBe((Guid)order.Id);
         result.Status.ShouldBe(Status.Completed);
         result.TotalPrice.ShouldBe(order.TotalPrice);
     }

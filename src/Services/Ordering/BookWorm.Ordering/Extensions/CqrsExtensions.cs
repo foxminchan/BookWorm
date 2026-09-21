@@ -18,7 +18,7 @@ internal static class CqrsExtensions
                 .ApplyTransactionBehavior<OrderingDbContext>();
 
             // Configure FluentValidation
-            services.AddValidatorsFromAssemblyContaining<IOrderingApiMarker>(
+            services.AddValidatorsFromAssemblyContaining<OrderingApiMarker>(
                 includeInternalTypes: true
             );
 

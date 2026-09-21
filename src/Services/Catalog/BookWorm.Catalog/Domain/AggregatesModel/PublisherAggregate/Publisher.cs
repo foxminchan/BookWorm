@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 
-public sealed class Publisher() : Entity, IAggregateRoot
+public sealed class Publisher() : Entity<PublisherId>, IAggregateRoot
 {
     public Publisher(string name)
         : this()

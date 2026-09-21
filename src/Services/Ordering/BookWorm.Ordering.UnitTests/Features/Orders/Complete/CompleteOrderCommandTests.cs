@@ -32,7 +32,7 @@ public sealed class CompleteOrderCommandTests
 
         // Create a test order using the OrderFaker
         _order = new OrderFaker().Generate(1)[0];
-        _orderId = _order.Id;
+        _orderId = (Guid)_order.Id;
     }
 
     [Test]

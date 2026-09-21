@@ -1,4 +1,5 @@
-﻿using BookWorm.Basket.Features;
+﻿using BookWorm.Basket.Domain;
+using BookWorm.Basket.Features;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Basket.Grpc.Services.Book;
 using BookWorm.Catalog.Grpc.Services;
@@ -19,7 +20,7 @@ public sealed class GetBasketPostProcessorTests
         _bookIds = [Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString()];
 
         _basketDto = new(
-            Guid.CreateVersion7().ToString(),
+            CustomerId.From(Guid.CreateVersion7().ToString()),
             [new(_bookIds[0], 2), new(_bookIds[1], 1)]
         );
 
@@ -79,7 +80,7 @@ public sealed class GetBasketPostProcessorTests
         // Arrange
         var query = new GetBasketQuery();
         var originalBasketDto = new CustomerBasketDto(
-            Guid.CreateVersion7().ToString(),
+            CustomerId.From(Guid.CreateVersion7().ToString()),
             [new(_bookIds[0], 3), new(_bookIds[1], 5)]
         );
         var booksResponse = new GetBooksResponse { Books = { _bookResponses } };
@@ -123,7 +124,10 @@ public sealed class GetBasketPostProcessorTests
     {
         // Arrange
         var query = new GetBasketQuery();
-        var emptyBasket = new CustomerBasketDto(Guid.CreateVersion7().ToString(), []);
+        var emptyBasket = new CustomerBasketDto(
+            CustomerId.From(Guid.CreateVersion7().ToString()),
+            []
+        );
 
         // Act
         await _handler.Handle(query, (_, _) => new(emptyBasket), CancellationToken.None);

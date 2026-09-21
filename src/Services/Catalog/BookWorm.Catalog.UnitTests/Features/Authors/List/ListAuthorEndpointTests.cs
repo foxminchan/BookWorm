@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Authors;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Authors.List;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -16,8 +17,8 @@ public sealed class ListAuthorEndpointTests
         // Arrange
         List<AuthorDto> authors =
         [
-            new(Guid.CreateVersion7(), "Author 1"),
-            new(Guid.CreateVersion7(), "Author 2"),
+            new(AuthorId.From(Guid.CreateVersion7()), "Author 1"),
+            new(AuthorId.From(Guid.CreateVersion7()), "Author 2"),
         ];
 
         _senderMock

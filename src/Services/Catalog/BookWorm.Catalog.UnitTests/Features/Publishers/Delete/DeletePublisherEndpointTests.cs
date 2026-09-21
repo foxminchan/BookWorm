@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Publishers.Delete;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Publishers.Delete;
 using BookWorm.Chassis.Endpoints;
 using BookWorm.Chassis.Exceptions;
 using Mediator;
@@ -9,7 +10,7 @@ namespace BookWorm.Catalog.UnitTests.Features.Publishers.Delete;
 public sealed class DeletePublisherEndpointTests
 {
     private readonly DeletePublisherEndpoint _endpoint = new();
-    private readonly Guid _publisherId = Guid.CreateVersion7();
+    private readonly PublisherId _publisherId = PublisherId.From(Guid.CreateVersion7());
     private readonly Mock<ISender> _senderMock = new();
 
     [Test]
@@ -141,7 +142,7 @@ public sealed class DeletePublisherEndpointTests
     public async Task GivenEmptyGuid_WhenHandlingDeletePublisher_ThenShouldStillCallSenderWithEmptyGuid()
     {
         // Arrange
-        var emptyGuid = Guid.Empty;
+        var emptyGuid = PublisherId.From(Guid.Empty);
 
         _senderMock
             .Setup(s => s.Send(It.IsAny<DeletePublisherCommand>(), It.IsAny<CancellationToken>()))
@@ -189,7 +190,7 @@ public sealed class DeletePublisherEndpointTests
     {
         // Arrange & Act & Assert
         _endpoint.ShouldNotBeNull();
-        _endpoint.ShouldBeAssignableTo<IEndpoint<NoContent, Guid, ISender>>();
+        _endpoint.ShouldBeAssignableTo<IEndpoint<NoContent, PublisherId, ISender>>();
     }
 
     [Test]

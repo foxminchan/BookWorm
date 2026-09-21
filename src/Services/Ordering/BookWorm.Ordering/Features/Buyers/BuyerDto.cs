@@ -1,3 +1,3 @@
 ﻿namespace BookWorm.Ordering.Features.Buyers;
 
-public sealed record BuyerDto(Guid Id, [PIIData] string? Name, [PIIData] string? Address);
+public sealed record BuyerDto(BuyerId Id, [PIIData] string? Name, [PIIData] string? Address);

@@ -8,7 +8,8 @@ public sealed class PublisherFaker : Faker<Publisher>
     public PublisherFaker()
     {
         Randomizer.Seed = new(Seeder.DefaultSeed);
-        CustomInstantiator(f => new(f.Company.CompanyName()));
+        CustomInstantiator(f => new(f.Company.CompanyName()))
+            .RuleFor(publisher => publisher.Id, _ => PublisherId.From(Guid.CreateVersion7()));
     }
 
     public Publisher[] Generate()

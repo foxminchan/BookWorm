@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Publishers;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Publishers;
 using BookWorm.Catalog.Features.Publishers.List;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -11,9 +12,9 @@ public sealed class ListPublishersEndpointTests
 
     private readonly List<PublisherDto> _expectedPublishers =
     [
-        new(Guid.CreateVersion7(), "Publisher 1"),
-        new(Guid.CreateVersion7(), "Publisher 2"),
-        new(Guid.CreateVersion7(), "Publisher 3"),
+        new(PublisherId.From(Guid.CreateVersion7()), "Publisher 1"),
+        new(PublisherId.From(Guid.CreateVersion7()), "Publisher 2"),
+        new(PublisherId.From(Guid.CreateVersion7()), "Publisher 3"),
     ];
 
     private readonly Mock<ISender> _senderMock = new();

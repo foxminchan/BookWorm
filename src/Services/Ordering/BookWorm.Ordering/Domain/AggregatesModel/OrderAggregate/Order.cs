@@ -2,11 +2,11 @@
 
 namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
-public sealed class Order() : AuditableEntity, IAggregateRoot, ISoftDelete
+public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDelete
 {
     private readonly List<OrderItem> _orderItems = [];
 
-    public Order(Guid buyerId, string? note, List<OrderItem> orderItems)
+    public Order(BuyerId buyerId, string? note, List<OrderItem> orderItems)
         : this()
     {
         BuyerId = buyerId;
@@ -18,7 +18,7 @@ public sealed class Order() : AuditableEntity, IAggregateRoot, ISoftDelete
 
     public Status Status { get; private set; }
     public string? Note { get; private set; }
-    public Guid BuyerId { get; private set; }
+    public BuyerId BuyerId { get; private set; }
     public Buyer? Buyer { get; private set; } = null!;
 
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();

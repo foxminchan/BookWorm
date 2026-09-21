@@ -1,5 +1,4 @@
 ﻿using BookWorm.Constants.Aspire;
-using Quartz.AspNetCore;
 
 namespace BookWorm.Scheduler.Extensions;
 

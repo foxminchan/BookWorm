@@ -18,6 +18,8 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .BeSealed()
             .Because(
@@ -32,6 +34,8 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
         Classes()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .BePublic()
             .Because(
@@ -174,6 +178,8 @@ public sealed class OrderingDomainTests : ArchUnitBaseTest
         Types()
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .NotDependOnAny(Types().That().ResideInNamespaceMatching(namespacePattern))
             .Because(

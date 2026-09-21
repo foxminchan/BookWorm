@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Books.Delete;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Features.Books.Delete;
 using BookWorm.Chassis.Exceptions;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,7 +8,7 @@ namespace BookWorm.Catalog.UnitTests.Features.Books.Delete;
 
 public sealed class DeleteBookEndpointTests
 {
-    private readonly Guid _bookId = Guid.CreateVersion7();
+    private readonly BookId _bookId = BookId.From(Guid.CreateVersion7());
     private readonly DeleteBookEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();
 

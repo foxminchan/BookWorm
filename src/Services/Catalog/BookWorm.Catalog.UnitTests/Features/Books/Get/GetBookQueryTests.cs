@@ -46,7 +46,7 @@ public sealed class GetBookQueryTests
         );
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(book);
         _mapperMock.Setup(m => m.Map(book)).Returns(expectedBookDto);
 
@@ -57,7 +57,7 @@ public sealed class GetBookQueryTests
         result.ShouldNotBeNull();
         result.ShouldBe(expectedBookDto);
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(book.Id, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _mapperMock.Verify(m => m.Map(book), Times.Once);
@@ -67,9 +67,9 @@ public sealed class GetBookQueryTests
     public async Task GivenNonExistentId_WhenGetBookQueryHandled_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var nonExistentId = Guid.CreateVersion7();
+        var nonExistentId = BookId.From(Guid.CreateVersion7());
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(nonExistentId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)nonExistentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book)null!);
 
         // Act
@@ -80,7 +80,7 @@ public sealed class GetBookQueryTests
         // Assert
         exception.Message.ShouldBe($"Book with id {nonExistentId} not found.");
         _repositoryMock.Verify(
-            r => r.GetByIdAsync(nonExistentId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((Guid)nonExistentId, It.IsAny<CancellationToken>()),
             Times.Once
         );
         _mapperMock.Verify(m => m.Map(It.IsAny<Book>()), Times.Never);

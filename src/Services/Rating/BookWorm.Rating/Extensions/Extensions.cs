@@ -68,12 +68,12 @@ internal static class Extensions
                 {
                     services.AddMigration<RatingDbContext>();
 
-                    services.AddRepositories(typeof(IRatingApiMarker));
+                    services.AddRepositories(typeof(RatingApiMarker));
                 }
             );
 
             // Configure FluentValidation
-            services.AddValidatorsFromAssemblyContaining<IRatingApiMarker>(
+            services.AddValidatorsFromAssemblyContaining<RatingApiMarker>(
                 includeInternalTypes: true
             );
 
@@ -93,8 +93,8 @@ internal static class Extensions
                 // rating updates for the same book land on a single partition.
                 opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId");
 
-                opts.Discovery.IncludeAssembly(typeof(IRatingApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(IRatingApiMarker).Assembly);
+                opts.Discovery.IncludeAssembly(typeof(RatingApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(RatingApiMarker).Assembly);
             });
 
             // Then register event-related services
@@ -103,9 +103,11 @@ internal static class Extensions
 
             // Configure endpoints
             services.AddVersioning();
-            services.AddEndpoints(typeof(IRatingApiMarker));
+            services.AddEndpoints(typeof(RatingApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.ApplyOpenApiInfoDefinitions<RatingAppSettings>()
+                options
+                    .MapVogenTypesInRatingApiMarker()
+                    .ApplyOpenApiInfoDefinitions<RatingAppSettings>()
             );
 
             builder.AddAgents();

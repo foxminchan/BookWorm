@@ -92,10 +92,30 @@ jobs:
     secrets:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
+  dependency-submission:
+    name: 📦 Dependency Submission
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: 📥 Checkout PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 📦 Submit dependency snapshot
+        uses: advanced-security/component-detection-dependency-submission-action@b282c67b1008fde9b60da4bdfcd8849613e293b2 # v0.1.6
+        with:
+          detectorsCategories: NuGet,Npm
+
   dependency-review:
     name: 🔒 Dependency Review
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs:
+      - dependency-submission
     permissions:
       contents: read
       pull-requests: write
@@ -107,6 +127,8 @@ jobs:
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           config-file: "./.github/dependency-review-config.yml"
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 300
 
   status:
     name: ✅ PR Status
@@ -116,6 +138,7 @@ jobs:
       - changes
       - backend
       - frontend
+      - dependency-submission
       - dependency-review
     if: ${{ !cancelled() }}
     permissions: {}
@@ -124,9 +147,10 @@ jobs:
         env:
           BACKEND: ${{ needs.backend.result }}
           FRONTEND: ${{ needs.frontend.result }}
+          DEPENDENCY_SUBMISSION: ${{ needs.dependency-submission.result }}
           DEPENDENCY_REVIEW: ${{ needs.dependency-review.result }}
         run: |
-          if [[ "$BACKEND" == "failure" || "$FRONTEND" == "failure" || "$DEPENDENCY_REVIEW" == "failure" ]]; then
+          if [[ "$BACKEND" == "failure" || "$FRONTEND" == "failure" || "$DEPENDENCY_SUBMISSION" == "failure" || "$DEPENDENCY_REVIEW" == "failure" ]]; then
             echo "::error::One or more CI pipelines failed"
             exit 1
           fi

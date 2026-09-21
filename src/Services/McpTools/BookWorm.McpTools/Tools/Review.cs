@@ -16,7 +16,7 @@ public sealed class Review(IRatingApi ratingApi)
         [Description("The unique identifier of the book to get reviews for")] Guid bookId
     )
     {
-        var response = await ratingApi.ListFeedbacksAsync(bookId);
+        var response = await ratingApi.ListFeedbacksAsync(BookId.From(bookId));
 
         if (!response.IsSuccessStatusCode)
         {

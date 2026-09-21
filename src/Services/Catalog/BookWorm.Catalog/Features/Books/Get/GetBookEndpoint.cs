@@ -3,14 +3,14 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Get;
 
-internal sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
+internal sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, BookId, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet(
-                "/books/{id:guid}",
+                "/books/{id}",
                 async (
-                    [Description("The unique identifier of the book to be retrieved")] Guid id,
+                    [Description("The unique identifier of the book to be retrieved")] BookId id,
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
@@ -23,7 +23,7 @@ internal sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, Guid, ISender>
     }
 
     public async Task<Ok<BookDto>> HandleAsync(
-        Guid id,
+        BookId id,
         ISender sender,
         CancellationToken cancellationToken = default
     )

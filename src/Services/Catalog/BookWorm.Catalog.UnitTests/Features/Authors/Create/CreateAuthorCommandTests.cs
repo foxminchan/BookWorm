@@ -1,5 +1,7 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+﻿using System.Reflection;
+using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Features.Authors.Create;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.Create;
 
@@ -22,6 +24,12 @@ public sealed class CreateAuthorCommandTests
         // Arrange
         var command = _faker.Generate();
         var author = new Author(command.Name);
+        typeof(Entity<AuthorId>)
+            .GetProperty(
+                nameof(Entity<>.Id),
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
+            )!
+            .SetValue(author, AuthorId.From(Guid.CreateVersion7()));
         _repositoryMock
             .Setup(r => r.AddAsync(It.IsAny<Author>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(author);

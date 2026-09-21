@@ -1,4 +1,5 @@
-﻿using BookWorm.Basket.Features.Create;
+﻿using BookWorm.Basket.Domain;
+using BookWorm.Basket.Features.Create;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
@@ -9,7 +10,7 @@ public sealed class CreateBasketEndpointTests
 {
     private CreateBasketCommand _command = null!;
     private CreateBasketEndpoint _endpoint = null!;
-    private string _expectedBasketId = null!;
+    private CustomerId _expectedBasketId;
     private LinkGenerator _linkGenerator = null!;
     private Mock<ISender> _senderMock = null!;
 
@@ -18,7 +19,7 @@ public sealed class CreateBasketEndpointTests
     {
         _command = new([new("book1", 1), new("book2", 2)]);
         _endpoint = new();
-        _expectedBasketId = Guid.CreateVersion7().ToString();
+        _expectedBasketId = CustomerId.From(Guid.CreateVersion7().ToString());
         _linkGenerator = Mock.Of<LinkGenerator>();
         _senderMock = new();
     }
@@ -50,7 +51,7 @@ public sealed class CreateBasketEndpointTests
         var result = await _endpoint.HandleAsync(_command, _senderMock.Object, _linkGenerator);
 
         // Assert
-        result.ShouldBeOfType<Created<string>>();
+        result.ShouldBeOfType<Created<CustomerId>>();
         result.Value.ShouldBe(_expectedBasketId);
     }
 

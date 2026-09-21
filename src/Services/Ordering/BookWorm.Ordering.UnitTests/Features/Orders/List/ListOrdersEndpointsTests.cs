@@ -19,7 +19,7 @@ public sealed class ListOrdersEndpointsTests
         // Arrange
         var query = new ListOrdersQuery(1, 10);
         var expectedResult = new PagedResult<OrderDto>(
-            [new(Guid.CreateVersion7(), DateTimeHelper.UtcNow(), 100.0m, Status.New)],
+            [new(OrderId.From(Guid.CreateVersion7()), DateTimeHelper.UtcNow(), 100.0m, Status.New)],
             1,
             10,
             1

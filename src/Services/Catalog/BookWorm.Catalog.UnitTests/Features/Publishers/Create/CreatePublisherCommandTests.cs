@@ -21,7 +21,7 @@ public sealed class CreatePublisherCommandTests
     {
         // Arrange
         var command = _faker.Generate();
-        var expectedId = Guid.CreateVersion7();
+        var expectedId = PublisherId.From(Guid.CreateVersion7());
         var publisher = new Publisher(command.Name) { Id = expectedId };
 
         _repositoryMock
@@ -36,7 +36,7 @@ public sealed class CreatePublisherCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(expectedId);
+        result.ShouldBe((Guid)expectedId);
         _repositoryMock.Verify(
             r =>
                 r.AddAsync(

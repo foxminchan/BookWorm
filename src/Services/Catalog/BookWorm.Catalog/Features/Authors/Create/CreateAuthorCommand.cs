@@ -2,12 +2,12 @@
 
 namespace BookWorm.Catalog.Features.Authors.Create;
 
-public sealed record CreateAuthorCommand(string Name) : ICommand<Guid>;
+public sealed record CreateAuthorCommand(string Name) : ICommand<AuthorId>;
 
 internal sealed class CreateAuthorHandler(IAuthorRepository repository)
-    : ICommandHandler<CreateAuthorCommand, Guid>
+    : ICommandHandler<CreateAuthorCommand, AuthorId>
 {
-    public async ValueTask<Guid> Handle(
+    public async ValueTask<AuthorId> Handle(
         CreateAuthorCommand request,
         CancellationToken cancellationToken
     )

@@ -66,15 +66,15 @@ public sealed class ProductTests
         var books = new List<Book>
         {
             new(
-                Guid.CreateVersion7(),
+                BookId.From(Guid.CreateVersion7()),
                 "Clean Code",
                 "A book about writing clean code",
                 "https://example.com/image.jpg",
                 29.99m,
                 null,
-                new(Guid.CreateVersion7(), "Programming"),
-                new(Guid.CreateVersion7(), "Prentice Hall"),
-                [new(Guid.CreateVersion7(), "Robert C. Martin")],
+                new(CategoryId.From(Guid.CreateVersion7()), "Programming"),
+                new(PublisherId.From(Guid.CreateVersion7()), "Prentice Hall"),
+                [new(AuthorId.From(Guid.CreateVersion7()), "Robert C. Martin")],
                 4.5,
                 120
             ),
@@ -109,7 +109,7 @@ public sealed class ProductTests
             new()
         );
 
-        _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
+        _catalogApi.Setup(x => x.GetBookAsync(BookId.From(id))).ReturnsAsync(response);
 
         // Act
         var result = await _sut.GetBookAsync(id);
@@ -125,7 +125,7 @@ public sealed class ProductTests
         var id = Guid.CreateVersion7();
         var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.OK), null, new());
 
-        _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
+        _catalogApi.Setup(x => x.GetBookAsync(BookId.From(id))).ReturnsAsync(response);
 
         // Act
         var result = await _sut.GetBookAsync(id);
@@ -140,22 +140,22 @@ public sealed class ProductTests
         // Arrange
         var id = Guid.CreateVersion7();
         var book = new Book(
-            id,
+            BookId.From(id),
             "Clean Code",
             "A book about writing clean code",
             "https://example.com/image.jpg",
             29.99m,
             null,
-            new(Guid.CreateVersion7(), "Programming"),
-            new(Guid.CreateVersion7(), "Prentice Hall"),
-            [new(Guid.CreateVersion7(), "Robert C. Martin")],
+            new(CategoryId.From(Guid.CreateVersion7()), "Programming"),
+            new(PublisherId.From(Guid.CreateVersion7()), "Prentice Hall"),
+            [new(AuthorId.From(Guid.CreateVersion7()), "Robert C. Martin")],
             4.5,
             120
         );
 
         var response = new ApiResponse<Book>(CreateResponse(HttpStatusCode.OK), book, new());
 
-        _catalogApi.Setup(x => x.GetBookAsync(id)).ReturnsAsync(response);
+        _catalogApi.Setup(x => x.GetBookAsync(BookId.From(id))).ReturnsAsync(response);
 
         // Act
         var result = await _sut.GetBookAsync(id);
@@ -228,8 +228,8 @@ public sealed class ProductTests
         // Arrange
         var categories = new List<Category>
         {
-            new(Guid.CreateVersion7(), "Programming"),
-            new(Guid.CreateVersion7(), "Fiction"),
+            new(CategoryId.From(Guid.CreateVersion7()), "Programming"),
+            new(CategoryId.From(Guid.CreateVersion7()), "Fiction"),
         };
 
         var response = new ApiResponse<List<Category>>(
@@ -307,8 +307,8 @@ public sealed class ProductTests
         // Arrange
         var authors = new List<Author>
         {
-            new(Guid.CreateVersion7(), "Robert C. Martin"),
-            new(Guid.CreateVersion7(), "Martin Fowler"),
+            new(AuthorId.From(Guid.CreateVersion7()), "Robert C. Martin"),
+            new(AuthorId.From(Guid.CreateVersion7()), "Martin Fowler"),
         };
 
         var response = new ApiResponse<List<Author>>(

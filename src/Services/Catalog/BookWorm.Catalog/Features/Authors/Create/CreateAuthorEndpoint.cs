@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Authors.Create;
 
-internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorCommand, ISender>
+internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<AuthorId>, CreateAuthorCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -12,7 +12,7 @@ internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorCom
                 async (CreateAuthorCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .ProducesPostWithoutLocation<Guid>()
+            .ProducesPostWithoutLocation<AuthorId>()
             .WithTags(nameof(Author))
             .WithName(nameof(CreateAuthorEndpoint))
             .WithSummary("Create Author")
@@ -22,7 +22,7 @@ internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<Guid>, CreateAuthorCom
             .RequirePerUserRateLimit();
     }
 
-    public async Task<Ok<Guid>> HandleAsync(
+    public async Task<Ok<AuthorId>> HandleAsync(
         CreateAuthorCommand command,
         ISender sender,
         CancellationToken cancellationToken = default

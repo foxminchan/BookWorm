@@ -2,11 +2,11 @@
 
 namespace BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 
-public sealed class Buyer() : Entity, IAggregateRoot
+public sealed class Buyer() : Entity<BuyerId>, IAggregateRoot
 {
     private readonly List<Order> _orders = [];
 
-    public Buyer(Guid id, string name, string street, string city, string province)
+    public Buyer(BuyerId id, string name, string street, string city, string province)
         : this()
     {
         Id = id;

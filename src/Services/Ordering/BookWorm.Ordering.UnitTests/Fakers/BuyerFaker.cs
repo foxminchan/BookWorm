@@ -10,7 +10,7 @@ public sealed class BuyerFaker : Faker<Buyer>
         Randomizer.Seed = new(Seeder.DefaultSeed);
         CustomInstantiator(f =>
             new(
-                f.Random.Guid(),
+                BuyerId.From(f.Random.Guid()),
                 f.Name.FullName(),
                 f.Address.StreetAddress(),
                 f.Address.City(),

@@ -1,3 +1,5 @@
+using Aspire.Hosting.Yarp;
+
 namespace BookWorm.AppHost.Extensions.Frontend;
 
 internal static class FrontendExtensions
@@ -5,7 +7,7 @@ internal static class FrontendExtensions
     extension(IDistributedApplicationBuilder builder)
     {
         public void AddFrontendApps(
-            IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+            IResourceBuilder<YarpResource> gateway,
             IResourceBuilder<IResource> keycloak
         )
         {
@@ -21,7 +23,7 @@ internal static class FrontendExtensions
 
     private static void AddTurborepoApps(
         IDistributedApplicationBuilder builder,
-        IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+        IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak
     )
     {
@@ -71,7 +73,7 @@ internal static class FrontendExtensions
 
     private static void AddPublishedContainerApps(
         IDistributedApplicationBuilder builder,
-        IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+        IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak
     )
     {
@@ -84,7 +86,7 @@ internal static class FrontendExtensions
             ),
             gateway,
             keycloak,
-            includeCopilot: true
+            true
         );
 
         storefront.WithEnvironment(
@@ -111,7 +113,7 @@ internal static class FrontendExtensions
 
     private static IResourceBuilder<ContainerResource> ConfigurePublishedFrontend(
         IResourceBuilder<ContainerResource> frontend,
-        IResourceBuilder<Aspire.Hosting.Yarp.YarpResource> gateway,
+        IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak,
         bool includeCopilot = false
     )
@@ -172,7 +174,7 @@ internal static class FrontendExtensions
 
                 return Task.CompletedTask;
             },
-            stage: "runtime"
+            "runtime"
         );
     }
 }

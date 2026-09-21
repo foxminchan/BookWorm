@@ -15,16 +15,16 @@ namespace BookWorm.ArchTests.Abstractions;
 
 public abstract class BaseTest
 {
-    protected static readonly Assembly BasketAssembly = typeof(IBasketApiMarker).Assembly;
-    protected static readonly Assembly CatalogAssembly = typeof(ICatalogApiMarker).Assembly;
+    protected static readonly Assembly BasketAssembly = typeof(BasketApiMarker).Assembly;
+    protected static readonly Assembly CatalogAssembly = typeof(CatalogApiMarker).Assembly;
     protected static readonly Assembly ChatAssembly = typeof(IChatApiMarker).Assembly;
     protected static readonly Assembly FinanceAssembly = typeof(IFinanceApiMarker).Assembly;
 
     protected static readonly Assembly NotificationAssembly =
         typeof(INotificationApiMarker).Assembly;
 
-    protected static readonly Assembly OrderingAssembly = typeof(IOrderingApiMarker).Assembly;
-    protected static readonly Assembly RatingAssembly = typeof(IRatingApiMarker).Assembly;
+    protected static readonly Assembly OrderingAssembly = typeof(OrderingApiMarker).Assembly;
+    protected static readonly Assembly RatingAssembly = typeof(RatingApiMarker).Assembly;
     protected static readonly Assembly SchedulerAssembly = typeof(ISchedulerApiMarker).Assembly;
     protected static readonly Assembly ChassisAssembly = typeof(IChassisMarker).Assembly;
     protected static readonly Assembly ConstantsAssembly = typeof(IConstantsMarker).Assembly;

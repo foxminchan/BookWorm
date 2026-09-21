@@ -3,14 +3,15 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Delete;
 
-internal sealed class DeleteCategoryEndpoint : IEndpoint<NoContent, Guid, ISender>
+internal sealed class DeleteCategoryEndpoint : IEndpoint<NoContent, CategoryId, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapDelete(
-                "/categories/{id:guid}",
+                "/categories/{id}",
                 async (
-                    [Description("The unique identifier of the category to be deleted")] Guid id,
+                    [Description("The unique identifier of the category to be deleted")]
+                        CategoryId id,
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
@@ -25,12 +26,12 @@ internal sealed class DeleteCategoryEndpoint : IEndpoint<NoContent, Guid, ISende
     }
 
     public async Task<NoContent> HandleAsync(
-        Guid id,
+        CategoryId id,
         ISender sender,
         CancellationToken cancellationToken = default
     )
     {
-        await sender.Send(new DeleteCategoryCommand(id), cancellationToken);
+        await sender.Send(new DeleteCategoryCommand((Guid)id), cancellationToken);
 
         return TypedResults.NoContent();
     }

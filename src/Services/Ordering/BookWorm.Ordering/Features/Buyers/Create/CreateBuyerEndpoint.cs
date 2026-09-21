@@ -4,7 +4,7 @@ using Mediator;
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
 internal sealed class CreateBuyerEndpoint
-    : IEndpoint<Created<Guid>, CreateBuyerCommand, ISender, LinkGenerator>
+    : IEndpoint<Created<BuyerId>, CreateBuyerCommand, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -13,7 +13,7 @@ internal sealed class CreateBuyerEndpoint
                 async (CreateBuyerCommand command, ISender sender, LinkGenerator linker) =>
                     await HandleAsync(command, sender, linker)
             )
-            .ProducesPost<Guid>()
+            .ProducesPost<BuyerId>()
             .WithTags(nameof(Buyer))
             .WithName(nameof(CreateBuyerEndpoint))
             .WithSummary("Create Buyer")
@@ -23,7 +23,7 @@ internal sealed class CreateBuyerEndpoint
             .RequirePerUserRateLimit();
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Created<BuyerId>> HandleAsync(
         CreateBuyerCommand command,
         ISender sender,
         LinkGenerator linker,

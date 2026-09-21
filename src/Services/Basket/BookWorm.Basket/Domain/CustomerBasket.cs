@@ -3,7 +3,7 @@ using BookWorm.SharedKernel.SeedWork;
 namespace BookWorm.Basket.Domain;
 
 [method: JsonConstructor]
-public sealed class CustomerBasket() : AuditableEntity<string>
+public sealed class CustomerBasket() : AuditableEntity<CustomerId>
 {
     private readonly List<BasketItem> _basketItems = [];
 
@@ -13,7 +13,7 @@ public sealed class CustomerBasket() : AuditableEntity<string>
     )
         : this()
     {
-        Id = id ?? throw new BasketDomainException("Customer ID cannot be null.");
+        Id = CustomerId.From(id ?? throw new BasketDomainException("Customer ID cannot be null."));
         _basketItems =
             items.Count > 0
                 ? [.. items]

@@ -67,7 +67,7 @@ public sealed class FeedbackAggregatorTests
         createdEvent.ShouldNotBeNull();
         createdEvent.BookId.ShouldBe(bookId);
         createdEvent.Rating.ShouldBe(rating);
-        createdEvent.FeedbackId.ShouldBe(feedback.Id);
+        createdEvent.FeedbackId.ShouldBe((Guid)feedback.Id);
     }
 
     [Test]
@@ -92,7 +92,7 @@ public sealed class FeedbackAggregatorTests
         deletedEvent.ShouldNotBeNull();
         deletedEvent.BookId.ShouldBe(bookId);
         deletedEvent.Rating.ShouldBe(rating);
-        deletedEvent.FeedbackId.ShouldBe(feedback.Id);
+        deletedEvent.FeedbackId.ShouldBe((Guid)feedback.Id);
     }
 
     [Test]
@@ -167,7 +167,7 @@ public sealed class FeedbackAggregatorTests
         createdEvent.ShouldNotBeNull();
         createdEvent.BookId.ShouldBe(bookId);
         createdEvent.Rating.ShouldBe(boundaryRating);
-        createdEvent.FeedbackId.ShouldBe(feedback.Id);
+        createdEvent.FeedbackId.ShouldBe((Guid)feedback.Id);
     }
 
     [Test]
