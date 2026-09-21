@@ -4,6 +4,9 @@ namespace BookWorm.AppHost.Extensions.Frontend;
 
 internal static class FrontendExtensions
 {
+    private const string AppUrlEnvironmentVariable = "NEXT_PUBLIC_APP_URL";
+    private const string BuildStage = "build";
+
     extension(IDistributedApplicationBuilder builder)
     {
         public void AddFrontendApps(
@@ -49,7 +52,7 @@ internal static class FrontendExtensions
             .WithKeycloak(keycloak);
 
         storefront.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             storefront.GetEndpoint(Uri.UriSchemeHttp)
         );
 
@@ -66,7 +69,7 @@ internal static class FrontendExtensions
             .WithKeycloak(keycloak);
 
         backoffice.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             backoffice.GetEndpoint(Uri.UriSchemeHttp)
         );
     }
@@ -90,7 +93,7 @@ internal static class FrontendExtensions
         );
 
         storefront.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             storefront.GetEndpoint(Uri.UriSchemeHttp)
         );
 
@@ -106,7 +109,7 @@ internal static class FrontendExtensions
         );
 
         backoffice.WithEnvironment(
-            "NEXT_PUBLIC_APP_URL",
+            AppUrlEnvironmentVariable,
             backoffice.GetEndpoint(Uri.UriSchemeHttp)
         );
     }
@@ -150,7 +153,7 @@ internal static class FrontendExtensions
             context =>
             {
                 context
-                    .Builder.From("oven/bun:1", "build")
+                    .Builder.From("oven/bun:1", BuildStage)
                     .WorkDir("/app")
                     .Copy(".", ".")
                     .Run("bun install --frozen-lockfile")
@@ -159,13 +162,13 @@ internal static class FrontendExtensions
                 context
                     .Builder.From("oven/bun:1-alpine", "runtime")
                     .WorkDir("/app")
-                    .CopyFrom("build", $"/app/apps/{appName}/.next/standalone", ".")
+                    .CopyFrom(BuildStage, $"/app/apps/{appName}/.next/standalone", ".")
                     .CopyFrom(
-                        "build",
+                        BuildStage,
                         $"/app/apps/{appName}/.next/static",
                         $"./apps/{appName}/.next/static"
                     )
-                    .CopyFrom("build", $"/app/apps/{appName}/public", $"./apps/{appName}/public")
+                    .CopyFrom(BuildStage, $"/app/apps/{appName}/public", $"./apps/{appName}/public")
                     .Env("NODE_ENV", "production")
                     .Env("NEXT_TELEMETRY_DISABLED", "1")
                     .Env("HOSTNAME", "0.0.0.0")

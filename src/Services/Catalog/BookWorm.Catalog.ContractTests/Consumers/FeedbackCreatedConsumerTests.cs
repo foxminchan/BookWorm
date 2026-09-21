@@ -10,7 +10,7 @@ namespace BookWorm.Catalog.ContractTests.Consumers;
 
 public sealed class FeedbackCreatedConsumerTests
 {
-    private readonly int _rating = 4;
+    private const int Rating = 4;
     private Book _book = null!;
     private Guid _feedbackId;
     private Mock<IBookRepository> _repositoryMock = null!;
@@ -39,7 +39,7 @@ public sealed class FeedbackCreatedConsumerTests
             .Setup(x => x.GetByIdAsync((Guid)_book.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_book);
 
-        var @event = new FeedbackCreatedIntegrationEvent((Guid)_book.Id, _rating, _feedbackId);
+        var @event = new FeedbackCreatedIntegrationEvent((Guid)_book.Id, Rating, _feedbackId);
         var busMock = new Mock<IMessageBus>();
         var handler = new FeedbackCreatedIntegrationEventHandler(
             _repositoryMock.Object,
