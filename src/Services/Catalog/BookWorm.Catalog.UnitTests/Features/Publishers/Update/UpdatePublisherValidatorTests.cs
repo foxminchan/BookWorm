@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Publishers.Update;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Publishers.Update;
 using BookWorm.Constants.Core;
 using FluentValidation.TestHelper;
 
@@ -12,7 +13,10 @@ public sealed class UpdatePublisherValidatorTests
     public void GivenValidCommand_WhenValidating_ThenShouldNotHaveValidationErrors()
     {
         // Arrange
-        var command = new UpdatePublisherCommand(Guid.CreateVersion7(), "Valid Publisher Name");
+        var command = new UpdatePublisherCommand(
+            PublisherId.From(Guid.CreateVersion7()),
+            "Valid Publisher Name"
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -25,7 +29,10 @@ public sealed class UpdatePublisherValidatorTests
     public void GivenEmptyId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdatePublisherCommand(Guid.Empty, "Valid Publisher Name");
+        var command = new UpdatePublisherCommand(
+            PublisherId.From(Guid.Empty),
+            "Valid Publisher Name"
+        );
 
         // Act
         var result = _validator.TestValidate(command);
@@ -43,7 +50,7 @@ public sealed class UpdatePublisherValidatorTests
     )
     {
         // Arrange
-        var command = new UpdatePublisherCommand(Guid.CreateVersion7(), name!);
+        var command = new UpdatePublisherCommand(PublisherId.From(Guid.CreateVersion7()), name!);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -57,7 +64,7 @@ public sealed class UpdatePublisherValidatorTests
     {
         // Arrange
         var command = new UpdatePublisherCommand(
-            Guid.CreateVersion7(),
+            PublisherId.From(Guid.CreateVersion7()),
             new('A', DataSchemaLength.Medium + 1)
         );
 

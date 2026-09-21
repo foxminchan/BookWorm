@@ -5,7 +5,7 @@ using Mediator;
 namespace BookWorm.Ordering.Features.Orders.Delete;
 
 [Transactional]
-public sealed record DeleteOrderCommand(Guid Id) : ICommand;
+public sealed record DeleteOrderCommand(OrderId Id) : ICommand;
 
 internal sealed class DeleteOrderHandler(IOrderRepository repository)
     : ICommandHandler<DeleteOrderCommand>
@@ -15,9 +15,9 @@ internal sealed class DeleteOrderHandler(IOrderRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var order = await repository.GetByIdAsync(request.Id, cancellationToken);
+        var order = await repository.GetByIdAsync((Guid)request.Id, cancellationToken);
 
-        Guard.Against.NotFound(order, request.Id);
+        Guard.Against.NotFound(order, (Guid)request.Id);
 
         order.Delete();
 

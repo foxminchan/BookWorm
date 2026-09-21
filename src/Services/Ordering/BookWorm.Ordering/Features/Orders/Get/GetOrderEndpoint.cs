@@ -2,14 +2,14 @@
 
 namespace BookWorm.Ordering.Features.Orders.Get;
 
-internal sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
+internal sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, OrderId, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet(
-                "/orders/{id:guid}",
+                "/orders/{id}",
                 async (
-                    [Description("The unique identifier of the order to be retrieved")] Guid id,
+                    [Description("The unique identifier of the order to be retrieved")] OrderId id,
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
@@ -24,7 +24,7 @@ internal sealed class GetOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISe
     }
 
     public async Task<Ok<OrderDetailDto>> HandleAsync(
-        Guid id,
+        OrderId id,
         ISender sender,
         CancellationToken cancellationToken = default
     )

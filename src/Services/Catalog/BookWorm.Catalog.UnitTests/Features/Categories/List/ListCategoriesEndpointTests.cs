@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Categories;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Features.Categories;
 using BookWorm.Catalog.Features.Categories.List;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -9,9 +10,9 @@ public sealed class ListCategoriesEndpointTests
 {
     private readonly List<CategoryDto> _categories =
     [
-        new(Guid.CreateVersion7(), "Fiction"),
-        new(Guid.CreateVersion7(), "Non-Fiction"),
-        new(Guid.CreateVersion7(), "Science"),
+        new(CategoryId.From(Guid.CreateVersion7()), "Fiction"),
+        new(CategoryId.From(Guid.CreateVersion7()), "Non-Fiction"),
+        new(CategoryId.From(Guid.CreateVersion7()), "Science"),
     ];
 
     private readonly ListCategoriesEndpoint _endpoint = new();

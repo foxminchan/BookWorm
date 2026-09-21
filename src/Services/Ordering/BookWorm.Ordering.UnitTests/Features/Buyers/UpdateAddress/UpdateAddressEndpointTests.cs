@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Features.Buyers;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
+using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.UpdateAddress;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -22,7 +23,7 @@ public sealed class UpdateAddressEndpointTests
 
         // Create a sample buyer DTO for the response
         _buyerDto = new(
-            Guid.CreateVersion7(),
+            BuyerId.From(Guid.CreateVersion7()),
             "Test Buyer",
             $"{_validCommand.Street}, {_validCommand.City}, {_validCommand.Province}"
         );

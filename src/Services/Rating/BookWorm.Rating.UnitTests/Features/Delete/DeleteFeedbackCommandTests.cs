@@ -23,7 +23,7 @@ public sealed class DeleteFeedbackCommandTests
     public async Task GivenExistingFeedback_WhenHandlingDeleteCommand_ThenShouldDeleteAndSaveChanges()
     {
         // Arrange
-        var command = new DeleteFeedbackCommand((Guid)_feedback.Id);
+        var command = new DeleteFeedbackCommand(_feedback.Id);
         _repositoryMock
             .Setup(x => x.GetByIdAsync((Guid)_feedback.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_feedback);
@@ -48,7 +48,7 @@ public sealed class DeleteFeedbackCommandTests
     {
         // Arrange
         var feedbackId = Guid.CreateVersion7();
-        var command = new DeleteFeedbackCommand(feedbackId);
+        var command = new DeleteFeedbackCommand(FeedbackId.From(feedbackId));
         _repositoryMock
             .Setup(x => x.GetByIdAsync(feedbackId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Feedback?)null);

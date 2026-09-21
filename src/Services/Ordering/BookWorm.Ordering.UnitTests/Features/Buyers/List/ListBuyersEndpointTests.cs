@@ -1,4 +1,5 @@
-﻿using BookWorm.Ordering.Features.Buyers;
+﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
+using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.List;
 using BookWorm.SharedKernel.Results;
 using Mediator;
@@ -24,8 +25,8 @@ public sealed class ListBuyersEndpointTests
 
         List<BuyerDto> buyers =
         [
-            new(Guid.CreateVersion7(), "John Doe", "123 Main St"),
-            new(Guid.CreateVersion7(), "Jane Smith", "456 Elm St"),
+            new(BuyerId.From(Guid.CreateVersion7()), "John Doe", "123 Main St"),
+            new(BuyerId.From(Guid.CreateVersion7()), "Jane Smith", "456 Elm St"),
         ];
 
         _pagedResult = new(buyers, 1, 10, 2);

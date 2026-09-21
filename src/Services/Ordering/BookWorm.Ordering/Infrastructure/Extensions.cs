@@ -17,7 +17,7 @@ internal static class Extensions
                 {
                     services.AddMigration<OrderingDbContext>();
 
-                    services.AddRepositories(typeof(IOrderingApiMarker));
+                    services.AddRepositories(typeof(OrderingApiMarker));
                 }
             );
 

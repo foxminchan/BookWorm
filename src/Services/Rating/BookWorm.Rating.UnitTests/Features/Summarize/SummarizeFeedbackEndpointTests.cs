@@ -1,4 +1,5 @@
-﻿using BookWorm.Rating.Features.Summarize;
+﻿using BookWorm.Rating.Features;
+using BookWorm.Rating.Features.Summarize;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using Mediator;
 using Microsoft.AspNetCore.Http;
@@ -10,7 +11,7 @@ public sealed class SummarizeFeedbackEndpointTests
 {
     private readonly SummarizeFeedbackEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();
-    private readonly Guid _validBookId = Guid.CreateVersion7();
+    private readonly BookId _validBookId = BookId.From(Guid.CreateVersion7());
 
     [Test]
     public async Task GivenValidBookId_WhenHandlingEndpointRequest_ThenShouldCallSenderWithQuery()
@@ -91,7 +92,7 @@ public sealed class SummarizeFeedbackEndpointTests
     public async Task GivenEmptyGuid_WhenHandlingEndpoint_ThenShouldStillCallSenderWithEmptyGuid()
     {
         // Arrange
-        var emptyBookId = Guid.Empty;
+        var emptyBookId = BookId.From(Guid.Empty);
         var expectedSummary = new SummarizeResult("No feedback found for this book.");
         _senderMock
             .Setup(s => s.Send(It.IsAny<SummarizeFeedbackQuery>(), It.IsAny<CancellationToken>()))
@@ -117,8 +118,8 @@ public sealed class SummarizeFeedbackEndpointTests
     public async Task GivenMultipleCalls_WhenHandlingEndpointWithDifferentBookIds_ThenShouldCallSenderForEachId()
     {
         // Arrange
-        var bookId1 = Guid.CreateVersion7();
-        var bookId2 = Guid.CreateVersion7();
+        var bookId1 = BookId.From(Guid.CreateVersion7());
+        var bookId2 = BookId.From(Guid.CreateVersion7());
         var summary1 = new SummarizeResult("Summary for book 1");
         var summary2 = new SummarizeResult("Summary for book 2");
 
@@ -257,7 +258,7 @@ public sealed class SummarizeFeedbackEndpointTests
     public async Task GivenDefaultGuid_WhenHandlingEndpoint_ThenShouldCallSenderWithDefaultGuid()
     {
         // Arrange
-        var defaultGuid = Guid.Empty;
+        var defaultGuid = BookId.From(Guid.Empty);
         var expectedSummary = new SummarizeResult("Summary for default guid.");
         _senderMock
             .Setup(s => s.Send(It.IsAny<SummarizeFeedbackQuery>(), It.IsAny<CancellationToken>()))

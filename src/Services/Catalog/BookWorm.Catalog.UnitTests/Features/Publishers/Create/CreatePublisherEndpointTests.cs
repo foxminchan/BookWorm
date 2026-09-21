@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Publishers.Create;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Publishers.Create;
 using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.Create;
@@ -40,7 +41,7 @@ public sealed class CreatePublisherEndpointTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Value.ShouldBe(expectedPublisherId);
+        result.Value.ShouldBe(PublisherId.From(expectedPublisherId));
         _senderMock.Verify(s => s.Send(_validCommand, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

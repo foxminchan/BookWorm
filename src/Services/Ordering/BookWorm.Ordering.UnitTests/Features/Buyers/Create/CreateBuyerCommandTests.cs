@@ -67,7 +67,7 @@ public sealed class CreateBuyerCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(buyerId);
+        result.ShouldBe(BuyerId.From(buyerId));
         buyerEntity.ShouldNotBeNull();
         buyerEntity.Name.ShouldBe(_userName);
         buyerEntity.Address!.Street.ShouldBe("123 Main St");

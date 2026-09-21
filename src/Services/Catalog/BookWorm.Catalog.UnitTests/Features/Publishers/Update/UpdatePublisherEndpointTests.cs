@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Publishers.Update;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Publishers.Update;
 using BookWorm.Chassis.Exceptions;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -9,7 +10,7 @@ public sealed class UpdatePublisherEndpointTests
 {
     private const string PublisherName = "Updated Publisher Name";
     private readonly UpdatePublisherEndpoint _endpoint = new();
-    private readonly Guid _publisherId = Guid.CreateVersion7();
+    private readonly PublisherId _publisherId = PublisherId.From(Guid.CreateVersion7());
     private readonly Mock<ISender> _senderMock = new();
 
     [Test]

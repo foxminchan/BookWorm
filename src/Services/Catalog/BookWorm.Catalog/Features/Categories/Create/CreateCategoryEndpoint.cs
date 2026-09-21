@@ -3,7 +3,8 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Create;
 
-internal sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategoryCommand, ISender>
+internal sealed class CreateCategoryEndpoint
+    : IEndpoint<Ok<CategoryId>, CreateCategoryCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -12,7 +13,7 @@ internal sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategor
                 async (CreateCategoryCommand command, ISender sender) =>
                     await HandleAsync(command, sender)
             )
-            .ProducesPostWithoutLocation<Guid>()
+            .ProducesPostWithoutLocation<CategoryId>()
             .WithTags(nameof(Category))
             .WithName(nameof(CreateCategoryEndpoint))
             .WithSummary("Create Category")
@@ -22,7 +23,7 @@ internal sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategor
             .RequirePerUserRateLimit();
     }
 
-    public async Task<Ok<Guid>> HandleAsync(
+    public async Task<Ok<CategoryId>> HandleAsync(
         CreateCategoryCommand command,
         ISender sender,
         CancellationToken cancellationToken = default
@@ -30,6 +31,6 @@ internal sealed class CreateCategoryEndpoint : IEndpoint<Ok<Guid>, CreateCategor
     {
         var result = await sender.Send(command, cancellationToken);
 
-        return TypedResults.Ok(result);
+        return TypedResults.Ok(CategoryId.From(result));
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Create;
 
-internal sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, LinkGenerator>
+internal sealed class CreateOrderEndpoint : IEndpoint<Created<OrderId>, ISender, LinkGenerator>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -18,7 +18,7 @@ internal sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, Li
                     LinkGenerator linker
                 ) => await HandleAsync(sender, linker)
             )
-            .ProducesPost<Guid>(false)
+            .ProducesPost<OrderId>(false)
             .WithIdempotency()
             .WithTags(nameof(Order))
             .WithName(nameof(CreateOrderEndpoint))
@@ -29,7 +29,7 @@ internal sealed class CreateOrderEndpoint : IEndpoint<Created<Guid>, ISender, Li
             .RequirePerUserRateLimit();
     }
 
-    public async Task<Created<Guid>> HandleAsync(
+    public async Task<Created<OrderId>> HandleAsync(
         ISender request,
         LinkGenerator linker,
         CancellationToken cancellationToken = default

@@ -42,7 +42,7 @@ public sealed class CreateBookCommandTests
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(bookId);
+        result.ShouldBe(BookId.From(bookId));
         mockRepo.Verify(
             r =>
                 r.AddAsync(

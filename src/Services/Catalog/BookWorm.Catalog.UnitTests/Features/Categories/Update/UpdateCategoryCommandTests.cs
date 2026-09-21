@@ -9,13 +9,13 @@ namespace BookWorm.Catalog.UnitTests.Features.Categories.Update;
 public sealed class UpdateCategoryCommandTests
 {
     private readonly Category _category;
-    private readonly Guid _categoryId;
+    private readonly CategoryId _categoryId;
     private readonly UpdateCategoryHandler _handler;
     private readonly Mock<ICategoryRepository> _repositoryMock;
 
     public UpdateCategoryCommandTests()
     {
-        _categoryId = Guid.CreateVersion7();
+        _categoryId = CategoryId.From(Guid.CreateVersion7());
         _category = new("Old Name");
 
         _repositoryMock = new();
@@ -30,7 +30,7 @@ public sealed class UpdateCategoryCommandTests
         var command = new UpdateCategoryCommand(_categoryId, "New Name");
 
         _repositoryMock
-            .Setup(x => x.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)_categoryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_category);
 
         var unitOfWorkMock = new Mock<IUnitOfWork>();
@@ -55,7 +55,7 @@ public sealed class UpdateCategoryCommandTests
         var command = new UpdateCategoryCommand(_categoryId, "New Name");
 
         _repositoryMock
-            .Setup(x => x.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync((Guid)_categoryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Category)null!);
 
         // Act

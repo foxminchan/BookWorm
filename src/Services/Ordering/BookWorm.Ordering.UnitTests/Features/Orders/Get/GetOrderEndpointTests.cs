@@ -10,7 +10,7 @@ public sealed class GetOrderEndpointTests
 {
     private readonly GetOrderEndpoint _endpoint;
     private readonly OrderDetailDto _orderDetailDto;
-    private readonly Guid _orderId;
+    private readonly OrderId _orderId;
     private readonly Mock<ISender> _senderMock;
 
     public GetOrderEndpointTests()
@@ -19,7 +19,7 @@ public sealed class GetOrderEndpointTests
         _endpoint = new();
 
         // Generate test data
-        _orderId = Guid.CreateVersion7();
+        _orderId = OrderId.From(Guid.CreateVersion7());
 
         var faker = new Faker();
         List<OrderItemDto> orderItems =

@@ -92,7 +92,7 @@ internal static class Extensions
             builder.AddPersistenceServices();
 
             // Configure FluentValidation
-            services.AddValidatorsFromAssemblyContaining<ICatalogApiMarker>(
+            services.AddValidatorsFromAssemblyContaining<CatalogApiMarker>(
                 includeInternalTypes: true
             );
 
@@ -103,13 +103,15 @@ internal static class Extensions
 
             // Configure endpoints
             services.AddVersioning();
-            services.AddEndpoints(typeof(ICatalogApiMarker));
+            services.AddEndpoints(typeof(CatalogApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.ApplyOpenApiInfoDefinitions<CatalogAppSettings>()
+                options
+                    .MapVogenTypesInCatalogApiMarker()
+                    .ApplyOpenApiInfoDefinitions<CatalogAppSettings>()
             );
 
             // Configure Mapper
-            services.AddMapper(typeof(ICatalogApiMarker));
+            services.AddMapper(typeof(CatalogApiMarker));
 
             // Configure EventBus
             var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Catalog);
@@ -125,8 +127,8 @@ internal static class Extensions
                 // rating updates for the same book land on a single partition.
                 opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId");
 
-                opts.Discovery.IncludeAssembly(typeof(ICatalogApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(ICatalogApiMarker).Assembly);
+                opts.Discovery.IncludeAssembly(typeof(CatalogApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(CatalogApiMarker).Assembly);
             });
 
             services.AddKeycloakTokenIntrospection();

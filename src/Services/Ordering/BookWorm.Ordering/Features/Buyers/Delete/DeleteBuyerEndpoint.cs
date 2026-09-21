@@ -2,14 +2,14 @@
 
 namespace BookWorm.Ordering.Features.Buyers.Delete;
 
-internal sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, Guid, ISender>
+internal sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, BuyerId, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapDelete(
-                "/buyers/{id:guid}",
+                "/buyers/{id}",
                 async (
-                    [Description("The unique identifier of the buyer to be deleted")] Guid id,
+                    [Description("The unique identifier of the buyer to be deleted")] BuyerId id,
                     ISender sender
                 ) => await HandleAsync(id, sender)
             )
@@ -24,7 +24,7 @@ internal sealed class DeleteBuyerEndpoint : IEndpoint<NoContent, Guid, ISender>
     }
 
     public async Task<NoContent> HandleAsync(
-        Guid id,
+        BuyerId id,
         ISender sender,
         CancellationToken cancellationToken = default
     )

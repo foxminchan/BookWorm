@@ -7,7 +7,7 @@ internal static class DomainToDtoMapper
         public OrderDetailDto ToOrderDetailDto()
         {
             return new(
-                (Guid)model.Id,
+                model.Id,
                 model.CreatedAt,
                 model.TotalPrice,
                 model.Status,
@@ -17,7 +17,7 @@ internal static class DomainToDtoMapper
 
         private OrderDto ToOrderDto()
         {
-            return new((Guid)model.Id, model.CreatedAt, model.TotalPrice, model.Status);
+            return new(model.Id, model.CreatedAt, model.TotalPrice, model.Status);
         }
     }
 

@@ -53,7 +53,7 @@ public sealed class GetBasketQueryTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Id.ShouldBe((string)_basket.Id);
+        result.Id.ShouldBe(_basket.Id);
         result.Items.Count.ShouldBe(_basket.Items.Count);
 
         // Verify quantities are preserved by matching items

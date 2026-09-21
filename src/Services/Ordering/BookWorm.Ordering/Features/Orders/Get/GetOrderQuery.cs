@@ -7,7 +7,7 @@ using Mediator;
 namespace BookWorm.Ordering.Features.Orders.Get;
 
 public sealed record GetOrderQuery(
-    [property: Description("Only 'ADMIN' role can retrieve other users' data")] Guid Id
+    [property: Description("Only 'ADMIN' role can retrieve other users' data")] OrderId Id
 ) : IQuery<OrderDetailDto>;
 
 internal sealed class GetOrderHandler(
@@ -24,19 +24,19 @@ internal sealed class GetOrderHandler(
         Order? order;
         if (claimsPrincipal.HasRole(Authorization.Roles.Admin))
         {
-            order = await repository.GetByIdAsync(request.Id, cancellationToken);
+            order = await repository.GetByIdAsync((Guid)request.Id, cancellationToken);
         }
         else
         {
             var buyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
             order = await repository.FirstOrDefaultAsync(
-                new OrderFilterSpec(request.Id, (Guid)buyerId),
+                new OrderFilterSpec((Guid)request.Id, (Guid)buyerId),
                 cancellationToken
             );
         }
 
-        Guard.Against.NotFound(order, request.Id);
+        Guard.Against.NotFound(order, (Guid)request.Id);
 
         var dto = order.ToOrderDetailDto();
 

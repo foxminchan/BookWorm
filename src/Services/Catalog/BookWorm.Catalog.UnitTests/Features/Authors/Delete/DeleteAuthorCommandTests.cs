@@ -24,7 +24,7 @@ public sealed class DeleteAuthorCommandTests
     {
         // Arrange
         var author = _faker.Generate()[0];
-        var command = new DeleteAuthorCommand((Guid)author.Id);
+        var command = new DeleteAuthorCommand(author.Id);
 
         _repositoryMock
             .Setup(r => r.GetByIdAsync((Guid)author.Id, It.IsAny<CancellationToken>()))
@@ -52,10 +52,10 @@ public sealed class DeleteAuthorCommandTests
     public async Task GivenInvalidCommand_WhenHandlingDeleteAuthor_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var command = new DeleteAuthorCommand(Guid.CreateVersion7());
+        var command = new DeleteAuthorCommand(AuthorId.From(Guid.CreateVersion7()));
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(command.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)command.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Author)null!);
 
         // Act

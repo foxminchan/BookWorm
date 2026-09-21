@@ -1,3 +1,3 @@
 ﻿namespace BookWorm.Catalog.Features.Categories;
 
-public sealed record CategoryDto(Guid Id, string? Name);
+public sealed record CategoryDto(CategoryId Id, string? Name);

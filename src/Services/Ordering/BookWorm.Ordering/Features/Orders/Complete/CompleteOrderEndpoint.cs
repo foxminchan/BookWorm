@@ -3,18 +3,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Complete;
 
-internal sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid, ISender>
+internal sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, OrderId, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPatch(
-                "/orders/{orderId:guid}/complete",
+                "/orders/{orderId}/complete",
                 async (
                     [FromHeader(Name = Http.RequestIdHeader)]
                     [Description("The idempotency key of the order to be completed")]
                         string key,
                     [Description("The unique identifier of the order to be completed")]
-                        Guid orderId,
+                        OrderId orderId,
                     ISender sender
                 ) => await HandleAsync(orderId, sender)
             )
@@ -30,12 +30,12 @@ internal sealed class CompleteOrderEndpoint : IEndpoint<Ok<OrderDetailDto>, Guid
     }
 
     public async Task<Ok<OrderDetailDto>> HandleAsync(
-        Guid orderId,
+        OrderId orderId,
         ISender request,
         CancellationToken cancellationToken = default
     )
     {
-        var result = await request.Send(new CompleteOrderCommand(orderId), cancellationToken);
+        var result = await request.Send(new CompleteOrderCommand((Guid)orderId), cancellationToken);
 
         return TypedResults.Ok(result);
     }

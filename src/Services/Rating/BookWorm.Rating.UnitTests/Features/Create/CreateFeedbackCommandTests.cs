@@ -60,7 +60,7 @@ public sealed class CreateFeedbackCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(expectedId);
+        result.ShouldBe(FeedbackId.From(expectedId));
         _repositoryMock.Verify(
             r =>
                 r.AddAsync(
@@ -105,7 +105,7 @@ public sealed class CreateFeedbackCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe(expectedId);
+        result.ShouldBe(FeedbackId.From(expectedId));
 
         _repositoryMock.Verify(
             r => r.AddAsync(It.IsAny<Feedback>(), It.IsAny<CancellationToken>()),

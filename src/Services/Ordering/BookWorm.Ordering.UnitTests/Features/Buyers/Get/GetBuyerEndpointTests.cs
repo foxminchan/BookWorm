@@ -1,4 +1,5 @@
 ﻿using BookWorm.Chassis.Exceptions;
+using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers;
 using BookWorm.Ordering.Features.Buyers.Get;
 using Mediator;
@@ -17,9 +18,9 @@ public sealed class GetBuyerEndpointTests
         _senderMock = new();
         _endpoint = new();
 
-        var buyerId = Guid.CreateVersion7();
+        var buyerId = BuyerId.From(Guid.CreateVersion7());
         _buyerDto = new(buyerId, "Test Buyer", "123 Test Street");
-        _query = new(buyerId);
+        _query = new((Guid)buyerId);
     }
 
     [Test]

@@ -23,7 +23,7 @@ public sealed class UpdateAuthorCommandTests
     {
         // Arrange
         var author = _faker.Generate()[0];
-        var command = new UpdateAuthorCommand((Guid)author.Id, "New Author Name");
+        var command = new UpdateAuthorCommand(author.Id, "New Author Name");
 
         _repositoryMock
             .Setup(r => r.GetByIdAsync((Guid)author.Id, It.IsAny<CancellationToken>()))
@@ -48,10 +48,13 @@ public sealed class UpdateAuthorCommandTests
     public async Task GivenInvalidAuthorId_WhenHandlingUpdateAuthor_ThenShouldThrowNotFoundException()
     {
         // Arrange
-        var command = new UpdateAuthorCommand(Guid.CreateVersion7(), "New Author Name");
+        var command = new UpdateAuthorCommand(
+            AuthorId.From(Guid.CreateVersion7()),
+            "New Author Name"
+        );
 
         _repositoryMock
-            .Setup(r => r.GetByIdAsync(command.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync((Guid)command.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Author)null!);
 
         // Act & Assert

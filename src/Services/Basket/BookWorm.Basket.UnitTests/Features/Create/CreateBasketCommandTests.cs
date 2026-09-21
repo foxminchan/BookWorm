@@ -96,7 +96,7 @@ public sealed class CreateBasketCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBe((string)basket.Id);
+        result.ShouldBe(basket.Id);
         _mockBasketRepository.Verify(
             x =>
                 x.CreateOrUpdateBasketAsync(

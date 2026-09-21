@@ -8,14 +8,14 @@ namespace BookWorm.Ordering.Features.Buyers.Create;
 
 [Transactional]
 public sealed record CreateBuyerCommand([PIIData] string Street, string City, string Province)
-    : ICommand<Guid>;
+    : ICommand<BuyerId>;
 
 internal sealed class CreateBuyerHandler(
     IBuyerRepository repository,
     ClaimsPrincipal claimsPrincipal
-) : ICommandHandler<CreateBuyerCommand, Guid>
+) : ICommandHandler<CreateBuyerCommand, BuyerId>
 {
-    public async ValueTask<Guid> Handle(
+    public async ValueTask<BuyerId> Handle(
         CreateBuyerCommand request,
         CancellationToken cancellationToken
     )
@@ -30,6 +30,6 @@ internal sealed class CreateBuyerHandler(
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-        return (Guid)result.Id;
+        return result.Id;
     }
 }

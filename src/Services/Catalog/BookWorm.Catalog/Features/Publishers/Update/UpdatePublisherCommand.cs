@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BookWorm.Catalog.Features.Publishers.Update;
 
-public sealed record UpdatePublisherCommand(Guid Id, string Name) : ICommand;
+public sealed record UpdatePublisherCommand(PublisherId Id, string Name) : ICommand;
 
 internal sealed class UpdatePublisherHandler(IPublisherRepository repository)
     : ICommandHandler<UpdatePublisherCommand>
@@ -13,9 +13,9 @@ internal sealed class UpdatePublisherHandler(IPublisherRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var publisher = await repository.GetByIdAsync(request.Id, cancellationToken);
+        var publisher = await repository.GetByIdAsync((Guid)request.Id, cancellationToken);
 
-        Guard.Against.NotFound(publisher, request.Id);
+        Guard.Against.NotFound(publisher, (Guid)request.Id);
 
         publisher.UpdateName(request.Name);
 

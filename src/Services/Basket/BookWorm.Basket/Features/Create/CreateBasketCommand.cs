@@ -3,14 +3,14 @@ using Mediator;
 
 namespace BookWorm.Basket.Features.Create;
 
-public sealed record CreateBasketCommand(List<BasketItemRequest> Items) : ICommand<string>;
+public sealed record CreateBasketCommand(List<BasketItemRequest> Items) : ICommand<CustomerId>;
 
 internal sealed class CreateBasketHandler(
     IBasketRepository repository,
     ClaimsPrincipal claimsPrincipal
-) : ICommandHandler<CreateBasketCommand, string>
+) : ICommandHandler<CreateBasketCommand, CustomerId>
 {
-    public async ValueTask<string> Handle(
+    public async ValueTask<CustomerId> Handle(
         CreateBasketCommand request,
         CancellationToken cancellationToken
     )
@@ -21,8 +21,7 @@ internal sealed class CreateBasketHandler(
 
         var result = await repository.CreateOrUpdateBasketAsync(basket);
 
-        return result is not null
-            ? (string)result.Id
-            : throw new BasketCreatedException("An error occurred while creating the basket.");
+        return result?.Id
+            ?? throw new BasketCreatedException("An error occurred while creating the basket.");
     }
 }

@@ -44,9 +44,11 @@ internal static class Extensions
 
             // Configure endpoints
             services.AddVersioning();
-            services.AddEndpoints(typeof(IOrderingApiMarker));
+            services.AddEndpoints(typeof(OrderingApiMarker));
             services.AddDefaultOpenApi(options =>
-                options.ApplyOpenApiInfoDefinitions<OrderingAppSettings>()
+                options
+                    .MapVogenTypesInOrderingApiMarker()
+                    .ApplyOpenApiInfoDefinitions<OrderingAppSettings>()
             );
 
             // Add event bus configuration
@@ -65,8 +67,8 @@ internal static class Extensions
                 // expose an OrderId to the same partition.
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
 
-                opts.Discovery.IncludeAssembly(typeof(IOrderingApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(IOrderingApiMarker).Assembly);
+                opts.Discovery.IncludeAssembly(typeof(OrderingApiMarker).Assembly);
+                opts.ListenToIntegrationEventsIn(typeof(OrderingApiMarker).Assembly);
             });
 
             // Configure gRPC

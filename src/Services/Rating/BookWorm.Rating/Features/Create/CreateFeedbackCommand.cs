@@ -10,12 +10,12 @@ public sealed record CreateFeedbackCommand(
     string? LastName,
     string? Comment,
     int Rating
-) : ICommand<Guid>;
+) : ICommand<FeedbackId>;
 
 internal sealed class CreateFeedbackHandler(IFeedbackRepository repository)
-    : ICommandHandler<CreateFeedbackCommand, Guid>
+    : ICommandHandler<CreateFeedbackCommand, FeedbackId>
 {
-    public async ValueTask<Guid> Handle(
+    public async ValueTask<FeedbackId> Handle(
         CreateFeedbackCommand request,
         CancellationToken cancellationToken
     )
@@ -33,6 +33,6 @@ internal sealed class CreateFeedbackHandler(IFeedbackRepository repository)
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-        return (Guid)result.Id;
+        return result.Id;
     }
 }

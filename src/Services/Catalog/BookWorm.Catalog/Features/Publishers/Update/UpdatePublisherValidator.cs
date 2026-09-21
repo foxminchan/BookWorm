@@ -6,7 +6,7 @@ internal sealed class UpdatePublisherValidator : AbstractValidator<UpdatePublish
 {
     public UpdatePublisherValidator()
     {
-        RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Id).Must(id => (Guid)id != Guid.Empty);
 
         RuleFor(x => x.Name).NotEmpty().MaximumLength(DataSchemaLength.Medium);
     }

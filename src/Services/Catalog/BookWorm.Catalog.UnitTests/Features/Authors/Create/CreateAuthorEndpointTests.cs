@@ -1,11 +1,12 @@
-﻿using BookWorm.Catalog.Features.Authors.Create;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Features.Authors.Create;
 using Mediator;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.Create;
 
 public sealed class CreateAuthorEndpointTests
 {
-    private readonly Guid _authorId = Guid.CreateVersion7();
+    private readonly AuthorId _authorId = AuthorId.From(Guid.CreateVersion7());
     private readonly CreateAuthorCommand _command = new("Test Author");
     private readonly CreateAuthorEndpoint _endpoint = new();
     private readonly Mock<ISender> _senderMock = new();

@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Features.Books.Create;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Features.Books.Create;
 using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -10,7 +11,7 @@ public sealed class CreateBookEndpointTests
 {
     private readonly CreateBookCommand _command;
     private readonly CreateBookEndpoint _endpoint;
-    private readonly Guid _expectedId;
+    private readonly BookId _expectedId;
     private readonly LinkGenerator _linkGenerator;
     private readonly Mock<ISender> _senderMock;
 
@@ -18,7 +19,7 @@ public sealed class CreateBookEndpointTests
     {
         _senderMock = new();
         _endpoint = new();
-        _expectedId = Guid.CreateVersion7();
+        _expectedId = BookId.From(Guid.CreateVersion7());
         _linkGenerator = new Mock<LinkGenerator>().Object;
 
         // Create a mock IFormFile for the image
@@ -64,7 +65,7 @@ public sealed class CreateBookEndpointTests
         var result = await _endpoint.HandleAsync(_command, _senderMock.Object, _linkGenerator);
 
         // Assert
-        result.ShouldBeOfType<Created<Guid>>();
+        result.ShouldBeOfType<Created<BookId>>();
         result.Value.ShouldBe(_expectedId);
     }
 
