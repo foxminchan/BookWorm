@@ -1,4 +1,6 @@
-﻿using BookWorm.AppHost.Extensions.Frontend;
+﻿using Aspire.Hosting.Foundry;
+using Azure.Provisioning.CognitiveServices;
+using BookWorm.AppHost.Extensions.Frontend;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -50,19 +52,21 @@ var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgr
 
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 
-var chat = foundry.AddDeployment(
-    Components.Foundry.Chat,
-    Components.Foundry.OpenAIGpt56Sol,
-    Components.Foundry.OpenAIGpt56SolVersion,
-    Components.Foundry.Provider
-);
+var chat = foundry
+    .AddDeployment(Components.Foundry.Chat, FoundryModel.OpenAI.Gpt56Sol)
+    .WithProperties(deployment =>
+    {
+        deployment.SkuName = "GlobalStandard";
+        deployment.SkuCapacity = 1;
+    });
 
-var embedding = foundry.AddDeployment(
-    Components.Foundry.Embedding,
-    Components.Foundry.TextEmbeddingAda002,
-    Components.Foundry.TextEmbeddingAda002Version,
-    Components.Foundry.Provider
-);
+var embedding = foundry
+    .AddDeployment(Components.Foundry.Embedding, FoundryModel.OpenAI.TextEmbeddingAda002)
+    .WithProperties(deployment =>
+    {
+        deployment.SkuName = "GlobalStandard";
+        deployment.SkuCapacity = 1;
+    });
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)
@@ -92,12 +96,15 @@ var catalogApi = builder
     .WithReference(catalogContainer)
     .WaitFor(catalogContainer)
     .WithReference(chat)
+    .WaitFor(chat)
     .WithReference(embedding)
+    .WaitFor(embedding)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
     )
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithFriendlyUrls();
 
 var mcp = builder
@@ -133,19 +140,24 @@ var orderingApi = builder
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Services.Chatting)
     .WithReference(chat)
+    .WaitFor(chat)
     .WithReference(embedding)
+    .WaitFor(embedding)
     .WithReference(mcp)
     .WithKeycloak(keycloak)
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithFriendlyUrls();
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
     .WithReference(chat)
+    .WaitFor(chat)
     .WithReference(embedding)
+    .WaitFor(embedding)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(mcp)
@@ -158,6 +170,7 @@ var ratingApi = builder
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithFriendlyUrls();
 
 mcp.WithReference(ratingApi);
