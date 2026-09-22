@@ -8,4 +8,4 @@ namespace BookWorm.Ordering;
 
 [OpenApiMarker<BuyerId>]
 [OpenApiMarker<OrderId>]
-public class OrderingApiMarker;
+public sealed class OrderingApiMarker;

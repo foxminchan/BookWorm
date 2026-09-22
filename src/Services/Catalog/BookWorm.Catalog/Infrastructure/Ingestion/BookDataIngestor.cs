@@ -6,7 +6,8 @@ namespace BookWorm.Catalog.Infrastructure.Ingestion;
 
 internal sealed class BookDataIngestor(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-    VectorStoreCollection<Guid, TextSnippet> vectorCollection
+    VectorStoreCollection<Guid, TextSnippet> vectorCollection,
+    CatalogDbContext dbContext
 ) : IIngestionSource<Book>
 {
     public async Task IngestDataAsync(Book data, CancellationToken cancellationToken = default)
@@ -16,7 +17,34 @@ internal sealed class BookDataIngestor(
 
         await vectorCollection.EnsureCollectionExistsAsync(cancellationToken);
 
-        var content = $"{data.Name} {data.Description}";
+        var authorIds = data.BookAuthors.Select(bookAuthor => bookAuthor.AuthorId.Value).ToArray();
+
+        var authorNames = await dbContext
+            .Authors.Where(author => authorIds.AsEnumerable().Contains(author.Id.Value))
+            .Select(author => author.Name)
+            .ToListAsync(cancellationToken);
+
+        var categoryName = data.CategoryId is not null
+            ? await dbContext
+                .Categories.Where(category => category.Id.Value == data.CategoryId.Value)
+                .Select(category => category.Name)
+                .SingleOrDefaultAsync(cancellationToken)
+            : null;
+
+        var publisherName = data.PublisherId is not null
+            ? await dbContext
+                .Publishers.Where(publisher => publisher.Id.Value == data.PublisherId.Value)
+                .Select(publisher => publisher.Name)
+                .SingleOrDefaultAsync(cancellationToken)
+            : null;
+
+        var content = $"""
+            Title: {data.Name}
+            Description: {data.Description}
+            Authors: {string.Join(", ", authorNames)}
+            Category: {categoryName}
+            Publisher: {publisherName}
+            """;
 
         var embeddings = await embeddingGenerator.GenerateVectorAsync(
             content,

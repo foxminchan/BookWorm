@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+﻿using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
@@ -19,9 +19,7 @@ internal static partial class AzureExtensions
             return builder;
         }
 
-        public IResourceBuilder<AzureStorageResource> ProvisionAsService(
-            params IResourceBuilder<ParameterResource>[] origins
-        )
+        public void ProvisionAsService(IHostEnvironment environment)
         {
             builder.ConfigureInfrastructure(infra =>
             {
@@ -35,11 +33,16 @@ internal static partial class AzureExtensions
                     return;
                 }
 
-                resource.Sku = new() { Name = StorageSkuName.StandardLrs };
+                resource.Sku = new()
+                {
+                    Name = environment.IsDevelopment()
+                        ? StorageSkuName.StandardLrs
+                        : StorageSkuName.StandardGzrs,
+                };
 
-                resource.Location = AzureLocation.SoutheastAsia;
-
-                resource.AccessTier = StorageAccountAccessTier.Cool;
+                resource.AccessTier = environment.IsDevelopment()
+                    ? StorageAccountAccessTier.Cool
+                    : StorageAccountAccessTier.Hot;
 
                 var corsRule = new StorageCorsRule
                 {
@@ -53,19 +56,8 @@ internal static partial class AzureExtensions
                     AllowedHeaders = ["*"],
                     ExposedHeaders = ["*"],
                     MaxAgeInSeconds = 3600,
+                    AllowedOrigins = ["*"],
                 };
-
-                if (origins.Length > 0)
-                {
-                    foreach (var origin in origins)
-                    {
-                        corsRule.AllowedOrigins.Add(origin.AsProvisioningParameter(infra));
-                    }
-                }
-                else
-                {
-                    corsRule.AllowedOrigins = ["*"];
-                }
 
                 var blobService = new BlobService(nameof(BlobService).ToLowerInvariant())
                 {
@@ -75,8 +67,6 @@ internal static partial class AzureExtensions
 
                 infra.Add(blobService);
             });
-
-            return builder;
         }
     }
 

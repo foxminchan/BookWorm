@@ -9,4 +9,4 @@ namespace BookWorm.Rating;
 
 [OpenApiMarker<FeedbackId>]
 [OpenApiMarker<BookId>]
-public class RatingApiMarker;
+public sealed class RatingApiMarker;

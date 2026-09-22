@@ -1,4 +1,6 @@
-﻿using Microsoft.Agents.AI;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using Microsoft.Agents.AI;
 using Npgsql;
 
 namespace BookWorm.Catalog.Infrastructure;
@@ -16,21 +18,42 @@ internal sealed class CatalogDbContextSeed(
         if (!await context.Categories.AnyAsync())
         {
             logger.LogInformation("Seeding categories");
-            context.Categories.AddRange(new CategoryData());
+            context.Categories.AddRange(
+                (
+                    await LoadSetupDataAsync(
+                        "categories.json",
+                        CatalogSeedSerializationContext.Default.ListCategorySeed
+                    )
+                ).Select(static seed => new Category(seed.Name))
+            );
             await context.SaveChangesAsync();
         }
 
         if (!await context.Authors.AnyAsync())
         {
             logger.LogInformation("Seeding authors");
-            context.Authors.AddRange(new AuthorData());
+            context.Authors.AddRange(
+                (
+                    await LoadSetupDataAsync(
+                        "authors.json",
+                        CatalogSeedSerializationContext.Default.ListAuthorSeed
+                    )
+                ).Select(static seed => new Author(seed.Name))
+            );
             await context.SaveChangesAsync();
         }
 
         if (!await context.Publishers.AnyAsync())
         {
             logger.LogInformation("Seeding publishers");
-            context.Publishers.AddRange(new PublisherData());
+            context.Publishers.AddRange(
+                (
+                    await LoadSetupDataAsync(
+                        "publishers.json",
+                        CatalogSeedSerializationContext.Default.ListPublisherSeed
+                    )
+                ).Select(static seed => new Publisher(seed.Name))
+            );
             await context.SaveChangesAsync();
         }
 
@@ -44,8 +67,24 @@ internal sealed class CatalogDbContextSeed(
             var random = Random.Shared;
             var books = new List<Book>();
 
-            foreach (var book in new BookData())
+            foreach (
+                var seed in await LoadSetupDataAsync(
+                    "books.json",
+                    CatalogSeedSerializationContext.Default.ListBookSeed
+                )
+            )
             {
+                var book = new Book(
+                    seed.Name,
+                    null,
+                    null,
+                    seed.Price,
+                    seed.PriceSale,
+                    CategoryId.From(Guid.Empty),
+                    PublisherId.From(Guid.Empty),
+                    []
+                );
+
                 var instructions = $"""
                     You are a professional book metadata writer.
                     Task: Generate a compelling description for a book titled "{book.Name}".
@@ -107,4 +146,33 @@ internal sealed class CatalogDbContextSeed(
             await context.SaveChangesAsync();
         }
     }
+
+    private static async Task<List<T>> LoadSetupDataAsync<T>(
+        string fileName,
+        JsonTypeInfo<List<T>> typeInfo
+    )
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Setup", fileName);
+        await using var stream = File.OpenRead(path);
+        return await JsonSerializer.DeserializeAsync(stream, typeInfo)
+            ?? throw new InvalidOperationException($"Setup data file '{fileName}' is empty.");
+    }
 }
+
+internal sealed record CategorySeed(string Name);
+
+internal sealed record AuthorSeed(string Name);
+
+internal sealed record PublisherSeed(string Name);
+
+internal sealed record BookSeed(string Name, decimal Price, decimal? PriceSale);
+
+[JsonSerializable(typeof(List<CategorySeed>))]
+[JsonSerializable(typeof(List<AuthorSeed>))]
+[JsonSerializable(typeof(List<PublisherSeed>))]
+[JsonSerializable(typeof(List<BookSeed>))]
+[JsonSourceGenerationOptions(
+    PropertyNameCaseInsensitive = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
+)]
+internal sealed partial class CatalogSeedSerializationContext : JsonSerializerContext;

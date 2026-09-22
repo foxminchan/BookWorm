@@ -9,22 +9,27 @@ internal static class FrontendExtensions
 
     extension(IDistributedApplicationBuilder builder)
     {
-        public void AddFrontendApps(
+        public (
+            IResourceBuilder<IResourceWithEndpoints> Storefront,
+            IResourceBuilder<IResourceWithEndpoints> Backoffice
+        ) AddFrontendApps(
             IResourceBuilder<YarpResource> gateway,
             IResourceBuilder<IResource> keycloak
         )
         {
             if (builder.ExecutionContext.IsRunMode)
             {
-                AddTurborepoApps(builder, gateway, keycloak);
-                return;
+                return AddTurborepoApps(builder, gateway, keycloak);
             }
 
-            AddPublishedContainerApps(builder, gateway, keycloak);
+            return AddPublishedContainerApps(builder, gateway, keycloak);
         }
     }
 
-    private static void AddTurborepoApps(
+    private static (
+        IResourceBuilder<IResourceWithEndpoints> Storefront,
+        IResourceBuilder<IResourceWithEndpoints> Backoffice
+    ) AddTurborepoApps(
         IDistributedApplicationBuilder builder,
         IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak
@@ -72,9 +77,14 @@ internal static class FrontendExtensions
             AppUrlEnvironmentVariable,
             backoffice.GetEndpoint(Uri.UriSchemeHttp)
         );
+
+        return (storefront, backoffice);
     }
 
-    private static void AddPublishedContainerApps(
+    private static (
+        IResourceBuilder<IResourceWithEndpoints> Storefront,
+        IResourceBuilder<IResourceWithEndpoints> Backoffice
+    ) AddPublishedContainerApps(
         IDistributedApplicationBuilder builder,
         IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<IResource> keycloak
@@ -112,6 +122,8 @@ internal static class FrontendExtensions
             AppUrlEnvironmentVariable,
             backoffice.GetEndpoint(Uri.UriSchemeHttp)
         );
+
+        return (storefront, backoffice);
     }
 
     private static IResourceBuilder<ContainerResource> ConfigurePublishedFrontend(

@@ -1,5 +1,5 @@
-﻿using Azure.Core;
-using Azure.Provisioning.PostgreSql;
+﻿using Azure.Provisioning.PostgreSql;
+using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
@@ -12,7 +12,6 @@ internal static partial class AzureExtensions
             builder.RunAsContainer(cfg =>
                 cfg.WithPgAdmin()
                     .WithDataVolume()
-                    .WithImageTag("18.3")
                     .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent)
             );
@@ -20,7 +19,9 @@ internal static partial class AzureExtensions
             return builder;
         }
 
-        public IResourceBuilder<AzurePostgresFlexibleServerResource> ProvisionAsService()
+        public IResourceBuilder<AzurePostgresFlexibleServerResource> ProvisionAsService(
+            IHostEnvironment environment
+        )
         {
             builder.ConfigureInfrastructure(infra =>
             {
@@ -34,30 +35,123 @@ internal static partial class AzureExtensions
                     return;
                 }
 
-                resource.Sku = new() { Tier = PostgreSqlFlexibleServerSkuTier.Burstable };
+                IResourceBuilder<AzurePostgresFlexibleServerResource>.ConfigureResource(
+                    resource,
+                    environment
+                );
 
-                resource.Location = AzureLocation.SoutheastAsia;
-
-                resource.HighAvailability = new()
+                if (!environment.IsDevelopment())
                 {
-                    Mode = PostgreSqlFlexibleServerHighAvailabilityMode.ZoneRedundant,
-                    StandbyAvailabilityZone = "2",
-                };
-
-                resource.Backup = new()
-                {
-                    BackupRetentionDays = 7,
-                    GeoRedundantBackup = PostgreSqlFlexibleServerGeoRedundantBackupEnum.Disabled,
-                };
-
-                resource.Storage = new()
-                {
-                    StorageSizeInGB = 32,
-                    AutoGrow = StorageAutoGrow.Disabled,
-                };
+                    infra.Add(
+                        new PostgreSqlFlexibleServerConfiguration("pgbouncer")
+                        {
+                            Parent = resource,
+                            Name = "pgbouncer",
+                            Value = "on",
+                        }
+                    );
+                }
             });
 
             return builder;
+        }
+
+        private static void ConfigureResource(
+            PostgreSqlFlexibleServer resource,
+            IHostEnvironment environment
+        )
+        {
+            var isDevelopment = environment.IsDevelopment();
+            var isStaging = environment.IsStaging();
+
+            resource.Sku = IResourceBuilder<AzurePostgresFlexibleServerResource>.CreateSku(
+                isDevelopment,
+                isStaging
+            );
+            resource.HighAvailability =
+                IResourceBuilder<AzurePostgresFlexibleServerResource>.CreateHighAvailability(
+                    isDevelopment
+                );
+
+            if (!isDevelopment)
+            {
+                resource.HighAvailability.StandbyAvailabilityZone = "2";
+            }
+
+            resource.Backup = IResourceBuilder<AzurePostgresFlexibleServerResource>.CreateBackup(
+                isDevelopment,
+                isStaging,
+                environment
+            );
+            resource.Storage = IResourceBuilder<AzurePostgresFlexibleServerResource>.CreateStorage(
+                isDevelopment,
+                isStaging
+            );
+        }
+
+        private static PostgreSqlFlexibleServerSku CreateSku(bool isDevelopment, bool isStaging)
+        {
+            return new()
+            {
+                Name = (isDevelopment, isStaging) switch
+                {
+                    (true, _) => "Standard_B1ms",
+                    (false, true) => "Standard_D2ds_v5",
+                    _ => "Standard_D4ds_v5",
+                },
+                Tier = isDevelopment
+                    ? PostgreSqlFlexibleServerSkuTier.Burstable
+                    : PostgreSqlFlexibleServerSkuTier.GeneralPurpose,
+            };
+        }
+
+        private static PostgreSqlFlexibleServerHighAvailability CreateHighAvailability(
+            bool isDevelopment
+        )
+        {
+            return new()
+            {
+                Mode = isDevelopment
+                    ? PostgreSqlFlexibleServerHighAvailabilityMode.Disabled
+                    : PostgreSqlFlexibleServerHighAvailabilityMode.ZoneRedundant,
+            };
+        }
+
+        private static PostgreSqlFlexibleServerBackupProperties CreateBackup(
+            bool isDevelopment,
+            bool isStaging,
+            IHostEnvironment environment
+        )
+        {
+            return new()
+            {
+                BackupRetentionDays = (isDevelopment, isStaging) switch
+                {
+                    (true, _) => 7,
+                    (false, true) => 14,
+                    _ => 35,
+                },
+                GeoRedundantBackup = environment.IsProduction()
+                    ? PostgreSqlFlexibleServerGeoRedundantBackupEnum.Enabled
+                    : PostgreSqlFlexibleServerGeoRedundantBackupEnum.Disabled,
+            };
+        }
+
+        private static PostgreSqlFlexibleServerStorage CreateStorage(
+            bool isDevelopment,
+            bool isStaging
+        )
+        {
+            return new()
+            {
+                StorageSizeInGB = (isDevelopment, isStaging) switch
+                {
+                    (true, _) => 32,
+                    (false, true) => 128,
+                    _ => 256,
+                },
+                AutoGrow = isDevelopment ? StorageAutoGrow.Disabled : StorageAutoGrow.Enabled,
+            };
         }
     }
 }

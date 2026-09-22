@@ -26,69 +26,25 @@ internal static class CorsExtensions
         HttpMethods.Options,
     ];
 
-    extension(IDistributedApplicationBuilder builder)
-    {
-        /// <summary>
-        ///     Configures CORS origin parameters for the application to allow cross-origin requests
-        ///     from the Storefront and Backoffice frontend applications in production.
-        /// </summary>
-        /// <returns>
-        ///     A tuple containing the Storefront URL and Backoffice URL parameter resource builders.
-        /// </returns>
-        public (
-            IResourceBuilder<ParameterResource> StorefrontUrl,
-            IResourceBuilder<ParameterResource> BackofficeUrl
-        ) AddCorsOriginParameters()
-        {
-            var storefrontUrl = builder
-                .AddParameter("storefront-url")
-                .WithDescription(ParameterDescriptions.Cors.StorefrontUrl, true)
-                .WithCustomInput(_ =>
-                    new()
-                    {
-                        Name = "StorefrontUrlParameter",
-                        Label = "Storefront URL",
-                        InputType = InputType.Text,
-                        Description =
-                            "Enter the Storefront application URL for CORS (e.g., https://bookworm.com)",
-                    }
-                );
-
-            var backofficeUrl = builder
-                .AddParameter("backoffice-url")
-                .WithDescription(ParameterDescriptions.Cors.BackofficeUrl, true)
-                .WithCustomInput(_ =>
-                    new()
-                    {
-                        Name = "BackofficeUrlParameter",
-                        Label = "Backoffice URL",
-                        InputType = InputType.Text,
-                        Description =
-                            "Enter the Backoffice application URL for CORS (e.g., https://admin.bookworm.com)",
-                    }
-                );
-
-            return (storefrontUrl, backofficeUrl);
-        }
-    }
-
     extension(IResourceBuilder<ProjectResource> builder)
     {
         /// <summary>
         ///     Applies CORS origin configuration to a backend service project, allowing cross-origin
         ///     requests from the specified Storefront and Backoffice URLs.
         /// </summary>
-        /// <param name="storefrontUrl">The Storefront URL parameter resource builder.</param>
-        /// <param name="backofficeUrl">The Backoffice URL parameter resource builder.</param>
+        /// <param name="storefront">The Aspire Storefront resource.</param>
+        /// <param name="backoffice">The Aspire Backoffice resource.</param>
+        /// <param name="scheme">The endpoint scheme used by the frontend deployment.</param>
         /// <returns>The original <see cref="IResourceBuilder{ProjectResource}" /> with CORS configuration applied.</returns>
         public IResourceBuilder<ProjectResource> WithCorsOrigins(
-            IResourceBuilder<ParameterResource> storefrontUrl,
-            IResourceBuilder<ParameterResource> backofficeUrl
+            IResourceBuilder<IResourceWithEndpoints> storefront,
+            IResourceBuilder<IResourceWithEndpoints> backoffice,
+            string scheme
         )
         {
             builder
-                .WithEnvironment("Cors__Origins__0", storefrontUrl)
-                .WithEnvironment("Cors__Origins__1", backofficeUrl)
+                .WithEnvironment("Cors__Origins__0", storefront.GetEndpoint(scheme))
+                .WithEnvironment("Cors__Origins__1", backoffice.GetEndpoint(scheme))
                 .WithEnvironment("Cors__AllowCredentials", "true");
 
             for (var i = 0; i < _defaultHeaders.Length; i++)

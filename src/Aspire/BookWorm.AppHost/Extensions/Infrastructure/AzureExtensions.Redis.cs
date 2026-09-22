@@ -1,5 +1,5 @@
-﻿using Azure.Core;
-using Azure.Provisioning.Redis;
+﻿using Azure.Provisioning.Redis;
+using Microsoft.Extensions.Hosting;
 using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
@@ -22,7 +22,9 @@ internal static partial class AzureExtensions
             return builder;
         }
 
-        public IResourceBuilder<AzureManagedRedisResource> ProvisionAsService()
+        public IResourceBuilder<AzureManagedRedisResource> ProvisionAsService(
+            IHostEnvironment environment
+        )
         {
             builder.ConfigureInfrastructure(infra =>
             {
@@ -38,12 +40,22 @@ internal static partial class AzureExtensions
 
                 resource.Sku = new()
                 {
-                    Family = RedisSkuFamily.BasicOrStandard,
-                    Name = RedisSkuName.Basic,
-                    Capacity = 1,
+                    Family = environment.IsProduction()
+                        ? RedisSkuFamily.Premium
+                        : RedisSkuFamily.BasicOrStandard,
+                    Name = (environment.IsDevelopment(), environment.IsProduction()) switch
+                    {
+                        (true, _) => RedisSkuName.Basic,
+                        (false, true) => RedisSkuName.Premium,
+                        _ => RedisSkuName.Standard,
+                    },
+                    Capacity = (environment.IsDevelopment(), environment.IsStaging()) switch
+                    {
+                        (true, _) => 0,
+                        (false, true) => 2,
+                        _ => 1,
+                    },
                 };
-
-                resource.Location = AzureLocation.SoutheastAsia;
             });
 
             return builder;

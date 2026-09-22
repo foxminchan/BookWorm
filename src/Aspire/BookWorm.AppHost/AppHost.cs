@@ -1,6 +1,4 @@
-﻿using BookWorm.AppHost.Extensions.Frontend;
-
-var builder = DistributedApplication.CreateBuilder(args);
+﻿var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
@@ -9,14 +7,14 @@ var postgres = builder
     .WithPasswordAuthentication()
     .WithIconName("HomeDatabase")
     .RunAsLocalContainer()
-    .ProvisionAsService();
+    .ProvisionAsService(builder.Environment);
 
 var redis = builder
     .AddAzureManagedRedis(Components.Redis)
     .WithAccessKeyAuthentication()
     .WithIconName("Memory")
     .RunAsLocalContainer()
-    .ProvisionAsService();
+    .ProvisionAsService(builder.Environment);
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
@@ -50,19 +48,9 @@ var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgr
 
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 
-var chat = foundry.AddDeployment(
-    Components.Foundry.Chat,
-    Components.Foundry.OpenAIGpt56Sol,
-    Components.Foundry.OpenAIGpt56SolVersion,
-    Components.Foundry.Provider
-);
+var chat = foundry.AddDeployment(Components.Foundry.Chat, FoundryModel.Anthropic.ClaudeOpus5);
 
-var embedding = foundry.AddDeployment(
-    Components.Foundry.Embedding,
-    Components.Foundry.TextEmbeddingAda002,
-    Components.Foundry.TextEmbeddingAda002Version,
-    Components.Foundry.Provider
-);
+var embedding = foundry.AddDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)
@@ -92,12 +80,15 @@ var catalogApi = builder
     .WithReference(catalogContainer)
     .WaitFor(catalogContainer)
     .WithReference(chat)
+    .WaitFor(chat)
     .WithReference(embedding)
+    .WaitFor(embedding)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
         StorageBuiltInRole.StorageBlobDataOwner
     )
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithFriendlyUrls();
 
 var mcp = builder
@@ -133,19 +124,24 @@ var orderingApi = builder
 var chatApi = builder
     .AddProject<BookWorm_Chat>(Services.Chatting)
     .WithReference(chat)
+    .WaitFor(chat)
     .WithReference(embedding)
+    .WaitFor(embedding)
     .WithReference(mcp)
     .WithKeycloak(keycloak)
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithFriendlyUrls();
 
 var ratingApi = builder
     .AddProject<BookWorm_Rating>(Services.Rating)
     .WithReference(chat)
+    .WaitFor(chat)
     .WithReference(embedding)
+    .WaitFor(embedding)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(mcp)
@@ -158,6 +154,7 @@ var ratingApi = builder
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithFriendlyUrls();
 
 mcp.WithReference(ratingApi);
@@ -197,7 +194,7 @@ var gateway = builder
     .WithService(catalogApi, true)
     .Build();
 
-builder.AddFrontendApps(gateway, keycloak);
+var (storefront, backoffice) = builder.AddFrontendApps(gateway, keycloak);
 
 if (builder.ExecutionContext.IsRunMode)
 {
@@ -233,15 +230,14 @@ if (builder.ExecutionContext.IsRunMode)
 }
 else
 {
-    var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();
+    storage.ProvisionAsService(builder.Environment);
+    var frontendScheme = Uri.UriSchemeHttps;
 
-    storage.ProvisionAsService(storefrontUrl, backofficeUrl);
-
-    catalogApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    basketApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    orderingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    chatApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    ratingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    catalogApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    basketApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    orderingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    chatApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    ratingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
 }
 
 await builder.Build().RunAsync();

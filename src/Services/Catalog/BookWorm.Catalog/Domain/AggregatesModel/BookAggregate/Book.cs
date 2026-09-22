@@ -101,9 +101,16 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
         AuthorId[] authorIds
     )
     {
+        var areAuthorsChanged = !_bookAuthors
+            .Select(bookAuthor => bookAuthor.AuthorId)
+            .SequenceEqual(authorIds);
+
         var isChanged =
             string.Compare(Name, name, StringComparison.OrdinalIgnoreCase) != 0
-            || string.Compare(Description, description, StringComparison.OrdinalIgnoreCase) != 0;
+            || string.Compare(Description, description, StringComparison.OrdinalIgnoreCase) != 0
+            || CategoryId != categoryId
+            || PublisherId != publisherId
+            || areAuthorsChanged;
 
         Name = !string.IsNullOrWhiteSpace(name)
             ? name

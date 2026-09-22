@@ -10,4 +10,4 @@ namespace BookWorm.Catalog;
 [OpenApiMarker<BookId>]
 [OpenApiMarker<CategoryId>]
 [OpenApiMarker<PublisherId>]
-public class CatalogApiMarker;
+public sealed class CatalogApiMarker;

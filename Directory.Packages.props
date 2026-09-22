@@ -22,7 +22,7 @@
       Version="$(AspireVersion)"
     />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Azure.AI.OpenAI" Version="$(AspireUnstableVersion)" />
+    <PackageVersion Include="Aspire.Azure.AI.Inference" Version="$(AspireUnstableVersion)" />
     <PackageVersion
       Include="Aspire.Microsoft.Azure.StackExchangeRedis"
       Version="$(AspireUnstableVersion)"
@@ -46,7 +46,7 @@
     />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.11.22" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.24" />
     <PackageVersion
       Include="Aspire.Hosting.AgentFramework.DevUI"
       Version="$(AgentFrameworkUnstableVersion)"
@@ -120,7 +120,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="16.0.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="16.1.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="Vogen" Version="8.0.7" />
   </ItemGroup>
