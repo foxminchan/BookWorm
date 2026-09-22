@@ -52,21 +52,9 @@ var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgr
 
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 
-var chat = foundry
-    .AddDeployment(Components.Foundry.Chat, FoundryModel.OpenAI.Gpt56Sol)
-    .WithProperties(deployment =>
-    {
-        deployment.SkuName = "GlobalStandard";
-        deployment.SkuCapacity = 1;
-    });
+var chat = foundry.AddDeployment(Components.Foundry.Chat, FoundryModel.Anthropic.ClaudeOpus5);
 
-var embedding = foundry
-    .AddDeployment(Components.Foundry.Embedding, FoundryModel.OpenAI.TextEmbeddingAda002)
-    .WithProperties(deployment =>
-    {
-        deployment.SkuName = "GlobalStandard";
-        deployment.SkuCapacity = 1;
-    });
+var embedding = foundry.AddDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)

@@ -15,7 +15,7 @@ public static class ModelExtensions
         ///     connection strings in the application configuration.
         /// </summary>
         /// <remarks>
-        ///     Conditionally adds an OpenAI chat client with function invocation support if
+        ///     Conditionally adds an Azure AI Inference chat client with function invocation support if
         ///     <c>Components.OpenAI.Chat</c> connection string is present, and an embedding
         ///     generator if <c>Components.OpenAI.Embedding</c> connection string is present.
         /// </remarks>
@@ -34,7 +34,7 @@ public static class ModelExtensions
             )
             {
                 builder
-                    .AddOpenAIClientFromConfiguration(Components.Foundry.Chat)
+                    .AddAzureChatCompletionsClient(Components.Foundry.Chat)
                     .AddChatClient()
                     .UseFunctionInvocation();
             }
@@ -46,7 +46,7 @@ public static class ModelExtensions
             )
             {
                 builder
-                    .AddOpenAIClientFromConfiguration(Components.Foundry.Embedding)
+                    .AddAzureEmbeddingsClient(Components.Foundry.Embedding)
                     .AddEmbeddingGenerator();
             }
 
