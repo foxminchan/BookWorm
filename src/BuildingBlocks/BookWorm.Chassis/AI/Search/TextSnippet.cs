@@ -5,7 +5,7 @@ namespace BookWorm.Chassis.AI.Search;
 
 public sealed class TextSnippet
 {
-    // 1536 is the default vector size for the OpenAI text-embedding-3-small model
+    // Cohere Embed v4 returns 1536-dimensional vectors by default.
     private const int VectorDimensions = 1536;
     private const string VectorDistanceFunction = DistanceFunction.CosineSimilarity;
     public const string CollectionName = "data-bookworm-snippets";

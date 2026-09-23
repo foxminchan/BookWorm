@@ -7,4 +7,4 @@ using Vogen;
 namespace BookWorm.Basket;
 
 [OpenApiMarker<CustomerId>]
-public class BasketApiMarker;
+public sealed class BasketApiMarker;
