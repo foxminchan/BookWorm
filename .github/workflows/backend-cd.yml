@@ -1,21 +1,13 @@
-name: BookWorm CD (Backend)
-run-name: Backend CD - ${{ github.event_name }} by ${{ github.actor }}
+name: BookWorm CD (Aspire)
+run-name: Aspire CD - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: The environment to deploy to
+        description: Aspire environment (Development, Staging, or Production)
         required: true
         type: environment
-      storefront_url:
-        description: The Storefront application URL for CORS
-        required: true
-        type: string
-      backoffice_url:
-        description: The Backoffice application URL for CORS
-        required: true
-        type: string
 
 env:
   GLOBAL_JSON_PATH: global.json
@@ -27,14 +19,18 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: bookworm-aspire-${{ inputs.environment }}
+  cancel-in-progress: false
+
 jobs:
   aspire_deploy:
     runs-on: ubuntu-latest
-    name: 🚀 Deploy BookWorm to ACA from ACR
+    name: 🚀 Deploy BookWorm to ACA with Aspire
     permissions:
       id-token: write
       contents: read
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ inputs.environment }}
     timeout-minutes: 30
     steps:
       - name: 📥 Checkout code
@@ -57,10 +53,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: ✅ Validate environment configuration
+        shell: bash
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          test -n "$AZURE_RESOURCE_GROUP" || { echo "AZURE_RESOURCE_GROUP is required for this GitHub Environment."; exit 1; }
+
       - name: 🚀 Deploy with Aspire
         run: |
           aspire deploy \
-            --environment ${{ github.event.inputs.environment }}
+            --environment ${{ inputs.environment }} \
+            --non-interactive
         env:
           DOTNET_CLI_TELEMETRY_OPTOUT: 1
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -70,7 +74,8 @@ jobs:
           DOTNET_MULTILEVEL_LOOKUP: 0
           DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
           Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          Azure__Location: ${{ secrets.AZURE_LOCATION || 'southeastasia' }}
+          Azure__Location: ${{ vars.AZURE_LOCATION || secrets.AZURE_LOCATION || 'southeastasia' }}
+          Azure__ResourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
           Parameters__openai_openai_apikey: ${{ secrets.OPENAI_APIKEY }}
           Parameters__kc_url: ${{ secrets.KC_URL }}
           Parameters__kc_realm: ${{ secrets.KC_REALM }}
@@ -82,5 +87,3 @@ jobs:
           Parameters__sendgrid_api_key: ${{ secrets.SENDGRID_API_KEY }}
           Parameters__sendgrid_email: ${{ secrets.SENDGRID_EMAIL }}
           Parameters__sendgrid_sender_name: ${{ secrets.SENDGRID_SENDER_NAME }}
-          Parameters__storefront_url: ${{ github.event.inputs.storefront_url }}
-          Parameters__backoffice_url: ${{ github.event.inputs.backoffice_url }}

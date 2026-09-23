@@ -1,8 +1,4 @@
-﻿using Aspire.Hosting.Foundry;
-using Azure.Provisioning.CognitiveServices;
-using BookWorm.AppHost.Extensions.Frontend;
-
-var builder = DistributedApplication.CreateBuilder(args);
+﻿var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
@@ -11,14 +7,14 @@ var postgres = builder
     .WithPasswordAuthentication()
     .WithIconName("HomeDatabase")
     .RunAsLocalContainer()
-    .ProvisionAsService();
+    .ProvisionAsService(builder.Environment);
 
 var redis = builder
     .AddAzureManagedRedis(Components.Redis)
     .WithAccessKeyAuthentication()
     .WithIconName("Memory")
     .RunAsLocalContainer()
-    .ProvisionAsService();
+    .ProvisionAsService(builder.Environment);
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
@@ -198,7 +194,7 @@ var gateway = builder
     .WithService(catalogApi, true)
     .Build();
 
-builder.AddFrontendApps(gateway, keycloak);
+var (storefront, backoffice) = builder.AddFrontendApps(gateway, keycloak);
 
 if (builder.ExecutionContext.IsRunMode)
 {
@@ -234,15 +230,14 @@ if (builder.ExecutionContext.IsRunMode)
 }
 else
 {
-    var (storefrontUrl, backofficeUrl) = builder.AddCorsOriginParameters();
+    storage.ProvisionAsService(builder.Environment);
+    var frontendScheme = Uri.UriSchemeHttps;
 
-    storage.ProvisionAsService(storefrontUrl, backofficeUrl);
-
-    catalogApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    basketApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    orderingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    chatApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
-    ratingApi.WithCorsOrigins(storefrontUrl, backofficeUrl);
+    catalogApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    basketApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    orderingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    chatApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
+    ratingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
 }
 
 await builder.Build().RunAsync();

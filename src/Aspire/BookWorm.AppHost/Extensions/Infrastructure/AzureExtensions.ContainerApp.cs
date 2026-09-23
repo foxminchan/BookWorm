@@ -1,5 +1,4 @@
 ﻿using Aspire.Hosting.Azure.AppContainers;
-using Azure.Core;
 using Azure.Provisioning.AppContainers;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
@@ -32,8 +31,6 @@ internal static partial class AzureExtensions
                             WorkloadProfileType = "Consumption",
                         }
                     );
-
-                    resource.Location = AzureLocation.SoutheastAsia;
                 });
         }
     }

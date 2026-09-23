@@ -1,5 +1,5 @@
-﻿using Azure.Core;
-using Azure.Provisioning.PostgreSql;
+﻿using Azure.Provisioning.PostgreSql;
+using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
@@ -12,7 +12,6 @@ internal static partial class AzureExtensions
             builder.RunAsContainer(cfg =>
                 cfg.WithPgAdmin()
                     .WithDataVolume()
-                    .WithImageTag("18.3")
                     .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent)
             );
@@ -20,7 +19,9 @@ internal static partial class AzureExtensions
             return builder;
         }
 
-        public IResourceBuilder<AzurePostgresFlexibleServerResource> ProvisionAsService()
+        public IResourceBuilder<AzurePostgresFlexibleServerResource> ProvisionAsService(
+            IHostEnvironment environment
+        )
         {
             builder.ConfigureInfrastructure(infra =>
             {
@@ -34,27 +35,69 @@ internal static partial class AzureExtensions
                     return;
                 }
 
-                resource.Sku = new() { Tier = PostgreSqlFlexibleServerSkuTier.Burstable };
+                var isDevelopment = environment.IsDevelopment();
+                var isStaging = environment.IsStaging();
 
-                resource.Location = AzureLocation.SoutheastAsia;
+                resource.Sku = new()
+                {
+                    Name = (isDevelopment, isStaging) switch
+                    {
+                        (true, _) => "Standard_B1ms",
+                        (false, true) => "Standard_D2ds_v5",
+                        _ => "Standard_D4ds_v5",
+                    },
+                    Tier = isDevelopment
+                        ? PostgreSqlFlexibleServerSkuTier.Burstable
+                        : PostgreSqlFlexibleServerSkuTier.GeneralPurpose,
+                };
 
                 resource.HighAvailability = new()
                 {
-                    Mode = PostgreSqlFlexibleServerHighAvailabilityMode.ZoneRedundant,
-                    StandbyAvailabilityZone = "2",
+                    Mode = isDevelopment
+                        ? PostgreSqlFlexibleServerHighAvailabilityMode.Disabled
+                        : PostgreSqlFlexibleServerHighAvailabilityMode.ZoneRedundant,
                 };
+
+                if (!isDevelopment)
+                {
+                    resource.HighAvailability.StandbyAvailabilityZone = "2";
+                }
 
                 resource.Backup = new()
                 {
-                    BackupRetentionDays = 7,
-                    GeoRedundantBackup = PostgreSqlFlexibleServerGeoRedundantBackupEnum.Disabled,
+                    BackupRetentionDays = (isDevelopment, isStaging) switch
+                    {
+                        (true, _) => 7,
+                        (false, true) => 14,
+                        _ => 35,
+                    },
+                    GeoRedundantBackup = environment.IsProduction()
+                        ? PostgreSqlFlexibleServerGeoRedundantBackupEnum.Enabled
+                        : PostgreSqlFlexibleServerGeoRedundantBackupEnum.Disabled,
                 };
 
                 resource.Storage = new()
                 {
-                    StorageSizeInGB = 32,
-                    AutoGrow = StorageAutoGrow.Disabled,
+                    StorageSizeInGB = (isDevelopment, isStaging) switch
+                    {
+                        (true, _) => 32,
+                        (false, true) => 128,
+                        _ => 256,
+                    },
+                    AutoGrow = isDevelopment ? StorageAutoGrow.Disabled : StorageAutoGrow.Enabled,
                 };
+
+                if (!isDevelopment)
+                {
+                    infra.Add(
+                        new PostgreSqlFlexibleServerConfiguration("pgbouncer")
+                        {
+                            Parent = resource,
+                            Name = "pgbouncer",
+                            Value = "on",
+                        }
+                    );
+                }
             });
 
             return builder;
