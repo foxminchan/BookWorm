@@ -9,9 +9,6 @@ sudo apt-get update && \
 echo "Installing tools via mise..."
 mise install
 
-echo "Install Aspire"
-curl -sSL https://aspire.dev/install.sh | bash
-
 echo "Installing Buf CLI"
 bun install -g @bufbuild/buf --ignore-scripts
 
