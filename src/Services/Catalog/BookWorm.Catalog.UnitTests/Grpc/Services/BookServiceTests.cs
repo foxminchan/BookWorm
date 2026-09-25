@@ -262,7 +262,7 @@ public sealed class BookServiceTests
                     LogLevel.Debug,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains($"Getting book status with id: {bookId}")
+                        (o, t) => o!.ToString()!.Contains($"Getting book status with id: {bookId}")
                     ),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
@@ -341,7 +341,7 @@ public sealed class BookServiceTests
                     LogLevel.Debug,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
-                        (o, t) => o.ToString()!.Contains("Getting book status with id")
+                        (o, t) => o!.ToString()!.Contains("Getting book status with id")
                     ),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()

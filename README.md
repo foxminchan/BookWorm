@@ -96,6 +96,7 @@
 
 > [!NOTE]
 >
+> - Use `mise tasks ls` to view available tasks.
 > - **Azure Subscription** is required for deploying to Azure Container Apps and using Microsoft Foundry.
 > - **Email** uses [SendGrid](https://sendgrid.com/) in production and [Mailpit](https://mailpit.axllent.org/) locally
 
