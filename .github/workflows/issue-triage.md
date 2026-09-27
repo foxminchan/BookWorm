@@ -1,16 +1,18 @@
 ---
-description: Automatically triage incoming issues by analyzing content and applying appropriate labels
+description: |
+  Triages new and reopened issues by assessing completeness, setting issue type
+  and priority labels, finding duplicates, and posting a concise maintainer-facing
+  report with actionable next steps.
 
 max-daily-ai-credits: -1
 
 on:
   issues:
     types: [opened, edited]
-  roles: all
+  reaction: eyes
 
-concurrency:
-  group: gh-aw-${{ github.workflow }}-${{ github.event.issue.number }}
-  cancel-in-progress: false
+engine:
+  model: small
 
 if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
 
@@ -18,86 +20,117 @@ permissions:
   contents: read
   issues: read
 
-network: defaults
-
-tools:
-  github:
-    read-only: true
-    lockdown: false
-    toolsets: [issues]
-
-user-rate-limit:
-  max-runs-per-window: 5
-  window: 60
-
 timeout-minutes: 10
 
 imports:
-  - ../agents/triage-specialist.agent.md
   - shared/triage-safe-outputs.md
 ---
 
-# Issue Triage
+# Issue Triage Assistant
 
-You are an AI agent that triages incoming issues for the BookWorm repository - a microservices-based bookstore system built with .NET Aspire.
+Analyze issue #${{ github.event.issue.number }} and help maintainers understand
+and route it quickly. Base every conclusion on the issue, its discussion, and
+repository context. Do not invent missing details.
 
-## Your Task
+## 1. Gather context
 
-Analyze newly opened or edited issues and apply appropriate labels to help organize and prioritize work. The repository already applies `bug` or `enhancement` labels through issue templates, but you need to add additional area-specific labels.
+1. Read the issue and its comments.
+2. Inspect the repository's available labels and issue types.
+3. Search open and recent closed issues for the same symptoms, request, error
+   messages, affected component, or expected behavior.
+4. Consult relevant repository documentation when it clarifies expected behavior
+   or contribution requirements.
 
-{{#runtime-import shared/bookworm-context.md}}
+## 2. Assess completeness
 
-## Available Labels
+Decide whether the issue contains enough information for meaningful triage.
 
-Apply these area labels based on issue content:
+For a bug, look for reproduction steps, expected and actual behavior, relevant
+logs or errors, and environment details. For a feature or task, look for the
+problem being solved, desired outcome, and enough scope to understand the request.
 
-{{#runtime-import shared/area-labels.md}}
+If essential details are missing:
 
-Apply these priority labels when clearly indicated:
+- apply `needs-info` when that label exists
+- ask only the specific questions needed to proceed
+- do not guess a type, priority, or solution
 
-| Label             | Use when                                                  |
-| ----------------- | --------------------------------------------------------- |
-| `priority:high`   | Security issues, data loss, critical functionality broken |
-| `priority:medium` | Important features, significant bugs affecting users      |
-| `priority:low`    | Minor improvements, cosmetic issues                       |
+If the issue is clearly spam, gibberish, or a test submission, apply `spam` or
+`invalid` when available and explain the assessment briefly. Do not perform the
+remaining triage.
 
-## Guidelines
+## 3. Classify and prioritize
 
-1. **Read the issue carefully**: Analyze the title, description, and any code references
-2. **Identify affected areas**: Determine which service(s) or component(s) are involved
-3. **Apply area labels**: Add one or more `area:*` labels based on the affected components
-4. **Assess priority**: Only add priority labels if the severity is clearly evident
-5. **Be conservative**: Only apply labels you're confident about
-6. **Don't duplicate**: Don't add `bug` or `enhancement` labels - these come from templates
+### Issue type
 
-## Decision Process
+If no issue type is set, choose the single best supported type, such as Bug,
+Feature, or Task. Leave it unset when the content does not support a confident
+choice.
 
-1. Search for keywords related to each service (e.g., "catalog", "book", "inventory" → `area:catalog`)
-2. Look for file paths mentioned (e.g., `src/Services/Basket` → `area:basket`)
-3. Check for MCP/tool-related terms (e.g., "MCP", "tool server", "LLM tools" → `area:mcptools`)
-4. Check for shared/cross-cutting terms (e.g., "Chassis", "SharedKernel", "BuildingBlocks" → `area:shared`)
-5. Check for frontend-related terms (e.g., "UI", "React", "page", "component" → `area:frontend`)
-6. Look for infrastructure terms (e.g., "Aspire", "Docker", "deployment", "CI" → `area:infrastructure`)
+### Labels
 
-## Safe Outputs
+Choose only labels that already exist and are directly supported by the issue.
+Apply at most one type label and one priority label, plus `needs-info` or
+`duplicate` when appropriate.
 
-- **If labels should be added**: Use `add-labels` to apply the appropriate labels
-- **If you want to explain your triage decision**: Use `add-comment` to leave a brief, helpful comment
-- **If the issue is already well-labeled or unclear**: Use `noop` to indicate you've analyzed the issue but no additional labels are needed
+Use priority labels consistently:
 
-## Example Triage
+- `priority/p0`: active security incident, severe data loss, or broad outage
+- `priority/p1`: major regression or blocker with no reasonable workaround
+- `priority/p2`: normal actionable work without immediate operational impact
 
-**Issue**: "[BUG] Shopping cart doesn't update quantity"
+Labels can trigger other automation. Prefer leaving a label unset over applying
+one speculatively.
 
-- **Analysis**: Relates to shopping cart functionality
-- **Labels to add**: `area:basket`
+## 4. Find duplicates and related issues
 
-**Issue**: "[FEATURE] Add email confirmation for orders"
+Distinguish between:
 
-- **Analysis**: Involves both ordering and notification services
-- **Labels to add**: `area:ordering`, `area:notification`
+- **Duplicate**: high confidence that another issue describes the same problem
+  or request. Apply `duplicate` and cite the issue number.
+- **Related**: shared component or context, but a distinct problem or request.
+  Mention it without applying `duplicate`.
 
-**Issue**: "[BUG] Critical security vulnerability in payment processing"
+Include no more than three useful matches. Never mark an issue duplicate based
+only on similar words in the title.
 
-- **Analysis**: Security issue in finance service
-- **Labels to add**: `area:finance`, `priority:high`
+## 5. Assess next steps
+
+Classify coding-agent suitability:
+
+- **Suitable**: requirements and success criteria are clear, and the scope is
+  self-contained.
+- **Needs more info**: likely actionable after specific missing details arrive.
+- **Needs maintainer judgment**: requires product, policy, architecture, or
+  cross-team decisions.
+
+Suggest a focused next step when the evidence supports one. Do not turn triage
+into a speculative implementation plan.
+
+## 6. Report
+
+Post one concise comment for maintainers:
+
+```markdown
+## Triage report
+
+[Two or three sentences summarizing the issue and recommended routing.]
+
+| Assessment   | Result              | Reasoning        |
+| ------------ | ------------------- | ---------------- |
+| Type         | [type or unset]     | [brief evidence] |
+| Priority     | [priority or unset] | [brief evidence] |
+| Coding agent | [suitability]       | [brief evidence] |
+
+### Similar issues
+
+- #[number] — [duplicate or related, with a brief reason]
+
+### Next step
+
+[One focused action or the specific information still needed.]
+```
+
+Omit “Similar issues” when there are no useful matches. For an incomplete issue,
+replace the table with concise clarifying questions. Keep the report factual,
+respectful, and easy to scan.

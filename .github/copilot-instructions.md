@@ -7,7 +7,7 @@ BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD wi
 ## Tech Stack
 
 - **Backend**: C# 14 (`LangVersion=preview`), .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + PostgreSQL (snake_case)
-- **Frontend**: TypeScript 7.0, Next.js 16.3, React 19, Bun 1.3 + Turbo 2 monorepo (Node >= 20)
+- **Frontend**: TypeScript 7.0, Next.js 16.3, React 19, Bun + Turbo monorepo (versions and Node requirements in `src/Clients/package.json`)
 - **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
 - **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
 - **Messaging**: WolverineFx with Kafka (outbox/inbox patterns)
@@ -36,11 +36,11 @@ Tasks are defined in [mise.toml](../mise.toml). Prefer `mise run` over raw `dotn
 - `mise run restore` — restore NuGet packages + .NET tools
 - `mise run build` — build the solution (`BookWorm.slnx`)
 - `mise run test` — run all tests
-- `mise run run` — start the Aspire AppHost (use `aspire start` directly when iterating)
+- `mise run run` — start the Aspire AppHost only when explicitly requested by the user
 - `mise run format` — format C# (CSharpier), frontend, EventCatalog, Docusaurus, k6, Keycloakify
 - `mise run prepare` — post-clone setup (restore + git hooks)
 
-Frontend dev: from `src/Clients/` run `bun i && bun run dev`.
+For routine changes, use the smallest relevant build, test, lint, or type-check command. Read the affected package scripts before selecting frontend checks. Do not start the Aspire AppHost unless explicitly requested. If Aspire validation is requested, use its CLI/MCP tools to inspect resources and diagnose failures.
 
 ## Common Pitfalls
 
@@ -49,15 +49,14 @@ Frontend dev: from `src/Clients/` run `bun i && bun run dev`.
 - **Centralized package versions**: add NuGet versions only in [Directory.Packages.props](../Directory.Packages.props), never in individual `.csproj` files.
 - **Sealed by default**: endpoints, handlers, `DbContext`s, and test classes should be `sealed`.
 - **snake_case in PostgreSQL**: tables/columns are snake_case via `UseSnakeCaseNamingConvention()`. Match that in any raw SQL.
-- **Frontend uses Bun, not pnpm/npm**: `src/Clients/` is managed by Bun (`bun@1.3.x`, `bun.lock`). Use `bun install`/`bun run`; running `pnpm`/`npm`/`yarn` creates a conflicting lockfile.
-- **AppHost restart**: changes to `AppHost.cs` require restarting the AppHost (`aspire start`); other code hot-reloads.
+- **Frontend uses Bun, not pnpm/npm**: `src/Clients/` is managed by Bun (`packageManager` in `src/Clients/package.json`, `bun.lock`). Use `bun install`/`bun run`; do not use `pnpm` or `npm` directly.
+- **AppHost restart**: changes to `AppHost.cs` require a restart when the application is already running or the user requests Aspire validation.
 - **Test project naming**: must end in `.UnitTests`, `.ContractTests`, or `.IntegrationTests` to be auto-detected.
 - **Never modify** `global.json` or `NuGet.config` unless explicitly asked.
 
 ## Coding Standards
 
 - Use latest C# 14 features
-- Use `IEndpoint<TResult, TRequest>` pattern from BookWorm.Chassis for Minimal API endpoints
 - Follow DDD aggregate boundaries; business logic belongs in the domain layer
 - Use `async`/`await` end-to-end with `CancellationToken` propagation
 - Prefer `var` when type is obvious; use pattern matching and switch expressions
@@ -65,40 +64,6 @@ Frontend dev: from `src/Clients/` run `bun i && bun run dev`.
 - Never commit secrets or API keys; use User Secrets for local dev
 - Validate inputs at service boundaries; scrub PII in logs
 - All public APIs require XML doc comments
-- All warnings are errors (`TreatWarningsAsErrors=true`)
-- Centralized package versioning via `Directory.Packages.props`
-
-## Key Patterns
-
-### Endpoint Pattern (Minimal API)
-
-Implement `IEndpoint<TResult, TRequest>` from BookWorm.Chassis. Endpoints are sealed classes with `MapEndpoint()` for route registration and `HandleAsync()` that delegates to CQRS via `ISender`. Chain `.ProducesGet<T>()`, `.MapToApiVersion()`, `.RequireAuthorization()`.
-
-### CQRS (Vertical Slice)
-
-Features live in `Features/{FeatureName}/` per service. Each feature folder contains:
-
-- Command/Query record implementing `ICommand<T>` or `IQuery<T>`
-- Handler class implementing `ICommandHandler` or `IQueryHandler`
-- Endpoint class implementing `IEndpoint`
-
-### EF Core
-
-- UUID v7 for IDs (`UniqueIdentifierHelper.NewUuidV7`)
-- Value objects via `OwnsOne()`; soft deletes via `HasQueryFilter(x => !x.IsDeleted)`
-- `IEntityTypeConfiguration<T>` in `Infrastructure/EntityConfigurations/`
-- Wolverine Inbox/Outbox entities registered in `OnModelCreating`
-- snake_case naming convention via `UseSnakeCaseNamingConvention()`
-
-### Data Access
-
-`IRepository<T>` + `IUnitOfWork` pattern; repositories encapsulate aggregate persistence
-
-### Testing
-
-- Name: `GivenCondition_WhenAction_ThenExpectedResult()`
-- Sealed test classes; Bogus Fakers for test data; Arrange-Act-Assert
-- Projects: `{Service}.UnitTests`, `{Service}.ContractTests`, `{Service}.IntegrationTests`
 
 ## Key Locations
 
@@ -114,15 +79,6 @@ Features live in `Features/{FeatureName}/` per service. Each feature folder cont
 
 ## See Also
 
-- [CLAUDE.md](../CLAUDE.md) — full agent operating guide (Aspire flow, feature/endpoint templates, infra notes)
 - [.github/CONTRIBUTING.md](./CONTRIBUTING.md) — contribution workflow, integration-event & proto standards, PR process
 - [.github/instructions/](./instructions/) — language/tooling rules auto-applied via `applyTo` (C#, Next.js, Markdown, GitHub Actions, Context7)
-- [.github/agents/](./agents/) — specialized subagents (`.NET Expert`, `Next.js Expert`, `Code Reviewer`, `Debug`, Spec Kit chain)
 - [.agents/skills/](../.agents/skills/) — on-demand skills (Aspire, Turborepo, TUnit, EventCatalog authoring, React best practices)
-
-<!-- SPECKIT START -->
-
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-
-<!-- SPECKIT END -->
