@@ -2,7 +2,13 @@
 safe-outputs:
   threat-detection: true
   add-labels:
-    max: 5
+    allowed:
+      - bug
+      - feature
+      - priority/p0
+      - priority/p1
+      - priority/p2
+    max: 3
   add-comment:
     max: 1
   noop:

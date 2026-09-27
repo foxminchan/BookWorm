@@ -13,10 +13,9 @@ Whether you're a first-time contributor or an experienced developer, this guide 
   - [Getting Started](#getting-started)
   - [Development Workflow](#development-workflow)
   - [Agent Workflow](#agent-workflow)
-    - [Available Agents](#available-agents)
-    - [Agent Collaboration Workflow](#agent-collaboration-workflow)
+    - [Available Skills](#available-skills)
     - [Typical Workflows](#typical-workflows)
-    - [Using Agents in Your Workflow](#using-agents-in-your-workflow)
+    - [Instruction Ownership](#instruction-ownership)
   - [Coding Standards](#coding-standards)
   - [Integration Events Standards](#integration-events-standards)
   - [Protocol Buffers (Proto) Schema Standards](#protocol-buffers-proto-schema-standards)
@@ -72,99 +71,37 @@ For the branching strategy, please refer to the [Git Flow](https://nvie.com/post
 
 ## Agent Workflow
 
-BookWorm includes AI agents to assist with development tasks. These agents work collaboratively through a structured handoff system:
+Reusable development capabilities are [Agent Skills](../.agents/skills/). Skills are selected for the task and provide procedures to the current coding assistant; they do not require a chain of custom-agent handoffs.
 
-### Available Agents
+### Available Skills
 
-1. **.NET Expert** — Implements, refactors, and optimizes C#/.NET code following project conventions, SOLID principles, and modern C# 14 patterns.
+| Task                              | Skill                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| Feature/refactoring plan          | [implementation-planning](../.agents/skills/implementation-planning/SKILL.md) |
+| C# services and domain boundaries | [dotnet-development](../.agents/skills/dotnet-development/SKILL.md)           |
+| Endpoints and vertical slices     | [api-design](../.agents/skills/api-design/SKILL.md)                           |
+| EF Core and repositories          | [persistence](../.agents/skills/persistence/SKILL.md)                         |
+| Next.js applications              | [frontend](../.agents/skills/frontend/SKILL.md)                               |
+| Bug investigation                 | [debugging](../.agents/skills/debugging/SKILL.md)                             |
+| Code review                       | [code-review](../.agents/skills/code-review/SKILL.md)                         |
+| CI/CD changes                     | [github-actions](../.agents/skills/github-actions/SKILL.md)                   |
+| Backend tests                     | [csharp-tunit](../.agents/skills/csharp-tunit/SKILL.md)                       |
+| Aspire resources and lifecycle    | [aspire](../.agents/skills/aspire/SKILL.md)                                   |
 
-2. **Next.js Expert** — Implements, debugs, and optimizes Next.js 16 App Router code with TypeScript, Server/Client Components, Cache Components, and Turbopack.
-
-3. **Debug** — Systematically identifies, analyzes, and resolves bugs through structured investigation and verification.
-
-4. **Planner** — Generates implementation plans for new features or refactoring existing code.
-
-5. **Code Reviewer** — Reviews code changes for quality, security, and best practices compliance.
-
-6. **GitHub Actions Expert** — Builds secure CI/CD workflows with action pinning, OIDC authentication, and supply-chain security.
-
-### Agent Collaboration Workflow
-
-The agents collaborate through handoffs to provide comprehensive development support:
-
-```mermaid
-graph TD
-    P[Planner] -->|Implement .NET| NE[.NET Expert]
-    P -->|Implement Frontend| NX[Next.js Expert]
-    P -->|Review Plan| CR[Code Reviewer]
-    NE -->|Request Review| CR
-    NE -->|Debug Issues| D[Debug]
-    NE -->|Plan Complex Changes| P
-    NX -->|Request Review| CR
-    NX -->|Debug Issues| D
-    NX -->|Plan Complex Changes| P
-    D -->|Get Expert Help| NE
-    D -->|Review Fix| CR
-    D -->|Plan Refactoring| P
-    CR -->|Fix .NET Issues| NE
-    CR -->|Fix Frontend Issues| NX
-    CR -->|Debug a Problem| D
-    CR -->|Create Refactoring Plan| P
-    GA[GitHub Actions Expert] -->|Review Workflows| CR
-    GA -->|Plan Complex CI/CD| P
-
-    style P fill:#1f4e79,color:#ffffff
-    style NE fill:#7a4f01,color:#ffffff
-    style NX fill:#5a2d82,color:#ffffff
-    style D fill:#7a1f1f,color:#ffffff
-    style CR fill:#1f6f3e,color:#ffffff
-    style GA fill:#7a3e00,color:#ffffff
-```
+Existing skills also cover EventCatalog, Turborepo, React performance, and Playwright BDD. Load those when the task needs their guidance.
 
 ### Typical Workflows
 
-**Backend Feature Development:**
+- **Feature development:** plan when needed, load the relevant implementation and test skills, then validate and review.
+- **Bug fixing:** reproduce with debugging, apply the affected capability's conventions, and verify the original failure and regression coverage.
+- **Code review:** use code-review and consult only the domain skills relevant to the diff.
+- **CI/CD changes:** use github-actions; plan substantial pipeline restructuring and validate changed workflow behavior.
 
-1. Start with **Planner** to create implementation plan
-2. Hand off to **.NET Expert** for implementation
-3. Use **Code Reviewer** to validate changes
-4. Use **Debug** if issues arise
+### Instruction Ownership
 
-**Frontend Feature Development:**
+[Copilot instructions](./copilot-instructions.md) contain repository-wide constraints. File-scoped rules remain under [instructions](./instructions/); reusable domain knowledge belongs in `.agents/skills/<skill-name>/SKILL.md`, never `.github/skills`.
 
-1. Start with **Planner** to create implementation plan
-2. Hand off to **Next.js Expert** for implementation
-3. Use **Code Reviewer** to validate changes
-4. Use **Debug** for hydration mismatches or runtime bugs
-
-**Bug Fixing:**
-
-1. Start with **Debug** to identify and fix bugs
-2. Hand off to **.NET Expert** or **Next.js Expert** for complex solutions
-3. Use **Code Reviewer** to review the fix
-4. Use **Planner** if architectural changes needed
-
-**Code Review:**
-
-1. Start with **Code Reviewer** for systematic review
-2. Hand off to **.NET Expert** or **Next.js Expert** to address issues
-3. Use **Planner** for major refactoring recommendations
-
-**CI/CD Changes:**
-
-1. Start with **GitHub Actions Expert** for workflow changes
-2. Hand off to **Code Reviewer** for review
-3. Use **Planner** for complex pipeline restructuring
-
-### Using Agents in Your Workflow
-
-- Agents are available in the `.github/agents/` directory
-- Each agent has specific expertise and tools
-- Agents can hand off work to other agents based on task requirements
-- Follow agent recommendations for maintaining code quality and consistency
-
-> [!TIP]
-> When working on complex features, start with the **Planner** agent to create a comprehensive implementation plan before coding.
+The only retained custom agent is [Triage Specialist](./agents/triage-specialist.agent.md). The [issue](./workflows/issue-triage.md) and [PR](./workflows/pr-triage.md) automation import it as their GitHub Copilot entry point and enforce safe outputs. Development skills do not replace these workflows. Native skill discovery is sufficient for development; no repository router is needed.
 
 ## Coding Standards
 
@@ -304,7 +241,7 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 - **Architecture Tests**: Use ArchUnitNET.TUnit in `tests/BookWorm.ArchTests/`
 - **Coverage**: Microsoft.Testing.Extensions.CodeCoverage for test coverage reports
 - **Integration Tests**: Use Aspire.Hosting.Testing for service integration tests
-- For automated test generation, refer to our [GitHub Copilot test prompts](./prompts/unit-test.prompt.md)
+- For backend test authoring, use the [csharp-tunit skill](../.agents/skills/csharp-tunit/SKILL.md)
 
 ## Pull Request Process
 
