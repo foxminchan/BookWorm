@@ -65,12 +65,6 @@ internal static class Extensions
                     var reviewPlugin = spScope.ServiceProvider.GetRequiredService<ReviewTool>();
                     var mcpClient = sp.GetRequiredService<McpClient>();
 
-                    var mcpTools = mcpClient
-                        .ListAgentToolsWithTasksAsync()
-                        .GetAwaiter()
-                        .GetResult()
-                        .Where(t => t.Name == "get_book");
-
                     var agent = new ChatClientAgent(
                         chatClient,
                         options: new()
@@ -85,12 +79,14 @@ internal static class Extensions
                                 Temperature = 0.4f,
                                 MaxOutputTokens = 1500,
                                 AllowMultipleToolCalls = true,
-                                Tools = [.. reviewPlugin.AsAITools(), .. mcpTools],
+                                Tools = [.. reviewPlugin.AsAITools()],
                             },
                         }
                     );
 
-                    return agent.WithBookWormGovernance(sp, key);
+                    return agent
+                        .WithRefreshingMcpTools(mcpClient, toolName => toolName == "get_book")
+                        .WithBookWormGovernance(sp, key);
                 }
             );
 
