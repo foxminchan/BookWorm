@@ -8,6 +8,10 @@ if [[ "$TEST_SESSION_TIMEOUT" =~ ^([0-9]+)(s|m|h)$ ]]; then
     s) session_timeout_seconds=$session_timeout_value ;;
     m) session_timeout_seconds=$((session_timeout_value * 60)) ;;
     h) session_timeout_seconds=$((session_timeout_value * 3600)) ;;
+    *)
+      echo "Unsupported testSessionTimeout unit: $session_timeout_unit" >&2
+      exit 1
+      ;;
   esac
 else
   echo "Unsupported testSessionTimeout value: $TEST_SESSION_TIMEOUT" >&2
