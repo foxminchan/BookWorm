@@ -8,10 +8,9 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 json_get() { printf '%s' "$INPUT" | python3 "$SCRIPT_DIR/hook-json.py" get "$@"; }
 TOOL_NAME=$(json_get toolName)
 RESULT_TYPE=$(json_get toolResult.resultType)
-TIMESTAMP=$(json_get timestamp)
-CWD=$(json_get cwd)
 
-LOG_DIR="${CWD}/.github/hooks/logs"
+REPO_DIR="$(cd -- "$SCRIPT_DIR/../../../.." && pwd)"
+LOG_DIR="${REPO_DIR}/.github/hooks/audit"
 mkdir -p "$LOG_DIR"
 
 AUDIT_LOG="${LOG_DIR}/audit.jsonl"
