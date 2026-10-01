@@ -127,23 +127,27 @@ public static partial class PactTestHelper
         {
             using var verifier = new PactVerifier(provider);
             verifier
-                .WithMessages(scenarios =>
-                    scenarios.Add(
-                        description,
-                        builder =>
-                        {
-                            builder
-                                .WithMetadata(
-                                    new
-                                    {
-                                        contentType = MediaTypeNames.Application.Json,
-                                        type = messageType,
-                                        source = GetMessageSource(provider),
-                                    }
-                                )
-                                .WithContent(() => message);
-                        }
-                    )
+                // PactNet 5.x requires an HTTP transport before configuring message verification.
+                .WithHttpEndpoint(new Uri("http://localhost"))
+                .WithMessages(
+                    scenarios =>
+                        scenarios.Add(
+                            description,
+                            builder =>
+                            {
+                                builder
+                                    .WithMetadata(
+                                        new
+                                        {
+                                            contentType = MediaTypeNames.Application.Json,
+                                            type = messageType,
+                                            source = GetMessageSource(provider),
+                                        }
+                                    )
+                                    .WithContent(() => message);
+                            }
+                        ),
+                    providerJsonSettings
                 )
                 .WithFileSource(new FileInfo(verificationPactPath))
                 .Verify();
