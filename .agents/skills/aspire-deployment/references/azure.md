@@ -94,12 +94,25 @@ Azure__SubscriptionId="<subscription-id>" \
 Azure__Location="westus2" \
 Azure__ResourceGroup="my-app-rg" \
 Parameters__api_key="<secret-value>" \
-aspire deploy --apphost ./apphost.ts --environment Production --non-interactive
+aspire deploy --apphost ./apphost.mts --environment Production --non-interactive
 ```
 
 Do not print secret values. Subscription/resource group/location are not secrets, but still summarize them carefully.
 
 If a parameter name contains `-`, use `_` in the environment variable name. For example, AppHost parameter `registry-endpoint` maps to `Parameters__registry_endpoint`.
+
+## Aspire 13.5 Azure scope and networking
+
+- Existing Azure resources can be referenced across resource groups, subscriptions, and
+  tenants with `AsExistingInResourceGroup`, `AsExistingInSubscription`, and
+  `AsExistingInTenant`, plus their run/publish variants. Parameters may supply names and
+  scope values.
+- Azure Container Apps and App Service environments can use delegated subnets. Model
+  service delegation and `WithDelegatedSubnet(...)` through current
+  `Aspire.Hosting.Azure.Network` APIs. These APIs are experimental under
+  `ASPIREAZURE003`.
+- Do not use cross-scope APIs as a substitute for confirming the target tenant,
+  subscription, and resource group.
 
 If `az account show` reports a tenant but `aspire deploy` later prompts during `fetch-tenant`, do not assume `aspire secret set "Azure:TenantId" ...` will answer that prompt. Tenant selection can still be a pipeline prompt. Run the deploy in a real interactive terminal/PTY, or make the Azure CLI login context unambiguous before deploying, for example with `az login --tenant <tenant-id>` or `azure/login`'s `tenant-id` input in GitHub Actions.
 
@@ -131,6 +144,10 @@ Code changes:
 3. Do not add explicit compute-environment assignment for the common single-environment case. Only if the AppHost has multiple compute environments, disambiguate each Azure Container Apps workload; in C#, add `.WithComputeEnvironment(aca)` to each compute resource that should deploy there. For TypeScript AppHosts, verify the current language-specific docs before assuming an equivalent assignment API.
 4. Do not add `PublishAsAzureContainerApp(...)` / `publishAsAzureContainerApp(...)` for a default Container App deployment. Add it only when the user needs per-resource Container App customization. Use Container App Job APIs only for worker/job resources that should run as jobs.
 5. Add managed Azure resources for production dependencies when appropriate, then keep normal `WithReference` / `withReference` connections so Aspire wires app settings, identities, and connection details.
+6. When multiple Container Apps environments deploy to one resource group and their
+   normalized names collide, use `WithUniqueResourceNaming()`. It is experimental under
+   `ASPIREACANAMING002` and changes the physical environment name; applying it to an
+   existing environment can recreate that environment, so require explicit approval.
 
 Key checks:
 
@@ -314,3 +331,5 @@ When troubleshooting generated Azure resources, match the live resource names an
 - App Service unsupported resource: move backing services to managed Azure resources or choose Container Apps/Azure Kubernetes Service (AKS) instead.
 - App Service dashed setting failure: rename the connection/environment key if possible; bypass validation only when the app does not depend on the original dashed key at runtime.
 - Azure Kubernetes Service (AKS) workload not reachable: refresh credentials with `az aks get-credentials`, then inspect pods, services, ingress/gateway resources, and Helm release status with `kubectl` and `helm`.
+- DevTunnel is healthy but its public URL is missing: if the CLI/SDK is 13.5.0-13.5.2,
+  upgrade to 13.5.3 or a later compatible release before changing endpoint configuration.

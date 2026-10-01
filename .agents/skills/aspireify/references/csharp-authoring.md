@@ -37,6 +37,10 @@ builder.Build().Run();
 The `Projects.X` strongly-typed reference comes from the SDK — `<Sdk Name="Aspire.AppHost.Sdk" />`
 in `.csproj` and `<ProjectReference>` for each project.
 
+New 13.5 AppHosts set `<AspireUseCliBundle>true</AspireUseCliBundle>`. Preserve that
+property; for existing AppHosts, add it only when the user chooses to opt into CLI-owned
+DCP/dashboard versions.
+
 For projects not in the SDK references, use the path overload:
 
 ```csharp
@@ -48,11 +52,15 @@ builder.AddProject("api", "../Api/Api.csproj")
 
 Top of file uses `#:sdk` and `#:package` directives — no `.csproj` required:
 
+Replace the version placeholders with package versions compatible with the AppHost's
+selected Aspire release.
+
 ```csharp
 #:sdk Aspire.AppHost.Sdk
-#:package Aspire.Hosting.PostgreSQL@13.*
-#:package Aspire.Hosting.Redis@13.*
-#:package Aspire.Hosting.NodeJs@13.*
+#:property AspireUseCliBundle=true
+#:package Aspire.Hosting.PostgreSQL@<postgres-package-version>
+#:package Aspire.Hosting.Redis@<redis-package-version>
+#:package Aspire.Hosting.JavaScript@<javascript-package-version>
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -177,3 +185,55 @@ builder.AddProject<Projects.Api>("api")
 
 `HttpCommandResultMode` returns the response body to the dashboard's
 notification center.
+
+## Resource Command Arguments And Interactions
+
+Use `CommandOptions.Arguments` for input that must work from both the dashboard and CLI.
+Read values from `ExecuteCommandContext.Arguments`. Hosting callback contexts expose
+`Services`; `ServiceProvider` is obsolete in 13.5.
+
+```csharp
+using Aspire.Hosting.ApplicationModel;
+
+builder.AddProject<Projects.Api>("api")
+    .WithCommand(
+        "echo",
+        "Echo",
+        context =>
+        {
+            var message = context.Arguments.GetString("message");
+            return Task.FromResult(CommandResults.Success(message));
+        },
+        commandOptions: new CommandOptions
+        {
+            Arguments =
+            [
+                new InteractionInput
+                {
+                    Name = "message",
+                    InputType = InputType.Text,
+                    Required = true,
+                },
+            ],
+        });
+```
+
+Direct Interaction Service prompts require an attached UI. Resolve
+`IInteractionService` from `context.Services`, check `IsAvailable`, and provide a
+noninteractive path before calling prompt APIs.
+
+## Experimental Terminals
+
+`WithTerminal()` exposes an interactive dashboard/CLI terminal. Suppress
+`ASPIRETERMINAL001`, keep `Columns` and `Rows` positive, and do not generate the removed
+`TerminalOptions.Shell` property:
+
+```csharp
+#pragma warning disable ASPIRETERMINAL001
+builder.AddContainer("repl", "my-repl")
+    .WithTerminal(options =>
+    {
+        options.Columns = 120;
+        options.Rows = 30;
+    });
+```

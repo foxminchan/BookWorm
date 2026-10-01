@@ -88,6 +88,19 @@ Make these changes in the AppHost:
    - **Routed endpoints must be marked external.** Any endpoint exposed by an Ingress (`WithPath(...)`) or a Gateway (`WithRoute(...)`), or wired up via `WithDefaultBackend(...)`, must come from a resource that opts in with `.WithExternalHttpEndpoints()` (C#) or `isExternal: true` on the endpoint annotation. `aspire publish` fails fast with an `InvalidOperationException` from `EndpointRoutingValidation` if a non-external endpoint is routed, so always pair `AddIngress`/`AddGateway` plumbing with explicit external opt-in on the target resource. This applies to AKS through `AzureKubernetesEnvironment` as well.
 8. Use `PublishAsKubernetesService(...)` / `publishAsKubernetesService(...)` only for per-resource Kubernetes manifest customization.
 
+### Persistent volumes in Aspire 13.5
+
+Kubernetes and AKS environments can model first-class persistent volumes. Use
+`AddPersistentVolume`, then configure storage class, capacity, and access mode before
+binding it to a workload with `WithPersistentVolume`. In TypeScript, use the generated
+`addPersistentVolume` and `withKubernetesPersistentVolume...` APIs after checking the
+current API reference.
+
+The compute-environment volume surface is experimental under `ASPIRECOMPUTE002`. Binding
+a persistent volume promotes the workload to a StatefulSet; it is not a durable
+`emptyDir`. Confirm storage class, capacity, access mode, mount path, reclaim expectations,
+and replica behavior before publishing.
+
 ## Azure Kubernetes Service (AKS) setup
 
 Expected package and AppHost environment:
@@ -137,7 +150,9 @@ For all Kubernetes targets:
 - AppHost parameters are configured or can be prompted.
 - External exposure is explicit through Ingress, Gateway API, service customization, or target-specific defaults.
 - Helm is the default deployment engine; record any customized namespace, release name, chart name, or chart version.
-- Storage defaults are understood. Kubernetes defaults to `emptyDir`; persistent storage needs explicit storage type/class/size decisions.
+- Storage defaults are understood. Kubernetes defaults to `emptyDir`; persistent storage
+  uses a first-class persistent volume with explicit storage class, capacity, access mode,
+  and StatefulSet implications.
 
 For existing/external clusters:
 

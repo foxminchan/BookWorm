@@ -77,6 +77,8 @@ Add one or both setup blocks before Aspire commands:
 | TypeScript AppHost or JavaScript resources | Install Node with `actions/setup-node`, then run the repo's package-manager install/build commands.   |
 | Mixed C#/TypeScript graph                  | Use both setup blocks so the AppHost and all compute resources can be restored, built, and published. |
 
+Match the example toolchain versions to the repo's SDK and Node requirements.
+
 C# AppHost setup:
 
 ```yaml
@@ -306,8 +308,8 @@ Create a GitHub Environment named `production` and store deployment values there
 Adapt the example instead of copying it blindly:
 
 - Start from the external `.yml` reference that matches the AppHost language, then adjust paths, package manager commands, package-manager caching, target branch, and parameter names.
-- Use `--apphost <path>` when the workflow should pin a specific AppHost, such as a single-file `apphost.cs`, `apphost.ts`, or an AppHost project file.
-- For TypeScript AppHosts, replace the .NET setup with Node/package-manager setup, deploy with `--apphost <path-to-apphost.ts> --non-interactive`, and provide deployment settings and AppHost parameters through the deploy step's `env:`.
+- Use `--apphost <path>` when the workflow should pin a specific AppHost, such as a single-file `apphost.cs`, current `apphost.mts`, legacy `apphost.ts`, or an AppHost project file.
+- For current TypeScript AppHosts, replace the .NET setup with Node/package-manager setup, deploy with `--apphost <path-to-apphost.mts> --non-interactive`, and provide deployment settings and AppHost parameters through the deploy step's `env:`.
 - Keep `id-token: write` for Azure OIDC login.
 - Put non-secret deployment settings in GitHub Environment variables when possible, such as `AZURE_LOCATION` and `AZURE_RESOURCE_GROUP`.
 - Put secret AppHost parameters in GitHub Environment secrets and pass them as `Parameters__*`.

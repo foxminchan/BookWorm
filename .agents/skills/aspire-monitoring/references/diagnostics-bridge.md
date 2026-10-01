@@ -53,20 +53,20 @@ The Aspire CLI communicates with the running AppHost through a **backchannel soc
 
 ### Available Commands
 
-| Command                                    | Purpose                                                              | Example                                                                    |
-| ------------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `aspire logs <resource>`                   | Console stdout/stderr from a resource                                | `aspire logs apiservice`                                                   |
-| `aspire logs --follow`                     | Stream logs in real-time                                             | `aspire logs apiservice --follow`                                          |
-| `aspire otel logs`                         | Structured OpenTelemetry log records                                 | `aspire otel logs`                                                         |
-| `aspire otel traces`                       | Distributed trace data                                               | `aspire otel traces`                                                       |
-| `aspire otel spans`                        | Individual span-level detail                                         | `aspire otel spans`                                                        |
-| `aspire otel logs --trace-id <id>`         | Logs correlated to a specific trace (⚠️ verify flag in your version) | `aspire otel logs --trace-id abc123`                                       |
-| `aspire otel logs --dashboard-url`         | Query a standalone or deployed dashboard                             | `aspire otel logs --dashboard-url "https://localhost:18888/login?t=TOKEN"` |
-| `aspire describe`                          | Resource state, endpoints, health (filtered)                         | `aspire describe --format Json`                                            |
-| `aspire describe --include-hidden`         | Include hidden resources (proxies, helpers, migrations)              | `aspire describe --include-hidden --format Json`                           |
-| `aspire ps --include-hidden --format Json` | Resource list including hidden resources                             | `aspire ps --include-hidden --format Json`                                 |
-| `aspire export`                            | Export portable telemetry bundle                                     | `aspire export`                                                            |
-| `aspire dashboard run`                     | Run the Aspire Dashboard standalone (foreground/blocking)            | `aspire dashboard run`                                                     |
+| Command                            | Purpose                                                              | Example                                                                    |
+| ---------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `aspire logs <resource>`           | Console stdout/stderr from a resource                                | `aspire logs apiservice`                                                   |
+| `aspire logs --follow`             | Stream logs in real-time                                             | `aspire logs apiservice --follow`                                          |
+| `aspire otel logs`                 | Structured OpenTelemetry log records                                 | `aspire otel logs`                                                         |
+| `aspire otel traces`               | Distributed trace data                                               | `aspire otel traces`                                                       |
+| `aspire otel spans`                | Individual span-level detail                                         | `aspire otel spans`                                                        |
+| `aspire otel logs --trace-id <id>` | Logs correlated to a specific trace (⚠️ verify flag in your version) | `aspire otel logs --trace-id abc123`                                       |
+| `aspire otel logs --dashboard-url` | Query a standalone or deployed dashboard                             | `aspire otel logs --dashboard-url "https://localhost:18888/login?t=TOKEN"` |
+| `aspire describe`                  | Resource state, endpoints, health (filtered)                         | `aspire describe --format Json`                                            |
+| `aspire describe --include-hidden` | Include hidden resources (proxies, helpers, migrations)              | `aspire describe --include-hidden --format Json`                           |
+| `aspire resources`                 | Compatibility alias for resource state                               | Prefer `aspire describe`                                                   |
+| `aspire export`                    | Export portable telemetry bundle                                     | `aspire export`                                                            |
+| `aspire dashboard run`             | Run the Aspire Dashboard standalone (foreground/blocking)            | `aspire dashboard run`                                                     |
 
 ### Tips for Agents
 
@@ -76,7 +76,7 @@ aspire describe --format Json
 
 # ✅ When an expected resource is missing, retry with --include-hidden
 #    Hidden-by-default resources (proxies, helper containers, migrations)
-aspire ps --include-hidden --format Json
+aspire describe --include-hidden --format Json
 
 # ✅ Get endpoints from describe, not guessing ports
 ENDPOINT=$(aspire describe apiservice --format Json | jq -r '.endpoints[0].url')
@@ -124,15 +124,26 @@ The container-image standalone dashboard is still available where the CLI isn't 
 
 ---
 
-## Browser Telemetry (`Aspire.Hosting.Browsers`)
+## Browser Logs (`Aspire.Hosting.Browsers`)
 
-The `Aspire.Hosting.Browsers` integration captures **browser console logs, network requests, and screenshots** from frontend resources during local development. Frontend resources opt in by calling `WithBrowserLogs()` in the AppHost. The data shows up in the dashboard alongside server-side telemetry.
+When a frontend opts into `WithBrowserLogs()`, Aspire creates a child resource named
+`<frontend>-browser-logs`. Browser console messages, errors, exceptions, and network diagnostics
+are written to this child's console log stream.
 
-| Need                                    | Action                                                           |
-| --------------------------------------- | ---------------------------------------------------------------- |
-| Inspect existing browser telemetry      | Open the dashboard or run `aspire otel logs <frontend-resource>` |
-| Check whether a frontend has it enabled | Look for `.WithBrowserLogs()` in the AppHost                     |
-| Add `WithBrowserLogs()` to a resource   | → **`aspireify` skill** (AppHost authoring)                      |
+| Need                                      | Action                                                                        |
+| ----------------------------------------- | ----------------------------------------------------------------------------- |
+| Discover the browser diagnostics resource | Use `aspire describe` or `aspire resources` to find `<frontend>-browser-logs` |
+| Correlate it to the frontend              | Check the child resource's parent relationship and `Source` property          |
+| Start browser diagnostics                 | `aspire resource <frontend>-browser-logs open-tracked-browser`                |
+| Inspect browser console output            | `aspire logs <frontend>-browser-logs`                                         |
+| Check whether a frontend has it enabled   | Look for `.WithBrowserLogs()` in the AppHost                                  |
+| Add `WithBrowserLogs()` to a resource     | → **`aspireify` skill** (AppHost authoring)                                   |
+
+`<frontend>-browser-logs` is not hidden by default. Start with normal `aspire describe`
+output; `aspire ps` is AppHost-level in 13.5. Retry with
+`aspire describe --include-hidden` only when the expected resource is unavailable. Do
+**not** use `aspire otel logs <frontend>` for browser output; browser diagnostics are not
+returned there.
 
 ---
 
@@ -184,13 +195,18 @@ Aspire auto-configures Application Insights when `AddAzureApplicationInsights()`
 
 No additional configuration is needed — Aspire wires the connection string during deployment.
 
-## Known Diagnostics Issues
+## Version-Specific Diagnostics
 
-| Issue                                                                                    | Symptom                                                             | Workaround                                    |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------- |
-| TS AppHost DNS failure ([#15782](https://github.com/microsoft/aspire/issues/15782))      | `aspire otel` returns "No such host" for `*.dev.localhost`          | Use `--dashboard-url localhost:PORT` directly |
-| `--isolated` mode telemetry ([#16107](https://github.com/microsoft/aspire/issues/16107)) | OTEL port not randomized in isolated mode                           | Avoid `--isolated` if telemetry is needed     |
-| Resource missing from `aspire ps` / `aspire describe`                                    | Hidden-by-default resources such as proxies, helpers, or migrations | Re-run with `--include-hidden`                |
+Check the running dashboard version and actual error before applying a historical fix.
+An older fix does not establish that downgrading a newer dashboard is a working
+mitigation, even temporarily or in an isolated test.
+
+| Symptom                                                     | Guidance                                                                                                                                                                              |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resource missing from `aspire describe`                     | Re-run `aspire describe --include-hidden`; do not use removed `aspire ps --include-hidden`.                                                                                           |
+| DevTunnel is healthy but has no public URL on 13.5.0-13.5.2 | Fixed in 13.5.3. Use a compatible release containing the fix before changing endpoint configuration.                                                                                  |
+| Known multi-path icon Graph crash on 13.5.0-13.5.2          | Fixed in 13.5.3. Use a compatible release containing the fix.                                                                                                                         |
+| Dashboard Graph crashes on 13.5.3 or later                  | Keep the selected version. Capture the browser console stack trace and dashboard logs to diagnose a separate cause or regression; do not recommend installing 13.5.3 as a workaround. |
 
 > **Resolved in 13.3**: The standalone-dashboard workaround for [#16236](https://github.com/microsoft/aspire/issues/16236) is obsolete — `aspire dashboard run` ships in-box (see Standalone Dashboard section above).
 
@@ -198,12 +214,12 @@ No additional configuration is needed — Aspire wires the connection string dur
 
 ## Summary: Where to Look
 
-| Question                             | Local Dev                                                        | Deployed                                                           |
-| ------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
-| "What's the status of my resources?" | `aspire describe` (try `--include-hidden` if missing)            | Azure Portal / `az containerapp show` / `kubectl describe pod`     |
-| "Show me the logs"                   | `aspire logs <resource>`                                         | `az containerapp logs show` / `kubectl logs <pod>` / `docker logs` |
-| "Show me distributed traces"         | `aspire otel traces`                                             | App Insights → Transaction Search                                  |
-| "Why is this resource unhealthy?"    | `aspire describe` + `aspire logs`                                | AppLens / azure-diagnostics / `kubectl describe pod`               |
-| "What metrics are available?"        | Aspire Dashboard (auto-launched or `aspire dashboard run`)       | Azure Monitor / App Insights / Container Insights                  |
-| "Export telemetry for analysis"      | `aspire export`                                                  | App Insights export / KQL query                                    |
-| "Browser console / network logs"     | Dashboard (with `WithBrowserLogs()` enabled) — N/A in production |
+| Question                             | Local Dev                                                                                                                                     | Deployed                                                           |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| "What's the status of my resources?" | `aspire describe` (try `--include-hidden` if missing)                                                                                         | Azure Portal / `az containerapp show` / `kubectl describe pod`     |
+| "Show me the logs"                   | `aspire logs <resource>`                                                                                                                      | `az containerapp logs show` / `kubectl logs <pod>` / `docker logs` |
+| "Show me distributed traces"         | `aspire otel traces`                                                                                                                          | App Insights → Transaction Search                                  |
+| "Why is this resource unhealthy?"    | `aspire describe` + `aspire logs`                                                                                                             | AppLens / azure-diagnostics / `kubectl describe pod`               |
+| "What metrics are available?"        | Open the Aspire Dashboard (VS Code no longer auto-opens it) or use `aspire dashboard run`                                                     | Azure Monitor / App Insights / Container Insights                  |
+| "Export telemetry for analysis"      | `aspire export`                                                                                                                               | App Insights export / KQL query                                    |
+| "Browser console / network logs"     | `aspire resource <frontend>-browser-logs open-tracked-browser`, then `aspire logs <frontend>-browser-logs` (with `WithBrowserLogs()` enabled) | N/A in production                                                  |

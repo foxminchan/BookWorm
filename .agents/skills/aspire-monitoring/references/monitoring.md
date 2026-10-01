@@ -8,7 +8,6 @@ Use these commands when the first job is to inspect current resource state, find
 
 ```bash
 aspire describe
-aspire resources
 aspire describe --apphost <path>
 aspire describe --apphost <path> --format Json
 ```
@@ -16,6 +15,8 @@ aspire describe --apphost <path> --format Json
 Keep these points in mind:
 
 - Use `aspire describe` first when you need the current state of the running app before deciding what to do next.
+- `aspire resources` is a backward-compatible alias; prefer `aspire describe` in new
+  commands. `aspire ps` lists running AppHosts, not their resources.
 - Use `--apphost <path>` when the workspace has multiple AppHosts or discovery is ambiguous.
 - Prefer `--format Json` when another tool or script needs to consume the result, such as a Playwright handoff or endpoint extraction.
 
@@ -29,7 +30,9 @@ aspire otel traces [resource] --format Json
 aspire otel spans [resource] --format Json
 aspire otel logs --trace-id <id> --format Json
 aspire otel logs [resource] --search "connection timeout"
-aspire otel spans [resource] --search "/api/products"
+aspire otel traces [resource] --search "/api/products"
+aspire otel logs [resource] --search "severity:error"
+aspire otel spans [resource] --search "@http.method:GET duration:>100"
 aspire logs [resource]
 aspire logs [resource] --search "error"
 ```
@@ -43,6 +46,72 @@ Keep these points in mind:
 - Prefer `--format Json` when another tool or script needs to consume the result, such as a Playwright handoff or endpoint extraction.
 - `[resource]` is optional. Include it to filter results to a single resource; omit it to see all resources.
 - `--search` can be combined with other options like `--format Json`, `--trace-id`, `--limit`, and resource filtering.
+
+## Scenario: I Need Browser Console, Error, Or Network Diagnostics
+
+When a frontend already uses `WithBrowserLogs()`, Aspire creates a normal child resource named
+`<frontend>-browser-logs`. Browser console messages, errors, exceptions, and network diagnostics
+go to that child resource's console log stream.
+
+```bash
+# Discover the BrowserLogs child resource.
+aspire describe
+aspire resources
+
+# Start a tracked browser session for the frontend.
+aspire resource <frontend>-browser-logs open-tracked-browser
+
+# Inspect browser console, error, exception, and network diagnostics.
+aspire logs <frontend>-browser-logs
+```
+
+Keep these points in mind:
+
+- Correlate the child resource to its frontend through the parent relationship and its `Source`
+  property.
+- `<frontend>-browser-logs` is not hidden by default. Start with normal `aspire describe` or
+  its `aspire resources` alias; use `aspire describe --include-hidden` only when the expected
+  resource is unavailable.
+- `aspire otel logs <frontend>` does **not** return browser diagnostics. Use
+  `aspire logs <frontend>-browser-logs` instead.
+- Adding or configuring `WithBrowserLogs()` is AppHost authoring; route that work to `aspireify`.
+
+## Filtering
+
+The `--search` option filters output by matching text against log content and trace/span content.
+
+- Multiple words are AND'd — all fragments must match.
+- Use `"quoted phrases"` for multi-word fragments: `--search "\"connection timeout\""`.
+- Qualifiers support quoted values: `--search "message:\"connection failed\""`.
+
+### Console Logs (`aspire logs --search`)
+
+Matches against log line text content and resource name. Only free-text is supported (no structured qualifiers).
+
+```bash
+aspire logs redis --search "timeout"
+aspire logs --follow --search "\"connection error\""
+```
+
+### Structured Telemetry (`aspire otel logs/traces/spans --search`)
+
+Supports free-text and structured qualifiers in a single query.
+
+**Free-text** matches against message, resource name, scope, trace/span IDs, severity/status, and all attribute keys/values.
+
+**Structured qualifiers** filter on specific fields with `key:value` syntax:
+
+- Log keys: `severity`, `resource`, `scope`, `message`, `trace-id`, `span-id`, `event`
+- Span/Trace keys: `name`, `resource`, `scope`, `status`, `kind`, `trace-id`, `span-id`, `duration`
+- Custom attributes: `@http.method:GET`, `@db.system:redis`
+- Negation: `-severity:debug`, `-@db.system:redis`
+- Comparison: `duration:>100`, `duration:>=50`
+
+```bash
+aspire otel logs --search "severity:error \"connection failed\""
+aspire otel spans --search "@http.method:GET duration:>100 status:error"
+aspire otel logs --search "resource:api -severity:debug"
+```
 
 ## Scenario: I Need A Sharable Diagnostics Bundle
 
@@ -68,6 +137,10 @@ Keep these points in mind:
 Commands like `aspire describe`, `aspire otel logs`, `aspire otel traces`, and `aspire otel spans` may include dashboard URLs in their JSON output. Only use URLs that are explicitly returned by these commands — do not construct dashboard URLs yourself.
 
 When a dashboard link is returned alongside a resource or telemetry entry, make the resource name, trace ID, or span ID a clickable markdown link using the returned URL.
+
+On Aspire 13.5.0-13.5.2, a healthy DevTunnel could omit its public URL. This was fixed
+in 13.5.3; use a compatible release containing the fix before treating the missing
+URL as an AppHost endpoint-modeling error.
 
 ## Displaying Resources
 
@@ -144,15 +217,33 @@ For dashboards configured with API-key authentication, pass `--api-key` alongsid
 aspire otel logs --dashboard-url https://my-dashboard.example.com --api-key "$DASHBOARD_API_KEY" --follow
 ```
 
-## Browser Telemetry
+## Aspire 13.5 Dashboard Changes
 
-Frontend resources opted into `Aspire.Hosting.Browsers` via `WithBrowserLogs()` surface browser console logs, network requests, and screenshots in the dashboard alongside server-side telemetry.
+- Timestamp qualifiers and exact numeric `==` / `!=` operators narrow structured
+  telemetry without pausing live streams.
+- Console-log pages support text search.
+- `WithTerminal()` resources use the experimental interactive terminal view.
+- The dashboard AI Assistant was removed. Configure agents with `aspire agent init`.
+- The VS Code Aspire extension no longer auto-opens the dashboard; use its in-editor view
+  or opt in through `dashboardBrowser` / `launch.json`.
+- Aspire 13.5.3 fixed the historical multi-path icon Graph crash affecting
+  13.5.0-13.5.2 dashboards, including Azure Blob resources. On 13.5.3 or later, keep the selected
+  version and capture the browser console stack trace and dashboard logs; this old
+  fix is not evidence that a downgrade would help.
 
-| Need                                            | Action                                                                                                    |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Inspect browser telemetry that is already wired | Open the dashboard; browser logs / network / screenshots appear next to server telemetry for the resource |
-| Confirm a frontend has it enabled               | Check the AppHost for `.WithBrowserLogs()` on the resource                                                |
-| Add `WithBrowserLogs()` to a resource           | Route to `aspireify`; this is AppHost authoring, not monitoring                                           |
+## Browser Logs
+
+`WithBrowserLogs()` creates a `<frontend>-browser-logs` child resource for the frontend. Its
+console stream contains browser console logs, errors, exceptions, and network diagnostics. Use
+`aspire resource <frontend>-browser-logs open-tracked-browser` to start a tracked browser session,
+then inspect `aspire logs <frontend>-browser-logs`.
+
+Use the child resource's parent relationship and `Source` property to verify which frontend it
+belongs to. Do not claim that `aspire otel logs <frontend>` returns this browser output. If an
+expected browser child resource is unavailable from normal `aspire describe` or `aspire resources`
+output, then retry discovery with `aspire describe --include-hidden`.
+
+Adding or configuring `WithBrowserLogs()` remains AppHost authoring and routes to `aspireify`.
 
 ## Why Aspire CLI Can't Do Remote Diagnostics
 

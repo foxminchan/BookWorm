@@ -11,14 +11,11 @@ and hands off to `aspire-orchestration`.
 # 1. Start the AppHost in the background, JSON output for parsing
 aspire start --non-interactive --format Json
 
-# 2. Wait for each declared resource (use displayName from aspire ps)
-aspire ps --format Json --include-hidden     # also lists hidden resources
-aspire wait <displayName>                     # repeat per resource
-
-# 3. Sanity-check the resource graph
+# 2. Inspect the full resource graph and wait for each declared resource
 aspire describe --format Json --include-hidden
+aspire wait <resource-name>                   # repeat per resource
 
-# 4. Stop cleanly
+# 3. Stop cleanly
 aspire stop
 ```
 
@@ -36,9 +33,9 @@ Strip non-JSON lines before parsing.
 
 ## Why `--include-hidden`
 
-`aspire ps` and `aspire describe` filter hidden resources (proxies,
-helper containers, migration jobs) by default. During validation use
-`--include-hidden` so you don't miss anything that `aspire start` actually started.
+`aspire ps` lists AppHosts in 13.5; it no longer lists resources. `aspire describe`
+filters hidden resources (proxies, helper containers, migration jobs) by default. During
+validation use `aspire describe --include-hidden` so you do not miss graph resources.
 
 ## Why `aspire wait` not curl loops
 
@@ -46,22 +43,17 @@ helper containers, migration jobs) by default. During validation use
 own health model. Hand-rolled `curl` loops race with startup and don't see
 container-internal health.
 
-> **Resource-name gotcha** ([#15842](https://github.com/microsoft/aspire/issues/15842)):
-> `aspire wait` rejects the `name` field — pass `displayName` from
-> `aspire ps --format Json` instead.
-
 ## Recovery
 
-| Symptom                               | Action                                                                  |
-| ------------------------------------- | ----------------------------------------------------------------------- |
-| Build error in resource               | Fix code; re-run `aspire start`                                         |
-| File-lock error during edit           | Hand off to `aspire-orchestration` → `aspire stop` → retry edit         |
-| Port conflict on start                | `aspire stop` (clears prior instance) → `aspire start`                  |
-| Resource missing from `aspire ps`     | Re-run with `--include-hidden`; if still missing, AppHost edit is wrong |
-| `aspire wait` rejects name            | Pull `displayName` from `aspire ps --format Json`                       |
-| Mixed JSON output from `aspire start` | Strip non-JSON lines before parsing                                     |
-| Container-backed resource fails       | Confirm Docker / Podman is running; re-run `aspire doctor`              |
-| TS AppHost change had no effect       | You probably edited `.aspire/modules/`. Edit `apphost.ts` only          |
+| Symptom                                 | Action                                                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Build error in resource                 | Fix code; re-run `aspire start`                                                                         |
+| File-lock error during edit             | Hand off to `aspire-orchestration` → `aspire stop` → retry edit                                         |
+| Port conflict on start                  | `aspire stop` (clears prior instance) → `aspire start`                                                  |
+| Resource missing from `aspire describe` | Re-run `aspire describe --include-hidden`; if still missing, the AppHost edit is wrong                  |
+| Mixed JSON output from `aspire start`   | Strip non-JSON lines before parsing                                                                     |
+| Container-backed resource fails         | Confirm Docker / Podman is running; re-run `aspire doctor`                                              |
+| TS AppHost change had no effect         | You probably edited `.aspire/modules/`. Edit the configured `apphost.mts` (or legacy `apphost.ts`) only |
 
 ## Hand-off Criteria
 

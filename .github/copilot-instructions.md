@@ -1,84 +1,66 @@
 # BookWorm — Copilot Instructions
 
-## Project Identity
+## Project identity
 
-BookWorm is a .NET 10 microservices bookstore using Aspire orchestration, DDD with Clean Architecture, and event-driven patterns (WolverineFx/Kafka).
+BookWorm is a .NET 10 microservices application built around Aspire, DDD, and event-driven integration patterns. The codebase emphasizes Vertical Slice Architecture, CQRS, and clean service boundaries.
 
-## Tech Stack
+## Workflow
 
-- **Backend**: C# 14 (`LangVersion=preview`), .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + PostgreSQL (snake_case)
-- **Frontend**: TypeScript 7.0, Next.js 16.3, React 19, Bun + Turbo monorepo (versions and Node requirements in `src/Clients/package.json`)
-- **CQRS**: `Mediator.SourceGenerator` (source generator-based, NOT MediatR) — uses `ICommand<T>`/`IQuery<T>` and `ICommandHandler`/`IQueryHandler`
-- **Testing**: TUnit, Moq, Bogus, Shouldly, Verify.TUnit
-- **Messaging**: WolverineFx with Kafka (outbox/inbox patterns)
-- **AI**: Microsoft Agents AI Framework (incl. A2A), Semantic Kernel, MCP server, CopilotKit (storefront)
-- **Auth**: Keycloak with token introspection + Keycloakify theme
-- **Gateway**: YARP reverse proxy (Aspire-hosted, routes all service traffic)
-
-## Services
-
-| Service          | Purpose                                               |
-| ---------------- | ----------------------------------------------------- |
-| **Catalog**      | Book catalog, search, embedding generation, inventory |
-| **Ordering**     | Order processing, saga orchestration                  |
-| **Basket**       | Shopping cart (Redis-backed)                          |
-| **Rating**       | Feedback/reviews, LLM-based summarization             |
-| **Chat**         | Conversational AI, multi-agent orchestration          |
-| **Finance**      | Payment processing, billing                           |
-| **Notification** | Email via MJML templates (SendGrid/MailKit)           |
-| **Scheduler**    | Job scheduling (Quartz)                               |
-| **McpTools**     | MCP server exposing catalog/rating tools to LLMs      |
+- Prefer the repo task runner in [mise.toml](../mise.toml) instead of raw `dotnet` or `bun` commands.
+- Use the smallest relevant validation command for routine changes.
+- Do not start the Aspire AppHost unless the user explicitly requests runtime validation.
+- When AppHost changes are involved, restart only when validation is requested or the app is already running.
 
 ## Commands
 
-Tasks are defined in [mise.toml](../mise.toml). Prefer `mise run` over raw `dotnet`/`bun` so dependencies resolve correctly:
+- `mise run restore` — restore .NET packages and tools
+- `mise run build` — build the solution
+- `mise run test` — run the test suite
+- `mise run format` — format C#, frontend, docs, and local tooling assets
+- `mise run run` — only for explicit runtime validation with Aspire
 
-- `mise run restore` — restore NuGet packages + .NET tools
-- `mise run build` — build the solution (`BookWorm.slnx`)
-- `mise run test` — run all tests
-- `mise run run` — start the Aspire AppHost only when explicitly requested by the user
-- `mise run format` — format C# (CSharpier), frontend, EventCatalog, Docusaurus, k6, Keycloakify
-- `mise run prepare` — post-clone setup (restore + git hooks)
+## Architecture and conventions
 
-For routine changes, use the smallest relevant build, test, lint, or type-check command. Read the affected package scripts before selecting frontend checks. Do not start the Aspire AppHost unless explicitly requested. If Aspire validation is requested, use its CLI/MCP tools to inspect resources and diagnose failures.
+- Use Vertical Slice Architecture and DDD boundaries; keep business logic near the feature and domain.
+- Use `Mediator.SourceGenerator`; do not introduce `MediatR`.
+- Keep endpoints, handlers, DbContexts, and tests `sealed` by default.
+- Keep `async`/`await` and `CancellationToken` propagation consistent across service boundaries.
+- Prefer modern C# 14 idioms, file-scoped namespaces, and pattern matching.
+- Treat warnings as errors; the build is strict.
+- Keep PostgreSQL naming and raw SQL in `snake_case`.
+- Centralize package versions in [Directory.Packages.props](../Directory.Packages.props); do not add NuGet versions to individual project files.
+- The frontend is a Bun-based monorepo under [src/Clients](../src/Clients); use `bun run` rather than `npm` or `pnpm`.
+- Keep secrets out of source control; prefer user secrets or environment variables.
 
-## Common Pitfalls
+## Project structure
 
-- **Mediator ≠ MediatR**: this repo uses `Mediator.SourceGenerator` (source-generator-based). Same-looking interfaces, different package — do not add MediatR.
-- **Warnings = errors**: `TreatWarningsAsErrors=true` globally. Any new warning fails the build.
-- **Centralized package versions**: add NuGet versions only in [Directory.Packages.props](../Directory.Packages.props), never in individual `.csproj` files.
-- **Sealed by default**: endpoints, handlers, `DbContext`s, and test classes should be `sealed`.
-- **snake_case in PostgreSQL**: tables/columns are snake_case via `UseSnakeCaseNamingConvention()`. Match that in any raw SQL.
-- **Frontend uses Bun, not pnpm/npm**: `src/Clients/` is managed by Bun (`packageManager` in `src/Clients/package.json`, `bun.lock`). Use `bun install`/`bun run`; do not use `pnpm` or `npm` directly.
-- **AppHost restart**: changes to `AppHost.cs` require a restart when the application is already running or the user requests Aspire validation.
-- **Test project naming**: must end in `.UnitTests`, `.ContractTests`, or `.IntegrationTests` to be auto-detected.
-- **Never modify** `global.json` or `NuGet.config` unless explicitly asked.
+- AppHost: [src/Aspire/BookWorm.AppHost/AppHost.cs](../src/Aspire/BookWorm.AppHost/AppHost.cs)
+- Services: [src/Services](../src/Services)
+- Shared libraries: [src/BuildingBlocks](../src/BuildingBlocks)
+- Frontend: [src/Clients](../src/Clients)
+- Integration components: [src/Integrations](../src/Integrations)
+- Tests: [tests](../tests)
 
-## Coding Standards
+## Common pitfalls
 
-- Use latest C# 14 features
-- Follow DDD aggregate boundaries; business logic belongs in the domain layer
-- Use `async`/`await` end-to-end with `CancellationToken` propagation
-- Prefer `var` when type is obvious; use pattern matching and switch expressions
-- Apply file-scoped namespaces and primary constructors
-- Never commit secrets or API keys; use User Secrets for local dev
-- Validate inputs at service boundaries; scrub PII in logs
-- All public APIs require XML doc comments
+- `Mediator.SourceGenerator` is not `MediatR`.
+- `snake_case` is required for PostgreSQL schema names and raw SQL.
+- `AppHost.cs` changes often require a restart in a running environment.
+- Frontend lockfiles are Bun-managed, not npm or pnpm.
+- Test projects should end with `.UnitTests`, `.ContractTests`, or `.IntegrationTests`.
+- Never modify [global.json](../global.json) or [NuGet.config](../NuGet.config) unless explicitly asked.
 
-## Key Locations
+## References
 
-- AppHost: `src/Aspire/BookWorm.AppHost/AppHost.cs`
-- Services: `src/Services/{Name}/BookWorm.{Name}/`
-- Frontend: `src/Clients/` (Turbo monorepo with `apps/` and `packages/`)
-- Shared: `src/BuildingBlocks/` (Chassis, Constants, SharedKernel)
-- Integrations: `src/Integrations/` (Presidio PII detection/redaction)
-- Gateway: YARP reverse proxy defined in `src/Aspire/BookWorm.AppHost/Extensions/Network/ProxyExtensions.cs`
-- Tests: `tests/` (architecture tests, AI evaluation), `src/Services/{Name}/BookWorm.{Name}.UnitTests/`
-- Specs: `specs/` (feature specifications)
-- Docs: `docs/docusaurus/` (architecture), `docs/eventcatalog/` (event schemas)
+- [README.md](../README.md)
+- [.github/CONTRIBUTING.md](./CONTRIBUTING.md)
+- [.github/instructions](./instructions)
+- [.agents/skills](../.agents/skills)
+- [docs/docusaurus](../docs/docusaurus)
+- [docs/eventcatalog](../docs/eventcatalog)
 
-## See Also
+## Official docs to prefer
 
-- [.github/CONTRIBUTING.md](./CONTRIBUTING.md) — contribution workflow, integration-event & proto standards, PR process
-- [.github/instructions/](./instructions/) — language/tooling rules auto-applied via `applyTo` (C#, Next.js, Markdown, GitHub Actions, Context7)
-- [.agents/skills/](../.agents/skills/) — on-demand skills (Aspire, Turborepo, TUnit, EventCatalog authoring, React best practices)
+- https://aspire.dev
+- https://learn.microsoft.com/dotnet/aspire
+- https://nuget.org

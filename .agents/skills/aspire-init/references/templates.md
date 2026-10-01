@@ -17,6 +17,10 @@ https://aspire.dev/reference/cli/commands/aspire-new/
 > **Important — Python starter changed in 13.3.** `dotnet new aspire-py-starter` was removed.
 > The current path is `aspire new aspire-py-starter`, and the AppHost is **TypeScript**, not
 > C#. The TypeScript AppHost orchestrates the FastAPI service plus the React frontend.
+>
+> Aspire 13.5 templates use `apphost.mts` for TypeScript AppHosts. New C# AppHost templates
+> enable `AspireUseCliBundle=true` and can target .NET 11 preview in addition to the current
+> .NET 10 LTS.
 
 ## Common Options
 

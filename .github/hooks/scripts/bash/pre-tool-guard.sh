@@ -4,8 +4,11 @@
 set -e
 
 INPUT=$(cat)
-TOOL_NAME=$(echo "$INPUT" | jq -r '.toolName')
-TOOL_ARGS=$(echo "$INPUT" | jq -r '.toolArgs')
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+json_get() { printf '%s' "$INPUT" | python3 "$SCRIPT_DIR/hook-json.py" get "$@"; }
+json_deny() { python3 "$SCRIPT_DIR/hook-json.py" deny "$1"; }
+TOOL_NAME=$(json_get toolName)
+TOOL_ARGS=$(json_get toolArgs)
 
 # --- Protected files: deny edits to foundational config ---
 PROTECTED_FILES=(
@@ -22,12 +25,11 @@ PROTECTED_FILES=(
 )
 
 if [[ "$TOOL_NAME" = "edit" ]] || [[ "$TOOL_NAME" = "create" ]]; then
-  FILE_PATH=$(echo "$TOOL_ARGS" | jq -r '.path // .filePath // empty')
+  FILE_PATH=$(printf '%s' "$TOOL_ARGS" | python3 "$SCRIPT_DIR/hook-json.py" get path filePath)
 
   for protected in "${PROTECTED_FILES[@]}"; do
     if echo "$FILE_PATH" | grep -qF "$protected"; then
-      jq -n --arg reason "Modifying '$protected' is not allowed without explicit user approval. This file controls foundational build/SDK configuration." \
-        '{permissionDecision: "deny", permissionDecisionReason: $reason}'
+      json_deny "Modifying '$protected' is not allowed without explicit user approval. This file controls foundational build/SDK configuration."
       exit 0
     fi
   done
@@ -35,29 +37,29 @@ fi
 
 # --- Dangerous bash commands ---
 if [[ "$TOOL_NAME" = "bash" ]]; then
-  COMMAND=$(echo "$TOOL_ARGS" | jq -r '.command // empty')
+  COMMAND=$(printf '%s' "$TOOL_ARGS" | python3 "$SCRIPT_DIR/hook-json.py" get command)
 
   # Block destructive system-level commands
   if echo "$COMMAND" | grep -qE "rm\s+-rf\s+/|mkfs|format\s+[A-Z]:|DROP\s+(TABLE|DATABASE)|TRUNCATE\s+TABLE"; then
-    jq -n '{permissionDecision: "deny", permissionDecisionReason: "Destructive system command detected. This operation is blocked by project policy."}'
+    json_deny "Destructive system command detected. This operation is blocked by project policy."
     exit 0
   fi
 
   # Block attempts to modify global tool config
   if echo "$COMMAND" | grep -qE "dotnet\s+workload\s+install\s+aspire"; then
-    jq -n '{permissionDecision: "deny", permissionDecisionReason: "The Aspire workload is obsolete and must not be installed. Use Aspire NuGet packages instead."}'
+    json_deny "The Aspire workload is obsolete and must not be installed. Use Aspire NuGet packages instead."
     exit 0
   fi
 
   # Block modifications to global.json via shell
   if echo "$COMMAND" | grep -qE "(sed|awk|echo|cat|tee|>).*global\.json"; then
-    jq -n '{permissionDecision: "deny", permissionDecisionReason: "Modifying global.json via shell is not permitted."}'
+    json_deny "Modifying global.json via shell is not permitted."
     exit 0
   fi
 
   # Block force push and bypassing safety checks
   if echo "$COMMAND" | grep -qE "git\s+push\s+.*--force|git\s+push\s+-f\b|git\s+reset\s+--hard|git\s+.*--no-verify"; then
-    jq -n '{permissionDecision: "deny", permissionDecisionReason: "Force push, hard reset, and --no-verify are blocked by project policy. These operations are destructive or bypass safety checks."}'
+    json_deny "Force push, hard reset, and --no-verify are blocked by project policy. These operations are destructive or bypass safety checks."
     exit 0
   fi
 fi

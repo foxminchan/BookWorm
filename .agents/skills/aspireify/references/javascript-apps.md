@@ -120,15 +120,20 @@ Never overwrite existing `scripts`, `dependencies`, or `devDependencies` — mer
 
 Run `aspire restore` to generate the `.aspire/modules/` directory with TypeScript SDK bindings, then install dependencies with the repo's package manager (`npm install`, `pnpm install`, or `yarn`).
 
-### tsconfig.json
+### `tsconfig.apphost.json`
 
-Augment if it exists:
+Use the AppHost-specific `tsconfig.apphost.json` scaffolded by `aspire init` or
+`aspire restore`. Do not add AppHost generated modules to the application's root
+`tsconfig.json`; doing so can pull generated code into the application build without
+changing AppHost compilation.
 
-- Ensure `".aspire/modules/**/*.ts"` and `"apphost.ts"` are in `include`
+- Ensure `"apphost.mts"` and the generated `.aspire/modules/*.mts` entry points are in `include`
 - Ensure `"module"` is `"nodenext"` or `"node16"` (ESM required)
 - Ensure `"moduleResolution"` matches
 
-If no `tsconfig.json` exists and `aspire restore` didn't create one, create a minimal one:
+If `tsconfig.apphost.json` is missing, run `aspire restore` and diagnose that restore if
+the file is still absent. Do not create or repurpose the application's root
+`tsconfig.json` as a fallback. A generated AppHost configuration has this shape:
 
 ```json
 {
@@ -141,7 +146,12 @@ If no `tsconfig.json` exists and `aspire restore` didn't create one, create a mi
     "outDir": "./dist",
     "rootDir": "."
   },
-  "include": ["apphost.ts", ".aspire/modules/**/*.ts"]
+  "include": [
+    "apphost.mts",
+    ".aspire/modules/aspire.mts",
+    ".aspire/modules/base.mts",
+    ".aspire/modules/transport.mts"
+  ]
 }
 ```
 
