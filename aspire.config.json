@@ -1,5 +1,9 @@
 {
+  "$schema": "https://aspire.dev/reference/cli/configuration/schema.json",
   "appHost": {
     "path": "src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj"
+  },
+  "sdk": {
+    "version": "13.6.0"
   }
 }

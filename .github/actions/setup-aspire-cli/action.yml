@@ -1,6 +1,6 @@
 name: Setup Aspire CLI
 description: >-
-  Resolve the Aspire version pinned in Directory.Build.props, install the
+  Resolve the Aspire version pinned in aspire.config.json, install the
   matching Aspire CLI, and verify the installed version matches
 author: BookWorm Team
 branding:
@@ -8,10 +8,10 @@ branding:
   color: purple
 
 inputs:
-  directory-build-props:
-    description: Path to the Directory.Build.props file that pins the AspireVersion property
+  aspire-config:
+    description: Path to the aspire.config.json file that pins the Aspire CLI version
     required: false
-    default: Directory.Build.props
+    default: aspire.config.json
 
 outputs:
   version:
@@ -25,10 +25,10 @@ runs:
       shell: bash
       id: aspire-version
       run: |
-        ASPIRE_VERSION="$(dotnet msbuild "$INPUT_DIRECTORY_BUILD_PROPS" -nologo -v:q -getProperty:AspireVersion)"
+        ASPIRE_VERSION="$(jq -er '.sdk.version | select(type == "string" and length > 0)' "$INPUT_ASPIRE_CONFIG")"
         echo "version=${ASPIRE_VERSION}" >> "$GITHUB_OUTPUT"
       env:
-        INPUT_DIRECTORY_BUILD_PROPS: ${{ inputs.directory-build-props }}
+        INPUT_ASPIRE_CONFIG: ${{ inputs.aspire-config }}
 
     - name: 🛠️ Install Aspire CLI
       uses: timheuer/setup-aspire@fec3fa825218461aa07fed28fa97a600d5d88b14 # v0.1.0
