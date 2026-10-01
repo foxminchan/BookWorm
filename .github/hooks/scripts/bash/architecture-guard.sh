@@ -6,7 +6,7 @@ set -e
 INPUT=$(cat)
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 json_get() { printf '%s' "$INPUT" | python3 "$SCRIPT_DIR/hook-json.py" get "$@"; }
-json_deny() { python3 "$SCRIPT_DIR/hook-json.py" deny "$1"; }
+json_deny() { local input="$1"; python3 "$SCRIPT_DIR/hook-json.py" deny "$input"; }
 TOOL_NAME=$(json_get toolName)
 TOOL_ARGS=$(json_get toolArgs)
 
