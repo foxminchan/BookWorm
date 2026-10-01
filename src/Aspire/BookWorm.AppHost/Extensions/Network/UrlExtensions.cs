@@ -1,4 +1,6 @@
-﻿namespace BookWorm.AppHost.Extensions.Network;
+﻿using Aspire.Hosting.Dotnet;
+
+namespace BookWorm.AppHost.Extensions.Network;
 
 internal static class UrlExtensions
 {
@@ -19,6 +21,10 @@ internal static class UrlExtensions
             if (builder is IResourceBuilder<ProjectResource> projectBuilder)
             {
                 projectBuilder.WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+            }
+            else if (builder is IResourceBuilder<DotnetProjectResource> dotnetProjectBuilder)
+            {
+                dotnetProjectBuilder.WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
             }
 
             return builder.WithUrls(c =>

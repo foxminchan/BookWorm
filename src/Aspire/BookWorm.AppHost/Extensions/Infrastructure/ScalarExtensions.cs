@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.OAuth;
+﻿using Aspire.Hosting.Dotnet;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Scalar.Aspire;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
@@ -44,13 +45,15 @@ internal static class ScalarExtensions
         /// <summary>
         ///     Configures the Scalar resource builder to include an API reference with OAuth authorization.
         /// </summary>
-        /// <param name="api">The project resource builder representing the API project.</param>
+        /// <param name="api">The .NET project resource builder representing the API project.</param>
         /// <returns>The configured Scalar resource builder with OAuth authorization.</returns>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when Keycloak resource is not found in the application builder or when the required 'kc-realm' parameter is
         ///     not configured.
         /// </exception>
-        public IResourceBuilder<ScalarResource> WithOpenAPI(IResourceBuilder<ProjectResource> api)
+        public IResourceBuilder<ScalarResource> WithOpenAPI(
+            IResourceBuilder<DotnetProjectResource> api
+        )
         {
             return builder.WithApiReference(
                 api,

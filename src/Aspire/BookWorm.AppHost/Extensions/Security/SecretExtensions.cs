@@ -1,8 +1,10 @@
-﻿namespace BookWorm.AppHost.Extensions.Security;
+﻿using Aspire.Hosting.Dotnet;
+
+namespace BookWorm.AppHost.Extensions.Security;
 
 internal static class SecretExtensions
 {
-    extension(IResourceBuilder<ProjectResource> builder)
+    extension(IResourceBuilder<DotnetProjectResource> builder)
     {
         /// <summary>
         ///     Configures the resource builder to create a generated secret parameter and expose it as an environment variable.
@@ -16,7 +18,7 @@ internal static class SecretExtensions
         ///     parameter.
         /// </param>
         /// <returns>
-        ///     The original <see cref="IResourceBuilder{ProjectResource}" /> after registering the parameter and mapping it
+        ///     The original <see cref="IResourceBuilder{DotnetProjectResource}" /> after registering the parameter and mapping it
         ///     to the environment variable.
         /// </returns>
         /// <remarks>
@@ -24,7 +26,7 @@ internal static class SecretExtensions
         ///     The created parameter is returned as a parameter resource which is then mapped to the specified environment
         ///     variable.
         /// </remarks>
-        public IResourceBuilder<ProjectResource> WithSecret(
+        public IResourceBuilder<DotnetProjectResource> WithSecret(
             string secretName,
             string environmentVariableName
         )

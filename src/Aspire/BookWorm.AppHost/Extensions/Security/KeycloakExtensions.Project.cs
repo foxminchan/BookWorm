@@ -1,15 +1,19 @@
+﻿using Aspire.Hosting.Dotnet;
+
 namespace BookWorm.AppHost.Extensions.Security;
 
 internal static partial class KeycloakExtensions
 {
-    extension(IResourceBuilder<ProjectResource> builder)
+    extension(IResourceBuilder<DotnetProjectResource> builder)
     {
         /// <summary>
         ///     Configures the project resource to integrate with Keycloak as an Identity Provider (IdP).
         /// </summary>
         /// <param name="keycloak">The Keycloak resource builder to configure as an IdP.</param>
         /// <returns>The project resource builder for method chaining.</returns>
-        public IResourceBuilder<ProjectResource> WithKeycloak(IResourceBuilder<IResource> keycloak)
+        public IResourceBuilder<DotnetProjectResource> WithKeycloak(
+            IResourceBuilder<IResource> keycloak
+        )
         {
             var clientId = builder.Resource.Name;
             var applicationBuilder = builder.ApplicationBuilder;

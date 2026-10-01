@@ -5,13 +5,14 @@
     <OutputType>Exe</OutputType>
     <AspireUseCliBundle>true</AspireUseCliBundle>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
-    <NoWarn>ASPIREPOSTGRES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001;ASPIREDOCKERFILEBUILDER001</NoWarn>
+    <NoWarn>ASPIREPOSTGRES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001;ASPIREDOCKERFILEBUILDER001;ASPIREDOTNETPROJECT001</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="**/node_modules/**/*.cs" />
   </ItemGroup>
   <ItemGroup Label="Aspire">
     <PackageReference Include="Scalar.Aspire" />
+    <PackageReference Include="Aspire.Hosting.Dotnet" />
     <PackageReference Include="Aspire.Hosting.Yarp" />
     <PackageReference Include="Aspire.Hosting.Foundry" />
     <PackageReference Include="Aspire.Hosting.Qdrant" />
@@ -30,17 +31,6 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Azure.Extensions" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" />
-  </ItemGroup>
-  <ItemGroup Label="Services">
-    <ProjectReference Include="..\..\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
-    <ProjectReference Include="..\..\Services\Catalog\BookWorm.Catalog\BookWorm.Catalog.csproj" />
-    <ProjectReference Include="..\..\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
-    <ProjectReference Include="..\..\Services\Finance\BookWorm.Finance\BookWorm.Finance.csproj" />
-    <ProjectReference Include="..\..\Services\McpTools\BookWorm.McpTools\BookWorm.McpTools.csproj" />
-    <ProjectReference Include="..\..\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
-    <ProjectReference Include="..\..\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
-    <ProjectReference Include="..\..\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />
-    <ProjectReference Include="..\..\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
   </ItemGroup>
   <ItemGroup Label="Integrations">
     <ProjectReference
