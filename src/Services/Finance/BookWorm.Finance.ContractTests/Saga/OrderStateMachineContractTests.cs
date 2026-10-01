@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Finance.ContractTests.Saga;
 
+[Category("PactConsumer")]
 public sealed class OrderStateMachineContractTests
 {
     private const string TestFullName = "John Doe";
@@ -20,7 +21,7 @@ public sealed class OrderStateMachineContractTests
         _logger = Mock.Of<ILogger<OrderSaga>>();
     }
 
-    private UserCheckedOutIntegrationEvent CreateCheckedOutEvent(Guid orderId, Guid basketId)
+    private static UserCheckedOutIntegrationEvent CreateCheckedOutEvent(Guid orderId, Guid basketId)
     {
         return new(orderId, basketId, TestFullName, TestEmail, TestTotalMoney);
     }
@@ -34,10 +35,16 @@ public sealed class OrderStateMachineContractTests
         var @event = CreateCheckedOutEvent(orderId, basketId);
 
         // Act
-        var (saga, messages) = OrderSaga.Start(@event, _settings, _logger);
-
-        // Assert
-        await SnapshotTestHelper.VerifyCloudEvents(messages);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Finance",
+            "Ordering",
+            @event,
+            pactEvent =>
+            {
+                _ = OrderSaga.Start(pactEvent, _settings, _logger);
+                return Task.CompletedTask;
+            }
+        );
     }
 
     [Test]
@@ -55,10 +62,16 @@ public sealed class OrderStateMachineContractTests
         var @event = new BasketDeletedCompleteIntegrationEvent(orderId, basketId, TestTotalMoney);
 
         // Act
-        var command = saga.Handle(@event);
-
-        // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(command);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Finance",
+            "Basket",
+            @event,
+            pactEvent =>
+            {
+                _ = saga.Handle(pactEvent);
+                return Task.CompletedTask;
+            }
+        );
     }
 
     [Test]
@@ -81,11 +94,19 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        var messages = saga.Handle(@event, _logger);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Finance",
+            "Basket",
+            @event,
+            pactEvent =>
+            {
+                _ = saga.Handle(pactEvent, _logger);
+                return Task.CompletedTask;
+            }
+        );
 
         // Assert
         saga.CurrentState.ShouldBe(OrderSagaStatus.BasketDeletionFailed);
-        await SnapshotTestHelper.VerifyCloudEvents(messages);
     }
 
     [Test]
@@ -109,11 +130,19 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        var messages = saga.Handle(@event, _logger);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Finance",
+            "Ordering",
+            @event,
+            pactEvent =>
+            {
+                _ = saga.Handle(pactEvent, _logger);
+                return Task.CompletedTask;
+            }
+        );
 
         // Assert
         saga.CurrentState.ShouldBe(OrderSagaStatus.Completed);
-        await SnapshotTestHelper.VerifyCloudEvents(messages);
     }
 
     [Test]
@@ -137,10 +166,18 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        var messages = saga.Handle(@event, _logger);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Finance",
+            "Ordering",
+            @event,
+            pactEvent =>
+            {
+                _ = saga.Handle(pactEvent, _logger);
+                return Task.CompletedTask;
+            }
+        );
 
         // Assert
         saga.CurrentState.ShouldBe(OrderSagaStatus.Cancelled);
-        await SnapshotTestHelper.VerifyCloudEvents(messages);
     }
 }

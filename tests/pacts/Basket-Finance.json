@@ -1,0 +1,96 @@
+{
+  "consumer": {
+    "name": "Basket"
+  },
+  "messages": [
+    {
+      "contents": {
+        "basketId": "01a0f86f-c4bc-7ee0-b5f1-1542f51d8e20",
+        "creationDate": "2026-10-01T17:07:49.5965615Z",
+        "email": "test@example.com",
+        "fullName": "Test User",
+        "id": "01a0f86f-c4dc-7990-bb7c-a7dcda82bc11",
+        "orderId": "01a0f86f-c4bc-7905-8cf1-82dfea20f81e",
+        "totalMoney": 99.99
+      },
+      "description": "BookWorm.Contracts.PlaceOrderCommand message",
+      "matchingRules": {
+        "body": {
+          "$.basketId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.email": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.fullName": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.orderId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.totalMoney": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-finance",
+        "type": "BookWorm.Contracts.PlaceOrderCommand"
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.0",
+      "models": "1.0.4"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "Finance"
+  }
+}

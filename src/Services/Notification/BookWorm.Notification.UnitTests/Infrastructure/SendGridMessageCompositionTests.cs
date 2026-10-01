@@ -1,4 +1,3 @@
-using BookWorm.Common;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Builders;
 using BookWorm.Notification.Infrastructure.Senders.SendGrid;
@@ -13,7 +12,7 @@ public sealed class SendGridMessageCompositionTests
     private const string SenderName = "BookWorm";
 
     [Test]
-    public async Task GivenNewOrder_WhenComposingSendGridMessage_ThenShouldMatchSnapshot()
+    public void GivenNewOrder_WhenComposingSendGridMessage_ThenShouldIncludeOrderDetails()
     {
         // Arrange
         var order = new Order(
@@ -37,11 +36,19 @@ public sealed class SendGridMessageCompositionTests
         var sendGridMessage = BuildSendGridMessage(mailMessage);
 
         // Assert
-        await SnapshotTestHelper.Verify(sendGridMessage);
+        sendGridMessage.From.Email.ShouldBe(SenderEmail);
+        sendGridMessage.From.Name.ShouldBe(SenderName);
+        sendGridMessage.Subject.ShouldBe("BookWorm: Your Order Has Been Received Successfully");
+        sendGridMessage.HtmlContent.ShouldBe("<html><body>Order email content</body></html>");
+        sendGridMessage
+            .Personalizations.Single()
+            .Tos.Single()
+            .Email.ShouldBe("john.doe@example.com");
+        Convert.ToInt64(sendGridMessage.SendAt).ShouldBe(mailMessage.Date.ToUnixTimeSeconds());
     }
 
     [Test]
-    public async Task GivenCompletedOrder_WhenComposingSendGridMessage_ThenShouldMatchSnapshot()
+    public void GivenCompletedOrder_WhenComposingSendGridMessage_ThenShouldIncludeOrderDetails()
     {
         // Arrange
         var order = new Order(
@@ -65,11 +72,17 @@ public sealed class SendGridMessageCompositionTests
         var sendGridMessage = BuildSendGridMessage(mailMessage);
 
         // Assert
-        await SnapshotTestHelper.Verify(sendGridMessage);
+        sendGridMessage.Subject.ShouldBe("BookWorm: Your Order Has Been Completed and Shipped");
+        sendGridMessage.HtmlContent.ShouldBe("<html><body>Completed order content</body></html>");
+        sendGridMessage
+            .Personalizations.Single()
+            .Tos.Single()
+            .Email.ShouldBe("jane.smith@example.com");
+        Convert.ToInt64(sendGridMessage.SendAt).ShouldBe(mailMessage.Date.ToUnixTimeSeconds());
     }
 
     [Test]
-    public async Task GivenCanceledOrder_WhenComposingSendGridMessage_ThenShouldMatchSnapshot()
+    public void GivenCanceledOrder_WhenComposingSendGridMessage_ThenShouldIncludeOrderDetails()
     {
         // Arrange
         var order = new Order(
@@ -93,11 +106,19 @@ public sealed class SendGridMessageCompositionTests
         var sendGridMessage = BuildSendGridMessage(mailMessage);
 
         // Assert
-        await SnapshotTestHelper.Verify(sendGridMessage);
+        sendGridMessage.Subject.ShouldBe(
+            "BookWorm: Your Order Has Been Canceled - Important Information"
+        );
+        sendGridMessage.HtmlContent.ShouldBe("<html><body>Canceled order content</body></html>");
+        sendGridMessage
+            .Personalizations.Single()
+            .Tos.Single()
+            .Email.ShouldBe("bob.wilson@example.com");
+        Convert.ToInt64(sendGridMessage.SendAt).ShouldBe(mailMessage.Date.ToUnixTimeSeconds());
     }
 
     [Test]
-    public async Task GivenMultipleRecipients_WhenComposingSendGridMessage_ThenShouldMatchSnapshot()
+    public void GivenMultipleRecipients_WhenComposingSendGridMessage_ThenShouldIncludeAllRecipients()
     {
         // Arrange
         var order = new Order(
@@ -119,14 +140,17 @@ public sealed class SendGridMessageCompositionTests
 
         // Act
         var sendGridMessage = BuildSendGridMessage(mailMessage);
-        sendGridMessage.AddTo(new EmailAddress("cc@example.com", "CC User"));
+        sendGridMessage.AddCc(new EmailAddress("cc@example.com", "CC User"));
 
         // Assert
-        await SnapshotTestHelper.Verify(sendGridMessage);
+        var recipients = sendGridMessage.Personalizations.Single();
+        recipients.Tos.Single().Email.ShouldBe("admin@example.com");
+        recipients.Ccs.Single().Email.ShouldBe("cc@example.com");
+        Convert.ToInt64(sendGridMessage.SendAt).ShouldBe(mailMessage.Date.ToUnixTimeSeconds());
     }
 
     [Test]
-    public async Task GivenStagingEnvironment_WhenComposingSendGridMessage_ThenSandboxModeShouldBeSet()
+    public void GivenStagingEnvironment_WhenComposingSendGridMessage_ThenSandboxModeShouldBeSet()
     {
         // Arrange
         var order = new Order(
@@ -151,7 +175,8 @@ public sealed class SendGridMessageCompositionTests
         sendGridMessage.SetSandBoxMode(true);
 
         // Assert
-        await SnapshotTestHelper.Verify(sendGridMessage);
+        sendGridMessage.MailSettings.SandboxMode.Enable.ShouldBe(true);
+        Convert.ToInt64(sendGridMessage.SendAt).ShouldBe(mailMessage.Date.ToUnixTimeSeconds());
     }
 
     /// <summary>

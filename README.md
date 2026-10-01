@@ -68,7 +68,7 @@
   - [x] Supported WCAG 2.1 AA accessibility standards
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
-  - [x] Implemented snapshot tests
+  - [x] Implemented Pact-based async message consumer/provider contract tests
   - [x] Established architecture testing strategy
   - [x] Performed load testing with k6
   - [x] Implemented frontend unit tests and component tests
@@ -126,6 +126,23 @@ mise run run
 > [!NOTE]
 >
 > On first run, you'll be prompted to enter the required environment variables.
+
+### Run tests
+
+Run the complete backend test suite with:
+
+```sh
+mise run test
+```
+
+Run only Pact message contracts with:
+
+```sh
+mise run test:contracts
+```
+
+The contract task runs consumer tests first to generate Pact files in `tests/pacts/`, then
+provider tests verify the messages produced by each service against those contracts.
 
 ### Self-Deploy to Azure
 

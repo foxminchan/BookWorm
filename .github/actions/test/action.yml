@@ -72,16 +72,5 @@ runs:
         TEST_HANG_TIMEOUT: ${{ inputs.testHangTimeout }}
         TEST_SESSION_TIMEOUT: ${{ inputs.testSessionTimeout }}
         NO_BUILD: ${{ inputs.no-build }}
-      run: >
-        dotnet test
-        --configuration Release
-        --no-restore $( [[ "$NO_BUILD" == "true" ]] && echo "--no-build" )
-        --report-trx
-        --coverage
-        --coverage-settings Coverage.runsettings
-        --results-directory ./test-results
-        --github-reporter-style full
-        --hangdump
-        --hangdump-timeout "$TEST_HANG_TIMEOUT"
-        --crashdump
-        --timeout "$TEST_SESSION_TIMEOUT"
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "$ACTION_PATH/scripts/run-tests.sh"

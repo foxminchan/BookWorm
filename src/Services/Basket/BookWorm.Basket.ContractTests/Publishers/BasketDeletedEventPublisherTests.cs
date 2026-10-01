@@ -6,6 +6,7 @@ using Wolverine;
 
 namespace BookWorm.Basket.ContractTests.Publishers;
 
+[Category("PactProvider")]
 public sealed class BasketDeletedEventPublisherTests
 {
     private const string Email = "test@example.com";
@@ -36,9 +37,11 @@ public sealed class BasketDeletedEventPublisherTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvents([
-            .. bus.AllOutgoing.Select(e => ((Envelope)e).Message),
-        ]);
+        var outgoingMessage = ((Envelope)bus.AllOutgoing.Single()).Message;
+        var publishedEvent =
+            outgoingMessage as BasketDeletedCompleteIntegrationEvent
+            ?? throw new InvalidOperationException("Expected basket deletion completion event.");
+        PactTestHelper.VerifyProviderMessage("Finance", "Basket", publishedEvent);
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 
@@ -56,9 +59,11 @@ public sealed class BasketDeletedEventPublisherTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvents([
-            .. bus.AllOutgoing.Select(e => ((Envelope)e).Message),
-        ]);
+        var outgoingMessage = ((Envelope)bus.AllOutgoing.Single()).Message;
+        var publishedEvent =
+            outgoingMessage as BasketDeletedFailedIntegrationEvent
+            ?? throw new InvalidOperationException("Expected basket deletion failure event.");
+        PactTestHelper.VerifyProviderMessage("Finance", "Basket", publishedEvent);
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 }

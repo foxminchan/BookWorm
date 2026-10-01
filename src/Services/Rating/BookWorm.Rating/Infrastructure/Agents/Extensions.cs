@@ -13,7 +13,6 @@ using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
-using Microsoft.Agents.AI.Mcp;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;

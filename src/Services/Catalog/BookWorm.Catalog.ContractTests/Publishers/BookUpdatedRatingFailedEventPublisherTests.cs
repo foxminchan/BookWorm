@@ -7,6 +7,7 @@ using Wolverine;
 
 namespace BookWorm.Catalog.ContractTests.Publishers;
 
+[Category("PactProvider")]
 public sealed class BookUpdatedRatingFailedEventPublisherTests
 {
     private readonly int _rating = 4;
@@ -46,9 +47,11 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
         await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvents([
-            .. bus.AllOutgoing.Select(e => ((Envelope)e).Message),
-        ]);
+        var outgoingMessage = ((Envelope)bus.AllOutgoing.Single()).Message;
+        var publishedEvent =
+            outgoingMessage as BookUpdatedRatingFailedIntegrationEvent
+            ?? throw new InvalidOperationException("Expected rating failure integration event.");
+        PactTestHelper.VerifyProviderMessage("Rating", "Catalog", publishedEvent);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once

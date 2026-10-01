@@ -1,4 +1,7 @@
 <Project>
+  <PropertyGroup>
+    <SolutionDir Condition="'$(SolutionDir)' == ''">$(MSBuildThisFileDirectory)</SolutionDir>
+  </PropertyGroup>
   <PropertyGroup Label="Framework">
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>preview</LangVersion>
@@ -33,11 +36,10 @@
     />
   </ItemGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('ContractTests'))">
-    <PackageReference Include="Verify.TUnit" />
-    <PackageReference Include="Verify.Wolverine" />
+    <PackageReference Include="PactNet" />
     <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestHelper.cs"
-      Link="SnapshotTestHelper.cs"
+      Include="$(SolutionDir)\tests\BookWorm.Common\PactTestHelper.cs"
+      Link="PactTestHelper.cs"
     />
   </ItemGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('Tests'))">

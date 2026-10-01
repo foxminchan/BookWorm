@@ -7,6 +7,7 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Catalog.ContractTests.Consumers;
 
+[Category("PactConsumer")]
 public sealed class FeedbackDeletedConsumerTests
 {
     private readonly int _rating = 4;
@@ -44,10 +45,14 @@ public sealed class FeedbackDeletedConsumerTests
         var handler = new FeedbackDeletedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(@event, CancellationToken.None);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Catalog",
+            "Rating",
+            @event,
+            async pactEvent => await handler.Handle(pactEvent, CancellationToken.None)
+        );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync((Guid)_book.Id, It.IsAny<CancellationToken>()),
             Times.Once
@@ -67,10 +72,14 @@ public sealed class FeedbackDeletedConsumerTests
         var handler = new FeedbackDeletedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(@event, CancellationToken.None);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Catalog",
+            "Rating",
+            @event,
+            async pactEvent => await handler.Handle(pactEvent, CancellationToken.None)
+        );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once

@@ -82,7 +82,7 @@ internal sealed class RefreshingMcpToolsAgent(
         AITool[] tools
     )
     {
-        ChatClientAgentRunOptions runOptions = options switch
+        var runOptions = options switch
         {
             null => new(new()),
             ChatClientAgentRunOptions chatClientRunOptions => (ChatClientAgentRunOptions)

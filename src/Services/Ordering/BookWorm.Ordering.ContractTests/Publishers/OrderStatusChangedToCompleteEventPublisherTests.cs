@@ -3,10 +3,11 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Ordering.ContractTests.Publishers;
 
+[Category("PactProvider")]
 public sealed class OrderStatusChangedToCompleteEventPublisherTests
 {
     [Test]
-    public async Task GivenOrderStatusChangedToCompleteIntegrationEvent_WhenPublished_ThenShouldMatchContract()
+    public void GivenOrderStatusChangedToCompleteIntegrationEvent_WhenPublished_ThenShouldMatchContract()
     {
         // Arrange
         var orderId = Guid.CreateVersion7();
@@ -24,6 +25,6 @@ public sealed class OrderStatusChangedToCompleteEventPublisherTests
         );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
+        PactTestHelper.VerifyProviderMessage("Finance", "Ordering", @event);
     }
 }
