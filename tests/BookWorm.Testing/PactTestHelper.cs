@@ -1,36 +1,49 @@
 using System.Net.Mime;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using PactNet;
 using PactNet.Verifier;
 using Wolverine.Attributes;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 using Match = PactNet.Matchers.Match;
 
-namespace BookWorm.Common;
+namespace BookWorm.Testing;
 
-public static partial class PactTestHelper
+public sealed partial class PactTestHelper
 {
     private const string ProviderVerificationMutexName = "BookWorm.PactNet.ProviderVerification";
 
-    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-    };
+    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly JsonSerializerOptions _providerJsonSettings;
 
-    private static readonly JsonSerializerOptions providerJsonSettings = new(
-        JsonSerializerDefaults.Web
-    )
+    public PactTestHelper(JsonSerializerContext messageJsonContext)
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-    };
+        ArgumentNullException.ThrowIfNull(messageJsonContext);
 
-    private static Task VerifyConsumerMessageAsync<T>(
+        _jsonOptions = new(messageJsonContext.Options)
+        {
+            TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                messageJsonContext,
+                PactSerializationContext.Default
+            ),
+        };
+
+        _providerJsonSettings = new(_jsonOptions)
+        {
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+            // PactNet also serializes matcher objects outside our generated message contracts.
+            TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                messageJsonContext,
+                PactSerializationContext.Default,
+                new DefaultJsonTypeInfoResolver()
+            ),
+        };
+    }
+
+    private Task VerifyConsumerMessageAsync<T>(
         string consumer,
         string provider,
         string description,
@@ -48,12 +61,12 @@ public static partial class PactTestHelper
             .WithMetadata("type", GetMessageType(expectedMessage.GetType()))
             .WithMetadata("source", GetMessageSource(provider))
             .WithJsonContent(
-                CreateTypeMatcher(JsonSerializer.SerializeToElement(expectedMessage, jsonOptions))
+                CreateTypeMatcher(JsonSerializer.SerializeToElement(expectedMessage, _jsonOptions))
             )
             .VerifyAsync(consume);
     }
 
-    public static Task VerifyConsumerMessageAsync<T>(
+    public Task VerifyConsumerMessageAsync<T>(
         string consumer,
         string provider,
         T expectedMessage,
@@ -72,11 +85,7 @@ public static partial class PactTestHelper
         );
     }
 
-    public static Task VerifyConsumerMessageAsync<T>(
-        string consumer,
-        string provider,
-        T expectedMessage
-    )
+    public Task VerifyConsumerMessageAsync<T>(string consumer, string provider, T expectedMessage)
     {
         ArgumentNullException.ThrowIfNull(expectedMessage);
         var messageType = GetMessageType(expectedMessage.GetType());
@@ -90,19 +99,19 @@ public static partial class PactTestHelper
         );
     }
 
-    public static void VerifyProviderMessage<T>(string consumer, string provider, T message)
+    public void VerifyProviderMessage<T>(string consumer, string provider, T message)
     {
         ArgumentNullException.ThrowIfNull(message);
 
         var messageType = GetMessageType(message.GetType());
         var pactPath = Path.Combine(GetPactDirectory(), $"{consumer}-{provider}.json");
         var description = $"{messageType} message";
-        var pactDocument = JObject.Parse(File.ReadAllText(pactPath));
+        var pactDocument = JsonNode.Parse(File.ReadAllText(pactPath))!;
         var messages =
-            pactDocument["messages"] as JArray
+            pactDocument["messages"] as JsonArray
             ?? throw new InvalidDataException($"Pact file '{pactPath}' has no messages.");
         var matchingMessages = messages
-            .Where(jToken => jToken["description"]?.Value<string>() == description)
+            .Where(messageNode => messageNode?["description"]?.GetValue<string>() == description)
             .ToArray();
 
         if (matchingMessages.Length != 1)
@@ -113,12 +122,15 @@ public static partial class PactTestHelper
             );
         }
 
-        pactDocument["messages"] = new JArray(matchingMessages[0].DeepClone());
+        pactDocument["messages"] = new JsonArray(matchingMessages[0]!.DeepClone());
         var verificationPactPath = Path.Combine(
             Path.GetTempPath(),
             $"bookworm-{Guid.CreateVersion7():N}.json"
         );
-        File.WriteAllText(verificationPactPath, pactDocument.ToString(Formatting.Indented));
+        File.WriteAllText(
+            verificationPactPath,
+            pactDocument.ToJsonString(new() { WriteIndented = true })
+        );
 
         using var mutex = new Mutex(false, ProviderVerificationMutexName);
         mutex.WaitOne();
@@ -128,7 +140,7 @@ public static partial class PactTestHelper
             using var verifier = new PactVerifier(provider);
             verifier
                 // PactNet 5.x requires an HTTP transport before configuring message verification.
-                .WithHttpEndpoint(new Uri("http://localhost"))
+                .WithHttpEndpoint(new("http://localhost"))
                 .WithMessages(
                     scenarios =>
                         scenarios.Add(
@@ -137,19 +149,18 @@ public static partial class PactTestHelper
                             {
                                 builder
                                     .WithMetadata(
-                                        new
-                                        {
-                                            contentType = MediaTypeNames.Application.Json,
-                                            type = messageType,
-                                            source = GetMessageSource(provider),
-                                        }
+                                        new PactMessageMetadata(
+                                            MediaTypeNames.Application.Json,
+                                            messageType,
+                                            GetMessageSource(provider)
+                                        )
                                     )
-                                    .WithContent(() => message);
+                                    .WithContent(() => message, _jsonOptions);
                             }
                         ),
-                    providerJsonSettings
+                    _providerJsonSettings
                 )
-                .WithFileSource(new FileInfo(verificationPactPath))
+                .WithFileSource(new(verificationPactPath))
                 .Verify();
         }
         finally
@@ -159,12 +170,12 @@ public static partial class PactTestHelper
         }
     }
 
-    private static PactConfig CreateConfig()
+    private PactConfig CreateConfig()
     {
         var pactDirectory = GetPactDirectory();
         Directory.CreateDirectory(pactDirectory);
 
-        return new() { PactDir = pactDirectory, DefaultJsonSettings = providerJsonSettings };
+        return new() { PactDir = pactDirectory, DefaultJsonSettings = _providerJsonSettings };
     }
 
     private static string GetPactDirectory()

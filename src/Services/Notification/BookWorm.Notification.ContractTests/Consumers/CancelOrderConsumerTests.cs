@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
@@ -44,7 +43,7 @@ public sealed class CancelOrderConsumerTests
         var handler = new CancelOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Notification",
             "Finance",
             command,

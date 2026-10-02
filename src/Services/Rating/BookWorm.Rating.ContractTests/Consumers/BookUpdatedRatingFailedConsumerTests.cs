@@ -1,5 +1,4 @@
-using BookWorm.Chassis.Repository;
-using BookWorm.Common;
+﻿using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.IntegrationEvents.EventHandlers;
@@ -40,7 +39,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         var handler = new BookUpdatedRatingFailedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Rating",
             "Catalog",
             @event,
@@ -68,7 +67,7 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         var handler = new BookUpdatedRatingFailedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Rating",
             "Catalog",
             @event,

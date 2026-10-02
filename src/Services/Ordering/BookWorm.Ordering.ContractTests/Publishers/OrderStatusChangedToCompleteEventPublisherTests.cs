@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 
 namespace BookWorm.Ordering.ContractTests.Publishers;
 
@@ -25,6 +24,6 @@ public sealed class OrderStatusChangedToCompleteEventPublisherTests
         );
 
         // Assert
-        PactTestHelper.VerifyProviderMessage("Finance", "Ordering", @event);
+        PactTests.Helper.VerifyProviderMessage("Finance", "Ordering", @event);
     }
 }

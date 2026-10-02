@@ -62,6 +62,15 @@ dotnet_style_prefer_conditional_expression_over_return = true:silent
 ###############################
 # Style Definitions
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+dotnet_naming_style.underscore_camel_case_style.capitalization = camel_case
+dotnet_naming_style.underscore_camel_case_style.required_prefix = _
+# Use _camelCase for private static readonly fields
+dotnet_naming_rule.private_static_readonly_fields_should_be_underscore_camel_case.severity = suggestion
+dotnet_naming_rule.private_static_readonly_fields_should_be_underscore_camel_case.symbols = private_static_readonly_fields
+dotnet_naming_rule.private_static_readonly_fields_should_be_underscore_camel_case.style = underscore_camel_case_style
+dotnet_naming_symbols.private_static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_readonly_fields.required_modifiers = static, readonly
 # Use PascalCase for constant fields
 dotnet_naming_rule.constant_fields_should_be_pascal_case.severity = suggestion
 dotnet_naming_rule.constant_fields_should_be_pascal_case.symbols = constant_fields

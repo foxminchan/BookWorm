@@ -1,5 +1,4 @@
-using BookWorm.Chassis.Repository;
-using BookWorm.Common;
+﻿using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Senders;
@@ -58,7 +57,7 @@ public sealed class ResendErrorEmailConsumerTests
         );
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Notification",
             "Scheduler",
             @event,

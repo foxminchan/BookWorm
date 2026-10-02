@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 
 namespace BookWorm.Rating.ContractTests.Publishers;
 
@@ -17,6 +16,6 @@ public sealed class FeedbackDeletedEventPublisherTests
         var @event = new FeedbackDeletedIntegrationEvent(bookId, rating, feedbackId);
 
         // Assert
-        PactTestHelper.VerifyProviderMessage("Catalog", "Rating", @event);
+        PactTests.Helper.VerifyProviderMessage("Catalog", "Rating", @event);
     }
 }

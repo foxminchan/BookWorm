@@ -5,11 +5,11 @@
   "messages": [
     {
       "contents": {
-        "creationDate": "2026-10-01T17:08:14.0261508Z",
+        "creationDate": "2026-10-02T18:47:34.8849336Z",
         "email": "test@example.com",
         "fullName": "Test User",
-        "id": "01a0f870-244a-7191-8a27-cbfcb0d33bf1",
-        "orderId": "01a0f870-2427-71cd-b322-5017a8485a93",
+        "id": "01a0fdf1-74e4-7321-b869-62d6ee0f91ba",
+        "orderId": "01a0fdf1-735e-78b6-961c-7f9f0dc2f6d1",
         "totalMoney": 99.99
       },
       "description": "BookWorm.Contracts.CancelOrderCommand message",
@@ -73,11 +73,11 @@
     },
     {
       "contents": {
-        "creationDate": "2026-10-01T17:08:14.0261846Z",
+        "creationDate": "2026-10-02T18:47:34.8849369Z",
         "email": "customer@example.com",
         "fullName": "John Doe",
-        "id": "01a0f870-244a-7087-bb10-951d9e9a3b28",
-        "orderId": "01a0f870-2427-7492-97c3-e7d69c89dc8f",
+        "id": "01a0fdf1-74e4-7c85-88a1-56817fe17cd4",
+        "orderId": "01a0fdf1-735e-73fb-a279-55786bed2245",
         "totalMoney": 150.99
       },
       "description": "BookWorm.Contracts.CompleteOrderCommand message",
@@ -141,12 +141,12 @@
     },
     {
       "contents": {
-        "basketId": "01a0f870-2449-736b-bbd7-34b64a5704e7",
-        "creationDate": "2026-10-01T17:08:14.0261188Z",
+        "basketId": "01a0fdf1-74e4-744f-b9c9-e5e53dd75b35",
+        "creationDate": "2026-10-02T18:47:34.8849568Z",
         "email": "john.doe@example.com",
         "fullName": "John Doe",
-        "id": "01a0f870-2449-76bb-af8f-3fb2d6ce00fe",
-        "orderId": "01a0f870-2449-7deb-8500-e6032c8adf24",
+        "id": "01a0fdf1-74e4-7374-b5d5-ea838176eca3",
+        "orderId": "01a0fdf1-74e4-780d-ae67-08c107eb8838",
         "totalMoney": 99.99
       },
       "description": "BookWorm.Contracts.PlaceOrderCommand message",
@@ -219,8 +219,8 @@
   ],
   "metadata": {
     "pactRust": {
-      "ffi": "0.4.0",
-      "models": "1.0.4"
+      "ffi": "0.4.27",
+      "models": "1.2.8"
     },
     "pactSpecification": {
       "version": "3.0.0"

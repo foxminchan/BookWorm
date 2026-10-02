@@ -141,6 +141,10 @@ mise run test:contracts
 The contract task runs consumer tests first to generate Pact files in `tests/pacts/`, then
 provider tests verify the messages produced by each service against those contracts.
 
+Test projects reference `tests/BookWorm.Testing/BookWorm.Testing.csproj` for shared helpers and
+test dependencies. Each contract-test project initializes a reusable `PactTestHelper` instance
+with its source-generated `PactMessageSerializationContext` and accesses it through `PactTests.Helper`.
+
 ### Self-Deploy to Azure
 
 1. **Authenticate with Azure**

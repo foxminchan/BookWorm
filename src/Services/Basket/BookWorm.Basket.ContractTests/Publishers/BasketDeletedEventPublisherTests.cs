@@ -1,6 +1,5 @@
-using BookWorm.Basket.Domain;
+﻿using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
-using BookWorm.Common;
 using BookWorm.Contracts;
 using Wolverine;
 
@@ -41,7 +40,7 @@ public sealed class BasketDeletedEventPublisherTests
         var publishedEvent =
             outgoingMessage as BasketDeletedCompleteIntegrationEvent
             ?? throw new InvalidOperationException("Expected basket deletion completion event.");
-        PactTestHelper.VerifyProviderMessage("Finance", "Basket", publishedEvent);
+        PactTests.Helper.VerifyProviderMessage("Finance", "Basket", publishedEvent);
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 
@@ -63,7 +62,7 @@ public sealed class BasketDeletedEventPublisherTests
         var publishedEvent =
             outgoingMessage as BasketDeletedFailedIntegrationEvent
             ?? throw new InvalidOperationException("Expected basket deletion failure event.");
-        PactTestHelper.VerifyProviderMessage("Finance", "Basket", publishedEvent);
+        PactTests.Helper.VerifyProviderMessage("Finance", "Basket", publishedEvent);
         _repositoryMock.Verify(x => x.DeleteBasketAsync(_basketId.ToString()), Times.Once);
     }
 }

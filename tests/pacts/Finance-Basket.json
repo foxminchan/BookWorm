@@ -5,10 +5,10 @@
   "messages": [
     {
       "contents": {
-        "basketId": "01a0f870-0bb9-7078-be14-185d83d8eabe",
-        "creationDate": "2026-10-01T17:08:07.7473332Z",
-        "id": "01a0f870-0bc3-78be-902b-81b3be245789",
-        "orderId": "01a0f870-0bb9-7e73-aafc-6aeaad97413e",
+        "basketId": "01a0fdf1-4e02-7ef0-88d3-3e02faeccbc1",
+        "creationDate": "2026-10-02T18:47:24.968253Z",
+        "id": "01a0fdf1-4e28-7ca9-9db0-8c23639d34bd",
+        "orderId": "01a0fdf1-4e02-7473-a9b9-b4fa08d1721f",
         "totalMoney": 99.99
       },
       "description": "BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent message",
@@ -64,11 +64,11 @@
     },
     {
       "contents": {
-        "basketId": "01a0f870-0bba-7fbe-8deb-348524999150",
-        "creationDate": "2026-10-01T17:08:07.7470838Z",
+        "basketId": "01a0fdf1-4e02-75bf-8b0c-a07c79e2d5d5",
+        "creationDate": "2026-10-02T18:47:24.9682407Z",
         "email": "john.doe@example.com",
-        "id": "01a0f870-0bc3-76a8-883e-9dfbae21858a",
-        "orderId": "01a0f870-0bba-7223-bf65-177fb40b1b01",
+        "id": "01a0fdf1-4e28-7866-9c00-7cd03cad812c",
+        "orderId": "01a0fdf1-4e02-7aac-8333-a1ed6fd5e3be",
         "totalMoney": 99.99
       },
       "description": "BookWorm.Contracts.BasketDeletedFailedIntegrationEvent message",
@@ -133,8 +133,8 @@
   ],
   "metadata": {
     "pactRust": {
-      "ffi": "0.4.0",
-      "models": "1.0.4"
+      "ffi": "0.4.27",
+      "models": "1.2.8"
     },
     "pactSpecification": {
       "version": "3.0.0"

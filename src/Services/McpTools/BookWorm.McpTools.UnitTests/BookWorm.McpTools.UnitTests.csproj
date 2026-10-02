@@ -4,10 +4,7 @@
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Moq" />
-    <PackageReference Include="Bogus" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\tests\BookWorm.Testing\BookWorm.Testing.csproj" />
     <ProjectReference Include="..\BookWorm.McpTools\BookWorm.McpTools.csproj" />
   </ItemGroup>
   <ItemGroup>

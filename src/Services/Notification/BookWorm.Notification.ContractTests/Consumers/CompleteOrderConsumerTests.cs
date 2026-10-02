@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Builders;
@@ -46,7 +45,7 @@ public sealed class CompleteOrderConsumerTests
         var handler = new CompleteOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Notification",
             "Finance",
             command,

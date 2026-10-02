@@ -24,17 +24,4 @@
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('ContractTests'))">
-    <PackageReference Include="PactNet" />
-    <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\PactTestHelper.cs"
-      Link="PactTestHelper.cs"
-    />
-  </ItemGroup>
-  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('Tests'))">
-    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
-    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
-    <PackageReference Include="Shouldly" />
-    <PackageReference Include="TUnit" />
-  </ItemGroup>
 </Project>

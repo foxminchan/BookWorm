@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
 using Microsoft.Extensions.Logging;
 using Wolverine;
@@ -18,7 +17,7 @@ public sealed class OrderStateMachineProviderTests
     {
         var messages = StartSaga().Messages;
 
-        PactTestHelper.VerifyProviderMessage(
+        PactTests.Helper.VerifyProviderMessage(
             "Basket",
             "Finance",
             messages.OfType<PlaceOrderCommand>().Single()
@@ -30,7 +29,7 @@ public sealed class OrderStateMachineProviderTests
     {
         var messages = StartSaga().Messages;
 
-        PactTestHelper.VerifyProviderMessage(
+        PactTests.Helper.VerifyProviderMessage(
             "Notification",
             "Finance",
             messages.OfType<PlaceOrderCommand>().Single()
@@ -43,7 +42,7 @@ public sealed class OrderStateMachineProviderTests
         var (saga, _) = StartSaga();
         var command = saga.Handle(new(Guid.CreateVersion7(), Guid.CreateVersion7(), TotalMoney));
 
-        PactTestHelper.VerifyProviderMessage("Ordering", "Finance", command);
+        PactTests.Helper.VerifyProviderMessage("Ordering", "Finance", command);
     }
 
     [Test]
@@ -60,7 +59,7 @@ public sealed class OrderStateMachineProviderTests
             Mock.Of<ILogger<OrderSaga>>()
         );
 
-        PactTestHelper.VerifyProviderMessage(
+        PactTests.Helper.VerifyProviderMessage(
             "Ordering",
             "Finance",
             messages.OfType<DeleteBasketFailedCommand>().Single()
@@ -82,7 +81,7 @@ public sealed class OrderStateMachineProviderTests
             Mock.Of<ILogger<OrderSaga>>()
         );
 
-        PactTestHelper.VerifyProviderMessage(
+        PactTests.Helper.VerifyProviderMessage(
             "Notification",
             "Finance",
             messages.OfType<CompleteOrderCommand>().Single()
@@ -104,7 +103,7 @@ public sealed class OrderStateMachineProviderTests
             Mock.Of<ILogger<OrderSaga>>()
         );
 
-        PactTestHelper.VerifyProviderMessage(
+        PactTests.Helper.VerifyProviderMessage(
             "Notification",
             "Finance",
             messages.OfType<CancelOrderCommand>().Single()

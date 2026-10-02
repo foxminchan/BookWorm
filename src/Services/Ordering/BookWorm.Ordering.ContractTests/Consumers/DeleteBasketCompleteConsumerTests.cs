@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 using BookWorm.Ordering.IntegrationEvents.EventHandlers;
 using Microsoft.Extensions.Logging;
 
@@ -27,7 +26,7 @@ public sealed class DeleteBasketCompleteConsumerTests
         var handler = new DeleteBasketCompleteCommandHandler(_loggerMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Ordering",
             "Finance",
             command,

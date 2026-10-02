@@ -1,6 +1,5 @@
-using BookWorm.Basket.Domain;
+﻿using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
-using BookWorm.Common;
 using BookWorm.Contracts;
 using Wolverine;
 
@@ -36,7 +35,7 @@ public sealed class PlaceOrderConsumerTests
         );
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Basket",
             "Finance",
             command,

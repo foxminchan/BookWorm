@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.Repository;
-using BookWorm.Common;
 using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.IntegrationEvents.EventHandlers;
@@ -49,7 +48,7 @@ public sealed class CleanUpSentEmailConsumerTests
         );
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Notification",
             "Scheduler",
             @event,

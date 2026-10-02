@@ -1,8 +1,7 @@
-using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Repository;
-using BookWorm.Common;
 using BookWorm.Contracts;
 
 namespace BookWorm.Catalog.ContractTests.Consumers;
@@ -45,7 +44,7 @@ public sealed class FeedbackDeletedConsumerTests
         var handler = new FeedbackDeletedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Catalog",
             "Rating",
             @event,
@@ -72,7 +71,7 @@ public sealed class FeedbackDeletedConsumerTests
         var handler = new FeedbackDeletedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Catalog",
             "Rating",
             @event,

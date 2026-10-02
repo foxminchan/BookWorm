@@ -7,6 +7,7 @@
     <PackageReference Include="TngTech.ArchUnitNET.TUnit" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BookWorm.Testing\BookWorm.Testing.csproj" />
     <ProjectReference Include="..\..\src\Services\Chat\BookWorm.Chat\BookWorm.Chat.csproj" />
     <ProjectReference Include="..\..\src\Services\Basket\BookWorm.Basket\BookWorm.Basket.csproj" />
     <ProjectReference Include="..\..\src\Services\Rating\BookWorm.Rating\BookWorm.Rating.csproj" />

@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 
 namespace BookWorm.Scheduler.ContractTests.Publishers;
 
@@ -13,6 +12,6 @@ public sealed class CleanUpSentEmailEventPublisherTests
         var @event = new CleanUpSentEmailIntegrationEvent();
 
         // Assert
-        PactTestHelper.VerifyProviderMessage("Notification", "Scheduler", @event);
+        PactTests.Helper.VerifyProviderMessage("Notification", "Scheduler", @event);
     }
 }

@@ -1,5 +1,4 @@
-using BookWorm.Chassis.Repository;
-using BookWorm.Common;
+﻿using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
@@ -45,7 +44,7 @@ public sealed class DeleteBasketFailedConsumerTests
         var handler = new DeleteBasketFailedCommandHandler(_repositoryMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Ordering",
             "Finance",
             command,
@@ -70,7 +69,7 @@ public sealed class DeleteBasketFailedConsumerTests
         var handler = new DeleteBasketFailedCommandHandler(_repositoryMock.Object);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Ordering",
             "Finance",
             command,

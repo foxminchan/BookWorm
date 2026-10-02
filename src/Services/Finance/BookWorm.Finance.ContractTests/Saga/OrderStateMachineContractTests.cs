@@ -1,5 +1,4 @@
-using BookWorm.Common;
-using BookWorm.Contracts;
+﻿using BookWorm.Contracts;
 using BookWorm.Finance.Saga;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +34,7 @@ public sealed class OrderStateMachineContractTests
         var @event = CreateCheckedOutEvent(orderId, basketId);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Finance",
             "Ordering",
             @event,
@@ -62,7 +61,7 @@ public sealed class OrderStateMachineContractTests
         var @event = new BasketDeletedCompleteIntegrationEvent(orderId, basketId, TestTotalMoney);
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Finance",
             "Basket",
             @event,
@@ -94,7 +93,7 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Finance",
             "Basket",
             @event,
@@ -130,7 +129,7 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Finance",
             "Ordering",
             @event,
@@ -166,7 +165,7 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Finance",
             "Ordering",
             @event,

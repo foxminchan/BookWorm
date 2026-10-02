@@ -5,9 +5,9 @@
   "messages": [
     {
       "contents": {
-        "creationDate": "2026-10-01T17:08:21.037288Z",
-        "id": "01a0f870-3fad-7886-810d-e587199582fc",
-        "orderId": "01a0f870-3f9e-7c27-8bf6-5db7155aee28",
+        "creationDate": "2026-10-02T18:47:46.0450275Z",
+        "id": "01a0fdf1-a07c-7396-b174-36b648d87015",
+        "orderId": "01a0fdf1-9f7d-79cc-ba0f-4512bfab16f9",
         "totalMoney": 125.99
       },
       "description": "BookWorm.Contracts.DeleteBasketCompleteCommand message",
@@ -55,11 +55,11 @@
     },
     {
       "contents": {
-        "basketId": "01a0f870-3f9f-7d05-82db-f2141ed0ed09",
-        "creationDate": "2026-10-01T17:08:21.0967683Z",
+        "basketId": "01a0fdf1-9f7e-7971-9b6f-c99279a92bc7",
+        "creationDate": "2026-10-02T18:47:46.1304329Z",
         "email": "test@example.com",
-        "id": "01a0f870-3fe8-7f37-b94c-5b690aeca2fb",
-        "orderId": "01a0f870-3f9f-73a9-a53d-80b21907722a",
+        "id": "01a0fdf1-a0d2-7bf2-b0f5-b8194697eb78",
+        "orderId": "01a0fdf1-9f7e-7e34-b1df-214a991324dd",
         "totalMoney": 100.0
       },
       "description": "BookWorm.Contracts.DeleteBasketFailedCommand message",
@@ -124,8 +124,8 @@
   ],
   "metadata": {
     "pactRust": {
-      "ffi": "0.4.0",
-      "models": "1.0.4"
+      "ffi": "0.4.27",
+      "models": "1.2.8"
     },
     "pactSpecification": {
       "version": "3.0.0"

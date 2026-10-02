@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <IsTestProject>false</IsTestProject>
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
+    <IsTestingPlatformEnabled>false</IsTestingPlatformEnabled>
+    <EnableTUnitSourceGeneration>false</EnableTUnitSourceGeneration>
+    <IsPackable>false</IsPackable>
+    <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
+  </PropertyGroup>
+  <ItemGroup Label="Testing">
+    <PackageReference Include="Bogus" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="PactNet" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="WolverineFx" />
+  </ItemGroup>
+</Project>

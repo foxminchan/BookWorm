@@ -1,7 +1,6 @@
-using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Chassis.Repository;
-using BookWorm.Common;
 using BookWorm.Contracts;
 using Wolverine;
 
@@ -51,7 +50,7 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
         var publishedEvent =
             outgoingMessage as BookUpdatedRatingFailedIntegrationEvent
             ?? throw new InvalidOperationException("Expected rating failure integration event.");
-        PactTestHelper.VerifyProviderMessage("Rating", "Catalog", publishedEvent);
+        PactTests.Helper.VerifyProviderMessage("Rating", "Catalog", publishedEvent);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),
             Times.Once

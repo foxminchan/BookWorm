@@ -1,8 +1,7 @@
-using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Repository;
-using BookWorm.Common;
 using BookWorm.Contracts;
 using Wolverine;
 
@@ -48,7 +47,7 @@ public sealed class FeedbackCreatedConsumerTests
         );
 
         // Act
-        await PactTestHelper.VerifyConsumerMessageAsync(
+        await PactTests.Helper.VerifyConsumerMessageAsync(
             "Catalog",
             "Rating",
             @event,
