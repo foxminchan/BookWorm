@@ -97,7 +97,7 @@ export class AboutPage extends BasePage {
   }
 
   // Assertions
-  async isOnAboutPage(): Promise<boolean> {
+  isOnAboutPage(): boolean {
     return this.page.url().includes("/about");
   }
 }

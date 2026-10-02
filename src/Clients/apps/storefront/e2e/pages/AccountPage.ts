@@ -64,7 +64,7 @@ export class AccountPage extends BasePage {
   }
 
   // Assertions
-  async isOnAccountPage(): Promise<boolean> {
+  isOnAccountPage(): boolean {
     return this.page.url().includes("/account");
   }
 }

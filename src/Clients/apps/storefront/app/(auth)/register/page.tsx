@@ -8,14 +8,14 @@ import { signIn } from "@/lib/auth-client";
 
 export default function RegisterPage() {
   useEffect(() => {
-    const register = async () => {
-      await signIn.social({
+    void signIn
+      .social({
         provider: "keycloak",
         callbackURL: "/",
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to start Keycloak registration:", error);
       });
-    };
-
-    register();
   }, []);
 
   return (

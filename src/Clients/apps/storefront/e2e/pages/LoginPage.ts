@@ -37,7 +37,7 @@ export class LoginPage extends BasePage {
   }
 
   // Assertions
-  async isOnLoginPage(): Promise<boolean> {
+  isOnLoginPage(): boolean {
     return this.page.url().includes("/login");
   }
 }

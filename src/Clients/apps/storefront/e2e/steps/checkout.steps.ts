@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { Given, Then, When } from "./fixtures";
 
 /**
@@ -61,11 +62,14 @@ Given(
   "I have added {int} different books to my basket",
   async ({ page, shopPage, productDetailPage }, bookCount: number) => {
     await shopPage.navigate();
-    for (let i = 0; i < bookCount; i++) {
-      await shopPage.clickBook(i);
-      await productDetailPage.addToBasket();
-      await shopPage.navigate();
-    }
+    await forEachSequentially(
+      Array.from({ length: bookCount }),
+      async (_, i) => {
+        await shopPage.clickBook(i);
+        await productDetailPage.addToBasket();
+        await shopPage.navigate();
+      },
+    );
   },
 );
 

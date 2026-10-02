@@ -128,13 +128,10 @@ Then("the URL should contain {string}", async ({ page }, urlPart: string) => {
   expect(url).toContain(urlPart);
 });
 
-Then(
-  "I should see page {int} in the URL",
-  async ({ page }, pageNumber: number) => {
-    const url = page.url();
-    expect(url).toContain(`page=${pageNumber}`);
-  },
-);
+Then("I should see page {int} in the URL", ({ page }, pageNumber: number) => {
+  const url = page.url();
+  expect(url).toContain(`page=${pageNumber}`);
+});
 
 // Visibility assertions
 Then("I should see {string} message", async ({ page }, message: string) => {

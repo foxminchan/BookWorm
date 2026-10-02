@@ -19,12 +19,20 @@ export function CellAction({ customer }: CellActionProps) {
   const [openDelete, setOpenDelete] = useState(false);
   const deleteCustomerMutation = useDeleteBuyer();
 
-  const handleDelete = useCallback(async () => {
-    deleteCustomerMutation.mutate(customer.id, {
-      onSuccess: () => {
-        setOpenDelete(false);
-        toast.success("Customer has been deleted");
-      },
+  const handleDelete = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      deleteCustomerMutation.mutate(customer.id, {
+        onSuccess: () => {
+          setOpenDelete(false);
+          toast.success("Customer has been deleted");
+          resolve();
+        },
+        onError: (error) => {
+          console.error("Failed to delete customer:", error);
+          toast.error("Failed to delete customer");
+          resolve();
+        },
+      });
     });
   }, [customer.id, deleteCustomerMutation]);
 

@@ -1,5 +1,6 @@
 import { Locator, Page, expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { BasePage } from "./BasePage";
 
 /**
@@ -192,17 +193,17 @@ export class ProductDetailPage extends BasePage {
   }
 
   async increaseQuantity(times: number = 1): Promise<void> {
-    for (let i = 0; i < times; i++) {
+    await forEachSequentially(Array.from({ length: times }), async () => {
       await this.increaseQuantityButton.click();
       await this.page.waitForTimeout(200); // Small delay between clicks
-    }
+    });
   }
 
   async decreaseQuantity(times: number = 1): Promise<void> {
-    for (let i = 0; i < times; i++) {
+    await forEachSequentially(Array.from({ length: times }), async () => {
       await this.decreaseQuantityButton.click();
       await this.page.waitForTimeout(200);
-    }
+    });
   }
 
   async addToBasket(): Promise<void> {

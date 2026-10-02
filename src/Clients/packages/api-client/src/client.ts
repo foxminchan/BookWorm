@@ -77,14 +77,14 @@ export default class ApiClient {
     this.tokenProvider = provider;
   }
 
-  public async get<T>(
+  public get<T>(
     url: string,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
     return this.client.get<T>(url, config);
   }
 
-  public async post<T>(
+  public post<T>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig,
@@ -92,7 +92,7 @@ export default class ApiClient {
     return this.client.post<T>(url, data, config);
   }
 
-  public async put<T>(
+  public put<T>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig,
@@ -100,7 +100,7 @@ export default class ApiClient {
     return this.client.put<T>(url, data, config);
   }
 
-  public async patch<T>(
+  public patch<T>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig,
@@ -108,7 +108,7 @@ export default class ApiClient {
     return this.client.patch<T>(url, data, config);
   }
 
-  public async delete<T>(
+  public delete<T>(
     url: string,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {

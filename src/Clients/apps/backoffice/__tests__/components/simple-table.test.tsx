@@ -1,8 +1,15 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { userEvent } from "@/__tests__/utils/test-utils";
 import { SimpleTable } from "@/components/simple-table";
+
+vi.mock("sonner", () => ({
+  toast: {
+    error: vi.fn(),
+  },
+}));
 
 type TestItem = {
   id: string;
@@ -86,6 +93,29 @@ describe("SimpleTable", () => {
     await waitFor(() => {
       expect(mockOnUpdate).toHaveBeenCalledWith("1", "Updated Item 1");
     });
+  });
+
+  it("should report update failures without leaving an unhandled rejection", async () => {
+    const user = userEvent.setup();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockOnUpdate.mockRejectedValueOnce(new Error("Update failed"));
+    render(<SimpleTable {...defaultProps} />);
+
+    await user.click(screen.getAllByRole("button", { name: /edit/i })[0]!);
+    const input = screen.getByDisplayValue("Item 1");
+    await user.clear(input);
+    await user.type(input, "Updated Item 1");
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to update item");
+    });
+    expect(screen.getByDisplayValue("Updated Item 1")).toBeInTheDocument();
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Failed to update table item:",
+      expect.any(Error),
+    );
+    errorSpy.mockRestore();
   });
 
   it("should cancel editing when clicking cancel button", async () => {

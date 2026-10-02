@@ -28,7 +28,7 @@ const categoryCardStyle = {
   borderRadius: 12,
 };
 
-export default async function Image() {
+export default function Image() {
   return new ImageResponse(
     <div
       style={{

@@ -223,7 +223,7 @@ export class ShopPage extends BasePage {
     });
   }
 
-  async getCurrentPage(): Promise<number> {
+  getCurrentPage(): number {
     const url = new URL(this.getCurrentUrl());
     const page = url.searchParams.get("page");
     return page ? Number.parseInt(page) : 1;
@@ -239,12 +239,12 @@ export class ShopPage extends BasePage {
     await expect(this.emptyState).toBeVisible();
   }
 
-  async assertUrlHasFilter(filterType: string, value: string): Promise<void> {
+  assertUrlHasFilter(filterType: string, value: string): void {
     const url = this.getCurrentUrl();
     expect(url).toContain(`${filterType}=${value}`);
   }
 
-  async assertUrlHasSearchQuery(query: string): Promise<void> {
+  assertUrlHasSearchQuery(query: string): void {
     const url = this.getCurrentUrl();
     expect(url).toContain(`search=${query}`);
   }

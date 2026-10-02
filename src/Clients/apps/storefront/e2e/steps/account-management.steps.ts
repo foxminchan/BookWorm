@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { Given, Then, When } from "./fixtures";
 
 /**
@@ -96,7 +97,7 @@ When("I go to {string} section", async ({ page }, sectionName: string) => {
 
 When("I fill in the address form:", async ({ page }, dataTable: any) => {
   const data: Record<string, string> = dataTable.rowsHash();
-  for (const [field, value] of Object.entries(data)) {
+  await forEachSequentially(Object.entries(data), async ([field, value]) => {
     let selector = "";
     if (field === "Street Address")
       selector = 'input[name*="street"], input[id*="street"]';
@@ -109,7 +110,7 @@ When("I fill in the address form:", async ({ page }, dataTable: any) => {
     else if (field === "Country")
       selector = 'select[name*="country"], input[name*="country"]';
     await page.locator(selector).fill(value);
-  }
+  });
 });
 
 Then("I should see the new address in my addresses list", async ({ page }) => {
@@ -282,11 +283,11 @@ Then("I should see a data export request confirmation", async ({ page }) => {
   ).toBeVisible();
 });
 
-Then("I should receive an email when data is ready", async () => {
+Then("I should receive an email when data is ready", () => {
   expect(true).toBeTruthy();
 });
 
-Then("I can download a ZIP file with my data", async () => {
+Then("I can download a ZIP file with my data", () => {
   expect(true).toBeTruthy();
 });
 
@@ -314,7 +315,7 @@ Then("my account should be marked for deletion", async ({ page }) => {
   expect(true).toBeTruthy();
 });
 
-Then("I should receive a confirmation email", async () => {
+Then("I should receive a confirmation email", () => {
   expect(true).toBeTruthy();
 });
 
@@ -400,10 +401,10 @@ Then("all actions should be touch-optimized", async ({ page }) => {
 });
 
 When("I navigate using only keyboard", async ({ page }) => {
-  for (let i = 0; i < 15; i++) {
+  await forEachSequentially(Array.from({ length: 15 }), async () => {
     await page.keyboard.press("Tab");
     await page.waitForTimeout(100);
-  }
+  });
 });
 
 Then("all sections should be accessible", async ({ page }) => {

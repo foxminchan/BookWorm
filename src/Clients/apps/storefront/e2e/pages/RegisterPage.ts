@@ -39,7 +39,7 @@ export class RegisterPage extends BasePage {
   }
 
   // Assertions
-  async isOnRegisterPage(): Promise<boolean> {
+  isOnRegisterPage(): boolean {
     return this.page.url().includes("/register");
   }
 }

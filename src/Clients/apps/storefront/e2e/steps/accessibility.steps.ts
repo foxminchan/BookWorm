@@ -74,15 +74,15 @@ Then(
   "all interactive elements should have accessible names",
   async ({ page }) => {
     const buttons = page.locator("button");
-    const count = await buttons.count();
-    for (let i = 0; i < Math.min(count, 10); i++) {
-      const btn = buttons.nth(i);
-      const name = await btn.evaluate((el) => {
+    const names = await buttons.evaluateAll((elements) =>
+      elements.slice(0, 10).map((el) => {
         const aria =
           el.getAttribute("aria-label") || el.getAttribute("aria-labelledby");
         const text = el.textContent?.trim();
         return aria || text;
-      });
+      }),
+    );
+    for (const name of names) {
       expect(name).toBeTruthy();
     }
   },
@@ -90,11 +90,13 @@ Then(
 
 Then("all images should have alt attributes", async ({ page }) => {
   const images = page.locator("img");
-  const count = await images.count();
-  for (let i = 0; i < Math.min(count, 10); i++) {
-    const img = images.nth(i);
-    const alt = await img.getAttribute("alt");
-    const role = await img.getAttribute("role");
+  const imageAttributes = await images.evaluateAll((elements) =>
+    elements.slice(0, 10).map((image) => ({
+      alt: image.getAttribute("alt"),
+      role: image.getAttribute("role"),
+    })),
+  );
+  for (const { alt, role } of imageAttributes) {
     expect(alt !== null || role === "presentation").toBeTruthy();
   }
 });
@@ -103,10 +105,8 @@ Then("all form inputs should have associated labels", async ({ page }) => {
   const inputs = page.locator(
     "input:visible, select:visible, textarea:visible",
   );
-  const count = await inputs.count();
-  for (let i = 0; i < Math.min(count, 10); i++) {
-    const input = inputs.nth(i);
-    const hasLabel = await input.evaluate((el) => {
+  const labelStatuses = await inputs.evaluateAll((elements) =>
+    elements.slice(0, 10).map((el) => {
       const id = el.id;
       const hasAssociatedLabel = id
         ? document.querySelector(`label[for="${id}"]`) !== null
@@ -122,7 +122,9 @@ Then("all form inputs should have associated labels", async ({ page }) => {
         closestLabel ||
         !!placeholder
       );
-    });
+    }),
+  );
+  for (const hasLabel of labelStatuses) {
     expect(hasLabel).toBeTruthy();
   }
 });
@@ -194,7 +196,7 @@ Then("all text should have sufficient color contrast", async ({ page }) => {
 });
 
 // Screen reader announcements
-Given("a screen reader is simulated", async () => {
+Given("a screen reader is simulated", () => {
   expect(true).toBeTruthy();
 });
 
@@ -230,12 +232,14 @@ Then(
   "all interactive elements should meet minimum touch target size",
   async ({ page }) => {
     const buttons = page.locator("button:visible, a:visible");
-    const count = await buttons.count();
-    for (let i = 0; i < Math.min(count, 10); i++) {
-      const box = await buttons.nth(i).boundingBox();
-      if (box) {
-        expect(Math.max(box.width, box.height)).toBeGreaterThanOrEqual(24);
-      }
+    const targetSizes = await buttons.evaluateAll((elements) =>
+      elements.slice(0, 10).map((element) => {
+        const { width, height } = element.getBoundingClientRect();
+        return Math.max(width, height);
+      }),
+    );
+    for (const targetSize of targetSizes) {
+      expect(targetSize).toBeGreaterThanOrEqual(24);
     }
   },
 );
@@ -461,11 +465,13 @@ When("I inspect the page elements", async () => {
 
 Then("all buttons should have accessible names", async ({ page }) => {
   const buttons = page.locator("button");
-  const count = await buttons.count();
-  for (let i = 0; i < Math.min(count, 5); i++) {
-    const btn = buttons.nth(i);
-    const text = await btn.textContent();
-    const label = await btn.getAttribute("aria-label");
+  const accessibleNames = await buttons.evaluateAll((elements) =>
+    elements.slice(0, 5).map((button) => ({
+      text: button.textContent,
+      label: button.getAttribute("aria-label"),
+    })),
+  );
+  for (const { text, label } of accessibleNames) {
     expect(text || label).toBeTruthy();
   }
 });

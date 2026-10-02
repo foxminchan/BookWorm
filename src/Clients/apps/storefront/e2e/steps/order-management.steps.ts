@@ -106,8 +106,12 @@ When("I filter orders by {string}", async ({ ordersPage }, status: string) => {
 Then("I should only see completed orders", async ({ ordersPage }) => {
   const count = await ordersPage.getOrdersCount();
   if (count > 0) {
-    for (let i = 0; i < count; i++) {
-      const status = await ordersPage.getOrderStatus(i);
+    const statuses = await Promise.all(
+      Array.from({ length: count }, (_, index) =>
+        ordersPage.getOrderStatus(index),
+      ),
+    );
+    for (const status of statuses) {
       expect(status.toLowerCase()).toContain("completed");
     }
   }

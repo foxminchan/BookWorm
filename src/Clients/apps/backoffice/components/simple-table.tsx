@@ -5,6 +5,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { flexRender, useTable } from "@tanstack/react-table";
 import { Edit, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -97,7 +98,7 @@ function NameCell(
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            handleEditSave(item.id);
+            void handleEditSave(item.id);
           }
           if (e.key === "Escape") {
             cancelEditing();
@@ -135,7 +136,7 @@ function ActionsCell(
         <Button
           size="sm"
           variant="default"
-          onClick={() => handleEditSave(item.id)}
+          onClick={() => void handleEditSave(item.id)}
           disabled={isSubmitting}
         >
           Save
@@ -245,8 +246,13 @@ export function SimpleTable<T extends BaseItem>({
     async (id: string) => {
       const trimmed = state.editValue.trim();
       if (trimmed) {
-        await onUpdate(id, trimmed);
-        dispatch({ type: "FINISH_EDIT" });
+        try {
+          await onUpdate(id, trimmed);
+          dispatch({ type: "FINISH_EDIT" });
+        } catch (error) {
+          console.error("Failed to update table item:", error);
+          toast.error("Failed to update item");
+        }
       }
     },
     [state.editValue, onUpdate],
@@ -258,6 +264,9 @@ export function SimpleTable<T extends BaseItem>({
     dispatch({ type: "START_DELETING" });
     try {
       await onDelete(state.deleteConfirmId);
+    } catch (error) {
+      console.error("Failed to delete table item:", error);
+      toast.error("Failed to delete item");
     } finally {
       dispatch({ type: "FINISH_DELETE" });
     }

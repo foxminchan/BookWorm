@@ -23,7 +23,7 @@ const bookSpineStyle = {
   display: "flex" as const,
 };
 
-export default async function Image() {
+export default function Image() {
   return new ImageResponse(
     <div
       style={{

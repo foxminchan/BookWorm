@@ -54,7 +54,7 @@ export class ShippingPage extends BasePage {
   }
 
   // Assertions
-  async isOnShippingPage(): Promise<boolean> {
+  isOnShippingPage(): boolean {
     return this.page.url().includes("/shipping");
   }
 }

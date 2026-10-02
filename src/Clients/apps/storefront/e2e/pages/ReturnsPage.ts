@@ -52,7 +52,7 @@ export class ReturnsPage extends BasePage {
   }
 
   // Assertions
-  async isOnReturnsPage(): Promise<boolean> {
+  isOnReturnsPage(): boolean {
     return this.page.url().includes("/returns");
   }
 }

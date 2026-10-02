@@ -87,7 +87,7 @@ export function BookForm({ bookId }: BookFormProps) {
     }
   }, [bookData, bookId, form]);
 
-  const onSubmit = async (data: CreateBookInput) => {
+  const onSubmit = (data: CreateBookInput) => {
     if (bookId) {
       updateMutation.mutate(
         {

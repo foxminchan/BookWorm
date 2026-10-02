@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 const protectedRoutes = ["/basket", "/checkout", "/account"];
 const authRoutes = ["/login", "/register"];
 
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const sessionToken = request.cookies.get("better-auth.session_token")?.value;
 

@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { Given, Then, When } from "./fixtures";
 
 /**
@@ -113,7 +114,7 @@ Given("I am on the Contact page", async ({ page }) => {
 
 When("I fill in the contact form:", async ({ page }, dataTable: any) => {
   const data: Record<string, string> = dataTable.rowsHash();
-  for (const [field, value] of Object.entries(data)) {
+  await forEachSequentially(Object.entries(data), async ([field, value]) => {
     let selector = "";
     if (field === "Name") selector = 'input[name="name"], input[id*="name"]';
     else if (field === "Email")
@@ -123,7 +124,7 @@ When("I fill in the contact form:", async ({ page }, dataTable: any) => {
     else if (field === "Message")
       selector = 'textarea[name="message"], textarea';
     await page.locator(selector).fill(value);
-  }
+  });
 });
 
 Then(
@@ -193,7 +194,7 @@ When("I click {string} in the footer", async ({ page }, linkText: string) => {
 
 Then(
   "I should be navigated to the {string} page",
-  async ({ page }, pageName: string) => {
+  ({ page }, pageName: string) => {
     expect(page.url().toLowerCase()).toContain(pageName.toLowerCase());
   },
 );
@@ -236,12 +237,12 @@ Then("all text should be readable", async ({ page }) => {
 
 Then("images should be responsive", async ({ page }) => {
   const images = page.locator("img");
-  const count = await images.count();
-  for (let i = 0; i < Math.min(count, 5); i++) {
-    const img = images.nth(i);
-    const maxWidth = await img.evaluate(
-      (el) => globalThis.getComputedStyle(el).maxWidth,
-    );
+  const maxWidths = await images.evaluateAll((elements) =>
+    elements
+      .slice(0, 5)
+      .map((image) => globalThis.getComputedStyle(image).maxWidth),
+  );
+  for (const maxWidth of maxWidths) {
     expect(
       maxWidth === "100%" ||
         maxWidth === "none" ||
@@ -289,7 +290,7 @@ When(
 
 // Print page
 
-Then("a print dialog should open", async () => {
+Then("a print dialog should open", () => {
   expect(true).toBeTruthy();
 });
 
@@ -316,10 +317,11 @@ Then("I should see the average rating", async ({ page }) => {
 // Sitemap and links
 Then("all links on the page should be valid", async ({ page }) => {
   const links = page.locator("a[href]");
-  const count = await links.count();
-  expect(count).toBeGreaterThan(0);
-  for (let i = 0; i < Math.min(count, 5); i++) {
-    const href = await links.nth(i).getAttribute("href");
+  const hrefs = await links.evaluateAll((elements) =>
+    elements.slice(0, 5).map((link) => link.getAttribute("href")),
+  );
+  expect(await links.count()).toBeGreaterThan(0);
+  for (const href of hrefs) {
     expect(href).toBeTruthy();
     expect(href).not.toBe("#");
   }
@@ -327,12 +329,12 @@ Then("all links on the page should be valid", async ({ page }) => {
 
 Then("there should be no broken images", async ({ page }) => {
   const images = page.locator("img");
-  const count = await images.count();
-  for (let i = 0; i < Math.min(count, 5); i++) {
-    const img = images.nth(i);
-    const naturalWidth = await img.evaluate(
-      (el: HTMLImageElement) => el.naturalWidth,
-    );
+  const naturalWidths = await images.evaluateAll((elements) =>
+    elements
+      .slice(0, 5)
+      .map((image) => (image as HTMLImageElement).naturalWidth),
+  );
+  for (const naturalWidth of naturalWidths) {
     expect(naturalWidth).toBeGreaterThan(0);
   }
 });

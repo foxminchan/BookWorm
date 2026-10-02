@@ -1,5 +1,6 @@
 import { Locator, Page, expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { BasePage } from "./BasePage";
 
 /**
@@ -138,10 +139,10 @@ export class BasketPage extends BasePage {
       'button[aria-label*="Increase"], button:has-text("+")',
     );
 
-    for (let i = 0; i < times; i++) {
+    await forEachSequentially(Array.from({ length: times }), async () => {
       await increaseButton.click();
       await this.page.waitForTimeout(200);
-    }
+    });
   }
 
   async decreaseItemQuantity(index: number, times: number = 1): Promise<void> {
@@ -150,10 +151,10 @@ export class BasketPage extends BasePage {
       'button[aria-label*="Decrease"], button:has-text("-")',
     );
 
-    for (let i = 0; i < times; i++) {
+    await forEachSequentially(Array.from({ length: times }), async () => {
       await decreaseButton.click();
       await this.page.waitForTimeout(200);
-    }
+    });
   }
 
   async removeItem(index: number, confirm: boolean = true): Promise<void> {
@@ -212,14 +213,20 @@ export class BasketPage extends BasePage {
   }
 
   async calculateExpectedTotal(): Promise<number> {
-    let subtotal = 0;
     const itemCount = await this.getItemCount();
-
-    for (let i = 0; i < itemCount; i++) {
-      const price = await this.getItemPrice(i);
-      const quantity = await this.getItemQuantity(i);
-      subtotal += price * quantity;
-    }
+    const itemTotals = await Promise.all(
+      Array.from({ length: itemCount }, async (_, index) => {
+        const [price, quantity] = await Promise.all([
+          this.getItemPrice(index),
+          this.getItemQuantity(index),
+        ]);
+        return price * quantity;
+      }),
+    );
+    const subtotal = itemTotals.reduce(
+      (total, itemTotal) => total + itemTotal,
+      0,
+    );
 
     const shipping = await this.getShipping();
     return subtotal + shipping;

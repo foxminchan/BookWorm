@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { Given, Then, When } from "./fixtures";
 
 /**
@@ -301,10 +302,10 @@ Then("the message should be sent", async ({ page }) => {
 });
 
 When("I press Tab repeatedly", async ({ page }) => {
-  for (let i = 0; i < 10; i++) {
+  await forEachSequentially(Array.from({ length: 10 }), async () => {
     await page.keyboard.press("Tab");
     await page.waitForTimeout(100);
-  }
+  });
 });
 
 Then("focus should cycle within the dialog", async ({ page }) => {
@@ -496,7 +497,7 @@ Then(
   },
 );
 
-Then("the chatbot is only available on desktop screens", async ({ page }) => {
+Then("the chatbot is only available on desktop screens", ({ page }) => {
   const viewport = page.viewportSize();
   expect(viewport?.width).toBeLessThan(768);
 });

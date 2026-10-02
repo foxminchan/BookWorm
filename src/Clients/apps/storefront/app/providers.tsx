@@ -35,7 +35,9 @@ export function Providers({
 
   useEffect(() => {
     if (!gatewayUrl && process.env.NODE_ENV === "development") {
-      initMocks();
+      void initMocks().catch((error: unknown) => {
+        console.error("Failed to initialize storefront mocks:", error);
+      });
     }
     setIsCopilotEnabled(isCopilotEnabled);
   }, [isCopilotEnabled, setIsCopilotEnabled, gatewayUrl]);

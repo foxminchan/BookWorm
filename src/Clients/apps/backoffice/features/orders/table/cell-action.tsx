@@ -38,30 +38,54 @@ export function CellAction({ order }: CellActionProps) {
 
   const orderIdShort = useMemo(() => order.id.slice(0, 8), [order.id]);
 
-  const handleComplete = useCallback(async () => {
-    completeOrderMutation.mutate(order.id, {
-      onSuccess: () => {
-        setOpenComplete(false);
-        toast.success("Order has been completed");
-      },
+  const handleComplete = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      completeOrderMutation.mutate(order.id, {
+        onSuccess: () => {
+          setOpenComplete(false);
+          toast.success("Order has been completed");
+          resolve();
+        },
+        onError: (error) => {
+          console.error("Failed to complete order:", error);
+          toast.error("Failed to complete order");
+          resolve();
+        },
+      });
     });
   }, [order.id, completeOrderMutation]);
 
-  const handleCancel = useCallback(async () => {
-    cancelOrderMutation.mutate(order.id, {
-      onSuccess: () => {
-        setOpenCancel(false);
-        toast.info("Order has been canceled");
-      },
+  const handleCancel = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      cancelOrderMutation.mutate(order.id, {
+        onSuccess: () => {
+          setOpenCancel(false);
+          toast.info("Order has been canceled");
+          resolve();
+        },
+        onError: (error) => {
+          console.error("Failed to cancel order:", error);
+          toast.error("Failed to cancel order");
+          resolve();
+        },
+      });
     });
   }, [order.id, cancelOrderMutation]);
 
-  const handleDelete = useCallback(async () => {
-    deleteOrderMutation.mutate(order.id, {
-      onSuccess: () => {
-        setOpenDelete(false);
-        toast.success("Order has been deleted");
-      },
+  const handleDelete = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      deleteOrderMutation.mutate(order.id, {
+        onSuccess: () => {
+          setOpenDelete(false);
+          toast.success("Order has been deleted");
+          resolve();
+        },
+        onError: (error) => {
+          console.error("Failed to delete order:", error);
+          toast.error("Failed to delete order");
+          resolve();
+        },
+      });
     });
   }, [order.id, deleteOrderMutation]);
 

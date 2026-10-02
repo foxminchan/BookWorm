@@ -67,7 +67,7 @@ export const ordersHandlers = [
     return HttpResponse.json(orderList, { status: 200, headers });
   }),
 
-  http.post(`${ORDERING_API_BASE_URL}/api/v1/orders`, async () => {
+  http.post(`${ORDERING_API_BASE_URL}/api/v1/orders`, () => {
     const order = ordersStoreManager.create([
       { id: "mock-item", quantity: 1, price: 29.99, name: "Mock Book" },
     ]);

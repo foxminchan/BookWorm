@@ -38,21 +38,10 @@
       "args": ["agent", "mcp"]
     },
     "sonarqube": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--init",
-        "--pull=always",
-        "-i",
-        "--rm",
-        "-e",
-        "SONARQUBE_TOKEN",
-        "-e",
-        "SONARQUBE_ORG",
-        "mcp/sonarqube"
-      ],
-      "env": {
-        "SONARQUBE_TOKEN": "${input:sonarqube-token}",
+      "type": "http",
+      "url": "https://api.sonarcloud.io/mcp",
+      "headers": {
+        "SONARQUBE_TOKEN": "Bearer ${input:sonarqube-token}",
         "SONARQUBE_ORG": "foxminchan"
       }
     }

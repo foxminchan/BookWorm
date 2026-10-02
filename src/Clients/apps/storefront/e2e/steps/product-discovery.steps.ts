@@ -114,7 +114,7 @@ Given("I have applied category and price filters", async ({ shopPage }) => {
   await shopPage.setPriceRange(20, 50);
 });
 
-Then("all filters should be reset", async ({ page }) => {
+Then("all filters should be reset", ({ page }) => {
   const url = page.url();
   expect(url).not.toContain("category=");
 });

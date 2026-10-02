@@ -21,12 +21,20 @@ export function CellAction({ book }: CellActionProps) {
   const [openDelete, setOpenDelete] = useState(false);
   const deleteBookMutation = useDeleteBook();
 
-  const handleDelete = useCallback(async () => {
-    deleteBookMutation.mutate(book.id, {
-      onSuccess: () => {
-        setOpenDelete(false);
-        toast.success("Book has been deleted");
-      },
+  const handleDelete = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      deleteBookMutation.mutate(book.id, {
+        onSuccess: () => {
+          setOpenDelete(false);
+          toast.success("Book has been deleted");
+          resolve();
+        },
+        onError: (error) => {
+          console.error("Failed to delete book:", error);
+          toast.error("Failed to delete book");
+          resolve();
+        },
+      });
     });
   }, [book.id, deleteBookMutation]);
 
