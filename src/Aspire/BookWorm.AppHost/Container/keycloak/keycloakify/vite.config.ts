@@ -12,6 +12,10 @@ export default defineConfig({
       groupId: "com.foxminchan.bookworm.keycloak",
       artifactId: "keycloak-theme-bookworm",
       accountThemeImplementation: "none",
+      keycloakVersionTargets: {
+        "22-to-25": false,
+        "all-other-versions": "BookWormThemes.jar",
+      },
       keycloakifyBuildDirPath: "../themes",
     }),
   ],

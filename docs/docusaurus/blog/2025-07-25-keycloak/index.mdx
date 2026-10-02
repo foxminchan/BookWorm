@@ -244,14 +244,12 @@ configured.
 
 #### Deployment Process
 
-1. **Theme Build**: The Keycloakify build process generates theme files in the `../themes/`
-   directory
-2. **Delete Old Theme**: Remove any existing theme files to avoid conflicts
-3. **Rename Build Files**: Ensure the theme files are named `BookWormThemes.jar` to match the
-   Keycloak theme configuration
-4. **Container Integration**: Theme files are automatically available to the Keycloak container
-5. **Realm Configuration**: The theme is applied through realm settings
-6. **Hot Deployment**: Changes are reflected when Keycloak restarts or reloads
+1. **Theme Build**: The AppHost build runs the Keycloakify build when
+   `Container/keycloak/themes/BookWormThemes.jar` does not exist
+2. **Container Integration**: The generated theme is automatically available to the Keycloak
+   container
+3. **Realm Configuration**: The theme is applied through realm settings
+4. **Hot Deployment**: Changes are reflected when Keycloak restarts or reloads
 
 #### Technology Stack
 

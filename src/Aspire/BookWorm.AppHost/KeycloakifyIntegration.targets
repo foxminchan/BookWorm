@@ -1,6 +1,11 @@
 <Project>
   <PropertyGroup>
-    <KeycloakifyContainerPath>$(MSBuildProjectDirectory)\Container\keycloak\keycloakify</KeycloakifyContainerPath>
+    <KeycloakifyContainerPath>
+      $(MSBuildProjectDirectory)\Container\keycloak\keycloakify
+    </KeycloakifyContainerPath>
+    <KeycloakifyThemePath>
+      $(MSBuildProjectDirectory)\Container\keycloak\themes\BookWormThemes.jar
+    </KeycloakifyThemePath>
     <BunIgnoreScriptsFlag Condition="'$(GITHUB_ACTIONS)' == 'true'"
       >--ignore-scripts
     </BunIgnoreScriptsFlag>
@@ -8,9 +13,7 @@
   <Target
     Name="BuildKeycloakifyContainer"
     BeforeTargets="Build"
-    Inputs="$(KeycloakifyContainerPath)\src\**\*;$(KeycloakifyContainerPath)\package.json;$(KeycloakifyContainerPath)\vite.config.ts"
-    Outputs="$(KeycloakifyContainerPath)\dist_keycloak\**\*"
-    Condition="'$(SkipKeycloakifyBuild)' != 'true' AND Exists('$(KeycloakifyContainerPath)\package.json')"
+    Condition="'$(SkipKeycloakifyBuild)' != 'true' AND Exists('$(KeycloakifyContainerPath)\package.json') AND !Exists('$(KeycloakifyThemePath)')"
   >
     <Message Text="Installing node packages for Keycloakify" Importance="high" />
     <Exec
@@ -18,17 +21,15 @@
       WorkingDirectory="$(KeycloakifyContainerPath)"
       IgnoreExitCode="false"
     />
-    <Message Text="Formatting Keycloakify code" Importance="normal" />
-    <Exec
-      Command="bun run format"
-      WorkingDirectory="$(KeycloakifyContainerPath)"
-      ContinueOnError="true"
-    />
     <Message Text="Building Keycloakify themes" Importance="high" />
     <Exec
-      Command="bun run build"
+      Command="bun run build-keycloak-theme"
       WorkingDirectory="$(KeycloakifyContainerPath)"
       IgnoreExitCode="false"
+    />
+    <Error
+      Condition="!Exists('$(KeycloakifyThemePath)')"
+      Text="Keycloakify build did not produce the expected theme at $(KeycloakifyThemePath)."
     />
   </Target>
 </Project>
