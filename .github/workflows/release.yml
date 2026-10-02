@@ -22,7 +22,7 @@ concurrency:
 jobs:
   release:
     name: 🎉 Create Signed Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: write

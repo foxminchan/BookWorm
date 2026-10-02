@@ -30,7 +30,7 @@ concurrency:
 jobs:
   vulnerability-scan:
     name: 🛡️ Vulnerability Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -62,7 +62,7 @@ jobs:
 
   misconfig-scan:
     name: 🛡️ Misconfiguration Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -95,7 +95,7 @@ jobs:
   sbom:
     name: 📝 SBOM Generation
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: write

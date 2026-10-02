@@ -16,7 +16,7 @@ env:
 jobs:
   format:
     name: 💅 Format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -34,7 +34,7 @@ jobs:
 
   style:
     name: 💅 Style
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -52,7 +52,7 @@ jobs:
 
   analyzers:
     name: 🔎 Analyzers
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -70,7 +70,7 @@ jobs:
 
   build:
     name: 🔨 Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs:
       - format
       - style
@@ -92,7 +92,7 @@ jobs:
 
   test:
     name: 🧪 Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs:
       - format
       - style

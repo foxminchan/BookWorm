@@ -34,7 +34,7 @@ concurrency:
 jobs:
   changes:
     name: 🔍 Detect Changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -94,7 +94,7 @@ jobs:
 
   dependency-submission:
     name: 📦 Dependency Submission
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: write
@@ -112,7 +112,7 @@ jobs:
 
   dependency-review:
     name: 🔒 Dependency Review
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     needs:
       - dependency-submission
@@ -132,7 +132,7 @@ jobs:
 
   status:
     name: ✅ PR Status
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     needs:
       - changes
