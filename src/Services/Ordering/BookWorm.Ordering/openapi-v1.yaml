@@ -1,0 +1,543 @@
+---
+openapi: 3.1.1
+info:
+  title: Ordering Service API
+  description:
+    Orchestrates the entire order lifecycle, from creation to completion
+    or cancellation, for the BookWorm platform
+  contact:
+    name: BookWorm Engineering
+    url: https://github.com/foxminchan
+    email: engineering@bookworm.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+  summary:
+    A service responsible for managing the order lifecycle for the BookWorm
+    platform
+paths:
+  "/api/v1/orders":
+    get:
+      tags:
+        - Order
+      summary: List Orders
+      description: List orders with pagination and filtering
+      operationId: ListOrdersEndpoint
+      parameters:
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 20
+        - name: Status
+          in: query
+          description: Status to filter results by
+          schema:
+            "$ref": "#/components/schemas/Status"
+        - name: BuyerId
+          in: query
+          description: Buyer ID to filter results by
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/OrderDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    post:
+      tags:
+        - Order
+      summary: Create Order
+      description: Create a new order
+      operationId: CreateOrderEndpoint
+      parameters:
+        - name: x-request-id
+          in: header
+          description: The idempotency key of the order to be created
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderId"
+  "/api/v1/orders/{id}":
+    get:
+      tags:
+        - Order
+      summary: Get Order
+      description: Get an order if it exists
+      operationId: GetOrderEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the order to be retrieved
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderDetailDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    delete:
+      tags:
+        - Order
+      summary: Delete Order
+      description: Delete an order if it exists
+      operationId: DeleteOrderEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the order to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/orders/{orderId}/complete":
+    patch:
+      tags:
+        - Order
+      summary: Complete Order
+      description: Complete an order
+      operationId: CompleteOrderEndpoint
+      parameters:
+        - name: x-request-id
+          in: header
+          description: The idempotency key of the order to be completed
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          description: The unique identifier of the order to be completed
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderDetailDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/orders/{orderId}/cancel":
+    patch:
+      tags:
+        - Order
+      summary: Cancel Order
+      description: Cancel an order
+      operationId: CancelOrderEndpoint
+      parameters:
+        - name: x-request-id
+          in: header
+          description: The idempotency key of the order to be cancelled
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          description: The unique identifier of the order to be cancelled
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderDetailDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/buyers/address":
+    patch:
+      tags:
+        - Buyer
+      summary: Update Buyer Address
+      description: Update the current buyer's address
+      operationId: UpdateAddressEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateAddressCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BuyerDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/buyers":
+    get:
+      tags:
+        - Buyer
+      summary: List Buyers
+      description: List all buyers with pagination options
+      operationId: ListBuyersEndpoint
+      parameters:
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/BuyerDto"
+    post:
+      tags:
+        - Buyer
+      summary: Create Buyer
+      description: Create a new buyer in the system
+      operationId: CreateBuyerEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateBuyerCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BuyerId"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/buyers/me":
+    get:
+      tags:
+        - Buyer
+      summary: Get Buyer
+      description: Get the current buyer's information
+      operationId: GetBuyerEndpoint
+      parameters:
+        - name: Id
+          in: query
+          description: Only 'ADMIN' role can retrieve other users' data
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BuyerDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/buyers/{id}":
+    delete:
+      tags:
+        - Buyer
+      summary: Delete Buyer
+      description: Delete a buyer by ID if it exists
+      operationId: DeleteBuyerEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the buyer to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+components:
+  schemas:
+    BuyerDto:
+      required:
+        - id
+        - name
+        - address
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/BuyerId"
+        name:
+          type:
+            - "null"
+            - string
+        address:
+          type:
+            - "null"
+            - string
+    BuyerId:
+      type: string
+      format: uuid
+    CreateBuyerCommand:
+      required:
+        - street
+        - city
+        - province
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+    HttpValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    OrderDetailDto:
+      required:
+        - id
+        - date
+        - total
+        - status
+        - items
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/OrderId"
+        date:
+          type: string
+          format: date-time
+        total:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+        status:
+          "$ref": "#/components/schemas/Status"
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/OrderItemDto"
+    OrderDto:
+      required:
+        - id
+        - date
+        - total
+        - status
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/OrderId"
+        date:
+          type: string
+          format: date-time
+        total:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+        status:
+          "$ref": "#/components/schemas/Status"
+    OrderId:
+      type: string
+      format: uuid
+    OrderItemDto:
+      required:
+        - id
+        - quantity
+        - price
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        quantity:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int32
+        price:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+        name:
+          type:
+            - "null"
+            - string
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+    Status:
+      enum:
+        - New
+        - Cancelled
+        - Completed
+    UpdateAddressCommand:
+      required:
+        - street
+        - city
+        - province
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+tags:
+  - name: Order
+  - name: Buyer

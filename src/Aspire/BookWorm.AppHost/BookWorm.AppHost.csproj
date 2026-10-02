@@ -1,5 +1,4 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.6.0">
-  <Import Project="K6Integration.targets" />
   <Import Project="KeycloakifyIntegration.targets" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -26,7 +25,6 @@
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
   </ItemGroup>
   <ItemGroup Label="CommunityToolkit">
-    <PackageReference Include="CommunityToolkit.Aspire.Hosting.k6" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Azure.Extensions" />

@@ -78,11 +78,6 @@ description = "Format Docusaurus"
 run = "bun run format"
 dir = "docs/docusaurus"
 
-[tasks."format:k6"]
-description = "Format K6 scripts"
-run = "bun run format"
-dir = "src/Aspire/BookWorm.AppHost/Container/k6"
-
 [tasks."format:keycloakify"]
 description = "Format Keycloakify"
 run = "bun run format"
@@ -95,7 +90,6 @@ depends = [
   "format:fe",
   "format:eventcatalog",
   "format:docusaurus",
-  "format:k6",
   "format:keycloakify",
 ]
 
@@ -125,11 +119,6 @@ description = "Update Docusaurus bun packages"
 run = "bun update"
 dir = "docs/docusaurus"
 
-[tasks."update:k6"]
-description = "Update K6 bun packages"
-run = "bun update"
-dir = "src/Aspire/BookWorm.AppHost/Container/k6"
-
 [tasks."update:keycloakify"]
 description = "Update Keycloakify bun packages"
 run = "bun update"
@@ -145,7 +134,6 @@ description = "Update all packages"
 depends = [
   "update:eventcatalog",
   "update:docusaurus",
-  "update:k6",
   "update:keycloakify",
   "update:fe",
 ]

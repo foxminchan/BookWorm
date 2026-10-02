@@ -31,7 +31,6 @@
     <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <!-- Community Toolkit -->
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.k6" Version="$(ToolKitVersion)" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
     <PackageVersion
       Include="CommunityToolkit.Aspire.Hosting.McpInspector"
@@ -46,8 +45,7 @@
       Version="$(ToolKitVersion)"
     />
     <!-- Extra -->
-    <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.11.28" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.29" />
     <PackageVersion
       Include="Aspire.Hosting.AgentFramework.DevUI"
       Version="$(AgentFrameworkUnstableVersion)"
@@ -164,7 +162,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
-    <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
+    <PackageVersion Include="TUnit" Version="1.72.16" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->

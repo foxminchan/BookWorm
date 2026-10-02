@@ -10,7 +10,6 @@
 
 [![BookWorm CI (Backend)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml/badge.svg?event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/backend-ci.yml)
 [![BookWorm CI (Frontend)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml/badge.svg?branch=main&event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/frontend-ci.yml)
-[![BookWorm CI (Keycloakify)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yml/badge.svg?branch=main&event=push)](https://github.com/foxminchan/BookWorm/actions/workflows/keycloak-ci.yml)
 
 <div>
   <a href="https://codespaces.new/foxminchan/BookWorm?quickstart=1" target="_blank">
@@ -68,12 +67,10 @@
   - [x] Supported WCAG 2.1 AA accessibility standards
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
-  - [x] Implemented Pact-based async message consumer/provider contract tests
+  - [x] Implemented Pact-based contract testing
   - [x] Established architecture testing strategy
-  - [x] Performed load testing with k6
   - [x] Implemented frontend unit tests and component tests
   - [x] Conducted end-to-end testing with BDD
-  - [ ] Planned integration tests _(planned)_
 
 ## Project Architecture
 

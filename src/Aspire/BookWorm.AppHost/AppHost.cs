@@ -249,8 +249,6 @@ if (builder.ExecutionContext.IsRunMode)
         .WithAgentService(ratingApi, [new(Agents.RatingAgent), new(Workflows.RatingSummarizer)])
         .WaitFor(chatApi)
         .WaitFor(ratingApi);
-
-    builder.AddK6(gateway);
 }
 else
 {

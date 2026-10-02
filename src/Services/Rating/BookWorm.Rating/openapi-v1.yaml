@@ -1,0 +1,292 @@
+---
+openapi: 3.1.1
+info:
+  title: Rating Service API
+  description:
+    Handles the collection, storage, and aggregation of user feedback and
+    ratings for books on the BookWorm platform
+  contact:
+    name: BookWorm Engineering
+    url: https://github.com/foxminchan
+    email: engineering@bookworm.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+  summary:
+    A service responsible for managing user feedback and ratings for books
+    on the BookWorm platform
+paths:
+  "/api/v1/feedbacks/{id}/summarize":
+    get:
+      tags:
+        - Feedback
+      summary: Summarize Feedback
+      description: Summarize the feedback for a book by its ID
+      operationId: SummarizeFeedbackEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the book to be summarized
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SummarizeResult"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/feedbacks":
+    get:
+      tags:
+        - Feedback
+      summary: List Feedbacks
+      description: List feedbacks for a book with pagination and filtering
+      operationId: ListFeedbacksEndpoint
+      parameters:
+        - name: BookId
+          in: query
+          description: The ID of the book to get feedback for
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 20
+        - name: OrderBy
+          in: query
+          description: Property to order results by
+          schema:
+            type: string
+            default: Rating
+        - name: IsDescending
+          in: query
+          description: Whether to order results in descending order
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/FeedbackDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    post:
+      tags:
+        - Feedback
+      summary: Create Feedback
+      description: Create a new feedback
+      operationId: CreateFeedbackEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateFeedbackCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/FeedbackId"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/feedbacks/{id}":
+    delete:
+      tags:
+        - Feedback
+      summary: Delete Feedback
+      description: Delete a feedback if it exists
+      operationId: DeleteFeedbackEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the feedback to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+components:
+  schemas:
+    CreateFeedbackCommand:
+      required:
+        - bookId
+        - firstName
+        - lastName
+        - comment
+        - rating
+      type: object
+      properties:
+        bookId:
+          type: string
+          format: uuid
+        firstName:
+          type:
+            - "null"
+            - string
+        lastName:
+          type:
+            - "null"
+            - string
+        comment:
+          type:
+            - "null"
+            - string
+        rating:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int32
+    FeedbackDto:
+      required:
+        - id
+        - firstName
+        - lastName
+        - comment
+        - rating
+        - bookId
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type:
+            - "null"
+            - string
+        lastName:
+          type:
+            - "null"
+            - string
+        comment:
+          type:
+            - "null"
+            - string
+        rating:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int32
+        bookId:
+          type: string
+          format: uuid
+    FeedbackId:
+      type: string
+      format: uuid
+    HttpValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+    SummarizeResult:
+      required:
+        - summary
+      type: object
+      properties:
+        summary:
+          type: string
+tags:
+  - name: Feedback

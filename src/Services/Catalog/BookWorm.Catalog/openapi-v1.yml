@@ -1,0 +1,812 @@
+---
+openapi: 3.1.1
+info:
+  title: Catalog Service API
+  description:
+    Manages the catalog of products for the BookWorm platform, including
+    books, authors, and categories
+  contact:
+    name: BookWorm Engineering
+    url: https://github.com/foxminchan
+    email: engineering@bookworm.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+  summary:
+    A service responsible for managing the catalog of products for the BookWorm
+    platform
+paths:
+  "/api/v1/publishers":
+    put:
+      tags:
+        - Publisher
+      summary: Update Publisher
+      description: Updates publisher if it exists
+      operationId: UpdatePublisherEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdatePublisherCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    get:
+      tags:
+        - Publisher
+      summary: List Publishers
+      description: Lists all publishers
+      operationId: ListPublishersEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/PublisherDto"
+    post:
+      tags:
+        - Publisher
+      summary: Create Publisher
+      description: Creates a new publisher
+      operationId: CreatePublisherEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreatePublisherCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PublisherId"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/publishers/{id}":
+    delete:
+      tags:
+        - Publisher
+      summary: Delete Publisher
+      description: Delete a publisher from the catalog system
+      operationId: DeletePublisherEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the publisher to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/categories":
+    put:
+      tags:
+        - Category
+      summary: Update Category
+      description: Update a category if it exists
+      operationId: UpdateCategoryEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateCategoryCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    get:
+      tags:
+        - Category
+      summary: List Categories
+      description: List all categories
+      operationId: ListCategoriesEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/CategoryDto"
+    post:
+      tags:
+        - Category
+      summary: Create Category
+      description: Create a new category in the catalog system
+      operationId: CreateCategoryEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateCategoryCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CategoryId"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/categories/{id}":
+    delete:
+      tags:
+        - Category
+      summary: Delete Category
+      description: Delete a category from the catalog system
+      operationId: DeleteCategoryEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the category to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/books":
+    put:
+      tags:
+        - Book
+      summary: Update Book
+      description: Update a book if it exists
+      operationId: UpdateBookEndpoint
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              "$ref": "#/components/schemas/UpdateBookCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    get:
+      tags:
+        - Book
+      summary: List Books
+      description: List all books with advanced filtering and pagination
+      operationId: ListBooksEndpoint
+      parameters:
+        - name: PageIndex
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 1
+        - name: PageSize
+          in: query
+          description: Number of items to return in a single page of results
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int32
+            default: 20
+        - name: OrderBy
+          in: query
+          description: Property to order results by
+          schema:
+            type: string
+            default: Name
+        - name: IsDescending
+          in: query
+          description: Whether to order results in descending order
+          schema:
+            type: boolean
+            default: false
+        - name: Search
+          in: query
+          description: Search term to filter results by
+          schema:
+            type: string
+        - name: MinPrice
+          in: query
+          description: Minimum price to filter results by
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+            type:
+              - number
+              - string
+            format: double
+        - name: MaxPrice
+          in: query
+          description: Maximum price to filter results by
+          schema:
+            pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+            type:
+              - number
+              - string
+            format: double
+        - name: CategoryId
+          in: query
+          description: Category IDs to filter results by
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - name: PublisherId
+          in: query
+          description: Publisher IDs to filter results by
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - name: AuthorIds
+          in: query
+          description: Author IDs to filter results by
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/BookDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+    post:
+      tags:
+        - Book
+      summary: Create Book
+      description: Create a book
+      operationId: CreateBookEndpoint
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              "$ref": "#/components/schemas/CreateBookCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BookId"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/books/{id}":
+    get:
+      tags:
+        - Book
+      summary: Get Book
+      description: Get a book by identifier
+      operationId: GetBookEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the book to be retrieved
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BookDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    delete:
+      tags:
+        - Book
+      summary: Delete Book
+      description: Delete a book if it exists
+      operationId: DeleteBookEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the book to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/api/v1/authors":
+    put:
+      tags:
+        - Author
+      summary: Update Author
+      description: Update an author if it exists
+      operationId: UpdateAuthorEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateAuthorCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    get:
+      tags:
+        - Author
+      summary: List Authors
+      description: List all authors
+      operationId: ListAuthorsEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/AuthorDto"
+    post:
+      tags:
+        - Author
+      summary: Create Author
+      description: Create a new author in the catalog system
+      operationId: CreateAuthorEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateAuthorCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AuthorId"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+  "/api/v1/authors/{id}":
+    delete:
+      tags:
+        - Author
+      summary: Delete Author
+      description: Delete an author from the catalog system
+      operationId: DeleteAuthorEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the author to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+components:
+  schemas:
+    AuthorDto:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/AuthorId"
+        name:
+          type:
+            - "null"
+            - string
+    AuthorId:
+      type: string
+      format: uuid
+    BookDto:
+      required:
+        - id
+        - name
+        - description
+        - imageUrl
+        - price
+        - priceSale
+        - status
+        - category
+        - publisher
+        - authors
+        - averageRating
+        - totalReviews
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/BookId"
+        name:
+          type:
+            - "null"
+            - string
+        description:
+          type:
+            - "null"
+            - string
+        imageUrl:
+          type:
+            - "null"
+            - string
+        price:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+        priceSale:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - "null"
+            - number
+            - string
+          format: double
+        status:
+          "$ref": "#/components/schemas/Status"
+        category:
+          oneOf:
+            - type: "null"
+            - "$ref": "#/components/schemas/CategoryDto"
+        publisher:
+          oneOf:
+            - type: "null"
+            - "$ref": "#/components/schemas/PublisherDto"
+        authors:
+          type: array
+          items:
+            "$ref": "#/components/schemas/AuthorDto"
+        averageRating:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+        totalReviews:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int32
+    BookId:
+      type: string
+      format: uuid
+    CategoryDto:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/CategoryId"
+        name:
+          type:
+            - "null"
+            - string
+    CategoryId:
+      type: string
+      format: uuid
+    CreateAuthorCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    CreateBookCommand:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        image:
+          oneOf:
+            - type: "null"
+            - "$ref": "#/components/schemas/IFormFile"
+        price:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+        priceSale:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - "null"
+            - number
+            - string
+          format: double
+        categoryId:
+          type: string
+          format: uuid
+        publisherId:
+          type: string
+          format: uuid
+        authorIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    CreateCategoryCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    CreatePublisherCommand:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+    HttpValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    IFormFile:
+      type:
+        - "null"
+        - string
+      format: binary
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+    PublisherDto:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/PublisherId"
+        name:
+          type:
+            - "null"
+            - string
+    PublisherId:
+      type: string
+      format: uuid
+    Status:
+      enum:
+        - InStock
+        - OutOfStock
+    UpdateAuthorCommand:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/AuthorId"
+        name:
+          type: string
+    UpdateBookCommand:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        image:
+          oneOf:
+            - type: "null"
+            - "$ref": "#/components/schemas/IFormFile"
+        price:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+        priceSale:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - "null"
+            - number
+            - string
+          format: double
+        categoryId:
+          type: string
+          format: uuid
+        publisherId:
+          type: string
+          format: uuid
+        authorIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isRemoveImage:
+          type: boolean
+    UpdateCategoryCommand:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/CategoryId"
+        name:
+          type: string
+    UpdatePublisherCommand:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          "$ref": "#/components/schemas/PublisherId"
+        name:
+          type: string
+tags:
+  - name: Publisher
+  - name: Category
+  - name: Book
+  - name: Author

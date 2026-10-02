@@ -1,0 +1,252 @@
+---
+openapi: 3.1.1
+info:
+  title: Basket Service API
+  description:
+    Manages the lifecycle of customer shopping baskets, including adding
+    and removing items, calculating totals, and handling checkout processes
+  contact:
+    name: BookWorm Engineering
+    url: https://github.com/foxminchan
+    email: engineering@bookworm.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+  summary: A service responsible for managing customer shopping baskets
+paths:
+  "/api/v1/baskets":
+    put:
+      tags:
+        - Basket
+      summary: Update Basket
+      description: Update a basket by its unique identifier
+      operationId: UpdateBasketEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateBasketCommand"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    get:
+      tags:
+        - Basket
+      summary: Get Basket
+      description: Get a basket by user
+      operationId: GetBasketEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CustomerBasketDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    delete:
+      tags:
+        - Basket
+      summary: Delete Basket
+      description: Delete a basket by its unique identifier
+      operationId: DeleteBasketEndpoint
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+    post:
+      tags:
+        - Basket
+      summary: Create Basket
+      description: Create a new basket for a user
+      operationId: CreateBasketEndpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateBasketCommand"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CustomerId"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+components:
+  schemas:
+    BasketItemDto:
+      required:
+        - id
+        - quantity
+      type: object
+      properties:
+        id:
+          type:
+            - "null"
+            - string
+        quantity:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int32
+        name:
+          type:
+            - "null"
+            - string
+        price:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - number
+            - string
+          format: double
+          default: 0
+        priceSale:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+          type:
+            - "null"
+            - number
+            - string
+          format: double
+    BasketItemRequest:
+      required:
+        - id
+        - quantity
+      type: object
+      properties:
+        id:
+          type: string
+        quantity:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int32
+    CreateBasketCommand:
+      required:
+        - items
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BasketItemRequest"
+    CustomerBasketDto:
+      required:
+        - id
+        - items
+      type: object
+      properties:
+        id:
+          oneOf:
+            - type: "null"
+            - "$ref": "#/components/schemas/CustomerId"
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BasketItemDto"
+    CustomerId:
+      type:
+        - "null"
+        - string
+      items:
+        type: string
+    HttpValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - "null"
+            - string
+        title:
+          type:
+            - "null"
+            - string
+        status:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - "null"
+            - integer
+            - string
+          format: int32
+        detail:
+          type:
+            - "null"
+            - string
+        instance:
+          type:
+            - "null"
+            - string
+    UpdateBasketCommand:
+      required:
+        - items
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BasketItemRequest"
+tags:
+  - name: Basket

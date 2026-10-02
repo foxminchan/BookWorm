@@ -24,17 +24,6 @@
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-  <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('IntegrationTests'))">
-    <PackageReference Include="TUnit.Aspire" />
-    <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\DistributedApplicationExtensions.cs"
-      Link="Extensions\DistributedApplicationExtensions.cs"
-    />
-    <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\PasswordGenerator.cs"
-      Link="Extensions\PasswordGenerator.cs"
-    />
-  </ItemGroup>
   <ItemGroup Condition="$(MSBuildProjectFullPath.Contains('ContractTests'))">
     <PackageReference Include="PactNet" />
     <Compile
