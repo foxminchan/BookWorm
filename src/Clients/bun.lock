@@ -23,7 +23,7 @@
       "dependencies": {
         "@hookform/resolvers": "^5.9.1",
         "@t3-oss/env-nextjs": "^0.13.11",
-        "@tanstack/react-query": "^5.104.0",
+        "@tanstack/react-query": "^5.104.1",
         "@tanstack/react-table": "^9.2.4",
         "@workspace/api-client": "workspace:*",
         "@workspace/api-hooks": "workspace:*",
@@ -64,7 +64,7 @@
         "@vitest/ui": "^5.0.3",
         "@workspace/eslint-config": "workspace:^",
         "@workspace/typescript-config": "workspace:*",
-        "allure": "^3.19.1",
+        "allure": "^3.20.0",
         "allure-playwright": "^3.13.0",
         "allure-vitest": "^3.13.0",
         "eslint": "^10.11.0",
@@ -85,7 +85,7 @@
         "@copilotkit/runtime": "^1.76.0",
         "@hookform/resolvers": "^5.9.1",
         "@t3-oss/env-nextjs": "^0.13.11",
-        "@tanstack/react-query": "^5.104.0",
+        "@tanstack/react-query": "^5.104.1",
         "@workspace/api-client": "workspace:*",
         "@workspace/api-hooks": "workspace:*",
         "@workspace/mocks": "workspace:*",
@@ -131,7 +131,7 @@
         "@vitest/ui": "^5.0.3",
         "@workspace/eslint-config": "workspace:^",
         "@workspace/typescript-config": "workspace:*",
-        "allure": "^3.19.1",
+        "allure": "^3.20.0",
         "allure-playwright": "^3.13.0",
         "allure-vitest": "^3.13.0",
         "eslint": "^10.11.0",
@@ -165,7 +165,7 @@
       "name": "@workspace/api-hooks",
       "version": "1.0.0",
       "dependencies": {
-        "@tanstack/react-query": "^5.104.0",
+        "@tanstack/react-query": "^5.104.1",
       },
       "devDependencies": {
         "@types/node": "^24.19.1",
@@ -324,8 +324,8 @@
     },
   },
   "overrides": {
-    "hono": "4.12.34",
-    "ip-address": "10.3.1",
+    "hono": "4.13.7",
+    "ip-address": "10.7.1",
     "postcss": "8.5.26",
   },
   "packages": {
@@ -373,61 +373,61 @@
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.3.0", "", {}, "sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA=="],
 
-    "@allurereport/aql": ["@allurereport/aql@3.19.1", "", {}, "sha512-84KbT9EqoVmKx+ro19jK5h9PIZnFDgT4ydiSYgZb2YYCSSD+AZaoS/SI7K+Lrv6dELPoaCUscBpJjd0jABXGwg=="],
+    "@allurereport/aql": ["@allurereport/aql@3.20.0", "", {}, "sha512-RYrRLOS0TNYRxLflb/+wqNBt2tICcl+gBFYtvMDDwWZrfYIFMx7rxZU/Bdwc8qJD5SZLbErEDSm5c32PurzcTw=="],
 
-    "@allurereport/charts-api": ["@allurereport/charts-api@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "d3-shape": "^3.2.0" } }, "sha512-DGgYLBZZi2A5qx+fbmt9/WG21+64xu28ST9N3RKZCg8LURuiWySnAuaPePJ8bokFrgI6E97AkX3+++NXO7Kyyg=="],
+    "@allurereport/charts-api": ["@allurereport/charts-api@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "d3-shape": "^3.2.0" } }, "sha512-aUIrnUk77ndtl3TSjpLZ6A1Ed5WpAgRYaB26l6iaS+qpRJVkI4OoT0lGCmKyqzlKiq0zB/2WrYiGoxYD9mjv8w=="],
 
-    "@allurereport/ci": ["@allurereport/ci@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "axios": "^1.20.0", "glob": "^13.0.6" } }, "sha512-kvXJTPDkBnJ6Jxwrw1FfX8pq/CgUbZOD5JBQx/1Z6r67AfqUgNmSy6XAlizn2BxNE62jpVH9EL1rmBF+wnfIDw=="],
+    "@allurereport/ci": ["@allurereport/ci@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "axios": "^1.20.0", "glob": "^13.0.6" } }, "sha512-hcw2HYX57TAr669NVcO6KcJBGM/sRxLSdYalsCm8jwTPeporz4T5Eh3oSFzbYyU38wL37ZGASdAOziJwoSaIbw=="],
 
-    "@allurereport/cli-commons": ["@allurereport/cli-commons@3.19.1", "", { "dependencies": { "lodash.debounce": "^4.0.8" } }, "sha512-k/8bi2zV8hvtgwRqmEbFSR0Ya1Cu+YYWOTqAfLl1k+DoiaUjoSgiKyCbQLHP7lJgXRucx8XRGFreusn9PWq6JQ=="],
+    "@allurereport/cli-commons": ["@allurereport/cli-commons@3.20.0", "", { "dependencies": { "lodash.debounce": "^4.0.8", "yoctocolors": "^2.2.0" } }, "sha512-+24dBehA8WDATx3zDuXCOUBcmCrwyMcITdWB9MCHxzXfqTS36L8Vgkqy6Y6TuASen4JoH4yQnj6uUSCdcU9Qpw=="],
 
-    "@allurereport/core": ["@allurereport/core@3.19.1", "", { "dependencies": { "@allurereport/ci": "3.19.1", "@allurereport/cli-commons": "3.19.1", "@allurereport/core-api": "3.19.1", "@allurereport/plugin-agent": "3.19.1", "@allurereport/plugin-allure2": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@allurereport/plugin-awesome": "3.19.1", "@allurereport/plugin-classic": "3.19.1", "@allurereport/plugin-csv": "3.19.1", "@allurereport/plugin-dashboard": "3.19.1", "@allurereport/plugin-jira": "3.19.1", "@allurereport/plugin-log": "3.19.1", "@allurereport/plugin-progress": "3.19.1", "@allurereport/plugin-slack": "3.19.1", "@allurereport/plugin-testops": "3.19.1", "@allurereport/plugin-testplan": "3.19.1", "@allurereport/reader": "3.19.1", "@allurereport/reader-api": "3.19.1", "@allurereport/service": "3.19.1", "@allurereport/summary": "3.19.1", "glob": "^13.0.6", "handlebars": "^4.7.9", "jiti": "^2.5.1", "node-stream-zip": "^1.15.0", "p-limit": "^7.3.0", "yaml": "^2.8.3", "yoctocolors": "^2.2.0", "zip-stream": "^7.0.5" } }, "sha512-7RNv4Dbe6tzmHQyI09SbWzlIFPIv9FuyUjBQX9dwhwL7yX+hXBPoqHQj3jNLDDWdLQ64a5jRst9PDloMQFE1nQ=="],
+    "@allurereport/core": ["@allurereport/core@3.20.0", "", { "dependencies": { "@allurereport/ci": "3.20.0", "@allurereport/cli-commons": "3.20.0", "@allurereport/core-api": "3.20.0", "@allurereport/plugin-agent": "3.20.0", "@allurereport/plugin-allure2": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@allurereport/plugin-awesome": "3.20.0", "@allurereport/plugin-classic": "3.20.0", "@allurereport/plugin-csv": "3.20.0", "@allurereport/plugin-dashboard": "3.20.0", "@allurereport/plugin-jira": "3.20.0", "@allurereport/plugin-log": "3.20.0", "@allurereport/plugin-progress": "3.20.0", "@allurereport/plugin-slack": "3.20.0", "@allurereport/plugin-testops": "3.20.0", "@allurereport/plugin-testplan": "3.20.0", "@allurereport/reader": "3.20.0", "@allurereport/reader-api": "3.20.0", "@allurereport/service": "3.20.0", "@allurereport/summary": "3.20.0", "glob": "^13.0.6", "handlebars": "^4.7.9", "jiti": "^2.5.1", "node-stream-zip": "^1.15.0", "p-limit": "^7.3.0", "yaml": "^2.8.3", "yoctocolors": "^2.2.0", "zip-stream": "^7.0.5" } }, "sha512-89vsSe7BYBsHS9icJOchyl20IQ8mYo9QGmkPeriO6UWKiCZucX00QQ1lKn7VUjcAJXi2R+mbBuwdzQB3D/zHdQ=="],
 
-    "@allurereport/core-api": ["@allurereport/core-api@3.19.1", "", { "dependencies": { "d3-shape": "^3.2.0" } }, "sha512-ZqINyXG7y+RSOdylz+GNgTN+sdKvS6GiqV5jZmJGT8tJ32wYhD6geuyHOt/Re7bf3srDjni71PnpLoZDVuHBLw=="],
+    "@allurereport/core-api": ["@allurereport/core-api@3.20.0", "", { "dependencies": { "d3-shape": "^3.2.0" } }, "sha512-13XPvMPxqgGZdlpb0xrqy2EOiBxFjAV5Xo6Xe6ZwSVcPk3bvhJcC4DOQJpVhy1lMmSUll/PMmkCVT6nJ4VDywQ=="],
 
-    "@allurereport/directory-watcher": ["@allurereport/directory-watcher@3.19.1", "", { "dependencies": { "chokidar": "^5.0.0" } }, "sha512-WDfncwyDbwj4TBM/91J8Wvz+S5/GoJ59zw5tInI7QD/ZIsDMiVHGj50LlMHKnKDHJUFFnFfLNFvIXMZqCOjWwA=="],
+    "@allurereport/directory-watcher": ["@allurereport/directory-watcher@3.20.0", "", { "dependencies": { "chokidar": "^5.0.0" } }, "sha512-h9qk1LxdNuozW2aRK3Eq42Ti13aIpd7hwS73yX48HrvqkYJ4/8j3KIUEcT1XFe7yDqeWzhU1PnD8XxRQlVPhqw=="],
 
-    "@allurereport/git": ["@allurereport/git@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1" } }, "sha512-qaySOLHIv5bD7n7r76DE7WyBNC+pilFJcsRujAKlWdgANsgoWQDDxdkhwqwKUkuCyx9AFmKuYnXVt/43QOrnHA=="],
+    "@allurereport/git": ["@allurereport/git@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0" } }, "sha512-hVB1nSeWTFgMh9xzOvhmkug5hTJmGmcBZG0xYrYZvlr/Zo2glSzrmub6XEQ58BB+mx/07yZlRgm8vb0/9iZMBw=="],
 
-    "@allurereport/plugin-agent": ["@allurereport/plugin-agent@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "yaml": "^2.8.1" } }, "sha512-11uP3qowODbwUINYgekW2c6wb7p9qbcd9RSErxk/+exw6eZDtGfQrxDaFQS/ETThJm/7ufce5MiClDxvJsb8Ug=="],
+    "@allurereport/plugin-agent": ["@allurereport/plugin-agent@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "yaml": "^2.8.1" } }, "sha512-yAavg25q4nFz+Mi92qMuix53KiSEqwSzO+RTgLq2L7GF+vJDyZ86MHI/c2vQw2uUltvZNmZGy9QFnsbvoL3QkA=="],
 
-    "@allurereport/plugin-allure2": ["@allurereport/plugin-allure2@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "handlebars": "^4.7.9" } }, "sha512-3hOt2l53LvFOD1vRqB0kYxCyzLusq+HokQALmLFd56MNWi1wTy8eTLSfh/GB+Vto/0B70uE48X2Xf9As+yD9gg=="],
+    "@allurereport/plugin-allure2": ["@allurereport/plugin-allure2@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "handlebars": "^4.7.9" } }, "sha512-Om7asLm0PDG86iQK8GCDk2HTTuamYit7vB7nBfaWZvPcjBLr/A3zb93NIqbe8zNzX6cIDgaWOT80T78rXELvwQ=="],
 
-    "@allurereport/plugin-api": ["@allurereport/plugin-api@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "tar-stream": "3.1.7" } }, "sha512-wVIMbLSVMKQ4LE8WPqUnIIHI6o5pP4Wp8ThO9PleK610O9AiNbRFi1YKA2rZygvDju98FFcl7wOrnb1jZNOo5g=="],
+    "@allurereport/plugin-api": ["@allurereport/plugin-api@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "tar-stream": "3.1.7" } }, "sha512-zoO/q1pnHirSpa/ocWEhHmNPTKo/UiVFlPvrmEYwXeU3sn+S220sZrtx9qsnL9Yhr/B9MaKS5n0tMjMCC+lXAA=="],
 
-    "@allurereport/plugin-awesome": ["@allurereport/plugin-awesome@3.19.1", "", { "dependencies": { "@allurereport/charts-api": "3.19.1", "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@allurereport/web-commons": "3.19.1", "d3-shape": "^3.2.0", "handlebars": "^4.7.9", "markdown-it": "^14.2.0" } }, "sha512-yr8vxaLWT8kWdEhta4Y4sNGGoxCTzhBbipN7AT3jYuje2FSL0OBkaIgYIs5jT5DUzqqy8t8rgkpEwgCxwdNW6w=="],
+    "@allurereport/plugin-awesome": ["@allurereport/plugin-awesome@3.20.0", "", { "dependencies": { "@allurereport/charts-api": "3.20.0", "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@allurereport/web-commons": "3.20.0", "d3-shape": "^3.2.0", "handlebars": "^4.7.9", "markdown-it": "^14.2.0" } }, "sha512-vvcBK5+5MC9t5YCrNSTVVfGBO1/eU6h+V0bLNXyxIPWBFkLM98rcLtFdfvzx3IFwwpTKnUMIPgIm0IGLWNh2Vw=="],
 
-    "@allurereport/plugin-classic": ["@allurereport/plugin-classic@3.19.1", "", { "dependencies": { "@allurereport/charts-api": "3.19.1", "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@allurereport/web-commons": "3.19.1", "d3-shape": "^3.2.0", "handlebars": "^4.7.9", "markdown-it": "^14.2.0" } }, "sha512-UGR5Us5n3s9hS/rulYu+9LbJaJnL4Sur/ljyKLQyGh3LemASa/M3vIp+5AQCgp1ygiJy171CEKrDuTJX5hRnSQ=="],
+    "@allurereport/plugin-classic": ["@allurereport/plugin-classic@3.20.0", "", { "dependencies": { "@allurereport/charts-api": "3.20.0", "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@allurereport/web-commons": "3.20.0", "d3-shape": "^3.2.0", "handlebars": "^4.7.9", "markdown-it": "^14.2.0" } }, "sha512-RXget/ufWbnByVsz69+GvyPWwoZNYVOsOFpgvGgQoPxiJ3ZAMOziSBaY6fuFVb8po5lXKFLil3wvyLu8N1qF+g=="],
 
-    "@allurereport/plugin-csv": ["@allurereport/plugin-csv@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1" } }, "sha512-crgptKaq4O8RSKykwDIj3nevPna+sycjj9qRVxOnSI2ekISHJ5BE2p/DK8NxKvzFcPMJ7iEimRnGnCl3JSumMQ=="],
+    "@allurereport/plugin-csv": ["@allurereport/plugin-csv@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0" } }, "sha512-iqq2JlepcuPRw04CxhUV03pDjtB02vra44iur2yLvqdhVIpxo+7RaoA2wSsdRQxXoh+bZr/9QzKUgI1Ra4KiBA=="],
 
-    "@allurereport/plugin-dashboard": ["@allurereport/plugin-dashboard@3.19.1", "", { "dependencies": { "@allurereport/charts-api": "3.19.1", "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@allurereport/web-commons": "3.19.1", "d3-shape": "^3.2.0", "handlebars": "^4.7.9" } }, "sha512-3PfpM4q8PN0dXPWtKaGb3iTs6syV7K5LZrEZcz5u8zPCBfx0jGK1TrHhFv+D3fxuYXYNxjsHbteVVekDN88DJQ=="],
+    "@allurereport/plugin-dashboard": ["@allurereport/plugin-dashboard@3.20.0", "", { "dependencies": { "@allurereport/charts-api": "3.20.0", "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@allurereport/web-commons": "3.20.0", "d3-shape": "^3.2.0", "handlebars": "^4.7.9" } }, "sha512-2uSc611a8CJ6BOokPUGxuG94w1QG6RAUxYGnS2ElhAZZ1pAXAkO+5HgkspaK2TKBJOwlFmhXlIgmsn11RKqA2Q=="],
 
-    "@allurereport/plugin-jira": ["@allurereport/plugin-jira@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "axios": "^1.20.0" } }, "sha512-N5D8LWAivN/Reqb6gy45T/6rqtciO+oN4apJutXoZBAbPjfXsvzM6BxJZyvY92jPomGxpyO1XAMC4cBFHl+uzg=="],
+    "@allurereport/plugin-jira": ["@allurereport/plugin-jira@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "axios": "^1.20.0" } }, "sha512-3hTPyYnP529Bg5pZxcQrwF/X8BMit5JtQsoqdwctHbtN1VsdVjG5fl+bucMHO5tsHwb8PUjVBPYcseyxTBi/IA=="],
 
-    "@allurereport/plugin-log": ["@allurereport/plugin-log@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "yoctocolors": "^2.2.0" } }, "sha512-XtCx9v7MuIxA9bVjL3ihlbfP8N3Z5xd2T9JVuBZSdsaFdqQcyKJD9jhPY2BTM5dAkJmTTiyyNjyvwctvD5X0jQ=="],
+    "@allurereport/plugin-log": ["@allurereport/plugin-log@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "yoctocolors": "^2.2.0" } }, "sha512-uTGG/kKcaYvYuJbN0Ur7/L65e95OrmVKVHySnzggT4gsypoc8LMNnvsR9ZnYcioCxXvCuWtjtpII+8tcAXVvog=="],
 
-    "@allurereport/plugin-progress": ["@allurereport/plugin-progress@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "yoctocolors": "^2.2.0" } }, "sha512-OMZxtfz7W0LvYZucAXeFAqoHQ1+2+kOd0rsOwM3lhpvlqQYUvkHfGytIWDmekssJMX5Oi1G8bWPe/FswLjoVKg=="],
+    "@allurereport/plugin-progress": ["@allurereport/plugin-progress@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "yoctocolors": "^2.2.0" } }, "sha512-9wIlEPZMlAaYnv8dEKpUKQxWesJkJzIfkDkT0MCA6RAxF/PYTPoV/WVfWgaVsa6DIdBbtNOo855pFtEfIYSeEw=="],
 
-    "@allurereport/plugin-server-reload": ["@allurereport/plugin-server-reload@3.19.1", "", { "dependencies": { "@allurereport/plugin-api": "3.19.1", "@allurereport/static-server": "3.19.1" } }, "sha512-47tL59667rGKMIWRi2reuId7TP5DpC3hSaOuZq33MRXivtHS0AKXwvbDMdnc+d6x52wutPmBhqkL5qE5JaKsEw=="],
+    "@allurereport/plugin-server-reload": ["@allurereport/plugin-server-reload@3.20.0", "", { "dependencies": { "@allurereport/plugin-api": "3.20.0", "@allurereport/static-server": "3.20.0" } }, "sha512-qFYzFAKtl7Ghiphj5zVVp6lYhbQPcS+2313sKB8s6dmriB962MKbiuaP7xbOwuFOmO2dlcjyn+EXZaygwwq2ig=="],
 
-    "@allurereport/plugin-slack": ["@allurereport/plugin-slack@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1" } }, "sha512-g+YCrk3rhQYnFRefJb6svUfpqvcZyNkSAnLandnQljHvw/GpQhifCtIqlp84aAKo0WyddScQtkcF/C8TB9i7qA=="],
+    "@allurereport/plugin-slack": ["@allurereport/plugin-slack@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0" } }, "sha512-fbE/DKNd29/mvKKK+qQYf2C8GUXDNykPEBsWEkgeOk5ByGA+41I/TAwowV5IgHkCTTVJO/VISI7s8+rZ26PPqQ=="],
 
-    "@allurereport/plugin-testops": ["@allurereport/plugin-testops@3.19.1", "", { "dependencies": { "@allurereport/ci": "3.19.1", "@allurereport/cli-commons": "3.19.1", "@allurereport/core-api": "3.19.1", "@allurereport/git": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@allurereport/reader-api": "3.19.1", "@allurereport/service": "3.19.1", "axios": "^1.20.0", "form-data": "^4.0.6", "lodash-es": "^4.18.1", "p-limit": "^7.3.0", "yoctocolors": "^2" } }, "sha512-rIMRiIoiOxzM7pHzXagE6vFZ48iCOOftoO/rQR8XAmghMg6UBi/dRba7BFn3wDhiMuWfBdC1QUJWdBZMsFaDcQ=="],
+    "@allurereport/plugin-testops": ["@allurereport/plugin-testops@3.20.0", "", { "dependencies": { "@allurereport/ci": "3.20.0", "@allurereport/cli-commons": "3.20.0", "@allurereport/core-api": "3.20.0", "@allurereport/git": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@allurereport/reader-api": "3.20.0", "@allurereport/service": "3.20.0", "axios": "^1.20.0", "form-data": "^4.0.6", "lodash-es": "^4.18.1", "p-limit": "^7.3.0", "yoctocolors": "^2" } }, "sha512-O+3SV759HcNTKvCbuoshsb5RLkiNOgAy46jaPyVvEt0DIjh6NgG4WVaW2HqMfxR0jE2gH/VB8nCS0wbdM1nW/A=="],
 
-    "@allurereport/plugin-testplan": ["@allurereport/plugin-testplan@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1" } }, "sha512-bAKKNoQQpGjhSn4qXbPrNJasvWJQ0lRnMxFgAhfpBu2m81GHbid/gbuWs9u+OaI8VRI0FK9DKiV54O1pEpN4xA=="],
+    "@allurereport/plugin-testplan": ["@allurereport/plugin-testplan@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0" } }, "sha512-DomLSgUF/hPlgQneQi51JhVF6aNUJU2x8Y5Up+AZUHLTtIOgXdXUu3D0byNaVV3qBiu2yeAtXIQS5/WAVx4qDg=="],
 
-    "@allurereport/reader": ["@allurereport/reader@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@allurereport/reader-api": "3.19.1", "fast-xml-parser": "^5.11.1" } }, "sha512-GPcOrKCI6Lx9rTBls0x3OsRizqnJm4Tyxr+5+KEMsTOdH0jxCOOxnKNvJ49ioqTkOhEo0oxGICifli5wi/+7xw=="],
+    "@allurereport/reader": ["@allurereport/reader@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@allurereport/reader-api": "3.20.0", "fast-xml-parser": "^5.11.1" } }, "sha512-NfYCOJwlmJm6Ti2HlWg3+hRFsd3//JKPxwSn/dLwzoxD+Jsp0qsn1LxbAgFUYOe4lCZ7zPwON6tVbX+CO3KbPQ=="],
 
-    "@allurereport/reader-api": ["@allurereport/reader-api@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "mime-types": "^3.0.2" } }, "sha512-gvfNlRqzDHgv67LAVlCXffEPJlSd+Em1foUeDdNHevnkKUgdwtgjlljwrq1q89ywAZWjAjlKsGSHY3WA1AAfOg=="],
+    "@allurereport/reader-api": ["@allurereport/reader-api@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "mime-types": "^3.0.2" } }, "sha512-S2H2PL8sfPqhVEwGMmQ561EE5DqugXKhv311eGmcpal7ZJSZaJr8Lj07bUMNih1hLyZO5g7MSkD++wf5+cYDHA=="],
 
-    "@allurereport/service": ["@allurereport/service@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "axios": "^1.20.0", "open": "^11.0.0" } }, "sha512-IQbwnbrC2FJibjKZJTZxtUXzVWute6hEFB13ZOcr42BuSkWbcGpREZP0QYl0mXrQbyF2h3/zc+3bNi7HZHE1uA=="],
+    "@allurereport/service": ["@allurereport/service@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "axios": "^1.20.0", "open": "^11.0.0" } }, "sha512-pTPXoHiFMBsBvzjZ74uH2Ii0l1f53LwdsXcg6SQwyOvBCIa0ZYPLwqre+Q0oEIK5nkkNdsDOkOzE+3daqq0r+w=="],
 
-    "@allurereport/static-server": ["@allurereport/static-server@3.19.1", "", { "dependencies": { "@allurereport/directory-watcher": "3.19.1", "open": "^11.0.0" } }, "sha512-C2jZ3zwaUrGVzWtnFGDroy2Cv8VS0rRRJNiIX/3kfM+cvn2/Wr4cPREvLfH0cejTby6Sl+WL08w196Gzp18chw=="],
+    "@allurereport/static-server": ["@allurereport/static-server@3.20.0", "", { "dependencies": { "@allurereport/directory-watcher": "3.20.0", "open": "^11.0.0" } }, "sha512-DqbOEWMYJ12NKLaQAHtdOV2P1E5xC00a8Ng0DAQZlcF1qgHmZIcjGQu01Vx9mQSsnWsPe8JoqgVO8+hKZvXBmg=="],
 
-    "@allurereport/summary": ["@allurereport/summary@3.19.1", "", { "dependencies": { "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "handlebars": "^4.7.9" } }, "sha512-WcQI71RlqoMwlOgQz1za1tpDW4uv5pVLepbhU6uo0Hk/IvrM4UBxXvwuScUUMA8QdXCVtaup4B5G3Bm8//HjRg=="],
+    "@allurereport/summary": ["@allurereport/summary@3.20.0", "", { "dependencies": { "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "handlebars": "^4.7.9" } }, "sha512-NAPQv1AkWdSU8p9A0UVm0JHOLHGsOyxh1uTwCMpET6uWB42iUXAPZp3ag8vzGgkji41slGsknfXelzPNPALmOQ=="],
 
-    "@allurereport/web-commons": ["@allurereport/web-commons@3.19.1", "", { "dependencies": { "@allurereport/aql": "3.19.1", "@allurereport/charts-api": "3.19.1", "@allurereport/core-api": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@preact/signals": "^2.6.1", "@preact/signals-core": "^1.12.2", "ansi-to-html": "^0.7.2", "d3-interpolate": "^3.0.1", "d3-scale": "^4.0.2", "d3-shape": "^3.2.0", "dompurify": "^3.4.0", "nanoid": "^5.1.16" } }, "sha512-ukR4k4Z0ZmcMlTVQsL/ZrB6rZTWBHT71I4cKRrdmCTVXUVMnFtY8YV7fwU+wL5g/BuPls2afE1JVsxV0hJohBQ=="],
+    "@allurereport/web-commons": ["@allurereport/web-commons@3.20.0", "", { "dependencies": { "@allurereport/aql": "3.20.0", "@allurereport/charts-api": "3.20.0", "@allurereport/core-api": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@preact/signals": "^2.6.1", "@preact/signals-core": "^1.12.2", "ansi-to-html": "^0.7.2", "d3-interpolate": "^3.0.1", "d3-scale": "^4.0.2", "d3-shape": "^3.2.0", "dompurify": "^3.4.0", "nanoid": "^5.1.16" } }, "sha512-w1/V67McUARfBYs5DL18AvVeLr19WD0TslVsLvqGI8hWrOvs6WSVXG3cEfeEFYrbA5c/gsnNWPEkwFlEcKgPeg=="],
 
     "@antfu/install-pkg": ["@antfu/install-pkg@2.1.0", "", { "dependencies": { "package-manager-detector": "^1.8.0", "tinyexec": "^1.3.1" } }, "sha512-sdg9NxU3zR4Mnawfbc/x6GB5Wf17WYud5qOuEuxXjaKpYpMkISSJEjItGebXJ2bQ4DIcly4NYH23mtkGJjvKUw=="],
 
@@ -1163,9 +1163,9 @@
 
     "@tanstack/pacer": ["@tanstack/pacer@0.20.1", "", { "dependencies": { "@tanstack/devtools-event-client": "^0.4.3", "@tanstack/store": "^0.9.3" } }, "sha512-ZNQ1bIL6eUXVKdic0tiImvBVkWrg/IoSK6VIacTrO3d3HAGnd70qFJNJagR/YOJIOw4EKGWnodwpYZkN1pWuVQ=="],
 
-    "@tanstack/query-core": ["@tanstack/query-core@5.104.0", "", {}, "sha512-JrC2r/JQlXt7khBSdUpsgxNvybzOg+aITa+ARRMlP2AFo93Y8vIqz077rp+e61mJetSZ0T6AJbwW1JHer1vrPQ=="],
+    "@tanstack/query-core": ["@tanstack/query-core@5.104.1", "", {}, "sha512-TiRghcrGkUTE+M4JBxvpPSpBhxvIzQairw+cksrHYGr+2uwC77yW1SY9nYxnYRYOppvucf8rEg6b5byoz4rTpw=="],
 
-    "@tanstack/react-query": ["@tanstack/react-query@5.104.0", "", { "dependencies": { "@tanstack/query-core": "5.104.0" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-e1TZmDCQnWIfiDVryIHeA6Idj+Lfx1hORLOhXS/l5wcgvtVD4yYqbTDl378sGQKIi2cSgb0TEMC9cKK8GGoJEw=="],
+    "@tanstack/react-query": ["@tanstack/react-query@5.104.1", "", { "dependencies": { "@tanstack/query-core": "5.104.1" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-Zz70EgjahNI7aCz8BZxM3vUGU44ycxEAzMuCUjLeA7SVhhOkg3ZgPjPJPvHjs6Rmky/dtmnu1WzjGHNHmhCoZQ=="],
 
     "@tanstack/react-store": ["@tanstack/react-store@0.11.2", "", { "dependencies": { "@tanstack/store": "0.11.2", "use-sync-external-store": "^1.6.0" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-oj5O5DmiMWE+ih+SioX2ayC1kbK7d3fpLx0B75fPJr9nY3zU+hoW010yr64qXsY/9fyiLVE2bn5mGNV3owm8RQ=="],
 
@@ -1487,7 +1487,7 @@
 
     "ajv-formats": ["ajv-formats@3.0.1", "", { "dependencies": { "ajv": "^8.0.0" } }, "sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ=="],
 
-    "allure": ["allure@3.19.1", "", { "dependencies": { "@allurereport/charts-api": "3.19.1", "@allurereport/ci": "3.19.1", "@allurereport/core": "3.19.1", "@allurereport/core-api": "3.19.1", "@allurereport/directory-watcher": "3.19.1", "@allurereport/plugin-agent": "3.19.1", "@allurereport/plugin-allure2": "3.19.1", "@allurereport/plugin-api": "3.19.1", "@allurereport/plugin-awesome": "3.19.1", "@allurereport/plugin-classic": "3.19.1", "@allurereport/plugin-csv": "3.19.1", "@allurereport/plugin-dashboard": "3.19.1", "@allurereport/plugin-jira": "3.19.1", "@allurereport/plugin-log": "3.19.1", "@allurereport/plugin-progress": "3.19.1", "@allurereport/plugin-server-reload": "3.19.1", "@allurereport/plugin-slack": "3.19.1", "@allurereport/reader-api": "3.19.1", "@allurereport/service": "3.19.1", "@allurereport/static-server": "3.19.1", "adm-zip": "^0.6.0", "clipanion": "^4.0.0-rc.4", "glob": "^13.0.6", "lodash.omit": "^4.18.0", "prompts": "^2.4.2", "typanion": "^3.14.0", "yoctocolors": "^2.2.0" }, "bin": "./cli.js" }, "sha512-6s2JFiRzJqSiUJATekxdRGqbi2TGZHOZuPgg6UD4AjBjN+oidASve+u2DpVXQMWdci/qM4B0Fi9tGf+aDM/lqQ=="],
+    "allure": ["allure@3.20.0", "", { "dependencies": { "@allurereport/charts-api": "3.20.0", "@allurereport/ci": "3.20.0", "@allurereport/cli-commons": "3.20.0", "@allurereport/core": "3.20.0", "@allurereport/core-api": "3.20.0", "@allurereport/directory-watcher": "3.20.0", "@allurereport/plugin-agent": "3.20.0", "@allurereport/plugin-allure2": "3.20.0", "@allurereport/plugin-api": "3.20.0", "@allurereport/plugin-awesome": "3.20.0", "@allurereport/plugin-classic": "3.20.0", "@allurereport/plugin-csv": "3.20.0", "@allurereport/plugin-dashboard": "3.20.0", "@allurereport/plugin-jira": "3.20.0", "@allurereport/plugin-log": "3.20.0", "@allurereport/plugin-progress": "3.20.0", "@allurereport/plugin-server-reload": "3.20.0", "@allurereport/plugin-slack": "3.20.0", "@allurereport/reader-api": "3.20.0", "@allurereport/service": "3.20.0", "@allurereport/static-server": "3.20.0", "adm-zip": "^0.6.0", "clipanion": "^4.0.0-rc.4", "glob": "^13.0.6", "lodash.omit": "^4.18.0", "prompts": "^2.4.2", "typanion": "^3.14.0", "yoctocolors": "^2.2.0" }, "bin": "./cli.js" }, "sha512-oHxa2AJZp+hCMMEQ47nbAC19FMwMsboWkgZTs3KWGNvCoxsBiFxV1urKuPrXQoC69BltL13biZM4I5PT8I6xkQ=="],
 
     "allure-js-commons": ["allure-js-commons@3.13.0", "", { "dependencies": { "md5": "^2.3.0" }, "peerDependencies": { "allure-playwright": "3.13.0" }, "optionalPeers": ["allure-playwright"] }, "sha512-NC4qcbmfpuYTstdw+EgimzhpHD2T85wzBNWRMPpu9rukkLzRlLvSmUCo5hy6vEvwQd9BUQh2yMFplJ+shIpVrA=="],
 
@@ -2113,7 +2113,7 @@
 
     "hermes-parser": ["hermes-parser@0.25.1", "", { "dependencies": { "hermes-estree": "0.25.1" } }, "sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA=="],
 
-    "hono": ["hono@4.12.34", "", {}, "sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA=="],
+    "hono": ["hono@4.13.7", "", {}, "sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ=="],
 
     "hookified": ["hookified@1.15.1", "", {}, "sha512-MvG/clsADq1GPM2KGo2nyfaWVyn9naPiXrqIe4jYjXNZQt238kWyOGrsyc/DmRAQ+Re6yeo6yX/yoNCG5KAEVg=="],
 
@@ -2153,7 +2153,7 @@
 
     "internmap": ["internmap@2.0.3", "", {}, "sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg=="],
 
-    "ip-address": ["ip-address@10.3.1", "", {}, "sha512-1e9d3kb97NHJTIJDZW9rKqW2h6+dFa50Dy0fpPSMQp2ADje5gvKsXmdiK6dwY5t76TaTt5+P5N1Y/LoToIxP6g=="],
+    "ip-address": ["ip-address@10.7.1", "", {}, "sha512-4OUAqU9Z1i3vCnS05hzGiFnEMDpQ+62pAD/MVQOp83fYyNC8GleCqaS0QikQBmcWCrKFiUs/B8ztRRiYOAXuCA=="],
 
     "ipaddr.js": ["ipaddr.js@1.9.1", "", {}, "sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g=="],
 
