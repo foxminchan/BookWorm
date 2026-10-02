@@ -5,15 +5,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Moq" />
-    <PackageReference Include="Verify.TUnit" />
-    <PackageReference Include="Verify.SendGrid" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BookWorm.Notification\BookWorm.Notification.csproj" />
-    <Compile
-      Include="$(SolutionDir)\tests\BookWorm.Common\SnapshotTestHelper.cs"
-      Link="SnapshotTestHelper.cs"
-    />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Moq" />

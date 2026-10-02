@@ -1,4 +1,5 @@
-﻿using Aspire.Hosting.Yarp;
+﻿using Aspire.Hosting.Dotnet;
+using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
 
 namespace BookWorm.AppHost.Extensions.Network;
@@ -59,7 +60,7 @@ internal sealed class Service
 {
     public const long DefaultMaxRequestBodySize = 10 * 1024 * 1024;
     public required string Name { get; init; }
-    public required IResourceBuilder<ProjectResource> Resource { get; init; }
+    public required IResourceBuilder<DotnetProjectResource> Resource { get; init; }
     public bool UseProtobuf { get; init; }
     public long MaxRequestBodySize { get; init; } = DefaultMaxRequestBodySize;
     public int? Order { get; init; }
@@ -77,7 +78,7 @@ internal sealed class ApiGatewayProxyBuilder
     private IDistributedApplicationBuilder Builder { get; }
 
     public ApiGatewayProxyBuilder WithService(
-        IResourceBuilder<ProjectResource> service,
+        IResourceBuilder<DotnetProjectResource> service,
         bool useProtobuf = false,
         long maxRequestBodySize = Service.DefaultMaxRequestBodySize,
         int? order = null

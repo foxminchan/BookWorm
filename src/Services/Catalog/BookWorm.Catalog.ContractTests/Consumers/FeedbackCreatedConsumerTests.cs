@@ -8,6 +8,7 @@ using Wolverine;
 
 namespace BookWorm.Catalog.ContractTests.Consumers;
 
+[Category("PactConsumer")]
 public sealed class FeedbackCreatedConsumerTests
 {
     private const int Rating = 4;
@@ -47,10 +48,14 @@ public sealed class FeedbackCreatedConsumerTests
         );
 
         // Act
-        await handler.Handle(@event, CancellationToken.None);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Catalog",
+            "Rating",
+            @event,
+            async pactEvent => await handler.Handle(pactEvent, CancellationToken.None)
+        );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync((Guid)_book.Id, It.IsAny<CancellationToken>()),
             Times.Once

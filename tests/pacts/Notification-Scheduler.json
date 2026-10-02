@@ -1,0 +1,83 @@
+{
+  "consumer": {
+    "name": "Notification"
+  },
+  "messages": [
+    {
+      "contents": {
+        "creationDate": "2026-10-01T17:08:14.0574058Z",
+        "id": "01a0f870-2469-7ee1-9862-e1e6332d837c"
+      },
+      "description": "BookWorm.Contracts.CleanUpSentEmailIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-scheduler",
+        "type": "BookWorm.Contracts.CleanUpSentEmailIntegrationEvent"
+      }
+    },
+    {
+      "contents": {
+        "creationDate": "2026-10-01T17:08:14.0577207Z",
+        "id": "01a0f870-2469-722a-82fa-36b97f631033"
+      },
+      "description": "BookWorm.Contracts.ResendErrorEmailIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-scheduler",
+        "type": "BookWorm.Contracts.ResendErrorEmailIntegrationEvent"
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.0",
+      "models": "1.0.4"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "Scheduler"
+  }
+}

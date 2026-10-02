@@ -3,10 +3,11 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Rating.ContractTests.Publishers;
 
+[Category("PactProvider")]
 public sealed class FeedbackCreatedEventPublisherTests
 {
     [Test]
-    public async Task GivenFeedbackCreatedIntegrationEvent_WhenPublished_ThenShouldMatchContract()
+    public void GivenFeedbackCreatedIntegrationEvent_WhenPublished_ThenShouldMatchContract()
     {
         // Arrange
         var bookId = Guid.CreateVersion7();
@@ -16,6 +17,6 @@ public sealed class FeedbackCreatedEventPublisherTests
         var @event = new FeedbackCreatedIntegrationEvent(bookId, rating, feedbackId);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
+        PactTestHelper.VerifyProviderMessage("Catalog", "Rating", @event);
     }
 }

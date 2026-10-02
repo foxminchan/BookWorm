@@ -237,11 +237,16 @@ When modifying Protocol Buffers schema files (`.proto` files), you must run the 
 - **Testing Framework**: Use **TUnit** (not xUnit/NUnit/MSTest)
 - **Mocking**: Utilize Moq for mocking dependencies
 - **Assertions**: Use Shouldly for fluent assertions
-- **Snapshot Testing**: Use Verify.TUnit for snapshot tests
+- **Contract Testing**: Use Pact.NET async-message consumer contracts and provider verification
 - **Architecture Tests**: Use ArchUnitNET.TUnit in `tests/BookWorm.ArchTests/`
 - **Coverage**: Microsoft.Testing.Extensions.CodeCoverage for test coverage reports
 - **Integration Tests**: Use Aspire.Hosting.Testing for service integration tests
 - For backend test authoring, use the [csharp-tunit skill](../.agents/skills/csharp-tunit/SKILL.md)
+
+Run the focused contract suite with `mise run test:contracts`. This runs all consumer
+contracts first to generate files under `tests/pacts/`, then verifies providers against them.
+Provider checks are deliberately run after pact generation because they share these
+artifacts.
 
 ## Pull Request Process
 

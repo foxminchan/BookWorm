@@ -24,7 +24,39 @@ run = "dotnet build BookWorm.slnx"
 [tasks.test]
 description = "Run tests"
 depends = ["build"]
-run = "dotnet test BookWorm.slnx"
+run = ["mise run test:unit", "mise run test:contracts"]
+
+[tasks."test:unit"]
+description = "Run unit and architecture tests"
+run = [
+  "dotnet test src/Services/Basket/BookWorm.Basket.UnitTests/BookWorm.Basket.UnitTests.csproj",
+  "dotnet test src/Services/Catalog/BookWorm.Catalog.UnitTests/BookWorm.Catalog.UnitTests.csproj",
+  "dotnet test src/Services/Chat/BookWorm.Chat.UnitTests/BookWorm.Chat.UnitTests.csproj",
+  "dotnet test src/Services/Finance/BookWorm.Finance.UnitTests/BookWorm.Finance.UnitTests.csproj",
+  "dotnet test src/Services/McpTools/BookWorm.McpTools.UnitTests/BookWorm.McpTools.UnitTests.csproj",
+  "dotnet test src/Services/Notification/BookWorm.Notification.UnitTests/BookWorm.Notification.UnitTests.csproj",
+  "dotnet test src/Services/Ordering/BookWorm.Ordering.UnitTests/BookWorm.Ordering.UnitTests.csproj",
+  "dotnet test src/Services/Rating/BookWorm.Rating.UnitTests/BookWorm.Rating.UnitTests.csproj",
+  "dotnet test src/Services/Scheduler/BookWorm.Scheduler.UnitTests/BookWorm.Scheduler.UnitTests.csproj",
+  "dotnet test tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj",
+]
+
+[tasks."test:contracts"]
+description = "Generate consumer pacts and verify provider messages"
+run = [
+  "dotnet test src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
+  "dotnet test src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
+  "dotnet test src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
+  "dotnet test src/Services/Notification/BookWorm.Notification.ContractTests/BookWorm.Notification.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
+  "dotnet test src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
+  "dotnet test src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
+  "dotnet test src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
+  "dotnet test src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
+  "dotnet test src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
+  "dotnet test src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
+  "dotnet test src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
+  "dotnet test src/Services/Scheduler/BookWorm.Scheduler.ContractTests/BookWorm.Scheduler.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
+]
 
 [tasks."format:cs"]
 description = "Format C# code"

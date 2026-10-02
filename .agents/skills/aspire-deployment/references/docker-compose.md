@@ -26,6 +26,9 @@ aspire docs api search "Docker Compose service customization" --language typescr
 
 ## Target setup
 
+The AppHost is the deployment model, not a Compose workload. Generate services for its
+declared resources; do not containerize the AppHost to run the deployed application.
+
 Expected package and AppHost environment:
 
 ```bash
@@ -59,6 +62,12 @@ Make these changes in the AppHost, not in the generated Compose output:
 6. Use customization APIs only for real Compose customization:
    - C#: `compose.ConfigureComposeFile(...)`, `compose.ConfigureEnvFile(...)`, and `resource.PublishAsDockerComposeService(...)`.
    - TypeScript: `compose.configureComposeFile(...)`, `compose.configureEnvFile(...)`, and `resource.publishAsDockerComposeService(...)`.
+   - Aspire 13.5 exposes shared-memory customization through the generated Compose service
+     model. Verify the current property/API before setting it; do not hand-edit `shm_size`
+     into generated YAML.
+7. Blazor gateway resources can publish to Docker Compose in 13.5. Keep the gateway
+   relationship in the AppHost and verify the generated service rather than replacing it
+   with a hand-written proxy service.
 
 Do not hand-edit `docker-compose.yaml` as the durable fix unless the user explicitly wants to eject generated artifacts.
 

@@ -1,0 +1,137 @@
+{
+  "consumer": {
+    "name": "Catalog"
+  },
+  "messages": [
+    {
+      "contents": {
+        "bookId": "01a0f86f-ee67-747a-a7a3-4087b883e06f",
+        "creationDate": "2026-10-01T17:08:00.3334129Z",
+        "feedbackId": "01a0f86f-edc2-7e3b-940c-d43808cf800c",
+        "id": "01a0f86f-eecd-70b7-a518-d39c7c7f9e2e",
+        "rating": 4
+      },
+      "description": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.bookId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.feedbackId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.rating": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-rating",
+        "type": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent"
+      }
+    },
+    {
+      "contents": {
+        "bookId": "01a0f86f-ee68-7a0f-82a1-2d2af353f849",
+        "creationDate": "2026-10-01T17:08:00.3334008Z",
+        "feedbackId": "01a0f86f-edc2-721f-a595-d8e46d1a64f8",
+        "id": "01a0f86f-eecd-7f14-b25f-8aeaf6d3606b",
+        "rating": 4
+      },
+      "description": "BookWorm.Contracts.FeedbackDeletedIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.bookId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.feedbackId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.rating": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-rating",
+        "type": "BookWorm.Contracts.FeedbackDeletedIntegrationEvent"
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.0",
+      "models": "1.0.4"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "Rating"
+  }
+}

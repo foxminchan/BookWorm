@@ -63,6 +63,26 @@ Use `aspire docs search` / `aspire docs get` to find the right builder methods, 
 
 **Don't invent APIs** — if docs search and integration list don't return it, it doesn't exist. Fall back to Tier 3 and note the limitation to the user. **API shapes differ between C# and TypeScript** — always check the correct language docs.
 
+## Package compatibility and interaction rules
+
+Before changing an existing AppHost, verify that its SDK and every `Aspire.Hosting.*`
+package use the same release family. Do not mix incompatible package versions.
+
+| Area                          | Current rule                                                                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hosting callback services     | Use `context.Services` in C#. In TypeScript, get the Interaction Service with `await context.services().getInteractionService()`. `ServiceProvider` is obsolete. |
+| External connection string    | Use `AddConnectionString` / `addConnectionString`; do not generate obsolete `PublishAsConnectionString`.                                                         |
+| Command input                 | Prefer `CommandOptions.Arguments`; values become dashboard fields and CLI `--<name>` options.                                                                    |
+| Direct interaction prompt     | Check `IInteractionService.IsAvailable` (or TS equivalent) and provide a noninteractive path before prompting.                                                   |
+| File upload / progress        | File inputs are stable; progress dialogs remain experimental under `ASPIREINTERACTION001`.                                                                       |
+| Interactive terminal          | `WithTerminal()` is experimental (`ASPIRETERMINAL001`); TypeScript uses parameterless defaults, and `TerminalOptions.Shell` no longer exists.                    |
+| AI integration                | Migrate deprecated `Aspire.Hosting.GitHub.Models` usage to Azure AI Foundry.                                                                                     |
+| Existing .NET project by path | `AddDotnetProject` moved to experimental `Aspire.Hosting.Dotnet` (`ASPIREDOTNETPROJECT001`).                                                                     |
+| Dev tunnel region             | Use normalized names such as `DevTunnelRegion.UKSouth` and `SoutheastAsia`.                                                                                      |
+
+For all 13.5 breaking changes and patch caveats, see
+[aspire-13-5-breaking-changes.md](../../aspire/references/aspire-13-5-breaking-changes.md).
+
 ### Check what integrations auto-manage
 
 Before modeling environment variables, passwords, ports, or volumes for a typed integration, **check the docs to see what the integration handles automatically**. Many typed integrations auto-generate passwords, manage ports dynamically, and handle volumes — duplicating this config causes errors or conflicts.

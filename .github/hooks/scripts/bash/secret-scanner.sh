@@ -4,8 +4,11 @@
 set -e
 
 INPUT=$(cat)
-TOOL_NAME=$(echo "$INPUT" | jq -r '.toolName')
-TOOL_ARGS=$(echo "$INPUT" | jq -r '.toolArgs')
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+json_get() { printf '%s' "$INPUT" | python3 "$SCRIPT_DIR/hook-json.py" get "$@"; }
+json_deny() { local input="$1"; python3 "$SCRIPT_DIR/hook-json.py" deny "$input"; }
+TOOL_NAME=$(json_get toolName)
+TOOL_ARGS=$(json_get toolArgs)
 
 # Patterns that indicate potential secrets
 SECRET_PATTERNS=(
@@ -31,8 +34,7 @@ check_for_secrets() {
 
   for pattern in "${SECRET_PATTERNS[@]}"; do
     if echo "$content" | grep -qEi "$pattern"; then
-      jq -n --arg reason "Potential secret detected in $context. Hardcoded credentials, API keys, and tokens must not be committed. Use User Secrets or environment variables instead." \
-        '{permissionDecision: "deny", permissionDecisionReason: $reason}'
+      json_deny "Potential secret detected in $context. Hardcoded credentials, API keys, and tokens must not be committed. Use User Secrets or environment variables instead."
       exit 0
     fi
   done
@@ -42,13 +44,13 @@ check_for_secrets() {
 
 # Check bash commands for secrets
 if [[ "$TOOL_NAME" = "bash" ]]; then
-  COMMAND=$(echo "$TOOL_ARGS" | jq -r '.command // empty')
+  COMMAND=$(printf '%s' "$TOOL_ARGS" | python3 "$SCRIPT_DIR/hook-json.py" get command)
   check_for_secrets "$COMMAND" "bash command"
 fi
 
 # Check file edits/creates for embedded secrets
 if [[ "$TOOL_NAME" = "edit" ]] || [[ "$TOOL_NAME" = "create" ]]; then
-  CONTENT=$(echo "$TOOL_ARGS" | jq -r '.content // .newText // .new_string // empty')
+  CONTENT=$(printf '%s' "$TOOL_ARGS" | python3 "$SCRIPT_DIR/hook-json.py" get content newText new_string)
   check_for_secrets "$CONTENT" "file content"
 fi
 

@@ -4,28 +4,26 @@
 set -e
 
 INPUT=$(cat)
-TOOL_NAME=$(echo "$INPUT" | jq -r '.toolName')
-RESULT_TYPE=$(echo "$INPUT" | jq -r '.toolResult.resultType')
-TIMESTAMP=$(echo "$INPUT" | jq -r '.timestamp')
-CWD=$(echo "$INPUT" | jq -r '.cwd')
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+json_get() { printf '%s' "$INPUT" | python3 "$SCRIPT_DIR/hook-json.py" get "$@"; }
+TOOL_NAME=$(json_get toolName)
+RESULT_TYPE=$(json_get toolResult.resultType)
 
-LOG_DIR="${CWD}/.github/hooks/logs"
+REPO_DIR="$(cd -- "$SCRIPT_DIR/../../../.." && pwd)"
+LOG_DIR="${REPO_DIR}/.github/hooks/audit"
 mkdir -p "$LOG_DIR"
 
 AUDIT_LOG="${LOG_DIR}/audit.jsonl"
 
 # Write structured JSONL entry
-jq -n -c \
-  --arg ts "$TIMESTAMP" \
-  --arg tool "$TOOL_NAME" \
-  --arg result "$RESULT_TYPE" \
-  --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)" \
-  '{timestamp: $ts, date: $date, tool: $tool, result: $result}' >> "$AUDIT_LOG"
+printf '%s\n' "$INPUT" | python3 "$SCRIPT_DIR/hook-json.py" audit >> "$AUDIT_LOG"
 
 # Track failure counts for the session
 if [[ "$RESULT_TYPE" = "failure" ]]; then
   FAILURE_LOG="${LOG_DIR}/failures.log"
-  RESULT_TEXT=$(echo "$INPUT" | jq -r '.toolResult.textResultForLlm // "no details"' | head -c 500)
+  RESULT_TEXT=$(json_get toolResult.textResultForLlm)
+  RESULT_TEXT=${RESULT_TEXT:-"no details"}
+  RESULT_TEXT=${RESULT_TEXT:0:500}
   echo "$(date): FAILURE [$TOOL_NAME] $RESULT_TEXT" >> "$FAILURE_LOG"
 fi
 

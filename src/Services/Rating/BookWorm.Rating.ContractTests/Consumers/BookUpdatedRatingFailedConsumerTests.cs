@@ -6,6 +6,7 @@ using BookWorm.Rating.IntegrationEvents.EventHandlers;
 
 namespace BookWorm.Rating.ContractTests.Consumers;
 
+[Category("PactConsumer")]
 public sealed class BookUpdatedRatingFailedConsumerTests
 {
     private Guid _feedbackId;
@@ -39,10 +40,14 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         var handler = new BookUpdatedRatingFailedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(@event, CancellationToken.None);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Rating",
+            "Catalog",
+            @event,
+            async pactEvent => await handler.Handle(pactEvent, CancellationToken.None)
+        );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
             Times.Once
@@ -63,10 +68,14 @@ public sealed class BookUpdatedRatingFailedConsumerTests
         var handler = new BookUpdatedRatingFailedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(@event, CancellationToken.None);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Rating",
+            "Catalog",
+            @event,
+            async pactEvent => await handler.Handle(pactEvent, CancellationToken.None)
+        );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_feedbackId, It.IsAny<CancellationToken>()),
             Times.Once

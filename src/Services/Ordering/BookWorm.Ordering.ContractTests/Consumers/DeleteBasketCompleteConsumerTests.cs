@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Ordering.ContractTests.Consumers;
 
+[Category("PactConsumer")]
 public sealed class DeleteBasketCompleteConsumerTests
 {
     private const decimal TotalMoney = 125.99m;
@@ -26,9 +27,11 @@ public sealed class DeleteBasketCompleteConsumerTests
         var handler = new DeleteBasketCompleteCommandHandler(_loggerMock.Object);
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(command);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Ordering",
+            "Finance",
+            command,
+            async pactCommand => await handler.Handle(pactCommand, CancellationToken.None)
+        );
     }
 }

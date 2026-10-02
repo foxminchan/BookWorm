@@ -7,6 +7,7 @@ using BookWorm.Ordering.IntegrationEvents.EventHandlers;
 
 namespace BookWorm.Ordering.ContractTests.Consumers;
 
+[Category("PactConsumer")]
 public sealed class DeleteBasketFailedConsumerTests
 {
     private const string Email = "test@example.com";
@@ -44,10 +45,12 @@ public sealed class DeleteBasketFailedConsumerTests
         var handler = new DeleteBasketFailedCommandHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(command);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Ordering",
+            "Finance",
+            command,
+            async pactCommand => await handler.Handle(pactCommand, CancellationToken.None)
+        );
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
             Times.Once
@@ -67,10 +70,12 @@ public sealed class DeleteBasketFailedConsumerTests
         var handler = new DeleteBasketFailedCommandHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(command);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Ordering",
+            "Finance",
+            command,
+            async pactCommand => await handler.Handle(pactCommand, CancellationToken.None)
+        );
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_orderId, It.IsAny<CancellationToken>()),
             Times.Once

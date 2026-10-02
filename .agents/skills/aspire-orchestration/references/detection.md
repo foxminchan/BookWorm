@@ -6,12 +6,15 @@
 
 ### 1. C# AppHost (Definitive — Strongest Signal)
 
-Look for `.csproj` files containing the Aspire AppHost SDK reference:
+Look for `.csproj` files containing the Aspire AppHost SDK reference, regardless of
+its version:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-  <Sdk Name="Aspire.AppHost.Sdk" Version="10.0.0" />
-  <!-- ... -->
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.5.3" />
+  <PropertyGroup>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+  </PropertyGroup>
 </Project>
 ```
 
@@ -46,13 +49,17 @@ File-based AppHosts are run the same way: `aspire start` (never `dotnet apphost.
 
 ### 2. TypeScript AppHost (Definitive)
 
-Look for an `apphost.ts` file in the project:
+Look for the current `apphost.mts` entry point first, then legacy `apphost.ts`:
 
 ```bash
-find . -name "apphost.ts" -not -path "*/node_modules/*"
+find . \( -name "apphost.mts" -o -name "apphost.ts" \) -not -path "*/node_modules/*"
 ```
 
-A TypeScript AppHost uses the `@aspire/apphost` package and defines resources programmatically in TypeScript instead of C#.
+A current TypeScript AppHost imports `createBuilder` from
+`./.aspire/modules/aspire.mjs`. Treat `apphost.ts` as a migration-compatible legacy
+layout. Explain that `aspire update --migrate` updates Aspire packages and migration
+artifacts together, then run `aspire update --migrate --yes --non-interactive` only after
+the user approves both mutation scopes.
 
 ### 3. `.aspire/modules/` Directory (High Confidence)
 
@@ -100,7 +107,7 @@ When scanning a repository, check signals in this order:
 | -------- | --------------------------------------------------- | ------------------------------------------------- |
 | 1        | `Aspire.AppHost.Sdk` in `.csproj`                   | This IS the AppHost — target for `aspire start`   |
 | 1b       | `apphost.cs` or `#:sdk Aspire.AppHost.Sdk` in `.cs` | File-based C# AppHost — target for `aspire start` |
-| 2        | `apphost.ts` file                                   | TypeScript AppHost — target for `aspire start`    |
+| 2        | `apphost.mts` or legacy `apphost.ts` file           | TypeScript AppHost — target for `aspire start`    |
 | 3        | `.aspire/modules/` directory                        | Aspire project — look for the AppHost             |
 | 4        | `aspire.config.json` or `.aspire/`                  | Aspire project — look for the AppHost             |
 | 5        | `Aspire.ServiceDefaults` references                 | Part of Aspire solution — AppHost is elsewhere    |
@@ -117,7 +124,7 @@ APPHOST_DIR=$(dirname $(grep -rl "Aspire.AppHost.Sdk" --include="*.csproj" .))
 APPHOST_FILE=$(find . -name "apphost.cs" -not -path "*/node_modules/*" | head -1)
 
 # Or for TypeScript
-APPHOST_DIR=$(dirname $(find . -name "apphost.ts" -not -path "*/node_modules/*" | head -1))
+APPHOST_DIR=$(dirname $(find . \( -name "apphost.mts" -o -name "apphost.ts" \) -not -path "*/node_modules/*" | head -1))
 ```
 
 ## Common Project Structures
@@ -145,7 +152,7 @@ MyApp/
 
 ```
 MyApp/
-├── apphost.ts                  ← TypeScript AppHost
+├── apphost.mts                 ← TypeScript AppHost
 ├── package.json
 ├── src/
 │   ├── api/                    ← Service project

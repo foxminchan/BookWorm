@@ -13,8 +13,8 @@ Heuristics for the **scan** and **propose** phases of `aspireify`.
 | Connection strings            | `grep -rIE '(Postgres\|Redis\|Mongo\|RabbitMQ\|Cosmos\|ServiceBus\|AMQP)' --include='*.json' --include='.env*' --include='*.config'` |
 | Hardcoded URLs                | `grep -rIE 'http://localhost:[0-9]+' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.cs'`                           |
 | Existing integration packages | `dotnet list package` per `.csproj`; `jq .dependencies package.json` per Node project                                                |
-| Existing endpoints            | `launchSettings.json`, `next.config.js`, `vite.config.ts`, `apphost.ts` modules                                                      |
-| Existing AppHost references   | `apphost.cs` / `Program.cs` / `apphost.ts` — what's already wired?                                                                   |
+| Existing endpoints            | `launchSettings.json`, `next.config.js`, `vite.config.ts`, `apphost.mts`                                                             |
+| Existing AppHost references   | `apphost.cs` / `Program.cs` / current `apphost.mts` / legacy `apphost.ts` — what's already wired?                                    |
 
 ## Heuristics
 

@@ -61,7 +61,7 @@ updates:
           - patch
       ContractTesting:
         patterns:
-          - Verify.*
+          - PactNet*
         update-types:
           - minor
           - patch
@@ -163,7 +163,7 @@ updates:
       - javascript
       - documentation
     open-pull-requests-limit: 10
-    package-ecosystem: npm
+    package-ecosystem: bun
     schedule:
       day: friday
       interval: weekly
@@ -188,7 +188,7 @@ updates:
       - javascript
       - documentation
     open-pull-requests-limit: 10
-    package-ecosystem: npm
+    package-ecosystem: bun
     schedule:
       day: friday
       interval: weekly
@@ -212,7 +212,7 @@ updates:
       - javascript
       - testing
     open-pull-requests-limit: 10
-    package-ecosystem: npm
+    package-ecosystem: bun
     schedule:
       day: friday
       interval: weekly
@@ -243,7 +243,7 @@ updates:
       - dependencies
       - javascript
     open-pull-requests-limit: 10
-    package-ecosystem: npm
+    package-ecosystem: bun
     schedule:
       day: friday
       interval: weekly
@@ -303,7 +303,7 @@ updates:
       - javascript
       - frontend
     open-pull-requests-limit: 15
-    package-ecosystem: npm
+    package-ecosystem: bun
     schedule:
       day: friday
       interval: weekly

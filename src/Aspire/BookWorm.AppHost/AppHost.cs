@@ -67,7 +67,10 @@ var presidioAnonymizer = builder
     .WithLifetime(ContainerLifetime.Persistent);
 
 var catalogApi = builder
-    .AddProject<BookWorm_Catalog>(Services.Catalog)
+    .AddDotnetProject(
+        Services.Catalog,
+        "../../Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj"
+    )
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(catalogDb)
@@ -92,13 +95,19 @@ var catalogApi = builder
     .WithFriendlyUrls();
 
 var mcp = builder
-    .AddProject<BookWorm_McpTools>(Services.McpTools)
+    .AddDotnetProject(
+        Services.McpTools,
+        "../../Services/McpTools/BookWorm.McpTools/BookWorm.McpTools.csproj"
+    )
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
     .WithFriendlyUrls();
 
 var basketApi = builder
-    .AddProject<BookWorm_Basket>(Services.Basket)
+    .AddDotnetProject(
+        Services.Basket,
+        "../../Services/Basket/BookWorm.Basket/BookWorm.Basket.csproj"
+    )
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(queue)
@@ -108,7 +117,10 @@ var basketApi = builder
     .WithFriendlyUrls();
 
 var orderingApi = builder
-    .AddProject<BookWorm_Ordering>(Services.Ordering)
+    .AddDotnetProject(
+        Services.Ordering,
+        "../../Services/Ordering/BookWorm.Ordering/BookWorm.Ordering.csproj"
+    )
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(queue)
@@ -122,7 +134,7 @@ var orderingApi = builder
     .WithFriendlyUrls();
 
 var chatApi = builder
-    .AddProject<BookWorm_Chat>(Services.Chatting)
+    .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
     .WithReference(chat)
     .WaitFor(chat)
     .WithReference(embedding)
@@ -137,7 +149,10 @@ var chatApi = builder
     .WithFriendlyUrls();
 
 var ratingApi = builder
-    .AddProject<BookWorm_Rating>(Services.Rating)
+    .AddDotnetProject(
+        Services.Rating,
+        "../../Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
+    )
     .WithReference(chat)
     .WaitFor(chat)
     .WithReference(embedding)
@@ -160,7 +175,10 @@ var ratingApi = builder
 mcp.WithReference(ratingApi);
 
 builder
-    .AddProject<BookWorm_Notification>(Services.Notification)
+    .AddDotnetProject(
+        Services.Notification,
+        "../../Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj"
+    )
     .WithEmailProvider()
     .WithReference(queue)
     .WaitFor(queue)
@@ -169,7 +187,10 @@ builder
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
-    .AddProject<BookWorm_Finance>(Services.Finance)
+    .AddDotnetProject(
+        Services.Finance,
+        "../../Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj"
+    )
     .WithReference(financeDb)
     .WaitFor(financeDb)
     .WithReference(queue)
@@ -177,7 +198,10 @@ builder
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
-    .AddProject<BookWorm_Scheduler>(Services.Scheduler)
+    .AddDotnetProject(
+        Services.Scheduler,
+        "../../Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
+    )
     .WithReference(queue)
     .WaitFor(queue)
     .WithReference(schedulerDb)

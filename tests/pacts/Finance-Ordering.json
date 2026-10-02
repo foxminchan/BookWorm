@@ -1,0 +1,250 @@
+{
+  "consumer": {
+    "name": "Finance"
+  },
+  "messages": [
+    {
+      "contents": {
+        "basketId": "01a0f870-0bb9-7c18-ae99-1064a3e468ae",
+        "creationDate": "2026-10-01T17:08:07.7471845Z",
+        "email": "john.doe@example.com",
+        "fullName": "John Doe",
+        "id": "01a0f870-0bc3-7a32-b00e-9f938e7e9172",
+        "orderId": "01a0f870-0bb9-7eb0-a748-f3dcde4781f5",
+        "totalMoney": 99.99
+      },
+      "description": "BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.basketId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.email": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.fullName": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.orderId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.totalMoney": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-ordering",
+        "type": "BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent"
+      }
+    },
+    {
+      "contents": {
+        "basketId": "01a0f870-0bb9-7221-bdfd-1fd5016800e8",
+        "creationDate": "2026-10-01T17:08:07.7471003Z",
+        "email": "john.doe@example.com",
+        "fullName": "John Doe",
+        "id": "01a0f870-0bc3-7841-905b-6f44c5b744c8",
+        "orderId": "01a0f870-0bb9-7305-b7c6-cb70518f5126",
+        "totalMoney": 99.99
+      },
+      "description": "BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.basketId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.email": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.fullName": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.orderId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.totalMoney": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-ordering",
+        "type": "BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent"
+      }
+    },
+    {
+      "contents": {
+        "basketId": "01a0f870-0bb9-7724-a3f9-383b7816dfbc",
+        "creationDate": "2026-10-01T17:08:07.7381609Z",
+        "email": "john.doe@example.com",
+        "fullName": "John Doe",
+        "id": "01a0f870-0bba-7c1c-8d02-f0357e991d9d",
+        "orderId": "01a0f870-0bb9-7d05-a567-458579a16e43",
+        "totalMoney": 99.99
+      },
+      "description": "BookWorm.Contracts.UserCheckedOutIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.basketId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.email": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.fullName": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.orderId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.totalMoney": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-ordering",
+        "type": "BookWorm.Contracts.UserCheckedOutIntegrationEvent"
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.0",
+      "models": "1.0.4"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "Ordering"
+  }
+}

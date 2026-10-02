@@ -136,18 +136,11 @@ jobs:
           -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
 
       - name: 🧪 Test
-        run: >
-          dotnet test
-          --configuration Release
-          --report-trx
-          --coverage
-          --coverage-settings Coverage.runsettings
-          --results-directory ./test-results
-          --github-reporter-style full
-          --hangdump
-          --hangdump-timeout ${{ env.HANG_TIMEOUT }}
-          --crashdump
-          --timeout ${{ env.SESSION_TIMEOUT }}
+        env:
+          TEST_HANG_TIMEOUT: ${{ env.HANG_TIMEOUT }}
+          TEST_SESSION_TIMEOUT: ${{ env.SESSION_TIMEOUT }}
+          NO_BUILD: "true"
+        run: bash .github/actions/test/scripts/run-tests.sh
 
       - name: 🔍 Sonarqube End
         env:

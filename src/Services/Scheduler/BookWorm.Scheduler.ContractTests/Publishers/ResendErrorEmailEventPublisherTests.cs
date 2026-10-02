@@ -3,15 +3,16 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Scheduler.ContractTests.Publishers;
 
+[Category("PactProvider")]
 public sealed class ResendErrorEmailEventPublisherTests
 {
     [Test]
-    public async Task GivenResendErrorEmailIntegrationEvent_WhenPublished_ThenShouldMatchContract()
+    public void GivenResendErrorEmailIntegrationEvent_WhenPublished_ThenShouldMatchContract()
     {
         // Arrange
         var @event = new ResendErrorEmailIntegrationEvent();
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
+        PactTestHelper.VerifyProviderMessage("Notification", "Scheduler", @event);
     }
 }

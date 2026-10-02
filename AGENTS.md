@@ -1,103 +1,62 @@
 # Agent Instructions
 
-## General recommendations for working with Aspire
+## Working style
 
-1. Do not start or run the Aspire AppHost unless the user explicitly asks you to do so.
-1. Validate routine changes with the smallest relevant build, test, lint, or type-check command instead.
-1. If the user explicitly requests Aspire validation, use the Aspire CLI and MCP tools to inspect resource status and debug issues.
-1. Changes to _AppHost.cs_ require restarting the application when Aspire is already running or when the user requests Aspire validation.
+- Prefer the repo task runner in [mise.toml](mise.toml) over raw `dotnet` or `bun` commands.
+- Do not start the Aspire AppHost unless the user explicitly asks for runtime validation.
+- For routine changes, use the smallest relevant build, test, lint, or type-check command.
+- If AppHost code changes, restart only when validation is requested or the app is already running.
 
-## Getting Started
+## Quick start
 
-The project uses [mise](https://mise.jdx.dev) as the task runner and tool version manager. Run `mise install` once after cloning, then use these commands:
+- Fresh clone: `mise install`, then `mise run prepare`
+- Restore: `mise run restore`
+- Build: `mise run build`
+- Test: `mise run test`
+- Format: `mise run format`
+- Run the app: `mise run run` only when explicitly requested
 
-- **Restore dependencies**: `mise run restore` (or `dotnet restore && dotnet tool restore`)
-- **Build solution**: `mise run build` (or `dotnet build`)
-- **Run with Aspire**: `mise run run` (handles setup + runs Aspire)
-- **Run tests**: `mise run test` (or `dotnet test`)
-- **Format code**: `mise run format` (formats C#, frontend, eventcatalog, docusaurus, k6, keycloakify)
-- **Clean build**: `mise run clean`
-- **Post-clone setup**: `mise run prepare` (restore + git hooks)
+## Project shape
 
-If there is already an instance of the application running it will prompt to stop the existing instance. You only need to restart the application if code in `apphost.cs` is changed, but if you experience problems it can be useful to reset everything to the starting state.
+- .NET 10 / C# 14 microservices with Aspire orchestration.
+- AppHost: [src/Aspire/BookWorm.AppHost/AppHost.cs](src/Aspire/BookWorm.AppHost/AppHost.cs)
+- Shared libraries: [src/BuildingBlocks](src/BuildingBlocks)
+- Frontend: [src/Clients](src/Clients) (Bun + Turbo + Next.js 16 / React 19)
+- Services: [src/Services](src/Services)
+- Integrations: [src/Integrations](src/Integrations)
+- Tests: [tests](tests)
+- Documentation: [README.md](README.md), [docs/docusaurus](docs/docusaurus), [docs/eventcatalog](docs/eventcatalog)
 
-## Project Structure
+## Architecture and coding conventions
 
-- `src/Aspire/`: Aspire host and service defaults
-- `src/BuildingBlocks/`: Shared libraries (Chassis, Constants, SharedKernel)
-- `src/Clients/`: Frontend applications (Next.js 16 Turbo monorepo)
-  - `apps/storefront/`: Customer-facing storefront
-  - `apps/backoffice/`: Admin dashboard
-  - `packages/`: Shared packages (api-client, api-hooks, eslint-config, mocks, types, typescript-config, ui, utils, validations)
-- `src/Services/`: Individual microservices (Catalog, Ordering, Basket, Rating, Chat, Finance, Notification, Scheduler, McpTools)
-- `src/Integrations/`: Integration components (Presidio PII detection/redaction)
-- `tests/`: Cross-cutting test projects (architecture tests)
-- `specs/`: Feature specifications (e.g., migration plans)
-- `docs/`: Documentation (EventCatalog, Docusaurus)
+- Follow Vertical Slice Architecture and DDD boundaries.
+- Use the source-generated CQRS model from `Mediator.SourceGenerator`; do not add `MediatR`.
+- Keep endpoints, handlers, DbContexts, and tests `sealed` by default.
+- Keep asynchronous flows fully `async`/`await` with `CancellationToken` propagation.
+- Treat warnings as errors; use file-scoped namespaces and modern C# features where appropriate.
+- Keep PostgreSQL identifiers and raw SQL in `snake_case`.
+- Centralize package versions in [Directory.Packages.props](Directory.Packages.props); avoid pinning versions in individual project files.
+- Frontend is Bun-based; use `bun run` from [src/Clients](src/Clients), not `npm` or `pnpm`.
+- Keep secrets out of source control; use user secrets/local environment variables instead.
 
-## Key Code Patterns
+## Common patterns to preserve
 
-### Adding a New Feature
+- Event-driven services use WolverineFx + Kafka with outbox/inbox patterns.
+- Auth is handled via Keycloak; apply authorization at endpoint boundaries.
+- Caching uses FusionCache; service boundaries should remain consistent with the existing architecture.
+- API versioning is explicit; follow the existing `ApiVersions.V1` patterns.
 
-Features follow Vertical Slice Architecture. To add a feature to a service:
+## References
 
-1. Create `Features/{FeatureName}/` folder in the service project
-2. Add a command/query record implementing `ICommand<T>` or `IQuery<T>`
-3. Add a handler implementing `ICommandHandler<TCommand, TResult>` or `IQueryHandler<TQuery, TResult>`
-4. Add an endpoint class implementing `IEndpoint<TResult, TRequest>` with `MapEndpoint()` and `HandleAsync()`
-5. The endpoint is auto-discovered — no manual route registration needed
+- [README.md](README.md)
+- [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)
+- [.github/copilot-instructions.md](.github/copilot-instructions.md)
+- [docs/docusaurus](docs/docusaurus)
+- [docs/eventcatalog](docs/eventcatalog)
+- [.agents/skills](.agents/skills)
 
-### Adding a New Endpoint
+## Official docs to prefer
 
-```csharp
-public sealed class MyEndpoint : IEndpoint<Ok<MyResult>, MyRequest, ISender>
-{
-    public void MapEndpoint(IEndpointRouteBuilder app)
-    {
-        app.MapGet("/my-route", async (MyRequest request, ISender sender)
-                => await HandleAsync(request, sender))
-            .ProducesGet<MyResult>()
-            .MapToApiVersion(ApiVersions.V1);
-    }
-
-    public async Task<Ok<MyResult>> HandleAsync(
-        MyRequest request, ISender sender,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await sender.Send(new MyQuery(request), cancellationToken);
-        return TypedResults.Ok(result);
-    }
-}
-```
-
-### Infrastructure
-
-- **Database**: Each service has its own PostgreSQL database, configured with snake_case naming and UUID v7 keys
-- **Events**: WolverineFx with Kafka; use Outbox/Inbox for transactional consistency
-- **Caching**: FusionCache (L1 in-memory + optional L2 distributed via Redis)
-- **Auth**: Keycloak with token introspection; use `.RequireAuthorization()` on endpoints
-- **API Versioning**: Asp.Versioning with `ApiVersions.V1`
-
-## Common Pitfalls
-
-- **CQRS library**: Use `Mediator.SourceGenerator` (source-gen based), NOT MediatR. The interface names look similar but the packages differ.
-- **snake_case DB**: PostgreSQL columns/tables are snake_case via `UseSnakeCaseNamingConvention()`. Don't use PascalCase in raw SQL.
-- **Frontend uses Bun**: `src/Clients/` is a Bun monorepo (`bun@1.3.x`, `bun.lock`). Use `bun install`/`bun run`, never `pnpm`/`npm`/`yarn` — they create a conflicting lockfile.
-- **Sealed classes**: All endpoints, handlers, tests, and DbContexts should be `sealed`.
-- **Warnings = Errors**: `TreatWarningsAsErrors=true` — the build will fail on any warning.
-- **Package versions**: Centralized in `Directory.Packages.props` — don't add version numbers in individual `.csproj` files.
-- **Test projects**: Follow `BookWorm.{Service}.{UnitTests|ContractTests|IntegrationTests}` naming. Tests are auto-detected by project name suffix.
-
-## Documentation
-
-- **Architecture**: See `docs/docusaurus/` for detailed documentation
-- **Events**: Event schemas and documentation in `docs/eventcatalog/`
-- **API**: OpenAPI specifications in `docs/eventcatalog/openapi-files/`
-
-## Official documentation
-
-IMPORTANT! Always prefer official documentation when available. The following sites contain the official documentation for Aspire and related components
-
-1. https://aspire.dev
-2. https://learn.microsoft.com/dotnet/aspire
-3. https://nuget.org (for specific integration package details)
+- https://aspire.dev
+- https://learn.microsoft.com/dotnet/aspire
+- https://nuget.org

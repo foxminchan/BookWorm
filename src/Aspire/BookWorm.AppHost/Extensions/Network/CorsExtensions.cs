@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Aspire.Hosting.Dotnet;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 
 namespace BookWorm.AppHost.Extensions.Network;
@@ -26,7 +27,7 @@ internal static class CorsExtensions
         HttpMethods.Options,
     ];
 
-    extension(IResourceBuilder<ProjectResource> builder)
+    extension(IResourceBuilder<DotnetProjectResource> builder)
     {
         /// <summary>
         ///     Applies CORS origin configuration to a backend service project, allowing cross-origin
@@ -35,8 +36,8 @@ internal static class CorsExtensions
         /// <param name="storefront">The Aspire Storefront resource.</param>
         /// <param name="backoffice">The Aspire Backoffice resource.</param>
         /// <param name="scheme">The endpoint scheme used by the frontend deployment.</param>
-        /// <returns>The original <see cref="IResourceBuilder{ProjectResource}" /> with CORS configuration applied.</returns>
-        public IResourceBuilder<ProjectResource> WithCorsOrigins(
+        /// <returns>The original <see cref="IResourceBuilder{DotnetProjectResource}" /> with CORS configuration applied.</returns>
+        public IResourceBuilder<DotnetProjectResource> WithCorsOrigins(
             IResourceBuilder<IResourceWithEndpoints> storefront,
             IResourceBuilder<IResourceWithEndpoints> backoffice,
             string scheme

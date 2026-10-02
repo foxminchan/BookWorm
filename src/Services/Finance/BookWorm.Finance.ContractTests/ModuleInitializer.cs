@@ -8,7 +8,6 @@ public static class ModuleInitializer
     [ModuleInitializer]
     public static void Initialize()
     {
-        VerifyWolverine.Initialize();
         RegisterOtelListener();
     }
 

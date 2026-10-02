@@ -9,7 +9,7 @@ Find the AppHost before choosing commands:
 1. Run `aspire ls` first. It lists all AppHosts in the current scope and is the preferred discovery command.
 2. If `aspire ls` shows exactly one AppHost, use it.
 3. If `aspire ls` shows no AppHosts, stop deployment work and invoke the `aspireify` skill to initialize/wire the AppHost before continuing.
-4. If `aspire ls` shows multiple AppHosts or discovery is still ambiguous, inspect `aspire.config.json`, `*.AppHost.csproj`, `apphost.cs`, or `apphost.ts`.
+4. If `aspire ls` shows multiple AppHosts or discovery is still ambiguous, inspect `aspire.config.json`, `*.AppHost.csproj`, `apphost.cs`, current `apphost.mts`, or legacy `apphost.ts`.
 5. For C# project AppHosts, confirm the project references Aspire AppHost support.
 6. For C# single-file AppHosts, look for the Aspire AppHost SDK directive.
 7. For TypeScript AppHosts, look for the AppHost file and generated module support.
@@ -139,7 +139,7 @@ Use these conventions:
 
 ```bash
 Parameters__name="<value>" \
-aspire deploy --apphost ./apphost.ts --environment Production --non-interactive
+aspire deploy --apphost ./apphost.mts --environment Production --non-interactive
 ```
 
 Never print secret values. If a command prints secrets, redact them in any summary.

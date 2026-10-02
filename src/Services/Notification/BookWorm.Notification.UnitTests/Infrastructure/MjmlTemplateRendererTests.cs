@@ -8,7 +8,7 @@ public sealed class MjmlTemplateRendererTests
     private readonly MjmlTemplateRenderer _renderer = new();
 
     [Test]
-    public async Task GivenNewOrder_WhenRenderingOrderEmail_ThenShouldMatchSnapshot()
+    public async Task GivenNewOrder_WhenRenderingOrderEmail_ThenShouldIncludeOrderDetails()
     {
         // Arrange
         var order = new Order(
@@ -25,11 +25,12 @@ public sealed class MjmlTemplateRendererTests
         var html = await _renderer.RenderAsync(order, "Orders/OrderEmail", CancellationToken.None);
 
         // Assert
-        await Verify(html, "html").ScrubLinesContaining("© ");
+        html.ShouldContain("Hello John Doe");
+        html.ShouldContain("$99.99");
     }
 
     [Test]
-    public async Task GivenCompletedOrder_WhenRenderingOrderEmail_ThenShouldMatchSnapshot()
+    public async Task GivenCompletedOrder_WhenRenderingOrderEmail_ThenShouldIncludeOrderDetails()
     {
         // Arrange
         var order = new Order(
@@ -46,11 +47,12 @@ public sealed class MjmlTemplateRendererTests
         var html = await _renderer.RenderAsync(order, "Orders/OrderEmail", CancellationToken.None);
 
         // Assert
-        await Verify(html, "html").ScrubLinesContaining("© ");
+        html.ShouldContain("Hello Jane Smith");
+        html.ShouldContain("$249.50");
     }
 
     [Test]
-    public async Task GivenCanceledOrder_WhenRenderingOrderEmail_ThenShouldMatchSnapshot()
+    public async Task GivenCanceledOrder_WhenRenderingOrderEmail_ThenShouldIncludeOrderDetails()
     {
         // Arrange
         var order = new Order(
@@ -67,11 +69,12 @@ public sealed class MjmlTemplateRendererTests
         var html = await _renderer.RenderAsync(order, "Orders/OrderEmail", CancellationToken.None);
 
         // Assert
-        await Verify(html, "html").ScrubLinesContaining("© ");
+        html.ShouldContain("Hello Bob Wilson");
+        html.ShouldContain("$15.00");
     }
 
     [Test]
-    public async Task GivenOrderWithSpecialCharactersInName_WhenRenderingOrderEmail_ThenShouldMatchSnapshot()
+    public async Task GivenOrderWithSpecialCharactersInName_WhenRenderingOrderEmail_ThenShouldPreserveOrderDetails()
     {
         // Arrange
         var order = new Order(
@@ -88,11 +91,12 @@ public sealed class MjmlTemplateRendererTests
         var html = await _renderer.RenderAsync(order, "Orders/OrderEmail", CancellationToken.None);
 
         // Assert
-        await Verify(html, "html").ScrubLinesContaining("© ");
+        html.ShouldContain("Hello José García-López");
+        html.ShouldContain("$1,234.56");
     }
 
     [Test]
-    public async Task GivenOrderWithZeroTotal_WhenRenderingOrderEmail_ThenShouldMatchSnapshot()
+    public async Task GivenOrderWithZeroTotal_WhenRenderingOrderEmail_ThenShouldRenderZeroTotal()
     {
         // Arrange
         var order = new Order(
@@ -109,7 +113,8 @@ public sealed class MjmlTemplateRendererTests
         var html = await _renderer.RenderAsync(order, "Orders/OrderEmail", CancellationToken.None);
 
         // Assert
-        await Verify(html, "html").ScrubLinesContaining("© ");
+        html.ShouldContain("Hello Free Promo User");
+        html.ShouldContain("$0.00");
     }
 
     [Test]

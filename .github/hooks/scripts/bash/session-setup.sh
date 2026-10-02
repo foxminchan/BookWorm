@@ -4,11 +4,14 @@
 set -e
 
 INPUT=$(cat)
-SOURCE=$(echo "$INPUT" | jq -r '.source')
-CWD=$(echo "$INPUT" | jq -r '.cwd')
-TIMESTAMP=$(echo "$INPUT" | jq -r '.timestamp')
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+json_get() { printf '%s' "$INPUT" | python3 "$SCRIPT_DIR/hook-json.py" get "$@"; }
+SOURCE=$(json_get source)
+CWD=$(json_get cwd)
+TIMESTAMP=$(json_get timestamp)
 
-LOG_DIR="${CWD}/.github/hooks/logs"
+REPO_DIR="$(cd -- "$SCRIPT_DIR/../../../.." && pwd)"
+LOG_DIR="${REPO_DIR}/.github/hooks/audit"
 mkdir -p "$LOG_DIR"
 
 SESSION_LOG="${LOG_DIR}/session.log"
@@ -34,7 +37,7 @@ else
 fi
 
 # Check if solution builds are cached
-if [[ -d "${CWD}/artifacts" ]]; then
+if [[ -d "${REPO_DIR}/artifacts" ]]; then
   echo "  Build artifacts: present" >> "$SESSION_LOG"
 else
   echo "  Build artifacts: not found (initial build may be required)" >> "$SESSION_LOG"

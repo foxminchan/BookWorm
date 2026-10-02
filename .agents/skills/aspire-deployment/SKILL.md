@@ -1,17 +1,17 @@
 ---
 name: aspire-deployment
-description: '**WORKFLOW SKILL** — Deploy Aspire apps from AppHost models to Docker Compose, Kubernetes, Azure, or AWS. WHEN: "deploy Aspire app", "publish Aspire artifacts", "deploy to Azure Container Apps", "generate Kubernetes artifacts", "tear down Aspire deployment". INVOKES: aspire CLI, Aspire docs, target cloud/container CLIs. FOR SINGLE OPERATIONS: use generic Azure, Kubernetes, Docker, or AWS tools only when no Aspire AppHost exists.'
+description: '**WORKFLOW SKILL** — Deploy Aspire apps from AppHost models to Docker Compose, Kubernetes, Azure, AWS, or preview Radius. WHEN: "deploy Aspire app", "publish Aspire artifacts", "deploy to Azure Container Apps", "generate Kubernetes artifacts", "deploy to Radius", "tear down Aspire deployment". INVOKES: aspire CLI, Aspire docs, target cloud/container CLIs. FOR SINGLE OPERATIONS: use generic Azure, Kubernetes, Docker, AWS, or Radius tools only when no Aspire AppHost exists.'
 license: MIT
 metadata:
   author: Microsoft
-  version: "0.0.1"
+  version: "0.0.3"
 ---
 
 # Aspire Deployment
 
 Use this skill when the task is to publish, preview, validate, deploy, or tear down an Aspire application deployment. This skill owns Aspire deployment routing. Do not start with a generic Azure, Docker, Kubernetes, Helm, or Bicep workflow until you have checked whether the workspace is an Aspire app.
 
-Aspire deployment starts from the AppHost model. Treat `aspire deploy`, `aspire publish`, `aspire destroy`, `aspire do`, and the deployment environment resources in the AppHost as the primary path.
+Aspire deployment starts from the AppHost model. Treat `aspire deploy`, `aspire publish`, `aspire destroy`, `aspire do`, and the deployment environment resources in the AppHost as the primary path. Use stable SDK/hosting packages from the project's release family and matching preview builds for preview-only integrations such as Kubernetes and Radius.
 
 Keep this as one skill with target-specific references. Load only the reference files that match the target you discover or the user requests.
 
@@ -19,7 +19,7 @@ Keep this as one skill with target-specific references. Load only the reference 
 
 This skill wins over generic cloud deployment skills when both conditions are true:
 
-1. The user asks to deploy, publish, generate deployment artifacts, create Bicep/Helm/Compose/CDK output, host on Azure or AWS, deploy to Azure or AWS, deploy to Kubernetes, deploy to Docker Compose, tear down deployed resources, or validate a deployment.
+1. The user asks to deploy, publish, generate deployment artifacts, create Bicep/Helm/Compose/CDK output, host on Azure or AWS, deploy to Azure, AWS, Kubernetes, Docker Compose, or Radius, tear down deployed resources, or validate a deployment.
 2. The workspace has Aspire markers:
    - Aspire workspace configuration
    - C# or TypeScript AppHost files
@@ -41,6 +41,7 @@ aspire docs search "Kubernetes deployment"
 aspire docs search "Azure Container Apps deployment"
 aspire docs search "Azure App Service deployment"
 aspire docs search "Azure Kubernetes Service deployment"
+aspire docs search "Radius deployment"
 aspire docs get "deploy-to-azure-kubernetes-service-aks"
 aspire docs get "<slug-from-search-results>"
 ```
@@ -56,6 +57,10 @@ aspire docs api get "<id-from-api-search>"
 Do not invent package names, builder methods, overloads, or deployment commands. API shapes differ between C# and TypeScript AppHosts.
 
 ### Prefer Aspire-native deployment
+
+Deploy the resources declared in the AppHost, not the AppHost process itself.
+For Docker Compose, configure the Compose environment and let Aspire generate services
+for those resources; do not replace this with an AppHost Dockerfile or Compose service.
 
 Use Aspire deployment targets and CLI commands first:
 
@@ -74,6 +79,8 @@ Use target-specific tooling only after Aspire has generated artifacts or when th
 - Kubernetes: inspect generated Helm chart output; use Helm/kubectl when applying published artifacts yourself.
 - Azure: use `aspire add <azure-target>`, `aspire publish`, and `aspire deploy` through the AppHost deployment environment.
 - AWS: use `aspire add aws` to add the integration, inspect generated CDK/CloudFormation output, and follow the AWS integrations repository guidance.
+- Radius: treat `Aspire.Hosting.Radius` as preview. Use integration/docs search to verify
+  the package and API, then model `AddRadiusEnvironment(...).WithNamespace(...)`.
 
 ### Ask where to deploy only when ambiguous
 
@@ -94,6 +101,9 @@ Show these choices:
 | Azure Kubernetes Service (AKS) | `aspire add azure-kubernetes`    | The user wants Aspire to provision and deploy to Azure-managed Kubernetes.                                    |
 | AWS                            | `aspire add aws`                 | The user wants Aspire to publish/deploy through the AWS Aspire integrations and AWS CDK.                      |
 
+Do not offer preview Radius as a default choice. Use it when the user explicitly requests
+Radius or the AppHost already contains a Radius environment.
+
 If the user says only "Azure", ask again with just the Azure choices: Azure Container Apps, Azure App Service, or Azure Kubernetes Service (AKS). If the AppHost already contains exactly one deployment environment and the user did not ask to change targets, use that target and tell the user what was detected.
 
 ### Ask before creating cloud resources when intent is not explicit
@@ -105,6 +115,20 @@ If the user explicitly asked to deploy now, continue through preflight and deplo
 ### Keep Azure deployment Aspire-native
 
 The Azure deployment path in this skill is `aspire add <azure-target>`, AppHost environment configuration, `aspire publish`, and `aspire deploy`. Do not route Azure deployment work through a separate Azure deployment tool or generated infrastructure workflow.
+
+### Keep Aspire packages on one release family
+
+Before publish or deploy, verify that `Aspire.AppHost.Sdk` and the hosting packages use
+compatible versions in the project's selected release family. Preview-only integrations
+need compatible preview builds selected by `aspire add` or integration docs.
+The CLI version does not make incompatible hosting packages safe; mixed graphs can
+fail at startup with `MissingMethodException` or `TypeLoadException`.
+
+Migrate obsolete 13.5 surfaces while editing deployment code:
+
+- use `.Services` instead of hosting context `.ServiceProvider`;
+- use `AddConnectionString` instead of `PublishAsConnectionString`; and
+- migrate deprecated `Aspire.Hosting.GitHub.Models` resources to Azure AI Foundry.
 
 ## Default workflow
 
@@ -123,6 +147,8 @@ The Azure deployment path in this skill is `aspire add <azure-target>`, AppHost 
    - Kubernetes and Azure Kubernetes Service (AKS): [references/kubernetes.md](references/kubernetes.md)
    - Azure Container Apps/App Service/Azure Kubernetes Service (AKS): [references/azure.md](references/azure.md)
    - AWS: [references/aws.md](references/aws.md)
+   - Radius preview: use current Aspire docs and API search for `Aspire.Hosting.Radius`;
+     do not guess experimental API shapes.
    - JavaScript app resources: [references/javascript.md](references/javascript.md)
    - CI/CD or GitHub Actions automation: [references/cicd.md](references/cicd.md)
 4. **Use Aspire docs search for current guidance.**
@@ -162,14 +188,15 @@ The Azure deployment path in this skill is `aspire add <azure-target>`, AppHost 
 
 Search the AppHost for deployment environment resources:
 
-| Target                         | Aspire add command               | Integration                  | AppHost environment concept                |
-| ------------------------------ | -------------------------------- | ---------------------------- | ------------------------------------------ |
-| Docker Compose                 | `aspire add docker`              | Docker hosting               | Docker Compose environment                 |
-| Kubernetes                     | `aspire add kubernetes`          | Kubernetes hosting           | Kubernetes environment                     |
-| Azure Container Apps           | `aspire add azure-appcontainers` | Azure Container Apps hosting | Azure Container Apps environment           |
-| Azure App Service              | `aspire add azure-appservice`    | Azure App Service hosting    | Azure App Service environment              |
-| Azure Kubernetes Service (AKS) | `aspire add azure-kubernetes`    | Azure Kubernetes hosting     | Azure Kubernetes Service (AKS) environment |
-| AWS                            | `aspire add aws`                 | AWS hosting                  | AWS CDK environment                        |
+| Target                         | Aspire add command                               | Integration                  | AppHost environment concept                |
+| ------------------------------ | ------------------------------------------------ | ---------------------------- | ------------------------------------------ |
+| Docker Compose                 | `aspire add docker`                              | Docker hosting               | Docker Compose environment                 |
+| Kubernetes                     | `aspire add kubernetes`                          | Kubernetes hosting           | Kubernetes environment                     |
+| Azure Container Apps           | `aspire add azure-appcontainers`                 | Azure Container Apps hosting | Azure Container Apps environment           |
+| Azure App Service              | `aspire add azure-appservice`                    | Azure App Service hosting    | Azure App Service environment              |
+| Azure Kubernetes Service (AKS) | `aspire add azure-kubernetes`                    | Azure Kubernetes hosting     | Azure Kubernetes Service (AKS) environment |
+| AWS                            | `aspire add aws`                                 | AWS hosting                  | AWS CDK environment                        |
+| Radius (preview)               | Discover with `aspire integration search radius` | `Aspire.Hosting.Radius`      | Radius environment                         |
 
 Use this table only for orientation. Before editing code, verify the current API in Aspire docs for the AppHost language.
 
@@ -196,6 +223,7 @@ Use `aspire secret list` for AppHost user secrets when appropriate, but do not p
 - [references/javascript.md](references/javascript.md) - JavaScript app deployment models, including Vite/static assets, Node/SSR servers, Next.js, and gateway/backend serving patterns.
 - [references/cicd.md](references/cicd.md) - CI/CD and GitHub Actions workflow guidance for Aspire publish/deploy, parameters, secrets, registry auth, and cloud auth.
 - [references/preflight.md](references/preflight.md) - Common preflight, preview, parameter, destroy, and validation checklist.
+- [aspire-13-5-breaking-changes.md](https://github.com/microsoft/aspire-skills/blob/main/skills/aspire/references/aspire-13-5-breaking-changes.md) - 13.5 package, API, and CLI migration rules.
 
 ## Agent execution
 

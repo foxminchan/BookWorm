@@ -7,6 +7,7 @@
   <ItemGroup Label="Aspire Packages">
     <!-- Hosting -->
     <PackageVersion Include="Aspire.Hosting" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Dotnet" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
@@ -46,7 +47,7 @@
     />
     <!-- Extra -->
     <PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
-    <PackageVersion Include="Scalar.Aspire" Version="0.11.26" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.11.28" />
     <PackageVersion
       Include="Aspire.Hosting.AgentFramework.DevUI"
       Version="$(AgentFrameworkUnstableVersion)"
@@ -91,7 +92,7 @@
     <!-- AI -->
     <PackageVersion
       Include="Microsoft.Agents.AI.Mcp"
-      Version="$(AgentFrameworkVersion)-alpha.260918.1"
+      Version="$(AgentFrameworkVersion)-alpha.260928.1"
     />
     <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="$(AgentFrameworkVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
@@ -105,7 +106,7 @@
     />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.OpenAI"
-      Version="$(AgentFrameworkVersion)-alpha.260918.1"
+      Version="$(AgentFrameworkVersion)-alpha.260928.1"
     />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
@@ -120,7 +121,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="16.1.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="16.3.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="Vogen" Version="8.0.7" />
   </ItemGroup>
@@ -140,7 +141,7 @@
     <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="$(QuartzVersion)" />
     <!-- Email & Messaging -->
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
-    <PackageVersion Include="MailKit" Version="4.18.0" />
+    <PackageVersion Include="MailKit" Version="4.18.1" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <!-- Other Integrations -->
@@ -165,9 +166,7 @@
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
     <!-- Contract Testing -->
-    <PackageVersion Include="Verify.TUnit" Version="32.0.1" />
-    <PackageVersion Include="Verify.Wolverine" Version="3.2.0" />
-    <PackageVersion Include="Verify.SendGrid" Version="1.0.0" />
+    <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MsTestVersion)" />

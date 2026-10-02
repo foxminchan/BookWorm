@@ -26,6 +26,8 @@ aspire init [options]
 | --------------------- | ------------------------------------------------------------------------------------------ |
 | `--language`          | `csharp` or `typescript`. Required in `--non-interactive` mode if both paths are available |
 | `--channel`           | `stable` (default), `staging`, `daily`                                                     |
+| `--skill-locations`   | Comma-separated agent skill locations, `all`, or `none`                                    |
+| `--skills`            | Comma-separated skills, `all`, or `none`                                                   |
 | `--non-interactive`   | **Required for agent execution.** Disables prompts and spinners                            |
 | `--nologo`            | Suppress startup banner / telemetry notice                                                 |
 | `--banner`            | Show the animated welcome banner                                                           |
@@ -33,17 +35,26 @@ aspire init [options]
 | `--wait-for-debugger` | Pause until a debugger attaches                                                            |
 | `-?, -h, --help`      | Print help                                                                                 |
 
+`--source` and `--version` are deprecated compatibility options and no longer affect
+`aspire init`. Do not generate them in new commands.
+
 ## What Gets Dropped
 
 ### C# Path (`--language csharp`)
 
 - **`apphost.cs`** — single-file AppHost using `#:sdk Aspire.AppHost.Sdk` and `#:package`
   directives. No `.csproj` is created in the file-based mode.
+- The generated AppHost opts into the 13.5 CLI bundle with
+  `#:property AspireUseCliBundle=true`.
 - **`aspire.config.json`** at repo root.
+
+When a `.sln` or `.slnx` exists, `aspire init` can create a project-based AppHost and add it
+to the solution instead of creating a single-file AppHost.
 
 ### TypeScript Path (`--language typescript`)
 
-- **`apphost.ts`** at repo root.
+- **`apphost.mts`** at repo root, or under `aspire-apphost/` when the repo already has a
+  root `package.json`.
 - **`.aspire/modules/`** generated folder (do not edit by hand — regenerate with `aspire add`).
 - **`aspire.config.json`** at repo root.
 
@@ -76,8 +87,10 @@ C# has two sub-modes the agent may encounter:
    ```bash
    aspire init --language <csharp|typescript> --non-interactive
    ```
-3. **Confirm artifacts** — `apphost.cs` (or `apphost.ts` + `.aspire/modules/`) and
-   `aspire.config.json` should be in the repo root.
+3. **Confirm artifacts** — verify root `aspire.config.json`, resolve its
+   `appHost.path` relative to that file, and confirm the selected `apphost.cs`, AppHost
+   project, or TypeScript `apphost.mts` exists there. For TypeScript, also confirm the
+   adjacent generated `.aspire/modules/`; do not assume the AppHost is at the repo root.
 4. **Confirm `aspireify` skill installed** — the agent's skill directory contains
    `aspireify/SKILL.md`. If missing, run `aspire agent init` to install it.
 5. **Hand off to `aspireify`** for wiring:
@@ -86,6 +99,8 @@ C# has two sub-modes the agent may encounter:
      whether to map env vars or switch to Aspire service discovery)
    - Wire resources with `WithReference`, `WaitFor`, endpoints, volumes
    - Optionally configure OpenTelemetry
+   - For a TypeScript AppHost toolchain problem, detect and preserve the repository's
+     existing package-manager convention before recommending a dependency command
    - Validate with a smoke-test `aspire start`
 6. **Validate** — once `aspireify` finishes wiring, run `aspire start` (handled by
    `aspire-orchestration`) and confirm resources reach a healthy state.
@@ -102,13 +117,14 @@ The same precedence applies to a legacy `.agents/skills/aspire-init/SKILL.md` fr
 
 ## Failure Modes and Recovery
 
-| Symptom                                                         | Cause                                                       | Recovery                                                                      |
-| --------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `aspire init` reports an AppHost already exists                 | Repo is already an Aspire app                               | Stop. Route to `aspireify` or `aspire-orchestration`                          |
-| `aspire init` fails without `--language` in `--non-interactive` | CLI needs the language explicitly when prompts are disabled | Re-run with `--language csharp` or `--language typescript`                    |
-| Skeleton dropped but no `aspireify` skill                       | Agent skill directory not detected during init              | Run `aspire agent init` to install `aspireify`, then continue                 |
-| `apphost.cs` references a missing `#:package`                   | Channel mismatch or transient feed issue                    | Re-run with `--channel stable` (or `daily` for pre-release)                   |
-| `aspire start` after wiring fails immediately                   | Wiring incomplete or wrong AppHost path                     | Re-invoke `aspireify`; confirm `aspire.config.json` `appHost.path` is correct |
+| Symptom                                                         | Cause                                                       | Recovery                                                                                                                                                           |
+| --------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `aspire init` reports an AppHost already exists                 | Repo is already an Aspire app                               | Stop. Route to `aspireify` or `aspire-orchestration`                                                                                                               |
+| `aspire init` fails without `--language` in `--non-interactive` | CLI needs the language explicitly when prompts are disabled | Re-run with `--language csharp` or `--language typescript`                                                                                                         |
+| Skeleton dropped but no `aspireify` skill                       | Agent skill directory not detected during init              | Run `aspire agent init` to install `aspireify`, then continue                                                                                                      |
+| `apphost.cs` references a missing `#:package`                   | Channel mismatch or transient feed issue                    | Re-run with `--channel stable` (or `daily` for pre-release)                                                                                                        |
+| `aspire start` after wiring fails immediately                   | Wiring incomplete or wrong AppHost path                     | Re-invoke `aspireify`; confirm `aspire.config.json` `appHost.path` is correct                                                                                      |
+| Existing TypeScript AppHost uses `apphost.ts`                   | Legacy entry point and package graph                        | Hand off to `aspire-orchestration`, which owns approval and `aspire update --migrate --yes --non-interactive`; return to aspireify only for later source authoring |
 
 ## Don't Do This
 

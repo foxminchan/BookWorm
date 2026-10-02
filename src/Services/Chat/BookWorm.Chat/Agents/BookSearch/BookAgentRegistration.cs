@@ -1,8 +1,8 @@
+using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
-using Microsoft.Agents.AI.Mcp;
 
 namespace BookWorm.Chat.Agents.BookSearch;
 
@@ -38,13 +38,6 @@ internal static class BookAgentRegistration
                         .Build(sp);
 
                     var mcpClient = sp.GetRequiredService<McpClient>();
-                    var mcpTools = mcpClient
-                        .ListAgentToolsWithTasksAsync()
-                        .GetAwaiter()
-                        .GetResult()
-                        .Where(t => _catalogToolNames.Contains(t.Name))
-                        .ToArray();
-
                     var skillsProvider = new AgentSkillsProvider(
                         Path.Combine(AppContext.BaseDirectory, "Skills", "book-catalog"),
                         loggerFactory: sp.GetService<ILoggerFactory>()
@@ -84,13 +77,17 @@ internal static class BookAgentRegistration
                                 MaxOutputTokens = 2000,
                                 TopP = 0.95f,
                                 AllowMultipleToolCalls = true,
-                                Tools = mcpTools,
                                 Reasoning = new() { Effort = ReasoningEffort.High },
                             },
                         }
                     );
 
-                    return agent.WithBookWormGovernance(sp, key);
+                    return agent
+                        .WithRefreshingMcpTools(
+                            mcpClient,
+                            toolName => _catalogToolNames.Contains(toolName)
+                        )
+                        .WithBookWormGovernance(sp, key);
                 }
             );
         }

@@ -10,6 +10,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
+[Category("PactConsumer")]
 public sealed class CompleteOrderConsumerTests
 {
     private const decimal TotalMoney = 150.99m;
@@ -45,10 +46,14 @@ public sealed class CompleteOrderConsumerTests
         var handler = new CompleteOrderCommandHandler(_senderMock.Object, _rendererMock.Object);
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Notification",
+            "Finance",
+            command,
+            async pactCommand => await handler.Handle(pactCommand, CancellationToken.None)
+        );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -66,7 +71,6 @@ public sealed class CompleteOrderConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never
@@ -84,7 +88,6 @@ public sealed class CompleteOrderConsumerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(command);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Never

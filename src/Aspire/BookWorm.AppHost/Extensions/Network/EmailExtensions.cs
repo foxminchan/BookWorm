@@ -1,10 +1,12 @@
-﻿namespace BookWorm.AppHost.Extensions.Network;
+﻿using Aspire.Hosting.Dotnet;
+
+namespace BookWorm.AppHost.Extensions.Network;
 
 internal static class EmailExtensions
 {
-    extension(IResourceBuilder<ProjectResource> builder)
+    extension(IResourceBuilder<DotnetProjectResource> builder)
     {
-        public IResourceBuilder<ProjectResource> WithEmailProvider()
+        public IResourceBuilder<DotnetProjectResource> WithEmailProvider()
         {
             var applicationBuilder = builder.ApplicationBuilder;
 

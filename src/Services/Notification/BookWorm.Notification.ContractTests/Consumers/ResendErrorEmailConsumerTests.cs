@@ -10,6 +10,7 @@ using MimeKit;
 
 namespace BookWorm.Notification.ContractTests.Consumers;
 
+[Category("PactConsumer")]
 public sealed class ResendErrorEmailConsumerTests
 {
     private Mock<GlobalLogBuffer> _logBufferMock = null!;
@@ -57,10 +58,14 @@ public sealed class ResendErrorEmailConsumerTests
         );
 
         // Act
-        await handler.Handle(@event, CancellationToken.None);
+        await PactTestHelper.VerifyConsumerMessageAsync(
+            "Notification",
+            "Scheduler",
+            @event,
+            async pactEvent => await handler.Handle(pactEvent, CancellationToken.None)
+        );
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -92,7 +97,6 @@ public sealed class ResendErrorEmailConsumerTests
         await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _repositoryMock.Verify(
             x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -134,7 +138,6 @@ public sealed class ResendErrorEmailConsumerTests
         await handler.Handle(@event, CancellationToken.None);
 
         // Assert
-        await SnapshotTestHelper.VerifyCloudEvent(@event);
         _senderMock.Verify(
             x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2)

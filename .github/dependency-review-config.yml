@@ -74,8 +74,11 @@ allow-licenses:
   - Unicode-3.0
   - Unicode-DFS-2016
 
-# Per-package license exemptions for packages with missing/undetectable metadata
+# Per-package exceptions where license metadata cannot be matched to SPDX allow-list entries
 allow-dependencies-licenses:
+  # 2.15.0 bundles permissively licensed components and public-domain notices,
+  # but its Scancode LicenseRef entries are not SPDX identifiers accepted above.
+  - "pkg:nuget/librdkafka.redist@2.15.0"
   - "pkg:npm/%40ag-ui/a2ui-middleware"
   - "pkg:npm/%40ag-ui/langgraph"
   - "pkg:npm/%40copilotkit/license-verifier"

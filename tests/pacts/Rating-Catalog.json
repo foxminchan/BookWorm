@@ -1,0 +1,60 @@
+{
+  "consumer": {
+    "name": "Rating"
+  },
+  "messages": [
+    {
+      "contents": {
+        "creationDate": "2026-10-01T17:08:27.9990171Z",
+        "feedbackId": "01a0f870-5ac6-7e57-af24-2123aa9659c0",
+        "id": "01a0f870-5adf-70f1-bbc7-c29effaca5be"
+      },
+      "description": "BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.feedbackId": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-catalog",
+        "type": "BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent"
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.0",
+      "models": "1.0.4"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "Catalog"
+  }
+}
