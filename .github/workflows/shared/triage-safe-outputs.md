@@ -1,6 +1,9 @@
 ---
 safe-outputs:
-  threat-detection: true
+  threat-detection:
+    engine:
+      id: copilot
+      model: gpt-5-mini
   add-labels:
     allowed:
       - bug

@@ -12,7 +12,7 @@ on:
   reaction: eyes
 
 engine:
-  model: small
+  model: gpt-5-mini
 
 if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'copilot[bot]' && github.actor != 'github-actions[bot]' && github.actor != 'renovate[bot]' }}
 

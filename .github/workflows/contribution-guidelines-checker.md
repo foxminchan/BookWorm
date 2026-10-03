@@ -17,9 +17,13 @@ permissions: read-all
 network: defaults
 
 engine:
-  model: small
+  model: gpt-5-mini
 
 safe-outputs:
+  threat-detection:
+    engine:
+      id: copilot
+      model: gpt-5-mini
   add-labels:
     allowed: [contribution-ready]
     max: 1
