@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using BookWorm.Chassis.AI.Search;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
@@ -6,6 +7,7 @@ using Npgsql;
 
 namespace BookWorm.Catalog.Ingestion;
 
+[ExcludeFromCodeCoverage]
 internal sealed class VectorBatchProcessor(
     NpgsqlDataSource dataSource,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
