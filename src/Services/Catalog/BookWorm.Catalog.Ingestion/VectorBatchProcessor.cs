@@ -102,7 +102,7 @@ internal sealed class VectorBatchProcessor(
         }
     }
 
-    private async Task<List<PendingUpdate>> ReadBatchAsync(
+    private static async Task<List<PendingUpdate>> ReadBatchAsync(
         NpgsqlConnection connection,
         CancellationToken cancellationToken
     )
