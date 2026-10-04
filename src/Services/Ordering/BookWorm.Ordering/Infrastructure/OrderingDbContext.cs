@@ -1,4 +1,4 @@
-﻿using Wolverine.EntityFrameworkCore;
+using Wolverine.EntityFrameworkCore;
 
 namespace BookWorm.Ordering.Infrastructure;
 
@@ -14,6 +14,11 @@ internal sealed class OrderingDbContext(DbContextOptions<OrderingDbContext> opti
     {
         await SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.RegisterAllInOrderingApiMarker();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

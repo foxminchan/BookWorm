@@ -45,6 +45,9 @@ public static class ServiceReferenceExtensions
         /// <param name="failureStatus">
         ///     One of the enumeration values that specifies the health status reported when the health probe fails.
         /// </param>
+        /// <param name="clientName">
+        ///     Optional name for a separately configured gRPC client.
+        /// </param>
         /// <returns>
         ///     An HTTP client builder for the registered gRPC client.
         /// </returns>
@@ -53,7 +56,8 @@ public static class ServiceReferenceExtensions
         /// </exception>
         public IHttpClientBuilder AddGrpcServiceReference<TClient>(
             string address,
-            HealthStatus failureStatus
+            HealthStatus failureStatus,
+            string? clientName = null
         )
             where TClient : class
         {
@@ -66,24 +70,25 @@ public static class ServiceReferenceExtensions
             }
 
             var uri = new Uri(address);
-            var builder = services
-                .AddGrpcClient<TClient>(o => o.Address = uri)
-                .ConfigurePrimaryHttpMessageHandler(() =>
-                    new SocketsHttpHandler
-                    {
-                        PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
-                        KeepAlivePingDelay = TimeSpan.FromSeconds(60),
-                        KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
-                        EnableMultipleHttp2Connections = true,
-                    }
-                );
+            var builder = clientName is null
+                ? services.AddGrpcClient<TClient>(o => o.Address = uri)
+                : services.AddGrpcClient<TClient>(clientName, o => o.Address = uri);
+            builder.ConfigurePrimaryHttpMessageHandler(() =>
+                new SocketsHttpHandler
+                {
+                    PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
+                    KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+                    KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
+                    EnableMultipleHttp2Connections = true,
+                }
+            );
 
             builder.AddStandardResilienceHandler();
 
             AddGrpcHealthChecks(
                 services,
                 uri,
-                $"{typeof(TClient).Name}-{_healthCheckName}",
+                $"{clientName ?? typeof(TClient).Name}-{_healthCheckName}",
                 failureStatus
             );
 

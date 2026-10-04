@@ -1,7 +1,11 @@
-﻿namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+namespace BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 
 public interface IBookRepository : IRepository<Book>
 {
+    Task<IReadOnlyList<BookCategoryCount>> CountByCategoryAsync(
+        CancellationToken cancellationToken = default
+    );
+
     Task<Book> AddAsync(Book book, CancellationToken cancellationToken = default);
     Task<Book?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

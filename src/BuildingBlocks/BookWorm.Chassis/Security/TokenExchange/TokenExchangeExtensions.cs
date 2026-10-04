@@ -26,12 +26,10 @@ public static class TokenExchangeExtensions
 
             service.TryAddTransient<ITokenExchange, TokenExchange>();
 
-            service.AddTransient(sp => new HttpClientAuthorizationDelegatingHandler(
+            builder.AddHttpMessageHandler(sp => new HttpClientAuthorizationDelegatingHandler(
                 sp.GetRequiredService<IHttpContextAccessor>(),
                 serviceKey
             ));
-
-            builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
 
             return builder;
         }

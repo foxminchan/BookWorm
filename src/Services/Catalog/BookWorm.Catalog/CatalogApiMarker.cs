@@ -10,4 +10,8 @@ namespace BookWorm.Catalog;
 [OpenApiMarker<BookId>]
 [OpenApiMarker<CategoryId>]
 [OpenApiMarker<PublisherId>]
-public sealed class CatalogApiMarker;
+[EfCoreConverter<AuthorId>]
+[EfCoreConverter<BookId>]
+[EfCoreConverter<CategoryId>]
+[EfCoreConverter<PublisherId>]
+public sealed partial class CatalogApiMarker;

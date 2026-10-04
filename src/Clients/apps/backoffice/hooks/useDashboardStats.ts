@@ -1,41 +1,46 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 
-import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
-import useBuyers from "@workspace/api-hooks/ordering/buyers/useBuyers";
-import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const REFETCH_INTERVAL = 30_000;
+import dashboardApiClient from "@workspace/api-client/ordering/dashboard";
+import { orderingKeys } from "@workspace/api-hooks/keys";
+import type { Dashboard } from "@workspace/types/ordering/dashboard";
+
+import { useUserContext } from "@/hooks/useUserContext";
 
 export function useDashboardStats() {
-  const booksQuery = useBooks(undefined, { refetchInterval: REFETCH_INTERVAL });
-  const ordersQuery = useOrders(undefined, {
-    refetchInterval: REFETCH_INTERVAL,
+  const queryClient = useQueryClient();
+  const { user } = useUserContext();
+  const userId = user?.id;
+  const [isDisconnected, setIsDisconnected] = useState(false);
+  const query = useQuery({
+    queryKey: orderingKeys.dashboard(userId),
+    queryFn: ({ signal }) => dashboardApiClient.get(signal),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    enabled: !!userId,
   });
-  const buyersQuery = useBuyers(undefined, {
-    refetchInterval: REFETCH_INTERVAL,
-  });
+  const hasData = !!query.data;
 
-  return useMemo(
-    () => ({
-      books: booksQuery.data?.items ?? [],
-      orders: ordersQuery.data?.items ?? [],
-      customers: buyersQuery.data?.items ?? [],
-      isLoading:
-        booksQuery.isLoading || ordersQuery.isLoading || buyersQuery.isLoading,
-      error: booksQuery.error ?? ordersQuery.error ?? buyersQuery.error,
-    }),
-    [
-      booksQuery.data?.items,
-      booksQuery.isLoading,
-      booksQuery.error,
-      ordersQuery.data?.items,
-      ordersQuery.isLoading,
-      ordersQuery.error,
-      buyersQuery.data?.items,
-      buyersQuery.isLoading,
-      buyersQuery.error,
-    ],
-  );
+  useEffect(() => {
+    if (!hasData) return;
+    return dashboardApiClient.subscribe(
+      (snapshot) => {
+        queryClient.setQueryData<Dashboard>(
+          orderingKeys.dashboard(userId),
+          (current) =>
+            current &&
+            Date.parse(current.updatedAt) > Date.parse(snapshot.updatedAt)
+              ? current
+              : snapshot,
+        );
+        setIsDisconnected(false);
+      },
+      () => setIsDisconnected(true),
+    );
+  }, [hasData, queryClient, userId]);
+
+  return { ...query, isDisconnected };
 }

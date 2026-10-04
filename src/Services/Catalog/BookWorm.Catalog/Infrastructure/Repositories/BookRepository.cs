@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Specification.Evaluators;
+using BookWorm.Chassis.Specification.Evaluators;
 
 namespace BookWorm.Catalog.Infrastructure.Repositories;
 
@@ -36,5 +36,17 @@ internal sealed class BookRepository(CatalogDbContext context) : IBookRepository
     )
     {
         return await Specification.GetQuery(_context.Books, spec).LongCountAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<BookCategoryCount>> CountByCategoryAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await _context
+            .Books.AsNoTracking()
+            .GroupBy(book => book.Category == null ? "Other" : book.Category.Name ?? "Other")
+            .OrderBy(group => group.Key)
+            .Select(group => new BookCategoryCount(group.Key, group.LongCount()))
+            .ToListAsync(cancellationToken);
     }
 }

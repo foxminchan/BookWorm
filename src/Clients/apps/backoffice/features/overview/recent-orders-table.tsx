@@ -76,7 +76,7 @@ export function RecentOrdersTable({
   orders,
   isLoading,
 }: RecentOrdersTableProps) {
-  const recentOrders = useMemo(() => orders.slice(-5), [orders]);
+  const recentOrders = useMemo(() => orders.slice(0, 5), [orders]);
 
   const table = useTable({
     features: backofficeTableFeatures,

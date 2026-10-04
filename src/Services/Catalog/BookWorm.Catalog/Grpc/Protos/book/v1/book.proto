@@ -7,6 +7,19 @@ package book.v1;
 service BookGrpcService {
   rpc GetBook (GetBookRequest) returns (GetBookResponse);
   rpc GetBooks (GetBooksRequest) returns (GetBooksResponse);
+  rpc GetDashboard (GetDashboardRequest) returns (GetDashboardResponse);
+}
+
+message GetDashboardRequest {}
+
+message GetDashboardResponse {
+  int64 total_books = 1;
+  repeated DashboardCategory categories = 2;
+}
+
+message DashboardCategory {
+  string name = 1;
+  int64 value = 2;
 }
 
 message GetBookRequest {

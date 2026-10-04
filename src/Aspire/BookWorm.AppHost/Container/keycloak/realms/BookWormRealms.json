@@ -1136,6 +1136,7 @@
         "email"
       ],
       "optionalClientScopes": [
+        "${CLIENT_CATALOG_ID}_read",
         "${CLIENT_ORDERING_ID}_read",
         "${CLIENT_ORDERING_ID}_write",
         "address",

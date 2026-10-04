@@ -24,6 +24,10 @@
     "node": ">=24.0.0"
   },
   "exports": {
+    "./ordering/dashboard": {
+      "import": "./src/ordering/dashboard.ts",
+      "types": "./src/ordering/dashboard.ts"
+    },
     "./shared": {
       "import": "./src/shared/index.ts",
       "types": "./src/shared/index.ts"

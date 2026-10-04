@@ -129,6 +129,7 @@ var orderingApi = builder
     .WaitFor(redis)
     .WithKeycloak(keycloak)
     .WithReference(catalogApi)
+    .WaitFor(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
     .WithFriendlyUrls();

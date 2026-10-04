@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel.Helpers;
+using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Ordering.Infrastructure.EntityConfigurations;
 

@@ -1,13 +1,15 @@
-﻿using System.Reflection;
+using System.Reflection;
 using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Dashboard;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Catalog.UnitTests.Grpc.Context;
 using BookWorm.SharedKernel.SeedWork;
 using Grpc.Core;
+using Mediator;
 using Microsoft.Extensions.Logging;
 using Status = BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Status;
 
@@ -17,12 +19,88 @@ public sealed class BookServiceTests
 {
     private readonly Mock<IBookRepository> _bookRepositoryMock;
     private readonly BookService _bookService;
+    private readonly Mock<ISender> _senderMock;
 
     public BookServiceTests()
     {
         _bookRepositoryMock = new();
+        _senderMock = new();
         var loggerMock = new Mock<ILogger<BookService>>();
-        _bookService = new(_bookRepositoryMock.Object, loggerMock.Object);
+        _bookService = new(_bookRepositoryMock.Object, loggerMock.Object, _senderMock.Object);
+    }
+
+    [Test]
+    public async Task GivenDashboardSummary_WhenGetDashboardCalled_ThenShouldReturnAllCategoryCounts()
+    {
+        var summary = new CatalogDashboardDto(35, [new("Fiction", 30), new("Other", 5)]);
+        _senderMock
+            .Setup(sender =>
+                sender.Send(It.IsAny<GetCatalogDashboardQuery>(), CancellationToken.None)
+            )
+            .ReturnsAsync(summary);
+
+        var result = await _bookService.GetDashboard(new(), new TestServerCallContext());
+
+        result.TotalBooks.ShouldBe(35);
+        result
+            .Categories.Select(category => new CategoryCountDto(category.Name, category.Value))
+            .ShouldBe(summary.Categories);
+        _senderMock.Verify(
+            sender => sender.Send(It.IsAny<GetCatalogDashboardQuery>(), CancellationToken.None),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenEmptyCatalog_WhenGetDashboardCalled_ThenShouldReturnZeroBooksAndNoCategories()
+    {
+        _senderMock
+            .Setup(sender =>
+                sender.Send(It.IsAny<GetCatalogDashboardQuery>(), CancellationToken.None)
+            )
+            .ReturnsAsync(new CatalogDashboardDto(0, []));
+
+        var result = await _bookService.GetDashboard(new(), new TestServerCallContext());
+
+        result.TotalBooks.ShouldBe(0);
+        result.Categories.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task GivenCancellationToken_WhenGetDashboardCalled_ThenShouldPropagateCancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var cancellationToken = cancellation.Token;
+        _senderMock
+            .Setup(sender => sender.Send(It.IsAny<GetCatalogDashboardQuery>(), cancellationToken))
+            .ReturnsAsync(new CatalogDashboardDto(0, []));
+
+        await _bookService.GetDashboard(
+            new(),
+            new TestServerCallContext(cancellationToken: cancellationToken)
+        );
+
+        _senderMock.Verify(
+            sender => sender.Send(It.IsAny<GetCatalogDashboardQuery>(), cancellationToken),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenDashboardQueryFailure_WhenGetDashboardCalled_ThenShouldPropagateException()
+    {
+        var exception = new InvalidOperationException("Catalog summary unavailable.");
+        _senderMock
+            .Setup(sender =>
+                sender.Send(It.IsAny<GetCatalogDashboardQuery>(), CancellationToken.None)
+            )
+            .ThrowsAsync(exception);
+
+        var result = await Should.ThrowAsync<InvalidOperationException>(() =>
+            _bookService.GetDashboard(new(), new TestServerCallContext())
+        );
+
+        result.ShouldBe(exception);
     }
 
     [Test]
@@ -227,7 +305,11 @@ public sealed class BookServiceTests
         // Set up the logger to return true for IsEnabled(LogLevel.Debug)
         loggerMock.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
 
-        var bookService = new BookService(_bookRepositoryMock.Object, loggerMock.Object);
+        var bookService = new BookService(
+            _bookRepositoryMock.Object,
+            loggerMock.Object,
+            Mock.Of<ISender>()
+        );
 
         var book = new Book(
             "Test Book",
@@ -287,7 +369,11 @@ public sealed class BookServiceTests
         // Set up the logger to return true for IsEnabled(LogLevel.Debug)
         loggerMock.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
 
-        var bookService = new BookService(_bookRepositoryMock.Object, loggerMock.Object);
+        var bookService = new BookService(
+            _bookRepositoryMock.Object,
+            loggerMock.Object,
+            Mock.Of<ISender>()
+        );
 
         List<Book> books =
         [

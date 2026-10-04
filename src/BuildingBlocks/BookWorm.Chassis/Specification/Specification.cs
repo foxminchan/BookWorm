@@ -25,7 +25,7 @@ public class Specification<T> : ISpecification<T>
     public IEnumerable<IncludeExpression> IncludeExpressions => _includeExpressions ?? [];
     public IEnumerable<string> IncludeStrings => _includeStrings ?? [];
 
-    public int Take { get; internal set; }
+    public int Take { get; internal set; } = -1;
     public int Skip { get; internal set; }
     public bool AsNoTracking { get; internal set; }
     public bool AsTracking { get; internal set; }
@@ -61,19 +61,19 @@ public class Specification<T> : ISpecification<T>
 
     internal void Add(OrderExpression<T> orderExpression)
     {
-        _orderExpressions ??= new(DefaultCapacityOrder);
+        _orderExpressions ??= [with(DefaultCapacityOrder)];
         _orderExpressions.Add(orderExpression);
     }
 
     internal void Add(IncludeExpression includeExpression)
     {
-        _includeExpressions ??= new(DefaultCapacityInclude);
+        _includeExpressions ??= [with(DefaultCapacityInclude)];
         _includeExpressions.Add(includeExpression);
     }
 
     internal void Add(string includeString)
     {
-        _includeStrings ??= new(DefaultCapacityIncludeString);
+        _includeStrings ??= [with(DefaultCapacityIncludeString)];
         _includeStrings.Add(includeString);
     }
 }

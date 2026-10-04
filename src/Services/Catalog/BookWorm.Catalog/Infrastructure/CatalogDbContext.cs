@@ -1,4 +1,4 @@
-﻿using Wolverine.EntityFrameworkCore;
+using Wolverine.EntityFrameworkCore;
 
 namespace BookWorm.Catalog.Infrastructure;
 
@@ -16,6 +16,11 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
     {
         await SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.RegisterAllInCatalogApiMarker();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

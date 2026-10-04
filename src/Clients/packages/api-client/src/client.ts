@@ -77,6 +77,10 @@ export default class ApiClient {
     this.tokenProvider = provider;
   }
 
+  public async getAccessToken(): Promise<string | null> {
+    return (await this.tokenProvider?.()) ?? null;
+  }
+
   public get<T>(
     url: string,
     config?: AxiosRequestConfig,

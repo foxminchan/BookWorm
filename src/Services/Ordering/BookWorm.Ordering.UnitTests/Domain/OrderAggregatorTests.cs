@@ -104,7 +104,7 @@ public sealed class OrderAggregatorTests
         order.MarkAsCompleted();
 
         // Act & Assert
-        Should.Throw<OrderingDomainException>(() => order.MarkAsCanceled());
+        Should.Throw<OrderingDomainException>(order.MarkAsCanceled);
         order.Status.ShouldBe(Status.Completed);
     }
 
@@ -177,7 +177,7 @@ public sealed class OrderAggregatorTests
         order.MarkAsCanceled();
 
         // Act & Assert
-        Should.Throw<OrderingDomainException>(() => order.MarkAsCompleted());
+        Should.Throw<OrderingDomainException>(order.MarkAsCompleted);
         order.Status.ShouldBe(Status.Cancelled);
     }
 
@@ -239,7 +239,7 @@ public sealed class OrderAggregatorTests
         order.MarkAsCompleted(); // Make it completed first
 
         // Act & Assert
-        Should.Throw<OrderingDomainException>(() => order.MarkAsCompleted());
+        Should.Throw<OrderingDomainException>(order.MarkAsCompleted);
     }
 
     [Test]
@@ -263,6 +263,6 @@ public sealed class OrderAggregatorTests
         order.MarkAsCompleted(); // Make it completed first
 
         // Act & Assert
-        Should.Throw<OrderingDomainException>(() => order.MarkAsCanceled());
+        Should.Throw<OrderingDomainException>(order.MarkAsCanceled);
     }
 }

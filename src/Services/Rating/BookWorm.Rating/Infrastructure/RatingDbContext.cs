@@ -1,4 +1,4 @@
-﻿using Wolverine.EntityFrameworkCore;
+using Wolverine.EntityFrameworkCore;
 
 namespace BookWorm.Rating.Infrastructure;
 
@@ -12,6 +12,11 @@ internal sealed class RatingDbContext(DbContextOptions<RatingDbContext> options)
     {
         await SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.RegisterAllInRatingApiMarker();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

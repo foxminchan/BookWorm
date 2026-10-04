@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 
 import { Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import type { PieSectorShapeProps } from "recharts/types/polar/Pie";
 
-import type { Book } from "@workspace/types/catalog/books";
+import type { CategoryCount } from "@workspace/types/ordering/dashboard";
 import {
   Card,
   CardContent,
@@ -17,26 +17,14 @@ import { BooksCategoryChartSkeleton } from "@/components/loading-skeleton";
 import { CHART_COLORS, CHART_THEME } from "@/lib/constants";
 
 type BooksCategoryChartProps = Readonly<{
-  books: Book[];
+  categories: CategoryCount[];
   isLoading: boolean;
 }>;
 
 export function BooksCategoryChart({
-  books,
+  categories,
   isLoading,
 }: BooksCategoryChartProps) {
-  const categoryStats = useMemo(() => {
-    const categoryMap = new Map<string, number>();
-    for (const book of books) {
-      const categoryName = book.category?.name ?? "Other";
-      categoryMap.set(categoryName, (categoryMap.get(categoryName) ?? 0) + 1);
-    }
-    return Array.from(categoryMap.entries()).map(([name, value]) => ({
-      name,
-      value,
-    }));
-  }, [books]);
-
   const renderSector = useCallback(
     (props: PieSectorShapeProps, index?: string | number) => {
       const i = typeof index === "number" ? index : 0;
@@ -58,7 +46,7 @@ export function BooksCategoryChart({
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
-              data={categoryStats}
+              data={categories}
               cx="50%"
               cy="50%"
               labelLine={false}
