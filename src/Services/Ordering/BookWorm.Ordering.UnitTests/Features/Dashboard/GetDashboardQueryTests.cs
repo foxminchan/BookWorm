@@ -9,11 +9,11 @@ namespace BookWorm.Ordering.UnitTests.Features.Dashboard;
 
 public sealed class GetDashboardQueryTests
 {
-    private readonly Mock<IOrderRepository> _orderRepositoryMock;
-    private readonly Mock<IBuyerRepository> _buyerRepositoryMock;
     private readonly Mock<IBookService> _bookServiceMock;
+    private readonly Mock<IBuyerRepository> _buyerRepositoryMock;
     private readonly Mock<IFusionCache> _cacheMock;
     private readonly GetDashboardHandler _handler;
+    private readonly Mock<IOrderRepository> _orderRepositoryMock;
     private readonly OrderDashboardSummary _orderSummary;
 
     public GetDashboardQueryTests()
@@ -77,10 +77,7 @@ public sealed class GetDashboardQueryTests
         result.TotalRevenue.ShouldBe(250);
         result.TotalCustomers.ShouldBe(30);
         result.TotalBooks.ShouldBe(35);
-        result.Categories.ShouldBe([
-            new CategoryCountDto("Fiction", 30),
-            new CategoryCountDto("Other", 5),
-        ]);
+        result.Categories.ShouldBe([new("Fiction", 30), new("Other", 5)]);
         result.RecentOrders.ShouldHaveSingleItem();
         result.RecentOrders[0].Id.ShouldBe((Guid)_orderSummary.RecentOrders[0].Id);
         result.RecentOrders[0].Total.ShouldBe(25);
@@ -137,9 +134,9 @@ public sealed class GetDashboardQueryTests
         result
             .DailyOrders.Select(day => day.Date)
             .ShouldBe(Enumerable.Range(-6, 7).Select(today.AddDays));
-        result.DailyOrders[0].ShouldBe(new DailyOrdersDto(today.AddDays(-6), 2, 10));
-        result.DailyOrders[1].ShouldBe(new DailyOrdersDto(today.AddDays(-5), 0, 0));
-        result.DailyOrders[^1].ShouldBe(new DailyOrdersDto(today, 40, 250));
+        result.DailyOrders[0].ShouldBe(new(today.AddDays(-6), 2, 10));
+        result.DailyOrders[1].ShouldBe(new(today.AddDays(-5), 0, 0));
+        result.DailyOrders[^1].ShouldBe(new(today, 40, 250));
         _orderRepositoryMock.Verify(
             repository =>
                 repository.GetDashboardAsync(
@@ -363,7 +360,7 @@ public sealed class GetDashboardQueryTests
                     FusionCacheEntryOptions? _,
                     IEnumerable<string>? _,
                     CancellationToken token
-                ) => new ValueTask<DashboardDto>(factory(null!, token))
+                ) => new(factory(null!, token))
             );
     }
 }

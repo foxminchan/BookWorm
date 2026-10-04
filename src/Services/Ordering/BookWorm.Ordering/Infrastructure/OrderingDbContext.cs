@@ -10,13 +10,15 @@ internal sealed class OrderingDbContext(DbContextOptions<OrderingDbContext> opti
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
-    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
-        configurationBuilder.RegisterAllInOrderingApiMarker();
-
     public async Task<bool> SaveEntitiesAsync(CancellationToken cancellationToken = default)
     {
         await SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.RegisterAllInOrderingApiMarker();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
