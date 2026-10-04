@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-
 import {
   CartesianGrid,
   Legend,
@@ -13,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-import type { Order } from "@workspace/types/ordering/orders";
+import type { DailyOrders } from "@workspace/types/ordering/dashboard";
 import {
   Card,
   CardContent,
@@ -26,32 +24,14 @@ import { OrdersRevenueChartSkeleton } from "@/components/loading-skeleton";
 import { CHART_COLORS, CHART_THEME } from "@/lib/constants";
 
 type OrdersRevenueChartProps = Readonly<{
-  orders: Order[];
+  dailyOrders: DailyOrders[];
   isLoading: boolean;
 }>;
 
 export function OrdersRevenueChart({
-  orders,
+  dailyOrders,
   isLoading,
 }: OrdersRevenueChartProps) {
-  const ordersByDate = useMemo(() => {
-    const dateMap = new Map<
-      string,
-      { date: string; orders: number; revenue: number }
-    >();
-    for (const order of orders) {
-      const date = new Date(order.date).toLocaleDateString();
-      const existing = dateMap.get(date);
-      if (existing) {
-        existing.orders += 1;
-        existing.revenue += order.total ?? 0;
-      } else {
-        dateMap.set(date, { date, orders: 1, revenue: order.total ?? 0 });
-      }
-    }
-    return Array.from(dateMap.values()).slice(-7);
-  }, [orders]);
-
   if (isLoading) {
     return <OrdersRevenueChartSkeleton />;
   }
@@ -60,11 +40,13 @@ export function OrdersRevenueChart({
     <Card className="lg:col-span-2">
       <CardHeader>
         <CardTitle>Orders & Revenue Trend</CardTitle>
-        <CardDescription>Daily orders and revenue</CardDescription>
+        <CardDescription>
+          Daily orders and completed-order revenue (UTC)
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={ordersByDate}>
+          <LineChart data={dailyOrders}>
             <CartesianGrid
               strokeDasharray={CHART_THEME.grid.strokeDasharray}
               stroke={CHART_THEME.grid.stroke}

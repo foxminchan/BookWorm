@@ -81,25 +81,25 @@ describe("RecentOrdersTable", () => {
     });
   });
 
-  it("limits display to last 5 orders", () => {
+  it("displays the first 5 orders in the backend ordering", () => {
     const manyOrders: Order[] = Array.from({ length: 10 }, (_, i) => ({
       ...createMockOrder({ total: 100, status: "New" }),
       id: `order-${i}`,
-      date: `2024-01-${(i + 1).toString().padStart(2, "0")}T10:00:00Z`,
+      date: `2024-01-${(10 - i).toString().padStart(2, "0")}T10:00:00Z`,
     }));
 
     render(<RecentOrdersTable orders={manyOrders} isLoading={false} />);
 
-    // Should only show last 5 orders (indices 5-9)
-    expect(screen.getByText("#order-5")).toBeInTheDocument();
-    expect(screen.getByText("#order-6")).toBeInTheDocument();
-    expect(screen.getByText("#order-7")).toBeInTheDocument();
-    expect(screen.getByText("#order-8")).toBeInTheDocument();
-    expect(screen.getByText("#order-9")).toBeInTheDocument();
+    // Backend sorts newest first; keep indices 0-4.
+    expect(screen.getByText("#order-0")).toBeInTheDocument();
+    expect(screen.getByText("#order-1")).toBeInTheDocument();
+    expect(screen.getByText("#order-2")).toBeInTheDocument();
+    expect(screen.getByText("#order-3")).toBeInTheDocument();
+    expect(screen.getByText("#order-4")).toBeInTheDocument();
 
-    // Earlier orders should not be visible
-    expect(screen.queryByText("#order-0")).not.toBeInTheDocument();
-    expect(screen.queryByText("#order-4")).not.toBeInTheDocument();
+    // Older orders should not be visible
+    expect(screen.queryByText("#order-5")).not.toBeInTheDocument();
+    expect(screen.queryByText("#order-9")).not.toBeInTheDocument();
   });
 
   it("displays empty state when no orders", () => {

@@ -25,8 +25,21 @@ internal static class Extensions
                     .WithScheme(builder.GetScheme())
                     .WithHost(Constants.Aspire.Services.Catalog)
                     .Build(),
-                HealthStatus.Degraded
+                HealthStatus.Degraded,
+                BookService.BooksClientName
             );
+
+            services
+                .AddGrpcServiceReference<BookGrpcService.BookGrpcServiceClient>(
+                    HttpUtilities
+                        .AsUrlBuilder()
+                        .WithScheme(builder.GetScheme())
+                        .WithHost(Constants.Aspire.Services.Catalog)
+                        .Build(),
+                    HealthStatus.Degraded,
+                    BookService.DashboardClientName
+                )
+                .AddAuthTokenExchange(Constants.Aspire.Services.Catalog);
 
             services.AddScoped<IBookService, BookService>();
 

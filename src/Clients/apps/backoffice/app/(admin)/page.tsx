@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 
+import { Button } from "@workspace/ui/components/button";
+
 import { KPICards } from "@/features/overview/kpi-cards";
 import { RecentOrdersTable } from "@/features/overview/recent-orders-table";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -24,23 +26,48 @@ const BooksCategoryChart = dynamic(
 );
 
 export default function OverviewTab() {
-  const { books, orders, customers, isLoading } = useDashboardStats();
+  const { data, isLoading, error, isDisconnected, refetch } =
+    useDashboardStats();
+
+  if (error && !data) {
+    return (
+      <div role="alert" className="space-y-4">
+        <p>Unable to load dashboard statistics.</p>
+        <Button onClick={() => void refetch()}>Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {isDisconnected && (
+        <p role="status" className="text-muted-foreground text-sm">
+          Live updates are reconnecting. Showing the last available statistics.
+        </p>
+      )}
       <KPICards
-        orders={orders}
-        totalCustomers={customers.length}
-        totalBooks={books.length}
+        totalOrders={data?.totalOrders ?? 0}
+        totalRevenue={data?.totalRevenue ?? 0}
+        totalCustomers={data?.totalCustomers ?? 0}
+        totalBooks={data?.totalBooks ?? 0}
         isLoading={isLoading}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <OrdersRevenueChart orders={orders} isLoading={isLoading} />
-        <BooksCategoryChart books={books} isLoading={isLoading} />
+        <OrdersRevenueChart
+          dailyOrders={data?.dailyOrders ?? []}
+          isLoading={isLoading}
+        />
+        <BooksCategoryChart
+          categories={data?.categories ?? []}
+          isLoading={isLoading}
+        />
       </div>
 
-      <RecentOrdersTable orders={orders} isLoading={isLoading} />
+      <RecentOrdersTable
+        orders={data?.recentOrders ?? []}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

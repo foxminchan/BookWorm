@@ -1,13 +1,40 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Features.Dashboard;
+using BookWorm.Constants.Core;
 using Grpc.Core;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Status = BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Status;
 
 namespace BookWorm.Catalog.Grpc.Services;
 
-internal sealed class BookService(IBookRepository repository, ILogger<BookService> logger)
-    : BookGrpcService.BookGrpcServiceBase
+internal sealed class BookService(
+    IBookRepository repository,
+    ILogger<BookService> logger,
+    ISender sender
+) : BookGrpcService.BookGrpcServiceBase
 {
+    [Authorize(Policy = Authorization.Policies.Admin)]
+    public override async Task<GetDashboardResponse> GetDashboard(
+        GetDashboardRequest request,
+        ServerCallContext context
+    )
+    {
+        var summary = await sender.Send(new GetCatalogDashboardQuery(), context.CancellationToken);
+        return new()
+        {
+            TotalBooks = summary.TotalBooks,
+            Categories =
+            {
+                summary.Categories.Select(category => new DashboardCategory
+                {
+                    Name = category.Name,
+                    Value = category.Value,
+                }),
+            },
+        };
+    }
+
     [AllowAnonymous]
     public override async Task<GetBookResponse> GetBook(
         GetBookRequest request,

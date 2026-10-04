@@ -6,6 +6,7 @@ import { booksHandlers } from "./catalog/books/index";
 import { categoriesHandlers } from "./catalog/categories/index";
 import { publishersHandlers } from "./catalog/publishers/index";
 import { buyersHandlers } from "./ordering/buyers/index";
+import { dashboardHandlers } from "./ordering/dashboard";
 import { ordersHandlers } from "./ordering/orders/index";
 import { feedbacksHandlers } from "./rating/index";
 
@@ -17,6 +18,7 @@ export const allHandlers: RequestHandler[] = [
   ...booksHandlers,
   ...basketHandlers,
   ...buyersHandlers,
+  ...dashboardHandlers,
   ...ordersHandlers,
   ...feedbacksHandlers,
 ];

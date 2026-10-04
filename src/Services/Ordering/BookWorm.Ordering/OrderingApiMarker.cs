@@ -8,4 +8,6 @@ namespace BookWorm.Ordering;
 
 [OpenApiMarker<BuyerId>]
 [OpenApiMarker<OrderId>]
-public sealed class OrderingApiMarker;
+[EfCoreConverter<BuyerId>]
+[EfCoreConverter<OrderId>]
+public sealed partial class OrderingApiMarker;

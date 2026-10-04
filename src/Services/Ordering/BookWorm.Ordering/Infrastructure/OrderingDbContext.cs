@@ -1,4 +1,4 @@
-﻿using Wolverine.EntityFrameworkCore;
+using Wolverine.EntityFrameworkCore;
 
 namespace BookWorm.Ordering.Infrastructure;
 
@@ -9,6 +9,9 @@ internal sealed class OrderingDbContext(DbContextOptions<OrderingDbContext> opti
     public DbSet<Buyer> Buyers => Set<Buyer>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
+        configurationBuilder.RegisterAllInOrderingApiMarker();
 
     public async Task<bool> SaveEntitiesAsync(CancellationToken cancellationToken = default)
     {

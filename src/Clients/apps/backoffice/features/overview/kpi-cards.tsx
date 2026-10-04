@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 
-import type { Order } from "@workspace/types/ordering/orders";
 import {
   Card,
   CardContent,
@@ -14,25 +13,21 @@ import { KPICardsSkeleton } from "@/components/loading-skeleton";
 import { currencyFormatter } from "@/lib/constants";
 
 type KPICardsProps = Readonly<{
-  orders: Order[];
+  totalOrders: number;
+  totalRevenue: number;
   totalCustomers: number;
   totalBooks: number;
   isLoading: boolean;
 }>;
 
 export function KPICards({
-  orders,
+  totalOrders,
+  totalRevenue,
   totalCustomers,
   totalBooks,
   isLoading,
 }: KPICardsProps) {
   const kpiData = useMemo(() => {
-    const totalRevenue = orders.reduce(
-      (sum, order) => sum + (order.total ?? 0),
-      0,
-    );
-    const totalOrders = orders.length;
-
     return [
       {
         title: "Total Revenue",
@@ -45,7 +40,7 @@ export function KPICards({
         change: `${totalCustomers} customers`,
       },
       {
-        title: "Active Customers",
+        title: "Registered Customers",
         value: totalCustomers.toString(),
         change: "Total registered",
       },
@@ -55,7 +50,7 @@ export function KPICards({
         change: "Available titles",
       },
     ];
-  }, [orders, totalCustomers, totalBooks]);
+  }, [totalRevenue, totalOrders, totalCustomers, totalBooks]);
 
   if (isLoading) {
     return <KPICardsSkeleton />;

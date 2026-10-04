@@ -4,6 +4,8 @@ namespace BookWorm.Ordering.Grpc.Services.Book;
 
 public interface IBookService
 {
+    Task<GetDashboardResponse> GetDashboardAsync(CancellationToken cancellationToken = default);
+
     Task<GetBookResponse?> GetBookByIdAsync(
         [StringSyntax(StringSyntaxAttribute.GuidFormat)] string id,
         CancellationToken cancellationToken = default

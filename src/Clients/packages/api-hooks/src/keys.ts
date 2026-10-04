@@ -49,6 +49,9 @@ const orderingBase = ["ordering"] as const;
 export const orderingKeys = {
   all: orderingBase,
 
+  dashboard: (userId?: string) =>
+    [...orderingBase, "dashboard", userId] as const,
+
   orders: {
     all: [...orderingBase, "orders"] as const,
     lists: () => [...orderingBase, "orders", "list"] as const,
