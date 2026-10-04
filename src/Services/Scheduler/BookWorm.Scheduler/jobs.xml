@@ -6,6 +6,26 @@
 
   <schedule>
     <job>
+      <name>ProcessVectorBatchJob</name>
+      <group>Scheduler</group>
+      <description>Calls the ingestion function to process pending catalog vector updates</description>
+      <job-type>BookWorm.Scheduler.Jobs.ProcessVectorBatchJob, BookWorm.Scheduler</job-type>
+      <durable>true</durable>
+      <recover>false</recover>
+    </job>
+    <trigger>
+      <cron>
+        <name>ProcessVectorBatchTrigger</name>
+        <group>Scheduler</group>
+        <description>Fires every five minutes to refresh changed catalog vectors</description>
+        <job-name>ProcessVectorBatchJob</job-name>
+        <job-group>Scheduler</job-group>
+        <misfire-instruction>FireOnceNow</misfire-instruction>
+        <cron-expression>0 0/5 * * * ?</cron-expression>
+        <time-zone>UTC</time-zone>
+      </cron>
+    </trigger>
+    <job>
       <name>CleanUpSentEmailJob</name>
       <group>Scheduler</group>
       <description>Publishes an event to clean up successfully sent emails</description>

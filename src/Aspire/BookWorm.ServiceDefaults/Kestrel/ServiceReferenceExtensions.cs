@@ -96,7 +96,31 @@ public static class ServiceReferenceExtensions
         }
 
         /// <summary>
-        ///     Adds a typed HTTP client reference with optional endpoint health check registration.
+        ///     Adds a typed HTTP client reference without an endpoint health check.
+        /// </summary>
+        /// <typeparam name="TClient">
+        ///    The typed Refit client contract.
+        /// </typeparam>
+        /// <param name="address">
+        ///    The absolute URI of the downstream HTTP service.
+        /// </param>
+        public IHttpClientBuilder AddHttpServiceReference<TClient>(string address)
+            where TClient : class
+        {
+            if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
+            {
+                throw new ArgumentException(
+                    "Address must be a valid absolute URI.",
+                    nameof(address)
+                );
+            }
+
+            var uri = new Uri(address);
+            return services.AddRefitClient<TClient>().ConfigureHttpClient(c => c.BaseAddress = uri);
+        }
+
+        /// <summary>
+        ///     Adds a typed HTTP client reference with endpoint health check registration.
         /// </summary>
         /// <typeparam name="TClient">
         ///     The typed Refit client contract.
@@ -145,7 +169,7 @@ public static class ServiceReferenceExtensions
 
             var uri = new Uri(address);
 
-            services.AddRefitClient<TClient>().ConfigureHttpClient(c => c.BaseAddress = uri);
+            services.AddHttpServiceReference<TClient>(address);
 
             services
                 .AddHealthChecks()

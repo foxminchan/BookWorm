@@ -131,7 +131,7 @@ public sealed class BookAggregatorTests
         book.CategoryId.ShouldBe(newCategoryId);
         book.PublisherId.ShouldBe(newPublisherId);
         book.BookAuthors.Count.ShouldBe(newAuthorIds.Length);
-        book.DomainEvents.ShouldContain(e => e is BookUpdatedEvent);
+        book.DomainEvents.ShouldContain(e => e is BookChangedEvent);
     }
 
     [Test]

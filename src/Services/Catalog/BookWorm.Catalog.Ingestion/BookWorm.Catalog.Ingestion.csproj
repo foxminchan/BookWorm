@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" />
+    <PackageReference Include="Aspire.Azure.Npgsql" />
+    <PackageReference Include="Aspire.Qdrant.Client" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Aspire/BookWorm.ServiceDefaults/BookWorm.ServiceDefaults.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None
+      Update="host.json"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
+    <None
+      Update="local.settings.json"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="Never"
+    />
+  </ItemGroup>
+</Project>

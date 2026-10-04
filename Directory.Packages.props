@@ -9,6 +9,7 @@
     <PackageVersion Include="Aspire.Hosting" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Dotnet" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
@@ -75,18 +76,12 @@
     />
     <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.0" />
     <!-- Observability -->
-    <PackageVersion
-      Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"
-      Version="$(OtelVersion)"
-    />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OtelVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OtelVersion)" />
-    <PackageVersion
-      Include="OpenTelemetry.Instrumentation.GrpcNetClient"
-      Version="$(OtelUnstableVersion)"
-    />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OtelVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OtelVersion)" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.19.1-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
     <!-- AI -->
     <PackageVersion
       Include="Microsoft.Agents.AI.Mcp"
@@ -124,6 +119,13 @@
     <PackageVersion Include="Vogen" Version="8.0.7" />
   </ItemGroup>
   <ItemGroup Label="Integration Packages">
+    <!-- Azure Functions isolated worker -->
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.1.0" />
+    <PackageVersion
+      Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore"
+      Version="2.1.1"
+    />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.2.0" />
     <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />

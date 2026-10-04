@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+    <NoWarn>$(NoWarn);EXTEXP0001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="OCI Labels">
     <ContainerLabel
@@ -10,6 +11,7 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Quartz">
+    <PackageReference Include="Refit.HttpClientFactory" />
     <PackageReference Include="Quartz.Aspire" />
     <PackageReference Include="Quartz.Plugins" />
     <PackageReference Include="Quartz.Dashboard" />
