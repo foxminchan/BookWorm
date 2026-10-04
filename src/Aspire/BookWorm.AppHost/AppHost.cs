@@ -198,6 +198,25 @@ builder
     .WaitFor(queue)
     .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
+var catalogIngestion = builder
+    .AddAzureFunctionsProject(
+        Services.CatalogIngestion,
+        "../../Services/Catalog/BookWorm.Catalog.Ingestion/BookWorm.Catalog.Ingestion.csproj"
+    )
+    .WithHostStorage(storage)
+    .WithReference(catalogDb)
+    .WaitFor(catalogApi)
+    .WithReference(qdrant)
+    .WaitFor(qdrant)
+    .WithReference(embedding)
+    .WaitFor(embedding)
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
+    .WithRoleAssignments(
+        storage,
+        StorageBuiltInRole.StorageBlobDataReader,
+        StorageBuiltInRole.StorageQueueDataReader
+    );
+
 builder
     .AddDotnetProject(
         Services.Scheduler,
@@ -207,6 +226,8 @@ builder
     .WaitFor(queue)
     .WithReference(schedulerDb)
     .WaitFor(schedulerDb)
+    .WithReference(catalogIngestion)
+    .WaitFor(catalogIngestion)
     .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 

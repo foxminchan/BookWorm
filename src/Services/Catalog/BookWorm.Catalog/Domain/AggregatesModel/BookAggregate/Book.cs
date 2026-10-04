@@ -28,7 +28,6 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
         CategoryId = categoryId;
         PublisherId = publisherId;
         _bookAuthors = [.. authorIds.Select(authorId => new BookAuthor(authorId))];
-        RegisterDomainEvent(new BookCreatedEvent(this));
     }
 
     public string? Name { get; private set; }
@@ -75,7 +74,6 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
         CategoryId = categoryId;
         PublisherId = publisherId;
         _bookAuthors.AddRange(authorIds.Select(authorId => new BookAuthor(authorId)));
-        RegisterDomainEvent(new BookCreatedEvent(this));
         return this;
     }
 
@@ -101,17 +99,6 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
         AuthorId[] authorIds
     )
     {
-        var areAuthorsChanged = !_bookAuthors
-            .Select(bookAuthor => bookAuthor.AuthorId)
-            .SequenceEqual(authorIds);
-
-        var isChanged =
-            string.Compare(Name, name, StringComparison.OrdinalIgnoreCase) != 0
-            || string.Compare(Description, description, StringComparison.OrdinalIgnoreCase) != 0
-            || CategoryId != categoryId
-            || PublisherId != publisherId
-            || areAuthorsChanged;
-
         Name = !string.IsNullOrWhiteSpace(name)
             ? name
             : throw new CatalogDomainException("Book name is required.");
@@ -122,11 +109,6 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
         Image = image;
         _bookAuthors.Clear();
         _bookAuthors.AddRange(authorIds.Select(authorId => new BookAuthor(authorId)));
-
-        if (isChanged)
-        {
-            RegisterDomainEvent(new BookUpdatedEvent(this));
-        }
 
         RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
         return this;

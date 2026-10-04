@@ -1,6 +1,4 @@
-﻿using BookWorm.Catalog.Infrastructure.Ingestion;
 using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chassis.AI.Ingestion;
 using BookWorm.Chassis.AI.Search;
 using BookWorm.Chassis.Caching;
 using BookWorm.Constants.Aspire;
@@ -53,8 +51,6 @@ internal static class Extensions
             var services = builder.Services;
 
             builder.AddAIServices().WithAITelemetry();
-
-            services.AddScoped<IIngestionSource<Book>, BookDataIngestor>();
 
             services.AddHybridSearch();
         }

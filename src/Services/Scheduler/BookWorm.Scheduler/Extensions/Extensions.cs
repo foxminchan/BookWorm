@@ -1,4 +1,8 @@
-﻿using BookWorm.Constants.Aspire;
+﻿using BookWorm.Chassis.Utilities;
+using BookWorm.Constants.Aspire;
+using BookWorm.Constants.Core;
+using BookWorm.Scheduler.Clients;
+using BookWorm.ServiceDefaults.Kestrel;
 
 namespace BookWorm.Scheduler.Extensions;
 
@@ -9,6 +13,17 @@ internal static class Extensions
         public void AddApplicationServices()
         {
             var services = builder.Services;
+
+            services
+                .AddHttpServiceReference<ICatalogIngestionApi>(
+                    HttpUtilities
+                        .AsUrlBuilder()
+                        .WithScheme(Http.Schemes.HttpOrHttps)
+                        .WithHost(Services.CatalogIngestion)
+                        .Build()
+                )
+                .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(5))
+                .RemoveAllResilienceHandlers();
 
             builder.AddEventBus(opts =>
             {

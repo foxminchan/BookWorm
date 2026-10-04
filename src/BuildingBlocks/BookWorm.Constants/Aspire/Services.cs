@@ -7,6 +7,7 @@ public static class Services
     public const string Finance = "finance";
     public const string Gateway = "gateway";
     public const string Catalog = "catalog";
+    public const string CatalogIngestion = "catalog-ingestion";
     public const string Ordering = "ordering";
     public const string Chatting = "chatting";
     public const string McpTools = "mcptools";
