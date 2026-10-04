@@ -41,9 +41,9 @@ export default function OverviewTab() {
   return (
     <div className="space-y-6">
       {isDisconnected && (
-        <p role="status" className="text-muted-foreground text-sm">
+        <output className="text-muted-foreground text-sm">
           Live updates are reconnecting. Showing the last available statistics.
-        </p>
+        </output>
       )}
       <KPICards
         totalOrders={data?.totalOrders ?? 0}

@@ -99,11 +99,10 @@ public sealed class CustomerBasketTests
     {
         // Arrange
         const string id = "customer-123";
-        List<BasketItem> items = [];
 
         // Act & Assert
         Should
-            .Throw<BasketDomainException>(() => new CustomerBasket(id, items))
+            .Throw<BasketDomainException>(() => new CustomerBasket(id, []))
             .Message.ShouldBe("Basket must contain at least one item.");
     }
 }

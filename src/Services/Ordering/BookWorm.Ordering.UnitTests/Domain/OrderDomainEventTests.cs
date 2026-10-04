@@ -143,6 +143,6 @@ public sealed class OrderDomainEventTests
         order.MarkAsCanceled();
 
         // Act & Assert
-        Should.Throw<OrderingDomainException>(() => order.MarkAsCanceled());
+        Should.Throw<OrderingDomainException>(order.MarkAsCanceled);
     }
 }

@@ -50,6 +50,20 @@ export async function readDashboardStream(
   }
 }
 
+async function getDashboardStreamBody(
+  response: Response,
+): Promise<ReadableStream<Uint8Array>> {
+  if (!response.ok || !response.body) {
+    await response.body?.cancel();
+    throw new Error("Dashboard stream unavailable");
+  }
+  if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+    await response.body.cancel();
+    throw new Error("Invalid dashboard stream response");
+  }
+  return response.body;
+}
+
 function waitForRetry(delay: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     if (signal.aborted) return resolve();
@@ -75,50 +89,42 @@ const dashboardApiClient = {
   ): () => void {
     const controller = new AbortController();
     const { signal } = controller;
-    const connect = async () => {
-      let delay = 1_000;
-      while (!signal.aborted) {
-        try {
-          const token = await apiClient.getAccessToken();
-          if (signal.aborted) return;
-          const response = await fetch(
-            new URL(`${DASHBOARD_PATH}/stream`, axiosConfig.baseURL),
-            {
-              headers: {
-                Accept: "text/event-stream",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
-              credentials: "include",
-              cache: "no-store",
-              signal,
-            },
-          );
-          if (!response.ok || !response.body) {
-            await response.body?.cancel();
-            throw new Error("Dashboard stream unavailable");
-          }
-          if (
-            !response.headers.get("content-type")?.includes("text/event-stream")
-          ) {
-            await response.body.cancel();
-            throw new Error("Invalid dashboard stream response");
-          }
-          await readDashboardStream(
-            response.body,
-            (snapshot) => {
-              delay = 1_000;
-              if (!signal.aborted) onSnapshot(snapshot);
-            },
-            signal,
-          );
-        } catch {
-          if (signal.aborted) return;
-        }
+    let delay = 1_000;
+    const connect = async (): Promise<void> => {
+      if (signal.aborted) return;
+      try {
+        const token = await apiClient.getAccessToken();
         if (signal.aborted) return;
-        onDisconnect();
-        await waitForRetry(delay, signal);
-        delay = Math.min(delay * 2, 30_000);
+        const response = await fetch(
+          new URL(`${DASHBOARD_PATH}/stream`, axiosConfig.baseURL),
+          {
+            headers: {
+              Accept: "text/event-stream",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+            cache: "no-store",
+            signal,
+          },
+        );
+        const body = await getDashboardStreamBody(response);
+        await readDashboardStream(
+          body,
+          (snapshot) => {
+            delay = 1_000;
+            if (!signal.aborted) onSnapshot(snapshot);
+          },
+          signal,
+        );
+      } catch {
+        if (signal.aborted) return;
       }
+      if (signal.aborted) return;
+      onDisconnect();
+      return waitForRetry(delay, signal).then(() => {
+        delay = Math.min(delay * 2, 30_000);
+        return connect();
+      });
     };
     void connect();
     return () => controller.abort();
