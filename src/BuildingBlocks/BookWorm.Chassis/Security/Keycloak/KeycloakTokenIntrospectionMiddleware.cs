@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
-using System.Text.Json;
 using BookWorm.Chassis.Security.Settings;
-using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -12,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace BookWorm.Chassis.Security.Keycloak;
 
 internal sealed class KeycloakTokenIntrospectionMiddleware(
-    IHttpClientFactory httpClientFactory,
+    IKeycloakApi keycloakApi,
     IdentityOptions identityOptions,
     ILogger<KeycloakTokenIntrospectionMiddleware> logger
 ) : IMiddleware
@@ -48,21 +46,14 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
             return;
         }
 
-        var introspectionEndpoint = KeycloakEndpoints
-            .Introspect(identityOptions.Realm)
-            .TrimStart('/');
-
-        using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
-
-        using var requestContent = new FormUrlEncodedContent([
-            new("token", token),
-            new("client_id", identityOptions.ClientId),
-            new("client_secret", identityOptions.ClientSecret),
-        ]);
-
-        using var response = await httpClient.PostAsync(
-            introspectionEndpoint,
-            requestContent,
+        using var response = await keycloakApi.IntrospectTokenAsync(
+            identityOptions.Realm,
+            new()
+            {
+                ["token"] = token,
+                ["client_id"] = identityOptions.ClientId,
+                ["client_secret"] = identityOptions.ClientSecret,
+            },
             cancellationToken
         );
 
@@ -74,17 +65,9 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
             return;
         }
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var tokenResponse = await JsonDocument.ParseAsync(
-            stream,
-            cancellationToken: cancellationToken
-        );
+        await response.EnsureSuccessfulAsync();
 
-        var isActive =
-            tokenResponse.RootElement.TryGetProperty("active", out var activeElement)
-            && activeElement.GetBoolean();
-
-        if (!isActive)
+        if (response.Content?.Active is not true)
         {
             logger.LogInformation("Inactive token presented");
 

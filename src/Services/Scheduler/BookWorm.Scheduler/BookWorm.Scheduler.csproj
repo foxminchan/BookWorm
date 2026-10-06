@@ -11,7 +11,6 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Quartz">
-    <PackageReference Include="Refit.HttpClientFactory" />
     <PackageReference Include="Quartz.Aspire" />
     <PackageReference Include="Quartz.Plugins" />
     <PackageReference Include="Quartz.Dashboard" />
@@ -24,7 +23,6 @@
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
     <InternalsVisibleTo Include="$(AssemblyName).ContractTests" />
-    <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />

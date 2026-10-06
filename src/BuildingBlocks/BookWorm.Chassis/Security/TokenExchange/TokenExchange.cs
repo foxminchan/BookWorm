@@ -1,15 +1,11 @@
 using System.Security.Claims;
-using System.Text.Json;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
-using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Chassis.Security.TokenExchange;
 
-internal sealed class TokenExchange(
-    IHttpClientFactory httpClientFactory,
-    IdentityOptions identityOptions
-) : ITokenExchange
+internal sealed class TokenExchange(IKeycloakApi keycloakApi, IdentityOptions identityOptions)
+    : ITokenExchange
 {
     public async Task<string> ExchangeAsync(
         ClaimsPrincipal claimsPrincipal,
@@ -18,13 +14,12 @@ internal sealed class TokenExchange(
         CancellationToken cancellationToken = default
     )
     {
-        var tokenEndpoint = KeycloakEndpoints.Token(identityOptions.Realm).TrimStart('/');
-
         var requestContent = GetRequestContent(claimsPrincipal, audience, scope);
-
-        using var httpClient = httpClientFactory.CreateClient(Components.KeyCloak);
-
-        var response = await httpClient.PostAsync(tokenEndpoint, requestContent, cancellationToken);
+        using var response = await keycloakApi.ExchangeTokenAsync(
+            identityOptions.Realm,
+            requestContent,
+            cancellationToken
+        );
 
         if (!response.IsSuccessStatusCode)
         {
@@ -33,10 +28,16 @@ internal sealed class TokenExchange(
             );
         }
 
-        return await GetResponseContent(response, cancellationToken);
+        await response.EnsureSuccessfulAsync();
+
+        var accessToken = response.Content?.AccessToken;
+
+        return string.IsNullOrWhiteSpace(accessToken)
+            ? throw new UnauthorizedAccessException("Token exchange did not return an access_token")
+            : accessToken;
     }
 
-    private FormUrlEncodedContent GetRequestContent(
+    private Dictionary<string, string> GetRequestContent(
         ClaimsPrincipal claimsPrincipal,
         string? audience = null,
         string? scope = null
@@ -49,49 +50,25 @@ internal sealed class TokenExchange(
             throw new UnauthorizedAccessException("No access_token found in claims principal");
         }
 
-        var parameters = new List<KeyValuePair<string, string>>
+        var parameters = new Dictionary<string, string>
         {
-            new("client_id", identityOptions.ClientId),
-            new("client_secret", identityOptions.ClientSecret),
-            new("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
-            new("subject_token", tokenClaim.Value),
-            new("subject_token_type", "urn:ietf:params:oauth:token-type:access_token"),
+            ["client_id"] = identityOptions.ClientId,
+            ["client_secret"] = identityOptions.ClientSecret,
+            ["grant_type"] = "urn:ietf:params:oauth:grant-type:token-exchange",
+            ["subject_token"] = tokenClaim.Value,
+            ["subject_token_type"] = "urn:ietf:params:oauth:token-type:access_token",
         };
 
         if (!string.IsNullOrWhiteSpace(audience))
         {
-            parameters.Add(new("audience", audience));
+            parameters.Add("audience", audience);
         }
 
         if (!string.IsNullOrWhiteSpace(scope))
         {
-            parameters.Add(new("scope", scope));
+            parameters.Add("scope", scope);
         }
 
-        return new(parameters);
-    }
-
-    private static async Task<string> GetResponseContent(
-        HttpResponseMessage response,
-        CancellationToken cancellationToken
-    )
-    {
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var tokenResponse = await JsonDocument.ParseAsync(
-            stream,
-            cancellationToken: cancellationToken
-        );
-
-        if (
-            !tokenResponse.RootElement.TryGetProperty("access_token", out var accessTokenElement)
-            || string.IsNullOrWhiteSpace(accessTokenElement.GetString())
-        )
-        {
-            throw new UnauthorizedAccessException("Token exchange did not return an access_token");
-        }
-
-        var accessToken = accessTokenElement.GetString()!;
-
-        return accessToken;
+        return parameters;
     }
 }

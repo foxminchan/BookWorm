@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -8,6 +9,7 @@ using BookWorm.Constants.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Refit;
 
 namespace BookWorm.Chassis.Security.Extensions;
 
@@ -47,10 +49,12 @@ public static class AuthenticationExtensions
                 .Build();
 
             // Registers a named HTTP client used for Keycloak communication.
-            services.AddHttpClient(
-                Components.KeyCloak,
-                client => client.BaseAddress = new(keycloakUrl)
-            );
+            services
+                .AddRefitGeneratedClient<IKeycloakApi>(
+                    RefitSettings.ForJsonContext(KeycloakSerializationContext.Default),
+                    Components.KeyCloak
+                )
+                .ConfigureHttpClient(client => client.BaseAddress = new(keycloakUrl));
 
             // Configures JWT bearer authentication backed by Keycloak.
             services

@@ -3,8 +3,10 @@
     <OutputType>Exe</OutputType>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Label="Framework">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" />

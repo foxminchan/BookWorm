@@ -1,7 +1,9 @@
+using BookWorm.Chassis.AI.Presidio.Clients;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Refit;
 
 namespace BookWorm.Chassis.AI.Presidio;
 
@@ -25,26 +27,26 @@ public static class PresidioExtensions
             );
 
             var services = builder.Services;
+            var settings = RefitSettings.ForJsonContext(PresidioSerializationContext.Default);
 
             services
-                .AddHttpClient(
-                    Components.Presidio.Analyzer,
-                    client => client.BaseAddress = new(analyzerConnectionString)
-                )
+                .AddRefitGeneratedClient<IPresidioAnalyzer>(settings, Components.Presidio.Analyzer)
+                .ConfigureHttpClient(client => client.BaseAddress = new(analyzerConnectionString))
                 .ConfigurePrimaryHttpMessageHandler(() =>
                     new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) }
                 );
 
             services
-                .AddHttpClient(
-                    Components.Presidio.Anonymizer,
-                    client => client.BaseAddress = new(anonymizerConnectionString)
+                .AddRefitGeneratedClient<IPresidioAnonymizer>(
+                    settings,
+                    Components.Presidio.Anonymizer
                 )
+                .ConfigureHttpClient(client => client.BaseAddress = new(anonymizerConnectionString))
                 .ConfigurePrimaryHttpMessageHandler(() =>
                     new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) }
                 );
 
-            services.AddSingleton<IPresidioService, PresidioService>();
+            services.AddTransient<IPresidioService, PresidioService>();
 
             return builder;
         }

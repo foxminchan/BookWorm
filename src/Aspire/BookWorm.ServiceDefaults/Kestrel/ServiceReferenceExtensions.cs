@@ -99,10 +99,10 @@ public static class ServiceReferenceExtensions
         ///     Adds a typed HTTP client reference without an endpoint health check.
         /// </summary>
         /// <typeparam name="TClient">
-        ///    The typed Refit client contract.
+        ///     The typed Refit client contract.
         /// </typeparam>
         /// <param name="address">
-        ///    The absolute URI of the downstream HTTP service.
+        ///     The absolute URI of the downstream HTTP service.
         /// </param>
         public IHttpClientBuilder AddHttpServiceReference<TClient>(string address)
             where TClient : class

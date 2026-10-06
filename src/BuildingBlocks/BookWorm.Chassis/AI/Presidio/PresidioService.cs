@@ -1,9 +1,10 @@
-using System.Net.Http.Json;
-using BookWorm.Constants.Aspire;
+using System.Text.Json;
+using BookWorm.Chassis.AI.Presidio.Clients;
 
 namespace BookWorm.Chassis.AI.Presidio;
 
-internal sealed class PresidioService(IHttpClientFactory httpClientFactory) : IPresidioService
+internal sealed class PresidioService(IPresidioAnalyzer analyzer, IPresidioAnonymizer anonymizer)
+    : IPresidioService
 {
     public async Task<string> AnonymizeAsync(
         string text,
@@ -15,43 +16,16 @@ internal sealed class PresidioService(IHttpClientFactory httpClientFactory) : IP
             return text;
         }
 
-        var analyzerRequest = new AnalyzerRequest(text);
-
-        using var analyzerClient = httpClientFactory.CreateClient(Components.Presidio.Analyzer);
-
-        using var analyzerResponse = await analyzerClient.PostAsJsonAsync(
-            "/analyze",
-            analyzerRequest,
-            cancellationToken
-        );
-
-        analyzerResponse.EnsureSuccessStatusCode();
-
         var analyzerResults =
-            await analyzerResponse.Content.ReadFromJsonAsync<AnalyzerResponse[]>(cancellationToken)
-            ?? [];
-
+            await analyzer.AnalyzeAsync(new(text), cancellationToken)
+            ?? throw new JsonException("The Presidio analyzer returned a null response.");
         if (analyzerResults.Length == 0)
         {
             return text;
         }
 
-        var anonymizerRequest = new AnonymizerRequest(text, analyzerResults);
+        var result = await anonymizer.AnonymizeAsync(new(text, analyzerResults), cancellationToken);
 
-        using var anonymizerClient = httpClientFactory.CreateClient(Components.Presidio.Anonymizer);
-
-        using var anonymizerResponse = await anonymizerClient.PostAsJsonAsync(
-            "/anonymize",
-            anonymizerRequest,
-            cancellationToken
-        );
-
-        anonymizerResponse.EnsureSuccessStatusCode();
-
-        var result = await anonymizerResponse.Content.ReadFromJsonAsync<AnonymizerResponse>(
-            cancellationToken
-        );
-
-        return result?.Text ?? text;
+        return result.Text;
     }
 }
