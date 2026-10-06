@@ -17,7 +17,10 @@ public sealed class ProcessVectorBatchJobTests
         {
             BaseAddress = new("http://catalog-ingestion"),
         };
-        var api = RestService.For<ICatalogIngestionApi>(client);
+        var api = RestService.For<ICatalogIngestionApi>(
+            client,
+            RefitSettings.ForJsonContext(CatalogIngestionSerializationContext.Default)
+        );
         var job = new ProcessVectorBatchJob(api, Mock.Of<ILogger<ProcessVectorBatchJob>>());
 
         await job.Execute(Mock.Of<IJobExecutionContext>());
@@ -36,7 +39,10 @@ public sealed class ProcessVectorBatchJobTests
         {
             BaseAddress = new("http://catalog-ingestion"),
         };
-        var api = RestService.For<ICatalogIngestionApi>(client);
+        var api = RestService.For<ICatalogIngestionApi>(
+            client,
+            RefitSettings.ForJsonContext(CatalogIngestionSerializationContext.Default)
+        );
         var job = new ProcessVectorBatchJob(api, Mock.Of<ILogger<ProcessVectorBatchJob>>());
 
         await Should.ThrowAsync<JobExecutionException>(() =>

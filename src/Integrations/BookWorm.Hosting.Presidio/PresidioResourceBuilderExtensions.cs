@@ -11,7 +11,7 @@ public static class PresidioAnalyzerResourceBuilderExtensions
         ///     Adds a Presidio Analyzer container resource to the distributed application.
         /// </summary>
         /// <param name="name">The name of the resource.</param>
-        /// <param name="httpPort">The optional host port for the HTTP endpoint. Defaults to container port 3000.</param>
+        /// <param name="httpPort">The optional host port for the HTTP endpoint. Assigned dynamically when omitted.</param>
         /// <returns>An <see cref="IResourceBuilder{PresidioAnalyzerResource}" /> for further configuration.</returns>
         [AspireExport]
         public IResourceBuilder<PresidioAnalyzerResource> AddPresidioAnalyzer(
@@ -28,8 +28,13 @@ public static class PresidioAnalyzerResourceBuilderExtensions
                 .WithImageTag(PresidioAnalyzerContainerImageTags.Tag)
                 .WithIconName("SearchShield")
                 .WithHttpEndpoint(
-                    targetPort: httpPort ?? 3000,
+                    port: httpPort,
+                    targetPort: 3000,
                     name: PresidioAnalyzerResource.HttpEndpointName
+                )
+                .WithHttpHealthCheck(
+                    "/health",
+                    endpointName: PresidioAnalyzerResource.HttpEndpointName
                 );
         }
     }
@@ -43,7 +48,7 @@ public static class PresidioAnonymizerResourceBuilderExtensions
         ///     Adds a Presidio Anonymizer container resource to the distributed application.
         /// </summary>
         /// <param name="name">The name of the resource.</param>
-        /// <param name="httpPort">The optional host port for the HTTP endpoint. Defaults to container port 3000.</param>
+        /// <param name="httpPort">The optional host port for the HTTP endpoint. Assigned dynamically when omitted.</param>
         /// <returns>An <see cref="IResourceBuilder{PresidioAnonymizerResource}" /> for further configuration.</returns>
         [AspireExport]
         public IResourceBuilder<PresidioAnonymizerResource> AddPresidioAnonymizer(
@@ -60,8 +65,13 @@ public static class PresidioAnonymizerResourceBuilderExtensions
                 .WithImageTag(PresidioAnonymizerContainerImageTags.Tag)
                 .WithIconName("ShieldCheckmark")
                 .WithHttpEndpoint(
-                    targetPort: httpPort ?? 3000,
+                    port: httpPort,
+                    targetPort: 3000,
                     name: PresidioAnonymizerResource.HttpEndpointName
+                )
+                .WithHttpHealthCheck(
+                    "/health",
+                    endpointName: PresidioAnonymizerResource.HttpEndpointName
                 );
         }
     }

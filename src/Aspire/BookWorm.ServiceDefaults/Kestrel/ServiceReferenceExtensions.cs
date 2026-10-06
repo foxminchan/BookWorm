@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Grpc.Core;
 using Grpc.Health.V1;
 using Polly.Timeout;
@@ -104,7 +105,13 @@ public static class ServiceReferenceExtensions
         /// <param name="address">
         ///     The absolute URI of the downstream HTTP service.
         /// </param>
-        public IHttpClientBuilder AddHttpServiceReference<TClient>(string address)
+        /// <param name="jsonContext">
+        ///     The source-generated JSON context for the client payloads.
+        /// </param>
+        public IHttpClientBuilder AddHttpServiceReference<TClient>(
+            string address,
+            JsonSerializerContext jsonContext
+        )
             where TClient : class
         {
             if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
@@ -116,7 +123,9 @@ public static class ServiceReferenceExtensions
             }
 
             var uri = new Uri(address);
-            return services.AddRefitClient<TClient>().ConfigureHttpClient(c => c.BaseAddress = uri);
+            return services
+                .AddRefitClient<TClient>(RefitSettings.ForJsonContext(jsonContext))
+                .ConfigureHttpClient(c => c.BaseAddress = uri);
         }
 
         /// <summary>
@@ -131,6 +140,9 @@ public static class ServiceReferenceExtensions
         /// <param name="failureStatus">
         ///     One of the enumeration values that specifies the health status reported when the health probe fails.
         /// </param>
+        /// <param name="jsonContext">
+        ///     The source-generated JSON context for the client payloads.
+        /// </param>
         /// <param name="healthRelativePath">
         ///     A relative URI path for the health endpoint. When <see langword="null" /> or empty, the default health path is
         ///     used.
@@ -144,6 +156,7 @@ public static class ServiceReferenceExtensions
         public void AddHttpServiceReference<TClient>(
             string address,
             HealthStatus failureStatus,
+            JsonSerializerContext jsonContext,
             string? healthRelativePath = null
         )
             where TClient : class
@@ -169,7 +182,7 @@ public static class ServiceReferenceExtensions
 
             var uri = new Uri(address);
 
-            services.AddHttpServiceReference<TClient>(address);
+            services.AddHttpServiceReference<TClient>(address, jsonContext);
 
             services
                 .AddHealthChecks()

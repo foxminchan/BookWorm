@@ -3,7 +3,7 @@ namespace BookWorm.Chassis.AI.Presidio;
 public interface IPresidioService
 {
     /// <summary>
-    ///     Analyzes the given text for PII entities and returns the anonymized version.
+    ///     Analyzes the given text and replaces every detected PII entity with &lt;Pii&gt;.
     /// </summary>
     /// <param name="text">The text to analyze and anonymize.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>

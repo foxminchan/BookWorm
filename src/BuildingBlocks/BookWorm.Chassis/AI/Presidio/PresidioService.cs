@@ -19,12 +19,21 @@ internal sealed class PresidioService(IPresidioAnalyzer analyzer, IPresidioAnony
         var analyzerResults =
             await analyzer.AnalyzeAsync(new(text), cancellationToken)
             ?? throw new JsonException("The Presidio analyzer returned a null response.");
+
         if (analyzerResults.Length == 0)
         {
             return text;
         }
 
-        var result = await anonymizer.AnonymizeAsync(new(text, analyzerResults), cancellationToken);
+        var request = new AnonymizerRequest(
+            text,
+            analyzerResults,
+            new Dictionary<string, ReplaceAnonymizer> { ["DEFAULT"] = new("<PII>") }
+        );
+
+        var result =
+            await anonymizer.AnonymizeAsync(request, cancellationToken)
+            ?? throw new JsonException("The Presidio anonymizer returned a null response.");
 
         return result.Text;
     }

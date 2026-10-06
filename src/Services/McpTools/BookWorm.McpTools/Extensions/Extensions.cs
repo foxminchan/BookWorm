@@ -55,7 +55,8 @@ internal static class Extensions
                     .WithScheme(Http.Schemes.HttpOrHttps)
                     .WithHost(Constants.Aspire.Services.Catalog)
                     .Build(),
-                HealthStatus.Degraded
+                HealthStatus.Degraded,
+                ApiSerializationContext.Default
             );
 
             services.AddHttpServiceReference<IRatingApi>(
@@ -64,7 +65,8 @@ internal static class Extensions
                     .WithScheme(Http.Schemes.HttpOrHttps)
                     .WithHost(Constants.Aspire.Services.Rating)
                     .Build(),
-                HealthStatus.Degraded
+                HealthStatus.Degraded,
+                ApiSerializationContext.Default
             );
 
             // Agent governance (policy enforcement for MCP tool calls) wired directly into the

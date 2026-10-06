@@ -20,7 +20,8 @@ internal static class Extensions
                         .AsUrlBuilder()
                         .WithScheme(Http.Schemes.HttpOrHttps)
                         .WithHost(Services.CatalogIngestion)
-                        .Build()
+                        .Build(),
+                    CatalogIngestionSerializationContext.Default
                 )
                 .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(5))
                 .RemoveAllResilienceHandlers();
