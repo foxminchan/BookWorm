@@ -27,27 +27,34 @@ internal static class Extensions
                 .RemoveAllResilienceHandlers();
 
             builder.AddEventBus(opts =>
-            {
-                opts.Discovery.IncludeAssembly(typeof(ISchedulerApiMarker).Assembly);
-            });
+                opts.Discovery.IncludeAssembly(typeof(ISchedulerApiMarker).Assembly)
+            );
 
             services.AddAntiforgery();
 
-            services.AddQuartz(q =>
-            {
-                q.UseTimeZoneConverter();
-                q.UseJobHistoryLogging();
-                q.UseTriggerHistoryLogging();
-                q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Environment.ProcessorCount);
-                q.AddJobListener<JobTelemetryListener>();
-
-                q.UseXmlSchedulingConfiguration(x =>
+            services.AddQuartz(
+                builder.Configuration.GetSection("Quartz"),
+                q =>
                 {
-                    x.Files.Add("~/jobs.xml");
-                    x.ScanInterval = TimeSpan.FromMinutes(1);
-                    x.FailOnFileNotFound = true;
-                    x.FailOnSchedulingError = true;
-                });
+                    q.UseJobHistoryLogging();
+                    q.UseStructuredTriggerLogging();
+                    q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Environment.ProcessorCount);
+                    q.AddJobListener<JobTelemetryListener>();
+
+                    q.UseJsonSchedulingConfiguration(x =>
+                    {
+                        x.Files.Add("~/jobs.json");
+                        x.ScanInterval = TimeSpan.FromMinutes(1);
+                        x.FailOnFileNotFound = true;
+                        x.FailOnSchedulingError = true;
+                    });
+                }
+            );
+
+            services.AddQuartzExecutionHistory(options =>
+            {
+                options.Retention = TimeSpan.FromDays(30);
+                options.MaxEntriesPerScheduler = 100_000;
             });
 
             builder.AddQuartzPersistentStore(Components.Database.Scheduler);

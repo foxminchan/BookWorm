@@ -34,8 +34,6 @@ internal static class Extensions
 
             builder.AddAgentGovernance("Policies/rating-agent.yaml");
 
-            services.AddOpenAIResponses();
-            services.AddOpenAIConversations();
             services.AddScoped<ReviewTool>();
             services.AddAgentDiscoveryClient(
                 HttpUtilities
@@ -233,10 +231,6 @@ internal static class Extensions
             app.MapAGUIServer(Workflows.RatingSummarizer, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
                 .WithTags(nameof(RatingAgent));
-
-            app.MapOpenAIResponses();
-
-            app.MapOpenAIConversations();
         }
     }
 }

@@ -253,30 +253,13 @@ if (builder.ExecutionContext.IsRunMode)
         .WithOpenAPI(orderingApi);
 
     builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
-
-    builder
-        .AddDevUI(Components.DevUI)
-        .WithAgentService(
-            chatApi,
-            [
-                new(Agents.QAAgent),
-                new(Agents.RouterAgent),
-                new(Agents.LanguageAgent),
-                new(Agents.SummarizeAgent),
-                new(Agents.SentimentAgent),
-                new(Agents.BookAgent),
-                new(Workflows.Chat),
-            ]
-        )
-        .WithAgentService(ratingApi, [new(Agents.RatingAgent), new(Workflows.RatingSummarizer)])
-        .WaitFor(chatApi)
-        .WaitFor(ratingApi);
 }
 else
 {
     storage.ProvisionAsService(builder.Environment);
     var frontendScheme = Uri.UriSchemeHttps;
 
+    // Add CORS origins for the APIs to allow requests from the frontend applications
     catalogApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
     basketApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
     orderingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);

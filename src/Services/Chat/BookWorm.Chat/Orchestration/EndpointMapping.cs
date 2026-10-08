@@ -1,5 +1,4 @@
 using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Orchestration.Loop;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
@@ -37,14 +36,6 @@ internal static class EndpointMapping
                 app.MapA2AJsonRpc(agent, $"/a2a/{agentName}").WithTags(agentName);
 
                 app.MapA2AHttpJson(agent, $"/a2a/{agentName}").WithTags(agentName);
-
-                // QAAgent is handoff-only and not directly callable via chat completions
-                if (
-                    string.Compare(agentName, QAAgentDefinition.Name, StringComparison.Ordinal) != 0
-                )
-                {
-                    app.MapOpenAIChatCompletions(agent).WithTags(agentName);
-                }
             }
 
             // Map AG-UI endpoint for interactive agents (e.g. RouterAgent)
@@ -56,10 +47,6 @@ internal static class EndpointMapping
                 .WithSummary("Bounded Iterative AI Agent")
                 .WithDescription(LoopAgentDefinition.Description)
                 .WithTags(nameof(Chat));
-
-            app.MapOpenAIResponses();
-
-            app.MapOpenAIConversations();
         }
     }
 }

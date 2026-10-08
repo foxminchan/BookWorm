@@ -6,7 +6,6 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Hosting -->
-    <PackageVersion Include="Aspire.Hosting" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Dotnet" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="$(AspireVersion)" />
@@ -47,10 +46,6 @@
     />
     <!-- Extra -->
     <PackageVersion Include="Scalar.Aspire" Version="0.11.30" />
-    <PackageVersion
-      Include="Aspire.Hosting.AgentFramework.DevUI"
-      Version="$(AgentFrameworkUnstableVersion)"
-    />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -83,11 +78,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
     <!-- AI -->
-    <PackageVersion
-      Include="Microsoft.Agents.AI.Mcp"
-      Version="$(AgentFrameworkVersion)-alpha.260928.1"
-    />
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="$(AgentFrameworkVersion)" />
+    <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="$(AgentFrameworkAlphaVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
@@ -96,10 +87,6 @@
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore"
       Version="$(AgentFrameworkUnstableVersion)"
-    />
-    <PackageVersion
-      Include="Microsoft.Agents.AI.Hosting.OpenAI"
-      Version="$(AgentFrameworkVersion)-alpha.260928.1"
     />
     <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
@@ -138,7 +125,6 @@
     <PackageVersion Include="Quartz.Aspire" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Plugins" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Dashboard" Version="$(QuartzVersion)" />
-    <PackageVersion Include="Quartz.Plugins.TimeZoneConverter" Version="$(QuartzVersion)" />
     <!-- Email & Messaging -->
     <PackageVersion Include="AspNetCore.HealthChecks.SendGrid" Version="$(HealthChecksVersion)" />
     <PackageVersion Include="MailKit" Version="4.18.1" />
@@ -164,7 +150,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
-    <PackageVersion Include="TUnit" Version="1.72.16" />
+    <PackageVersion Include="TUnit" Version="1.73.5" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->
