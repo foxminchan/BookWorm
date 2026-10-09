@@ -16,8 +16,6 @@ internal static class Extensions
             builder.AddMcpClient(Services.McpTools);
 
             services.AddAGUIServer();
-            services.AddOpenAIResponses();
-            services.AddOpenAIConversations();
         }
     }
 }

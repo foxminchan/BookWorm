@@ -14,10 +14,9 @@
     <PackageReference Include="Quartz.Aspire" />
     <PackageReference Include="Quartz.Plugins" />
     <PackageReference Include="Quartz.Dashboard" />
-    <PackageReference Include="Quartz.Plugins.TimeZoneConverter" />
   </ItemGroup>
-  <ItemGroup Label="Quartz XML Config">
-    <None Update="jobs.xml" CopyToOutputDirectory="PreserveNewest" />
+  <ItemGroup Label="Quartz JSON Config">
+    <None Update="jobs.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />

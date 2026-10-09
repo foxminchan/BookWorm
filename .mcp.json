@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "aspire": {
+      "type": "local",
+      "command": "aspire",
+      "args": ["agent", "mcp"],
+      "tools": ["*"]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "tools": ["*"]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/oauth",
+      "tools": ["*"]
+    },
+    "sonarqube": {
+      "type": "http",
+      "url": "https://api.sonarcloud.io/mcp",
+      "headers": {
+        "SONARQUBE_TOKEN": "Bearer ${env:SONARQUBE_TOKEN}",
+        "SONARQUBE_ORG": "foxminchan"
+      }
+    }
+  }
+}

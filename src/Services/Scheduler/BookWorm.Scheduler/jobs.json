@@ -1,0 +1,91 @@
+{
+  "ProcessingDirectives": {
+    "OverwriteExistingData": true
+  },
+  "Schedule": {
+    "Jobs": [
+      {
+        "Description": "Calls the ingestion function to process pending catalog vector updates",
+        "Durable": true,
+        "Group": "Scheduler",
+        "JobType": "BookWorm.Scheduler.Jobs.ProcessVectorBatchJob, BookWorm.Scheduler",
+        "Name": "ProcessVectorBatchJob",
+        "Recover": false
+      },
+      {
+        "Description": "Publishes an event to clean up successfully sent emails",
+        "Durable": true,
+        "Group": "Scheduler",
+        "JobType": "BookWorm.Scheduler.Jobs.CleanUpSentEmailJob, BookWorm.Scheduler",
+        "Name": "CleanUpSentEmailJob",
+        "Recover": false
+      },
+      {
+        "Description": "Publishes an event to retry previously failed email deliveries",
+        "Durable": true,
+        "Group": "Scheduler",
+        "JobType": "BookWorm.Scheduler.Jobs.ResendErrorEmailJob, BookWorm.Scheduler",
+        "Name": "ResendErrorEmailJob",
+        "Recover": false
+      },
+      {
+        "Description": "Emits a periodic scheduler heartbeat for observability",
+        "Durable": true,
+        "Group": "Scheduler",
+        "JobType": "BookWorm.Scheduler.Jobs.HeartbeatJob, BookWorm.Scheduler",
+        "Name": "HeartbeatJob",
+        "Recover": false
+      }
+    ],
+    "Triggers": [
+      {
+        "Cron": {
+          "Expression": "0 0/5 * * * ?",
+          "MisfireInstruction": "FireOnceNow",
+          "TimeZone": "UTC"
+        },
+        "Description": "Fires every five minutes to refresh changed catalog vectors",
+        "Group": "Scheduler",
+        "JobGroup": "Scheduler",
+        "JobName": "ProcessVectorBatchJob",
+        "Name": "ProcessVectorBatchTrigger"
+      },
+      {
+        "Cron": {
+          "Expression": "0 0 * * * ?",
+          "MisfireInstruction": "FireOnceNow",
+          "TimeZone": "UTC"
+        },
+        "Description": "Fires every hour to clean up sent emails",
+        "Group": "Scheduler",
+        "JobGroup": "Scheduler",
+        "JobName": "CleanUpSentEmailJob",
+        "Name": "CleanUpSentEmailTrigger"
+      },
+      {
+        "Cron": {
+          "Expression": "0 0 * * * ?",
+          "MisfireInstruction": "FireOnceNow",
+          "TimeZone": "UTC"
+        },
+        "Description": "Fires every hour to resend failed emails",
+        "Group": "Scheduler",
+        "JobGroup": "Scheduler",
+        "JobName": "ResendErrorEmailJob",
+        "Name": "ResendErrorEmailTrigger"
+      },
+      {
+        "Cron": {
+          "Expression": "0/30 * * * * ?",
+          "MisfireInstruction": "FireOnceNow",
+          "TimeZone": "UTC"
+        },
+        "Description": "Fires every 30 seconds to record scheduler activity",
+        "Group": "Scheduler",
+        "JobGroup": "Scheduler",
+        "JobName": "HeartbeatJob",
+        "Name": "HeartbeatTrigger"
+      }
+    ]
+  }
+}
