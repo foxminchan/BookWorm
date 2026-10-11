@@ -21,26 +21,54 @@ internal static class EmailExtensions
             }
             else
             {
-                var apiKey = applicationBuilder
-                    .AddParameter("sendgrid-api-key", true)
-                    .WithDescription(ParameterDescriptions.SendGrid.ApiKey, true)
+                var smtpEndpoint = applicationBuilder
+                    .AddParameter("email-smtp-endpoint")
+                    .WithDescription(ParameterDescriptions.Email.SmtpEndpoint)
                     .WithCustomInput(_ =>
                         new()
                         {
-                            Name = "SendGridApiKeyParameter",
-                            Label = "SendGrid API Key",
+                            Name = "EmailSmtpEndpointParameter",
+                            Label = "SMTP Endpoint",
+                            InputType = InputType.Text,
+                            Value = "smtp://smtp.sendgrid.net:587",
+                            Description = "SMTP endpoint for the email provider",
+                        }
+                    );
+
+                var smtpUsername = applicationBuilder
+                    .AddParameter("email-smtp-username")
+                    .WithDescription(ParameterDescriptions.Email.SmtpUsername)
+                    .WithCustomInput(_ =>
+                        new()
+                        {
+                            Name = "EmailSmtpUsernameParameter",
+                            Label = "SMTP Username",
+                            InputType = InputType.Text,
+                            Value = "apikey",
+                            Description = "Username for SMTP authentication",
+                        }
+                    );
+
+                var smtpPassword = applicationBuilder
+                    .AddParameter("email-smtp-password", true)
+                    .WithDescription(ParameterDescriptions.Email.SmtpPassword, true)
+                    .WithCustomInput(_ =>
+                        new()
+                        {
+                            Name = "EmailSmtpPasswordParameter",
+                            Label = "SMTP Password",
                             InputType = InputType.SecretText,
-                            Description = "Enter your SendGrid API key here",
+                            Description = "Password or credential for SMTP authentication",
                         }
                     );
 
                 var email = applicationBuilder
-                    .AddParameter("sendgrid-email", true)
-                    .WithDescription(ParameterDescriptions.SendGrid.SenderEmail, true)
+                    .AddParameter("email-sender-address", true)
+                    .WithDescription(ParameterDescriptions.Email.SenderEmail, true)
                     .WithCustomInput(_ =>
                         new()
                         {
-                            Name = "SendGridSenderEmailParameter",
+                            Name = "EmailSenderAddressParameter",
                             Label = "Sender Email",
                             InputType = InputType.Text,
                             Value = "noreply@yourdomain.com",
@@ -49,8 +77,8 @@ internal static class EmailExtensions
                     );
 
                 var senderName = applicationBuilder
-                    .AddParameter("sendgrid-sender-name", true)
-                    .WithDescription(ParameterDescriptions.SendGrid.SenderName, true)
+                    .AddParameter("email-sender-name", true)
+                    .WithDescription(ParameterDescriptions.Email.SenderName, true)
                     .WithCustomInput(_ =>
                         new()
                         {
@@ -63,11 +91,15 @@ internal static class EmailExtensions
                     );
 
                 builder
-                    .WithEnvironment("SendGrid__ApiKey", apiKey)
-                    .WithEnvironment("SendGrid__SenderEmail", email)
-                    .WithEnvironment("SendGrid__SenderName", senderName);
+                    .WithEnvironment("Email__Endpoint", smtpEndpoint)
+                    .WithEnvironment("Email__Username", smtpUsername)
+                    .WithEnvironment("Email__Password", smtpPassword)
+                    .WithEnvironment("Email__From", email)
+                    .WithEnvironment("Email__Name", senderName);
 
-                apiKey.WithParentRelationship(builder);
+                smtpEndpoint.WithParentRelationship(builder);
+                smtpUsername.WithParentRelationship(builder);
+                smtpPassword.WithParentRelationship(builder);
                 email.WithParentRelationship(builder);
                 senderName.WithParentRelationship(builder);
             }

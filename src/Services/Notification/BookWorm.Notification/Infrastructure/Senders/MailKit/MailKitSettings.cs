@@ -13,9 +13,12 @@ internal sealed partial class MailKitSettings : IValidateOptions<MailKitSettings
     [EmailAddress]
     public string From { get; init; } = string.Empty;
 
-    public Uri? Endpoint { get; private set; }
+    [Required]
+    public Uri? Endpoint { get; set; }
 
-    public NetworkCredential? Credentials { get; private set; }
+    public string? Username { get; set; }
+
+    public string? Password { get; set; }
 
     public bool DisableHealthChecks { get; set; } = false;
 
@@ -79,8 +82,22 @@ internal sealed partial class MailKitSettings : IValidateOptions<MailKitSettings
 
             if (hasUser)
             {
-                Credentials = new(user!.ToString(), pass!.ToString());
+                Username = user!.ToString();
+                Password = pass!.ToString();
             }
+        }
+    }
+
+    internal sealed class MailKitCredentialsValidator : IValidateOptions<MailKitSettings>
+    {
+        public ValidateOptionsResult Validate(string? name, MailKitSettings options)
+        {
+            return string.IsNullOrWhiteSpace(options.Username)
+                == string.IsNullOrWhiteSpace(options.Password)
+                ? ValidateOptionsResult.Success
+                : ValidateOptionsResult.Fail(
+                    "SMTP username and password must be configured together."
+                );
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
 
-internal sealed class EmailOutboxService(IOutboxRepository repository, ISender actualSender)
+internal sealed class EmailOutboxService(IOutboxRepository repository, IEmailSender actualSender)
     : ISender
 {
     public async Task SendAsync(

@@ -22,9 +22,9 @@ internal sealed class MailKitClientFactory(MailKitSettings settings)
         {
             await client.ConnectAsync(settings.Endpoint, cancellationToken);
 
-            if (settings.Credentials is not null)
+            if (settings.Username is { } username && settings.Password is { } password)
             {
-                await client.AuthenticateAsync(settings.Credentials, cancellationToken);
+                await client.AuthenticateAsync(username, password, cancellationToken);
             }
 
             return client;

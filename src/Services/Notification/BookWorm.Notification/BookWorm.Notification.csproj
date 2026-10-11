@@ -9,8 +9,6 @@
   <ItemGroup Label="Email / Messaging">
     <PackageReference Include="MailKit" />
     <PackageReference Include="Mjml.Net" />
-    <PackageReference Include="SendGrid" />
-    <PackageReference Include="AspNetCore.HealthChecks.SendGrid" />
   </ItemGroup>
   <ItemGroup Label="EF Core">
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />

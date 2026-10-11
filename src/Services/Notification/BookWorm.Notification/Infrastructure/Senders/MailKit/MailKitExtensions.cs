@@ -1,3 +1,4 @@
+using BookWorm.Chassis.Utilities.Configurations;
 using MailKit;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
@@ -37,37 +38,34 @@ internal static class MailKitExtensions
             var rawSettings = new MailKitSettings();
             builder.Configuration.GetSection(sectionName).Bind(rawSettings);
 
-            // Bind settings from configuration section and validate on start
-            services
-                .AddOptionsWithValidateOnStart<MailKitSettings>()
-                .BindConfiguration(sectionName)
-                .PostConfigure(options =>
+            builder.Configure<MailKitSettings>(sectionName);
+
+            services.PostConfigure<MailKitSettings>(options =>
+            {
+                if (
+                    builder.Configuration.GetConnectionString(connectionName) is
+                    { } connectionString
+                )
                 {
-                    if (
-                        builder.Configuration.GetConnectionString(connectionName) is
-                        { } connectionString
-                    )
-                    {
-                        options.ParseConnectionString(connectionString);
-                    }
+                    options.ParseConnectionString(connectionString);
+                }
 
-                    configureSettings?.Invoke(options);
-                })
-                .ValidateDataAnnotations();
+                configureSettings?.Invoke(options);
+            });
 
-            services.AddSingleton<IValidateOptions<MailKitSettings>, MailKitSettings>();
-
-            // Register settings as singleton for injection
-            services.AddSingleton(sp => sp.GetRequiredService<IOptions<MailKitSettings>>().Value);
+            services.AddSingleton<
+                IValidateOptions<MailKitSettings>,
+                MailKitCredentialsValidator
+            >();
 
             // Register factory as singleton to manage SMTP connection state
             services.AddSingleton(sp => new MailKitClientFactory(
                 sp.GetRequiredService<MailKitSettings>()
             ));
 
-            // Register both concrete type and interface for outbox pattern support
+            // Register the provider-neutral sender contract for the outbox.
             services.AddScoped<MailKitSender>();
-            services.AddScoped<ISender>(sp => sp.GetRequiredService<MailKitSender>());
+            services.AddScoped<IEmailSender>(sp => sp.GetRequiredService<MailKitSender>());
 
             if (!rawSettings.DisableHealthChecks)
             {

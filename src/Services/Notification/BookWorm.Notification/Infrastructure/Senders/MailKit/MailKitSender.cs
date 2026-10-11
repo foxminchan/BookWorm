@@ -8,17 +8,17 @@ internal sealed class MailKitSender(
     GlobalLogBuffer logBuffer,
     MailKitSettings settings,
     ResiliencePipelineProvider<string> provider
-) : ISender
+) : IEmailSender
 {
     public async Task SendAsync(
         MimeMessage mailMessage,
         CancellationToken cancellationToken = default
     )
     {
-        using var client = await factory.CreateClientAsync(cancellationToken);
-
         try
         {
+            using var client = await factory.CreateClientAsync(cancellationToken);
+
             var pipeline = provider.GetPipeline(nameof(Notification));
 
             mailMessage.From.Add(new MailboxAddress(settings.Name, settings.From));

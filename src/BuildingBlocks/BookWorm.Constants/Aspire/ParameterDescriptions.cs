@@ -45,45 +45,33 @@ public static class ParameterDescriptions
             """;
     }
 
-    public static class SendGrid
+    public static class Email
     {
-        public const string ApiKey = """
-            🔐 SendGrid API key for authentication.
-            You can obtain it from your SendGrid account dashboard.
+        public const string SmtpEndpoint = """
+            SMTP server endpoint used to deliver outgoing email.
 
-            🔒 Security requirements:
-            - Use 'Mail Send' permission only (principle of least privilege)
-            - Store securely in production (Azure Key Vault recommended)
-            - Rotate keys regularly for enhanced security
+            💡 Example: SendGrid uses 'smtp://smtp.sendgrid.net:587'.
+            📋 Use the endpoint and port provided by your SMTP provider.
+            ⚠️  Use an isolated test SMTP endpoint in staging to avoid delivering real email.
+            """;
 
-            ⚠️  Important: Never commit API keys to source control
-            💡 Format: Starts with 'SG.' followed by base64-encoded string
-            📋 Example: 'SG.abc123def456...' (69 characters total)
+        public const string SmtpUsername = """
+            Username used to authenticate with the configured SMTP server.
 
-            📚 Resources:
-            - For more information, visit: https://app.sendgrid.com/settings/api_keys
-            - To create a new API key, go to: https://app.sendgrid.com/settings/api_keys/create
-            - API key permissions: https://docs.sendgrid.com/ui/account-and-settings/api-keys#api-key-permissions
+            💡 For SendGrid SMTP, use 'apikey'. Other SMTP providers supply their own username.
+            """;
+
+        public const string SmtpPassword = """
+            🔐 Password or credential for the configured SMTP server.
+
+            🔒 Keep this secret out of source control and use secure secret storage in production.
             """;
 
         public const string SenderEmail = """
-            📧 Sender email address for outgoing emails.
-            This should be a verified email address in your SendGrid account.
+            📧 Sender email address for outgoing email.
+            The provider may require this address or its domain to be verified.
 
-            ✅ Requirements:
-            - Must be verified in SendGrid sender authentication
-            - Should match your domain for better deliverability
-            - Avoid using no-reply addresses when possible
-
-            💡 Best practices:
-            - Use a monitored email address (e.g., notifications@bookworm.com)
-            - Consider using subdomain for transactional emails
-            📋 Example: 'noreply@bookworm.com' or 'notifications@yourdomain.com'
-
-            📚 Resources:
-            - For more information, visit: https://app.sendgrid.com/settings/sender_auth
-            - To verify a new sender email, go to: https://app.sendgrid.com/settings/sender_auth/single_sender
-            - Sender authentication guide: https://docs.sendgrid.com/ui/sending-email/sender-verification
+            📋 Example: 'notifications@yourdomain.com'
             """;
 
         public const string SenderName = """
@@ -96,11 +84,6 @@ public static class ParameterDescriptions
             - Avoid special characters or excessive length
 
             📋 Examples: 'BookWorm App', 'BookWorm Notifications', or 'Your Company Name'
-            ⚠️  Note: Some email clients may override this with the email address
-
-            📚 Resources:
-            - For more information, visit: https://app.sendgrid.com/settings/sender_auth
-            - Email deliverability best practices: https://docs.sendgrid.com/ui/sending-email/deliverability
             """;
     }
 

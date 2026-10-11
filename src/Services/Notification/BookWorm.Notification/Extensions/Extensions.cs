@@ -5,7 +5,6 @@ using BookWorm.Chassis.Repository;
 using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;
-using BookWorm.Notification.Infrastructure.Senders.SendGrid;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
 
@@ -37,15 +36,13 @@ internal static class Extensions
 
             services.AddSingleton<IRenderer, MjmlTemplateRenderer>();
 
-            // Register the mailkit sender for development
-            // and the sendgrid sender for other environments
             if (builder.Environment.IsDevelopment())
             {
                 builder.AddMailKitClient(Components.MailPit);
             }
             else
             {
-                builder.AddSendGridClient();
+                builder.AddMailKitClient(Components.Email);
             }
 
             builder.AddEmailOutbox();
