@@ -32,9 +32,13 @@ internal static class EndpointMapping
             {
                 var agentName = agent.Name ?? string.Empty;
 
-                app.MapA2AJsonRpc(agent, $"/a2a/{agentName}").WithTags(agentName);
+                app.MapA2AJsonRpc(agent, $"/a2a/{agentName}")
+                    .RequireAuthorization()
+                    .WithTags(agentName);
 
-                app.MapA2AHttpJson(agent, $"/a2a/{agentName}").WithTags(agentName);
+                app.MapA2AHttpJson(agent, $"/a2a/{agentName}")
+                    .RequireAuthorization()
+                    .WithTags(agentName);
             }
 
             // Map AG-UI endpoint for interactive agents (e.g. RouterAgent)
