@@ -55,7 +55,7 @@ internal static class MailKitExtensions
 
             services.AddSingleton<
                 IValidateOptions<MailKitSettings>,
-                MailKitCredentialsValidator
+                MailKitSettings.MailKitCredentialsValidator
             >();
 
             // Register factory as singleton to manage SMTP connection state

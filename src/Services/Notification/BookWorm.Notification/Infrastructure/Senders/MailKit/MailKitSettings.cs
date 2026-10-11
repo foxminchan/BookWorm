@@ -92,7 +92,8 @@ internal sealed partial class MailKitSettings : IValidateOptions<MailKitSettings
     {
         public ValidateOptionsResult Validate(string? name, MailKitSettings options)
         {
-            return string.IsNullOrWhiteSpace(options.Username)
+            return
+                string.IsNullOrWhiteSpace(options.Username)
                 == string.IsNullOrWhiteSpace(options.Password)
                 ? ValidateOptionsResult.Success
                 : ValidateOptionsResult.Fail(

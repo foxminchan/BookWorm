@@ -36,14 +36,9 @@ internal static class Extensions
 
             services.AddSingleton<IRenderer, MjmlTemplateRenderer>();
 
-            if (builder.Environment.IsDevelopment())
-            {
-                builder.AddMailKitClient(Components.MailPit);
-            }
-            else
-            {
-                builder.AddMailKitClient(Components.Email);
-            }
+            builder.AddMailKitClient(
+                builder.Environment.IsDevelopment() ? Components.MailPit : Components.Email
+            );
 
             builder.AddEmailOutbox();
 
