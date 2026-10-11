@@ -1,5 +1,4 @@
 using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chat.Orchestration.Loop;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
@@ -33,19 +32,18 @@ internal static class EndpointMapping
             {
                 var agentName = agent.Name ?? string.Empty;
 
-                app.MapA2AJsonRpc(agent, $"/a2a/{agentName}").WithTags(agentName);
+                app.MapA2AJsonRpc(agent, $"/a2a/{agentName}")
+                    .RequireAuthorization()
+                    .WithTags(agentName);
 
-                app.MapA2AHttpJson(agent, $"/a2a/{agentName}").WithTags(agentName);
+                app.MapA2AHttpJson(agent, $"/a2a/{agentName}")
+                    .RequireAuthorization()
+                    .WithTags(agentName);
             }
 
             // Map AG-UI endpoint for interactive agents (e.g. RouterAgent)
             app.MapAGUIServer(Workflows.Chat, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
-                .WithTags(nameof(Chat));
-
-            app.MapAGUIServer(LoopAgentDefinition.Name, "/ag-ui/loop")
-                .WithSummary("Bounded Iterative AI Agent")
-                .WithDescription(LoopAgentDefinition.Description)
                 .WithTags(nameof(Chat));
         }
     }

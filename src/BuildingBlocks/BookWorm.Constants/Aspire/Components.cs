@@ -6,6 +6,7 @@ public static class Components
     public const string Redis = "redis";
     public const string Broker = "broker";
     public const string MailPit = "mailpit";
+    public const string Email = "email";
     public const string Postgres = "postgres";
     public const string KeyCloak = "keycloak";
     public const string Inspector = "inspector";

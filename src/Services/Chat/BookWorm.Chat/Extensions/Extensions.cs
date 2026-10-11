@@ -12,7 +12,6 @@ using BookWorm.Chat.Agents.SentimentAnalysis;
 using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Chat.Configurations;
 using BookWorm.Chat.Orchestration;
-using BookWorm.Chat.Orchestration.Loop;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
@@ -103,7 +102,6 @@ internal static class Extensions
 
             // Compose the multi-agent workflow
             builder.AddChatWorkflow();
-            builder.AddLoopAgent();
 
             services.AddKeycloakTokenIntrospection();
         }

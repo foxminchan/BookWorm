@@ -55,11 +55,15 @@ public static class ConfigurationExtensions
         {
             var services = builder.Services;
 
-            services
+            var optionsBuilder = services
                 .AddOptionsWithValidateOnStart<TSetting>(name)
                 .Configure(options => configure?.Invoke(options))
-                .BindConfiguration(section)
-                .ValidateDataAnnotations();
+                .BindConfiguration(section);
+
+            if (!typeof(TSetting).IsDefined(typeof(OptionsValidatorAttribute), inherit: false))
+            {
+                optionsBuilder.ValidateDataAnnotations();
+            }
 
             if (typeof(IValidateOptions<TSetting>).IsAssignableFrom(typeof(TSetting)))
             {
