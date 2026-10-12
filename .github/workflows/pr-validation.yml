@@ -71,6 +71,8 @@ jobs:
       - changes
     if: needs.changes.outputs.backend == 'true'
     uses: ./.github/workflows/backend-shared.yml
+    with:
+      run-build-and-test: false
     permissions:
       contents: read
       security-events: write

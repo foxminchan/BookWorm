@@ -1,5 +1,5 @@
-name: BookWorm CD (Aspire)
-run-name: Aspire CD - ${{ github.event_name }} by ${{ github.actor }}
+name: BookWorm AppHost CD
+run-name: AppHost CD - ${{ github.event_name }} by ${{ github.actor }}
 
 on:
   workflow_dispatch:
@@ -24,9 +24,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  aspire_deploy:
+  apphost_deploy:
     runs-on: ubuntu-26.04
-    name: 🚀 Deploy BookWorm to ACA with Aspire
+    name: 🚀 Deploy BookWorm frontend and backend to ACA with Aspire
     permissions:
       id-token: write
       contents: read
@@ -57,8 +57,31 @@ jobs:
         shell: bash
         env:
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          KC_URL: ${{ secrets.KC_URL }}
+          KC_REALM: ${{ secrets.KC_REALM }}
+          CATALOG_SECRET: ${{ secrets.CATALOG_SECRET }}
+          MCPTOOLS_SECRET: ${{ secrets.MCPTOOLS_SECRET }}
+          BASKET_SECRET: ${{ secrets.BASKET_SECRET }}
+          ORDERING_SECRET: ${{ secrets.ORDERING_SECRET }}
+          CHATTING_SECRET: ${{ secrets.CHATTING_SECRET }}
+          RATING_SECRET: ${{ secrets.RATING_SECRET }}
+          EMAIL_SMTP_ENDPOINT: ${{ vars.EMAIL_SMTP_ENDPOINT }}
+          EMAIL_SMTP_USERNAME: ${{ vars.EMAIL_SMTP_USERNAME }}
+          EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
+          EMAIL_SENDER_ADDRESS: ${{ vars.EMAIL_SENDER_ADDRESS }}
+          EMAIL_SENDER_NAME: ${{ vars.EMAIL_SENDER_NAME }}
         run: |
           test -n "$AZURE_RESOURCE_GROUP" || { echo "AZURE_RESOURCE_GROUP is required for this GitHub Environment."; exit 1; }
+          missing=()
+          for name in KC_URL KC_REALM CATALOG_SECRET MCPTOOLS_SECRET BASKET_SECRET ORDERING_SECRET CHATTING_SECRET RATING_SECRET EMAIL_SMTP_ENDPOINT EMAIL_SMTP_USERNAME EMAIL_SMTP_PASSWORD EMAIL_SENDER_ADDRESS EMAIL_SENDER_NAME; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            printf '::error::Missing required GitHub Environment variables or secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
 
       - name: 🚀 Deploy with Aspire
         run: |
@@ -66,9 +89,6 @@ jobs:
             --environment ${{ inputs.environment }} \
             --non-interactive
         env:
-          DOTNET_CLI_TELEMETRY_OPTOUT: 1
-          DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-          DOTNET_NOLOGO: true
           DOTNET_GENERATE_ASPNET_CERTIFICATE: false
           DOTNET_ADD_GLOBAL_TOOLS_TO_PATH: false
           DOTNET_MULTILEVEL_LOOKUP: 0
@@ -76,14 +96,16 @@ jobs:
           Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           Azure__Location: ${{ vars.AZURE_LOCATION || secrets.AZURE_LOCATION || 'southeastasia' }}
           Azure__ResourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
-          Parameters__openai_openai_apikey: ${{ secrets.OPENAI_APIKEY }}
           Parameters__kc_url: ${{ secrets.KC_URL }}
           Parameters__kc_realm: ${{ secrets.KC_REALM }}
           Parameters__catalog_secret: ${{ secrets.CATALOG_SECRET }}
+          Parameters__mcptools_secret: ${{ secrets.MCPTOOLS_SECRET }}
           Parameters__basket_secret: ${{ secrets.BASKET_SECRET }}
           Parameters__ordering_secret: ${{ secrets.ORDERING_SECRET }}
           Parameters__chatting_secret: ${{ secrets.CHATTING_SECRET }}
           Parameters__rating_secret: ${{ secrets.RATING_SECRET }}
-          Parameters__sendgrid_api_key: ${{ secrets.SENDGRID_API_KEY }}
-          Parameters__sendgrid_email: ${{ secrets.SENDGRID_EMAIL }}
-          Parameters__sendgrid_sender_name: ${{ secrets.SENDGRID_SENDER_NAME }}
+          Parameters__email_smtp_endpoint: ${{ vars.EMAIL_SMTP_ENDPOINT }}
+          Parameters__email_smtp_username: ${{ vars.EMAIL_SMTP_USERNAME }}
+          Parameters__email_smtp_password: ${{ secrets.EMAIL_SMTP_PASSWORD }}
+          Parameters__email_sender_address: ${{ vars.EMAIL_SENDER_ADDRESS }}
+          Parameters__email_sender_name: ${{ vars.EMAIL_SENDER_NAME }}
