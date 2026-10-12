@@ -20,6 +20,7 @@ public static class Extensions
             var scheme = builder.Environment.IsDevelopment()
                 ? Uri.UriSchemeHttp
                 : Http.Schemes.HttpOrHttps;
+
             var keycloakUrl = HttpUtilities
                 .AsUrlBuilder()
                 .WithScheme(scheme)

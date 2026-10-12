@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace BookWorm.Scheduler.Clients;
 
+[ExcludeFromCodeCoverage]
 internal sealed class CatalogIngestionAuthorizationHandler(ITokenExchange tokenExchange)
     : DelegatingHandler
 {
