@@ -585,6 +585,20 @@
       "groups": []
     },
     {
+      "id": "9c9e0908-c0a5-43e1-9504-a0b8ed890d56",
+      "username": "service-account-${CLIENT_SCHEDULER_ID}",
+      "emailVerified": false,
+      "enabled": true,
+      "totp": false,
+      "serviceAccountClientId": "${CLIENT_SCHEDULER_ID}",
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": ["default-roles-${REALM_NAME}"],
+      "clientRoles": {},
+      "notBefore": 0,
+      "groups": []
+    },
+    {
       "id": "fef2a4d7-82be-47a0-8e62-ae8427402584",
       "username": "service-account-${CLIENT_ORDERING_ID}",
       "emailVerified": false,
@@ -995,6 +1009,48 @@
         "offline_access",
         "microprofile-jwt"
       ]
+    },
+    {
+      "id": "7a364242-4e1e-4d6d-b0b2-c1677e8ee6ad",
+      "clientId": "${CLIENT_CATALOG_INGESTION_ID}",
+      "name": "${CLIENT_CATALOG_INGESTION_NAME}",
+      "description": "Audience for the catalog vector ingestion function",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
+      "fullScopeAllowed": false,
+      "defaultClientScopes": ["roles"]
+    },
+    {
+      "id": "a4d5dc8e-6f9e-4db1-a91b-876ca1db099b",
+      "clientId": "${CLIENT_SCHEDULER_ID}",
+      "name": "${CLIENT_SCHEDULER_NAME}",
+      "description": "Machine client for scheduled BookWorm background jobs",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${CLIENT_SCHEDULER_SECRET}",
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "standard.token.exchange.enabled": "true",
+        "client_credentials.use_refresh_token": "false"
+      },
+      "fullScopeAllowed": false,
+      "defaultClientScopes": ["service_account", "roles"]
     },
     {
       "id": "dc87a6cc-0137-4248-9215-632c3b7fe073",

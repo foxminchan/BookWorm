@@ -1,13 +1,45 @@
-﻿using BookWorm.Chassis.Security.Settings;
+﻿using BookWorm.Chassis.Security.Keycloak;
+using BookWorm.Chassis.Security.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Refit;
 
 namespace BookWorm.Chassis.Security.TokenExchange;
 
-public static class TokenExchangeExtensions
+public static class Extensions
 {
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the token-exchange service.
+        /// </summary>
+        /// <returns>The same <see cref="IServiceCollection" /> instance.</returns>
+        public IServiceCollection AddTokenExchange()
+        {
+            services.TryAddTransient<ITokenExchange, TokenExchange>();
+            return services;
+        }
+    }
+
+    extension(IHostApplicationBuilder builder)
+    {
+        /// <summary>
+        ///     Registers Keycloak token exchange services without enabling inbound authentication.
+        /// </summary>
+        /// <returns>The same <see cref="IHostApplicationBuilder" /> instance.</returns>
+        public IHostApplicationBuilder AddKeycloakTokenExchange()
+        {
+            builder.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
+            builder.AddKeycloakClient();
+
+            builder.Services.AddTokenExchange();
+            return builder;
+        }
+    }
+
     extension(IHttpClientBuilder builder)
     {
         /// <summary>
@@ -24,7 +56,7 @@ public static class TokenExchangeExtensions
         {
             var service = builder.Services;
 
-            service.TryAddTransient<ITokenExchange, TokenExchange>();
+            service.AddTokenExchange();
 
             builder.AddHttpMessageHandler(sp => new HttpClientAuthorizationDelegatingHandler(
                 sp.GetRequiredService<IHttpContextAccessor>(),

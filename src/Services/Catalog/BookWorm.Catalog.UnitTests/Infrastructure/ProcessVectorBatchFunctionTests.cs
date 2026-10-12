@@ -1,24 +1,87 @@
-﻿using System.Net;
+﻿using System.Security.Claims;
 using BookWorm.Catalog.Ingestion;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+using BookWorm.Constants.Aspire;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.UnitTests.Infrastructure;
 
 public sealed class ProcessVectorBatchFunctionTests
 {
     [Test]
-    public async Task GivenAnonymousRequest_WhenInvoked_ThenShouldProcessOneVectorBatch()
+    public async Task GivenSchedulerRequest_WhenInvoked_ThenShouldProcessOneVectorBatch()
     {
         using var cancellation = new CancellationTokenSource();
         var processor = new Mock<IVectorBatchProcessor>();
         processor.Setup(x => x.ProcessAsync(cancellation.Token)).ReturnsAsync(7);
         var function = new ProcessVectorBatchFunction(processor.Object);
 
-        var response = await function.ProcessVectorBatch(CreateRequest(), cancellation.Token);
+        var response = await function.ProcessVectorBatch(
+            CreateRequest(CreateSchedulerAuthentication()),
+            cancellation.Token
+        );
 
-        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        response.ShouldBeOfType<NoContent>();
         processor.Verify(x => x.ProcessAsync(cancellation.Token), Times.Once);
+        processor.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task GivenUnauthenticatedRequest_WhenInvoked_ThenShouldReturnUnauthorized()
+    {
+        var processor = new Mock<IVectorBatchProcessor>();
+        var function = new ProcessVectorBatchFunction(processor.Object);
+        var authenticationService = new Mock<IAuthenticationService>();
+        authenticationService
+            .Setup(x =>
+                x.AuthenticateAsync(
+                    It.IsAny<HttpContext>(),
+                    JwtBearerDefaults.AuthenticationScheme
+                )
+            )
+            .ReturnsAsync(AuthenticateResult.Fail("Invalid token"));
+
+        var response = await function.ProcessVectorBatch(
+            CreateRequest(authenticationService.Object),
+            CancellationToken.None
+        );
+
+        response.ShouldBeOfType<UnauthorizedHttpResult>();
+        processor.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task GivenDifferentClientRequest_WhenInvoked_ThenShouldReturnForbidden()
+    {
+        var processor = new Mock<IVectorBatchProcessor>();
+        var function = new ProcessVectorBatchFunction(processor.Object);
+        var authenticationService = new Mock<IAuthenticationService>();
+        authenticationService
+            .Setup(x =>
+                x.AuthenticateAsync(
+                    It.IsAny<HttpContext>(),
+                    JwtBearerDefaults.AuthenticationScheme
+                )
+            )
+            .ReturnsAsync(
+                AuthenticateResult.Success(
+                    new AuthenticationTicket(
+                        new ClaimsPrincipal(
+                            new ClaimsIdentity([new Claim("azp", "other-client")], "Bearer")
+                        ),
+                        JwtBearerDefaults.AuthenticationScheme
+                    )
+                )
+            );
+
+        var response = await function.ProcessVectorBatch(
+            CreateRequest(authenticationService.Object),
+            CancellationToken.None
+        );
+
+        response.ShouldBeOfType<ForbidHttpResult>();
         processor.VerifyNoOtherCalls();
     }
 
@@ -32,7 +95,10 @@ public sealed class ProcessVectorBatchFunctionTests
         var function = new ProcessVectorBatchFunction(processor.Object);
 
         await Should.ThrowAsync<InvalidOperationException>(() =>
-            function.ProcessVectorBatch(CreateRequest(), CancellationToken.None)
+            function.ProcessVectorBatch(
+                CreateRequest(CreateSchedulerAuthentication()),
+                CancellationToken.None
+            )
         );
     }
 
@@ -48,18 +114,48 @@ public sealed class ProcessVectorBatchFunctionTests
         var function = new ProcessVectorBatchFunction(processor.Object);
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
-            function.ProcessVectorBatch(CreateRequest(), cancellation.Token)
+            function.ProcessVectorBatch(
+                CreateRequest(CreateSchedulerAuthentication()),
+                cancellation.Token
+            )
         );
     }
 
-    private static HttpRequestData CreateRequest()
+    private static IAuthenticationService CreateSchedulerAuthentication()
     {
-        var context = Mock.Of<FunctionContext>();
-        var response = new Mock<HttpResponseData>(context);
-        response.SetupProperty(x => x.StatusCode);
-        var request = new Mock<HttpRequestData>(context);
-        request.SetupGet(x => x.Headers).Returns(new HttpHeadersCollection());
-        request.Setup(x => x.CreateResponse()).Returns(response.Object);
-        return request.Object;
+        var authenticationService = new Mock<IAuthenticationService>();
+        authenticationService
+            .Setup(x =>
+                x.AuthenticateAsync(
+                    It.IsAny<HttpContext>(),
+                    JwtBearerDefaults.AuthenticationScheme
+                )
+            )
+            .ReturnsAsync(
+                AuthenticateResult.Success(
+                    new AuthenticationTicket(
+                        new ClaimsPrincipal(
+                            new ClaimsIdentity(
+                                [new Claim("azp", Services.Scheduler)],
+                                "Bearer"
+                            )
+                        ),
+                        JwtBearerDefaults.AuthenticationScheme
+                    )
+                )
+            );
+
+        return authenticationService.Object;
+    }
+
+    private static HttpRequest CreateRequest(IAuthenticationService authenticationService)
+    {
+        var context = new DefaultHttpContext
+        {
+            RequestServices = new ServiceCollection()
+                .AddSingleton(authenticationService)
+                .BuildServiceProvider(),
+        };
+        return context.Request;
     }
 }
