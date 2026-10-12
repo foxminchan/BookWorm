@@ -1,6 +1,7 @@
 using BookWorm.Catalog.Ingestion;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Search;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Constants.Aspire;
 using BookWorm.ServiceDefaults;
 using Microsoft.Azure.Functions.Worker.Builder;
@@ -13,6 +14,7 @@ var builder = FunctionsApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.ConfigureFunctionsWebApplication();
 builder.Services.AddOpenTelemetry().UseFunctionsWorkerDefaults();
+builder.AddDefaultAuthentication(Services.CatalogIngestion);
 
 builder.AddAzureNpgsqlDataSource(Components.Database.Catalog);
 builder.AddQdrantClient(Components.VectorDb);

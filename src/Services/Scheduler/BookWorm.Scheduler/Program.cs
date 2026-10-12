@@ -19,8 +19,8 @@ app.UseRouting();
 
 app.UseAntiforgery();
 app.MapStaticAssets();
-app.MapQuartzHttpApi().AllowAnonymous();
-app.MapQuartzDashboard().AllowAnonymous();
+app.MapQuartzHttpApi();
+app.MapQuartzDashboard();
 
 app.MapDefaultEndpoints();
 

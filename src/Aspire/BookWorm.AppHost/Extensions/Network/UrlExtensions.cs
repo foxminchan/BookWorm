@@ -7,7 +7,7 @@ internal static class UrlExtensions
     extension<T>(IResourceBuilder<T> builder)
         where T : IResource
     {
-        public IResourceBuilder<T> WithFriendlyUrls(
+        public IResourceBuilder<T> WithDisplayUrls(
             string? displayText = null,
             string? endpointName = null,
             string? path = null

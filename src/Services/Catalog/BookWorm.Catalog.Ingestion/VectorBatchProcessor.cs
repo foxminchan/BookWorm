@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using BookWorm.Chassis.AI.Ingestion;
 using BookWorm.Chassis.AI.Search;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,7 @@ internal sealed class VectorBatchProcessor(
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
     VectorStoreCollection<Guid, TextSnippet> collection,
     ILogger<VectorBatchProcessor> logger
-) : IVectorBatchProcessor
+) : IVectorBatchProcessor, IIngestionSource<VectorUpdateBatch>
 {
     private const int BatchSize = 200;
     private const long LockId = 740031001;
@@ -25,6 +26,7 @@ internal sealed class VectorBatchProcessor(
             "SELECT pg_try_advisory_lock($1)",
             connection
         );
+
         acquireLock.Parameters.AddWithValue(LockId);
         if (await acquireLock.ExecuteScalarAsync(cancellationToken) is not true)
         {
@@ -39,44 +41,10 @@ internal sealed class VectorBatchProcessor(
                 return 0;
             }
 
-            await collection.EnsureCollectionExistsAsync(cancellationToken);
-            var active = pending.Where(item => item.Content is not null).ToArray();
-            var embeddings =
-                active.Length == 0
-                    ? null
-                    : await embeddingGenerator.GenerateAsync(
-                        active.Select(item => item.Content!),
-                        cancellationToken: cancellationToken
-                    );
-
-            if (embeddings is not null && embeddings.Count != active.Length)
-            {
-                throw new InvalidOperationException(
-                    "The embedding service returned an incomplete batch."
-                );
-            }
-
-            var index = 0;
-            var processed = 0;
+            var batch = new VectorUpdateBatch(pending);
+            await IngestDataAsync(batch, cancellationToken);
             foreach (var item in pending)
             {
-                if (item.Content is null)
-                {
-                    await collection.DeleteAsync(item.BookId, cancellationToken);
-                }
-                else
-                {
-                    await collection.UpsertAsync(
-                        new TextSnippet
-                        {
-                            Id = item.BookId,
-                            Content = item.Content,
-                            Vector = embeddings![index++].Vector,
-                        },
-                        cancellationToken
-                    );
-                }
-
                 // Concurrent edits change revision and must survive this acknowledgement.
                 await using var acknowledge = new NpgsqlCommand(
                     "DELETE FROM pending_vector_updates WHERE book_id = $1 AND revision = $2",
@@ -85,11 +53,10 @@ internal sealed class VectorBatchProcessor(
                 acknowledge.Parameters.AddWithValue(item.BookId);
                 acknowledge.Parameters.AddWithValue(item.Revision);
                 await acknowledge.ExecuteNonQueryAsync(cancellationToken);
-                processed++;
             }
 
-            logger.LogInformation("Processed {Count} pending vector updates", processed);
-            return processed;
+            logger.LogInformation("Processed {Count} pending vector updates", pending.Count);
+            return pending.Count;
         }
         finally
         {
@@ -102,7 +69,51 @@ internal sealed class VectorBatchProcessor(
         }
     }
 
-    private static async Task<List<PendingUpdate>> ReadBatchAsync(
+    public async Task IngestDataAsync(
+        VectorUpdateBatch batch,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await collection.EnsureCollectionExistsAsync(cancellationToken);
+        var active = batch.Updates.Where(item => item.Content is not null).ToArray();
+        var embeddings =
+            active.Length == 0
+                ? null
+                : await embeddingGenerator.GenerateAsync(
+                    active.Select(item => item.Content!),
+                    cancellationToken: cancellationToken
+                );
+
+        if (embeddings is not null && embeddings.Count != active.Length)
+        {
+            throw new InvalidOperationException(
+                "The embedding service returned an incomplete batch."
+            );
+        }
+
+        var index = 0;
+        foreach (var item in batch.Updates)
+        {
+            if (item.Content is null)
+            {
+                await collection.DeleteAsync(item.BookId, cancellationToken);
+            }
+            else
+            {
+                await collection.UpsertAsync(
+                    new TextSnippet
+                    {
+                        Id = item.BookId,
+                        Content = item.Content,
+                        Vector = embeddings![index++].Vector,
+                    },
+                    cancellationToken
+                );
+            }
+        }
+    }
+
+    private static async Task<List<PendingVectorUpdate>> ReadBatchAsync(
         NpgsqlConnection connection,
         CancellationToken cancellationToken
     )
@@ -127,9 +138,11 @@ internal sealed class VectorBatchProcessor(
             """,
             connection
         );
+
         command.Parameters.AddWithValue(BatchSize);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        List<PendingUpdate> pending = [];
+        List<PendingVectorUpdate> pending = [];
+
         while (await reader.ReadAsync(cancellationToken))
         {
             pending.Add(
@@ -143,6 +156,8 @@ internal sealed class VectorBatchProcessor(
 
         return pending;
     }
-
-    private sealed record PendingUpdate(Guid BookId, Guid Revision, string? Content);
 }
+
+internal sealed record VectorUpdateBatch(IReadOnlyList<PendingVectorUpdate> Updates);
+
+internal sealed record PendingVectorUpdate(Guid BookId, Guid Revision, string? Content);

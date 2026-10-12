@@ -66,9 +66,8 @@ public static class AgentDiscoveryClientExtensions
         )
         {
             services.AddHttpClient<AgentDiscoveryClient>(client =>
-            {
-                client.BaseAddress = new(baseAddress);
-            });
+                client.BaseAddress = new(baseAddress)
+            );
         }
     }
 }

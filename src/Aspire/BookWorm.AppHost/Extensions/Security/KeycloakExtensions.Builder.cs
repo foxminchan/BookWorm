@@ -90,6 +90,18 @@ internal static partial class KeycloakExtensions
             return builder;
         }
 
+        private void WithAudienceClient(string clientId, string clientType)
+        {
+            var clientEnv = clientId.ToUpperInvariant();
+
+            builder
+                .WithEnvironment($"CLIENT_{clientEnv}_ID", clientId)
+                .WithEnvironment(
+                    $"CLIENT_{clientEnv}_NAME",
+                    Services.ToClientName(clientId, clientType)
+                );
+        }
+
         private IResourceBuilder<KeycloakResource> WithCustomTheme(string themeName)
         {
             var importFullPath = Path.GetFullPath(
