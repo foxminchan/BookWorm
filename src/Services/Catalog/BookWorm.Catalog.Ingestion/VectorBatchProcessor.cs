@@ -26,6 +26,7 @@ internal sealed class VectorBatchProcessor(
             "SELECT pg_try_advisory_lock($1)",
             connection
         );
+
         acquireLock.Parameters.AddWithValue(LockId);
         if (await acquireLock.ExecuteScalarAsync(cancellationToken) is not true)
         {
@@ -137,9 +138,11 @@ internal sealed class VectorBatchProcessor(
             """,
             connection
         );
+
         command.Parameters.AddWithValue(BatchSize);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         List<PendingVectorUpdate> pending = [];
+
         while (await reader.ReadAsync(cancellationToken))
         {
             pending.Add(

@@ -3,7 +3,6 @@ using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Azure.Functions.Worker;
 
 namespace BookWorm.Catalog.Ingestion;
@@ -38,6 +37,7 @@ public sealed class ProcessVectorBatchFunction(IVectorBatchProcessor processor)
         }
 
         await processor.ProcessAsync(cancellationToken);
+
         return TypedResults.NoContent();
     }
 }

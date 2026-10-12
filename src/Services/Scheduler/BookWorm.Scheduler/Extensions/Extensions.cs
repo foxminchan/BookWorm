@@ -2,6 +2,7 @@
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
+using BookWorm.Scheduler.Clients;
 using BookWorm.ServiceDefaults.Kestrel;
 
 namespace BookWorm.Scheduler.Extensions;

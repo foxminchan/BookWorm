@@ -69,7 +69,7 @@
       Include="Microsoft.Extensions.Caching.StackExchangeRedis"
       Version="$(DotnetPackagesVersion)"
     />
-    <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.0" />
+    <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.1" />
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
@@ -148,7 +148,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
-    <PackageVersion Include="TUnit" Version="1.73.19" />
+    <PackageVersion Include="TUnit" Version="1.74.0" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->
