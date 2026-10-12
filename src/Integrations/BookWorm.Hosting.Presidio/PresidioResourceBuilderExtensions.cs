@@ -27,11 +27,7 @@ public static class PresidioAnalyzerResourceBuilderExtensions
                 .WithImageRegistry(PresidioAnalyzerContainerImageTags.Registry)
                 .WithImageTag(PresidioAnalyzerContainerImageTags.Tag)
                 .WithIconName("SearchShield")
-                .WithHttpEndpoint(
-                    port: httpPort,
-                    targetPort: 3000,
-                    name: PresidioAnalyzerResource.HttpEndpointName
-                )
+                .WithHttpEndpoint(httpPort, 3000, PresidioAnalyzerResource.HttpEndpointName)
                 .WithHttpHealthCheck(
                     "/health",
                     endpointName: PresidioAnalyzerResource.HttpEndpointName
@@ -64,11 +60,7 @@ public static class PresidioAnonymizerResourceBuilderExtensions
                 .WithImageRegistry(PresidioAnonymizerContainerImageTags.Registry)
                 .WithImageTag(PresidioAnonymizerContainerImageTags.Tag)
                 .WithIconName("ShieldCheckmark")
-                .WithHttpEndpoint(
-                    port: httpPort,
-                    targetPort: 3000,
-                    name: PresidioAnonymizerResource.HttpEndpointName
-                )
+                .WithHttpEndpoint(httpPort, 3000, PresidioAnonymizerResource.HttpEndpointName)
                 .WithHttpHealthCheck(
                     "/health",
                     endpointName: PresidioAnonymizerResource.HttpEndpointName

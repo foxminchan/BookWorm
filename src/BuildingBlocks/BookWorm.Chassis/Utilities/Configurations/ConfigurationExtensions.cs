@@ -60,7 +60,7 @@ public static class ConfigurationExtensions
                 .Configure(options => configure?.Invoke(options))
                 .BindConfiguration(section);
 
-            if (!typeof(TSetting).IsDefined(typeof(OptionsValidatorAttribute), inherit: false))
+            if (!typeof(TSetting).IsDefined(typeof(OptionsValidatorAttribute), false))
             {
                 optionsBuilder.ValidateDataAnnotations();
             }

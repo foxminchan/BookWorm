@@ -62,10 +62,8 @@ public sealed class ProcessVectorBatchFunctionTests
             )
             .ReturnsAsync(
                 AuthenticateResult.Success(
-                    new AuthenticationTicket(
-                        new ClaimsPrincipal(
-                            new ClaimsIdentity([new Claim("azp", "other-client")], "Bearer")
-                        ),
+                    new(
+                        new(new ClaimsIdentity([new("azp", "other-client")], "Bearer")),
                         JwtBearerDefaults.AuthenticationScheme
                     )
                 )
@@ -125,10 +123,8 @@ public sealed class ProcessVectorBatchFunctionTests
             )
             .ReturnsAsync(
                 AuthenticateResult.Success(
-                    new AuthenticationTicket(
-                        new ClaimsPrincipal(
-                            new ClaimsIdentity([new Claim("azp", Services.Scheduler)], "Bearer")
-                        ),
+                    new(
+                        new(new ClaimsIdentity([new("azp", Services.Scheduler)], "Bearer")),
                         JwtBearerDefaults.AuthenticationScheme
                     )
                 )
