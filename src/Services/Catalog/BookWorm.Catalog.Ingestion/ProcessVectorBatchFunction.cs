@@ -11,9 +11,7 @@ namespace BookWorm.Catalog.Ingestion;
 public sealed class ProcessVectorBatchFunction(IVectorBatchProcessor processor)
 {
     [Function(nameof(ProcessVectorBatch))]
-    public async Task<
-        Results<UnauthorizedHttpResult, ForbidHttpResult, NoContent>
-    > ProcessVectorBatch(
+    public async Task<IResult> ProcessVectorBatch(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "vectors/batch")]
             HttpRequest request,
         CancellationToken cancellationToken
