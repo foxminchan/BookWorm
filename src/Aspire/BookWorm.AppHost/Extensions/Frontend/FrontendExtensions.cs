@@ -17,12 +17,9 @@ internal static class FrontendExtensions
             IResourceBuilder<IResource> keycloak
         )
         {
-            if (builder.ExecutionContext.IsRunMode)
-            {
-                return AddTurborepoApps(builder, gateway, keycloak);
-            }
-
-            return AddPublishedContainerApps(builder, gateway, keycloak);
+            return builder.ExecutionContext.IsRunMode
+                ? AddTurborepoApps(builder, gateway, keycloak)
+                : AddPublishedContainerApps(builder, gateway, keycloak);
         }
     }
 

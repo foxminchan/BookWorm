@@ -92,7 +92,7 @@ var catalogApi = builder
         StorageBuiltInRole.StorageBlobDataOwner
     )
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithFriendlyUrls();
+    .WithDisplayUrls();
 
 var mcp = builder
     .AddDotnetProject(
@@ -101,7 +101,7 @@ var mcp = builder
     )
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithFriendlyUrls();
+    .WithDisplayUrls();
 
 var basketApi = builder
     .AddDotnetProject(
@@ -114,7 +114,7 @@ var basketApi = builder
     .WaitFor(queue)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
-    .WithFriendlyUrls();
+    .WithDisplayUrls();
 
 var orderingApi = builder
     .AddDotnetProject(
@@ -132,7 +132,7 @@ var orderingApi = builder
     .WaitFor(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithFriendlyUrls();
+    .WithDisplayUrls();
 
 var chatApi = builder
     .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
@@ -147,7 +147,7 @@ var chatApi = builder
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithFriendlyUrls();
+    .WithDisplayUrls();
 
 var ratingApi = builder
     .AddDotnetProject(
@@ -171,7 +171,7 @@ var ratingApi = builder
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithFriendlyUrls();
+    .WithDisplayUrls();
 
 mcp.WithReference(ratingApi);
 
@@ -185,7 +185,7 @@ builder
     .WaitFor(queue)
     .WithReference(notificationDb)
     .WaitFor(notificationDb)
-    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
+    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder
     .AddDotnetProject(
@@ -196,7 +196,7 @@ builder
     .WaitFor(financeDb)
     .WithReference(queue)
     .WaitFor(queue)
-    .WithFriendlyUrls(path: Http.Endpoints.AlivenessEndpointPath);
+    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 var catalogIngestion = builder
     .AddAzureFunctionsProject(
@@ -230,7 +230,7 @@ builder
     .WaitFor(schedulerDb)
     .WithReference(catalogIngestion)
     .WaitFor(catalogIngestion)
-    .WithFriendlyUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
+    .WithDisplayUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 
 var gateway = builder

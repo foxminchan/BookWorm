@@ -17,7 +17,7 @@ internal sealed partial class CorsSettings : IValidateOptions<CorsSettings>
     public IList<string> Methods { get; } = [];
 
     [Range(0, int.MaxValue)]
-    public int? MaxAge { get; set; }
+    public int? MaxAge { get; init; }
 
-    public bool AllowCredentials { get; set; }
+    public bool AllowCredentials { get; init; }
 }

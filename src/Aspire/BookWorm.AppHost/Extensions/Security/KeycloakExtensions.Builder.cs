@@ -90,10 +90,7 @@ internal static partial class KeycloakExtensions
             return builder;
         }
 
-        private IResourceBuilder<KeycloakResource> WithAudienceClient(
-            string clientId,
-            string clientType
-        )
+        private void WithAudienceClient(string clientId, string clientType)
         {
             var clientEnv = clientId.ToUpperInvariant();
 
@@ -103,8 +100,6 @@ internal static partial class KeycloakExtensions
                     $"CLIENT_{clientEnv}_NAME",
                     Services.ToClientName(clientId, clientType)
                 );
-
-            return builder;
         }
 
         private IResourceBuilder<KeycloakResource> WithCustomTheme(string themeName)

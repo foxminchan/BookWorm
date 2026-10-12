@@ -13,10 +13,8 @@ public sealed class ProcessVectorBatchJobTests
     public async Task GivenScheduledBatch_WhenExecuting_ThenShouldSendOneAnonymousPost()
     {
         using var handler = new RecordingHandler(HttpStatusCode.NoContent);
-        using var client = new HttpClient(handler)
-        {
-            BaseAddress = new("http://catalog-ingestion"),
-        };
+        using var client = new HttpClient(handler);
+        client.BaseAddress = new("http://catalog-ingestion");
         var api = RestService.For<ICatalogIngestionApi>(
             client,
             RefitSettings.ForJsonContext(CatalogIngestionSerializationContext.Default)
@@ -35,10 +33,8 @@ public sealed class ProcessVectorBatchJobTests
     public async Task GivenFailedBatch_WhenExecuting_ThenShouldSurfaceJobFailureWithoutRetrying()
     {
         using var handler = new RecordingHandler(HttpStatusCode.InternalServerError);
-        using var client = new HttpClient(handler)
-        {
-            BaseAddress = new("http://catalog-ingestion"),
-        };
+        using var client = new HttpClient(handler);
+        client.BaseAddress = new("http://catalog-ingestion");
         var api = RestService.For<ICatalogIngestionApi>(
             client,
             RefitSettings.ForJsonContext(CatalogIngestionSerializationContext.Default)
