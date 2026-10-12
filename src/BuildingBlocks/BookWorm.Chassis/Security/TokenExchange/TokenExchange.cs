@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
+using Refit;
 
 namespace BookWorm.Chassis.Security.TokenExchange;
 
@@ -103,7 +104,7 @@ internal sealed class TokenExchange(IKeycloakApi keycloakApi, IdentityOptions id
     }
 
     private static async Task<string> ReadAccessTokenAsync(
-        Refit.IApiResponse<KeycloakTokenResponse> response,
+        ApiResponse<KeycloakTokenResponse> response,
         string operation
     )
     {

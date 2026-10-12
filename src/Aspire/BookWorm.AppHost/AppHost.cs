@@ -203,7 +203,7 @@ var catalogIngestion = builder
         Services.CatalogIngestion,
         "../../Services/Catalog/BookWorm.Catalog.Ingestion/BookWorm.Catalog.Ingestion.csproj"
     )
-    .WithKeycloak(keycloak, audienceClientId: Services.CatalogIngestion)
+    .WithKeycloak(keycloak, Services.CatalogIngestion)
     .WithHostStorage(storage)
     .WithReference(catalogDb)
     .WaitFor(catalogApi)

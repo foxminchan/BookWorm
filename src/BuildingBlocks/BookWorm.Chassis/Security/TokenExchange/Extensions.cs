@@ -1,11 +1,11 @@
 ﻿using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Security.Settings;
+using BookWorm.Chassis.Utilities.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Refit;
 
 namespace BookWorm.Chassis.Security.TokenExchange;
 
@@ -17,10 +17,9 @@ public static class Extensions
         ///     Registers the token-exchange service.
         /// </summary>
         /// <returns>The same <see cref="IServiceCollection" /> instance.</returns>
-        public IServiceCollection AddTokenExchange()
+        private void AddTokenExchange()
         {
             services.TryAddTransient<ITokenExchange, TokenExchange>();
-            return services;
         }
     }
 

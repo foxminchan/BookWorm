@@ -4,9 +4,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace BookWorm.Scheduler.Clients;
 
-internal sealed class CatalogIngestionAuthorizationHandler(
-    ITokenExchange tokenExchange
-) : DelegatingHandler
+internal sealed class CatalogIngestionAuthorizationHandler(ITokenExchange tokenExchange)
+    : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -18,10 +17,7 @@ internal sealed class CatalogIngestionAuthorizationHandler(
             cancellationToken: cancellationToken
         );
 
-        request.Headers.Authorization = new(
-            JwtBearerDefaults.AuthenticationScheme,
-            exchangedToken
-        );
+        request.Headers.Authorization = new(JwtBearerDefaults.AuthenticationScheme, exchangedToken);
         return await base.SendAsync(request, cancellationToken);
     }
 }

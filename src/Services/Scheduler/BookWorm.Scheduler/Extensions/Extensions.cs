@@ -1,5 +1,5 @@
-﻿using BookWorm.Chassis.Utilities;
-using BookWorm.Chassis.Security.TokenExchange;
+﻿using BookWorm.Chassis.Security.TokenExchange;
+using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using BookWorm.Scheduler.Clients;

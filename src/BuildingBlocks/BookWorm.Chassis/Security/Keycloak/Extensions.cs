@@ -1,8 +1,9 @@
 using BookWorm.Chassis.Utilities;
-using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Refit;
 
 namespace BookWorm.Chassis.Security.Keycloak;
 

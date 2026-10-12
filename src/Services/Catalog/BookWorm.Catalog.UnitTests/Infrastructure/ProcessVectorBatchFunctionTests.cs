@@ -4,6 +4,7 @@ using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.UnitTests.Infrastructure;
@@ -36,10 +37,7 @@ public sealed class ProcessVectorBatchFunctionTests
         var authenticationService = new Mock<IAuthenticationService>();
         authenticationService
             .Setup(x =>
-                x.AuthenticateAsync(
-                    It.IsAny<HttpContext>(),
-                    JwtBearerDefaults.AuthenticationScheme
-                )
+                x.AuthenticateAsync(It.IsAny<HttpContext>(), JwtBearerDefaults.AuthenticationScheme)
             )
             .ReturnsAsync(AuthenticateResult.Fail("Invalid token"));
 
@@ -60,10 +58,7 @@ public sealed class ProcessVectorBatchFunctionTests
         var authenticationService = new Mock<IAuthenticationService>();
         authenticationService
             .Setup(x =>
-                x.AuthenticateAsync(
-                    It.IsAny<HttpContext>(),
-                    JwtBearerDefaults.AuthenticationScheme
-                )
+                x.AuthenticateAsync(It.IsAny<HttpContext>(), JwtBearerDefaults.AuthenticationScheme)
             )
             .ReturnsAsync(
                 AuthenticateResult.Success(
@@ -126,19 +121,13 @@ public sealed class ProcessVectorBatchFunctionTests
         var authenticationService = new Mock<IAuthenticationService>();
         authenticationService
             .Setup(x =>
-                x.AuthenticateAsync(
-                    It.IsAny<HttpContext>(),
-                    JwtBearerDefaults.AuthenticationScheme
-                )
+                x.AuthenticateAsync(It.IsAny<HttpContext>(), JwtBearerDefaults.AuthenticationScheme)
             )
             .ReturnsAsync(
                 AuthenticateResult.Success(
                     new AuthenticationTicket(
                         new ClaimsPrincipal(
-                            new ClaimsIdentity(
-                                [new Claim("azp", Services.Scheduler)],
-                                "Bearer"
-                            )
+                            new ClaimsIdentity([new Claim("azp", Services.Scheduler)], "Bearer")
                         ),
                         JwtBearerDefaults.AuthenticationScheme
                     )
