@@ -2,7 +2,6 @@
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
-using BookWorm.Scheduler.Clients;
 using BookWorm.ServiceDefaults.Kestrel;
 
 namespace BookWorm.Scheduler.Extensions;
@@ -16,7 +15,6 @@ internal static class Extensions
             var services = builder.Services;
 
             builder.AddKeycloakTokenExchange();
-            services.AddTransient<CatalogIngestionAuthorizationHandler>();
 
             services
                 .AddHttpServiceReference<ICatalogIngestionApi>(
@@ -28,7 +26,7 @@ internal static class Extensions
                     CatalogIngestionSerializationContext.Default
                 )
                 .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(5))
-                .AddHttpMessageHandler<CatalogIngestionAuthorizationHandler>()
+                .AddClientCredentialsTokenExchange(Services.CatalogIngestion)
                 .RemoveAllResilienceHandlers();
 
             builder.AddEventBus(opts =>

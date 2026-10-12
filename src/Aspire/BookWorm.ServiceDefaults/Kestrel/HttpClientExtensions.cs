@@ -1,4 +1,6 @@
-﻿namespace BookWorm.ServiceDefaults.Kestrel;
+﻿using BookWorm.Chassis.Security.TokenExchange;
+
+namespace BookWorm.ServiceDefaults.Kestrel;
 
 public static class HttpClientExtensions
 {
@@ -17,6 +19,18 @@ public static class HttpClientExtensions
 
             builder.AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>();
 
+            return builder;
+        }
+
+        /// <summary>
+        ///     Adds a token-exchange delegating handler so the client can authenticate as the
+        ///     configured service identity when calling downstream services.
+        /// </summary>
+        /// <param name="serviceKey">Optional target service name used to resolve the exchange audience/scope.</param>
+        /// <returns>The configured <see cref="IHttpClientBuilder" /> instance for chaining.</returns>
+        public IHttpClientBuilder AddClientCredentialsTokenExchange(string? serviceKey = null)
+        {
+            builder.AddAuthTokenExchange(serviceKey);
             return builder;
         }
     }
