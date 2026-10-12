@@ -44,6 +44,8 @@ jobs:
   ci:
     name: 🚀 CI Pipeline
     uses: ./.github/workflows/backend-shared.yml
+    with:
+      run-build-and-test: ${{ github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       security-events: write

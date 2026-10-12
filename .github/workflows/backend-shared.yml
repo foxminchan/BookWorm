@@ -3,6 +3,13 @@ run-name: Backend Shared CI
 
 on:
   workflow_call:
+    inputs:
+      run-build-and-test:
+        description: >-
+          Run standalone build and test jobs when they are not delegated to
+          SonarQube (for example, on manual dispatch).
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -70,6 +77,7 @@ jobs:
 
   build:
     name: 🔨 Build
+    if: inputs.run-build-and-test
     runs-on: ubuntu-26.04
     needs:
       - format
@@ -92,6 +100,7 @@ jobs:
 
   test:
     name: 🧪 Test
+    if: inputs.run-build-and-test
     runs-on: ubuntu-26.04
     needs:
       - format
