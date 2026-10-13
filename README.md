@@ -95,7 +95,7 @@
 >
 > - Use `mise tasks ls` to view available tasks.
 > - **Azure Subscription** is required for deploying to Azure Container Apps and using Microsoft Foundry.
-> - **Email** uses SMTP through MailKit, with [Mailpit](https://mailpit.axllent.org/) locally; configure the endpoint and credentials for providers like SendGrid or Azure Communication Services in production.
+> - **Email** uses SMTP through MailKit, with [Mailpit](https://mailpit.axllent.org/) locally; configure the endpoint and credentials for providers like SendGrid or production SMTP servers.
 
 ### Run locally
 
