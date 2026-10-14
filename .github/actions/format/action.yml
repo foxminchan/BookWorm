@@ -21,7 +21,7 @@ runs:
   using: composite
   steps:
     - name: Setup Environment
-      uses: ./.github/actions/setup
+      uses: $/.github/actions/setup
       with:
         global-json-file: ${{ inputs.global-json-file }}
         bun-version-file: ${{ inputs.bun-version-file }}

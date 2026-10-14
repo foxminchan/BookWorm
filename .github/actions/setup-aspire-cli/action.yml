@@ -31,7 +31,7 @@ runs:
         INPUT_ASPIRE_CONFIG: ${{ inputs.aspire-config }}
 
     - name: 🛠️ Install Aspire CLI
-      uses: timheuer/setup-aspire@fec3fa825218461aa07fed28fa97a600d5d88b14 # v0.1.0
+      uses: timheuer/setup-aspire@v0.1.0
       with:
         version: ${{ steps.aspire-version.outputs.version }}
 

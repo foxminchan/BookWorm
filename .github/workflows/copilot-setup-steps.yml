@@ -26,25 +26,25 @@ jobs:
     # If you do not check out your code, Copilot will do this for you.
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
       - name: 🔧 Setup .NET Core
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        uses: actions/setup-dotnet@v6.0.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
       - name: 🍞 Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.0.2
+        uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: ⚡ Setup Mise
-        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        uses: jdx/mise-action@v5.1.1
 
       - name: 🐳 Setup Docker
-        uses: docker/setup-docker-action@2bf61fb9464cc67f0cbdeabed6aa0380accd1c70 # v5.5.0
+        uses: docker/setup-docker-action@v5.5.0
 
       - name: 🛠️ Install Tools
         run: dotnet tool restore

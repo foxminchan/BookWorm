@@ -29,12 +29,12 @@ jobs:
       contents: read
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
       - name: 💅 Format
-        uses: ./.github/actions/format
+        uses: $/.github/actions/format
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
@@ -47,12 +47,12 @@ jobs:
       contents: read
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
       - name: 💅 Style
-        uses: ./.github/actions/style
+        uses: $/.github/actions/style
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
@@ -65,12 +65,12 @@ jobs:
       contents: read
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
       - name: 🧪 Analyzers
-        uses: ./.github/actions/analyzers
+        uses: $/.github/actions/analyzers
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
@@ -88,12 +88,12 @@ jobs:
       contents: read
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
       - name: 🔨 Build
-        uses: ./.github/actions/build
+        uses: $/.github/actions/build
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
@@ -112,12 +112,12 @@ jobs:
       checks: write
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
       - name: 🧪 Test
-        uses: ./.github/actions/test
+        uses: $/.github/actions/test
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
