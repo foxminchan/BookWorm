@@ -85,6 +85,7 @@ jobs:
         uses: allure-framework/allure-action@v0.11.0
         with:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-report
+          remote-href: https://foxminchan.github.io/BookWorm/reports/backoffice
           github-token: ${{ github.token }}
 
       - name: 📊 Post Allure Summary (Storefront)
@@ -93,4 +94,5 @@ jobs:
         uses: allure-framework/allure-action@v0.11.0
         with:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report
+          remote-href: https://foxminchan.github.io/BookWorm/reports/storefront
           github-token: ${{ github.token }}
