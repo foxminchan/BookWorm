@@ -129,7 +129,10 @@
     <PackageVersion Include="MailKit" Version="4.18.1" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />
     <!-- Security Fixed -->
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(DotnetPackagesVersion)" />
+    <PackageVersion
+      Include="System.Security.Cryptography.Pkcs"
+      Version="$(DotnetPackagesVersion)"
+    />
     <!-- Other Integrations -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageVersion
