@@ -21,7 +21,7 @@ runs:
   using: composite
   steps:
     - name: Cache NuGet Packages
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache@v6.1.0
       if: success()
       with:
         path: ~/.nuget/packages
@@ -31,7 +31,7 @@ runs:
           ${{ runner.os }}-nuget-
 
     - name: Setup Environment
-      uses: ./.github/actions/setup
+      uses: $/.github/actions/setup
       with:
         global-json-file: ${{ inputs.global-json-file }}
         bun-version-file: ${{ inputs.bun-version-file }}

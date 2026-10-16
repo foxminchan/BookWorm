@@ -6,11 +6,11 @@
   </PropertyGroup>
   <ItemGroup Label="Aspire Packages">
     <!-- Hosting -->
-    <PackageVersion Include="Aspire.Hosting.Dotnet" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Dotnet" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Foundry" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
@@ -45,7 +45,7 @@
       Version="$(ToolKitVersion)"
     />
     <!-- Extra -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.11.30" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.12.0" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -71,12 +71,12 @@
     />
     <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.1" />
     <!-- Observability -->
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.19.1-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.20.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.0" />
     <!-- AI -->
     <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="$(AgentFrameworkAlphaVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
@@ -128,6 +128,11 @@
     <!-- Email & Messaging -->
     <PackageVersion Include="MailKit" Version="4.18.1" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />
+    <!-- Security Fixed -->
+    <PackageVersion
+      Include="System.Security.Cryptography.Pkcs"
+      Version="$(DotnetPackagesVersion)"
+    />
     <!-- Other Integrations -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageVersion
@@ -148,7 +153,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
-    <PackageVersion Include="TUnit" Version="1.74.0" />
+    <PackageVersion Include="TUnit" Version="1.75.0" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->
