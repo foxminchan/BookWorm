@@ -127,7 +127,7 @@ jobs:
 
       - name: ⬇️ Download frontend coverage
         if: needs.frontend-test.result == 'success'
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
         with:
           name: frontend-coverage
           path: ${{ github.workspace }}/src/Clients/apps
