@@ -2,6 +2,7 @@ using Wolverine.Attributes;
 
 namespace BookWorm.Contracts;
 
+[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Ordering)]
 [MessageIdentity("BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent")]
 public sealed record OrderStatusChangedToCompleteIntegrationEvent(
     Guid OrderId,

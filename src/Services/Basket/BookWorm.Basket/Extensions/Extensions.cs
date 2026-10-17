@@ -96,7 +96,10 @@ internal static class Extensions
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
 
                 opts.Discovery.IncludeAssembly(typeof(BasketApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(BasketApiMarker).Assembly);
+                opts.ConfigureIntegrationEventTopicsIn(
+                    builder.Environment,
+                    typeof(BasketApiMarker).Assembly
+                );
             });
 
             services.AddKeycloakTokenIntrospection();
