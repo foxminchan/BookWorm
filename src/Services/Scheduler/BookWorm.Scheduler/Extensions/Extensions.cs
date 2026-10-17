@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Security.TokenExchange;
+﻿using BookWorm.Chassis.EventBus.Wolverine;
+using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
