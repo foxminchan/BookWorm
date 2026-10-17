@@ -94,7 +94,10 @@ internal static class Extensions
                 opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId");
 
                 opts.Discovery.IncludeAssembly(typeof(RatingApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(RatingApiMarker).Assembly);
+                opts.ConfigureIntegrationEventTopicsIn(
+                    builder.Environment,
+                    typeof(RatingApiMarker).Assembly
+                );
             });
 
             // Then register event-related services

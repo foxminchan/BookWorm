@@ -68,7 +68,10 @@ internal static class Extensions
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
 
                 opts.Discovery.IncludeAssembly(typeof(OrderingApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(OrderingApiMarker).Assembly);
+                opts.ConfigureIntegrationEventTopicsIn(
+                    builder.Environment,
+                    typeof(OrderingApiMarker).Assembly
+                );
             });
 
             // Configure gRPC

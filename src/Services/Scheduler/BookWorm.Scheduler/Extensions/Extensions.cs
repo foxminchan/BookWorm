@@ -31,8 +31,13 @@ internal static class Extensions
                 .RemoveAllResilienceHandlers();
 
             builder.AddEventBus(opts =>
-                opts.Discovery.IncludeAssembly(typeof(ISchedulerApiMarker).Assembly)
-            );
+            {
+                opts.Discovery.IncludeAssembly(typeof(ISchedulerApiMarker).Assembly);
+                opts.ConfigureIntegrationEventTopicsIn(
+                    builder.Environment,
+                    typeof(ISchedulerApiMarker).Assembly
+                );
+            });
 
             services.AddAntiforgery();
 

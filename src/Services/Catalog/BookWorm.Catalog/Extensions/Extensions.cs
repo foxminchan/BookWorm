@@ -128,7 +128,10 @@ internal static class Extensions
                 opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId");
 
                 opts.Discovery.IncludeAssembly(typeof(CatalogApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(CatalogApiMarker).Assembly);
+                opts.ConfigureIntegrationEventTopicsIn(
+                    builder.Environment,
+                    typeof(CatalogApiMarker).Assembly
+                );
             });
 
             services.AddKeycloakTokenIntrospection();

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Scrutor;
 using Wolverine;
 using Wolverine.Attributes;
 using Wolverine.Configuration;
@@ -15,11 +16,45 @@ namespace BookWorm.Chassis.EventBus.Wolverine;
 
 public static class WolverineHostExtensions
 {
-    private static IEnumerable<Type> GetIntegrationEventTypes(IEnumerable<Assembly> assemblies)
+    private static Type[] ScanIntegrationTypes(IEnumerable<Assembly> assemblies)
     {
-        return assemblies
-            .SelectMany(GetLoadableTypes)
-            .Where(t => t is { IsAbstract: false, IsInterface: false })
+        var scannedServices = new ServiceCollection();
+
+        scannedServices.Scan(scan =>
+            scan.FromAssemblies(assemblies.ToArray())
+                .AddClasses(
+                    classes => classes.Where(IsIntegrationMessageOrHandler),
+                    publicOnly: false
+                )
+                .AsSelf()
+                .WithTransientLifetime()
+        );
+
+        return scannedServices
+            .Select(descriptor => descriptor.ImplementationType)
+            .Where(type => type is not null)
+            .Cast<Type>()
+            .Distinct()
+            .ToArray();
+    }
+
+    private static bool IsIntegrationMessageOrHandler(Type type)
+    {
+        return typeof(IntegrationEvent).IsAssignableFrom(type)
+            || type
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+                .Any(method =>
+                    IsMessageHandlerMethod(method)
+                    && typeof(IntegrationEvent).IsAssignableFrom(
+                        method.GetParameters()[0].ParameterType
+                    )
+                );
+    }
+
+    private static IEnumerable<Type> GetHandledIntegrationEventTypes(IEnumerable<Type> types)
+    {
+        return types
+            .Where(t => !typeof(IntegrationEvent).IsAssignableFrom(t))
             .SelectMany(t =>
                 t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             )
@@ -28,16 +63,9 @@ public static class WolverineHostExtensions
             .Where(t => typeof(IntegrationEvent).IsAssignableFrom(t));
     }
 
-    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+    private static IEnumerable<Type> GetIntegrationEventTypes(IEnumerable<Type> types)
     {
-        try
-        {
-            return assembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            return ex.Types.Where(t => t is not null).Cast<Type>();
-        }
+        return types.Where(t => typeof(IntegrationEvent).IsAssignableFrom(t));
     }
 
     private static bool IsMessageHandlerMethod(MethodInfo method)
@@ -100,7 +128,11 @@ public static class WolverineHostExtensions
                     );
 
                     // ── Kafka transport with CloudEvents interop ──────────────────────
-                    opts.UseKafkaWithCloudEvents(kafkaConnectionString, applicationName);
+                    opts.UseKafkaWithCloudEvents(
+                        kafkaConnectionString,
+                        applicationName,
+                        builder.Environment.EnvironmentName
+                    );
 
                     // ── Service-specific customisation ─────────────────────────────────
                     configure?.Invoke(opts);
@@ -116,7 +148,11 @@ public static class WolverineHostExtensions
 
     extension(WolverineOptions opts)
     {
-        private void UseKafkaWithCloudEvents(string kafkaConnectionString, string applicationName)
+        private void UseKafkaWithCloudEvents(
+            string kafkaConnectionString,
+            string applicationName,
+            string environmentName
+        )
         {
             var serviceName = KafkaTopicRouter.ToKebabCase(applicationName);
             opts.ServiceName = serviceName;
@@ -126,7 +162,9 @@ public static class WolverineHostExtensions
             // ── Native Kafka dead letter queue ────────────────────────────────
             opts.UseKafka(kafkaConnectionString)
                 .AutoProvision()
-                .DeadLetterQueueTopicName($"bookworm-{serviceName}-dead-letter-queue");
+                .DeadLetterQueueTopicName(
+                    KafkaTopicRouter.CreateDeadLetterTopicName(applicationName, environmentName)
+                );
 
             opts.Policies.PropagateGroupIdToPartitionKey();
 
@@ -143,33 +181,42 @@ public static class WolverineHostExtensions
                     }
                 )
             );
-
-            opts.PublishAllMessages().ToKafkaTopics().TelemetryEnabled(true);
         }
 
         /// <summary>
-        ///     Scans the specified assemblies for public instance/static methods with a single parameter
-        ///     of type <see cref="IntegrationEvent" /> and registers a Kafka listener for each
-        ///     unique message type found. The listener will be configured to subscribe to the topic
-        ///     specified in the <see cref="MessageIdentityAttribute" /> of the message type, or
-        ///     the message type's full name if the attribute is not present.
+        ///     Scans the specified assemblies for integration messages and handlers, configures
+        ///     publishing routes, and registers listeners for handled messages.
         /// </summary>
-        /// <param name="assemblies">List of assemblies to scan for message handler methods</param>
-        public void ListenToIntegrationEventsIn(params Assembly[] assemblies)
+        /// <param name="environment">Host environment used to construct Kafka topic names.</param>
+        /// <param name="assemblies">Assemblies containing integration messages and handlers.</param>
+        public void ConfigureIntegrationEventTopicsIn(
+            IHostEnvironment environment,
+            params Assembly[] assemblies
+        )
         {
-            var topics = new Dictionary<string, Type>(StringComparer.Ordinal);
+            var scannedTypes = ScanIntegrationTypes(assemblies);
+            var messageTypes = GetIntegrationEventTypes(scannedTypes).ToArray();
 
-            foreach (var messageType in GetIntegrationEventTypes(assemblies))
+            foreach (var messageType in messageTypes)
             {
                 var identity = messageType.GetCustomAttribute<MessageIdentityAttribute>();
-                var topic = identity?.Alias ?? messageType.FullName ?? messageType.Name;
-                topics[topic] = messageType;
+                var messageIdentity = identity?.Alias ?? messageType.FullName ?? messageType.Name;
+                var topic = KafkaTopicRouter.CreateTopicName(
+                    messageType,
+                    environment.ApplicationName,
+                    environment.EnvironmentName
+                );
+                opts.RegisterMessageType(messageType, messageIdentity);
+                opts.PublishMessage(messageType).ToKafkaTopic(topic).TelemetryEnabled(true);
             }
 
-            foreach (var (topic, messageType) in topics)
+            foreach (var messageType in GetHandledIntegrationEventTypes(scannedTypes).Distinct())
             {
-                opts.RegisterMessageType(messageType, topic);
-
+                var topic = KafkaTopicRouter.CreateTopicName(
+                    messageType,
+                    environment.ApplicationName,
+                    environment.EnvironmentName
+                );
                 // Route any message that exhausts its retry policy to the transport-level
                 // native dead letter queue topic configured in `UseKafkaWithCloudEvents`.
                 opts.ListenToKafkaTopic(topic).EnableNativeDeadLetterQueue();

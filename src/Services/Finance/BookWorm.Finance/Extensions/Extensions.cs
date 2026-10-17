@@ -35,7 +35,10 @@ internal static class Extensions
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
 
                 opts.Discovery.IncludeAssembly(typeof(IFinanceApiMarker).Assembly);
-                opts.ListenToIntegrationEventsIn(typeof(IFinanceApiMarker).Assembly);
+                opts.ConfigureIntegrationEventTopicsIn(
+                    builder.Environment,
+                    typeof(IFinanceApiMarker).Assembly
+                );
             });
         }
     }

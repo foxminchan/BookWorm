@@ -2,6 +2,7 @@ using Wolverine.Attributes;
 
 namespace BookWorm.Contracts;
 
+[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Ordering)]
 [MessageIdentity("BookWorm.Contracts.UserCheckedOutIntegrationEvent")]
 public sealed record UserCheckedOutIntegrationEvent(
     Guid OrderId,
