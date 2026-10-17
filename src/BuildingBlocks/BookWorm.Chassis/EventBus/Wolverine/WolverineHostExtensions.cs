@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Scrutor;
 using Wolverine;
 using Wolverine.Attributes;
 using Wolverine.Configuration;
@@ -41,8 +40,7 @@ public static class WolverineHostExtensions
     private static bool IsIntegrationMessageOrHandler(Type type)
     {
         return typeof(IntegrationEvent).IsAssignableFrom(type)
-            || type
-                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+            || type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
                 .Any(method =>
                     IsMessageHandlerMethod(method)
                     && typeof(IntegrationEvent).IsAssignableFrom(

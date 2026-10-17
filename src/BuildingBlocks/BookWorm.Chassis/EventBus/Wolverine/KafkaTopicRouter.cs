@@ -32,10 +32,7 @@ internal static class KafkaTopicRouter
         );
     }
 
-    public static string CreateDeadLetterTopicName(
-        string applicationName,
-        string environmentName
-    )
+    public static string CreateDeadLetterTopicName(string applicationName, string environmentName)
     {
         var nameParts = GetApplicationNameParts(applicationName);
         var projectName = nameParts[0];
@@ -68,11 +65,13 @@ internal static class KafkaTopicRouter
         var typeName = messageType.Name;
         foreach (var suffix in new[] { "IntegrationEvent", "Command" })
         {
-            if (typeName.EndsWith(suffix, StringComparison.Ordinal))
+            if (!typeName.EndsWith(suffix, StringComparison.Ordinal))
             {
-                typeName = typeName[..^suffix.Length];
-                break;
+                continue;
             }
+
+            typeName = typeName[..^suffix.Length];
+            break;
         }
 
         if (typeName.StartsWith(serviceName, StringComparison.OrdinalIgnoreCase))
