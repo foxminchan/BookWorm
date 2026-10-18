@@ -21,10 +21,7 @@ public static class WolverineHostExtensions
 
         scannedServices.Scan(scan =>
             scan.FromAssemblies(assemblies.ToArray())
-                .AddClasses(
-                    classes => classes.Where(IsIntegrationMessageOrHandler),
-                    publicOnly: false
-                )
+                .AddClasses(classes => classes.Where(IsIntegrationMessageOrHandler), false)
                 .AsSelf()
                 .WithTransientLifetime()
         );

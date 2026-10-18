@@ -1,8 +1,9 @@
+using BookWorm.Constants.Aspire;
 using Wolverine.Attributes;
 
 namespace BookWorm.Contracts;
 
-[IntegrationMessageOwner(ServiceName = BookWorm.Constants.Aspire.Services.Ordering, TopicName = "user-checked-out")]
+[IntegrationMessageOwner(ServiceName = Services.Ordering, TopicName = "user-checked-out")]
 [MessageIdentity("BookWorm.Contracts.UserCheckedOutIntegrationEvent")]
 public sealed record UserCheckedOutIntegrationEvent(
     Guid OrderId,

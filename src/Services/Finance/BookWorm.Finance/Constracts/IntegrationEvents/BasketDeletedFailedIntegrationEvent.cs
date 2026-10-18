@@ -1,8 +1,9 @@
+using BookWorm.Constants.Aspire;
 using Wolverine.Attributes;
 
 namespace BookWorm.Contracts;
 
-[IntegrationMessageOwner(ServiceName = BookWorm.Constants.Aspire.Services.Basket, TopicName = "delete-failed")]
+[IntegrationMessageOwner(ServiceName = Services.Basket, TopicName = "delete-failed")]
 [MessageIdentity("BookWorm.Contracts.BasketDeletedFailedIntegrationEvent")]
 public sealed record BasketDeletedFailedIntegrationEvent(
     Guid OrderId,
