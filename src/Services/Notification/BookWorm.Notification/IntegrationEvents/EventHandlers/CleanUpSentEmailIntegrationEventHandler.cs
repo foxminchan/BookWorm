@@ -1,4 +1,5 @@
 ﻿using BookWorm.Notification.Domain.Models;
+using Wolverine.Attributes;
 
 namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
@@ -8,6 +9,7 @@ internal sealed class CleanUpSentEmailIntegrationEventHandler(
     IOutboxRepository repository
 )
 {
+    [WolverineHandler]
     public async Task Handle(
         CleanUpSentEmailIntegrationEvent _,
         CancellationToken cancellationToken

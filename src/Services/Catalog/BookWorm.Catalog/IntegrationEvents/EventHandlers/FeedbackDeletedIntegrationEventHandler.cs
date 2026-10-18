@@ -1,9 +1,11 @@
 ﻿using BookWorm.Contracts;
+using Wolverine.Attributes;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 internal sealed class FeedbackDeletedIntegrationEventHandler(IBookRepository repository)
 {
+    [WolverineHandler]
     public async Task Handle(
         FeedbackDeletedIntegrationEvent @event,
         CancellationToken cancellationToken

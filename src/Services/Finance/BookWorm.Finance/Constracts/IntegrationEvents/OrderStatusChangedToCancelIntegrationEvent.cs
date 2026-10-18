@@ -2,7 +2,7 @@ using Wolverine.Attributes;
 
 namespace BookWorm.Contracts;
 
-[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Ordering)]
+[IntegrationMessageOwner(ServiceName = BookWorm.Constants.Aspire.Services.Ordering, TopicName = "order-status-change-to-cancel")]
 [MessageIdentity("BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent")]
 public sealed record OrderStatusChangedToCancelIntegrationEvent(
     Guid OrderId,

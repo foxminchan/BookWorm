@@ -68,7 +68,7 @@ public static class WolverineHostExtensions
 
     private static bool IsMessageHandlerMethod(MethodInfo method)
     {
-        return method.Name is "Handle" or "HandleAsync" or "Consume" or "ConsumeAsync"
+        return method.GetCustomAttribute<WolverineHandlerAttribute>() is not null
             && method.GetParameters().Length > 0;
     }
 

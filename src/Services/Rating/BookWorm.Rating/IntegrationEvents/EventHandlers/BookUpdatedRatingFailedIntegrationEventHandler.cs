@@ -1,9 +1,11 @@
 ﻿using BookWorm.Contracts;
+using Wolverine.Attributes;
 
 namespace BookWorm.Rating.IntegrationEvents.EventHandlers;
 
 internal sealed class BookUpdatedRatingFailedIntegrationEventHandler(IFeedbackRepository repository)
 {
+    [WolverineHandler]
     public async Task Handle(
         BookUpdatedRatingFailedIntegrationEvent @event,
         CancellationToken cancellationToken

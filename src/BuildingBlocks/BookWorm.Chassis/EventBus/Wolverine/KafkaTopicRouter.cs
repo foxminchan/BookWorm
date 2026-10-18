@@ -11,24 +11,32 @@ internal static class KafkaTopicRouter
     )
     {
         var owner = messageType.GetCustomAttribute<IntegrationMessageOwnerAttribute>();
-        if (owner is null || string.IsNullOrWhiteSpace(owner.ServiceName))
+        if (
+            owner is null
+            || string.IsNullOrWhiteSpace(owner.ServiceName)
+            || string.IsNullOrWhiteSpace(owner.TopicName)
+        )
         {
             throw new InvalidOperationException(
-                $"Integration message '{messageType.FullName}' must declare an "
-                    + $"{nameof(IntegrationMessageOwnerAttribute)}."
+                $"Integration message '{messageType.FullName}' must declare non-empty "
+                    + $"{nameof(IntegrationMessageOwnerAttribute.ServiceName)} and "
+                    + $"{nameof(IntegrationMessageOwnerAttribute.TopicName)}."
             );
         }
 
+        var topicName = string.Join(".", ToKebabCase(owner.ServiceName), owner.TopicName);
+        if (!owner.AppendPrefix)
+        {
+            return topicName;
+        }
+
         var nameParts = GetApplicationNameParts(applicationName);
-        var projectName = nameParts[0];
-        var eventName = GetEventName(messageType, owner.ServiceName);
 
         return string.Join(
             ".",
-            projectName.ToLowerInvariant(),
+            nameParts[0].ToLowerInvariant(),
             ToKebabCase(environmentName),
-            ToKebabCase(owner.ServiceName),
-            eventName
+            topicName
         );
     }
 
@@ -58,41 +66,6 @@ internal static class KafkaTopicRouter
         }
 
         return nameParts;
-    }
-
-    private static string GetEventName(Type messageType, string serviceName)
-    {
-        var typeName = messageType.Name;
-        foreach (var suffix in new[] { "IntegrationEvent", "Command" })
-        {
-            if (!typeName.EndsWith(suffix, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            typeName = typeName[..^suffix.Length];
-            break;
-        }
-
-        if (typeName.StartsWith(serviceName, StringComparison.OrdinalIgnoreCase))
-        {
-            typeName = typeName[serviceName.Length..];
-        }
-
-        var eventName = ToKebabCase(typeName)
-            .Replace("deleted", "delete", StringComparison.Ordinal)
-            .Replace("created", "create", StringComparison.Ordinal)
-            .Replace("updated", "update", StringComparison.Ordinal)
-            .Replace("changed", "change", StringComparison.Ordinal);
-
-        if (string.IsNullOrWhiteSpace(eventName))
-        {
-            throw new InvalidOperationException(
-                $"Integration message '{messageType.FullName}' does not contain an event name."
-            );
-        }
-
-        return eventName;
     }
 
     public static string ToKebabCase(string name)

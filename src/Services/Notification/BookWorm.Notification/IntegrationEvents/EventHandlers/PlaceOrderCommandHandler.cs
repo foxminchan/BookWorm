@@ -1,7 +1,10 @@
-﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿using Wolverine.Attributes;
+
+namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 internal sealed class PlaceOrderCommandHandler(ISender sender, IRenderer renderer)
 {
+    [WolverineHandler]
     public async Task Handle(PlaceOrderCommand message, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(message.Email))
