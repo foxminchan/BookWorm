@@ -1,6 +1,8 @@
-﻿namespace BookWorm.Contracts;
+﻿using BookWorm.Constants.Aspire;
 
-[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Finance)]
+namespace BookWorm.Contracts;
+
+[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "delete-basket-failed")]
 public sealed record DeleteBasketFailedCommand(
     Guid BasketId,
     string? Email,

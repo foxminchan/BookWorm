@@ -1,8 +1,9 @@
+using BookWorm.Constants.Aspire;
 using Wolverine.Attributes;
 
 namespace BookWorm.Contracts;
 
-[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Rating)]
+[IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-create")]
 [MessageIdentity("BookWorm.Contracts.FeedbackCreatedIntegrationEvent")]
 public sealed record FeedbackCreatedIntegrationEvent(Guid BookId, int Rating, Guid FeedbackId)
     : IntegrationEvent;

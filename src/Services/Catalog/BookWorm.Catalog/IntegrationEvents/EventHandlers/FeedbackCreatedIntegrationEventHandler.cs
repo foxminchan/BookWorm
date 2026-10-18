@@ -1,5 +1,6 @@
 ﻿using BookWorm.Contracts;
 using Wolverine;
+using Wolverine.Attributes;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
@@ -8,6 +9,7 @@ internal sealed class FeedbackCreatedIntegrationEventHandler(
     IMessageBus bus
 )
 {
+    [WolverineHandler]
     public async Task Handle(
         FeedbackCreatedIntegrationEvent @event,
         CancellationToken cancellationToken

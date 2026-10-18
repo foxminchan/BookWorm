@@ -1,5 +1,5 @@
 ﻿namespace BookWorm.Contracts;
 
-[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Finance)]
+[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "delete-basket-complete")]
 public sealed record DeleteBasketCompleteCommand(Guid OrderId, decimal TotalMoney)
     : IntegrationEvent;

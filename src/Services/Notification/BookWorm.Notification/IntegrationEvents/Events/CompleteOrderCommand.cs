@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Contracts;
 
-[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Finance)]
+[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "complete-order")]
 public sealed record CompleteOrderCommand(
     Guid OrderId,
     string? FullName,

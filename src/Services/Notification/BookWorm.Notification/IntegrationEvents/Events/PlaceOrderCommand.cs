@@ -1,6 +1,6 @@
 ﻿namespace BookWorm.Contracts;
 
-[IntegrationMessageOwner(BookWorm.Constants.Aspire.Services.Finance)]
+[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "place-order")]
 public sealed record PlaceOrderCommand(
     Guid BasketId,
     string? FullName,

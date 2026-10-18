@@ -1,7 +1,10 @@
-﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿using Wolverine.Attributes;
+
+namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 internal sealed class CancelOrderCommandHandler(ISender sender, IRenderer renderer)
 {
+    [WolverineHandler]
     public async Task Handle(CancelOrderCommand message, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(message.Email))

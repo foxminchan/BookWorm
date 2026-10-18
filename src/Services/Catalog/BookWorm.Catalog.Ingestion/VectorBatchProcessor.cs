@@ -19,6 +19,50 @@ internal sealed class VectorBatchProcessor(
     private const int BatchSize = 200;
     private const long LockId = 740031001;
 
+    public async Task IngestDataAsync(
+        VectorUpdateBatch batch,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await collection.EnsureCollectionExistsAsync(cancellationToken);
+        var active = batch.Updates.Where(item => item.Content is not null).ToArray();
+        var embeddings =
+            active.Length == 0
+                ? null
+                : await embeddingGenerator.GenerateAsync(
+                    active.Select(item => item.Content!),
+                    cancellationToken: cancellationToken
+                );
+
+        if (embeddings is not null && embeddings.Count != active.Length)
+        {
+            throw new InvalidOperationException(
+                "The embedding service returned an incomplete batch."
+            );
+        }
+
+        var index = 0;
+        foreach (var item in batch.Updates)
+        {
+            if (item.Content is null)
+            {
+                await collection.DeleteAsync(item.BookId, cancellationToken);
+            }
+            else
+            {
+                await collection.UpsertAsync(
+                    new TextSnippet
+                    {
+                        Id = item.BookId,
+                        Content = item.Content,
+                        Vector = embeddings![index++].Vector,
+                    },
+                    cancellationToken
+                );
+            }
+        }
+    }
+
     public async Task<int> ProcessAsync(CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -66,50 +110,6 @@ internal sealed class VectorBatchProcessor(
             );
             releaseLock.Parameters.AddWithValue(LockId);
             await releaseLock.ExecuteScalarAsync(CancellationToken.None);
-        }
-    }
-
-    public async Task IngestDataAsync(
-        VectorUpdateBatch batch,
-        CancellationToken cancellationToken = default
-    )
-    {
-        await collection.EnsureCollectionExistsAsync(cancellationToken);
-        var active = batch.Updates.Where(item => item.Content is not null).ToArray();
-        var embeddings =
-            active.Length == 0
-                ? null
-                : await embeddingGenerator.GenerateAsync(
-                    active.Select(item => item.Content!),
-                    cancellationToken: cancellationToken
-                );
-
-        if (embeddings is not null && embeddings.Count != active.Length)
-        {
-            throw new InvalidOperationException(
-                "The embedding service returned an incomplete batch."
-            );
-        }
-
-        var index = 0;
-        foreach (var item in batch.Updates)
-        {
-            if (item.Content is null)
-            {
-                await collection.DeleteAsync(item.BookId, cancellationToken);
-            }
-            else
-            {
-                await collection.UpsertAsync(
-                    new TextSnippet
-                    {
-                        Id = item.BookId,
-                        Content = item.Content,
-                        Vector = embeddings![index++].Vector,
-                    },
-                    cancellationToken
-                );
-            }
         }
     }
 

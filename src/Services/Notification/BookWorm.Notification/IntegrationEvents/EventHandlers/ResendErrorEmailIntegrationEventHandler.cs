@@ -1,4 +1,5 @@
 using BookWorm.Notification.Domain.Models;
+using Wolverine.Attributes;
 
 namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
@@ -9,6 +10,7 @@ internal sealed class ResendErrorEmailIntegrationEventHandler(
     ISender sender
 )
 {
+    [WolverineHandler]
     public async Task Handle(
         ResendErrorEmailIntegrationEvent _,
         CancellationToken cancellationToken
