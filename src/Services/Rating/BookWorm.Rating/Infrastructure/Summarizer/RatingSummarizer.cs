@@ -1,4 +1,4 @@
-﻿using BookWorm.Constants.Other;
+using BookWorm.Rating.Infrastructure.Agents;
 using Microsoft.Agents.AI;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
@@ -6,7 +6,7 @@ using ModelContextProtocol.Client;
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
 internal sealed class RatingSummarizer(
-    [FromKeyedServices(Workflows.RatingSummarizer)] AIAgent ratingSummarizerAgent,
+    [FromKeyedServices(RatingAgent.Name)] AIAgent ratingAgent,
     McpClient mcpClient
 ) : ISummarizer
 {
@@ -15,17 +15,16 @@ internal sealed class RatingSummarizer(
         CancellationToken cancellationToken = default
     )
     {
-        var workflowAgentThread = await ratingSummarizerAgent.CreateSessionAsync(cancellationToken);
-
         var prompt = await mcpClient.GetPromptAsync(
             "summarize_rating",
             new Dictionary<string, object?> { ["content"] = content },
             cancellationToken: cancellationToken
         );
 
-        var response = await ratingSummarizerAgent.RunAsync(
+        var agentSession = await ratingAgent.CreateSessionAsync(cancellationToken);
+        var response = await ratingAgent.RunAsync(
             prompt.ToChatMessages(),
-            workflowAgentThread,
+            agentSession,
             cancellationToken: cancellationToken
         );
 
