@@ -30,49 +30,51 @@ internal static class Extensions
 
             services.AddScoped<ReviewTool>();
 
-            builder.AddAIAgent(
-                RatingAgent.Name,
-                (sp, key) =>
-                {
-                    var compactionProvider = RatingCompactionPipelineFactory.Create(
-                        sp.GetRequiredService<IChatClient>()
-                    );
+            builder
+                .AddAIAgent(
+                    RatingAgent.Name,
+                    (sp, key) =>
+                    {
+                        var compactionProvider = RatingCompactionPipelineFactory.Create(
+                            sp.GetRequiredService<IChatClient>()
+                        );
 
-                    var chatClient = sp.GetRequiredService<IChatClient>()
-                        .AsBuilder()
-                        .UsePIIMiddleware(sp)
-                        .UseGuardrailMiddleware()
-                        .UseAIContextProviders(compactionProvider)
-                        .Build(sp);
+                        var chatClient = sp.GetRequiredService<IChatClient>()
+                            .AsBuilder()
+                            .UsePIIMiddleware(sp)
+                            .UseGuardrailMiddleware()
+                            .UseAIContextProviders(compactionProvider)
+                            .Build(sp);
 
-                    using var spScope = sp.CreateScope();
-                    var reviewPlugin = spScope.ServiceProvider.GetRequiredService<ReviewTool>();
-                    var mcpClient = sp.GetRequiredService<McpClient>();
+                        using var spScope = sp.CreateScope();
+                        var reviewPlugin = spScope.ServiceProvider.GetRequiredService<ReviewTool>();
+                        var mcpClient = sp.GetRequiredService<McpClient>();
 
-                    var agent = new ChatClientAgent(
-                        chatClient,
-                        options: new()
-                        {
-                            Name = key,
-                            Description = RatingAgent.Description,
-                            // Review lookup tools are read-only queries, safe to run concurrently.
-                            AllowConcurrentInvocation = true,
-                            ChatOptions = new()
+                        var agent = new ChatClientAgent(
+                            chatClient,
+                            options: new()
                             {
-                                Instructions = RatingAgent.Instructions,
-                                Temperature = 0.4f,
-                                MaxOutputTokens = 1500,
-                                AllowMultipleToolCalls = true,
-                                Tools = [.. reviewPlugin.AsAITools()],
-                            },
-                        }
-                    );
+                                Name = key,
+                                Description = RatingAgent.Description,
+                                // Review lookup tools are read-only queries, safe to run concurrently.
+                                AllowConcurrentInvocation = true,
+                                ChatOptions = new()
+                                {
+                                    Instructions = RatingAgent.Instructions,
+                                    Temperature = 0.4f,
+                                    MaxOutputTokens = 1500,
+                                    AllowMultipleToolCalls = true,
+                                    Tools = [.. reviewPlugin.AsAITools()],
+                                },
+                            }
+                        );
 
-                    return agent
-                        .WithRefreshingMcpTools(mcpClient, toolName => toolName == "get_book")
-                        .WithBookWormGovernance(sp, key);
-                }
-            ).WithInMemorySessionStore();
+                        return agent
+                            .WithRefreshingMcpTools(mcpClient, toolName => toolName == "get_book")
+                            .WithBookWormGovernance(sp, key);
+                    }
+                )
+                .WithInMemorySessionStore();
         }
     }
 
