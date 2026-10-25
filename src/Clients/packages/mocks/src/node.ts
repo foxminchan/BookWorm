@@ -5,7 +5,7 @@ import { allHandlers } from "./handlers";
 export const server = setupServer(...allHandlers);
 
 export const startServer = () => {
-  server.listen({ onUnhandledRequest: "warn" });
+  server.listen({ onUnhandledFrame: "warn" });
 };
 
 export const stopServer = () => {

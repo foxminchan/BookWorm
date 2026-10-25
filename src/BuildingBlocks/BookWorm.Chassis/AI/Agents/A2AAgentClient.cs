@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using A2A;
+using A2A.Grpc;
 using BookWorm.Chassis.Security.TokenExchange;
 using Microsoft.Agents.AI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,6 +10,11 @@ namespace BookWorm.Chassis.AI.Agents;
 
 internal sealed class A2AAgentClient(Uri baseUri, string? path)
 {
+    static A2AAgentClient()
+    {
+        A2AGrpcClientRegistration.Register();
+    }
+
     public async Task<AIAgent> GetAIAgent(
         IServiceProvider serviceProvider,
         string agentName,
@@ -27,7 +33,18 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
             cancellationToken
         );
 
-        return card.AsAIAgent(httpClient);
+        return card.AsAIAgent(
+            httpClient,
+            new()
+            {
+                PreferredBindings =
+                [
+                    ProtocolBindingNames.Grpc,
+                    ProtocolBindingNames.JsonRpc,
+                    ProtocolBindingNames.HttpJson,
+                ],
+            }
+        );
     }
 
     private static async Task HandleAuthenticationAsync(
@@ -74,10 +91,16 @@ internal sealed class A2AAgentClient(Uri baseUri, string? path)
             Name = agentName,
             SupportedInterfaces =
             [
+                new() { Url = endpointUrl.ToString(), ProtocolBinding = ProtocolBindingNames.Grpc },
                 new()
                 {
                     Url = endpointUrl.ToString(),
                     ProtocolBinding = ProtocolBindingNames.JsonRpc,
+                },
+                new()
+                {
+                    Url = endpointUrl.ToString(),
+                    ProtocolBinding = ProtocolBindingNames.HttpJson,
                 },
             ],
         };

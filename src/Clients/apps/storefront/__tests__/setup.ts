@@ -15,7 +15,7 @@ faker.seed(fakerSeed);
 
 // Establish API mocking before all tests
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledFrame: "error" });
 });
 
 // Reset any request handlers that we may add during the tests,

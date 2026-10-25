@@ -6,7 +6,7 @@ export const worker = setupWorker(...allHandlers);
 
 export const startMocking = async () => {
   await worker.start({
-    onUnhandledRequest: "warn",
+    onUnhandledFrame: "warn",
     serviceWorker: {
       url: "/mockServiceWorker.js",
     },

@@ -15,7 +15,20 @@ const basketPaths = [
   "*/basket/api/v1/baskets", // Gateway pattern
 ];
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "DELETE, GET, OPTIONS, POST, PUT",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+};
+
 export const basketHandlers = [
+  ...basketPaths.map((path) =>
+    http.options(
+      path,
+      () => new HttpResponse(null, { status: 204, headers: corsHeaders }),
+    ),
+  ),
+
   ...basketPaths.map((path) =>
     http.get(path, () => {
       const basket = basketStore.get(MOCK_USER_ID);

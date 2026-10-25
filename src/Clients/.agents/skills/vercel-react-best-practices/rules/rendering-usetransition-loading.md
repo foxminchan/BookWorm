@@ -38,7 +38,7 @@ function SearchResults() {
 **Correct (useTransition with built-in pending state):**
 
 ```tsx
-import { useTransition, useState } from "react";
+import { useState, useTransition } from "react";
 
 function SearchResults() {
   const [query, setQuery] = useState("");

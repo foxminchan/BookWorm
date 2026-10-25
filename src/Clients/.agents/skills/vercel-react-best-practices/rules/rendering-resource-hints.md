@@ -34,7 +34,7 @@ export default function App() {
 **Example (preload critical fonts and styles):**
 
 ```tsx
-import { preload, preinit } from "react-dom";
+import { preinit, preload } from "react-dom";
 
 export default function RootLayout({ children }) {
   // Preload font file
@@ -58,7 +58,7 @@ export default function RootLayout({ children }) {
 **Example (preload modules for code-split routes):**
 
 ```tsx
-import { preloadModule, preinitModule } from "react-dom";
+import { preinitModule, preloadModule } from "react-dom";
 
 function Navigation() {
   const preloadDashboard = () => {

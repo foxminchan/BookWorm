@@ -1,0 +1,113 @@
+name: Supply Chain Security
+run-name: OpenSSF Scorecard & SLSA Provenance - ${{ github.event_name }} by ${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Runs every Thursday at 10:00 AM Asia/Ho_Chi_Minh (UTC+7)
+    - cron: 0 3 * * 4
+  workflow_dispatch:
+  release:
+    types: [created]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scorecard:
+    name: 🛡️ Scorecard Analysis
+    if: github.event_name != 'release'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🛡️ Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@v2.5.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: ⬆️ Upload SARIF artifact
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: scorecard-results
+          path: results.sarif
+          retention-days: 5
+
+      - name: ⬆️ Upload Scorecard results to code scanning
+        if: ${{ !cancelled() }}
+        uses: github/codeql-action/upload-sarif@v4.39.1
+        with:
+          sarif_file: results.sarif
+          category: openssf-scorecard
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
+
+  build:
+    name: 📦 Build SLSA provenance subject
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    outputs:
+      digests: ${{ steps.hash.outputs.digests }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout release source
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 📦 Generate source archive
+        env:
+          VERSION: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          archive="BookWorm-${VERSION}.tar.gz"
+          git archive \
+            --format=tar.gz \
+            --prefix="BookWorm-${VERSION}/" \
+            HEAD \
+            > "$archive"
+
+      - name: 🔐 Generate subject for provenance
+        id: hash
+        run: |
+          set -euo pipefail
+
+          archive=$(find . -maxdepth 1 -name 'BookWorm-*.tar.gz' -type f -print -quit)
+          echo "digests=$(sha256sum "$archive" | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+  provenance:
+    name: 🔏 Generate SLSA provenance
+    needs:
+      - build
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.4.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.digests }}
+      upload-assets: ${{ github.event_name == 'release' }}
