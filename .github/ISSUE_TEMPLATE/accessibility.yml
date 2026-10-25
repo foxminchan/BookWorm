@@ -1,0 +1,71 @@
+name: Accessibility issue
+description: Report an accessibility barrier or suggest an accessibility improvement
+title: "[ACCESSIBILITY] "
+labels: ["accessibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping make BookWorm more accessible.
+
+        Please search [existing issues](https://github.com/foxminchan/BookWorm/issues)
+        before submitting a new report. Do not include passwords, private data, or
+        security-sensitive information.
+  - type: textarea
+    id: task
+    attributes:
+      label: Affected page or task
+      description: What were you trying to do, and where did the barrier occur?
+      placeholder: I was trying to...
+    validations:
+      required: true
+  - type: textarea
+    id: barrier
+    attributes:
+      label: Accessibility barrier
+      description: Describe what happened and what you expected to happen.
+      placeholder: |
+        Actual behavior:
+        Expected behavior:
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the steps needed to encounter the barrier.
+      placeholder: |
+        1. Go to...
+        2. Navigate to...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include versions when possible. You do not need to disclose a diagnosis.
+      placeholder: |
+        - Operating system:
+        - Browser and version:
+        - Device:
+        - Assistive technology and version:
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      description: Choose the option that best describes the impact.
+      options:
+        - Critical - a core task cannot be completed
+        - Serious - significant difficulty, but a workaround exists
+        - Moderate - recurring or inconsistent difficulty
+        - Minor - small impact on usability
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add optional screenshots, recordings, links, or possible workarounds.

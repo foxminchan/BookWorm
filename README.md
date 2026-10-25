@@ -64,7 +64,7 @@
 - [x] Built modern client applications:
   - [x] Monorepo architecture powered by `Turborepo`
   - [x] Customer-facing storefront and admin backoffice dashboard with `Next.js`
-  - [x] Supported WCAG 2.1 AA accessibility standards
+  - [x] Targeted WCAG 2.1 AA accessibility standards ([accessibility statement](.github/ACCESSIBILITY.md))
 - [x] Established a testing strategy:
   - [x] Conducted service unit tests
   - [x] Implemented Pact-based contract testing
