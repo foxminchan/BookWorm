@@ -9,6 +9,7 @@ using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
+using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
@@ -91,7 +92,7 @@ internal static class Extensions
                     o.DefaultAgentId = $"did:bookworm:{ServerInfoOptions.Name}";
                     o.ServerName = ServerInfoOptions.Name;
                 })
-                .WithHttpTransport(o => o.Stateless = true)
+                .WithHttpTransport(o => o.SessionMode = HttpServerSessionMode.Stateless)
                 .AddAuthorizationFilters()
                 .WithToolsFromAssembly()
                 .WithPromptsFromAssembly()

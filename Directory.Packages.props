@@ -44,9 +44,8 @@
       Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions"
       Version="$(ToolKitVersion)"
     />
-    <PackageVersion Include="MessagePack" Version="2.5.303" />
     <!-- Extra -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.12.0" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.12.3" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -72,13 +71,14 @@
     />
     <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.1" />
     <!-- Observability -->
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.20.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.20.1-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
     <!-- AI -->
+    <PackageVersion Include="A2A.Grpc.AspNetCore" Version="1.0.0-preview3" />
     <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="$(AgentFrameworkAlphaVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion
@@ -102,7 +102,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" PrivateAssets="All" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="16.3.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="16.4.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="Vogen" Version="8.0.7" />
   </ItemGroup>
@@ -127,15 +127,11 @@
     <PackageVersion Include="Quartz.Plugins" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Dashboard" Version="$(QuartzVersion)" />
     <!-- Email & Messaging -->
-    <PackageVersion Include="MailKit" Version="4.18.1" />
+    <PackageVersion Include="MailKit" Version="4.18.2" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />
-    <!-- Security Fixed -->
-    <PackageVersion
-      Include="System.Security.Cryptography.Pkcs"
-      Version="$(DotnetPackagesVersion)"
-    />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
+    <PackageVersion Include="ModelContextProtocol.Extensions.Tasks" Version="2.3.0" />
     <PackageVersion
       Include="ZiggyCreatures.FusionCache.OpenTelemetry"
       Version="$(FusionCacheVersion)"
@@ -154,7 +150,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
-    <PackageVersion Include="TUnit" Version="1.75.0" />
+    <PackageVersion Include="TUnit" Version="1.76.0" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->

@@ -20,6 +20,7 @@
     <PackageReference Include="CommunityToolkit.VectorData.Qdrant" />
   </ItemGroup>
   <ItemGroup Label="AI">
+    <PackageReference Include="A2A.Grpc.AspNetCore" />
     <PackageReference Include="Aspire.Azure.AI.Inference" />
     <PackageReference Include="Microsoft.Agents.AI.A2A" />
     <PackageReference Include="Microsoft.Agents.AI.Mcp" />

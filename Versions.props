@@ -1,22 +1,22 @@
 <Project>
   <PropertyGroup Label="Package Versions">
     <!-- Core Libraries -->
-    <AspireVersion>13.6.1</AspireVersion>
-    <AspireUnstableVersion>$(AspireVersion)-preview.1.26506.6</AspireUnstableVersion>
+    <AspireVersion>13.6.4</AspireVersion>
+    <AspireUnstableVersion>$(AspireVersion)-preview.1.26523.11</AspireUnstableVersion>
     <DotnetPackagesVersion>10.0.13</DotnetPackagesVersion>
     <GrpcVersion>2.84.0</GrpcVersion>
     <!-- Integration Libraries -->
-    <WolverineVersion>6.51.0</WolverineVersion>
-    <QuartzVersion>4.5.1</QuartzVersion>
+    <WolverineVersion>6.53.0</WolverineVersion>
+    <QuartzVersion>4.6.0</QuartzVersion>
     <FusionCacheVersion>2.9.0</FusionCacheVersion>
     <!-- Microsoft Packages -->
     <MsExtVersion>10.11.0</MsExtVersion>
     <MsTestVersion>2.5.1</MsTestVersion>
     <ToolKitVersion>13.6.0</ToolKitVersion>
     <!-- Agent Framework Packages -->
-    <AgentFrameworkVersion>1.25.0</AgentFrameworkVersion>
-    <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.261014.1</AgentFrameworkUnstableVersion>
-    <AgentFrameworkAlphaVersion>$(AgentFrameworkVersion)-alpha.261014.1</AgentFrameworkAlphaVersion>
+    <AgentFrameworkVersion>1.26.0</AgentFrameworkVersion>
+    <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.261023.1</AgentFrameworkUnstableVersion>
+    <AgentFrameworkAlphaVersion>$(AgentFrameworkVersion)-alpha.261023.1</AgentFrameworkAlphaVersion>
     <!-- Miscellaneous Packages -->
     <HealthChecksVersion>9.0.0</HealthChecksVersion>
   </PropertyGroup>

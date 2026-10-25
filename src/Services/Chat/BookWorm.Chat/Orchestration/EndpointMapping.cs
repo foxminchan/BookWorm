@@ -41,6 +41,8 @@ internal static class EndpointMapping
                     .WithTags(agentName);
             }
 
+            app.MapGrpcA2A();
+
             // Map AG-UI endpoint for interactive agents (e.g. RouterAgent)
             app.MapAGUIServer(Workflows.Chat, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
