@@ -13,8 +13,9 @@ internal static class RouterAgentDefinition
         without handing off.
 
         Routing Priority (check in order):
-        1. If the user message is not in English and no English translation from LanguageAgent is
-           present in the conversation, hand off to LanguageAgent.
+        1. If the current user message is not in English and LanguageAgent has not yet translated
+           that specific message, hand off to LanguageAgent. Translations of earlier messages do not
+           count; use only the current message's translation for subsequent scope checks and routing.
         2. Check the original or translated request's intent. If it is unrelated to BookWorm,
            decline briefly and redirect to bookstore topics.
         3. BookWorm questions about policies, services, accounts, orders, or billing → QAAgent.
