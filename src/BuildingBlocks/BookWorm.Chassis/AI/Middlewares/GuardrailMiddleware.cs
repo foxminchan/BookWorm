@@ -19,8 +19,8 @@ internal static partial class GuardrailMiddleware
     private static partial Regex InjectionPatternRegex();
 
     [GeneratedRegex(
-        @"(?:reveal|repeat|show|print|provide)\s+(?:your|the|system|developer)\s+"
-            + @"(?:prompt|instructions?|message)"
+        @"(?:reveal|repeat|show|print|provide)\s+(?:(?:your|the)\s+prompt"
+            + @"|(?:(?:your|the)\s+)?(?:system|developer)\s+(?:prompt|instructions?|message))"
             + @"|(?:system|developer)\s+prompt\s*:",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     )]
