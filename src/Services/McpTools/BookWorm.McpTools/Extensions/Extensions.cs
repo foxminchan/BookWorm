@@ -144,7 +144,7 @@ internal static class Extensions
 
                             Prompts:
                             - recommend_books: Generate a structured recommendation request
-                            - analyze_book_quality: Classify a book as Best Seller / Good / Bad / No Data
+                            - analyze_book_quality: Classify review-based quality as Top Rated / Good / Bad / No Data
                             """;
                     }
                 );

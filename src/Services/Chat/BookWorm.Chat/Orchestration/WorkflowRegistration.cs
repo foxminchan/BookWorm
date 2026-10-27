@@ -5,7 +5,6 @@ using BookWorm.Chat.Agents.LanguageTranslation;
 using BookWorm.Chat.Agents.Routing;
 using BookWorm.Chat.Agents.SentimentAnalysis;
 using BookWorm.Chat.Agents.Summarization;
-using BookWorm.Chat.Orchestration.Conditions;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
@@ -48,13 +47,13 @@ internal static class WorkflowRegistration
                             .CreateHandoffBuilderWith(routerAgent)
                             .WithHandoffs(
                                 routerAgent,
-                                [languageAgent, summarizeAgent, sentimentAgent, bookAgent]
+                                [languageAgent, summarizeAgent, sentimentAgent, bookAgent, qaAgent]
                             )
                             // Define handoff paths for agent collaboration
                             .WithHandoff(
                                 languageAgent,
-                                bookAgent,
-                                "Transfer to this agent if the user input is not in English."
+                                routerAgent,
+                                "Return the English translation to RouterAgent for scope checking and routing."
                             )
                             .WithHandoff(
                                 summarizeAgent,
@@ -62,6 +61,11 @@ internal static class WorkflowRegistration
                                 "Transfer to this agent if the user message is very long or complex."
                             )
                             .WithHandoffs(sentimentAgent, [bookAgent, routerAgent])
+                            .WithHandoff(
+                                qaAgent,
+                                bookAgent,
+                                "Transfer to this agent if a customer-service request also needs book information."
+                            )
                             .WithHandoff(
                                 bookAgent,
                                 routerAgent,
@@ -89,12 +93,11 @@ internal static class WorkflowRegistration
                         InputValidationExecutor inputValidator = new(governanceKernel);
                         ResponseFormatterExecutor responseFormatter = new();
 
-                        // Build workflow with 4-layer architecture:
+                        // Build workflow with 3-layer architecture:
                         // 1. Input Validation - Validates and preprocesses user input
                         // 2. Agent Handoff - Routes to appropriate specialized agent
                         //    (rejected input short-circuits to output)
-                        // 3. Conditional Post-Processing - Intelligent routing based on output analysis
-                        // 4. Response Formatting - Ensures consistent, well-formatted responses
+                        // 3. Response Formatting - Ensures consistent, well-formatted responses
                         var workflow = new WorkflowBuilder(inputValidator)
                             // Layer 1: Switch-case on validation result
                             .AddSwitch(
@@ -109,33 +112,13 @@ internal static class WorkflowRegistration
                             )
                             // Layer 1→2: Forward accepted input to the agent handoff
                             .AddEdge(acceptedExtractor, handoffWorkflowExecutor)
-                            // Layer 2→3/4: Switch-case on post-processing conditions
-                            .AddSwitch(
-                                handoffWorkflowExecutor,
-                                switchBuilder =>
-                                    switchBuilder
-                                        .AddCase<List<ChatMessage>>(
-                                            output =>
-                                                output is not null
-                                                && PolicyKeywordCondition.Evaluate(output),
-                                            qaAgent
-                                        )
-                                        .AddCase<List<ChatMessage>>(
-                                            output =>
-                                                output is not null
-                                                && NegativeSentimentCondition.Evaluate(output),
-                                            sentimentAgent
-                                        )
-                                        .WithDefault(responseFormatter)
-                            )
-                            // Layer 3→4: Connect post-processing paths to response formatter
-                            .AddEdge(qaAgent, responseFormatter)
-                            .AddEdge(sentimentAgent, responseFormatter)
+                            // Layer 2→3: Format the selected agent's response
+                            .AddEdge(handoffWorkflowExecutor, responseFormatter)
                             // Set terminal output nodes
                             .WithOutputFrom(responseFormatter, rejectedExtractor)
                             .WithName(key)
                             .WithDescription(
-                                "Production-grade workflow with input validation, intelligent agent routing, conditional post-processing, and response formatting"
+                                "Workflow with input validation, specialized-agent handoffs, and response formatting"
                             )
                             .Build();
 
