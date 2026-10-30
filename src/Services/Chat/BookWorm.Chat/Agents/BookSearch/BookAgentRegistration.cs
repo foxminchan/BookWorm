@@ -65,8 +65,7 @@ internal static class BookAgentRegistration
 
                     var agent = new ChatClientAgent(chatClient, options);
 
-                    return agent
-                        .WithBookWormGovernance(sp, key);
+                    return agent.WithBookWormGovernance(sp, key);
                 }
             );
         }

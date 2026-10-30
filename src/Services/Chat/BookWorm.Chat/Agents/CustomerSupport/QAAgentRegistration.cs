@@ -33,15 +33,9 @@ internal static class QAAgentRegistration
                             loggerFactory: sp.GetService<ILoggerFactory>()
                         );
 
-                        var (options, _) = AgentDefinitionLoader.Load(
-                            DefinitionFile,
-                            key
-                        );
+                        var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
                         options.AIContextProviders = [skillsProvider];
-                        options.ChatOptions!.Reasoning = new()
-                        {
-                            Effort = ReasoningEffort.Medium,
-                        };
+                        options.ChatOptions!.Reasoning = new() { Effort = ReasoningEffort.Medium };
 
                         var agent = new ChatClientAgent(chatClient, options);
 

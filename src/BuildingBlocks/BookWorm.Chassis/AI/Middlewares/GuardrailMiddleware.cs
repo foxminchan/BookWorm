@@ -54,16 +54,13 @@ internal static partial class GuardrailMiddleware
         static List<ChatMessage> FilterMessages(
             IEnumerable<ChatMessage> contents,
             bool wrapUntrustedContent = true
-        )
-        {
-            return
+        ) =>
             [
                 .. contents.Select(message => new ChatMessage(
                     message.Role,
                     FilterContent(message, wrapUntrustedContent)
                 )),
             ];
-        }
 
         static string FilterContent(ChatMessage message, bool wrapUntrustedContent)
         {

@@ -1,5 +1,4 @@
-﻿using AgentGovernance;
-using BookWorm.Chassis.AI.Agents;
+﻿using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
@@ -56,11 +55,7 @@ internal static class Extensions
                         var mcpTools = mcpClient.GetAgentTools(toolNames);
 
                         options.AllowConcurrentInvocation = true;
-                        options.ChatOptions!.Tools =
-                        [
-                            .. reviewPlugin.AsAITools(),
-                            .. mcpTools,
-                        ];
+                        options.ChatOptions!.Tools = [.. reviewPlugin.AsAITools(), .. mcpTools];
 
                         var agent = new ChatClientAgent(chatClient, options);
 

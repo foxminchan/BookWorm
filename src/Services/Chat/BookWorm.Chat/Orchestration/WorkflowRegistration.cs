@@ -19,13 +19,13 @@ internal static class WorkflowRegistration
                     (sp, key) =>
                     {
                         var routerAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            Agents.RouterAgent
+                            Constants.Other.Agents.RouterAgent
                         );
                         var bookAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            Agents.BookAgent
+                            Constants.Other.Agents.BookAgent
                         );
                         var qaAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            Agents.QAAgent
+                            Constants.Other.Agents.QAAgent
                         );
 
                         // Build handoff workflow for dynamic agent routing
