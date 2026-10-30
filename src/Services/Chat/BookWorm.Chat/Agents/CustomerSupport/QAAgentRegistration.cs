@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
@@ -7,13 +8,15 @@ namespace BookWorm.Chat.Agents.CustomerSupport;
 
 internal static class QAAgentRegistration
 {
+    private const string DefinitionFile = "Agents/CustomerSupport/qa-agent.yaml";
+
     extension(IHostApplicationBuilder builder)
     {
         public void AddQAAgent()
         {
             builder
                 .AddAIAgent(
-                    QAAgentDefinition.Name,
+                    Constants.Other.Agents.QAAgent,
                     (sp, key) =>
                     {
                         var compactionProvider = CompactionPipelineFactory.CreateLight();
@@ -30,22 +33,17 @@ internal static class QAAgentRegistration
                             loggerFactory: sp.GetService<ILoggerFactory>()
                         );
 
-                        var agent = new ChatClientAgent(
-                            chatClient,
-                            options: new()
-                            {
-                                Name = key,
-                                Description = QAAgentDefinition.Description,
-                                AIContextProviders = [skillsProvider],
-                                ChatOptions = new()
-                                {
-                                    Instructions = QAAgentDefinition.Instructions,
-                                    Temperature = 0.5f,
-                                    MaxOutputTokens = 1000,
-                                    Reasoning = new() { Effort = ReasoningEffort.Medium },
-                                },
-                            }
+                        var (options, _) = AgentDefinitionLoader.Load(
+                            DefinitionFile,
+                            key
                         );
+                        options.AIContextProviders = [skillsProvider];
+                        options.ChatOptions!.Reasoning = new()
+                        {
+                            Effort = ReasoningEffort.Medium,
+                        };
+
+                        var agent = new ChatClientAgent(chatClient, options);
 
                         return agent.WithBookWormGovernance(sp, key);
                     }

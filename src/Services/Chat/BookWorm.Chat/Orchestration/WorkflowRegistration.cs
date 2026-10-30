@@ -1,7 +1,4 @@
 using AgentGovernance;
-using BookWorm.Chat.Agents.BookSearch;
-using BookWorm.Chat.Agents.CustomerSupport;
-using BookWorm.Chat.Agents.Routing;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
@@ -22,12 +19,14 @@ internal static class WorkflowRegistration
                     (sp, key) =>
                     {
                         var routerAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            RouterAgentDefinition.Name
+                            Agents.RouterAgent
                         );
                         var bookAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            BookAgentDefinition.Name
+                            Agents.BookAgent
                         );
-                        var qaAgent = sp.GetRequiredKeyedService<AIAgent>(QAAgentDefinition.Name);
+                        var qaAgent = sp.GetRequiredKeyedService<AIAgent>(
+                            Agents.QAAgent
+                        );
 
                         // Build handoff workflow for dynamic agent routing
                         // RouterAgent routes requests to the book or support agent.

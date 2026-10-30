@@ -79,6 +79,10 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
     <!-- AI -->
     <PackageVersion Include="A2A.Grpc.AspNetCore" Version="1.0.0-preview3" />
+    <PackageVersion
+      Include="Microsoft.Agents.AI.Declarative"
+      Version="$(AgentFrameworkVersion)-rc1"
+    />
     <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="$(AgentFrameworkAlphaVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion

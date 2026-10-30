@@ -15,6 +15,8 @@ namespace BookWorm.Rating.Infrastructure.Agents;
 
 internal static class Extensions
 {
+    private const string DefinitionFile = "Agents/rating-agent.yaml";
+
     extension(IHostApplicationBuilder builder)
     {
         public void AddAgents()
@@ -32,7 +34,7 @@ internal static class Extensions
 
             builder
                 .AddAIAgent(
-                    RatingAgent.Name,
+                    Constants.Other.Agents.RatingAgent,
                     (sp, key) =>
                     {
                         var compactionProvider = RatingCompactionPipelineFactory.Create(
@@ -50,28 +52,19 @@ internal static class Extensions
                         var reviewPlugin = spScope.ServiceProvider.GetRequiredService<ReviewTool>();
                         var mcpClient = sp.GetRequiredService<McpClient>();
 
-                        var agent = new ChatClientAgent(
-                            chatClient,
-                            options: new()
-                            {
-                                Name = key,
-                                Description = RatingAgent.Description,
-                                // Review lookup tools are read-only queries, safe to run concurrently.
-                                AllowConcurrentInvocation = true,
-                                ChatOptions = new()
-                                {
-                                    Instructions = RatingAgent.Instructions,
-                                    Temperature = 0.4f,
-                                    MaxOutputTokens = 1500,
-                                    AllowMultipleToolCalls = true,
-                                    Tools = [.. reviewPlugin.AsAITools()],
-                                },
-                            }
-                        );
+                        var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
+                        var mcpTools = mcpClient.GetAgentTools(toolNames);
 
-                        return agent
-                            .WithRefreshingMcpTools(mcpClient, toolName => toolName == "get_book")
-                            .WithBookWormGovernance(sp, key);
+                        options.AllowConcurrentInvocation = true;
+                        options.ChatOptions!.Tools =
+                        [
+                            .. reviewPlugin.AsAITools(),
+                            .. mcpTools,
+                        ];
+
+                        var agent = new ChatClientAgent(chatClient, options);
+
+                        return agent.WithBookWormGovernance(sp, key);
                     }
                 )
                 .WithInMemorySessionStore();
@@ -84,9 +77,9 @@ internal static class Extensions
         {
             app.MapAgentDiscovery("/agents");
 
-            app.MapAGUIServer(RatingAgent.Name, "/ag-ui")
+            app.MapAGUIServer(Constants.Other.Agents.RatingAgent, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
-                .WithTags(nameof(RatingAgent));
+                .WithTags(nameof(Constants.Other.Agents.RatingAgent));
         }
     }
 }
