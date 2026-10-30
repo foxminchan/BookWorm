@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Infrastructure.Agents;
@@ -14,11 +15,7 @@ internal static class RatingOutputGuardrailMiddleware
         CancellationToken cancellationToken
     )
     {
-        var response = await innerChatClient.GetResponseAsync(
-            messages,
-            options,
-            cancellationToken
-        );
+        var response = await innerChatClient.GetResponseAsync(messages, options, cancellationToken);
 
         if (
             response.Messages.Any(message =>
@@ -31,8 +28,8 @@ internal static class RatingOutputGuardrailMiddleware
 
         var output = string.Join(
             "\n",
-            response.Messages
-                .Where(message => message.Role == ChatRole.Assistant)
+            response
+                .Messages.Where(message => message.Role == ChatRole.Assistant)
                 .Select(message => message.Text)
         );
 
@@ -48,7 +45,7 @@ internal static class RatingOutputGuardrailMiddleware
         IEnumerable<ChatMessage> messages,
         ChatOptions? options,
         IChatClient innerChatClient,
-        CancellationToken cancellationToken
+        [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
         // Validate the complete result before yielding any streamed output.
@@ -64,8 +61,8 @@ internal static class RatingOutputGuardrailMiddleware
         {
             var output = string.Join(
                 "\n",
-                response.Messages
-                    .Where(message => message.Role == ChatRole.Assistant)
+                response
+                    .Messages.Where(message => message.Role == ChatRole.Assistant)
                     .Select(message => message.Text)
             );
 
@@ -81,7 +78,7 @@ internal static class RatingOutputGuardrailMiddleware
         }
     }
 
-    internal static bool IsValid(string output)
+    private static bool IsValid(string output)
     {
         if (string.IsNullOrWhiteSpace(output))
         {
@@ -97,10 +94,11 @@ internal static class RatingOutputGuardrailMiddleware
             && IsConfidenceLine(lines[3]);
 
         static bool IsClassificationLine(string line) =>
-            line is "Classification: No Data"
-                or "Classification: Bad"
-                or "Classification: Good"
-                or "Classification: Top Rated";
+            line
+                is "Classification: No Data"
+                    or "Classification: Bad"
+                    or "Classification: Good"
+                    or "Classification: Top Rated";
 
         static bool IsConfidenceLine(string line) =>
             line is "Confidence: High" or "Confidence: Medium" or "Confidence: Low";

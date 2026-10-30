@@ -25,13 +25,15 @@ public static class BookRecommendationPromptType
     )
     {
         var constraints = new List<string>();
-        foreach (var (value, label, prefix) in new[]
-        {
-            (genre, "Genre/Topic", string.Empty),
-            (priceRange, "Price range", "$"),
-            (preferredAuthors, "Preferred authors", string.Empty),
-            (readerProfile, "Reader profile", string.Empty),
-        })
+        foreach (
+            var (value, label, prefix) in new[]
+            {
+                (genre, "Genre/Topic", string.Empty),
+                (priceRange, "Price range", "$"),
+                (preferredAuthors, "Preferred authors", string.Empty),
+                (readerProfile, "Reader profile", string.Empty),
+            }
+        )
         {
             if (string.IsNullOrWhiteSpace(value))
             {

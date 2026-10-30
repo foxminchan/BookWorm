@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.AI;
 
@@ -50,7 +52,7 @@ internal static partial class GuardrailMiddleware
         IEnumerable<ChatMessage> messages,
         ChatOptions? options,
         IChatClient innerChatClient,
-        CancellationToken cancellationToken
+        [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
         // Buffer streamed updates so prompt-leak checks run before any response reaches the caller.
@@ -88,11 +90,15 @@ internal static partial class GuardrailMiddleware
                 content is TextContent textContent
                     ? CreateTextContent(
                         textContent,
-                        redact
-                            ? "[REDACTED: Safety policy]"
+                        redact ? "[REDACTED: Safety policy]"
                             : wrapUntrustedContent && isUntrusted
-                                ? $"<untrusted-content encoding=\"json\">\n{JsonSerializer.Serialize(textContent.Text)}\n</untrusted-content>"
-                                : textContent.Text
+                                ? $"""
+                                <untrusted-content encoding=\"json\">\n{JsonSerializer.Serialize(
+                                    textContent.Text,
+                                    TextContentSerializationContext.Default.String
+                                )}\n</untrusted-content>
+                                """
+                            : textContent.Text
                     )
                     : content
             ),
@@ -127,3 +133,6 @@ public static class GuardrailMiddlewareExtensions
         }
     }
 }
+
+[JsonSerializable(typeof(string))]
+internal sealed partial class TextContentSerializationContext : JsonSerializerContext;

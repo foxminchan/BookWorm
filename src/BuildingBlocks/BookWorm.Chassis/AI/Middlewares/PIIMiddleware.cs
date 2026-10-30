@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.AI.Presidio;
+﻿using System.Runtime.CompilerServices;
+using BookWorm.Chassis.AI.Presidio;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -52,10 +53,9 @@ internal static class PIIMiddleware
             IEnumerable<ChatMessage> messages,
             ChatOptions? options,
             IChatClient innerChatClient,
-            CancellationToken cancellationToken
+            [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
-            // Buffer streamed updates so generated PII is removed before it reaches the caller.
             var filteredMessages = await FilterMessagesAsync(
                 presidioService,
                 messages,
