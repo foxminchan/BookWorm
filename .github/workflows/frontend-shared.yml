@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: ⚡ Set up Turborepo Remote Cache
-        uses: vercel/setup-turborepo-remote-cache-action@v1.0.0
+        uses: vercel/setup-turborepo-remote-cache-action@v1.1.0
         with:
           team: ${{ vars.TURBO_TEAM }}
 
@@ -81,7 +81,7 @@ jobs:
       - name: 📊 Post Allure Summary (Backoffice)
         if: |
           ${{ !cancelled() && hashFiles('src/Clients/apps/backoffice/allure-report/index.html') != '' }}
-        uses: allure-framework/allure-action@v0.11.3
+        uses: allure-framework/allure-action@v0.12.0
         with:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-report
           remote-href: https://foxminchan.github.io/BookWorm/reports/backoffice
@@ -90,7 +90,7 @@ jobs:
       - name: 📊 Post Allure Summary (Storefront)
         if: |
           ${{ !cancelled() && hashFiles('src/Clients/apps/storefront/allure-report/index.html') != '' }}
-        uses: allure-framework/allure-action@v0.11.3
+        uses: allure-framework/allure-action@v0.12.0
         with:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report
           remote-href: https://foxminchan.github.io/BookWorm/reports/storefront
