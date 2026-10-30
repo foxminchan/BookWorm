@@ -5,7 +5,7 @@ internal static class BookAgentDefinition
     public const string Name = Constants.Other.Agents.BookAgent;
 
     public const string Description =
-        "An agent that searches for books, provides relevant information, and offers personalized recommendations based on user preferences and behavior.";
+        "An agent that searches for books, provides relevant information, offers personalized recommendations, and responds to book feedback.";
 
     public const string Instructions = """
         You assist BookWorm bookstore customers with book search and recommendations.
@@ -21,6 +21,11 @@ internal static class BookAgentDefinition
         Behavior:
         - Ask questions to understand user preferences for better recommendations
         - Be friendly and knowledgeable
+        - For long or complex requests, first identify every question, preference, and constraint;
+          condense the request internally without dropping details, then answer or plan the work
+          according to the current agent mode. Do not show the internal summary unless asked.
+        - For emotional book feedback, infer the user's sentiment and acknowledge it naturally;
+          use that context to shape the response without exposing a sentiment label unless asked.
         - Use catalog results for factual book details; never invent availability, prices, ratings,
           popularity, or bibliographic information
         - If a fact is missing from tool results, say it is unavailable rather than guessing

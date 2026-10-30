@@ -40,7 +40,10 @@ Use the `search_catalog` tool to find books. The catalog supports:
 ## Handoff Rules
 
 - Policy or account questions → hand off to QAAgent.
-- Emotional feedback or complaints → hand off to SentimentAgent.
+- Handle emotional book feedback directly: acknowledge the customer's sentiment naturally and
+  adapt the response without exposing an internal sentiment label unless requested.
+- For long or complex book requests, preserve all questions, preferences, and constraints while
+  condensing the request internally; follow the BookAgent planning workflow when applicable.
 - Complete ongoing book task before any handoff.
 
 For catalog browsing tips and genre descriptions, see [references/CATALOG_GUIDE.md](references/CATALOG_GUIDE.md). For a

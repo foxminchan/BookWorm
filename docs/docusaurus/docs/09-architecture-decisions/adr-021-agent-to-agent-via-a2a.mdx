@@ -22,6 +22,14 @@ last_update:
 
 **Accepted** - March 2025
 
+> **Implementation update — October 2026:** The Chat service consolidated its Summarize and
+> Sentiment specialists into BookAgent to reduce sequential handoffs. Chat now exposes Router,
+> Language, QA, and Book agents; the first three retain their A2A endpoints. BookAgent handles
+> long-request condensation and book-feedback sentiment as part of its normal response. The
+> Rating service's own review summarization is unchanged. The ecosystem table and implementation
+> details below describe the original 2025 design and are retained as historical context; they do
+> not represent the current Chat service registrations.
+
 ## Context
 
 BookWorm's intelligent chat system relies on specialized AI agents to provide comprehensive book

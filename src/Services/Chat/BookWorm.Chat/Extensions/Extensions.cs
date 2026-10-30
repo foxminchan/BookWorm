@@ -8,8 +8,6 @@ using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.LanguageTranslation;
 using BookWorm.Chat.Agents.Routing;
-using BookWorm.Chat.Agents.SentimentAnalysis;
-using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Chat.Configurations;
 using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
@@ -96,8 +94,6 @@ internal static class Extensions
             // Register each agent as a self-contained vertical slice
             builder.AddBookAgent();
             builder.AddLanguageAgent();
-            builder.AddSentimentAgent();
-            builder.AddSummarizeAgent();
             builder.AddQAAgent();
             builder.AddRouterAgent();
 

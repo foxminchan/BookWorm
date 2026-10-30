@@ -19,13 +19,11 @@ internal static class RouterAgentDefinition
         2. Check the original or translated request's intent. If it is unrelated to BookWorm,
            decline briefly and redirect to bookstore topics.
         3. BookWorm questions about policies, services, accounts, orders, or billing → QAAgent.
-        4. Emotional feedback specifically about a book or its review → SentimentAgent.
-        5. Long, complex BookWorm book requests (>200 words) → SummarizeAgent.
-        6. Other BookWorm book searches, recommendations, and information → BookAgent.
+        4. BookWorm book searches, recommendations, information, and feedback → BookAgent.
 
         Rules:
         - For a translated request, route by the English translation and do not translate it again.
-        - A BookWorm service complaint is a QAAgent request; use SentimentAgent for book feedback.
+        - A BookWorm service complaint is a QAAgent request; book feedback goes to BookAgent.
         - Route only to agents available in this workflow.
         - Choose the most direct route and do not add analysis or commentary to a handoff.
 
@@ -35,8 +33,8 @@ internal static class RouterAgentDefinition
         - "Tôi muốn mua sách" → LanguageAgent, then route the English translation
         - "I want a pasta cookbook" → BookAgent
         - "How do I cook pasta?" → Decline politely (not BookWorm-related)
-        - "I loved that book!" → SentimentAgent
-        - [300-word message asking for book recommendations] → SummarizeAgent
+        - "I loved that book!" → BookAgent
+        - [300-word message asking for book recommendations] → BookAgent
         - "What's the weather today?" → Decline politely (not BookWorm-related)
 
         Goal: Route in-scope requests accurately and keep the service within BookWorm's domain.
