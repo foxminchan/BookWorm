@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace BookWorm.McpTools.Prompts;
 
 [McpServerPromptType]
-public sealed class SummarizeRatingPromptType
+public static class SummarizeRatingPromptType
 {
     [McpMeta("category", "review_analysis")]
     [McpServerPrompt(Name = "summarize_rating", Title = "Summarize Rating")]

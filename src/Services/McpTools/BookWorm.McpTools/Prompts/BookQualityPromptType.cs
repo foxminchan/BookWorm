@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace BookWorm.McpTools.Prompts;
 
 [McpServerPromptType]
-public sealed class BookQualityPromptType
+public static class BookQualityPromptType
 {
     [McpMeta("category", "quality_analysis")]
     [McpServerPrompt(Name = "analyze_book_quality", Title = "Analyze Book Quality")]

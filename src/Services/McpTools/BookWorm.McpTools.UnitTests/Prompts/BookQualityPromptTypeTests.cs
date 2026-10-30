@@ -94,7 +94,9 @@ public sealed class BookQualityPromptTypeTests
             "describes available reader feedback rather than objective literary merit"
         );
         result.Text.ShouldContain("Do not infer reviewer identity, demographics, or motivations");
-        result.Text.ShouldContain("concise, checkable sentences grounded in metrics and review themes");
+        result.Text.ShouldContain(
+            "concise, checkable sentences grounded in metrics and review themes"
+        );
     }
 
     [Test]

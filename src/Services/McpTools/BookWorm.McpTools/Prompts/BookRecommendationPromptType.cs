@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace BookWorm.McpTools.Prompts;
 
 [McpServerPromptType]
-public sealed class BookRecommendationPromptType
+public static class BookRecommendationPromptType
 {
     [McpMeta("category", "recommendation")]
     [McpServerPrompt(Name = "recommend_books", Title = "Recommend Books")]
