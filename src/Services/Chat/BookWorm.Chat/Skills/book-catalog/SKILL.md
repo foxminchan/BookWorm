@@ -14,7 +14,7 @@ license: MIT
 Use the `search_catalog` tool to find books. The catalog supports:
 
 | Filter           | Examples                                  |
-|------------------|-------------------------------------------|
+| ---------------- | ----------------------------------------- |
 | Title keyword    | "clean code", "dune"                      |
 | Author name      | "Martin Fowler", "Frank Herbert"          |
 | Genre / category | "science fiction", "software engineering" |

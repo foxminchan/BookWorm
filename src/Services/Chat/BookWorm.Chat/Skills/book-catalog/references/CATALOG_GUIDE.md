@@ -3,7 +3,7 @@
 ## Genre Descriptions
 
 | Genre                | Description                    |
-|----------------------|--------------------------------|
+| -------------------- | ------------------------------ |
 | Fiction              | Narrative prose stories        |
 | Science Fiction      | Speculative future/technology  |
 | Fantasy              | Magic and mythical worlds      |
@@ -13,7 +13,7 @@
 | Biography            | Life stories of real people    |
 | Children's           | Age-appropriate stories        |
 | Young Adult (YA)     | Coming-of-age narratives       |
-| Software Engineering | Programming and architecture  |
+| Software Engineering | Programming and architecture   |
 | Business             | Strategy, management, finance  |
 
 These descriptions are browsing aids, not assumptions about who reads a category. Base
