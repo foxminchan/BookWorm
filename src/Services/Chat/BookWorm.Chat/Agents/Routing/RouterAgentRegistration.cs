@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
@@ -7,35 +8,27 @@ namespace BookWorm.Chat.Agents.Routing;
 
 internal static class RouterAgentRegistration
 {
+    private const string DefinitionFile = "Agents/Routing/router-agent.yaml";
+
     extension(IHostApplicationBuilder builder)
     {
         public void AddRouterAgent()
         {
             builder
                 .AddAIAgent(
-                    RouterAgentDefinition.Name,
+                    Constants.Other.Agents.RouterAgent,
                     (sp, key) =>
                     {
                         var chatClient = sp.GetRequiredService<IChatClient>()
                             .AsBuilder()
+                            .UsePIIMiddleware(sp)
                             .UseGuardrailMiddleware()
                             .Build(sp);
 
-                        var agent = new ChatClientAgent(
-                            chatClient,
-                            options: new()
-                            {
-                                Name = key,
-                                Description = RouterAgentDefinition.Description,
-                                ChatOptions = new()
-                                {
-                                    Instructions = RouterAgentDefinition.Instructions,
-                                    Temperature = 0.1f,
-                                    MaxOutputTokens = 200,
-                                    Reasoning = new() { Effort = ReasoningEffort.Low },
-                                },
-                            }
-                        );
+                        var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
+                        options.ChatOptions!.Reasoning = new() { Effort = ReasoningEffort.Low };
+
+                        var agent = new ChatClientAgent(chatClient, options);
 
                         return agent.WithBookWormGovernance(sp, key);
                     }

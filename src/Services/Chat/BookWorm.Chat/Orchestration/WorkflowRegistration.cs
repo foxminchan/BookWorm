@@ -1,10 +1,4 @@
 using AgentGovernance;
-using BookWorm.Chat.Agents.BookSearch;
-using BookWorm.Chat.Agents.CustomerSupport;
-using BookWorm.Chat.Agents.LanguageTranslation;
-using BookWorm.Chat.Agents.Routing;
-using BookWorm.Chat.Agents.SentimentAnalysis;
-using BookWorm.Chat.Agents.Summarization;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
@@ -25,42 +19,20 @@ internal static class WorkflowRegistration
                     (sp, key) =>
                     {
                         var routerAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            RouterAgentDefinition.Name
+                            Constants.Other.Agents.RouterAgent
                         );
                         var bookAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            BookAgentDefinition.Name
+                            Constants.Other.Agents.BookAgent
                         );
-                        var languageAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            LanguageAgentDefinition.Name
+                        var qaAgent = sp.GetRequiredKeyedService<AIAgent>(
+                            Constants.Other.Agents.QAAgent
                         );
-                        var sentimentAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            SentimentAgentDefinition.Name
-                        );
-                        var summarizeAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            SummarizeAgentDefinition.Name
-                        );
-                        var qaAgent = sp.GetRequiredKeyedService<AIAgent>(QAAgentDefinition.Name);
 
                         // Build handoff workflow for dynamic agent routing
-                        // RouterAgent analyzes requests and delegates to specialized agents
+                        // RouterAgent routes requests to the book or support agent.
                         var handoffWorkflow = AgentWorkflowBuilder
                             .CreateHandoffBuilderWith(routerAgent)
-                            .WithHandoffs(
-                                routerAgent,
-                                [languageAgent, summarizeAgent, sentimentAgent, bookAgent, qaAgent]
-                            )
-                            // Define handoff paths for agent collaboration
-                            .WithHandoff(
-                                languageAgent,
-                                routerAgent,
-                                "Return the English translation to RouterAgent for scope checking and routing."
-                            )
-                            .WithHandoff(
-                                summarizeAgent,
-                                bookAgent,
-                                "Transfer to this agent if the user message is very long or complex."
-                            )
-                            .WithHandoffs(sentimentAgent, [bookAgent, routerAgent])
+                            .WithHandoffs(routerAgent, [bookAgent, qaAgent])
                             .WithHandoff(
                                 qaAgent,
                                 bookAgent,

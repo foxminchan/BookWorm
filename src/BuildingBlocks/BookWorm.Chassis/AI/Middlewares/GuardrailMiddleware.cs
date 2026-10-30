@@ -1,4 +1,7 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Middlewares;
@@ -19,18 +22,11 @@ internal static partial class GuardrailMiddleware
     private static partial Regex InjectionPatternRegex();
 
     [GeneratedRegex(
-        @"(?:reveal|repeat|show|print|provide)\s+(?:(?:your|the)\s+prompt"
-            + @"|(?:(?:your|the)\s+)?(?:system|developer)\s+(?:prompt|instructions?|message))"
-            + @"|(?:system|developer)\s+prompt\s*:",
+        @"(?:system|developer)\s+(?:prompt|instructions?)\s*[:=]\s*\S"
+            + @"|(?:\[/?INST\]|<<SYS>>|<\|im_start\|>\s*system)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     )]
     private static partial Regex PromptLeakagePatternRegex();
-
-    [GeneratedRegex(
-        @"\b(?:harmful|illegal|violence|weapon|drug|abuse|hate|discrimination)\b",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    )]
-    private static partial Regex ForbiddenContentRegex();
 
     public static async Task<ChatResponse> InvokeAsync(
         IEnumerable<ChatMessage> messages,
@@ -50,40 +46,74 @@ internal static partial class GuardrailMiddleware
         response.Messages = FilterMessages(response.Messages, false);
 
         return response;
+    }
 
-        static List<ChatMessage> FilterMessages(
-            IEnumerable<ChatMessage> contents,
-            bool wrapUntrustedContent = true
-        )
+    internal static async IAsyncEnumerable<ChatResponseUpdate> InvokeStreamingAsync(
+        IEnumerable<ChatMessage> messages,
+        ChatOptions? options,
+        IChatClient innerChatClient,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        // Buffer streamed updates so prompt-leak checks run before any response reaches the caller.
+        var filteredMessages = FilterMessages(messages);
+        var response = await innerChatClient
+            .GetStreamingResponseAsync(filteredMessages, options, cancellationToken)
+            .ToChatResponseAsync(cancellationToken);
+
+        response.Messages = FilterMessages(response.Messages, false);
+
+        foreach (var update in response.ToChatResponseUpdates())
         {
-            return
-            [
-                .. contents.Select(message => new ChatMessage(
-                    message.Role,
-                    FilterContent(message, wrapUntrustedContent)
-                )),
-            ];
-        }
-
-        static string FilterContent(ChatMessage message, bool wrapUntrustedContent)
-        {
-            var content = message.Text;
-            var isUntrusted = message.Role == ChatRole.User || message.Role == ChatRole.Tool;
-
-            if (
-                (isUntrusted && InjectionPatternRegex().IsMatch(content))
-                || (!isUntrusted && PromptLeakagePatternRegex().IsMatch(content))
-                || ForbiddenContentRegex().IsMatch(content)
-            )
-            {
-                return "[REDACTED: Safety policy]";
-            }
-
-            return wrapUntrustedContent && isUntrusted
-                ? $"<untrusted-content>\n{content}\n</untrusted-content>"
-                : content;
+            yield return update;
         }
     }
+
+    private static List<ChatMessage> FilterMessages(
+        IEnumerable<ChatMessage> contents,
+        bool wrapUntrustedContent = true
+    ) => [.. contents.Select(message => FilterMessage(message, wrapUntrustedContent))];
+
+    private static ChatMessage FilterMessage(ChatMessage message, bool wrapUntrustedContent)
+    {
+        var isUntrusted = message.Role == ChatRole.User || message.Role == ChatRole.Tool;
+        var combinedText = message.Text;
+
+        var redact =
+            (isUntrusted && InjectionPatternRegex().IsMatch(combinedText))
+            || (!isUntrusted && PromptLeakagePatternRegex().IsMatch(combinedText));
+
+        var filteredMessage = message.Clone();
+        filteredMessage.Contents =
+        [
+            .. message.Contents.Select(content =>
+                content is TextContent textContent
+                    ? CreateTextContent(
+                        textContent,
+                        redact ? "[REDACTED: Safety policy]"
+                            : wrapUntrustedContent && isUntrusted
+                                ? $"""
+                                <untrusted-content encoding=\"json\">\n{JsonSerializer.Serialize(
+                                    textContent.Text,
+                                    TextContentSerializationContext.Default.String
+                                )}\n</untrusted-content>
+                                """
+                            : textContent.Text
+                    )
+                    : content
+            ),
+        ];
+
+        return filteredMessage;
+    }
+
+    private static TextContent CreateTextContent(TextContent original, string text) =>
+        new(text)
+        {
+            Annotations = original.Annotations,
+            AdditionalProperties = original.AdditionalProperties,
+            RawRepresentation = original.RawRepresentation,
+        };
 }
 
 public static class GuardrailMiddlewareExtensions
@@ -96,7 +126,13 @@ public static class GuardrailMiddlewareExtensions
         /// <returns>The configured <see cref="ChatClientBuilder" /> instance for fluent chaining.</returns>
         public ChatClientBuilder UseGuardrailMiddleware()
         {
-            return builder.Use(GuardrailMiddleware.InvokeAsync, null);
+            return builder.Use(
+                GuardrailMiddleware.InvokeAsync,
+                GuardrailMiddleware.InvokeStreamingAsync
+            );
         }
     }
 }
+
+[JsonSerializable(typeof(string))]
+internal sealed partial class TextContentSerializationContext : JsonSerializerContext;

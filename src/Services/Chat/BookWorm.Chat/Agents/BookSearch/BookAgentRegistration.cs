@@ -1,4 +1,5 @@
 using BookWorm.Chassis.AI.Agents;
+using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using Microsoft.Agents.AI;
@@ -8,22 +9,15 @@ namespace BookWorm.Chat.Agents.BookSearch;
 
 internal static class BookAgentRegistration
 {
+    private const string DefinitionFile = "Agents/BookSearch/book-agent.yaml";
     private const string FileMemoryRootConfigKey = "Chat:Harness:FileMemory:Root";
-
-    private static readonly string[] _catalogToolNames =
-    [
-        "search_catalog",
-        "get_book",
-        "list_categories",
-        "list_authors",
-    ];
 
     extension(IHostApplicationBuilder builder)
     {
         public void AddBookAgent()
         {
             builder.AddAIAgent(
-                BookAgentDefinition.Name,
+                Constants.Other.Agents.BookAgent,
                 (sp, key) =>
                 {
                     var compactionProvider = CompactionPipelineFactory.CreateFull(
@@ -51,43 +45,27 @@ internal static class BookAgentRegistration
 
                     var (todoProvider, modeProvider) =
                         HarnessProviderFactory.CreatePlanningProviders();
+
                     var fileMemoryProvider = HarnessProviderFactory.CreateFileMemoryProvider(
                         fileMemoryRoot
                     );
 
-                    var agent = new ChatClientAgent(
-                        chatClient,
-                        options: new()
-                        {
-                            Name = key,
-                            Description = BookAgentDefinition.Description,
-                            // Catalog tools are read-only queries, safe to run concurrently.
-                            AllowConcurrentInvocation = true,
-                            AIContextProviders =
-                            [
-                                skillsProvider,
-                                todoProvider,
-                                modeProvider,
-                                fileMemoryProvider,
-                            ],
-                            ChatOptions = new()
-                            {
-                                Instructions = BookAgentDefinition.Instructions,
-                                Temperature = 0.7f,
-                                MaxOutputTokens = 2000,
-                                TopP = 0.95f,
-                                AllowMultipleToolCalls = true,
-                                Reasoning = new() { Effort = ReasoningEffort.High },
-                            },
-                        }
-                    );
+                    var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
+                    var chatOptions = options.ChatOptions!;
+                    chatOptions.Tools = mcpClient.GetAgentTools(toolNames);
+                    options.AllowConcurrentInvocation = true;
+                    options.AIContextProviders =
+                    [
+                        skillsProvider,
+                        todoProvider,
+                        modeProvider,
+                        fileMemoryProvider,
+                    ];
+                    options.ChatOptions!.Reasoning = new() { Effort = ReasoningEffort.High };
 
-                    return agent
-                        .WithRefreshingMcpTools(
-                            mcpClient,
-                            toolName => _catalogToolNames.Contains(toolName)
-                        )
-                        .WithBookWormGovernance(sp, key);
+                    var agent = new ChatClientAgent(chatClient, options);
+
+                    return agent.WithBookWormGovernance(sp, key);
                 }
             );
         }

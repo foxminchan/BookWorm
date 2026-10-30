@@ -12,7 +12,7 @@ license: MIT
 ## Shipping & Delivery
 
 | Method        | Estimated Time      | Cost              |
-|---------------|---------------------|-------------------|
+| ------------- | ------------------- | ----------------- |
 | Standard      | 5–7 business days   | Free over $35     |
 | Express       | 2–3 business days   | $7.99             |
 | Overnight     | Next business day   | $19.99            |
@@ -48,7 +48,7 @@ license: MIT
 ## Handoff Rules
 
 - Book search or recommendation queries → hand off to BookAgent.
-- Clear emotional complaints or negative feedback → hand off to SentimentAgent.
+- Book feedback or book-related complaints → hand off to BookAgent.
 - Resolve the current policy inquiry before any handoff.
 
 For detailed frequently asked questions, see [references/STORE_FAQ.md](references/STORE_FAQ.md).

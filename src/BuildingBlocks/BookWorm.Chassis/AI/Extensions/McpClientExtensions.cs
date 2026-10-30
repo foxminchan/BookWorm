@@ -1,5 +1,7 @@
 ﻿using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
+using Microsoft.Agents.AI.Mcp;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -9,6 +11,44 @@ namespace BookWorm.Chassis.AI.Extensions;
 
 public static class McpClientExtensions
 {
+    extension(McpClient mcpClient)
+    {
+        /// <summary>
+        ///     Loads the MCP tools declared by an agent definition.
+        /// </summary>
+        /// <param name="toolNames">The declared tool names allowed for the agent.</param>
+        /// <returns>The matching MCP tools.</returns>
+        /// <exception cref="InvalidDataException">
+        ///     The definition declares no tools or the MCP server provides no matching tools.
+        /// </exception>
+        public AITool[] GetAgentTools(IReadOnlySet<string> toolNames)
+        {
+            ArgumentNullException.ThrowIfNull(mcpClient);
+            ArgumentNullException.ThrowIfNull(toolNames);
+
+            if (toolNames.Count == 0)
+            {
+                throw new InvalidDataException("Agent definition must declare MCP tools.");
+            }
+
+            var tools = mcpClient
+                .ListAgentToolsWithTasksAsync()
+                .GetAwaiter()
+                .GetResult()
+                .Where(tool => toolNames.Contains(tool.Name))
+                .ToArray();
+
+            if (tools.Length == 0)
+            {
+                throw new InvalidDataException(
+                    "MCP server did not provide any tools declared by the agent definition."
+                );
+            }
+
+            return tools;
+        }
+    }
+
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
