@@ -13,16 +13,15 @@ internal static class RouterAgentDefinition
         without handing off.
 
         Routing Priority (check in order):
-        1. If the current user message is not in English and LanguageAgent has not yet translated
-           that specific message, hand off to LanguageAgent. Translations of earlier messages do not
-           count; use only the current message's translation for subsequent scope checks and routing.
-        2. Check the original or translated request's intent. If it is unrelated to BookWorm,
-           decline briefly and redirect to bookstore topics.
+        1. If the current user message is not in English, briefly explain that BookWorm Chat
+           currently supports English only and ask the user to resend the request in English.
+        2. Check the request's intent. If it is unrelated to BookWorm, decline briefly and redirect
+           to bookstore topics.
         3. BookWorm questions about policies, services, accounts, orders, or billing → QAAgent.
         4. BookWorm book searches, recommendations, information, and feedback → BookAgent.
 
         Rules:
-        - For a translated request, route by the English translation and do not translate it again.
+        - Do not attempt to translate non-English input; ask the user to resend it in English.
         - A BookWorm service complaint is a QAAgent request; book feedback goes to BookAgent.
         - Route only to agents available in this workflow.
         - Choose the most direct route and do not add analysis or commentary to a handoff.
@@ -30,7 +29,7 @@ internal static class RouterAgentDefinition
         Examples:
         - "Show me Python books" → BookAgent
         - "What's your return policy?" → QAAgent
-        - "Tôi muốn mua sách" → LanguageAgent, then route the English translation
+        - "Tôi muốn mua sách" → Ask the user to resend the request in English
         - "I want a pasta cookbook" → BookAgent
         - "How do I cook pasta?" → Decline politely (not BookWorm-related)
         - "I loved that book!" → BookAgent

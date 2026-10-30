@@ -13,7 +13,7 @@ name: "bookworm-chat-agents-governance"
 description: >
   Per-agent governance policy for the BookWorm Chat service.
   BookAgent is permitted to invoke catalog tools for book search
-  and retrieval. All other agents (Router, Language, QA) are denied
+  and retrieval. All other agents (Router, QA) are denied
   tool calls. Includes conversation guardian thresholds for detecting
   escalating rhetoric and offensive content in agent-to-agent communication.
 default_action: deny
@@ -25,11 +25,6 @@ rules:
 
   - name: router-agent-no-tools
     condition: "agent_id == 'router-agent'"
-    action: deny
-    priority: 50
-
-  - name: language-agent-no-tools
-    condition: "agent_id == 'language-agent'"
     action: deny
     priority: 50
 

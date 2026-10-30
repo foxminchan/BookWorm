@@ -1,7 +1,6 @@
 using AgentGovernance;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
-using BookWorm.Chat.Agents.LanguageTranslation;
 using BookWorm.Chat.Agents.Routing;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;
@@ -28,21 +27,13 @@ internal static class WorkflowRegistration
                         var bookAgent = sp.GetRequiredKeyedService<AIAgent>(
                             BookAgentDefinition.Name
                         );
-                        var languageAgent = sp.GetRequiredKeyedService<AIAgent>(
-                            LanguageAgentDefinition.Name
-                        );
                         var qaAgent = sp.GetRequiredKeyedService<AIAgent>(QAAgentDefinition.Name);
 
                         // Build handoff workflow for dynamic agent routing
-                        // RouterAgent routes requests to the language, book, or support agent.
+                        // RouterAgent routes requests to the book or support agent.
                         var handoffWorkflow = AgentWorkflowBuilder
                             .CreateHandoffBuilderWith(routerAgent)
-                            .WithHandoffs(routerAgent, [languageAgent, bookAgent, qaAgent])
-                            .WithHandoff(
-                                languageAgent,
-                                routerAgent,
-                                "Return the English translation to RouterAgent for scope checking and routing."
-                            )
+                            .WithHandoffs(routerAgent, [bookAgent, qaAgent])
                             .WithHandoff(
                                 qaAgent,
                                 bookAgent,

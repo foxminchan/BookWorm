@@ -6,7 +6,6 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
-using BookWorm.Chat.Agents.LanguageTranslation;
 using BookWorm.Chat.Agents.Routing;
 using BookWorm.Chat.Configurations;
 using BookWorm.Chat.Orchestration;
@@ -93,7 +92,6 @@ internal static class Extensions
 
             // Register each agent as a self-contained vertical slice
             builder.AddBookAgent();
-            builder.AddLanguageAgent();
             builder.AddQAAgent();
             builder.AddRouterAgent();
 
