@@ -75,11 +75,11 @@ public static class BookRecommendationPromptType
                    - Rating summary (average rating / total reviews)
                 4. Order recommendations by best fit first
 
-                Use only explicitly stated, book-relevant preferences. Do not infer demographic
-                traits or use stereotypes to decide what someone should read. Do not invent catalog
-                facts, and identify when a requested detail or rating signal is unavailable.
-                Distinguish catalog facts from recommendation judgments; do not expose private
-                reasoning.
+                Use only explicitly stated, book-relevant preferences.
+                Do not infer demographic traits or use stereotypes to decide what someone should read.
+                Do not invent catalog facts, and identify when a requested detail or rating signal
+                is unavailable. Distinguish catalog facts from recommendation judgments; do not
+                expose private reasoning.
 
                 If no books match the criteria, suggest broadening the search parameters.
             """
