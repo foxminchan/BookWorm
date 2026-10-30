@@ -21,6 +21,7 @@ internal static class RouterAgentRegistration
                     {
                         var chatClient = sp.GetRequiredService<IChatClient>()
                             .AsBuilder()
+                            .UsePIIMiddleware(sp)
                             .UseGuardrailMiddleware()
                             .Build(sp);
 

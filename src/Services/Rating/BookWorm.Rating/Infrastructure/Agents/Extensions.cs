@@ -44,6 +44,10 @@ internal static class Extensions
                             .AsBuilder()
                             .UsePIIMiddleware(sp)
                             .UseGuardrailMiddleware()
+                            .Use(
+                                RatingOutputGuardrailMiddleware.InvokeAsync,
+                                RatingOutputGuardrailMiddleware.InvokeStreamingAsync
+                            )
                             .UseAIContextProviders(compactionProvider)
                             .Build(sp);
 

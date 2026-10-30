@@ -22,12 +22,60 @@ internal static class PIIMiddleware
                 cancellationToken
             );
 
-            return await innerChatClient.GetResponseAsync(
+            var response = await innerChatClient.GetResponseAsync(
                 filteredMessages,
                 options,
                 cancellationToken
             );
+
+            response.Messages = await FilterMessagesAsync(
+                presidioService,
+                response.Messages,
+                cancellationToken
+            );
+
+            return response;
         };
+    }
+
+    public static Func<
+        IEnumerable<ChatMessage>,
+        ChatOptions?,
+        IChatClient,
+        CancellationToken,
+        IAsyncEnumerable<ChatResponseUpdate>
+    > CreateStreaming(IPresidioService presidioService)
+    {
+        return InvokeStreamingAsync;
+
+        async IAsyncEnumerable<ChatResponseUpdate> InvokeStreamingAsync(
+            IEnumerable<ChatMessage> messages,
+            ChatOptions? options,
+            IChatClient innerChatClient,
+            CancellationToken cancellationToken
+        )
+        {
+            // Buffer streamed updates so generated PII is removed before it reaches the caller.
+            var filteredMessages = await FilterMessagesAsync(
+                presidioService,
+                messages,
+                cancellationToken
+            );
+            var response = await innerChatClient
+                .GetStreamingResponseAsync(filteredMessages, options, cancellationToken)
+                .ToChatResponseAsync(cancellationToken);
+
+            response.Messages = await FilterMessagesAsync(
+                presidioService,
+                response.Messages,
+                cancellationToken
+            );
+
+            foreach (var update in response.ToChatResponseUpdates())
+            {
+                yield return update;
+            }
+        }
     }
 
     private static async Task<IList<ChatMessage>> FilterMessagesAsync(
@@ -40,12 +88,35 @@ internal static class PIIMiddleware
 
         foreach (var message in messages)
         {
-            var anonymizedText = await presidioService.AnonymizeAsync(
-                message.Text,
-                cancellationToken
-            );
+            var anonymizedMessage = message.Clone();
+            var contents = new List<AIContent>(message.Contents.Count);
 
-            result.Add(new(message.Role, anonymizedText));
+            foreach (var content in message.Contents)
+            {
+                if (content is TextContent textContent)
+                {
+                    var anonymizedText = await presidioService.AnonymizeAsync(
+                        textContent.Text,
+                        cancellationToken
+                    );
+
+                    contents.Add(
+                        new TextContent(anonymizedText)
+                        {
+                            Annotations = textContent.Annotations,
+                            AdditionalProperties = textContent.AdditionalProperties,
+                            RawRepresentation = textContent.RawRepresentation,
+                        }
+                    );
+                }
+                else
+                {
+                    contents.Add(content);
+                }
+            }
+
+            anonymizedMessage.Contents = contents;
+            result.Add(anonymizedMessage);
         }
 
         return result;
@@ -66,7 +137,10 @@ public static class PIIMiddlewareExtensions
         public ChatClientBuilder UsePIIMiddleware(IServiceProvider sp)
         {
             var presidioService = sp.GetRequiredService<IPresidioService>();
-            return builder.Use(PIIMiddleware.Create(presidioService), null);
+            return builder.Use(
+                PIIMiddleware.Create(presidioService),
+                PIIMiddleware.CreateStreaming(presidioService)
+            );
         }
     }
 }

@@ -41,7 +41,7 @@ rules:
 
   # ── Rate limiting (priority 30) ─────────────────────────────────
   - name: rate-limit-review-reads
-    condition: "tool_name == 'get_reviews'"
+    condition: "tool_name == 'GetCustomerReviews'"
     action: rate_limit
     limit: "30/minute"
 
