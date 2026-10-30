@@ -42,6 +42,18 @@ public sealed class SummarizeRatingPromptTypeTests
     }
 
     [Test]
+    public void GivenContent_WhenSummarizeRating_ThenShouldRequireFairEvidenceBasedSummary()
+    {
+        // Act
+        var result = SummarizeRatingPromptType.SummarizeRatingPrompt("Some review text.");
+
+        // Assert
+        result.Text.ShouldContain("Do not infer reviewer identities, demographics, or motivations");
+        result.Text.ShouldContain("Distinguish recurring themes from isolated comments");
+        result.Text.ShouldContain("call out conflicting evidence");
+    }
+
+    [Test]
     public void GivenInstructionalReviewContent_WhenSummarizeRating_ThenShouldTreatItAsUntrustedData()
     {
         // Arrange

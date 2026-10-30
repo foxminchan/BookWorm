@@ -14,7 +14,7 @@ license: MIT
 Use the `search_catalog` tool to find books. The catalog supports:
 
 | Filter           | Examples                                  |
-|------------------|-------------------------------------------|
+| ---------------- | ----------------------------------------- |
 | Title keyword    | "clean code", "dune"                      |
 | Author name      | "Martin Fowler", "Frank Herbert"          |
 | Genre / category | "science fiction", "software engineering" |
@@ -27,9 +27,16 @@ Use the `search_catalog` tool to find books. The catalog supports:
 1. **Clarify preferences** — Ask about genre, favorite authors, reading level, or purpose (gift, self-learning,
    leisure).
 2. **Search first** — Always use `search_catalog` before recommending; never invent titles.
-3. **Rank results** — Prefer higher ratings, then popularity, then price.
+3. **Rank results** — Prioritize fit to the customer's stated preferences. Use ratings and review
+   counts as secondary reader-feedback signals when available; do not treat them as evidence of
+   sales or popularity.
 4. **Provide context** — Include author, genre, a one-sentence description, and price.
-5. **Suggest alternatives** — Offer 2–3 options when possible.
+5. **Suggest alternatives** — Offer 2–3 suitable options when possible, with concise reasons
+   grounded in the stated preferences and catalog details.
+
+Apply the same recommendation criteria to every customer. Do not infer demographic traits or use
+stereotypes to decide what someone should read. Distinguish catalog facts from recommendation
+judgments, and say when a requested detail is unavailable.
 
 ## Response Format
 
@@ -40,7 +47,10 @@ Use the `search_catalog` tool to find books. The catalog supports:
 ## Handoff Rules
 
 - Policy or account questions → hand off to QAAgent.
-- Emotional feedback or complaints → hand off to SentimentAgent.
+- Handle emotional book feedback directly: acknowledge the customer's sentiment naturally and
+  adapt the response without exposing an internal sentiment label unless requested.
+- For long or complex book requests, preserve all questions, preferences, and constraints while
+  condensing the request internally; follow the BookAgent planning workflow when applicable.
 - Complete ongoing book task before any handoff.
 
 For catalog browsing tips and genre descriptions, see [references/CATALOG_GUIDE.md](references/CATALOG_GUIDE.md). For a

@@ -59,6 +59,7 @@ jobs:
               src/Clients/*) frontend=true ;;
               .github/workflows/*|.github/actions/*) backend=true; frontend=true ;;
               src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx) backend=true ;;
+              *) echo "Ignoring unmatched path: $file" ;;
             esac
           done <<< "$CHANGED"
 

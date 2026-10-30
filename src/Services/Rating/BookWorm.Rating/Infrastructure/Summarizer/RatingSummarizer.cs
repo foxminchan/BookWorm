@@ -1,4 +1,3 @@
-using BookWorm.Rating.Infrastructure.Agents;
 using Microsoft.Agents.AI;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
@@ -6,7 +5,7 @@ using ModelContextProtocol.Client;
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
 internal sealed class RatingSummarizer(
-    [FromKeyedServices(RatingAgent.Name)] AIAgent ratingAgent,
+    [FromKeyedServices(Constants.Other.Agents.RatingAgent)] AIAgent ratingAgent,
     McpClient mcpClient
 ) : ISummarizer
 {

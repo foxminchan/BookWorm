@@ -22,6 +22,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup Label="Agent Definitions">
+    <Content Include="Agents\**\*.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
     <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />

@@ -41,7 +41,7 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: ⚡ Setup Mise
-        uses: jdx/mise-action@v5.2.2
+        uses: jdx/mise-action@v5.2.4
 
       - name: 🐳 Setup Docker
         uses: docker/setup-docker-action@v5.6.0

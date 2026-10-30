@@ -45,7 +45,7 @@
       Version="$(ToolKitVersion)"
     />
     <!-- Extra -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.12.3" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.12.6" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -79,6 +79,10 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
     <!-- AI -->
     <PackageVersion Include="A2A.Grpc.AspNetCore" Version="1.0.0-preview3" />
+    <PackageVersion
+      Include="Microsoft.Agents.AI.Declarative"
+      Version="$(AgentFrameworkVersion)-rc1"
+    />
     <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="$(AgentFrameworkAlphaVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion
@@ -117,7 +121,7 @@
     <!-- gRPC -->
     <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
     <PackageVersion Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(GrpcVersion)" />
-    <PackageVersion Include="Grpc.Tools" Version="2.84.0" PrivateAssets="All" />
+    <PackageVersion Include="Grpc.Tools" Version="2.85.0" PrivateAssets="All" />
     <!-- WolverineFx -->
     <PackageVersion Include="WolverineFx.Kafka" Version="$(WolverineVersion)" />
     <PackageVersion Include="WolverineFx.Http.Marten" Version="$(WolverineVersion)" />
@@ -149,8 +153,8 @@
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.4" />
-    <PackageVersion Include="TUnit" Version="1.76.0" />
+    <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.5" />
+    <PackageVersion Include="TUnit" Version="1.76.45" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->
