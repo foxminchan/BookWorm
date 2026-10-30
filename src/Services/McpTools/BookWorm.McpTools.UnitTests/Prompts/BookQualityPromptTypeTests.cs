@@ -83,6 +83,21 @@ public sealed class BookQualityPromptTypeTests
     }
 
     [Test]
+    public void GivenValidMetrics_WhenAnalyzeBookQuality_ThenShouldRequireConsistentAndTransparentEvidence()
+    {
+        // Act
+        var result = BookQualityPromptType.AnalyzeBookQualityPrompt(4.2, 20, "Mostly positive.");
+
+        // Assert
+        result.Text.ShouldContain("Apply the same classification thresholds to every book");
+        result.Text.ShouldContain(
+            "describes available reader feedback rather than objective literary merit"
+        );
+        result.Text.ShouldContain("Do not infer reviewer identity, demographics, or motivations");
+        result.Text.ShouldContain("concise, checkable sentences grounded in metrics and review themes");
+    }
+
+    [Test]
     public void GivenZeroReviews_WhenAnalyzeBookQuality_ThenShouldStillReturnValidMessage()
     {
         // Act

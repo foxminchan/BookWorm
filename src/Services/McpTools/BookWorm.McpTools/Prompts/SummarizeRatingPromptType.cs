@@ -37,6 +37,11 @@ public sealed class SummarizeRatingPromptType
                 Review content (JSON string):
                 {reviewContent}
 
+                Summarize only opinions and experiences expressed in the supplied reviews. Do not
+                infer reviewer identities, demographics, or motivations, and do not generalize a
+                small or potentially unrepresentative set of reviews to all readers. Distinguish
+                recurring themes from isolated comments and call out conflicting evidence.
+
                 Return a concise summary using these sections:
                 - Overall sentiment
                 - Recurring themes
@@ -46,9 +51,9 @@ public sealed class SummarizeRatingPromptType
                 - Data limitations
 
                 Ground each section in the supplied reviews. Do not infer sales performance or
-                label a book Top Rated or infer sales performance based on review sentiment alone.
-                If the reviews contain
-                insufficient or conflicting evidence for a section, say so.
+                assign a classification such as Top Rated; classification thresholds are applied
+                separately using rating metrics. If the reviews contain insufficient or conflicting
+                evidence for a section, say so.
             """
         );
     }
