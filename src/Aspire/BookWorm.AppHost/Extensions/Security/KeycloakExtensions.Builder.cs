@@ -18,9 +18,7 @@ internal static partial class KeycloakExtensions
                 .AddKeycloak(name)
                 .WithDataVolume()
                 .WithOtlpExporter()
-                .WithIconName("LockClosedRibbon")
                 .WithCustomTheme(_defaultLocalKeycloakName)
-                .WithImagePullPolicy(ImagePullPolicy.Always)
                 .WithLifetime(ContainerLifetime.Persistent)
                 .WithSampleRealmImport(_defaultLocalKeycloakName, nameof(BookWorm));
 

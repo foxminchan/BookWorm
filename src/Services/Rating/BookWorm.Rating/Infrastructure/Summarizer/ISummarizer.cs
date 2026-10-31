@@ -1,6 +1,11 @@
-﻿namespace BookWorm.Rating.Infrastructure.Summarizer;
+﻿using BookWorm.Rating.Infrastructure.Summarizer.Models;
+
+namespace BookWorm.Rating.Infrastructure.Summarizer;
 
 public interface ISummarizer
 {
-    Task<string?> SummarizeAsync(string content, CancellationToken cancellationToken = default);
+    Task<SummarizeResult> SummarizeAsync(
+        Guid bookId,
+        CancellationToken cancellationToken = default
+    );
 }

@@ -2,42 +2,32 @@
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
-var postgres = builder
-    .AddAzurePostgresFlexibleServer(Components.Postgres)
-    .WithPasswordAuthentication()
-    .WithIconName("HomeDatabase")
-    .RunAsLocalContainer()
-    .ProvisionAsService(builder.Environment);
-
 var redis = builder
     .AddAzureManagedRedis(Components.Redis)
     .WithAccessKeyAuthentication()
-    .WithIconName("Memory")
     .RunAsLocalContainer()
     .ProvisionAsService(builder.Environment);
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
-    .WithIconName("DatabaseSearch")
     .WithDataVolume()
-    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
-var queue = builder
-    .AddKafka(Components.Broker)
-    .WithIconName("Pipeline")
-    .WithKafkaUI()
-    .WithImagePullPolicy(ImagePullPolicy.Always)
-    .WithLifetime(ContainerLifetime.Persistent);
+var broker = builder.ExecutionContext.IsRunMode
+    ? builder.AddKafka(Components.Broker).WithKafkaUI().WithLifetime(ContainerLifetime.Persistent)
+    : builder.AddConnectionString(Components.Broker);
 
-var storage = builder
-    .AddAzureStorage(Components.Azure.Storage.Resource)
-    .WithIconName("DatabasePlugConnected")
-    .RunAsLocalContainer();
+var storage = builder.AddAzureStorage(Components.Azure.Storage.Resource).RunAsLocalContainer();
 
 var catalogContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
     .WithAzureStorageExplorer();
+
+var postgres = builder
+    .AddAzurePostgresFlexibleServer(Components.Postgres)
+    .WithPasswordAuthentication()
+    .RunAsLocalContainer()
+    .ProvisionAsService(builder.Environment);
 
 var ratingDb = postgres.AddDatabase(Components.Database.Rating).WithPostgresMcp();
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMcp();
@@ -48,8 +38,7 @@ var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgr
 
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 
-var chat = foundry.AddDeployment(Components.Foundry.Chat, FoundryModel.Anthropic.ClaudeOpus5);
-
+var chat = foundry.AddDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
 var embedding = foundry.AddDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
@@ -58,12 +47,10 @@ IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
-    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var presidioAnonymizer = builder
     .AddPresidioAnonymizer(Components.Presidio.Anonymizer)
-    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var catalogApi = builder
@@ -71,8 +58,8 @@ var catalogApi = builder
         Services.Catalog,
         "../../Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj"
     )
-    .WithReference(queue)
-    .WaitFor(queue)
+    .WithReference(broker)
+    .WaitFor(broker)
     .WithReference(catalogDb)
     .WaitFor(catalogDb)
     .WithReference(redis)
@@ -110,8 +97,8 @@ var basketApi = builder
     )
     .WithReference(redis)
     .WaitFor(redis)
-    .WithReference(queue)
-    .WaitFor(queue)
+    .WithReference(broker)
+    .WaitFor(broker)
     .WithReference(catalogApi)
     .WithKeycloak(keycloak)
     .WithDisplayUrls();
@@ -123,8 +110,8 @@ var orderingApi = builder
     )
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
-    .WithReference(queue)
-    .WaitFor(queue)
+    .WithReference(broker)
+    .WaitFor(broker)
     .WithReference(redis)
     .WaitFor(redis)
     .WithKeycloak(keycloak)
@@ -161,8 +148,8 @@ var ratingApi = builder
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(mcp)
-    .WithReference(queue)
-    .WaitFor(queue)
+    .WithReference(broker)
+    .WaitFor(broker)
     .WithKeycloak(keycloak)
     .WithReference(chatApi)
     .WaitFor(chatApi)
@@ -181,8 +168,8 @@ builder
         "../../Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj"
     )
     .WithEmailProvider()
-    .WithReference(queue)
-    .WaitFor(queue)
+    .WithReference(broker)
+    .WaitFor(broker)
     .WithReference(notificationDb)
     .WaitFor(notificationDb)
     .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
@@ -194,8 +181,8 @@ builder
     )
     .WithReference(financeDb)
     .WaitFor(financeDb)
-    .WithReference(queue)
-    .WaitFor(queue)
+    .WithReference(broker)
+    .WaitFor(broker)
     .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 var catalogIngestion = builder
@@ -224,8 +211,8 @@ builder
         "../../Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
     )
     .WithKeycloak(keycloak)
-    .WithReference(queue)
-    .WaitFor(queue)
+    .WithReference(broker)
+    .WaitFor(broker)
     .WithReference(schedulerDb)
     .WaitFor(schedulerDb)
     .WithReference(catalogIngestion)
@@ -261,7 +248,6 @@ else
     storage.ProvisionAsService(builder.Environment);
     var frontendScheme = Uri.UriSchemeHttps;
 
-    // Add CORS origins for the APIs to allow requests from the frontend applications
     catalogApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
     basketApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
     orderingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);

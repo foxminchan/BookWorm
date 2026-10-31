@@ -70,10 +70,11 @@ jobs:
           EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
           EMAIL_SENDER_ADDRESS: ${{ vars.EMAIL_SENDER_ADDRESS }}
           EMAIL_SENDER_NAME: ${{ vars.EMAIL_SENDER_NAME }}
+          KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
         run: |
           test -n "$AZURE_RESOURCE_GROUP" || { echo "AZURE_RESOURCE_GROUP is required for this GitHub Environment."; exit 1; }
           missing=()
-          for name in KC_URL KC_REALM CATALOG_SECRET MCPTOOLS_SECRET BASKET_SECRET ORDERING_SECRET CHATTING_SECRET RATING_SECRET EMAIL_SMTP_ENDPOINT EMAIL_SMTP_USERNAME EMAIL_SMTP_PASSWORD EMAIL_SENDER_ADDRESS EMAIL_SENDER_NAME; do
+          for name in KC_URL KC_REALM CATALOG_SECRET MCPTOOLS_SECRET BASKET_SECRET ORDERING_SECRET CHATTING_SECRET RATING_SECRET EMAIL_SMTP_ENDPOINT EMAIL_SMTP_USERNAME EMAIL_SMTP_PASSWORD EMAIL_SENDER_ADDRESS EMAIL_SENDER_NAME KAFKA_BROKER; do
             if [[ -z "${!name}" ]]; then
               missing+=("$name")
             fi
@@ -109,3 +110,4 @@ jobs:
           Parameters__email_smtp_password: ${{ secrets.EMAIL_SMTP_PASSWORD }}
           Parameters__email_sender_address: ${{ vars.EMAIL_SENDER_ADDRESS }}
           Parameters__email_sender_name: ${{ vars.EMAIL_SENDER_NAME }}
+          ConnectionStrings__broker: ${{ secrets.KAFKA_BROKER }}

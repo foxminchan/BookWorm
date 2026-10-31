@@ -1,314 +1,42 @@
-﻿using BookWorm.Chassis.Exceptions;
 using BookWorm.Rating.Features.Summarize;
 using BookWorm.Rating.Infrastructure.Summarizer;
+using BookWorm.Rating.Infrastructure.Summarizer.Models;
 
 namespace BookWorm.Rating.UnitTests.Features.Summarize;
 
 public sealed class SummarizeFeedbackQueryTests
 {
-    private readonly SummarizeFeedbackHandler _handler;
-    private readonly Mock<ISummarizer> _summarizerMock = new();
-    private readonly Guid _validBookId = Guid.CreateVersion7();
-
-    public SummarizeFeedbackQueryTests()
+    [Test]
+    public async Task GivenValidBookId_WhenHandlingQuery_ThenShouldPassTypedBookIdToSummarizer()
     {
-        _handler = new(_summarizerMock.Object);
+        var bookId = Guid.CreateVersion7();
+        var expected = new SummarizeResult("Summary");
+        var summarizer = new Mock<ISummarizer>();
+        summarizer
+            .Setup(s => s.SummarizeAsync(bookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+        var handler = new SummarizeFeedbackHandler(summarizer.Object);
+
+        var result = await handler.Handle(new(bookId), CancellationToken.None);
+
+        result.ShouldBe(expected);
+        summarizer.Verify(s => s.SummarizeAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
-    public async Task GivenValidBookId_WhenHandlingQuery_ThenShouldCallSummarizerWithCorrectContent()
+    public async Task GivenCancellationToken_WhenHandlingQuery_ThenShouldPropagateIt()
     {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        var expectedContent = $"Get an overview of the ratings for book with ID  {_validBookId}";
-        const string expectedSummary = "Excellent book with 4.5 star rating and positive reviews.";
+        var bookId = Guid.CreateVersion7();
+        using var cancellation = new CancellationTokenSource();
+        var cancellationToken = cancellation.Token;
+        var summarizer = new Mock<ISummarizer>();
+        summarizer
+            .Setup(s => s.SummarizeAsync(bookId, cancellationToken))
+            .ThrowsAsync(new OperationCanceledException(cancellationToken));
+        var handler = new SummarizeFeedbackHandler(summarizer.Object);
 
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(expectedContent, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedSummary);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Summary.ShouldBe(expectedSummary);
-        _summarizerMock.Verify(
-            s => s.SummarizeAsync(expectedContent, It.IsAny<CancellationToken>()),
-            Times.Once
+        await Should.ThrowAsync<OperationCanceledException>(() =>
+            handler.Handle(new(bookId), cancellationToken).AsTask()
         );
-    }
-
-    [Test]
-    public async Task GivenValidBookIdWithCancellationToken_WhenHandlingQuery_ThenShouldPassTokenToSummarizer()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        var cancellationToken = CancellationToken.None;
-        const string expectedSummary = "Book summary with cancellation token.";
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), cancellationToken))
-            .ReturnsAsync(expectedSummary);
-
-        // Act
-        var result = await _handler.Handle(query, cancellationToken);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Summary.ShouldBe(expectedSummary);
-        _summarizerMock.Verify(
-            s => s.SummarizeAsync(It.IsAny<string>(), cancellationToken),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenEmptyGuid_WhenHandlingQuery_ThenShouldStillCallSummarizerWithEmptyGuid()
-    {
-        // Arrange
-        var emptyBookId = Guid.Empty;
-        var query = new SummarizeFeedbackQuery(emptyBookId);
-        var expectedContent = $"Get an overview of the ratings for book with ID  {emptyBookId}";
-        const string expectedSummary = "No ratings found for this book.";
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(expectedContent, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedSummary);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Summary.ShouldBe(expectedSummary);
-        _summarizerMock.Verify(
-            s => s.SummarizeAsync(expectedContent, It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public async Task GivenSummarizerReturnsNull_WhenHandlingQuery_ThenShouldThrowNotFoundException()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<NotFoundException>(async () =>
-            await _handler.Handle(query, CancellationToken.None)
-        );
-
-        exception.Message.ShouldBe($"No ratings found for book with ID {_validBookId}");
-    }
-
-    [Test]
-    public async Task GivenSummarizerReturnsEmptyString_WhenHandlingQuery_ThenShouldReturnEmptyResult()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        var emptySummary = string.Empty;
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptySummary);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Summary.ShouldBe(emptySummary);
-    }
-
-    [Test]
-    public async Task GivenSummarizerReturnsWhitespace_WhenHandlingQuery_ThenShouldReturnWhitespaceResult()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        var whitespaceSummary = string.Empty.PadLeft(100, ' ');
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(whitespaceSummary);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Summary.ShouldBe(whitespaceSummary);
-    }
-
-    [Test]
-    public async Task GivenSummarizerReturnsLongSummary_WhenHandlingQuery_ThenShouldReturnFullSummary()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        var longSummary = string.Join(
-            " ",
-            Enumerable.Repeat("This is a very detailed rating summary.", 50)
-        );
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(longSummary);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Summary.ShouldBe(longSummary);
-        result.Summary.Length.ShouldBeGreaterThan(1000);
-    }
-
-    [Test]
-    public async Task GivenSummarizerThrowsException_WhenHandlingQuery_ThenShouldPropagateException()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        var expectedException = new InvalidOperationException("Summarizer service unavailable");
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(expectedException);
-
-        // Act & Assert
-        var actualException = await Should.ThrowAsync<InvalidOperationException>(async () =>
-            await _handler.Handle(query, CancellationToken.None)
-        );
-
-        actualException.Message.ShouldBe("Summarizer service unavailable");
-    }
-
-    [Test]
-    public async Task GivenMultipleQueries_WhenHandlingQueriesWithDifferentBookIds_ThenShouldCallSummarizerForEach()
-    {
-        // Arrange
-        var bookId1 = Guid.CreateVersion7();
-        var bookId2 = Guid.CreateVersion7();
-        var query1 = new SummarizeFeedbackQuery(bookId1);
-        var query2 = new SummarizeFeedbackQuery(bookId2);
-
-        const string summary1 = "Summary for book 1";
-        const string summary2 = "Summary for book 2";
-
-        _summarizerMock
-            .Setup(s =>
-                s.SummarizeAsync(
-                    $"Get an overview of the ratings for book with ID  {bookId1}",
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(summary1);
-
-        _summarizerMock
-            .Setup(s =>
-                s.SummarizeAsync(
-                    $"Get an overview of the ratings for book with ID  {bookId2}",
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(summary2);
-
-        // Act
-        var result1 = await _handler.Handle(query1, CancellationToken.None);
-        var result2 = await _handler.Handle(query2, CancellationToken.None);
-
-        // Assert
-        result1.Summary.ShouldBe(summary1);
-        result2.Summary.ShouldBe(summary2);
-
-        _summarizerMock.Verify(
-            s =>
-                s.SummarizeAsync(
-                    $"Get an overview of the ratings for book with ID  {bookId1}",
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-
-        _summarizerMock.Verify(
-            s =>
-                s.SummarizeAsync(
-                    $"Get an overview of the ratings for book with ID  {bookId2}",
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-    }
-
-    [Test]
-    public void GivenQueryRecord_WhenCreatingInstance_ThenShouldInitializeCorrectly()
-    {
-        // Arrange & Act
-        var query = new SummarizeFeedbackQuery(_validBookId);
-
-        // Assert
-        query.BookId.ShouldBe(_validBookId);
-    }
-
-    [Test]
-    public async Task GivenSpecialCharactersInBookId_WhenHandlingQuery_ThenShouldHandleCorrectly()
-    {
-        // Arrange
-        var specialBookId = new Guid("12345678-1234-1234-1234-123456789012");
-        var query = new SummarizeFeedbackQuery(specialBookId);
-        var expectedContent = $"Get an overview of the ratings for book with ID  {specialBookId}";
-        const string expectedSummary = "Book with special ID processed successfully.";
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(expectedContent, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedSummary);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Summary.ShouldBe(expectedSummary);
-    }
-
-    [Test]
-    public async Task GivenCancelledCancellationToken_WhenHandlingQuery_ThenShouldThrowOperationCancelledException()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        using var cts = new CancellationTokenSource();
-        await cts.CancelAsync();
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new OperationCanceledException());
-
-        // Act & Assert
-        await Should.ThrowAsync<OperationCanceledException>(async () =>
-            await _handler.Handle(query, cts.Token)
-        );
-    }
-
-    [Test]
-    public async Task GivenSummarizerReturnsResult_WhenHandlingQuery_ThenShouldWrapInSummarizeResult()
-    {
-        // Arrange
-        var query = new SummarizeFeedbackQuery(_validBookId);
-        const string summaryText = "Book rating summary.";
-
-        _summarizerMock
-            .Setup(s => s.SummarizeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(summaryText);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.ShouldBeOfType<SummarizeResult>();
-        result.Summary.ShouldBe(summaryText);
     }
 }

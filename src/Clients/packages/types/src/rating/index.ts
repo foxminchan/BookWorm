@@ -25,4 +25,9 @@ export type ListFeedbacksQuery = {
 
 export type FeedbackSummary = {
   summary: string;
+  classification: "NoData" | "Bad" | "Good" | "TopRated";
+  averageRating: number | null;
+  reviewCount: number;
+  evidence: string;
+  confidence: string;
 };

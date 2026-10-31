@@ -1,4 +1,5 @@
 ﻿using BookWorm.Rating.Infrastructure.Summarizer;
+using BookWorm.Rating.Infrastructure.Summarizer.Models;
 using Mediator;
 
 namespace BookWorm.Rating.Features.Summarize;
@@ -13,12 +14,6 @@ internal sealed class SummarizeFeedbackHandler(ISummarizer summarizer)
         CancellationToken cancellationToken
     )
     {
-        var summary =
-            await summarizer.SummarizeAsync(
-                $"Get an overview of the ratings for book with ID  {request.BookId}",
-                cancellationToken
-            ) ?? throw new NotFoundException($"No ratings found for book with ID {request.BookId}");
-
-        return new(summary);
+        return await summarizer.SummarizeAsync(request.BookId, cancellationToken);
     }
 }
