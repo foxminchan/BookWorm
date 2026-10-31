@@ -61,7 +61,6 @@ internal static class BookAgentRegistration
                         modeProvider,
                         fileMemoryProvider,
                     ];
-                    options.ChatOptions!.Reasoning = new() { Effort = ReasoningEffort.High };
 
                     var agent = new ChatClientAgent(chatClient, options);
 

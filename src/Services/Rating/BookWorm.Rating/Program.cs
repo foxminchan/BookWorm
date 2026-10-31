@@ -1,7 +1,7 @@
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Constants.Core;
 using BookWorm.Rating.Extensions;
-using BookWorm.Rating.Infrastructure.Agents;
+using BookWorm.Rating.Infrastructure.AI;
 using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);

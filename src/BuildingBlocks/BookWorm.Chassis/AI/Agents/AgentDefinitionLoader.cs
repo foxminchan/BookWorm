@@ -1,19 +1,26 @@
 using Microsoft.Agents.AI;
 using Microsoft.Agents.ObjectModel;
 using Microsoft.Agents.ObjectModel.Yaml;
+using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Agents;
 
 public static class AgentDefinitionLoader
 {
+    private const string ReasoningEffortOption = "reasoningEffort";
+
     /// <summary>
     ///     Loads a prompt agent definition from the application output directory.
     /// </summary>
     /// <param name="definitionFile">The path to the definition, relative to the application output directory.</param>
     /// <param name="expectedName">The agent name expected by the registering service.</param>
     /// <returns>The configured options and declared tool names.</returns>
+    /// <remarks>
+    ///     A declared <c>reasoningEffort</c> model option is applied to the typed chat reasoning options.
+    /// </remarks>
     /// <exception cref="InvalidDataException">
-    ///     The definition is not a prompt agent, its name does not match, or required metadata is missing.
+    ///     The definition is not a prompt agent, its name does not match, required metadata is missing,
+    ///     or its reasoning effort option is invalid.
     /// </exception>
     public static (ChatClientAgentOptions Options, IReadOnlySet<string> ToolNames) Load(
         string definitionFile,
@@ -44,11 +51,50 @@ public static class AgentDefinitionLoader
             );
         }
 
+        var declaredReasoningEffort =
+            definition.Model.Options?.ExtensionData?.Properties.GetValueOrDefault(
+                ReasoningEffortOption
+            );
+
+        if (declaredReasoningEffort is not null and not StringDataValue)
+        {
+            throw new InvalidDataException(
+                $"Agent definition '{path}' has an invalid model option '{ReasoningEffortOption}'."
+            );
+        }
+
         var chatOptions = definition.GetChatOptionsAsync(new(), null).GetAwaiter().GetResult();
 
         if (chatOptions is null || string.IsNullOrWhiteSpace(chatOptions.Instructions))
         {
             throw new InvalidDataException($"Agent definition '{path}' must include instructions.");
+        }
+
+        if (
+            chatOptions.AdditionalProperties?.TryGetValue(
+                ReasoningEffortOption,
+                out var reasoningEffortValue
+            )
+                is true
+            && reasoningEffortValue is not null
+        )
+        {
+            if (
+                reasoningEffortValue is not string reasoningEffortName
+                || !Enum.TryParse<ReasoningEffort>(
+                    reasoningEffortName,
+                    true,
+                    out var reasoningEffort
+                )
+                || !Enum.IsDefined(reasoningEffort)
+            )
+            {
+                throw new InvalidDataException(
+                    $"Agent definition '{path}' has an invalid model option '{ReasoningEffortOption}'."
+                );
+            }
+
+            (chatOptions.Reasoning ??= new()).Effort = reasoningEffort;
         }
 
         var toolNames =

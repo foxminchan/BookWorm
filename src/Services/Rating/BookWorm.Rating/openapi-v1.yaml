@@ -288,5 +288,24 @@ components:
       properties:
         summary:
           type: string
+        classification:
+          type: string
+          enum:
+            - NoData
+            - Bad
+            - Good
+            - TopRated
+        averageRating:
+          type:
+            - number
+            - "null"
+          format: double
+        reviewCount:
+          type: integer
+          format: int32
+        evidence:
+          type: string
+        confidence:
+          type: string
 tags:
   - name: Feedback

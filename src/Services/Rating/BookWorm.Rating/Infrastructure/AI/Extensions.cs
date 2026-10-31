@@ -3,6 +3,7 @@ using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Chassis.AI.Presidio;
+using BookWorm.Constants.Other;
 using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
@@ -10,7 +11,7 @@ using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 
-namespace BookWorm.Rating.Infrastructure.Agents;
+namespace BookWorm.Rating.Infrastructure.AI;
 
 internal static class Extensions
 {
@@ -33,7 +34,7 @@ internal static class Extensions
 
             builder
                 .AddAIAgent(
-                    Constants.Other.Agents.RatingAgent,
+                    Agents.RatingAgent,
                     (sp, key) =>
                     {
                         var compactionProvider = RatingCompactionPipelineFactory.Create(
@@ -76,9 +77,9 @@ internal static class Extensions
         {
             app.MapAgentDiscovery("/agents");
 
-            app.MapAGUIServer(Constants.Other.Agents.RatingAgent, "/ag-ui")
+            app.MapAGUIServer(Agents.RatingAgent, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
-                .WithTags(nameof(Constants.Other.Agents.RatingAgent));
+                .WithTags(nameof(Agents.RatingAgent));
         }
     }
 }

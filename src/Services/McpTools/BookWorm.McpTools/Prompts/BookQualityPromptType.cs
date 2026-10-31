@@ -29,10 +29,12 @@ public static class BookQualityPromptType
         return new(
             ChatRole.User,
             $"""
-                Classify the review-based quality of this book using only the supplied metrics and
-                review summary. Apply the same classification thresholds to every book. Review
-                counts and ratings are not evidence of sales volume, and this classification
-                describes available reader feedback rather than objective literary merit.
+                Assess the supplied review summary and metrics. Determine only whether the review
+                themes show a dominant negative pattern, and provide concise evidence and a
+                confidence level. The application applies the final classification thresholds.
+                Apply the same assessment criteria to every book and describe reader feedback rather
+                than objective literary merit.
+                Review counts and ratings are not evidence of sales volume.
 
                 Rating Data:
                 - Average rating: {averageRating:F1} / 5.0
@@ -47,21 +49,10 @@ public static class BookQualityPromptType
                 metrics from interpretations of review themes, and state when the evidence is
                 limited, conflicting, or potentially unrepresentative.
 
-                Apply these mutually exclusive classification rules in order:
-                1. No Data: fewer than 3 reviews, or no valid average rating in the range 0.0-5.0.
-                2. Bad: average rating below 3.5, or the review summary shows a dominant negative
-                   pattern.
-                3. Top Rated: average rating at least 4.5 with at least 50 reviews, or at least
-                   4.0 with at least 200 reviews, provided there is no dominant negative pattern.
-                4. Good: all remaining valid cases with at least 3 reviews and an average rating
-                   of 3.5 or higher.
-                Top Rated describes review and rating signals only; do not imply verified sales.
-
                 Return exactly these fields:
-                Classification: No Data | Bad | Good | Top Rated
-                Metrics: Average rating and review count
+                DominantNegativePattern: true or false
                 Evidence: 2-3 concise, checkable sentences grounded in metrics and review themes
-                Confidence: High | Medium | Low, with a brief reason
+                Confidence: High | Medium | Low
                 Do not include private reasoning or unsupported causal explanations.
             """
         );

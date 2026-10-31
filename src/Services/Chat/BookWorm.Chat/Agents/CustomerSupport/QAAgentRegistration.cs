@@ -35,7 +35,6 @@ internal static class QAAgentRegistration
 
                         var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
                         options.AIContextProviders = [skillsProvider];
-                        options.ChatOptions!.Reasoning = new() { Effort = ReasoningEffort.Medium };
 
                         var agent = new ChatClientAgent(chatClient, options);
 

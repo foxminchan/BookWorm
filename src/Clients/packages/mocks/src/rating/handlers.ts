@@ -127,6 +127,11 @@ export const feedbacksHandlers = [
       if (feedbacks.length === 0) {
         return HttpResponse.json({
           summary: "No reviews available for this book yet.",
+          classification: "NoData",
+          averageRating: null,
+          reviewCount: 0,
+          evidence: "No review data is available.",
+          confidence: "Low",
         });
       }
 
@@ -145,7 +150,27 @@ export const feedbacksHandlers = [
         summary = `Reviews for this book are generally critical. ${negativeCount} out of ${feedbacks.length} reviewers gave it 2 stars or lower. Common criticisms include pacing issues, character development concerns, and plot inconsistencies.`;
       }
 
-      return HttpResponse.json({ summary }, { status: 200 });
+      const classification =
+        feedbacks.length < 3
+          ? "NoData"
+          : avgRating < 3.5
+            ? "Bad"
+            : (avgRating >= 4.5 && feedbacks.length >= 50) ||
+                (avgRating >= 4 && feedbacks.length >= 200)
+              ? "TopRated"
+              : "Good";
+
+      return HttpResponse.json(
+        {
+          summary,
+          classification,
+          averageRating: avgRating,
+          reviewCount: feedbacks.length,
+          evidence: "Mock classification based on mock review metrics.",
+          confidence: feedbacks.length >= 50 ? "High" : "Low",
+        },
+        { status: 200 },
+      );
     },
   ),
 ];

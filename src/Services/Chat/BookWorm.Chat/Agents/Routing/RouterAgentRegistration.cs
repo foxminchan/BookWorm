@@ -26,7 +26,6 @@ internal static class RouterAgentRegistration
                             .Build(sp);
 
                         var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
-                        options.ChatOptions!.Reasoning = new() { Effort = ReasoningEffort.Low };
 
                         var agent = new ChatClientAgent(chatClient, options);
 

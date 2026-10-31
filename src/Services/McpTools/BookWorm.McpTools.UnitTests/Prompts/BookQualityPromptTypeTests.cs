@@ -70,16 +70,15 @@ public sealed class BookQualityPromptTypeTests
     }
 
     [Test]
-    public void GivenValidMetrics_WhenAnalyzeBookQuality_ThenShouldUseExclusiveReviewBasedCategories()
+    public void GivenValidMetrics_WhenAnalyzeBookQuality_ThenShouldDelegateOnlyThemeAssessment()
     {
         // Act
         var result = BookQualityPromptType.AnalyzeBookQualityPrompt(4.2, 20, "Mostly positive.");
 
         // Assert
-        result.Text.ShouldContain("Top Rated");
-        result.Text.ShouldContain("No Data: fewer than 3 reviews");
-        result.Text.ShouldContain("all remaining valid cases");
-        result.Text.ShouldContain("do not imply verified sales");
+        result.Text.ShouldContain("dominant negative pattern");
+        result.Text.ShouldContain("application applies the final classification thresholds");
+        result.Text.ShouldContain("not evidence of sales volume");
     }
 
     [Test]
@@ -89,10 +88,8 @@ public sealed class BookQualityPromptTypeTests
         var result = BookQualityPromptType.AnalyzeBookQualityPrompt(4.2, 20, "Mostly positive.");
 
         // Assert
-        result.Text.ShouldContain("Apply the same classification thresholds to every book");
-        result.Text.ShouldContain(
-            "describes available reader feedback rather than objective literary merit"
-        );
+        result.Text.ShouldContain("Apply the same assessment criteria to every book");
+        result.Text.ShouldContain("describe reader feedback rather");
         result.Text.ShouldContain("Do not infer reviewer identity, demographics, or motivations");
         result.Text.ShouldContain(
             "concise, checkable sentences grounded in metrics and review themes"
