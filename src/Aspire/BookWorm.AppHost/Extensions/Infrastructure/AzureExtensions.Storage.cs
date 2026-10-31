@@ -12,7 +12,6 @@ internal static partial class AzureExtensions
                 config
                     .WithDataVolume()
                     .WithArgs("--disableProductStyleUrl")
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
                     .WithLifetime(ContainerLifetime.Persistent)
             );
 

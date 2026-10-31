@@ -5,35 +5,25 @@ builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).Provision
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .WithPasswordAuthentication()
-    .WithIconName("HomeDatabase")
     .RunAsLocalContainer()
     .ProvisionAsService(builder.Environment);
 
 var redis = builder
     .AddAzureManagedRedis(Components.Redis)
     .WithAccessKeyAuthentication()
-    .WithIconName("Memory")
     .RunAsLocalContainer()
     .ProvisionAsService(builder.Environment);
 
 var qdrant = builder
     .AddQdrant(Components.VectorDb)
-    .WithIconName("DatabaseSearch")
     .WithDataVolume()
-    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
-var queue = builder
-    .AddKafka(Components.Broker)
-    .WithIconName("Pipeline")
-    .WithKafkaUI()
-    .WithImagePullPolicy(ImagePullPolicy.Always)
-    .WithLifetime(ContainerLifetime.Persistent);
+var queue = builder.ExecutionContext.IsRunMode
+    ? builder.AddKafka(Components.Broker).WithKafkaUI().WithLifetime(ContainerLifetime.Persistent)
+    : builder.AddConnectionString(Components.Broker);
 
-var storage = builder
-    .AddAzureStorage(Components.Azure.Storage.Resource)
-    .WithIconName("DatabasePlugConnected")
-    .RunAsLocalContainer();
+var storage = builder.AddAzureStorage(Components.Azure.Storage.Resource).RunAsLocalContainer();
 
 var catalogContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
@@ -48,7 +38,7 @@ var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgr
 
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 
-var chat = foundry.AddDeployment(Components.Foundry.Chat, FoundryModel.Anthropic.ClaudeOpus5);
+var chat = foundry.AddDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
 
 var embedding = foundry.AddDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
@@ -58,12 +48,10 @@ IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
-    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var presidioAnonymizer = builder
     .AddPresidioAnonymizer(Components.Presidio.Anonymizer)
-    .WithImagePullPolicy(ImagePullPolicy.Always)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var catalogApi = builder

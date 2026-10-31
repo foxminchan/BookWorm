@@ -10,10 +10,7 @@ internal static partial class AzureExtensions
         public IResourceBuilder<AzurePostgresFlexibleServerResource> RunAsLocalContainer()
         {
             builder.RunAsContainer(cfg =>
-                cfg.WithPgAdmin()
-                    .WithDataVolume()
-                    .WithImagePullPolicy(ImagePullPolicy.Always)
-                    .WithLifetime(ContainerLifetime.Persistent)
+                cfg.WithPgAdmin().WithDataVolume().WithLifetime(ContainerLifetime.Persistent)
             );
 
             return builder;
