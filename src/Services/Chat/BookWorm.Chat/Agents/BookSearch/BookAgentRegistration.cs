@@ -2,6 +2,7 @@ using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chat.Memory;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 
@@ -54,13 +55,21 @@ internal static class BookAgentRegistration
                     var chatOptions = options.ChatOptions!;
                     chatOptions.Tools = mcpClient.GetAgentTools(toolNames);
                     options.AllowConcurrentInvocation = true;
-                    options.AIContextProviders =
-                    [
-                        skillsProvider,
-                        todoProvider,
-                        modeProvider,
-                        fileMemoryProvider,
-                    ];
+
+                    // Durable cross-session memory is optional: it is only registered when its
+                    // backing stores (chatdb, Qdrant) are configured.
+                    var userMemoryProvider = sp.GetService<UserMemoryContextProvider>();
+
+                    options.AIContextProviders = userMemoryProvider is null
+                        ? [skillsProvider, todoProvider, modeProvider, fileMemoryProvider]
+                        :
+                        [
+                            skillsProvider,
+                            todoProvider,
+                            modeProvider,
+                            fileMemoryProvider,
+                            userMemoryProvider,
+                        ];
 
                     var agent = new ChatClientAgent(chatClient, options);
 

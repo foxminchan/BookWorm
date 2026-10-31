@@ -35,6 +35,7 @@ var financeDb = postgres.AddDatabase(Components.Database.Finance).WithPostgresMc
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
 var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
+var chatDb = postgres.AddDatabase(Components.Database.Chat).WithPostgresMcp();
 
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 
@@ -123,6 +124,10 @@ var orderingApi = builder
 
 var chatApi = builder
     .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
+    .WithReference(chatDb)
+    .WaitFor(chatDb)
+    .WithReference(qdrant)
+    .WaitFor(qdrant)
     .WithReference(chat)
     .WaitFor(chat)
     .WithReference(embedding)

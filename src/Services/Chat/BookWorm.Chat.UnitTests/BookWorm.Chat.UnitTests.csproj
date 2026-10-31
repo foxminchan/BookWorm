@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
+    <NoWarn>$(NoWarn);MAAI001</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\tests\BookWorm.Testing\BookWorm.Testing.csproj" />
