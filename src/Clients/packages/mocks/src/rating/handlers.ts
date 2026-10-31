@@ -150,15 +150,19 @@ export const feedbacksHandlers = [
         summary = `Reviews for this book are generally critical. ${negativeCount} out of ${feedbacks.length} reviewers gave it 2 stars or lower. Common criticisms include pacing issues, character development concerns, and plot inconsistencies.`;
       }
 
-      const classification =
-        feedbacks.length < 3
-          ? "NoData"
-          : avgRating < 3.5
-            ? "Bad"
-            : (avgRating >= 4.5 && feedbacks.length >= 50) ||
-                (avgRating >= 4 && feedbacks.length >= 200)
-              ? "TopRated"
-              : "Good";
+      let classification: "NoData" | "Bad" | "TopRated" | "Good";
+      if (feedbacks.length < 3) {
+        classification = "NoData";
+      } else if (avgRating < 3.5) {
+        classification = "Bad";
+      } else if (
+        (avgRating >= 4.5 && feedbacks.length >= 50) ||
+        (avgRating >= 4 && feedbacks.length >= 200)
+      ) {
+        classification = "TopRated";
+      } else {
+        classification = "Good";
+      }
 
       return HttpResponse.json(
         {

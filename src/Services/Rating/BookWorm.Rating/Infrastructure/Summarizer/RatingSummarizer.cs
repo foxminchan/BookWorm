@@ -33,6 +33,36 @@ internal sealed class RatingSummarizer(
         }
 
         var averageRating = feedback.Average(review => review.Rating);
+
+        var summaryText = await SummarizeReviewsAsync(feedback, cancellationToken);
+        var assessment = await AssessSummaryQualityAsync(
+            averageRating,
+            reviewCount,
+            summaryText,
+            cancellationToken
+        );
+
+        var classification = RatingClassifier.Classify(
+            averageRating,
+            reviewCount,
+            assessment.DominantNegativePattern
+        );
+
+        return new(
+            summaryText,
+            classification,
+            averageRating,
+            reviewCount,
+            assessment.Evidence,
+            assessment.Confidence
+        );
+    }
+
+    private async Task<string> SummarizeReviewsAsync(
+        IReadOnlyList<Feedback> feedback,
+        CancellationToken cancellationToken
+    )
+    {
         var reviewData = JsonSerializer.Serialize(
             [
                 .. feedback.Select(review => new FeedbackReview(
@@ -51,56 +81,50 @@ internal sealed class RatingSummarizer(
             reviewData,
             cancellationToken
         );
-
         var summary = await RunStructuredWithRetryAsync(
             RatingSummarizerSerializationContext.Default.RatingSummaryOutput,
-            [summaryPrompt],
+            summaryPrompt,
             cancellationToken
         );
-        var summaryText = summary.ToText();
 
+        return summary.ToText();
+    }
+
+    private async Task<QualityAssessmentOutput> AssessSummaryQualityAsync(
+        double averageRating,
+        int reviewCount,
+        string summaryText,
+        CancellationToken cancellationToken
+    )
+    {
         var qualityPrompt = await promptProvider.GetQualityPromptAsync(
             averageRating,
             reviewCount,
             summaryText,
             cancellationToken
         );
-        var assessment = await RunStructuredWithRetryAsync(
-            RatingSummarizerSerializationContext.Default.QualityAssessmentOutput,
-            [qualityPrompt],
-            cancellationToken
-        );
-        var classification = RatingClassifier.Classify(
-            averageRating,
-            reviewCount,
-            assessment.DominantNegativePattern
-        );
 
-        return new(
-            summaryText,
-            classification,
-            averageRating,
-            reviewCount,
-            assessment.Evidence,
-            assessment.Confidence
+        return await RunStructuredWithRetryAsync(
+            RatingSummarizerSerializationContext.Default.QualityAssessmentOutput,
+            qualityPrompt,
+            cancellationToken
         );
     }
 
     private async Task<T> RunStructuredWithRetryAsync<T>(
         JsonTypeInfo<T> jsonTypeInfo,
-        IEnumerable<ChatMessage> messages,
+        ChatMessage message,
         CancellationToken cancellationToken
     )
         where T : class
     {
-        var messageList = messages.ToArray();
         JsonException? firstFailure = null;
 
         for (var attempt = 0; attempt < 2; attempt++)
         {
             var session = await ratingAgent.CreateSessionAsync(cancellationToken);
             var response = await ratingAgent.RunAsync(
-                messageList,
+                [message],
                 session,
                 new ChatClientAgentRunOptions
                 {
@@ -124,7 +148,7 @@ internal sealed class RatingSummarizer(
                 {
                     throw new InvalidOperationException(
                         "The rating agent returned invalid structured output after one retry.",
-                        firstFailure ?? exception
+                        firstFailure
                     );
                 }
 
