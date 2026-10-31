@@ -1,9 +1,9 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using BookWorm.Constants.Other;
-using BookWorm.Rating.Features.List;
+using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.Rating.Infrastructure.Summarizer.Models;
 using BookWorm.Rating.Infrastructure.Summarizer.Providers;
-using Mediator;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
@@ -12,7 +12,7 @@ namespace BookWorm.Rating.Infrastructure.Summarizer;
 internal sealed class RatingSummarizer(
     [FromKeyedServices(Agents.RatingAgent)] AIAgent ratingAgent,
     IRatingPromptProvider promptProvider,
-    ISender sender
+    IFeedbackRepository feedbackRepository
 ) : ISummarizer
 {
     public async Task<SummarizeResult> SummarizeAsync(
@@ -20,22 +20,40 @@ internal sealed class RatingSummarizer(
         CancellationToken cancellationToken = default
     )
     {
-        var feedback = await sender.Send(
-            new ListFeedbacksQuery(bookId, 1, int.MaxValue),
+        var feedback = await feedbackRepository.ListAsync(
+            new FeedbackFilterSpec(bookId, nameof(Feedback.Rating), false, 1, int.MaxValue),
             cancellationToken
         );
 
         var reviewCount = feedback.Count;
-        var averageRating =
-            reviewCount == 0 ? double.NaN : feedback.Average(review => review.Rating);
-        var reviewData = JsonSerializer.Serialize(feedback);
+
+        if (reviewCount == 0)
+        {
+            return new("No feedback found for this book.");
+        }
+
+        var averageRating = feedback.Average(review => review.Rating);
+        var reviewData = JsonSerializer.Serialize(
+            [
+                .. feedback.Select(review => new FeedbackReview(
+                    (Guid)review.Id,
+                    review.FirstName,
+                    review.LastName,
+                    review.Comment,
+                    review.Rating,
+                    review.BookId
+                )),
+            ],
+            RatingSummarizerSerializationContext.Default.FeedbackReviewArray
+        );
 
         var summaryPrompt = await promptProvider.GetSummaryPromptAsync(
             reviewData,
             cancellationToken
         );
 
-        var summary = await RunStructuredWithRetryAsync<RatingSummaryOutput>(
+        var summary = await RunStructuredWithRetryAsync(
+            RatingSummarizerSerializationContext.Default.RatingSummaryOutput,
             [summaryPrompt],
             cancellationToken
         );
@@ -47,7 +65,8 @@ internal sealed class RatingSummarizer(
             summaryText,
             cancellationToken
         );
-        var assessment = await RunStructuredWithRetryAsync<QualityAssessmentOutput>(
+        var assessment = await RunStructuredWithRetryAsync(
+            RatingSummarizerSerializationContext.Default.QualityAssessmentOutput,
             [qualityPrompt],
             cancellationToken
         );
@@ -60,7 +79,7 @@ internal sealed class RatingSummarizer(
         return new(
             summaryText,
             classification,
-            double.IsNaN(averageRating) ? null : averageRating,
+            averageRating,
             reviewCount,
             assessment.Evidence,
             assessment.Confidence
@@ -68,6 +87,7 @@ internal sealed class RatingSummarizer(
     }
 
     private async Task<T> RunStructuredWithRetryAsync<T>(
+        JsonTypeInfo<T> jsonTypeInfo,
         IEnumerable<ChatMessage> messages,
         CancellationToken cancellationToken
     )
@@ -87,7 +107,7 @@ internal sealed class RatingSummarizer(
                     ChatOptions = new()
                     {
                         ResponseFormat = ChatResponseFormat.ForJsonSchema<T>(),
-                        Tools = [],
+                        ToolMode = ChatToolMode.None,
                     },
                 },
                 cancellationToken
@@ -95,7 +115,7 @@ internal sealed class RatingSummarizer(
 
             try
             {
-                return JsonSerializer.Deserialize<T>(response.Text, JsonSerializerOptions.Web)
+                return JsonSerializer.Deserialize(response.Text, jsonTypeInfo)
                     ?? throw new JsonException("The structured response was null.");
             }
             catch (JsonException exception)
