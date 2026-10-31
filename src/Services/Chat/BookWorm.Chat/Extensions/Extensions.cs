@@ -8,6 +8,7 @@ using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.Routing;
 using BookWorm.Chat.Configurations;
+using BookWorm.Chat.Memory;
 using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
@@ -77,6 +78,9 @@ internal static class Extensions
             // AI infrastructure (chat client, telemetry, protocols)
             builder.AddAIInfrastructure();
             builder.Services.AddA2AGrpc();
+
+            // Durable, user-scoped episodic and semantic memory for BookAgent
+            builder.AddUserMemory();
 
             // Agent governance (policy enforcement, identity, rings, injection detection)
             builder.AddAgentGovernance("Policies/chat-agents.yaml");

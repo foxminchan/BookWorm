@@ -12,6 +12,10 @@
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
   </ItemGroup>
+  <ItemGroup Label="Memory">
+    <PackageReference Include="Aspire.Qdrant.Client" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+  </ItemGroup>
   <ItemGroup Label="Agent Skills">
     <None Include="skills\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -30,6 +34,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
     <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
