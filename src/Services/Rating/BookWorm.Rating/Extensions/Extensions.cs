@@ -8,7 +8,6 @@ using BookWorm.Constants.Core;
 using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.AI;
 using BookWorm.Rating.Infrastructure.Summarizer;
-using BookWorm.Rating.Infrastructure.Summarizer.Providers;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Wolverine.EntityFrameworkCore;
@@ -115,8 +114,7 @@ internal static class Extensions
             );
 
             builder.AddAgents();
-            services.AddScoped<ISummarizer, RatingSummarizer>();
-            services.AddScoped<IRatingPromptProvider, McpRatingPromptProvider>();
+            builder.AddSummarizer();
 
             services.AddKeycloakTokenIntrospection();
         }
