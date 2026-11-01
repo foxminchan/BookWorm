@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using BookWorm.Rating.Infrastructure.Summarizer.Models;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 

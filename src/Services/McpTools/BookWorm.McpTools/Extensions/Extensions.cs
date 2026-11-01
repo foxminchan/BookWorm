@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol;
-using ModelContextProtocol.Server;
 
 namespace BookWorm.McpTools.Extensions;
 

@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.CQRS;
-using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 

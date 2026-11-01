@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Catalog.Features.Publishers.Create;
+﻿namespace BookWorm.Catalog.Features.Publishers.Create;
 
 public sealed record CreatePublisherCommand(string Name) : ICommand<Guid>;
 

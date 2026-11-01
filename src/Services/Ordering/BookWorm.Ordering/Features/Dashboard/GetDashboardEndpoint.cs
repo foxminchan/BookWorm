@@ -1,6 +1,3 @@
-using BookWorm.Chassis.Security.Extensions;
-using Mediator;
-
 namespace BookWorm.Ordering.Features.Dashboard;
 
 internal sealed class GetDashboardEndpoint : IEndpoint<Ok<DashboardDto>, ISender>

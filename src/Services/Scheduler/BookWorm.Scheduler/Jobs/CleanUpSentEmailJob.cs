@@ -1,7 +1,4 @@
-﻿using BookWorm.Contracts;
-using Wolverine;
-
-namespace BookWorm.Scheduler.Jobs;
+﻿namespace BookWorm.Scheduler.Jobs;
 
 [DisallowConcurrentExecution]
 internal sealed class CleanUpSentEmailJob(IMessageBus bus, ILogger<CleanUpSentEmailJob> logger)

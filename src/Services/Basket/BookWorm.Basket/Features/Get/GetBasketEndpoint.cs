@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Basket.Features.Get;
+﻿namespace BookWorm.Basket.Features.Get;
 
 internal sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISender>
 {

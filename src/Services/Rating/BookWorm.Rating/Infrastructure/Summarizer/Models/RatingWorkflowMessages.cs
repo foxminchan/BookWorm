@@ -1,5 +1,3 @@
-using Microsoft.Agents.AI.Workflows;
-
 namespace BookWorm.Rating.Infrastructure.Summarizer.Models;
 
 internal sealed record RatingWorkflowInput(

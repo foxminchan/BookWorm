@@ -1,5 +1,3 @@
-using Vogen;
-
 namespace BookWorm.McpTools.Models;
 
 [ValueObject<Guid>(Conversions.SystemTextJson)]

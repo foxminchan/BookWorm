@@ -1,5 +1,4 @@
-﻿using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chassis.AI.Presidio;
+﻿using BookWorm.Chassis.AI.Presidio;
 
 namespace BookWorm.Chat.Infrastructure;
 

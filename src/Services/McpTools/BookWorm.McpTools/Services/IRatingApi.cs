@@ -1,4 +1,3 @@
-using BookWorm.McpTools.Models;
 using Refit;
 
 namespace BookWorm.McpTools.Services;

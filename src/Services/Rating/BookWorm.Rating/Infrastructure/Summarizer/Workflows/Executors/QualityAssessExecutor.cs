@@ -1,7 +1,5 @@
-using BookWorm.Rating.Infrastructure.Summarizer.Models;
 using BookWorm.Rating.Infrastructure.Summarizer.Providers;
 using BookWorm.Rating.Infrastructure.Summarizer.Workflows.Runners;
-using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer.Workflows.Executors;
 

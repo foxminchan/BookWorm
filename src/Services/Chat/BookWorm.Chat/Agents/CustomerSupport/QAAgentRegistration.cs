@@ -1,9 +1,3 @@
-using BookWorm.Chassis.AI.Agents;
-using BookWorm.Chassis.AI.Governance;
-using BookWorm.Chassis.AI.Middlewares;
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Hosting;
-
 namespace BookWorm.Chat.Agents.CustomerSupport;
 
 internal static class QAAgentRegistration

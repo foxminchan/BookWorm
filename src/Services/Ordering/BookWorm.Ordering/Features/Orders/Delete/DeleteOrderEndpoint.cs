@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Ordering.Features.Orders.Delete;
+﻿namespace BookWorm.Ordering.Features.Orders.Delete;
 
 internal sealed class DeleteOrderEndpoint : IEndpoint<NoContent, OrderId, ISender>
 {

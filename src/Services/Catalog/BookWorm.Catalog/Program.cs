@@ -1,7 +1,6 @@
 using BookWorm.Catalog.Extensions;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Security.Keycloak;
-using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);

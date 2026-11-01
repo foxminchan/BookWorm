@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using BookWorm.SharedKernel.Results;
-using Mediator;
+﻿using BookWorm.SharedKernel.Results;
 
 namespace BookWorm.Rating.Features.List;
 

@@ -1,8 +1,6 @@
-using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Extensions;
-using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.Get;
 

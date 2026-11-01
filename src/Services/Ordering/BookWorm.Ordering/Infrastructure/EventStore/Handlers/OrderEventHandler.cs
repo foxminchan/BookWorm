@@ -1,7 +1,6 @@
 ﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Extensions;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
-using Mediator;
 
 namespace BookWorm.Ordering.Infrastructure.EventStore.Handlers;
 

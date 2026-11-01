@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Agents.AI;
-using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer.Workflows.Runners;
 

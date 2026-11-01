@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
+﻿namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
 internal sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddressCommand, ISender>
 {

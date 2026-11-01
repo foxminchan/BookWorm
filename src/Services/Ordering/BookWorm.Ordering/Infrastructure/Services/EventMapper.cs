@@ -1,5 +1,4 @@
-﻿using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
+﻿using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Contracts;
 
 namespace BookWorm.Ordering.Infrastructure.Services;

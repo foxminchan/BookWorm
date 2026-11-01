@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.EventBus.Wolverine;
-using BookWorm.Constants.Aspire;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
 

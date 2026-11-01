@@ -1,5 +1,4 @@
 ﻿using BookWorm.Ordering.Features.Buyers.Get;
-using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 

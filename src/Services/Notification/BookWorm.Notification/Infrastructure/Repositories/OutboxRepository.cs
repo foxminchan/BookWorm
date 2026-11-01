@@ -1,7 +1,6 @@
 ﻿using BookWorm.Chassis.Repository;
 using BookWorm.Chassis.Specification;
 using BookWorm.Chassis.Specification.Evaluators;
-using BookWorm.Notification.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Notification.Infrastructure.Repositories;

@@ -1,6 +1,3 @@
-using BookWorm.Constants.Aspire;
-using Wolverine.Attributes;
-
 namespace BookWorm.Contracts;
 
 [IntegrationMessageOwner(ServiceName = Services.Basket, TopicName = "delete-failed")]

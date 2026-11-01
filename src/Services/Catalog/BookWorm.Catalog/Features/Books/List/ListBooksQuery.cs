@@ -1,8 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Chassis.AI.Search;
-using BookWorm.Constants.Core;
 using BookWorm.SharedKernel.Results;
-using Mediator;
 
 namespace BookWorm.Catalog.Features.Books.List;
 

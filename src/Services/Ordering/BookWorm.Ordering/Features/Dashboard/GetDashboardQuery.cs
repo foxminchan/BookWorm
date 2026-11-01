@@ -1,4 +1,3 @@
-using Mediator;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Ordering.Features.Dashboard;

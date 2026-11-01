@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Domain.Models;
-
-namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
+﻿namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
 
 internal sealed class EmailOutboxService(IOutboxRepository repository, IEmailSender actualSender)
     : ISender

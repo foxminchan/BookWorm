@@ -1,6 +1,5 @@
 ﻿using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
-using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Delete;
 

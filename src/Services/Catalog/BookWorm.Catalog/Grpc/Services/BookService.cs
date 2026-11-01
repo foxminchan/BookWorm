@@ -1,8 +1,6 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Dashboard;
-using BookWorm.Constants.Core;
 using Grpc.Core;
-using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Status = BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Status;
 

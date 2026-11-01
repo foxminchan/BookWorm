@@ -1,5 +1,4 @@
-﻿using BookWorm.McpTools.Models;
-using BookWorm.SharedKernel.Results;
+﻿using BookWorm.SharedKernel.Results;
 using Refit;
 
 namespace BookWorm.McpTools.Services;

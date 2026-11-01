@@ -1,5 +1,3 @@
-using Wolverine.Attributes;
-
 namespace BookWorm.Contracts;
 
 [IntegrationMessageOwner(ServiceName = Services.Scheduler, TopicName = "resend-error-email")]

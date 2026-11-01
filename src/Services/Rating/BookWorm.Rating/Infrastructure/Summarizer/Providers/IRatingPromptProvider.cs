@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.AI;
-
-namespace BookWorm.Rating.Infrastructure.Summarizer.Providers;
+﻿namespace BookWorm.Rating.Infrastructure.Summarizer.Providers;
 
 internal interface IRatingPromptProvider
 {

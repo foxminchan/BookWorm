@@ -1,4 +1,3 @@
-using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using Microsoft.AspNetCore.Authorization;
 

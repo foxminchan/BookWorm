@@ -147,6 +147,8 @@ var ratingApi = builder
     .WaitFor(embedding)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
+    .WithReference(redis)
+    .WaitFor(redis)
     .WithReference(mcp)
     .WithReference(broker)
     .WaitFor(broker)

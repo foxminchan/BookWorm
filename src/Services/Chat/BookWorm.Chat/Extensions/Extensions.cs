@@ -1,6 +1,4 @@
 ﻿using System.Security.Claims;
-using BookWorm.Chassis.AI.Agents;
-using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;

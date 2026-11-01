@@ -1,5 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using BookWorm.SharedKernel.Helpers;
+﻿using BookWorm.SharedKernel.Helpers;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookWorm.Rating.Infrastructure.EntityConfigurations;

@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Publishers.List;
+﻿namespace BookWorm.Catalog.Features.Publishers.List;
 
 internal sealed class ListPublishersEndpoint : IEndpoint<Ok<IReadOnlyList<PublisherDto>>, ISender>
 {

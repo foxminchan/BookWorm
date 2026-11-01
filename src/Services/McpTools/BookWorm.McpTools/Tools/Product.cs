@@ -1,9 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using BookWorm.McpTools.Models;
-using ModelContextProtocol.Server;
-
-namespace BookWorm.McpTools.Tools;
+﻿namespace BookWorm.McpTools.Tools;
 
 [McpServerToolType]
 public sealed class Product(ICatalogApi catalogApi)

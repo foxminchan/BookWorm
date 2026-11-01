@@ -1,10 +1,8 @@
 using BookWorm.Constants.Other;
-using BookWorm.Rating.Infrastructure.Summarizer.Models;
 using BookWorm.Rating.Infrastructure.Summarizer.Providers;
 using BookWorm.Rating.Infrastructure.Summarizer.Workflows.Executors;
 using BookWorm.Rating.Infrastructure.Summarizer.Workflows.Runners;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Workflows;
 using MAFWorkflow = Microsoft.Agents.AI.Workflows.Workflow;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer.Workflows;

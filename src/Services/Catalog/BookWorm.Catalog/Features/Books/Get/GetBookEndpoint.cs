@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Books.Get;
+﻿namespace BookWorm.Catalog.Features.Books.Get;
 
 internal sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, BookId, ISender>
 {

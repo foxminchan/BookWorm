@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Catalog.Features.Books.Create;
+﻿namespace BookWorm.Catalog.Features.Books.Create;
 
 internal sealed class CreateBookPreProcessor(IBlobService blobService)
     : MessagePreProcessor<CreateBookCommand, Guid>

@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.Utilities.Guards;
-using Mediator;
 
 namespace BookWorm.Catalog.Features.Categories.Delete;
 

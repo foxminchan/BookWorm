@@ -1,7 +1,4 @@
-﻿using BookWorm.Basket.Extensions;
-using Mediator;
-
-namespace BookWorm.Basket.Features.Create;
+﻿namespace BookWorm.Basket.Features.Create;
 
 public sealed record CreateBasketCommand(List<BasketItemRequest> Items) : ICommand<CustomerId>;
 

@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-
-namespace BookWorm.Catalog.Features.Authors.Create;
+﻿namespace BookWorm.Catalog.Features.Authors.Create;
 
 internal sealed class CreateAuthorValidator : AbstractValidator<CreateAuthorCommand>
 {

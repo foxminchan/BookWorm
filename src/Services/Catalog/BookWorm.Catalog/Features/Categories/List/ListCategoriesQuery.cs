@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Catalog.Features.Categories.List;
+﻿namespace BookWorm.Catalog.Features.Categories.List;
 
 public sealed record ListCategoriesQuery : IQuery<IReadOnlyList<CategoryDto>>;
 

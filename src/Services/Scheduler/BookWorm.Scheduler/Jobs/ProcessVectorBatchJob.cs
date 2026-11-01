@@ -1,6 +1,4 @@
-﻿using BookWorm.Scheduler.Clients;
-
-namespace BookWorm.Scheduler.Jobs;
+﻿namespace BookWorm.Scheduler.Jobs;
 
 [DisallowConcurrentExecution]
 internal sealed class ProcessVectorBatchJob(

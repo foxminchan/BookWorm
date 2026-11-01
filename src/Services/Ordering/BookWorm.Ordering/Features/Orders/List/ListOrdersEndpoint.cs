@@ -1,5 +1,4 @@
 ﻿using BookWorm.SharedKernel.Results;
-using Mediator;
 
 namespace BookWorm.Ordering.Features.Orders.List;
 

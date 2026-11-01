@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <NoWarn>MAAI001;MAAIW001</NoWarn>
+    <NoWarn>$(NoWarn);MAAI001;MAAIW001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="OCI Labels">
     <ContainerLabel
@@ -13,6 +13,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup Label="Aspire Components">
+    <PackageReference Include="Aspire.Microsoft.Azure.StackExchangeRedis" />
   </ItemGroup>
   <ItemGroup Label="Governance Policies">
     <Content Include="Policies\*.yaml">

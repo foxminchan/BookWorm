@@ -1,8 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.AI;
-using ModelContextProtocol.Server;
-
 namespace BookWorm.McpTools.Prompts;
 
 [McpServerPromptType]

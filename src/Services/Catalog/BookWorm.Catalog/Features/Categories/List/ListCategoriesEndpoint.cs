@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Categories.List;
+﻿namespace BookWorm.Catalog.Features.Categories.List;
 
 internal sealed class ListCategoriesEndpoint : IEndpoint<Ok<IReadOnlyList<CategoryDto>>, ISender>
 {

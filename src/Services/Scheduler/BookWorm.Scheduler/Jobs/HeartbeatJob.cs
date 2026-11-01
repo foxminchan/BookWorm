@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace BookWorm.Scheduler.Jobs;
 
 [ExcludeFromCodeCoverage]

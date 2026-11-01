@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Catalog.Features.Authors.List;
+﻿namespace BookWorm.Catalog.Features.Authors.List;
 
 public sealed record ListAuthorsQuery : IQuery<IReadOnlyList<AuthorDto>>;
 

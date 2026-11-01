@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-
-namespace BookWorm.Contracts;
+﻿namespace BookWorm.Contracts;
 
 [IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "place-order")]
 public sealed record PlaceOrderCommand(

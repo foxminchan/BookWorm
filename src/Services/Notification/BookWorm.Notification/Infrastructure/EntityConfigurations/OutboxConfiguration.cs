@@ -1,5 +1,4 @@
 ﻿using BookWorm.Constants.Core;
-using BookWorm.Notification.Domain.Models;
 using BookWorm.SharedKernel.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

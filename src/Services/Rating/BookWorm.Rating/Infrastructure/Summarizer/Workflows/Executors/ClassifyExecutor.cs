@@ -1,6 +1,3 @@
-using BookWorm.Rating.Infrastructure.Summarizer.Models;
-using Microsoft.Agents.AI.Workflows;
-
 namespace BookWorm.Rating.Infrastructure.Summarizer.Workflows.Executors;
 
 internal sealed class ClassifyExecutor()

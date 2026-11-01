@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Categories.Create;
+﻿namespace BookWorm.Catalog.Features.Categories.Create;
 
 internal sealed class CreateCategoryEndpoint
     : IEndpoint<Ok<CategoryId>, CreateCategoryCommand, ISender>

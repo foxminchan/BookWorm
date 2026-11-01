@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Categories.Delete;
+﻿namespace BookWorm.Catalog.Features.Categories.Delete;
 
 internal sealed class DeleteCategoryEndpoint : IEndpoint<NoContent, CategoryId, ISender>
 {

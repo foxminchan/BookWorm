@@ -1,5 +1,3 @@
-using Microsoft.Agents.AI;
-
 namespace BookWorm.Chat.Infrastructure;
 
 internal static class HarnessProviderFactory

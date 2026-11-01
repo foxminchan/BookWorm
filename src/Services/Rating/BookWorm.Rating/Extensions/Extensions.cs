@@ -1,10 +1,10 @@
-﻿using BookWorm.Chassis.CQRS;
+﻿using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
-using BookWorm.Constants.Core;
 using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.AI;
 using BookWorm.Rating.Infrastructure.Summarizer;
@@ -71,6 +71,13 @@ internal static class Extensions
                     services.AddRepositories(typeof(RatingApiMarker));
                 }
             );
+
+            // Configure Redis Cache
+            builder
+                .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+                .WithAzureAuthentication();
+
+            builder.AddCaching();
 
             // Configure FluentValidation
             services.AddValidatorsFromAssemblyContaining<RatingApiMarker>(

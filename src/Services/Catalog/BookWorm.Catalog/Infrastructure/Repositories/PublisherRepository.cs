@@ -1,5 +1,3 @@
-using BookWorm.Constants.Core;
-
 namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class PublisherRepository(CatalogDbContext context) : IPublisherRepository

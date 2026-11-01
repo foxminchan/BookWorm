@@ -1,7 +1,5 @@
-﻿using BookWorm.Constants.Core;
-using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
+﻿using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.SharedKernel.Results;
-using Mediator;
 
 namespace BookWorm.Rating.Features.List;
 

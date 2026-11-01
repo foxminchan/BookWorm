@@ -1,6 +1,5 @@
 ﻿using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate.Specifications;
 using BookWorm.SharedKernel.Results;
-using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.List;
 

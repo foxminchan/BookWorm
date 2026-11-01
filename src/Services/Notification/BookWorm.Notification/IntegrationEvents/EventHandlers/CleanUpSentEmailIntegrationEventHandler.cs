@@ -1,7 +1,4 @@
-﻿using BookWorm.Notification.Domain.Models;
-using Wolverine.Attributes;
-
-namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 internal sealed class CleanUpSentEmailIntegrationEventHandler(
     ILogger<CleanUpSentEmailIntegrationEventHandler> logger,

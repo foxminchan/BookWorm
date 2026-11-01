@@ -1,4 +1,8 @@
 ﻿global using A2A;
+global using BookWorm.Chassis.AI.Agents;
+global using BookWorm.Chassis.AI.Extensions;
+global using BookWorm.Chassis.AI.Governance;
+global using BookWorm.Chassis.AI.Middlewares;
 global using BookWorm.Chassis.Endpoints;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.Chassis.Utilities;
@@ -7,5 +11,8 @@ global using BookWorm.Constants.Aspire;
 global using BookWorm.Constants.Core;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Kestrel;
+global using Microsoft.Agents.AI;
+global using Microsoft.Agents.AI.Hosting;
+global using Microsoft.Agents.AI.Workflows;
 global using Microsoft.Extensions.AI;
 global using ModelContextProtocol.Client;

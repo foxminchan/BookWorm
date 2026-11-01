@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Publishers.Delete;
+﻿namespace BookWorm.Catalog.Features.Publishers.Delete;
 
 internal sealed class DeletePublisherEndpoint : IEndpoint<NoContent, PublisherId, ISender>
 {

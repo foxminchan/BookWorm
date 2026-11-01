@@ -1,5 +1,3 @@
-using BookWorm.Notification.Domain.Models;
-
 namespace BookWorm.Notification.Infrastructure.Senders.Outbox;
 
 internal static class OutboxExtensions

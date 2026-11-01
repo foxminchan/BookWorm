@@ -1,5 +1,4 @@
 using BookWorm.Chassis.Specification.Evaluators;
-using BookWorm.Constants.Core;
 
 namespace BookWorm.Catalog.Infrastructure.Repositories;
 

@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Ordering.Features.Buyers.Get;
+﻿namespace BookWorm.Ordering.Features.Buyers.Get;
 
 internal sealed class GetBuyerEndpoint : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, ISender>
 {

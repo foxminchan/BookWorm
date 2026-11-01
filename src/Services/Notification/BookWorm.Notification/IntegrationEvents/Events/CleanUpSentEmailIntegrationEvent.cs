@@ -1,5 +1,3 @@
-using Wolverine.Attributes;
-
 namespace BookWorm.Contracts;
 
 [IntegrationMessageOwner(ServiceName = Services.Scheduler, TopicName = "clean-up-sent-email")]

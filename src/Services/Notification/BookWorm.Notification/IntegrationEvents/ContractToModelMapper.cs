@@ -1,6 +1,4 @@
-﻿using BookWorm.Notification.Domain.Models;
-
-namespace BookWorm.Notification.IntegrationEvents;
+﻿namespace BookWorm.Notification.IntegrationEvents;
 
 internal static class ContractToModelMapper
 {

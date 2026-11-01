@@ -1,6 +1,4 @@
 using System.Runtime.CompilerServices;
-using BookWorm.Chassis.Security.Extensions;
-using Mediator;
 
 namespace BookWorm.Ordering.Features.Dashboard;
 

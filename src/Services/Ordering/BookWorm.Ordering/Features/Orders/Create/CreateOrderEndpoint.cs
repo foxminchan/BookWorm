@@ -1,5 +1,4 @@
 ﻿using BookWorm.Ordering.Features.Orders.Get;
-using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Orders.Create;

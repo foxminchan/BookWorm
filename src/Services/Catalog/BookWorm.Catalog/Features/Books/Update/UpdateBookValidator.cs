@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Core;
-
-namespace BookWorm.Catalog.Features.Books.Update;
+﻿namespace BookWorm.Catalog.Features.Books.Update;
 
 internal sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 {

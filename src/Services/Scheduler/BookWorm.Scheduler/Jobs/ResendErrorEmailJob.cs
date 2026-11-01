@@ -1,7 +1,4 @@
-﻿using BookWorm.Contracts;
-using Wolverine;
-
-namespace BookWorm.Scheduler.Jobs;
+﻿namespace BookWorm.Scheduler.Jobs;
 
 [DisallowConcurrentExecution]
 internal sealed class ResendErrorEmailJob(IMessageBus bus, ILogger<ResendErrorEmailJob> logger)

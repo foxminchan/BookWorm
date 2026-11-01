@@ -1,9 +1,5 @@
 using System.Net.Mime;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using BookWorm.McpTools.Models;
 using ModelContextProtocol;
-using ModelContextProtocol.Server;
 
 namespace BookWorm.McpTools.Resources;
 

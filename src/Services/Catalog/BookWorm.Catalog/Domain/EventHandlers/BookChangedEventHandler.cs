@@ -1,5 +1,4 @@
 ﻿using BookWorm.Catalog.Domain.Events;
-using Mediator;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.Domain.EventHandlers;

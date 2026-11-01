@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Catalog.Features.Books.Update;
+﻿namespace BookWorm.Catalog.Features.Books.Update;
 
 internal sealed class UpdateBookPreProcessor(IBlobService blobService)
     : MessagePreProcessor<UpdateBookCommand, Unit>

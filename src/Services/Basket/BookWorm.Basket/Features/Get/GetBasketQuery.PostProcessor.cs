@@ -1,6 +1,4 @@
-﻿using Mediator;
-
-namespace BookWorm.Basket.Features.Get;
+﻿namespace BookWorm.Basket.Features.Get;
 
 internal sealed class GetBasketPostProcessor(IBookService bookService)
     : MessagePostProcessor<GetBasketQuery, CustomerBasketDto>

@@ -1,5 +1,4 @@
 ﻿using BookWorm.Rating.Domain.Events;
-using Mediator;
 
 namespace BookWorm.Rating.Domain.EventHandlers;
 

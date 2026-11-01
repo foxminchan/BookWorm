@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.Repository;
-using BookWorm.Notification.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Wolverine.EntityFrameworkCore;
 

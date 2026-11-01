@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Authors.Create;
+﻿namespace BookWorm.Catalog.Features.Authors.Create;
 
 internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<AuthorId>, CreateAuthorCommand, ISender>
 {

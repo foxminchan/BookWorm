@@ -1,6 +1,4 @@
-﻿using BookWorm.Basket.Extensions;
-using BookWorm.Chassis.Utilities.Guards;
-using Mediator;
+﻿using BookWorm.Chassis.Utilities.Guards;
 
 namespace BookWorm.Basket.Features.Update;
 

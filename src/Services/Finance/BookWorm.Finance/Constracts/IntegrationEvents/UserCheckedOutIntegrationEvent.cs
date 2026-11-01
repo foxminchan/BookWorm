@@ -1,6 +1,3 @@
-using BookWorm.Constants.Aspire;
-using Wolverine.Attributes;
-
 namespace BookWorm.Contracts;
 
 [IntegrationMessageOwner(ServiceName = Services.Ordering, TopicName = "user-checked-out")]

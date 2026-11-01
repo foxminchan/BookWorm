@@ -1,7 +1,5 @@
 using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
-using BookWorm.Rating.Infrastructure.Summarizer.Models;
 using BookWorm.Rating.Infrastructure.Summarizer.Workflows;
-using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 

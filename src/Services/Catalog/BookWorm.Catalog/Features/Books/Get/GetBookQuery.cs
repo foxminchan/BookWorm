@@ -1,5 +1,4 @@
 ﻿using BookWorm.Chassis.Utilities.Guards;
-using Mediator;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.Features.Books.Get;

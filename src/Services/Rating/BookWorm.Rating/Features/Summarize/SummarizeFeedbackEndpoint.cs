@@ -1,8 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using BookWorm.Rating.Infrastructure.Summarizer.Models;
-using Mediator;
-
-namespace BookWorm.Rating.Features.Summarize;
+﻿namespace BookWorm.Rating.Features.Summarize;
 
 internal sealed class SummarizeFeedbackEndpoint : IEndpoint<Ok<SummarizeResult>, BookId, ISender>
 {

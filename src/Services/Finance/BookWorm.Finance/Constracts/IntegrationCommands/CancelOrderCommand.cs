@@ -1,6 +1,4 @@
-﻿using BookWorm.Constants.Aspire;
-
-namespace BookWorm.Contracts;
+﻿namespace BookWorm.Contracts;
 
 [IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "cancel-order")]
 public sealed record CancelOrderCommand(

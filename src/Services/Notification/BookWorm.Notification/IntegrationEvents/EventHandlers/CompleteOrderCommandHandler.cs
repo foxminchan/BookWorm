@@ -1,6 +1,4 @@
-﻿using Wolverine.Attributes;
-
-namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
 
 internal sealed class CompleteOrderCommandHandler(ISender sender, IRenderer renderer)
 {

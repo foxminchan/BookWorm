@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Infrastructure.AI;
 

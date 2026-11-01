@@ -1,4 +1,10 @@
-﻿global using BookWorm.Chassis.EventBus;
+﻿global using System.Diagnostics.CodeAnalysis;
+global using BookWorm.Chassis.EventBus;
+global using BookWorm.Constants.Aspire;
+global using BookWorm.Contracts;
+global using BookWorm.Scheduler.Clients;
 global using BookWorm.Scheduler.Jobs.Listeners;
 global using BookWorm.ServiceDefaults;
 global using Quartz;
+global using Wolverine;
+global using Wolverine.Attributes;

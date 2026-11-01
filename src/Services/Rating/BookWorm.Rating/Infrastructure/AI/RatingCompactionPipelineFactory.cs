@@ -1,5 +1,4 @@
 using Microsoft.Agents.AI.Compaction;
-using Microsoft.Extensions.AI;
 
 namespace BookWorm.Rating.Infrastructure.AI;
 

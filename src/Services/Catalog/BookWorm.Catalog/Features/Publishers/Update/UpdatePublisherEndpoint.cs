@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Publishers.Update;
+﻿namespace BookWorm.Catalog.Features.Publishers.Update;
 
 internal sealed class UpdatePublisherEndpoint
     : IEndpoint<NoContent, UpdatePublisherCommand, ISender>

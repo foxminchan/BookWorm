@@ -1,7 +1,5 @@
-﻿using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Utilities.Guards;
+﻿using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
-using Mediator;
 
 namespace BookWorm.Ordering.Features.Buyers.Get;
 

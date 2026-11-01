@@ -1,7 +1,9 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
 global using BookWorm.Chassis.EF;
 global using BookWorm.Chassis.EventBus;
+global using BookWorm.Constants.Aspire;
 global using BookWorm.Finance.Infrastructure;
 global using BookWorm.Finance.Saga;
 global using BookWorm.ServiceDefaults;
 global using Microsoft.EntityFrameworkCore;
+global using Wolverine.Attributes;

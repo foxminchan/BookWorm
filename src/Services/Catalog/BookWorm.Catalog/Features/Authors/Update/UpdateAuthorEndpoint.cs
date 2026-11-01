@@ -1,7 +1,4 @@
-﻿using BookWorm.Constants.Core;
-using Mediator;
-
-namespace BookWorm.Catalog.Features.Authors.Update;
+﻿namespace BookWorm.Catalog.Features.Authors.Update;
 
 internal sealed class UpdateAuthorEndpoint : IEndpoint<NoContent, UpdateAuthorCommand, ISender>
 {

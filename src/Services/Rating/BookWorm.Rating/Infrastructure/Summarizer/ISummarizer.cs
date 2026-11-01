@@ -1,6 +1,4 @@
-﻿using BookWorm.Rating.Infrastructure.Summarizer.Models;
-
-namespace BookWorm.Rating.Infrastructure.Summarizer;
+﻿namespace BookWorm.Rating.Infrastructure.Summarizer;
 
 public interface ISummarizer
 {
