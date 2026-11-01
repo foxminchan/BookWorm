@@ -27,7 +27,7 @@ internal sealed class McpRatingPromptProvider(McpClient mcpClient) : IRatingProm
     )
     {
         var prompt = await GetSummaryPromptAsync(partialSummaries, cancellationToken);
-        var reductionInstructions = """
+        const string reductionInstructions = """
             The supplied JSON is an array of partial summaries. Each item includes ReviewCount,
             the number of reviews represented by that summary. Account for these unequal batch
             sizes when consolidating evidence; do not give every batch equal weight. ReviewCount
