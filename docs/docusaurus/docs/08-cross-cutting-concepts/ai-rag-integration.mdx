@@ -114,6 +114,25 @@ and automated decision-making across the system.
 - **Temperature Control** - Adjust response creativity and consistency
 - **Token Management** - Optimize token usage and response length
 
+### Debugging Model Router Selection
+
+The shared `AddAIServices()` chat pipeline logs the model reported by each provider response at
+`Information` level under `BookWorm.Chassis.AI.Middlewares.ModelLoggingChatClient`. In the service
+logs or Aspire dashboard, filter by this category or the structured `ModelId` field to see which
+underlying model handled a request.
+
+- `ModelId` is the model returned by the provider, not the router deployment name.
+- `RequestedModelId` identifies the requested model or configured deployment.
+- `ResponseId` correlates the log with the provider response; `IsStreaming` identifies streaming calls.
+- Each provider call is logged, including subsequent calls during function invocation. Streaming
+  logs appear when model metadata arrives, without buffering the response or repeating every chunk.
+- If the provider omits the model ID, a warning explicitly states that selection cannot be determined.
+  The requested deployment is not substituted for the actual model.
+- Prompts, generated text, and tool arguments are not included in these logs.
+
+Foundry exposes the selected model through the response's `model` field; see
+[How to use model router](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/model-router).
+
 ### Embedding Service
 
 - **Text Embeddings** - Generate 3072-dimensional vectors via `text-embedding-3-large`

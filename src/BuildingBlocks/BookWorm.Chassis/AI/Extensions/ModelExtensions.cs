@@ -1,4 +1,5 @@
-﻿using BookWorm.Constants.Aspire;
+﻿using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +37,8 @@ public static class ModelExtensions
                 builder
                     .AddAzureChatCompletionsClient(Components.Foundry.Chat)
                     .AddChatClient()
-                    .UseFunctionInvocation();
+                    .UseFunctionInvocation()
+                    .UseModelLogging();
             }
 
             if (

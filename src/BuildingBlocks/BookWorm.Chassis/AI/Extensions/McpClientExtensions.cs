@@ -36,7 +36,7 @@ public static class McpClientExtensions
                 .GetAwaiter()
                 .GetResult()
                 .Where(tool => toolNames.Contains(tool.Name))
-                .ToArray();
+                .ToArray<AITool>();
 
             if (tools.Length == 0)
             {
