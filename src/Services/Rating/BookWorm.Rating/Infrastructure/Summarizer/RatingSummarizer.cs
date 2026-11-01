@@ -57,6 +57,8 @@ internal sealed class RatingSummarizer(
             return result;
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         var workflowError = run.OutgoingEvents.OfType<WorkflowErrorEvent>().FirstOrDefault();
         throw new InvalidOperationException(
             $"The rating summarization workflow completed without producing a result. "
