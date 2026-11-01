@@ -137,6 +137,10 @@
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
     <PackageVersion Include="ModelContextProtocol.Extensions.Tasks" Version="2.3.0" />
     <PackageVersion
+      Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis"
+      Version="$(FusionCacheVersion)"
+    />
+    <PackageVersion
       Include="ZiggyCreatures.FusionCache.OpenTelemetry"
       Version="$(FusionCacheVersion)"
     />

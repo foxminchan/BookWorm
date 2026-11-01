@@ -19,10 +19,13 @@ internal static class RouterAgentRegistration
                     Constants.Other.Agents.RouterAgent,
                     (sp, key) =>
                     {
+                        var compactionProvider = CompactionPipelineFactory.CreateLight();
+
                         var chatClient = sp.GetRequiredService<IChatClient>()
                             .AsBuilder()
                             .UsePIIMiddleware(sp)
                             .UseGuardrailMiddleware()
+                            .UseAIContextProviders(compactionProvider)
                             .Build(sp);
 
                         var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);

@@ -6,6 +6,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using StackExchange.Redis;
 using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
 using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 
 namespace BookWorm.Chassis.Caching;
@@ -49,6 +50,14 @@ public static class CachingExtensions
             {
                 fusionBuilder.WithDistributedCache(sp => new RedisCache(
                     new RedisCacheOptions
+                    {
+                        ConnectionMultiplexerFactory = () =>
+                            Task.FromResult(sp.GetRequiredService<IConnectionMultiplexer>()),
+                    }
+                ));
+
+                fusionBuilder.WithBackplane(sp => new RedisBackplane(
+                    new RedisBackplaneOptions
                     {
                         ConnectionMultiplexerFactory = () =>
                             Task.FromResult(sp.GetRequiredService<IConnectionMultiplexer>()),

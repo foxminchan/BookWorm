@@ -99,7 +99,7 @@ Existing skills also cover EventCatalog, Turborepo, React performance, and Playw
 
 ### Instruction Ownership
 
-[Copilot instructions](./copilot-instructions.md) contain repository-wide constraints. File-scoped rules remain under [instructions](./instructions/); reusable domain knowledge belongs in `.agents/skills/<skill-name>/SKILL.md`, never `.github/skills`.
+[AGENTS.md](../AGENTS.md) is the single source of repository-wide agent guidance. File-scoped rules remain under [instructions](./instructions/); reusable domain knowledge belongs in `.agents/skills/<skill-name>/SKILL.md`, never `.github/skills`.
 
 The only retained custom agent is [Triage Specialist](./agents/triage-specialist.agent.md). The [issue](./workflows/issue-triage.md) and [PR](./workflows/pr-triage.md) automation import it as their GitHub Copilot entry point and enforce safe outputs. Development skills do not replace these workflows. Native skill discovery is sufficient for development; no repository router is needed.
 

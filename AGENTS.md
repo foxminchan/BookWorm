@@ -1,5 +1,7 @@
 # Agent Instructions
 
+BookWorm is a .NET 10 microservices application built around Aspire, DDD, and event-driven integration patterns. The codebase emphasizes Vertical Slice Architecture, CQRS, and clean service boundaries.
+
 ## Working style
 
 - Prefer the repo task runner in [mise.toml](mise.toml) over raw `dotnet` or `bun` commands.
@@ -27,6 +29,13 @@
 - Tests: [tests](tests)
 - Documentation: [README.md](README.md), [docs/docusaurus](docs/docusaurus), [docs/eventcatalog](docs/eventcatalog)
 
+## Common pitfalls
+
+- `Mediator.SourceGenerator` is not `MediatR`.
+- Test projects should end with `.UnitTests`, `.ContractTests`, or `.IntegrationTests`.
+- Frontend lockfiles are Bun-managed, not npm or pnpm.
+- Never modify [global.json](global.json) or [NuGet.config](NuGet.config) unless explicitly asked.
+
 ## Architecture and coding conventions
 
 - Follow Vertical Slice Architecture and DDD boundaries.
@@ -50,7 +59,6 @@
 
 - [README.md](README.md)
 - [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)
-- [.github/copilot-instructions.md](.github/copilot-instructions.md)
 - [docs/docusaurus](docs/docusaurus)
 - [docs/eventcatalog](docs/eventcatalog)
 - [.agents/skills](.agents/skills)
