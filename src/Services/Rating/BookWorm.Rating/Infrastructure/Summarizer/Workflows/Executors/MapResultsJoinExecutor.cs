@@ -44,7 +44,7 @@ internal sealed class MapResultsJoinExecutor(int expectedWorkerCount)
 
         await context.SendMessageAsync(
             new ReductionRequest(summaries, metrics, 0, null),
-            "ReduceExecutor",
+            nameof(ReduceExecutor),
             cancellationToken
         );
     }

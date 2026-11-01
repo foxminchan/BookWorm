@@ -43,7 +43,7 @@ internal sealed class MapExecutor(
                 cancellationToken
             );
 
-            summaries.Add(new(batch.Index, summary));
+            summaries.Add(new(batch.Index, batch.Reviews.Length, summary));
         }
 
         await context.SendMessageAsync(

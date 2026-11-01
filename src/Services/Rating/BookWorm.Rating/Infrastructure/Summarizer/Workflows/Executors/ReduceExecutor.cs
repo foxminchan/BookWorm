@@ -28,8 +28,8 @@ internal sealed class ReduceExecutor(
         else
         {
             var promptData = JsonSerializer.Serialize(
-                message.Summaries.Select(item => item.Summary).ToArray(),
-                RatingSummarizerSerializationContext.Default.RatingSummaryOutputArray
+                message.Summaries,
+                RatingSummarizerSerializationContext.Default.PartialRatingSummaryArray
             );
 
             var prompt = await promptProvider.GetReductionPromptAsync(

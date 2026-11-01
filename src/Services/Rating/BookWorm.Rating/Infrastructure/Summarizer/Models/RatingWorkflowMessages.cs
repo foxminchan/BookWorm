@@ -17,7 +17,11 @@ internal sealed record ReviewPartition(
     RatingWorkflowMetrics Metrics
 );
 
-internal sealed record PartialRatingSummary(int BatchIndex, RatingSummaryOutput Summary);
+internal sealed record PartialRatingSummary(
+    int BatchIndex,
+    int ReviewCount,
+    RatingSummaryOutput Summary
+);
 
 internal sealed class MapShardResult(
     int workerIndex,

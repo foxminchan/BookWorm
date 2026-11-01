@@ -14,10 +14,14 @@ internal sealed class RefineReductionExecutor()
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var feedback =
-            $"Previous confidence: {message.Assessment.Confidence}. "
-            + $"Assessment evidence: {message.Assessment.Evidence} "
-            + "Revise the merged summary to address this evidence while remaining grounded in the partial summaries.";
+        var feedback = $"""
+            Previously assessed merged summary:
+            {message.Candidate.Summary.ToText()}
+
+            Previous confidence: {message.Assessment.Confidence}.
+            Assessment evidence: {message.Assessment.Evidence}
+            Revise the merged summary to address this evidence while remaining grounded in the partial summaries.
+            """;
 
         return ValueTask.FromResult(
             new ReductionRequest(
