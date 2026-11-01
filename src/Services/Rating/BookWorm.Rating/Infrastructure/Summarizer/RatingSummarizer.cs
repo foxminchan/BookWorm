@@ -1,18 +1,13 @@
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
-using BookWorm.Constants.Other;
 using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.Rating.Infrastructure.Summarizer.Models;
-using BookWorm.Rating.Infrastructure.Summarizer.Providers;
-using Microsoft.Agents.AI;
-using Microsoft.Extensions.AI;
+using BookWorm.Rating.Infrastructure.Summarizer.Workflows;
+using Microsoft.Agents.AI.Workflows;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
 internal sealed class RatingSummarizer(
-    [FromKeyedServices(Agents.RatingAgent)] AIAgent ratingAgent,
-    IRatingPromptProvider promptProvider,
-    IFeedbackRepository feedbackRepository
+    IFeedbackRepository feedbackRepository,
+    IRatingSummarizerWorkflowFactory workflowFactory
 ) : ISummarizer
 {
     public async Task<SummarizeResult> SummarizeAsync(
@@ -24,7 +19,6 @@ internal sealed class RatingSummarizer(
             new FeedbackFilterSpec(bookId, nameof(Feedback.Rating), false, 1, int.MaxValue),
             cancellationToken
         );
-
         var reviewCount = feedback.Count;
 
         if (reviewCount == 0)
@@ -33,132 +27,41 @@ internal sealed class RatingSummarizer(
         }
 
         var averageRating = feedback.Average(review => review.Rating);
+        var reviews = feedback
+            .Select(review => new FeedbackReview(
+                (Guid)review.Id,
+                review.FirstName,
+                review.LastName,
+                review.Comment,
+                review.Rating,
+                review.BookId
+            ))
+            .ToArray();
 
-        var summaryText = await SummarizeReviewsAsync(feedback, cancellationToken);
-        var assessment = await AssessSummaryQualityAsync(
-            averageRating,
-            reviewCount,
-            summaryText,
-            cancellationToken
+        var workflow = workflowFactory.Create(reviewCount);
+
+        await using var run = await InProcessExecution.RunAsync(
+            workflow,
+            new RatingWorkflowInput(reviews, averageRating, reviewCount),
+            cancellationToken: cancellationToken
         );
 
-        var classification = RatingClassifier.Classify(
-            averageRating,
-            reviewCount,
-            assessment.DominantNegativePattern
-        );
+        var result = run
+            .OutgoingEvents.OfType<WorkflowOutputEvent>()
+            .Select(output => output.Data)
+            .OfType<SummarizeResult>()
+            .SingleOrDefault();
 
-        return new(
-            summaryText,
-            classification,
-            averageRating,
-            reviewCount,
-            assessment.Evidence,
-            assessment.Confidence
-        );
-    }
-
-    private async Task<string> SummarizeReviewsAsync(
-        IReadOnlyList<Feedback> feedback,
-        CancellationToken cancellationToken
-    )
-    {
-        var reviewData = JsonSerializer.Serialize(
-            [
-                .. feedback.Select(review => new FeedbackReview(
-                    (Guid)review.Id,
-                    review.FirstName,
-                    review.LastName,
-                    review.Comment,
-                    review.Rating,
-                    review.BookId
-                )),
-            ],
-            RatingSummarizerSerializationContext.Default.FeedbackReviewArray
-        );
-
-        var summaryPrompt = await promptProvider.GetSummaryPromptAsync(
-            reviewData,
-            cancellationToken
-        );
-        var summary = await RunStructuredWithRetryAsync(
-            RatingSummarizerSerializationContext.Default.RatingSummaryOutput,
-            summaryPrompt,
-            cancellationToken
-        );
-
-        return summary.ToText();
-    }
-
-    private async Task<QualityAssessmentOutput> AssessSummaryQualityAsync(
-        double averageRating,
-        int reviewCount,
-        string summaryText,
-        CancellationToken cancellationToken
-    )
-    {
-        var qualityPrompt = await promptProvider.GetQualityPromptAsync(
-            averageRating,
-            reviewCount,
-            summaryText,
-            cancellationToken
-        );
-
-        return await RunStructuredWithRetryAsync(
-            RatingSummarizerSerializationContext.Default.QualityAssessmentOutput,
-            qualityPrompt,
-            cancellationToken
-        );
-    }
-
-    private async Task<T> RunStructuredWithRetryAsync<T>(
-        JsonTypeInfo<T> jsonTypeInfo,
-        ChatMessage message,
-        CancellationToken cancellationToken
-    )
-        where T : class
-    {
-        JsonException? firstFailure = null;
-
-        for (var attempt = 0; attempt < 2; attempt++)
+        if (result is not null)
         {
-            var session = await ratingAgent.CreateSessionAsync(cancellationToken);
-            var response = await ratingAgent.RunAsync(
-                [message],
-                session,
-                new ChatClientAgentRunOptions
-                {
-                    ChatOptions = new()
-                    {
-                        ResponseFormat = ChatResponseFormat.ForJsonSchema<T>(),
-                        ToolMode = ChatToolMode.None,
-                    },
-                },
-                cancellationToken
-            );
-
-            try
-            {
-                return JsonSerializer.Deserialize(response.Text, jsonTypeInfo)
-                    ?? throw new JsonException("The structured response was null.");
-            }
-            catch (JsonException exception)
-            {
-                if (attempt != 0)
-                {
-                    throw new InvalidOperationException(
-                        "The rating agent returned invalid structured output after one retry.",
-                        firstFailure
-                    );
-                }
-
-                firstFailure = exception;
-            }
+            return result;
         }
 
+        var workflowError = run.OutgoingEvents.OfType<WorkflowErrorEvent>().FirstOrDefault();
         throw new InvalidOperationException(
-            "The rating agent returned invalid structured output after one retry.",
-            firstFailure
+            $"The rating summarization workflow completed without producing a result. "
+                + $"Workflow events: {string.Join(", ", run.OutgoingEvents.Select(evt => evt.GetType().Name))}.",
+            workflowError?.Exception
         );
     }
 }
