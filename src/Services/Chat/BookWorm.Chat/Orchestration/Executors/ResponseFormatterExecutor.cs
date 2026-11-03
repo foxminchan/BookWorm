@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace BookWorm.Chat.Orchestration.Executors;
 
 internal sealed partial class ResponseFormatterExecutor()
-    : Executor<List<ChatMessage>, string>("ResponseFormatterExecutor")
+    : Executor<List<ChatMessage>, string>(nameof(ResponseFormatterExecutor))
 {
     [GeneratedRegex(@"\n{3,}", RegexOptions.Compiled)]
     private static partial Regex ExcessiveNewlinesRegex();

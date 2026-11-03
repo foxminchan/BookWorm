@@ -89,6 +89,7 @@ internal static class WorkflowRegistration
                             .WithDescription(
                                 "Workflow with input validation, specialized-agent handoffs, and response formatting"
                             )
+                            .WithOpenTelemetry()
                             .Build();
 
                         return workflow;
