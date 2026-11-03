@@ -32,8 +32,7 @@ public static class ChatClientAgentExtensions
             ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
 
             var (options, toolNames) = AgentDefinitionLoader.Load(definitionFile, agentName);
-            var chatOptions = options.ChatOptions;
-            chatOptions?.Tools = mcpClient.GetAgentTools(toolNames);
+            options.ChatOptions?.Tools = mcpClient.GetAgentTools(toolNames);
             options.AllowConcurrentInvocation = true;
 
             var agent = new ChatClientAgent(chatClient, options);
