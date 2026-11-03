@@ -9,8 +9,36 @@ import {
 } from "@copilotkit/runtime";
 
 import { env } from "@/env.mjs";
+import { auth } from "@/lib/auth";
 
+const KEYCLOAK_PROVIDER_ID = "keycloak";
 const serviceAdapter = new ExperimentalEmptyAdapter();
+
+const getKeycloakAccessToken = async (
+  requestHeaders: Headers,
+): Promise<string | null> => {
+  try {
+    const accounts = await auth.api.listUserAccounts({
+      headers: requestHeaders,
+    });
+    const account = accounts.find(
+      (account) => account.providerId === KEYCLOAK_PROVIDER_ID,
+    );
+
+    if (!account) {
+      return null;
+    }
+
+    const { accessToken } = await auth.api.getAccessToken({
+      body: { accountId: account.id },
+      headers: requestHeaders,
+    });
+
+    return accessToken ?? null;
+  } catch {
+    return null;
+  }
+};
 
 const getRuntime = async () => {
   const gatewayUrl =
@@ -23,12 +51,15 @@ const getRuntime = async () => {
   const agUiUrl = `${gatewayUrl}/chatting/ag-ui`;
   const agentName = env.NEXT_PUBLIC_COPILOT_AGENT_NAME;
 
-  // Extract auth token from request headers to pass to backend agent
+  // The AG-UI endpoint requires a Keycloak bearer token; resolve it from the
+  // Better Auth session when the browser didn't send one explicitly.
   const headersList = await headers();
-  const authHeader = headersList.get("authorization");
   const cookieHeader = headersList.get("cookie");
+  const accessToken = await getKeycloakAccessToken(headersList);
+  const authHeader =
+    headersList.get("authorization") ??
+    (accessToken ? `Bearer ${accessToken}` : null);
 
-  // Pass authentication context to backend agent via custom headers
   const agentHeaders: Record<string, string> = {};
   if (authHeader) {
     agentHeaders["authorization"] = authHeader;

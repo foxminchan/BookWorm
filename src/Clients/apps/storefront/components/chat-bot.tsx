@@ -10,12 +10,15 @@ import {
   useState,
 } from "react";
 
+import Link from "next/link";
+
 import { CopilotSidebar } from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
 import { useAtomValue } from "jotai";
 import {
   AlertCircle,
   Clock,
+  LogIn,
   MessageCircle,
   RefreshCw,
   WifiOff,
@@ -26,6 +29,7 @@ import { match } from "ts-pattern";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
 
+import { isAuthenticatedAtom } from "@/atoms/basket-atom";
 import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { env } from "@/env.mjs";
 import { useA2UIComponents } from "@/hooks/useA2UIComponents";
@@ -327,18 +331,46 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   );
 });
 
+type UnavailableReason = "disabled" | "unavailable" | "unauthenticated";
+
+const UNAVAILABLE_COPY: Record<
+  UnavailableReason,
+  { subtitle: string; title: string; description: string }
+> = {
+  disabled: {
+    subtitle: "Coming Soon",
+    title: "Feature in Development",
+    description:
+      "Our AI chat assistant is currently under development and will be available soon. Stay tuned!",
+  },
+  unavailable: {
+    subtitle: "Chat unavailable",
+    title: "Chat Unavailable",
+    description:
+      "The chat feature is currently unavailable. Please try again later.",
+  },
+  unauthenticated: {
+    subtitle: "Sign in required",
+    title: "Sign in to chat",
+    description:
+      "Please sign in to your BookWorm account to chat with our literary guide.",
+  },
+};
+
 const UnavailableChatUI = ({
   isOpen,
   onClose,
-  isFeatureDisabled = false,
+  reason,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  isFeatureDisabled?: boolean;
+  reason: UnavailableReason;
 }) => {
   if (!isOpen) {
     return null;
   }
+
+  const copy = UNAVAILABLE_COPY[reason];
 
   return (
     <dialog
@@ -362,9 +394,7 @@ const UnavailableChatUI = ({
               <h2 id="chat-unavailable-title" className="font-semibold">
                 BookWorm Literary Guide
               </h2>
-              <p className="text-xs opacity-90">
-                {isFeatureDisabled ? "Coming Soon" : "Chat unavailable"}
-              </p>
+              <p className="text-xs opacity-90">{copy.subtitle}</p>
             </div>
           </div>
           <Button
@@ -383,17 +413,17 @@ const UnavailableChatUI = ({
             <AlertCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
           </div>
           <div className="text-center">
-            <h3 className="mb-2 text-lg font-semibold">
-              {isFeatureDisabled
-                ? "Feature in Development"
-                : "Chat Unavailable"}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {isFeatureDisabled
-                ? "Our AI chat assistant is currently under development and will be available soon. Stay tuned!"
-                : "The chat feature is currently unavailable. Please try again later."}
-            </p>
+            <h3 className="mb-2 text-lg font-semibold">{copy.title}</h3>
+            <p className="text-muted-foreground text-sm">{copy.description}</p>
           </div>
+          {reason === "unauthenticated" && (
+            <Button asChild size="sm" className="gap-2">
+              <Link href="/login">
+                <LogIn className="h-4 w-4" aria-hidden="true" />
+                Sign in
+              </Link>
+            </Button>
+          )}
         </CardContent>
       </Card>
     </dialog>
@@ -405,10 +435,15 @@ export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
   const hasGateway = !!(
     env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP
   );
+  const isAuthenticated = useAtomValue(isAuthenticatedAtom);
   const [isUnavailableChatOpen, setIsUnavailableChatOpen] = useState(false);
 
-  const isFeatureDisabled = !isCopilotEnabled;
-  const canShowChat = isCopilotEnabled && hasGateway;
+  const reason: UnavailableReason = !isCopilotEnabled
+    ? "disabled"
+    : !hasGateway
+      ? "unavailable"
+      : "unauthenticated";
+  const canShowChat = isCopilotEnabled && hasGateway && isAuthenticated;
 
   useImperativeHandle(ref, () => ({
     openChat: () => {
@@ -435,23 +470,15 @@ export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
         onClick={() => setIsUnavailableChatOpen(true)}
         size="icon"
         className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
-        aria-label={
-          isFeatureDisabled
-            ? "Chat feature coming soon - click to learn more"
-            : "Open chat - feature currently unavailable"
-        }
-        title={
-          isFeatureDisabled
-            ? "Feature in development"
-            : "Chat feature is unavailable"
-        }
+        aria-label={`Open chat - ${UNAVAILABLE_COPY[reason].subtitle}`}
+        title={UNAVAILABLE_COPY[reason].title}
       >
         <MessageCircle className="h-6 w-6" aria-hidden="true" />
       </Button>
       <UnavailableChatUI
         isOpen={isUnavailableChatOpen}
         onClose={() => setIsUnavailableChatOpen(false)}
-        isFeatureDisabled={isFeatureDisabled}
+        reason={reason}
       />
     </>
   );
