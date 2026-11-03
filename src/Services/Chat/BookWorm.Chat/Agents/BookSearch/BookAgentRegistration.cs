@@ -48,7 +48,7 @@ internal static class BookAgentRegistration
                     );
 
                     var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
-                    var chatOptions = options.ChatOptions!;
+                    var chatOptions = options.ChatOptions;
                     var catalogTools = mcpClient.GetAgentTools(toolNames);
                     var catalogResearcher = chatClient.InitSubAgent(
                         sp,
@@ -64,13 +64,9 @@ internal static class BookAgentRegistration
                         "book-recommendation-researcher"
                     );
 
-                    chatOptions.Tools =
-                    [
+                    chatOptions?.Tools = [
                         .. catalogTools,
-                        .. SubAgentFactory.Create(
-                            catalogResearcher,
-                            recommendationResearcher
-                        ),
+                        .. SubAgentFactory.Create(catalogResearcher, recommendationResearcher),
                     ];
                     options.AllowConcurrentInvocation = true;
                     options.AIContextProviders =
@@ -87,6 +83,5 @@ internal static class BookAgentRegistration
                 }
             );
         }
-
     }
 }

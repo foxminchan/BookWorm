@@ -33,7 +33,8 @@ public static class SubAgentFactory
 
         for (var index = 0; index < agents.Length; index++)
         {
-            var agent = agents[index]
+            var agent =
+                agents[index]
                 ?? throw new ArgumentException(
                     "Subagents cannot contain null entries.",
                     nameof(agents)
@@ -41,10 +42,7 @@ public static class SubAgentFactory
 
             if (string.IsNullOrWhiteSpace(agent.Name))
             {
-                throw new ArgumentException(
-                    "Each subagent must have a name.",
-                    nameof(agents)
-                );
+                throw new ArgumentException("Each subagent must have a name.", nameof(agents));
             }
 
             if (string.IsNullOrWhiteSpace(agent.Description))
@@ -74,10 +72,7 @@ public static class SubAgentFactory
     {
         async Task<string> InvokeAsync(string query, CancellationToken cancellationToken)
         {
-            var response = await agent.RunAsync(
-                query,
-                cancellationToken: cancellationToken
-            );
+            var response = await agent.RunAsync(query, cancellationToken: cancellationToken);
 
             return response.Text;
         }
@@ -88,9 +83,7 @@ public static class SubAgentFactory
     private static string SanitizeName(string name)
     {
         return string.Concat(
-            name.Select(character =>
-                char.IsAsciiLetterOrDigit(character) ? character : '_'
-            )
+            name.Select(character => char.IsAsciiLetterOrDigit(character) ? character : '_')
         );
     }
 }
