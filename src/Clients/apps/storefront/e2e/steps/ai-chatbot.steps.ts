@@ -14,6 +14,45 @@ import { Given, Then, When } from "./fixtures";
 /** Deterministic counter to cycle through close actions across invocations */
 let closeActionCounter = 0;
 
+Given("I have an authenticated Better Auth session", async ({ page }) => {
+  const now = new Date().toISOString();
+
+  await page.route("**/api/auth/get-session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        session: {
+          id: "e2e-session",
+          token: "e2e-session-token",
+          userId: "e2e-user",
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          createdAt: now,
+          updatedAt: now,
+        },
+        user: {
+          id: "e2e-user",
+          name: "E2E Customer",
+          email: "e2e@example.com",
+          emailVerified: true,
+          createdAt: now,
+          updatedAt: now,
+        },
+      }),
+    }),
+  );
+});
+
+Given("I am a guest", async ({ page }) => {
+  await page.route("**/api/auth/get-session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: "null",
+    }),
+  );
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+});
+
 // Feature flag checks
 Given("AI features are enabled", async ({ page }) => {
   await page.evaluate(() => {
@@ -57,6 +96,20 @@ When("I click the floating chat button", async ({ page }) => {
     )
     .click();
   await page.waitForTimeout(500);
+});
+
+When("I click the sign-in-required chat button", async ({ page }) => {
+  await page.locator('button[aria-label="Open chat - Sign in required"]').click();
+});
+
+Then("the chat dialog should prompt me to sign in", async ({ page }) => {
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Sign in to chat");
+  await expect(dialog.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+    "href",
+    "/login",
+  );
 });
 
 Then("the AI chatbot dialog should open", async ({ page }) => {

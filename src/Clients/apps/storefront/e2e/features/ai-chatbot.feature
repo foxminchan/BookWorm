@@ -7,6 +7,7 @@ Feature: AI-Powered Book Recommendations
   So that I can get personalized book recommendations and assistance
 
   Background:
+    Given I have an authenticated Better Auth session
     Given the storefront application is running
     And AI features are enabled
 
@@ -27,6 +28,12 @@ Feature: AI-Powered Book Recommendations
     Then the AI chatbot dialog should open with title "BookWorm Literary Guide"
     And the chatbot should be ready to receive messages
     And I should see the placeholder text "Ask about books, search for titles, or manage your basket..."
+
+  @authentication
+  Scenario: Guest is prompted to sign in before opening chat
+    Given I am a guest
+    When I click the sign-in-required chat button
+    Then the chat dialog should prompt me to sign in
 
   @chat-interaction
   Scenario: Get book recommendation based on mood
