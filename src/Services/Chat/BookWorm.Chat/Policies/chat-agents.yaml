@@ -23,6 +23,16 @@ rules:
     action: allow
     priority: 60
 
+  - name: book-catalog-researcher-catalog-tools
+    condition: "agent_id == 'book-catalog-researcher' and tool_name in allowed_tools"
+    action: allow
+    priority: 60
+
+  - name: book-recommendation-researcher-catalog-tools
+    condition: "agent_id == 'book-recommendation-researcher' and tool_name in allowed_tools"
+    action: allow
+    priority: 60
+
   - name: router-agent-no-tools
     condition: "agent_id == 'router-agent'"
     action: deny
