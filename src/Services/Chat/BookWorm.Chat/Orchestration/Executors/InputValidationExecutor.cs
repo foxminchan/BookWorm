@@ -6,7 +6,7 @@ namespace BookWorm.Chat.Orchestration.Executors;
 internal sealed record InputValidationResult(bool IsAccepted, ChatMessage Message);
 
 internal sealed partial class InputValidationExecutor(GovernanceKernel? governanceKernel = null)
-    : Executor<ChatMessage, InputValidationResult>("InputValidationExecutor")
+    : Executor<ChatMessage, InputValidationResult>(nameof(InputValidationExecutor))
 {
     private const int MinLength = 1;
     private const int MaxLength = 2000;
