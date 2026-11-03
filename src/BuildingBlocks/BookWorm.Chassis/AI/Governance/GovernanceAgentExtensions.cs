@@ -16,14 +16,15 @@ public static class GovernanceAgentExtensions
         ///     governance policies are enforced for every tool invocation.
         /// </summary>
         /// <param name="services">The DI service provider that exposes the registered <see cref="GovernanceKernel" />.</param>
-        /// <param name="agentName">Logical agent name; used to build the default DID (<c>did:bookworm:{agentName}</c>).</param>
+        /// <param name="agentName">Logical agent name; used to build the governance DID (<c>did:mesh:bookworm:{agentName}</c>).</param>
         public AIAgent WithBookWormGovernance(IServiceProvider services, string agentName)
         {
             return agent.WithGovernance(
                 services.GetRequiredService<GovernanceKernel>(),
                 new()
                 {
-                    DefaultAgentId = $"did:bookworm:{agentName}",
+                    DefaultAgentId = $"did:mesh:bookworm:{agentName}",
+                    AgentIdResolver = (_, _) => $"did:mesh:bookworm:{agentName}",
                     EnableFunctionMiddleware = true,
                 }
             );

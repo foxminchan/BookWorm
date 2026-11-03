@@ -19,32 +19,54 @@ description: >
 default_action: deny
 rules:
   - name: book-agent-run
-    condition: "agent_did == 'did:bookworm:book' and agent_name == 'BookAgent'"
+    condition: "agent_did == 'did:mesh:bookworm:book' and agent_name == 'BookAgent'"
     action: allow
     priority: 60
 
   - name: book-agent-catalog-tools
-    condition: "agent_did == 'did:bookworm:book' and tool_name in ['search_catalog', 'get_book', 'list_categories', 'list_authors', 'delegate_book_catalog_researcher', 'delegate_book_recommendation_researcher']"
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'search_catalog' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'get_book' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'list_categories' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'list_authors'
+    action: allow
+    priority: 60
+
+  - name: book-agent-catalog-researcher-delegation
+    condition: "agent_did == 'did:mesh:bookworm:book' and tool_name == 'delegate_book_catalog_researcher'"
+    action: allow
+    priority: 60
+
+  - name: book-agent-recommendation-researcher-delegation
+    condition: "agent_did == 'did:mesh:bookworm:book' and tool_name == 'delegate_book_recommendation_researcher'"
     action: allow
     priority: 60
 
   - name: book-catalog-researcher-run
-    condition: "agent_did == 'did:bookworm:book-catalog-researcher' and agent_name == 'book-catalog-researcher'"
+    condition: "agent_did == 'did:mesh:bookworm:book-catalog-researcher' and agent_name == 'book-catalog-researcher'"
     action: allow
     priority: 60
 
   - name: book-catalog-researcher-catalog-tools
-    condition: "agent_did == 'did:bookworm:book-catalog-researcher' and tool_name in ['search_catalog', 'get_book', 'list_categories', 'list_authors']"
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book-catalog-researcher' and tool_name == 'search_catalog' or
+      agent_did == 'did:mesh:bookworm:book-catalog-researcher' and tool_name == 'get_book' or
+      agent_did == 'did:mesh:bookworm:book-catalog-researcher' and tool_name == 'list_categories' or
+      agent_did == 'did:mesh:bookworm:book-catalog-researcher' and tool_name == 'list_authors'
     action: allow
     priority: 60
 
   - name: book-recommendation-researcher-run
-    condition: "agent_did == 'did:bookworm:book-recommendation-researcher' and agent_name == 'book-recommendation-researcher'"
+    condition: "agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and agent_name == 'book-recommendation-researcher'"
     action: allow
     priority: 60
 
   - name: book-recommendation-researcher-catalog-tools
-    condition: "agent_did == 'did:bookworm:book-recommendation-researcher' and tool_name in ['search_catalog', 'get_book', 'list_categories', 'list_authors']"
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and tool_name == 'search_catalog' or
+      agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and tool_name == 'get_book' or
+      agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and tool_name == 'list_categories' or
+      agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and tool_name == 'list_authors'
     action: allow
     priority: 60
 

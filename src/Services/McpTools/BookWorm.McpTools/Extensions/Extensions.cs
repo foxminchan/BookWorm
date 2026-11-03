@@ -88,7 +88,7 @@ internal static class Extensions
                         Path.Combine(AppContext.BaseDirectory, "Policies", "mcp-tools.yaml")
                     );
                     o.RequireAuthenticatedAgentId = false;
-                    o.DefaultAgentId = $"did:bookworm:{ServerInfoOptions.Name}";
+                    o.DefaultAgentId = $"did:mesh:bookworm:{ServerInfoOptions.Name}";
                     o.ServerName = ServerInfoOptions.Name;
                 })
                 .WithHttpTransport(o => o.SessionMode = HttpServerSessionMode.Stateless)
