@@ -3,6 +3,10 @@ namespace BookWorm.Chat.Agents.BookSearch;
 internal static class BookAgentRegistration
 {
     private const string DefinitionFile = "Agents/BookSearch/book-agent.yaml";
+    private const string CatalogResearcherDefinitionFile =
+        "Agents/BookSearch/catalog-researcher.yaml";
+    private const string RecommendationResearcherDefinitionFile =
+        "Agents/BookSearch/recommendation-researcher.yaml";
     private const string FileMemoryRootConfigKey = "Chat:Harness:FileMemory:Root";
 
     extension(IHostApplicationBuilder builder)
@@ -44,8 +48,26 @@ internal static class BookAgentRegistration
                     );
 
                     var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
-                    var chatOptions = options.ChatOptions!;
-                    chatOptions.Tools = mcpClient.GetAgentTools(toolNames);
+                    var chatOptions = options.ChatOptions;
+                    var catalogTools = mcpClient.GetAgentTools(toolNames);
+                    var catalogResearcher = chatClient.InitSubAgent(
+                        sp,
+                        mcpClient,
+                        CatalogResearcherDefinitionFile,
+                        "book-catalog-researcher"
+                    );
+
+                    var recommendationResearcher = chatClient.InitSubAgent(
+                        sp,
+                        mcpClient,
+                        RecommendationResearcherDefinitionFile,
+                        "book-recommendation-researcher"
+                    );
+
+                    chatOptions?.Tools = [
+                        .. catalogTools,
+                        .. SubAgentFactory.Create(catalogResearcher, recommendationResearcher),
+                    ];
                     options.AllowConcurrentInvocation = true;
                     options.AIContextProviders =
                     [
