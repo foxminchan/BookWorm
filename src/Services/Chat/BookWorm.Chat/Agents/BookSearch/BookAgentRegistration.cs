@@ -48,19 +48,17 @@ internal static class BookAgentRegistration
                     );
 
                     var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
-                    var chatOptions = options.ChatOptions;
+                    var chatOptions = options.ChatOptions!;
                     var catalogTools = mcpClient.GetAgentTools(toolNames);
-                    var catalogResearcher = CreateResearcher(
+                    var catalogResearcher = chatClient.InitSubAgent(
                         sp,
-                        chatClient,
                         mcpClient,
                         CatalogResearcherDefinitionFile,
                         "book-catalog-researcher"
                     );
 
-                    var recommendationResearcher = CreateResearcher(
+                    var recommendationResearcher = chatClient.InitSubAgent(
                         sp,
-                        chatClient,
                         mcpClient,
                         RecommendationResearcherDefinitionFile,
                         "book-recommendation-researcher"
@@ -90,21 +88,5 @@ internal static class BookAgentRegistration
             );
         }
 
-        private static AIAgent CreateResearcher(
-            IServiceProvider services,
-            IChatClient chatClient,
-            McpClient mcpClient,
-            string definitionFile,
-            string agentName
-        )
-        {
-            var (options, toolNames) = AgentDefinitionLoader.Load(definitionFile, agentName);
-            options.ChatOptions.Tools = mcpClient.GetAgentTools(toolNames);
-            options.AllowConcurrentInvocation = true;
-
-            var agent = new ChatClientAgent(chatClient, options);
-
-            return agent.WithBookWormGovernance(services, agentName);
-        }
     }
 }
