@@ -21,7 +21,7 @@ runs:
   using: composite
   steps:
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v6.0.0
+      uses: actions/setup-dotnet@v6.1.0
       with:
         global-json-file: ${{ inputs.global-json-file }}
 
