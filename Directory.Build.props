@@ -15,7 +15,7 @@
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     <DisableRarCache>true</DisableRarCache>
     <!-- Temporarily disable security warnings for transitive packages. -->
-    <NoWarn>NU1603</NoWarn>
+    <NoWarn>NU1603;NU1608</NoWarn>
     <UseArtifactsOutput>true</UseArtifactsOutput>
   </PropertyGroup>
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">

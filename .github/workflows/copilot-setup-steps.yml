@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 1
 
       - name: 🔧 Setup .NET Core
-        uses: actions/setup-dotnet@v6.0.0
+        uses: actions/setup-dotnet@v6.1.0
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
 
@@ -41,7 +41,7 @@ jobs:
           bun-version-file: ${{ env.BUN_VERSION_FILE }}
 
       - name: ⚡ Setup Mise
-        uses: jdx/mise-action@v5.2.4
+        uses: jdx/mise-action@v5.2.6
 
       - name: 🐳 Setup Docker
         uses: docker/setup-docker-action@v5.6.0
