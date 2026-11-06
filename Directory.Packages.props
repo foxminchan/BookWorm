@@ -45,7 +45,7 @@
       Version="$(ToolKitVersion)"
     />
     <!-- Extra -->
-    <PackageVersion Include="Scalar.Aspire" Version="0.12.7" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.13.0" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -73,12 +73,12 @@
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.20.1-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
     <!-- AI -->
-    <PackageVersion Include="A2A.Grpc.AspNetCore" Version="1.0.0-preview3" />
+    <PackageVersion Include="A2A.Grpc.AspNetCore" Version="1.0.0-preview4" />
     <PackageVersion
       Include="Microsoft.Agents.AI.Declarative"
       Version="$(AgentFrameworkVersion)-rc1"
@@ -134,8 +134,7 @@
     <PackageVersion Include="MailKit" Version="4.18.2" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
-    <PackageVersion Include="ModelContextProtocol.Extensions.Tasks" Version="2.3.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.3.1" />
     <PackageVersion
       Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis"
       Version="$(FusionCacheVersion)"
@@ -158,7 +157,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.5" />
-    <PackageVersion Include="TUnit" Version="1.77.0" />
+    <PackageVersion Include="TUnit" Version="1.81.0" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->
