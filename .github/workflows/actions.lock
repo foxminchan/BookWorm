@@ -39,7 +39,7 @@ workflows:
         - 'actions/configure-pages@v6.0.0'
         - 'actions/deploy-pages@v5.0.1'
         - 'actions/upload-pages-artifact@v5.0.0'
-        - 'dawidd6/action-download-artifact@v27'
+        - 'dawidd6/action-download-artifact@v28'
         - 'oven-sh/setup-bun@v2.2.0'
     '.github/workflows/frontend-ci.yml': []
     '.github/workflows/frontend-shared.yml':
@@ -216,9 +216,9 @@ dependencies:
         commit: 'sha1-a641126d1b8aa4d1fa005f4f92df94a3a4c4c906'
         owner_id: 6844498
         repo_id: 210798615
-    'dawidd6/action-download-artifact@v27':
-        ref: 'v27'
-        commit: 'sha1-eab87c9830c39eff17e5a6eadb20bfb4bc880477'
+    'dawidd6/action-download-artifact@v28':
+        ref: 'v28'
+        commit: 'sha1-a92c7ae74cf1df8810783758581e485ac3aaa309'
         owner_id: 9713907
         repo_id: 239218448
     'docker/setup-docker-action@v5.6.0':
