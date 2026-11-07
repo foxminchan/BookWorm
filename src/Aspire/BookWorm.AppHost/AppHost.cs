@@ -41,9 +41,13 @@ var notificationDb = postgres.AddDatabase(Components.Database.Notification).With
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
 
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
+var project = foundry.AddProject(Components.Foundry.Project);
 
-var chat = foundry.AddDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
-var embedding = foundry.AddDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
+var chat = project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
+var embedding = project.AddModelDeployment(
+    Components.Foundry.Embedding,
+    FoundryModel.Cohere.EmbedV40
+);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)
@@ -74,9 +78,7 @@ var catalogApi = builder
     .WithReference(catalogContainer)
     .WaitFor(catalogContainer)
     .WithReference(chat)
-    .WaitFor(chat)
     .WithReference(embedding)
-    .WaitFor(embedding)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -128,10 +130,10 @@ var orderingApi = builder
 var chatApi = builder
     .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
     .WithReference(chat)
-    .WaitFor(chat)
     .WithReference(embedding)
-    .WaitFor(embedding)
+    .WithReference(project)
     .WithReference(mcp)
+    .WaitFor(mcp)
     .WithKeycloak(keycloak)
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
@@ -149,9 +151,7 @@ var ratingApi = builder
         "../../Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
     )
     .WithReference(chat)
-    .WaitFor(chat)
     .WithReference(embedding)
-    .WaitFor(embedding)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(redis)
@@ -204,7 +204,6 @@ var catalogIngestion = builder
     .WithReference(qdrant)
     .WaitFor(qdrant)
     .WithReference(embedding)
-    .WaitFor(embedding)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithRoleAssignments(
         storage,

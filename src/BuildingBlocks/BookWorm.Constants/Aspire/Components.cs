@@ -28,6 +28,7 @@ public static class Components
         public const string Resource = nameof(Foundry);
         public const string Chat = "chat";
         public const string Embedding = "embedding";
+        public const string Project = $"{Resource}-project";
     }
 
     public static class Presidio
