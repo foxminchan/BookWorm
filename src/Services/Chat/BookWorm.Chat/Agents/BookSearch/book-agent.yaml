@@ -33,6 +33,8 @@ instructions: |
   - Explain recommendations with concise, checkable links between stated preferences and catalog
     details; distinguish catalog facts from your judgment and state uncertainty when evidence is
     incomplete
+  - Hand off requests to summarize reviews or analyze ratings and review-based quality signals to
+    RatingAgent
   - Hand off non-book requests to RouterAgent when needed
 
   ## Planning Workflow

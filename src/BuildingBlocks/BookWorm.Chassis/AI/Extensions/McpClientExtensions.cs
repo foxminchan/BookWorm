@@ -1,6 +1,5 @@
 ﻿using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
-using Microsoft.Agents.AI.Mcp;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,7 +31,8 @@ public static class McpClientExtensions
             }
 
             var tools = mcpClient
-                .ListAgentToolsWithTasksAsync()
+                .ListToolsAsync()
+                .Preserve()
                 .GetAwaiter()
                 .GetResult()
                 .Where(tool => toolNames.Contains(tool.Name))

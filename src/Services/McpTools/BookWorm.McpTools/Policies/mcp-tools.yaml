@@ -12,7 +12,7 @@ version: "1.0"
 name: "bookworm-mcp-tools-governance"
 description: >
   Governance policy for the BookWorm MCP Tools server.
-  Permits catalog and review tool invocations exposed to
+  Permits catalog tool invocations exposed to
   external LLM clients. Blocks dangerous tools (shell, file
   write/delete, raw HTTP), tool poisoning attempts, and hidden
   instructions in tool definitions. Rate-limits all tool calls
@@ -25,13 +25,8 @@ rules:
     action: deny
     priority: 100
 
-  # ── Catalog & review tools (priority 50) ────────────────────────
+  # ── Catalog tools (priority 50) ─────────────────────────────────
   - name: allow-catalog-tools
-    condition: "tool_name in allowed_tools"
-    action: allow
-    priority: 50
-
-  - name: allow-review-tools
     condition: "tool_name in allowed_tools"
     action: allow
     priority: 50

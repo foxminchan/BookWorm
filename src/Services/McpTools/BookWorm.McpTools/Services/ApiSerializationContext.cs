@@ -6,7 +6,6 @@ namespace BookWorm.McpTools.Services;
 [JsonSerializable(typeof(Book))]
 [JsonSerializable(typeof(List<Category>))]
 [JsonSerializable(typeof(List<Author>))]
-[JsonSerializable(typeof(List<Feedback>))]
 [JsonSourceGenerationOptions(
     PropertyNameCaseInsensitive = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase

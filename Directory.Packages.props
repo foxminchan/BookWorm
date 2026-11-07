@@ -83,7 +83,6 @@
       Include="Microsoft.Agents.AI.Declarative"
       Version="$(AgentFrameworkVersion)-rc1"
     />
-    <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="$(AgentFrameworkAlphaVersion)" />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
@@ -157,7 +156,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.5" />
-    <PackageVersion Include="TUnit" Version="1.81.0" />
+    <PackageVersion Include="TUnit" Version="1.81.10" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->

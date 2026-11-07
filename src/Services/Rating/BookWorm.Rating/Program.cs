@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Rating.Extensions;
 using BookWorm.Rating.Infrastructure.AI;
@@ -35,7 +36,9 @@ var apiVersionSet = app.NewApiVersionSet()
 
 app.MapEndpoints(apiVersionSet, "feedbacks");
 
-app.MapAgentsDiscovery();
+app.MapAgentDiscovery("/agents");
+
+app.MapGrpcA2A().RequireAuthorization();
 
 app.MapDefaultEndpoints();
 

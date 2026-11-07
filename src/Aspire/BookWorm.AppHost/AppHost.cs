@@ -153,8 +153,6 @@ var ratingApi = builder
     .WithReference(broker)
     .WaitFor(broker)
     .WithKeycloak(keycloak)
-    .WithReference(chatApi)
-    .WaitFor(chatApi)
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
@@ -162,7 +160,7 @@ var ratingApi = builder
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithDisplayUrls();
 
-mcp.WithReference(ratingApi);
+chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 builder
     .AddDotnetProject(

@@ -59,16 +59,6 @@ internal static class Extensions
                 ApiSerializationContext.Default
             );
 
-            services.AddHttpServiceReference<IRatingApi>(
-                HttpUtilities
-                    .AsUrlBuilder()
-                    .WithScheme(Http.Schemes.HttpOrHttps)
-                    .WithHost(Constants.Aspire.Services.Rating)
-                    .Build(),
-                HealthStatus.Degraded,
-                ApiSerializationContext.Default
-            );
-
             // Agent governance (policy enforcement for MCP tool calls) wired directly into the
             // MCP pipeline via Microsoft.AgentGovernance.Extensions.ModelContextProtocol.
             services
@@ -133,16 +123,11 @@ internal static class Extensions
                             - get_book: Retrieve full details for a specific book by ID
                             - list_categories: List all book categories
                             - list_authors: List all authors in the catalog
-                            - get_book_reviews: Retrieve customer reviews for a specific book
-
-                            Resources (stable URIs for ambient context):
-                            - bookworm://catalog/categories — all book categories
-                            - bookworm://catalog/authors — all authors
-                            - bookworm://catalog/books/{id} — single book details
-                            - bookworm://ratings/{bookId}/reviews — reviews for a book
 
                             Prompts:
                             - recommend_books: Generate a structured recommendation request
+                            - summarize_rating: Summarize book review content for rating analysis
+                            - reduce_rating_summaries: Merge partial review summaries into one summary
                             - analyze_book_quality: Assess dominant negative review patterns for application classification
                             """;
                     }
