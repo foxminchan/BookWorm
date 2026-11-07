@@ -14,7 +14,7 @@ public sealed class DeleteAuthorValidatorTests
     {
         _repositoryMock = new();
         var authorValidator = new AuthorValidator(_repositoryMock.Object);
-        _validator = new(authorValidator);
+        _validator = [with(authorValidator)];
     }
 
     [Test]

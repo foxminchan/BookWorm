@@ -201,7 +201,7 @@ public sealed class BookServiceTests
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
             )!
             .SetValue(book, BookId.From(bookId));
-        typeof(Book).GetProperty("Status")!.SetValue(book, Status.OutOfStock);
+        typeof(Book).GetProperty("Status")?.SetValue(book, Status.OutOfStock);
 
         _bookRepositoryMock
             .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))

@@ -20,18 +20,20 @@ public static class WolverineHostExtensions
         var scannedServices = new ServiceCollection();
 
         scannedServices.Scan(scan =>
-            scan.FromAssemblies(assemblies.ToArray())
+            scan.FromAssemblies([.. assemblies])
                 .AddClasses(classes => classes.Where(IsIntegrationMessageOrHandler), false)
                 .AsSelf()
                 .WithTransientLifetime()
         );
 
-        return scannedServices
-            .Select(descriptor => descriptor.ImplementationType)
-            .Where(type => type is not null)
-            .Cast<Type>()
-            .Distinct()
-            .ToArray();
+        return
+        [
+            .. scannedServices
+                .Select(descriptor => descriptor.ImplementationType)
+                .Where(type => type is not null)
+                .Cast<Type>()
+                .Distinct(),
+        ];
     }
 
     private static bool IsIntegrationMessageOrHandler(Type type)

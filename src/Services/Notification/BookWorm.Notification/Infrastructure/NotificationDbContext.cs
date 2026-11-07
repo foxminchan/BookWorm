@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Repository;
+using BookWorm.Chassis.Repository;
 using Microsoft.EntityFrameworkCore;
 using Wolverine.EntityFrameworkCore;
 
@@ -14,6 +14,11 @@ public sealed class NotificationDbContext(DbContextOptions<NotificationDbContext
     {
         await SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.RegisterAllInNotificationApiMarker();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

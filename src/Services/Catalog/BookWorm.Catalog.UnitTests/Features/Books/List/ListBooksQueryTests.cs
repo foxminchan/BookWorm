@@ -38,8 +38,8 @@ public sealed class ListBooksQueryTests
                 b.Name,
                 b.Description,
                 b.Image,
-                b.Price!.OriginalPrice,
-                b.Price.DiscountPrice,
+                b.Price?.OriginalPrice ?? 0,
+                b.Price?.DiscountPrice,
                 b.Status,
                 null, // Category
                 null, // Publisher

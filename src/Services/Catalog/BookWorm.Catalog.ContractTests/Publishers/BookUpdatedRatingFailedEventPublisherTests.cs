@@ -9,7 +9,7 @@ namespace BookWorm.Catalog.ContractTests.Publishers;
 [Category("PactProvider")]
 public sealed class BookUpdatedRatingFailedEventPublisherTests
 {
-    private readonly int _rating = 4;
+    private const int Rating = 4;
     private Guid _bookId;
     private Guid _feedbackId;
     private Mock<IBookRepository> _repositoryMock = null!;
@@ -38,7 +38,7 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
             .Setup(x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Book?)null);
 
-        var @event = new FeedbackCreatedIntegrationEvent(_bookId, _rating, _feedbackId);
+        var @event = new FeedbackCreatedIntegrationEvent(_bookId, Rating, _feedbackId);
         var bus = new TestMessageContext();
         var handler = new FeedbackCreatedIntegrationEventHandler(_repositoryMock.Object, bus);
 

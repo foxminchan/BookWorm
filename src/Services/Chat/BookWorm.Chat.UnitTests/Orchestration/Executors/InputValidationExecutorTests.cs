@@ -89,7 +89,7 @@ public sealed class InputValidationExecutorTests
         result.IsAccepted.ShouldBeTrue();
         result.Message.Role.ShouldBe(ChatRole.User);
         result.Message.Text.ShouldContain("... [Message truncated due to length]");
-        result.Message.Text!.Length.ShouldBeLessThan(2500);
+        result.Message.Text.Length.ShouldBeLessThan(2500);
     }
 
     [Test]

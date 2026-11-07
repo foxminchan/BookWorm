@@ -18,13 +18,14 @@ internal static class UrlExtensions
                 return builder;
             }
 
-            if (builder is IResourceBuilder<ProjectResource> projectBuilder)
+            switch (builder)
             {
-                projectBuilder.WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
-            }
-            else if (builder is IResourceBuilder<DotnetProjectResource> dotnetProjectBuilder)
-            {
-                dotnetProjectBuilder.WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+                case IResourceBuilder<ProjectResource> projectBuilder:
+                    projectBuilder.WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+                    break;
+                case IResourceBuilder<DotnetProjectResource> dotnetProjectBuilder:
+                    dotnetProjectBuilder.WithHttpHealthCheck(Http.Endpoints.HealthEndpointPath);
+                    break;
             }
 
             return builder.WithUrls(c =>

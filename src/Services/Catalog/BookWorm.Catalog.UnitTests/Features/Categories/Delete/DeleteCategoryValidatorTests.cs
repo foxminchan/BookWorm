@@ -15,7 +15,7 @@ public sealed class DeleteCategoryValidatorTests
     {
         _mockRepository = new();
         var categoryValidator = new CategoryValidator(_mockRepository.Object);
-        _deleteCategoryValidator = new(categoryValidator);
+        _deleteCategoryValidator = [with(categoryValidator)];
     }
 
     [Test]

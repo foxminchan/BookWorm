@@ -51,6 +51,6 @@ internal sealed class ListOrdersHandler(
 
         var totalItems = await repository.CountAsync(countSpec, cancellationToken);
 
-        return new(orders.ToOrderDtos(), request.PageIndex, request.PageSize, totalItems);
+        return [with(orders.ToOrderDtos(), request.PageIndex, request.PageSize, totalItems)];
     }
 }

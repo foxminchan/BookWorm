@@ -13,8 +13,8 @@ public sealed class DeletePublisherValidatorTests
 
     public DeletePublisherValidatorTests()
     {
-        _publisherValidator = new(_mockRepository.Object);
-        _validator = new(_publisherValidator);
+        _publisherValidator = [with(_mockRepository.Object)];
+        _validator = [with(_publisherValidator)];
     }
 
     [Test]

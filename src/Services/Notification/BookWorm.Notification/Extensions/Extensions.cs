@@ -26,7 +26,7 @@ internal static class Extensions
                 {
                     services.AddMigration<NotificationDbContext>();
 
-                    services.AddRepositories(typeof(INotificationApiMarker));
+                    services.AddRepositories(typeof(NotificationApiMarker));
                 },
                 true
             );
@@ -57,10 +57,10 @@ internal static class Extensions
                 // routing all events that expose an OrderId to the same partition.
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
 
-                opts.Discovery.IncludeAssembly(typeof(INotificationApiMarker).Assembly);
+                opts.Discovery.IncludeAssembly(typeof(NotificationApiMarker).Assembly);
                 opts.ConfigureIntegrationEventTopicsIn(
                     builder.Environment,
-                    typeof(INotificationApiMarker).Assembly
+                    typeof(NotificationApiMarker).Assembly
                 );
             });
         }

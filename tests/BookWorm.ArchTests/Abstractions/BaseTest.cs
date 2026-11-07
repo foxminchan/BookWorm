@@ -1,4 +1,4 @@
-﻿using BookWorm.Basket;
+using BookWorm.Basket;
 using BookWorm.Catalog;
 using BookWorm.Chassis;
 using BookWorm.Chat;
@@ -21,7 +21,7 @@ public abstract class BaseTest
     protected static readonly Assembly FinanceAssembly = typeof(IFinanceApiMarker).Assembly;
 
     protected static readonly Assembly NotificationAssembly =
-        typeof(INotificationApiMarker).Assembly;
+        typeof(NotificationApiMarker).Assembly;
 
     protected static readonly Assembly OrderingAssembly = typeof(OrderingApiMarker).Assembly;
     protected static readonly Assembly RatingAssembly = typeof(RatingApiMarker).Assembly;

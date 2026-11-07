@@ -68,16 +68,16 @@ public static class SubAgentFactory
         return tools;
     }
 
-    private static AITool CreateTool(AIAgent agent, string name)
+    private static AIFunction CreateTool(AIAgent agent, string name)
     {
+        return AIFunctionFactory.Create(InvokeAsync, name, agent.Description);
+
         async Task<string> InvokeAsync(string query, CancellationToken cancellationToken)
         {
             var response = await agent.RunAsync(query, cancellationToken: cancellationToken);
 
             return response.Text;
         }
-
-        return AIFunctionFactory.Create(InvokeAsync, name, agent.Description);
     }
 
     private static string SanitizeName(string name)

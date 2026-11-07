@@ -10,12 +10,12 @@ internal sealed class BookFilterSpec : Specification<Book>
 
         if (categoryIds is not null && categoryIds.Length > 0)
         {
-            Query.Where(book => categoryIds.Contains((Guid)book.Category!.Id));
+            Query.Where(book => categoryIds.AsEnumerable().Contains((Guid)book.Category!.Id));
         }
 
         if (publisherIds is not null && publisherIds.Length > 0)
         {
-            Query.Where(book => publisherIds.Contains((Guid)book.Publisher!.Id));
+            Query.Where(book => publisherIds.AsEnumerable().Contains((Guid)book.Publisher!.Id));
         }
     }
 
@@ -31,7 +31,7 @@ internal sealed class BookFilterSpec : Specification<Book>
     {
         if (ids is not null && ids.Length > 0)
         {
-            Query.Where(book => ids.Contains((Guid)book.Id));
+            Query.Where(book => ids.AsEnumerable().Contains((Guid)book.Id));
         }
 
         if (minPrice is not null)
@@ -47,7 +47,9 @@ internal sealed class BookFilterSpec : Specification<Book>
         if (authorIds is not null && authorIds.Length > 0)
         {
             Query.Where(book =>
-                book.BookAuthors.Any(author => authorIds.Contains((Guid)author.AuthorId))
+                book.BookAuthors.Any(author =>
+                    authorIds.AsEnumerable().Contains((Guid)author.AuthorId)
+                )
             );
         }
     }

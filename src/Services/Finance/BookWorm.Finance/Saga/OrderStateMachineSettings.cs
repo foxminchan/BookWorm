@@ -12,8 +12,8 @@ internal sealed partial class OrderStateMachineSettings
 
     [Required]
     [Range(1, int.MaxValue, ErrorMessage = "Max attempts must be a positive integer.")]
-    public int MaxAttempts { get; set; }
+    public int MaxAttempts { get; init; }
 
     [Required]
-    public TimeSpan MaxRetryTimeout { get; set; }
+    public TimeSpan MaxRetryTimeout { get; init; }
 }

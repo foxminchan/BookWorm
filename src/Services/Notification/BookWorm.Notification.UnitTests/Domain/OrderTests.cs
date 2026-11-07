@@ -9,7 +9,7 @@ public sealed class OrderTests
     public void GivenOrder_WhenCreated_ThenPropertiesShouldBeSet()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
+        var id = OrderId.From(Guid.CreateVersion7());
         const string fullName = "Test User";
         const decimal totalMoney = 99.99m;
         const Status status = Status.New;
@@ -28,7 +28,7 @@ public sealed class OrderTests
     public void GivenOrder_WhenCreated_ThenCreatedAtShouldDefaultToToday()
     {
         // Act
-        var order = new Order(Guid.CreateVersion7(), "Test User", 50.00m, Status.New);
+        var order = new Order(OrderId.From(Guid.CreateVersion7()), "Test User", 50.00m, Status.New);
 
         // Assert
         order.CreatedAt.ShouldBe(DateOnly.FromDateTime(DateTimeHelper.UtcNow()));
@@ -41,7 +41,12 @@ public sealed class OrderTests
         var customDate = new DateOnly(2025, 6, 15);
 
         // Act
-        var order = new Order(Guid.CreateVersion7(), "Test User", 50.00m, Status.Completed)
+        var order = new Order(
+            OrderId.From(Guid.CreateVersion7()),
+            "Test User",
+            50.00m,
+            Status.Completed
+        )
         {
             CreatedAt = customDate,
         };
@@ -57,7 +62,7 @@ public sealed class OrderTests
     internal async Task GivenOrder_WhenCreatedWithStatus_ThenStatusShouldMatch(Status status)
     {
         // Act
-        var order = new Order(Guid.CreateVersion7(), "Test User", 10.00m, status);
+        var order = new Order(OrderId.From(Guid.CreateVersion7()), "Test User", 10.00m, status);
 
         // Assert
         await Assert.That(order.Status).IsEqualTo(status);
@@ -67,7 +72,7 @@ public sealed class OrderTests
     public void GivenTwoOrdersWithSameValues_WhenCompared_ThenShouldBeEqual()
     {
         // Arrange
-        var id = Guid.CreateVersion7();
+        var id = OrderId.From(Guid.CreateVersion7());
         var date = new DateOnly(2025, 1, 1);
 
         var order1 = new Order(id, "User", 99.99m, Status.New) { CreatedAt = date };
@@ -81,8 +86,8 @@ public sealed class OrderTests
     public void GivenTwoOrdersWithDifferentIds_WhenCompared_ThenShouldNotBeEqual()
     {
         // Arrange
-        var order1 = new Order(Guid.CreateVersion7(), "User", 99.99m, Status.New);
-        var order2 = new Order(Guid.CreateVersion7(), "User", 99.99m, Status.New);
+        var order1 = new Order(OrderId.From(Guid.CreateVersion7()), "User", 99.99m, Status.New);
+        var order2 = new Order(OrderId.From(Guid.CreateVersion7()), "User", 99.99m, Status.New);
 
         // Act & Assert
         order1.ShouldNotBe(order2);

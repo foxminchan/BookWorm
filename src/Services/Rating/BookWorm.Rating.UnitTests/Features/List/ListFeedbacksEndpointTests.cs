@@ -31,7 +31,7 @@ public sealed class ListFeedbacksEndpointTests
         ];
 
         // Create paged result
-        _pagedResult = new(feedbacks, 1, 10, 2);
+        _pagedResult = [with(feedbacks, 1, 10, 2)];
     }
 
     [Test]

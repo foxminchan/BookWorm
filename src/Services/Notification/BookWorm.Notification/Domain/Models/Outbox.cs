@@ -1,9 +1,9 @@
-﻿using BookWorm.SharedKernel.Helpers;
+using BookWorm.SharedKernel.Helpers;
 using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Notification.Domain.Models;
 
-public sealed class Outbox() : IAggregateRoot
+public sealed class Outbox() : Entity<OutboxId>, IAggregateRoot
 {
     public Outbox(string toName, string toEmail, string subject, string body)
         : this()
@@ -16,7 +16,6 @@ public sealed class Outbox() : IAggregateRoot
         CreatedAt = DateTimeHelper.UtcNow();
     }
 
-    public Guid Id { get; private set; }
     public string? ToName { get; private set; }
     public string? ToEmail { get; private set; }
     public string? Subject { get; private set; }

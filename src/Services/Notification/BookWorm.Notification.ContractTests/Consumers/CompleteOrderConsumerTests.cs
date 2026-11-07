@@ -1,4 +1,4 @@
-﻿using BookWorm.Contracts;
+using BookWorm.Contracts;
 using BookWorm.Notification.Domain.Exceptions;
 using BookWorm.Notification.Domain.Models;
 using BookWorm.Notification.Infrastructure.Builders;
@@ -120,11 +120,11 @@ public sealed class CompleteOrderConsumerTests
     {
         // Arrange
         const Status invalidStatus = (Status)99;
-        var order = new Order(_orderId, FullName, TotalMoney, invalidStatus);
+        var order = new Order(OrderId.From(_orderId), FullName, TotalMoney, invalidStatus);
         var builder = OrderMimeMessageBuilder.Initialize();
 
         // Act & Assert
         var exception = Assert.Throws<NotificationException>(() => builder.WithSubject(order));
-        exception?.Message.ShouldBe($"Invalid status: {invalidStatus}");
+        exception.Message.ShouldBe($"Invalid status: {invalidStatus}");
     }
 }

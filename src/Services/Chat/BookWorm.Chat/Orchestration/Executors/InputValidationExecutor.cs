@@ -19,7 +19,7 @@ internal sealed partial class InputValidationExecutor(GovernanceKernel? governan
             + @"|<\|.*?\|>"
             + @"|###\s*instruction"
             + @"|\[INST\]"
-            + @"|<<SYS>>"
+            + "|<<SYS>>"
             + @"|<\|im_start\|>"
             + @"|\{\s*system_message"
             + @"|<script[\s>]"

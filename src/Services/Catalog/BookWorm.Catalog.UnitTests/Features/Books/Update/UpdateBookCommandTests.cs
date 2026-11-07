@@ -44,10 +44,10 @@ public sealed class UpdateBookCommandTests
         // Assert
         book.Name.ShouldBe("Updated Name");
         book.Description.ShouldBe("Updated Description");
-        book.Price!.OriginalPrice.ShouldBe(19.99m);
-        book.Price.DiscountPrice.ShouldBe(9.99m);
-        ((Guid)book.CategoryId!).ShouldBe(command.CategoryId);
-        ((Guid)book.PublisherId!).ShouldBe(command.PublisherId);
+        book.Price?.OriginalPrice.ShouldBe(19.99m);
+        book.Price?.DiscountPrice.ShouldBe(9.99m);
+        ((Guid)(CategoryId)book.CategoryId!).ShouldBe(command.CategoryId);
+        ((Guid)(PublisherId)book.PublisherId!).ShouldBe(command.PublisherId);
         book.BookAuthors.Select(x => (Guid)x.AuthorId).ShouldBe(command.AuthorIds);
         repository.Verify(
             x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
@@ -97,11 +97,11 @@ public sealed class UpdateBookCommandTests
         book.Update(
             book.Name!,
             book.Description,
-            book.Price!.OriginalPrice,
-            book.Price.DiscountPrice,
+            book.Price?.OriginalPrice ?? 0,
+            book.Price?.DiscountPrice,
             "existing-image.jpg",
-            CategoryId.From((Guid)book.CategoryId!),
-            PublisherId.From((Guid)book.PublisherId!),
+            CategoryId.From((Guid)(CategoryId)book.CategoryId!),
+            PublisherId.From((Guid)(PublisherId)book.PublisherId!),
             [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
@@ -119,10 +119,10 @@ public sealed class UpdateBookCommandTests
             Id = (Guid)book.Id,
             Name = book.Name!,
             Description = book.Description!,
-            Price = book.Price!.OriginalPrice,
-            PriceSale = book.Price.DiscountPrice,
-            CategoryId = (Guid)book.CategoryId,
-            PublisherId = (Guid)book.PublisherId,
+            Price = book.Price?.OriginalPrice ?? 0,
+            PriceSale = book.Price?.DiscountPrice,
+            CategoryId = (Guid)(CategoryId)book.CategoryId,
+            PublisherId = (Guid)(PublisherId)book.PublisherId,
             AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
             IsRemoveImage = true,
         };
@@ -145,11 +145,11 @@ public sealed class UpdateBookCommandTests
         book.Update(
             book.Name!,
             book.Description!,
-            book.Price!.OriginalPrice,
-            book.Price.DiscountPrice,
+            book.Price?.OriginalPrice ?? 0,
+            book.Price?.DiscountPrice,
             "existing-image.jpg",
-            CategoryId.From((Guid)book.CategoryId!),
-            PublisherId.From((Guid)book.PublisherId!),
+            CategoryId.From((Guid)(CategoryId)book.CategoryId!),
+            PublisherId.From((Guid)(PublisherId)book.PublisherId!),
             [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
@@ -167,10 +167,10 @@ public sealed class UpdateBookCommandTests
             Id = (Guid)book.Id,
             Name = book.Name!,
             Description = book.Description!,
-            Price = book.Price!.OriginalPrice,
-            PriceSale = book.Price.DiscountPrice,
-            CategoryId = (Guid)book.CategoryId!,
-            PublisherId = (Guid)book.PublisherId!,
+            Price = book.Price?.OriginalPrice ?? 0,
+            PriceSale = book.Price?.DiscountPrice,
+            CategoryId = (Guid)(CategoryId)book.CategoryId!,
+            PublisherId = (Guid)(PublisherId)book.PublisherId!,
             AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
             ImageUrn = "new-image.jpg",
         }; // Simulating a new image upload
@@ -193,11 +193,11 @@ public sealed class UpdateBookCommandTests
         book.Update(
             book.Name!,
             book.Description,
-            book.Price!.OriginalPrice,
-            book.Price.DiscountPrice,
+            book.Price?.OriginalPrice ?? 0,
+            book.Price?.DiscountPrice,
             "existing-image.jpg",
-            CategoryId.From((Guid)book.CategoryId!),
-            PublisherId.From((Guid)book.PublisherId!),
+            CategoryId.From((Guid)(CategoryId)book.CategoryId!),
+            PublisherId.From((Guid)(PublisherId)book.PublisherId!),
             [.. book.BookAuthors.Select(x => x.AuthorId)]
         );
 
@@ -213,12 +213,12 @@ public sealed class UpdateBookCommandTests
         var command = new UpdateBookCommand
         {
             Id = (Guid)book.Id,
-            Name = book.Name!,
+            Name = book.Name ?? string.Empty,
             Description = book.Description!,
-            Price = book.Price!.OriginalPrice,
-            PriceSale = book.Price.DiscountPrice,
-            CategoryId = (Guid)book.CategoryId,
-            PublisherId = (Guid)book.PublisherId,
+            Price = book.Price?.OriginalPrice ?? 0,
+            PriceSale = book.Price?.DiscountPrice,
+            CategoryId = (Guid)(CategoryId)book.CategoryId,
+            PublisherId = (Guid)(PublisherId)book.PublisherId,
             AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
         };
 

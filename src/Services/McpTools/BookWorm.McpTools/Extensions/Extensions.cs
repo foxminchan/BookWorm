@@ -4,7 +4,6 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
-using BookWorm.McpTools.Configurations;
 using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
@@ -25,8 +24,6 @@ internal static class Extensions
             var services = builder.Services;
 
             builder.AddDefaultCors();
-
-            builder.AddAppSettings<McpToolsAppSettings>();
 
             builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
 
@@ -59,8 +56,6 @@ internal static class Extensions
                 ApiSerializationContext.Default
             );
 
-            // Agent governance (policy enforcement for MCP tool calls) wired directly into the
-            // MCP pipeline via Microsoft.AgentGovernance.Extensions.ModelContextProtocol.
             services
                 .AddMcpServer()
                 .WithGovernance(o =>

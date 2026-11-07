@@ -33,7 +33,7 @@ internal sealed class OrderEvaluator : IEvaluator
         >(
             null,
             (queryable, orderExpression) =>
-                orderExpression!.OrderType switch
+                orderExpression?.OrderType switch
                 {
                     OrderType.OrderBy => queryable is null
                         ? query.OrderBy(orderExpression.KeySelector)

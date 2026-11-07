@@ -3,11 +3,18 @@ using Microsoft.Extensions.Options;
 
 namespace BookWorm.Rating.Infrastructure.Summarizer;
 
-internal enum RatingConfidenceLevel
+internal enum RatingConfidenceLevel : sbyte
 {
+    [Display(Name = "Unknown")]
     Unknown = -1,
+
+    [Display(Name = "Low")]
     Low = 0,
+
+    [Display(Name = "Medium")]
     Medium = 1,
+
+    [Display(Name = "High")]
     High = 2,
 }
 

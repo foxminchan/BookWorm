@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Scheduler.Jobs;
+namespace BookWorm.Scheduler.Jobs;
 
 [DisallowConcurrentExecution]
 internal sealed class CleanUpSentEmailJob(IMessageBus bus, ILogger<CleanUpSentEmailJob> logger)
@@ -9,6 +9,7 @@ internal sealed class CleanUpSentEmailJob(IMessageBus bus, ILogger<CleanUpSentEm
         CancellationToken cancellationToken = default
     )
     {
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
             await bus.PublishAsync(new CleanUpSentEmailIntegrationEvent());

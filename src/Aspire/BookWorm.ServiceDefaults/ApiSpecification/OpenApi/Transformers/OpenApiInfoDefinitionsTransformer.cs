@@ -41,10 +41,13 @@ internal sealed class OpenApiInfoDefinitionsTransformer<T>(T appSettings)
 
 public static class OpenApiInfoDefinitionsTransformerExtensions
 {
-    public static OpenApiOptions ApplyOpenApiInfoDefinitions<T>(this OpenApiOptions options)
-        where T : AppSettings, new()
+    extension(OpenApiOptions options)
     {
-        options.AddDocumentTransformer(new OpenApiInfoDefinitionsTransformer<T>(new()));
-        return options;
+        public OpenApiOptions ApplyOpenApiInfoDefinitions<T>()
+            where T : AppSettings, new()
+        {
+            options.AddDocumentTransformer(new OpenApiInfoDefinitionsTransformer<T>(new()));
+            return options;
+        }
     }
 }

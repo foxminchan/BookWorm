@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Features.Books.Create;
 using BookWorm.SharedKernel.SeedWork;
 
@@ -52,8 +54,8 @@ public sealed class CreateBookCommandTests
                         && b.Image == command.ImageName
                         && b.Price!.OriginalPrice == command.Price
                         && b.Price!.DiscountPrice == command.PriceSale
-                        && (Guid)b.CategoryId! == command.CategoryId
-                        && (Guid)b.PublisherId! == command.PublisherId
+                        && (Guid)(CategoryId)b.CategoryId! == command.CategoryId
+                        && (Guid)(PublisherId)b.PublisherId! == command.PublisherId
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -101,11 +103,11 @@ public sealed class CreateBookCommandTests
 
         // Assert
         capturedBook.ShouldNotBeNull();
-        capturedBook!.BookAuthors.Count.ShouldBe(command.AuthorIds.Length);
+        capturedBook?.BookAuthors.Count.ShouldBe(command.AuthorIds.Length);
 
         foreach (var authorId in command.AuthorIds)
         {
-            capturedBook!.BookAuthors.ShouldContain(ba => (Guid)ba.AuthorId == authorId);
+            capturedBook?.BookAuthors.ShouldContain(ba => (Guid)ba.AuthorId == authorId);
         }
     }
 }

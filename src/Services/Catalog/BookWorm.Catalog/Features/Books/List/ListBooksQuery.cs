@@ -62,7 +62,7 @@ internal sealed class ListBooksHandler(
 
             if (ids.Length == 0)
             {
-                return new([], request.PageIndex, request.PageSize, 0);
+                return [with([], request.PageIndex, request.PageSize, 0)];
             }
         }
 
@@ -94,6 +94,6 @@ internal sealed class ListBooksHandler(
 
         var results = mapper.Map(books);
 
-        return new(results, request.PageIndex, request.PageSize, totalItems);
+        return [with(results, request.PageIndex, request.PageSize, totalItems)];
     }
 }

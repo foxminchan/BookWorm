@@ -15,7 +15,7 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
   </ItemGroup>
   <ItemGroup Label="Agent Skills">
-    <None Include="skills\**\*.*">
+    <None Include="Skills\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

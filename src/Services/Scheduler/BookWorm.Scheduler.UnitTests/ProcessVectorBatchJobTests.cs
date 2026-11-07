@@ -25,7 +25,7 @@ public sealed class ProcessVectorBatchJobTests
 
         handler.RequestCount.ShouldBe(1);
         handler.Method.ShouldBe(HttpMethod.Post);
-        handler.Uri!.AbsolutePath.ShouldBe("/api/vectors/batch");
+        handler.Uri?.AbsolutePath.ShouldBe("/api/vectors/batch");
         handler.HeaderCount.ShouldBe(0);
     }
 

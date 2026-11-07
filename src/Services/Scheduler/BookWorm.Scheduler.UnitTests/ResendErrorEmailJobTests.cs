@@ -91,6 +91,6 @@ public sealed class ResendErrorEmailJobTests
 
         // Assert
         exception.InnerException.ShouldBeOfType<InvalidOperationException>();
-        exception.InnerException!.Message.ShouldBe("Bus failure");
+        exception.InnerException?.Message.ShouldBe("Bus failure");
     }
 }

@@ -9,5 +9,5 @@ public sealed record StartActivityOptions
 
     public string? ParentId { get; set; }
 
-    public ActivityContext? Parent { get; set; }
+    public ActivityContext? Parent { get; init; }
 }

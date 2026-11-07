@@ -34,7 +34,7 @@ public class Specification<T> : ISpecification<T>
 
     internal void Add(WhereExpression<T> whereExpressions)
     {
-        _whereExpressions ??= new(DefaultCapacityWhere);
+        _whereExpressions ??= [with(DefaultCapacityWhere)];
         _whereExpressions.Add(whereExpressions);
     }
 
@@ -42,7 +42,7 @@ public class Specification<T> : ISpecification<T>
     {
         if (_searchExpressions is null)
         {
-            _searchExpressions = new(DefaultCapacitySearch) { searchExpressions };
+            _searchExpressions = [with(DefaultCapacitySearch), searchExpressions];
             return;
         }
 

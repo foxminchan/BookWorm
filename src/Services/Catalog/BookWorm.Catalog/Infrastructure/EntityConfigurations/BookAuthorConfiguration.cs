@@ -22,7 +22,7 @@ internal sealed class BookAuthorConfiguration : IEntityTypeConfiguration<BookAut
         builder
             .HasOne(x => x.Book)
             .WithMany(x => x.BookAuthors)
-            .HasForeignKey("BookId")
+            .HasForeignKey(nameof(BookId))
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasQueryFilter(x => !x.Book.IsDeleted);

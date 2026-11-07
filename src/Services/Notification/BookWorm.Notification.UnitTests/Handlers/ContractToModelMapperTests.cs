@@ -22,7 +22,7 @@ public sealed class ContractToModelMapperTests
         var order = command.ToOrder();
 
         // Assert
-        order.Id.ShouldBe(command.OrderId);
+        order.Id.ShouldBe(OrderId.From(command.OrderId));
         order.FullName.ShouldBe("John Doe");
         order.TotalMoney.ShouldBe(99.99m);
         order.Status.ShouldBe(Status.New);
@@ -63,7 +63,7 @@ public sealed class ContractToModelMapperTests
         var order = command.ToOrder();
 
         // Assert
-        order.Id.ShouldBe(command.OrderId);
+        order.Id.ShouldBe(OrderId.From(command.OrderId));
         order.FullName.ShouldBe("Jane Smith");
         order.TotalMoney.ShouldBe(150.00m);
         order.Status.ShouldBe(Status.Canceled);
@@ -103,7 +103,7 @@ public sealed class ContractToModelMapperTests
         var order = command.ToOrder();
 
         // Assert
-        order.Id.ShouldBe(command.OrderId);
+        order.Id.ShouldBe(OrderId.From(command.OrderId));
         order.FullName.ShouldBe("Bob Wilson");
         order.TotalMoney.ShouldBe(200.00m);
         order.Status.ShouldBe(Status.Completed);

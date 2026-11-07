@@ -18,7 +18,7 @@ public sealed class OutboxTests
         var outbox = new Outbox(toName, toEmail, subject, body);
 
         // Assert
-        outbox.Id.ShouldBe(Guid.Empty);
+        outbox.Id.IsInitialized().ShouldBeFalse();
         outbox.ToName.ShouldBe(toName);
         outbox.ToEmail.ShouldBe(toEmail);
         outbox.Subject.ShouldBe(subject);

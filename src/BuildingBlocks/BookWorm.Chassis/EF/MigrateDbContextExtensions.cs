@@ -11,64 +11,66 @@ public static class MigrateDbContextExtensions
     private const string ActivitySourceName = "DbMigrations";
     private static readonly ActivitySource _activitySource = new(ActivitySourceName, "1.0.0");
 
-    private static async Task MigrateDbContextAsync<TContext>(
-        this IServiceProvider services,
-        Func<TContext, IServiceProvider, Task> seeder
-    )
-        where TContext : DbContext
+    extension(IServiceProvider services)
     {
-        using var scope = services.CreateScope();
-        var scopeServices = scope.ServiceProvider;
-        var logger = scopeServices.GetRequiredService<ILogger<TContext>>();
-        var context = scopeServices.GetService<TContext>();
-
-        using var activity = _activitySource.HasListeners()
-            ? _activitySource.StartActivity()
-            : null;
-
-        activity?.DisplayName = $"Migration operation {typeof(TContext).Name}";
-
-        try
+        private async Task MigrateDbContextAsync<TContext>(
+            Func<TContext, IServiceProvider, Task> seeder
+        )
+            where TContext : DbContext
         {
-            logger.LogInformation(
-                "Migrating database associated with context {DbContextName}",
-                typeof(TContext).Name
-            );
+            using var scope = services.CreateScope();
+            var scopeServices = scope.ServiceProvider;
+            var logger = scopeServices.GetRequiredService<ILogger<TContext>>();
+            var context = scopeServices.GetService<TContext>();
 
-            var strategy = context?.Database.CreateExecutionStrategy();
+            using var activity = _activitySource.HasListeners()
+                ? _activitySource.StartActivity()
+                : null;
 
-            if (strategy is not null && context is not null)
+            activity?.DisplayName = $"Migration operation {typeof(TContext).Name}";
+
+            try
             {
-                await strategy.ExecuteAsync(() => InvokeSeeder(seeder, context, scopeServices));
+                logger.LogInformation(
+                    "Migrating database associated with context {DbContextName}",
+                    typeof(TContext).Name
+                );
+
+                var strategy = context?.Database.CreateExecutionStrategy();
+
+                if (strategy is not null && context is not null)
+                {
+                    await strategy.ExecuteAsync(() => InvokeSeeder(seeder, context, scopeServices));
+                }
+
+                activity?.SetStatus(ActivityStatusCode.Ok);
             }
-
-            activity?.SetStatus(ActivityStatusCode.Ok);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "An error occurred while migrating the database used on context {DbContextName}",
-                typeof(TContext).Name
-            );
-
-            if (activity is null)
+            catch (Exception ex)
             {
+                logger.LogError(
+                    ex,
+                    "An error occurred while migrating the database used on context {DbContextName}",
+                    typeof(TContext).Name
+                );
+
+                if (activity is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Database migration failed for {typeof(TContext).Name}. See inner exception for details.",
+                        ex
+                    );
+                }
+
+                activity.SetStatus(ActivityStatusCode.Error);
+                activity.SetTag("otel.status_code", "error");
+                activity.SetTag("otel.status_description", ex.Message);
+                activity.AddException(ex);
+
                 throw new InvalidOperationException(
                     $"Database migration failed for {typeof(TContext).Name}. See inner exception for details.",
                     ex
                 );
             }
-
-            activity.SetStatus(ActivityStatusCode.Error);
-            activity.SetTag("otel.status_code", "error");
-            activity.SetTag("otel.status_description", ex.Message);
-            activity.AddException(ex);
-
-            throw new InvalidOperationException(
-                $"Database migration failed for {typeof(TContext).Name}. See inner exception for details.",
-                ex
-            );
         }
     }
 

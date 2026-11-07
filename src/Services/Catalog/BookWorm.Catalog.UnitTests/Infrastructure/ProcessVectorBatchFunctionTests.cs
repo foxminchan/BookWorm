@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BookWorm.Catalog.Ingestion;
 using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication;
@@ -15,17 +15,18 @@ public sealed class ProcessVectorBatchFunctionTests
     public async Task GivenSchedulerRequest_WhenInvoked_ThenShouldProcessOneVectorBatch()
     {
         using var cancellation = new CancellationTokenSource();
+        var cancellationToken = cancellation.Token;
         var processor = new Mock<IVectorBatchProcessor>();
-        processor.Setup(x => x.ProcessAsync(cancellation.Token)).ReturnsAsync(7);
+        processor.Setup(x => x.ProcessAsync(cancellationToken)).ReturnsAsync(7);
         var function = new ProcessVectorBatchFunction(processor.Object);
 
         var response = await function.ProcessVectorBatch(
             CreateRequest(CreateSchedulerAuthentication()),
-            cancellation.Token
+            cancellationToken
         );
 
-        response.ShouldBeOfType<NoContent>();
-        processor.Verify(x => x.ProcessAsync(cancellation.Token), Times.Once);
+        response.Result.ShouldBeOfType<NoContent>();
+        processor.Verify(x => x.ProcessAsync(cancellationToken), Times.Once);
         processor.VerifyNoOtherCalls();
     }
 
@@ -46,7 +47,7 @@ public sealed class ProcessVectorBatchFunctionTests
             CancellationToken.None
         );
 
-        response.ShouldBeOfType<UnauthorizedHttpResult>();
+        response.Result.ShouldBeOfType<UnauthorizedHttpResult>();
         processor.VerifyNoOtherCalls();
     }
 
@@ -74,7 +75,7 @@ public sealed class ProcessVectorBatchFunctionTests
             CancellationToken.None
         );
 
-        response.ShouldBeOfType<ForbidHttpResult>();
+        response.Result.ShouldBeOfType<ForbidHttpResult>();
         processor.VerifyNoOtherCalls();
     }
 
@@ -100,16 +101,17 @@ public sealed class ProcessVectorBatchFunctionTests
     {
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();
+        var cancellationToken = cancellation.Token;
         var processor = new Mock<IVectorBatchProcessor>();
         processor
-            .Setup(x => x.ProcessAsync(cancellation.Token))
-            .Returns(Task.FromCanceled<int>(cancellation.Token));
+            .Setup(x => x.ProcessAsync(cancellationToken))
+            .Returns(Task.FromCanceled<int>(cancellationToken));
         var function = new ProcessVectorBatchFunction(processor.Object);
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
             function.ProcessVectorBatch(
                 CreateRequest(CreateSchedulerAuthentication()),
-                cancellation.Token
+                cancellationToken
             )
         );
     }

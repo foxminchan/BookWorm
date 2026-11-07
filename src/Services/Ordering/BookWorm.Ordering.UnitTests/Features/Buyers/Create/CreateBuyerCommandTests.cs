@@ -70,9 +70,9 @@ public sealed class CreateBuyerCommandTests
         result.ShouldBe(BuyerId.From(buyerId));
         buyerEntity.ShouldNotBeNull();
         buyerEntity.Name.ShouldBe(_userName);
-        buyerEntity.Address!.Street.ShouldBe("123 Main St");
-        buyerEntity.Address.City.ShouldBe("Seattle");
-        buyerEntity.Address.Province.ShouldBe("Washington");
+        buyerEntity.Address?.Street.ShouldBe("123 Main St");
+        buyerEntity.Address?.City.ShouldBe("Seattle");
+        buyerEntity.Address?.Province.ShouldBe("Washington");
         _buyerRepositoryMock.Verify(
             x => x.AddAsync(It.IsAny<Buyer>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -108,7 +108,7 @@ public sealed class CreateBuyerCommandTests
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "Washington");
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
-            .Returns((Claim?)default!);
+            .Returns((Claim?)null!);
 
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);
@@ -129,7 +129,7 @@ public sealed class CreateBuyerCommandTests
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "Washington");
         _claimsPrincipalMock
             .Setup(x => x.FindFirst(KeycloakClaimTypes.Name))
-            .Returns((Claim?)default!);
+            .Returns((Claim?)null!);
 
         Buyer? buyerEntity = null;
         _buyerRepositoryMock

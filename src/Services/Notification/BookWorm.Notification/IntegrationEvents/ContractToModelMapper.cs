@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Notification.IntegrationEvents;
+namespace BookWorm.Notification.IntegrationEvents;
 
 internal static class ContractToModelMapper
 {
@@ -9,7 +9,7 @@ internal static class ContractToModelMapper
         public Order ToOrder()
         {
             return new(
-                command.OrderId,
+                OrderId.From(command.OrderId),
                 command.FullName ?? Customer,
                 command.TotalMoney,
                 Status.Canceled
@@ -22,7 +22,7 @@ internal static class ContractToModelMapper
         public Order ToOrder()
         {
             return new(
-                command.OrderId,
+                OrderId.From(command.OrderId),
                 command.FullName ?? Customer,
                 command.TotalMoney,
                 Status.New
@@ -35,7 +35,7 @@ internal static class ContractToModelMapper
         public Order ToOrder()
         {
             return new(
-                command.OrderId,
+                OrderId.From(command.OrderId),
                 command.FullName ?? Customer,
                 command.TotalMoney,
                 Status.Completed

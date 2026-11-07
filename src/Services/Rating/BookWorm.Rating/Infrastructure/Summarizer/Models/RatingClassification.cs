@@ -5,9 +5,16 @@ namespace BookWorm.Rating.Infrastructure.Summarizer.Models;
 [JsonConverter(typeof(JsonStringEnumConverter<RatingClassification>))]
 public enum RatingClassification : byte
 {
+    [Description("No Data")]
     NoData = 0,
+
+    [Description("Bad")]
     Bad = 1,
+
+    [Description("Good")]
     Good = 2,
+
+    [Description("Top Rated")]
     TopRated = 3,
 }
 

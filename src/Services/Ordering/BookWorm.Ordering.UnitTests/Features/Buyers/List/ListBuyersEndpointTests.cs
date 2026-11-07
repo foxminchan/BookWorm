@@ -29,7 +29,7 @@ public sealed class ListBuyersEndpointTests
             new(BuyerId.From(Guid.CreateVersion7()), "Jane Smith", "456 Elm St"),
         ];
 
-        _pagedResult = new(buyers, 1, 10, 2);
+        _pagedResult = [with(buyers, 1, 10, 2)];
     }
 
     [Test]

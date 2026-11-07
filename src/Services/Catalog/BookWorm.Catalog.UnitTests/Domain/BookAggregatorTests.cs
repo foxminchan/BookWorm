@@ -126,8 +126,8 @@ public sealed class BookAggregatorTests
         book.Name.ShouldBe(newName);
         book.Description.ShouldBe(newDescription);
         book.Image.ShouldBe(newImage);
-        book.Price!.OriginalPrice.ShouldBe(newPrice);
-        book.Price.DiscountPrice.ShouldBe(newPriceSale);
+        book.Price?.OriginalPrice.ShouldBe(newPrice);
+        book.Price?.DiscountPrice.ShouldBe(newPriceSale);
         book.CategoryId.ShouldBe(newCategoryId);
         book.PublisherId.ShouldBe(newPublisherId);
         book.BookAuthors.Count.ShouldBe(newAuthorIds.Length);

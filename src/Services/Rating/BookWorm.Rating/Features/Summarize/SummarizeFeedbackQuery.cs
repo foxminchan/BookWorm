@@ -22,11 +22,13 @@ internal sealed class SummarizeFeedbackHandler(ISummarizer summarizer, IFusionCa
                 var result = await summarizer.SummarizeAsync(request.BookId, ct);
 
                 // No reviews means no LLM call was made, so keep it short-lived to surface the first reviews quickly.
-                if (result.ReviewCount == 0)
+                if (result.ReviewCount != 0)
                 {
-                    ctx.Options.Duration = TimeSpan.FromMinutes(1);
-                    ctx.Options.DistributedCacheDuration = TimeSpan.FromMinutes(1);
+                    return result;
                 }
+
+                ctx.Options.Duration = TimeSpan.FromMinutes(1);
+                ctx.Options.DistributedCacheDuration = TimeSpan.FromMinutes(1);
 
                 return result;
             },

@@ -40,7 +40,7 @@ public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDel
     /// <summary>
     ///     Marks the order as completed if it is currently in a new state.
     /// </summary>
-    /// <returns>The current order instance with its status updated to completed.</returns>
+    /// <returns>The current order instance with its status updated to complete.</returns>
     /// <exception cref="OrderingDomainException">
     ///     Thrown when the order is not in <see cref="Status.New" /> status.
     /// </exception>
@@ -65,7 +65,7 @@ public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDel
     /// <summary>
     ///     Marks the order as cancelled if it is in the New status.
     /// </summary>
-    /// <returns>The current order instance with its status updated to cancelled.</returns>
+    /// <returns>The current order instance with its status updated to cancel.</returns>
     /// <exception cref="OrderingDomainException">
     ///     Thrown when the order is not in <see cref="Status.New" /> status.
     /// </exception>

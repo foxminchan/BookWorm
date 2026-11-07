@@ -6,7 +6,7 @@ namespace BookWorm.ArchTests.Dependencies;
 
 public sealed class CyclicDependencyTests : ArchUnitBaseTest
 {
-    private static readonly string[] ServiceNames =
+    private static readonly string[] _serviceNames =
     [
         nameof(Basket),
         nameof(Catalog),
@@ -32,7 +32,7 @@ public sealed class CyclicDependencyTests : ArchUnitBaseTest
     )
     {
         var serviceTypes = GetServiceTypes(serviceName);
-        var otherServices = ServiceNames.Where(s => s != serviceName).ToArray();
+        var otherServices = _serviceNames.Where(s => s != serviceName).ToArray();
 
         var rule = Types()
             .That()
@@ -67,11 +67,11 @@ public sealed class CyclicDependencyTests : ArchUnitBaseTest
             .Are(buildingBlockTypes)
             .Should()
             .NotDependOnAnyTypesThat()
-            .Are(GetServiceTypes(ServiceNames[0]));
+            .Are(GetServiceTypes(_serviceNames[0]));
 
-        for (var i = 1; i < ServiceNames.Length; i++)
+        for (var i = 1; i < _serviceNames.Length; i++)
         {
-            rule = rule.OrShould().NotDependOnAnyTypesThat().Are(GetServiceTypes(ServiceNames[i]));
+            rule = rule.OrShould().NotDependOnAnyTypesThat().Are(GetServiceTypes(_serviceNames[i]));
         }
 
         rule.Because(

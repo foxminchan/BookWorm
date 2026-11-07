@@ -10,7 +10,6 @@ namespace BookWorm.Ordering.UnitTests.Features.Orders.Complete;
 
 public sealed class CompleteOrderCommandTests
 {
-    private readonly Mock<ClaimsPrincipal> _claimsPrincipalMock;
     private readonly CompleteOrderHandler _handler;
     private readonly Order _order;
     private readonly Guid _orderId;
@@ -19,16 +18,16 @@ public sealed class CompleteOrderCommandTests
     public CompleteOrderCommandTests()
     {
         _orderRepositoryMock = new();
-        _claimsPrincipalMock = new();
+        Mock<ClaimsPrincipal> claimsPrincipalMock = new();
 
         // Setup as admin by default so existing spec-based tests work unchanged
-        _claimsPrincipalMock
+        claimsPrincipalMock
             .Setup(c => c.FindAll(ClaimTypes.Role))
             .Returns(
                 new[] { Authorization.Roles.Admin }.Select(r => new Claim(ClaimTypes.Role, r))
             );
 
-        _handler = new(_orderRepositoryMock.Object, _claimsPrincipalMock.Object);
+        _handler = new(_orderRepositoryMock.Object, claimsPrincipalMock.Object);
 
         // Create a test order using the OrderFaker
         _order = new OrderFaker().Generate(1)[0];

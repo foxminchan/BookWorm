@@ -2,16 +2,9 @@ using Wolverine;
 
 namespace BookWorm.Chassis.EventBus.Wolverine;
 
-internal sealed class CloudEventHeaderPolicy : IEnvelopeRule
+internal sealed class CloudEventHeaderPolicy(string source) : IEnvelopeRule
 {
-    private readonly string? _source;
-
-    public CloudEventHeaderPolicy() { }
-
-    public CloudEventHeaderPolicy(string source)
-    {
-        _source = source;
-    }
+    private readonly string? _source = source;
 
     public void Modify(Envelope envelope)
     {

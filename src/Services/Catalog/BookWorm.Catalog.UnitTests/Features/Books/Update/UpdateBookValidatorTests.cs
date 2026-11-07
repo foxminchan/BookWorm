@@ -25,40 +25,6 @@ public sealed class UpdateBookValidatorTests
     }
 
     [Test]
-    public void GivenValidCommand_WhenValidating_ThenShouldNotHaveAnyValidationErrors()
-    {
-        // Arrange
-        var command = new UpdateBookCommand
-        {
-            Id = _validId,
-            Name = ValidName,
-            Description = ValidDescription,
-            Price = ValidPrice,
-            PriceSale = ValidPriceSale,
-            CategoryId = _validCategoryId,
-            PublisherId = _validPublisherId,
-            AuthorIds = _validAuthorIds,
-        };
-    }
-
-    [Test]
-    public void GivenEmptyId_WhenValidating_ThenShouldHaveValidationError()
-    {
-        // Arrange
-        var command = new UpdateBookCommand
-        {
-            Id = Guid.Empty,
-            Name = ValidName,
-            Description = ValidDescription,
-            Price = ValidPrice,
-            PriceSale = ValidPriceSale,
-            CategoryId = _validCategoryId,
-            PublisherId = _validPublisherId,
-            AuthorIds = _validAuthorIds,
-        };
-    }
-
-    [Test]
     public void GivenEmptyName_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
@@ -398,33 +364,6 @@ public sealed class UpdateBookValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Image);
-    }
-
-    [Test]
-    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpg")]
-    [Arguments(MediaTypeNames.Image.Jpeg, "test.jpeg")]
-    [Arguments(MediaTypeNames.Image.Png, "test.png")]
-    [Arguments(MediaTypeNames.Image.Webp, "test.webp")]
-    public void GivenValidImageFile_WhenValidating_ThenShouldNotHaveValidationErrors(
-        string contentType,
-        string fileName
-    )
-    {
-        // Arrange
-        var mockFile = CreateMockFile(1000, contentType, fileName);
-
-        var command = new UpdateBookCommand
-        {
-            Id = _validId,
-            Name = ValidName,
-            Description = ValidDescription,
-            Image = mockFile.Object,
-            Price = ValidPrice,
-            PriceSale = ValidPriceSale,
-            CategoryId = _validCategoryId,
-            PublisherId = _validPublisherId,
-            AuthorIds = _validAuthorIds,
-        };
     }
 
     private static Mock<IFormFile> CreateMockFile(long length, string contentType, string fileName)

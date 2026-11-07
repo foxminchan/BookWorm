@@ -8,9 +8,6 @@ public sealed class Feedback() : AuditableEntity<FeedbackId>, IAggregateRoot
     public Feedback(Guid bookId, string? firstName, string? lastName, string? comment, int rating)
         : this()
     {
-        // Generate the Id client-side (UUID v7) so the FeedbackCreatedEvent below carries
-        // the real identifier. The EF configuration falls back to the Postgres `uuidv7()`
-        // default only when Id is Guid.Empty, so this assignment is honoured on insert.
         Id = FeedbackId.From(Guid.CreateVersion7());
         BookId = bookId;
         FirstName = firstName;

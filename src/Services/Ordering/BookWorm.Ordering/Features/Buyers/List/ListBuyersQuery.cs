@@ -27,6 +27,6 @@ internal sealed class ListBuyersQueryHandler(IBuyerRepository repository)
 
         var totalItems = await repository.CountAsync(cancellationToken);
 
-        return new(buyers.ToBuyerDtos(), request.PageIndex, request.PageSize, totalItems);
+        return [with(buyers.ToBuyerDtos(), request.PageIndex, request.PageSize, totalItems)];
     }
 }

@@ -4,7 +4,7 @@ using BookWorm.SharedKernel.Helpers;
 namespace BookWorm.Notification.Domain.Models;
 
 internal sealed record Order(
-    Guid Id,
+    OrderId Id,
     string FullName,
     [property: Format("C")] decimal TotalMoney,
     Status Status

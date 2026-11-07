@@ -122,7 +122,7 @@ public sealed partial class PactTestHelper
             );
         }
 
-        pactDocument["messages"] = new JsonArray(matchingMessages[0]!.DeepClone());
+        pactDocument["messages"] = new JsonArray(matchingMessages[0]?.DeepClone());
         var verificationPactPath = Path.Combine(
             Path.GetTempPath(),
             $"bookworm-{Guid.CreateVersion7():N}.json"

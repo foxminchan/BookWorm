@@ -45,6 +45,6 @@ internal sealed class ListFeedbacksHandler(IFeedbackRepository repository)
 
         var totalItems = await repository.CountAsync(countSpec, cancellationToken);
 
-        return new(feedbacks.ToFeedbackDtos(), request.PageIndex, request.PageSize, totalItems);
+        return [with(feedbacks.ToFeedbackDtos(), request.PageIndex, request.PageSize, totalItems)];
     }
 }

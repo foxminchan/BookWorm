@@ -16,9 +16,9 @@ internal sealed partial class MailKitSettings : IValidateOptions<MailKitSettings
     [Required]
     public Uri? Endpoint { get; set; }
 
-    public string? Username { get; set; }
+    public string? Username { get; private set; }
 
-    public string? Password { get; set; }
+    public string? Password { get; private set; }
 
     public bool DisableHealthChecks { get; set; } = false;
 
@@ -32,59 +32,58 @@ internal sealed partial class MailKitSettings : IValidateOptions<MailKitSettings
         {
             throw new InvalidOperationException(
                 $"""
-                ConnectionString is missing.
-                It should be provided in 'ConnectionStrings:{connectionString}'
-                or '{ConfigurationSection}:Endpoint' key.'
-                configuration section.
+                ConnectionString is missing. Provide it in the 'ConnectionStrings' section
+                or in the '{ConfigurationSection}:Endpoint' configuration key.
                 """
             );
         }
 
+        // Form 1: the whole value is the endpoint URI.
         if (Uri.TryCreate(connectionString, UriKind.Absolute, out var uri))
         {
             Endpoint = uri;
+            return;
         }
-        else
+
+        // Form 2: key/value pairs, e.g. "Endpoint=https://host;Username=u;Password=p".
+        var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+
+        if (!builder.TryGetValue(nameof(Endpoint), out var endpoint))
         {
-            var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+            throw new InvalidOperationException(
+                $"""
+                The 'Endpoint' key is missing in the connection string
+                (or in '{ConfigurationSection}:Endpoint').
+                """
+            );
+        }
 
-            if (!builder.TryGetValue(nameof(Endpoint), out var endpoint))
-            {
-                throw new InvalidOperationException(
-                    $"""
-                    The 'ConnectionStrings:{connectionString}' (or 'Endpoint' key in
-                    '{ConfigurationSection}') is missing.
-                    """
-                );
-            }
+        if (!Uri.TryCreate(endpoint.ToString(), UriKind.Absolute, out uri))
+        {
+            throw new InvalidOperationException(
+                $"""
+                The 'Endpoint' value in the connection string
+                (or in '{ConfigurationSection}:Endpoint') isn't a valid URI.
+                """
+            );
+        }
 
-            if (!Uri.TryCreate(endpoint.ToString(), UriKind.Absolute, out uri))
-            {
-                throw new InvalidOperationException(
-                    $"""
-                    The 'ConnectionStrings:{connectionString}' (or 'Endpoint' key in
-                    '{ConfigurationSection}') isn't a valid URI.
-                    """
-                );
-            }
+        Endpoint = uri;
 
-            Endpoint = uri;
+        var hasUser = builder.TryGetValue(nameof(NetworkCredential.UserName), out var user);
+        var hasPass = builder.TryGetValue(nameof(NetworkCredential.Password), out var pass);
 
-            var hasUser = builder.TryGetValue(nameof(NetworkCredential.UserName), out var user);
-            var hasPass = builder.TryGetValue(nameof(NetworkCredential.Password), out var pass);
+        if (hasUser != hasPass)
+        {
+            throw new InvalidOperationException(
+                "Both Username and Password must be supplied together."
+            );
+        }
 
-            if (hasUser != hasPass)
-            {
-                throw new InvalidOperationException(
-                    "Both Username and Password must be supplied together."
-                );
-            }
-
-            if (hasUser)
-            {
-                Username = user!.ToString();
-                Password = pass!.ToString();
-            }
+        if (hasUser)
+        {
+            Username = user?.ToString();
+            Password = pass?.ToString();
         }
     }
 

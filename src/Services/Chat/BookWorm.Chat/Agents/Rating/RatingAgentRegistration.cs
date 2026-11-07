@@ -9,9 +9,11 @@ internal static class RatingAgentRegistration
     {
         public void AddRatingAgent()
         {
-            builder.Services.AddHttpContextAccessor();
-            builder
-                .Services.AddHttpClient(
+            var services = builder.Services;
+
+            services.AddHttpContextAccessor();
+            services
+                .AddHttpClient(
                     Constants.Other.Agents.RatingAgent,
                     client =>
                     {

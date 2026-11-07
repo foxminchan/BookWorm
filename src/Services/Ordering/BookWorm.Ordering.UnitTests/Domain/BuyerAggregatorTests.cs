@@ -23,9 +23,9 @@ public sealed class BuyerAggregateTests
         ((Guid)buyer.Id).ShouldBe(id);
         buyer.Name.ShouldBe(name);
         buyer.Address.ShouldNotBeNull();
-        buyer.Address!.Street.ShouldBe(street);
-        buyer.Address!.City.ShouldBe(city);
-        buyer.Address!.Province.ShouldBe(province);
+        buyer.Address?.Street.ShouldBe(street);
+        buyer.Address?.City.ShouldBe(city);
+        buyer.Address?.Province.ShouldBe(province);
     }
 
     [Test]
@@ -111,9 +111,9 @@ public sealed class BuyerAggregateTests
 
         // Assert
         buyer.Address.ShouldNotBeNull();
-        buyer.Address!.Street.ShouldBe(newStreet);
-        buyer.Address!.City.ShouldBe(newCity);
-        buyer.Address!.Province.ShouldBe(newProvince);
+        buyer.Address?.Street.ShouldBe(newStreet);
+        buyer.Address?.City.ShouldBe(newCity);
+        buyer.Address?.Province.ShouldBe(newProvince);
     }
 
     [Test]

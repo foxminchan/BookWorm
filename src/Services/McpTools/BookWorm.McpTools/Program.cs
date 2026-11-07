@@ -10,8 +10,6 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-app.UseDefaultOpenApi();
-
 app.UseDefaultCors();
 
 app.MapMcp("/mcp").RequireAuthorization();

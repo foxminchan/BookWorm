@@ -35,8 +35,8 @@ public sealed class GetBookQueryTests
             book.Name,
             book.Description,
             book.Image,
-            book.Price!.OriginalPrice,
-            book.Price.DiscountPrice,
+            book.Price?.OriginalPrice ?? 0,
+            book.Price?.DiscountPrice,
             book.Status,
             null, // Category
             null, // Publisher

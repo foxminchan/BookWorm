@@ -41,7 +41,7 @@ public sealed class ListBooksEndpointTests
             ),
         ];
 
-        _expectedResult = new(books, 1, 10, 1);
+        _expectedResult = [with(books, 1, 10, 1)];
     }
 
     [Test]

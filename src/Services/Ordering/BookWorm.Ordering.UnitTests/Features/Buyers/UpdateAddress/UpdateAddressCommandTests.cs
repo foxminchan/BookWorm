@@ -52,9 +52,9 @@ public sealed class UpdateAddressCommandTests
             x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _buyer.Address!.Street.ShouldBe(_command.Street);
-        _buyer.Address.City.ShouldBe(_command.City);
-        _buyer.Address.Province.ShouldBe(_command.Province);
+        _buyer.Address?.Street.ShouldBe(_command.Street);
+        _buyer.Address?.City.ShouldBe(_command.City);
+        _buyer.Address?.Province.ShouldBe(_command.Province);
     }
 
     [Test]
