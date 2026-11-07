@@ -37,7 +37,7 @@ app.MapEndpoints(apiVersionSet, "feedbacks");
 
 app.MapAgentDiscovery("/agents");
 
-app.MapGrpcA2A().RequireAuthorization();
+app.MapGrpcA2A().RequireAuthorization(Authorization.Policies.Read);
 
 app.MapDefaultEndpoints();
 

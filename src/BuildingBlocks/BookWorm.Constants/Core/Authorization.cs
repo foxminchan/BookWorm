@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants.Core;
+namespace BookWorm.Constants.Core;
 
 public static class Authorization
 {
@@ -14,6 +14,7 @@ public static class Authorization
         public const string Admin = Roles.Admin;
         public const string User = Roles.User;
         public const string Reporter = Roles.Reporter;
+        public const string Read = Actions.Read;
     }
 
     public static class Actions

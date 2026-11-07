@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.Caching;
 using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
@@ -27,7 +27,7 @@ internal static class Extensions
 
             builder.AddAppSettings<RatingAppSettings>();
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication(Services.Rating).WithKeycloakClaimsTransformation();
 
             services
                 .AddAuthorizationBuilder()
@@ -42,6 +42,15 @@ internal static class Extensions
                                 $"{Services.Rating}_{Authorization.Actions.Read}",
                                 $"{Services.Rating}_{Authorization.Actions.Write}"
                             );
+                    }
+                )
+                .AddPolicy(
+                    Authorization.Policies.Read,
+                    policy =>
+                    {
+                        policy
+                            .RequireAuthenticatedUser()
+                            .RequireScope($"{Services.Rating}_{Authorization.Actions.Read}");
                     }
                 );
 
