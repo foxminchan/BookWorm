@@ -5,6 +5,7 @@ using BookWorm.Rating.Features.List;
 using BookWorm.Rating.Tools;
 using BookWorm.SharedKernel.Results;
 using Mediator;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Rating.UnitTests.Tools;
 
@@ -19,6 +20,40 @@ public sealed class ReviewToolTests
         _senderMock = new();
         _reviewTool = new(_senderMock.Object);
         _validBookId = Guid.CreateVersion7();
+    }
+
+    [Test]
+    public async Task GivenScopeFactory_WhenGetCustomerReviews_ThenShouldResolveSenderAndDisposeScope()
+    {
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock.Setup(x => x.GetService(typeof(ISender))).Returns(_senderMock.Object);
+
+        var scopeMock = new Mock<IServiceScope>();
+        scopeMock.SetupGet(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
+
+        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
+
+        _senderMock
+            .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([with([], 1, int.MaxValue, 0)]);
+
+        var reviewTool = new ReviewTool(scopeFactoryMock.Object);
+
+        var result = await reviewTool.GetCustomerReviews(_validBookId);
+
+        result.ShouldBe("No reviews found for this book");
+        scopeFactoryMock.Verify(x => x.CreateScope(), Times.Once);
+        serviceProviderMock.Verify(x => x.GetService(typeof(ISender)), Times.Once);
+        scopeMock.Verify(x => x.Dispose(), Times.Once);
+        _senderMock.Verify(
+            x =>
+                x.Send(
+                    It.Is<ListFeedbacksQuery>(q => q.BookId == _validBookId),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [Test]

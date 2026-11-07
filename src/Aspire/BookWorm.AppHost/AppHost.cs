@@ -23,6 +23,10 @@ var catalogContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
     .WithAzureStorageExplorer();
 
+var chatSessionContainer = storage
+    .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Chatting))
+    .WithAzureStorageExplorer();
+
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .WithPasswordAuthentication()
@@ -133,6 +137,9 @@ var chatApi = builder
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
+    .WithReference(chatSessionContainer)
+    .WaitFor(chatSessionContainer)
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithDisplayUrls();
 
@@ -153,8 +160,6 @@ var ratingApi = builder
     .WithReference(broker)
     .WaitFor(broker)
     .WithKeycloak(keycloak)
-    .WithReference(chatApi)
-    .WaitFor(chatApi)
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
@@ -162,7 +167,7 @@ var ratingApi = builder
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithDisplayUrls();
 
-mcp.WithReference(ratingApi);
+chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 builder
     .AddDotnetProject(

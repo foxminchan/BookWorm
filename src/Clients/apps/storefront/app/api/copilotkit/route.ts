@@ -8,11 +8,55 @@ import {
   copilotRuntimeNextJSAppRouterEndpoint,
 } from "@copilotkit/runtime";
 
+import { AUTH } from "@workspace/utils/constants";
+
 import { env } from "@/env.mjs";
+import { auth } from "@/lib/auth";
 
 const serviceAdapter = new ExperimentalEmptyAdapter();
 
-const getRuntime = async () => {
+const jsonResponse = (status: number, body: Record<string, unknown>) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+
+/**
+ * Resolves the Keycloak access token for the current Better Auth session.
+ * Better Auth refreshes the token automatically when it has expired.
+ */
+const getAccessToken = async (
+  requestHeaders: Headers,
+): Promise<string | null> => {
+  try {
+    const session = await auth.api.getSession({ headers: requestHeaders });
+    if (!session?.user) {
+      return null;
+    }
+
+    const accounts = await auth.api.listUserAccounts({
+      headers: requestHeaders,
+    });
+    const account = accounts?.find(
+      (account) => account.providerId === AUTH.PROVIDER,
+    );
+    if (!account) {
+      return null;
+    }
+
+    const token = await auth.api.getAccessToken({
+      body: { accountId: account.id },
+      headers: requestHeaders,
+    });
+
+    return token?.accessToken ?? null;
+  } catch (error) {
+    console.error("Failed to resolve access token for chat:", error);
+    return null;
+  }
+};
+
+const getRuntime = (accessToken: string) => {
   const gatewayUrl =
     env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
 
@@ -23,24 +67,10 @@ const getRuntime = async () => {
   const agUiUrl = `${gatewayUrl}/chatting/ag-ui`;
   const agentName = env.NEXT_PUBLIC_COPILOT_AGENT_NAME;
 
-  // Extract auth token from request headers to pass to backend agent
-  const headersList = await headers();
-  const authHeader = headersList.get("authorization");
-  const cookieHeader = headersList.get("cookie");
-
-  // Pass authentication context to backend agent via custom headers
-  const agentHeaders: Record<string, string> = {};
-  if (authHeader) {
-    agentHeaders["authorization"] = authHeader;
-  }
-  if (cookieHeader) {
-    agentHeaders["cookie"] = cookieHeader;
-  }
-
   const agents = {
     [agentName]: new HttpAgent({
       url: agUiUrl,
-      headers: agentHeaders,
+      headers: { authorization: `Bearer ${accessToken}` },
     }),
   };
 
@@ -48,8 +78,17 @@ const getRuntime = async () => {
 };
 
 export const POST = async (req: NextRequest) => {
+  const accessToken = await getAccessToken(await headers());
+
+  if (!accessToken) {
+    return jsonResponse(401, {
+      error: "Unauthorized",
+      message: "You must be signed in to use the chat assistant.",
+    });
+  }
+
   try {
-    const runtime = await getRuntime();
+    const runtime = getRuntime(accessToken);
     const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
       runtime,
       serviceAdapter,
@@ -59,16 +98,10 @@ export const POST = async (req: NextRequest) => {
     return handleRequest(req);
   } catch (error) {
     console.error("CopilotKit runtime error:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Failed to process request",
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return jsonResponse(500, {
+      error: "Failed to process request",
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
   }
 };

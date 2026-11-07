@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.AI.Agents;
+﻿using A2A;
+using BookWorm.Chassis.AI.Agents;
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Governance;
 using BookWorm.Chassis.AI.Middlewares;
@@ -7,7 +8,6 @@ using BookWorm.Constants.Other;
 using BookWorm.Rating.Tools;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
-using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using ModelContextProtocol.Client;
 
 namespace BookWorm.Rating.Infrastructure.AI;
@@ -22,6 +22,11 @@ internal static class Extensions
         {
             var services = builder.Services;
 
+            services.AddA2AGrpc();
+            services.AddSingleton<IA2ARequestHandler>(sp =>
+                sp.GetRequiredKeyedService<A2AServer>(Agents.RatingAgent)
+            );
+
             builder.AddAIServices().WithAITelemetry();
             builder.AddPresidio();
 
@@ -29,7 +34,7 @@ internal static class Extensions
 
             builder.AddAgentGovernance("Policies/rating-agent.yaml");
 
-            services.AddScoped<ReviewTool>();
+            services.AddSingleton<ReviewTool>();
 
             builder
                 .AddAIAgent(
@@ -51,34 +56,21 @@ internal static class Extensions
                             .UseAIContextProviders(compactionProvider)
                             .Build(sp);
 
-                        using var spScope = sp.CreateScope();
-                        var reviewPlugin = spScope.ServiceProvider.GetRequiredService<ReviewTool>();
+                        var reviewPlugin = sp.GetRequiredService<ReviewTool>();
                         var mcpClient = sp.GetRequiredService<McpClient>();
 
                         var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
                         var mcpTools = mcpClient.GetAgentTools(toolNames);
 
                         options.AllowConcurrentInvocation = true;
-                        options.ChatOptions!.Tools = [.. reviewPlugin.AsAITools(), .. mcpTools];
+                        options.ChatOptions?.Tools = [.. reviewPlugin.AsAITools(), .. mcpTools];
 
                         var agent = new ChatClientAgent(chatClient, options);
 
                         return agent.WithBookWormGovernance(sp, key);
                     }
                 )
-                .WithInMemorySessionStore();
-        }
-    }
-
-    extension(WebApplication app)
-    {
-        public void MapAgentsDiscovery()
-        {
-            app.MapAgentDiscovery("/agents");
-
-            app.MapAGUIServer(Agents.RatingAgent, "/ag-ui")
-                .WithSummary("Interactive AI Agent")
-                .WithTags(nameof(Agents.RatingAgent));
+                .AddA2AServer();
         }
     }
 }

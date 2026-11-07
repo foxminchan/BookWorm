@@ -45,6 +45,8 @@ export const auth = betterAuth({
             "ordering_write",
             "rating_read",
             "rating_write",
+            "chatting_read",
+            "chatting_write",
           ],
         }),
       ],

@@ -4,6 +4,7 @@ using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
+using BookWorm.Chat.Agents.Rating;
 using BookWorm.Chat.Agents.Routing;
 using BookWorm.Chat.Configurations;
 using BookWorm.Chat.Orchestration;
@@ -42,6 +43,19 @@ internal static class Extensions
                             );
                     }
                 )
+                .AddPolicy(
+                    Authorization.Policies.User,
+                    policy =>
+                    {
+                        policy
+                            .RequireAuthenticatedUser()
+                            .RequireRole(Authorization.Roles.User)
+                            .RequireScope(
+                                $"{Services.Chatting}_{Authorization.Actions.Read}",
+                                $"{Services.Chatting}_{Authorization.Actions.Write}"
+                            );
+                    }
+                )
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
@@ -52,6 +66,13 @@ internal static class Extensions
                         )
                         .Build()
                 );
+
+            // Configure Blob Storage client for chat session storage
+            builder.AddAzureBlobContainerClient(
+                Components.Azure.Storage.BlobContainer(Services.Chatting)
+            );
+            services.AddHttpContextAccessor();
+            services.UseClaimsBasedAgentIsolation();
 
             // Add exception handlers
             services.AddNotFoundExceptionHandler();
@@ -74,7 +95,6 @@ internal static class Extensions
 
             // AI infrastructure (chat client, telemetry, protocols)
             builder.AddAIInfrastructure();
-            builder.Services.AddA2AGrpc();
 
             // Agent governance (policy enforcement, identity, rings, injection detection)
             builder.AddAgentGovernance("Policies/chat-agents.yaml");
@@ -91,6 +111,7 @@ internal static class Extensions
             // Register each agent as a self-contained vertical slice
             builder.AddBookAgent();
             builder.AddQAAgent();
+            builder.AddRatingAgent();
             builder.AddRouterAgent();
 
             // Compose the multi-agent workflow

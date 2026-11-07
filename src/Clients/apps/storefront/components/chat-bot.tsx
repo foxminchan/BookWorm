@@ -10,12 +10,15 @@ import {
   useState,
 } from "react";
 
+import Link from "next/link";
+
 import { CopilotSidebar } from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
 import { useAtomValue } from "jotai";
 import {
   AlertCircle,
   Clock,
+  LogIn,
   MessageCircle,
   RefreshCw,
   WifiOff,
@@ -36,6 +39,7 @@ import { useChatAgentState } from "@/hooks/useChatAgentState";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { useUserContext } from "@/hooks/useUserContext";
+import { useSession } from "@/lib/auth-client";
 import "@/styles/copilot.css";
 
 export type ChatBotRef = {
@@ -327,18 +331,53 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
   );
 });
 
+type UnavailableReason = "disabled" | "unauthenticated" | "unavailable";
+
 const UnavailableChatUI = ({
   isOpen,
   onClose,
-  isFeatureDisabled = false,
+  reason = "unavailable",
 }: {
   isOpen: boolean;
   onClose: () => void;
-  isFeatureDisabled?: boolean;
+  reason?: UnavailableReason;
 }) => {
   if (!isOpen) {
     return null;
   }
+
+  const isFeatureDisabled = reason === "disabled";
+  const isUnauthenticated = reason === "unauthenticated";
+
+  const subtitle = match(reason)
+    .with("disabled", () => "Coming Soon")
+    .with("unauthenticated", () => "Sign in required")
+    .with("unavailable", () => "Chat unavailable")
+    .exhaustive();
+
+  const heading = match(reason)
+    .with("disabled", () => "Feature in Development")
+    .with("unauthenticated", () => "Sign in to Chat")
+    .with("unavailable", () => "Chat Unavailable")
+    .exhaustive();
+
+  const description = match(reason)
+    .with(
+      "disabled",
+      () =>
+        "Our AI chat assistant is currently under development and will be available soon. Stay tuned!",
+    )
+    .with(
+      "unauthenticated",
+      () =>
+        "Please sign in to your account to chat with our AI literary assistant.",
+    )
+    .with(
+      "unavailable",
+      () =>
+        "The chat feature is currently unavailable. Please try again later.",
+    )
+    .exhaustive();
 
   return (
     <dialog
@@ -362,9 +401,7 @@ const UnavailableChatUI = ({
               <h2 id="chat-unavailable-title" className="font-semibold">
                 BookWorm Literary Guide
               </h2>
-              <p className="text-xs opacity-90">
-                {isFeatureDisabled ? "Coming Soon" : "Chat unavailable"}
-              </p>
+              <p className="text-xs opacity-90">{subtitle}</p>
             </div>
           </div>
           <Button
@@ -380,19 +417,23 @@ const UnavailableChatUI = ({
 
         <CardContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-950">
-            <AlertCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+            {isUnauthenticated ? (
+              <LogIn className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+            ) : (
+              <AlertCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+            )}
           </div>
           <div className="text-center">
-            <h3 className="mb-2 text-lg font-semibold">
-              {isFeatureDisabled
-                ? "Feature in Development"
-                : "Chat Unavailable"}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {isFeatureDisabled
-                ? "Our AI chat assistant is currently under development and will be available soon. Stay tuned!"
-                : "The chat feature is currently unavailable. Please try again later."}
-            </p>
+            <h3 className="mb-2 text-lg font-semibold">{heading}</h3>
+            <p className="text-muted-foreground text-sm">{description}</p>
+            {isUnauthenticated && !isFeatureDisabled && (
+              <Button asChild size="sm" className="mt-4 gap-2">
+                <Link href="/login">
+                  <LogIn className="h-4 w-4" aria-hidden="true" />
+                  Sign In
+                </Link>
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -402,13 +443,21 @@ const UnavailableChatUI = ({
 
 export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
   const isCopilotEnabled = useAtomValue(isCopilotEnabledAtom);
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
   const hasGateway = !!(
     env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP
   );
   const [isUnavailableChatOpen, setIsUnavailableChatOpen] = useState(false);
 
   const isFeatureDisabled = !isCopilotEnabled;
-  const canShowChat = isCopilotEnabled && hasGateway;
+  const canShowChat = isCopilotEnabled && hasGateway && isAuthenticated;
+  let unavailableReason: UnavailableReason = "unavailable";
+  if (isFeatureDisabled) {
+    unavailableReason = "disabled";
+  } else if (hasGateway && !isAuthenticated) {
+    unavailableReason = "unauthenticated";
+  }
 
   useImperativeHandle(ref, () => ({
     openChat: () => {
@@ -435,23 +484,29 @@ export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
         onClick={() => setIsUnavailableChatOpen(true)}
         size="icon"
         className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
-        aria-label={
-          isFeatureDisabled
-            ? "Chat feature coming soon - click to learn more"
-            : "Open chat - feature currently unavailable"
-        }
-        title={
-          isFeatureDisabled
-            ? "Feature in development"
-            : "Chat feature is unavailable"
-        }
+        aria-label={match(unavailableReason)
+          .with(
+            "disabled",
+            () => "Chat feature coming soon - click to learn more",
+          )
+          .with("unauthenticated", () => "Open chat - sign in required")
+          .with(
+            "unavailable",
+            () => "Open chat - feature currently unavailable",
+          )
+          .exhaustive()}
+        title={match(unavailableReason)
+          .with("disabled", () => "Feature in development")
+          .with("unauthenticated", () => "Sign in to use chat")
+          .with("unavailable", () => "Chat feature is unavailable")
+          .exhaustive()}
       >
         <MessageCircle className="h-6 w-6" aria-hidden="true" />
       </Button>
       <UnavailableChatUI
         isOpen={isUnavailableChatOpen}
         onClose={() => setIsUnavailableChatOpen(false)}
-        isFeatureDisabled={isFeatureDisabled}
+        reason={unavailableReason}
       />
     </>
   );

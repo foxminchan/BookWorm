@@ -1,6 +1,6 @@
+using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Rating.Extensions;
-using BookWorm.Rating.Infrastructure.AI;
 using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,7 +35,9 @@ var apiVersionSet = app.NewApiVersionSet()
 
 app.MapEndpoints(apiVersionSet, "feedbacks");
 
-app.MapAgentsDiscovery();
+app.MapAgentDiscovery("/agents");
+
+app.MapGrpcA2A().RequireAuthorization(Authorization.Policies.Read);
 
 app.MapDefaultEndpoints();
 

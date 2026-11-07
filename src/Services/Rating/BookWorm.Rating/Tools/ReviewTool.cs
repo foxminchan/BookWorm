@@ -5,14 +5,37 @@ using BookWorm.Rating.Features.List;
 
 namespace BookWorm.Rating.Tools;
 
-public sealed class ReviewTool(ISender sender)
+public sealed class ReviewTool
 {
+    private readonly Func<Guid, Task<string>> _getCustomerReviews;
+
+    public ReviewTool(IServiceScopeFactory scopeFactory)
+    {
+        _getCustomerReviews = async bookId =>
+        {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
+            return await GetCustomerReviewsAsync(sender, bookId);
+        };
+    }
+
+    internal ReviewTool(ISender sender)
+    {
+        _getCustomerReviews = bookId => GetCustomerReviewsAsync(sender, bookId);
+    }
+
     [Description(
         "Fetches all reviews and ratings for a book, returning review IDs, ratings, and comments in JSON"
     )]
-    public async Task<string> GetCustomerReviews(
+    public Task<string> GetCustomerReviews(
         [Description("The ID of the book to get the review for")] Guid bookId
     )
+    {
+        return _getCustomerReviews(bookId);
+    }
+
+    private static async Task<string> GetCustomerReviewsAsync(ISender sender, Guid bookId)
     {
         var reviews = await sender.Send(new ListFeedbacksQuery(bookId, 1, int.MaxValue));
 

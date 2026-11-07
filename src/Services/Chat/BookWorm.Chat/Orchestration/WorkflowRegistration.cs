@@ -1,4 +1,5 @@
 using AgentGovernance;
+using Azure.Storage.Blobs;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;
 
@@ -24,16 +25,24 @@ internal static class WorkflowRegistration
                         var qaAgent = sp.GetRequiredKeyedService<AIAgent>(
                             Constants.Other.Agents.QAAgent
                         );
+                        var ratingAgent = sp.GetRequiredKeyedService<AIAgent>(
+                            Constants.Other.Agents.RatingAgent
+                        );
 
                         // Build handoff workflow for dynamic agent routing
-                        // RouterAgent routes requests to the book or support agent.
+                        // RouterAgent routes requests to specialized book, rating, or support agents.
                         var handoffWorkflow = AgentWorkflowBuilder
                             .CreateHandoffBuilderWith(routerAgent)
-                            .WithHandoffs(routerAgent, [bookAgent, qaAgent])
+                            .WithHandoffs(routerAgent, [bookAgent, qaAgent, ratingAgent])
                             .WithHandoff(
                                 qaAgent,
                                 bookAgent,
                                 "Transfer to this agent if a customer-service request also needs book information."
+                            )
+                            .WithHandoff(
+                                bookAgent,
+                                ratingAgent,
+                                "Transfer to this agent to summarize a book's reviews or analyze its rating and review-based quality signals."
                             )
                             .WithHandoff(
                                 bookAgent,
@@ -96,7 +105,10 @@ internal static class WorkflowRegistration
                     }
                 )
                 .AddAsAIAgent()
-                .WithInMemorySessionStore();
+                .WithAzureBlobSessionStore(
+                    (sp, _) => sp.GetRequiredService<BlobContainerClient>(),
+                    new() { BlobNamePrefix = "ag-ui/" }
+                );
         }
     }
 }
