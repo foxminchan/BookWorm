@@ -43,6 +43,19 @@ internal static class Extensions
                             );
                     }
                 )
+                .AddPolicy(
+                    Authorization.Policies.User,
+                    policy =>
+                    {
+                        policy
+                            .RequireAuthenticatedUser()
+                            .RequireRole(Authorization.Roles.User)
+                            .RequireScope(
+                                $"{Services.Chatting}_{Authorization.Actions.Read}",
+                                $"{Services.Chatting}_{Authorization.Actions.Write}"
+                            );
+                    }
+                )
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
@@ -53,6 +66,13 @@ internal static class Extensions
                         )
                         .Build()
                 );
+
+            // Configure Blob Storage client for chat session storage
+            builder.AddAzureBlobContainerClient(
+                Components.Azure.Storage.BlobContainer(Services.Chatting)
+            );
+            services.AddHttpContextAccessor();
+            services.UseClaimsBasedAgentIsolation();
 
             // Add exception handlers
             services.AddNotFoundExceptionHandler();

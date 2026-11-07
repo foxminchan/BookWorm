@@ -3,10 +3,13 @@ namespace BookWorm.Chat.Agents.BookSearch;
 internal static class BookAgentRegistration
 {
     private const string DefinitionFile = "Agents/BookSearch/book-agent.yaml";
+
     private const string CatalogResearcherDefinitionFile =
         "Agents/BookSearch/catalog-researcher.yaml";
+
     private const string RecommendationResearcherDefinitionFile =
         "Agents/BookSearch/recommendation-researcher.yaml";
+
     private const string FileMemoryRootConfigKey = "Chat:Harness:FileMemory:Root";
 
     extension(IHostApplicationBuilder builder)

@@ -1,4 +1,5 @@
 using AgentGovernance;
+using Azure.Storage.Blobs;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;
 
@@ -104,7 +105,10 @@ internal static class WorkflowRegistration
                     }
                 )
                 .AddAsAIAgent()
-                .WithInMemorySessionStore();
+                .WithAzureBlobSessionStore(
+                    (sp, _) => sp.GetRequiredService<BlobContainerClient>(),
+                    new() { BlobNamePrefix = "ag-ui/" }
+                );
         }
     }
 }

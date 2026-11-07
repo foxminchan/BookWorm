@@ -10,6 +10,8 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.AzureStorage" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
   </ItemGroup>
   <ItemGroup Label="Agent Skills">

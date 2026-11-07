@@ -123,11 +123,12 @@ underlying model handled a request.
 
 - `ModelId` is the model returned by the provider, not the router deployment name.
 - `RequestedModelId` identifies the requested model or configured deployment.
-- `ResponseId` correlates the log with the provider response; `IsStreaming` identifies streaming calls.
+- `ResponseId` correlates the log with the provider response; `IsStreaming` identifies streaming
+  calls.
 - Each provider call is logged, including subsequent calls during function invocation. Streaming
   logs appear when model metadata arrives, without buffering the response or repeating every chunk.
-- If the provider omits the model ID, a warning explicitly states that selection cannot be determined.
-  The requested deployment is not substituted for the actual model.
+- If the provider omits the model ID, a warning explicitly states that selection cannot be
+  determined. The requested deployment is not substituted for the actual model.
 - Prompts, generated text, and tool arguments are not included in these logs.
 
 Foundry exposes the selected model through the response's `model` field; see

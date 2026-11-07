@@ -9,9 +9,15 @@ public sealed class SummarizeFeedbackQueryTests
 {
     private static readonly TimeSpan _summaryDuration = TimeSpan.FromHours(6);
 
-    private static string CacheKey(Guid bookId) => $"rating:summary:v1:{bookId}";
+    private static string CacheKey(Guid bookId)
+    {
+        return $"rating:summary:v1:{bookId}";
+    }
 
-    private static FusionCache CreateCache() => new(new FusionCacheOptions());
+    private static FusionCache CreateCache()
+    {
+        return new(new FusionCacheOptions());
+    }
 
     [Test]
     public async Task GivenCacheMiss_WhenHandlingQuery_ThenShouldSummarizeAndCacheResult()

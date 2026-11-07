@@ -93,6 +93,10 @@
       Version="$(AgentFrameworkUnstableVersion)"
     />
     <PackageVersion
+      Include="Microsoft.Agents.AI.Hosting.AzureStorage"
+      Version="$(AgentFrameworkUnstableVersion)"
+    />
+    <PackageVersion
       Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents"
       Version="5.0.0"
     />

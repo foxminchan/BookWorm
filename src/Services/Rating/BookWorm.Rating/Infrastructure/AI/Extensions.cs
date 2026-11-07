@@ -22,8 +22,6 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            services.AddHttpContextAccessor();
-            services.UseClaimsBasedAgentIsolation();
             services.AddA2AGrpc();
             services.AddSingleton<IA2ARequestHandler>(sp =>
                 sp.GetRequiredKeyedService<A2AServer>(Agents.RatingAgent)
@@ -72,8 +70,7 @@ internal static class Extensions
                         return agent.WithBookWormGovernance(sp, key);
                     }
                 )
-                .AddA2AServer()
-                .WithInMemorySessionStore();
+                .AddA2AServer();
         }
     }
 }

@@ -48,7 +48,9 @@ export function Providers({
 
   useAccessToken(authClient, useSession);
 
-  const shouldShowCopilot = !!isCopilotEnabled && !!gatewayUrl;
+  // The chat agent (AG-UI) requires an authenticated user
+  const shouldShowCopilot =
+    !!isCopilotEnabled && !!gatewayUrl && !!session?.user;
 
   return (
     <QueryClientProvider client={queryClient}>

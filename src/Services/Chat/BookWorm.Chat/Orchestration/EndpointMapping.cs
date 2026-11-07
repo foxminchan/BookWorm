@@ -13,7 +13,9 @@ internal static class EndpointMapping
 
             app.MapAGUIServer(Workflows.Chat, "/ag-ui")
                 .WithSummary("Interactive AI Agent")
-                .WithTags(nameof(Chat));
+                .WithTags(nameof(Chat))
+                .RequireAuthorization(Authorization.Policies.User)
+                .RequirePerUserRateLimit();
         }
     }
 }
