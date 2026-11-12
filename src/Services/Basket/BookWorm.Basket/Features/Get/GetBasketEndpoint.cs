@@ -4,10 +4,8 @@ internal sealed class GetBasketEndpoint : IEndpoint<Ok<CustomerBasketDto>, ISend
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                string.Empty,
-                async (ISender sender, CancellationToken cancellationToken) =>
-                    await HandleAsync(sender, cancellationToken)
+        app.MapGet(string.Empty, async (ISender sender, CancellationToken cancellationToken) =>
+                await HandleAsync(sender, cancellationToken)
             )
             .ProducesGet<CustomerBasketDto>(hasNotFound: true)
             .WithTags(nameof(Basket))

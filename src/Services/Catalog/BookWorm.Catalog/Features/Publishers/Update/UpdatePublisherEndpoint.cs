@@ -5,10 +5,8 @@ internal sealed class UpdatePublisherEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
-                "/publishers",
-                async (UpdatePublisherCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPut("/publishers", async (UpdatePublisherCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPut()
             .WithTags(nameof(Publisher))

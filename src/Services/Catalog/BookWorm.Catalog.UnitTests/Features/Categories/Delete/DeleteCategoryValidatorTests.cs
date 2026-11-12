@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Categories.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
@@ -14,7 +14,7 @@ public sealed class DeleteCategoryValidatorTests
     public DeleteCategoryValidatorTests()
     {
         _mockRepository = new();
-        var categoryValidator = new CategoryValidator(_mockRepository.Object);
+        CategoryValidator categoryValidator = [with(_mockRepository.Object)];
         _deleteCategoryValidator = [with(categoryValidator)];
     }
 

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 
@@ -27,7 +27,7 @@ internal sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOpt
 
     public ValidateOptionsResult Validate(string? name, ServerInfoOptions options)
     {
-        var results = new List<ValidationResult>();
+        List<ValidationResult> results = [];
         var context = new ValidationContext(options);
 
         if (!Validator.TryValidateObject(options, context, results, true))
@@ -46,7 +46,7 @@ internal sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOpt
 
         foreach (var icon in options.Icons)
         {
-            var iconResults = new List<ValidationResult>();
+            List<ValidationResult> iconResults = [];
             var iconContext = new ValidationContext(icon);
 
             if (!Validator.TryValidateObject(icon, iconContext, iconResults, true))

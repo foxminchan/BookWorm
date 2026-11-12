@@ -4,10 +4,8 @@ internal sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddr
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPatch(
-                "/buyers/address",
-                async (UpdateAddressCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPatch("/buyers/address", async (UpdateAddressCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPatch<BuyerDto>()
             .WithTags(nameof(Buyer))

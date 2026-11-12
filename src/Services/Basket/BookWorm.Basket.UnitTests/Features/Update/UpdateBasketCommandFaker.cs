@@ -9,9 +9,8 @@ public sealed class UpdateBasketCommandFaker : Faker<UpdateBasketCommand>
     {
         CustomInstantiator(f =>
             new([
-                .. f.Make(
-                    f.Random.Int(1, 10),
-                    () => new BasketItemRequest(f.Commerce.ProductName(), f.Random.Int(1, 10))
+                .. f.Make(f.Random.Int(1, 10), () =>
+                    new BasketItemRequest(f.Commerce.ProductName(), f.Random.Int(1, 10))
                 ),
             ])
         );

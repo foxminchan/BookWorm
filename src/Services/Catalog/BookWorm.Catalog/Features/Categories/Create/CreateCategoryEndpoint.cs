@@ -5,10 +5,8 @@ internal sealed class CreateCategoryEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                "/categories",
-                async (CreateCategoryCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPost("/categories", async (CreateCategoryCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPostWithoutLocation<CategoryId>()
             .WithTags(nameof(Category))

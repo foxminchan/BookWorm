@@ -15,29 +15,23 @@ internal static class AuthorizationExtensions
 
             services
                 .AddAuthorizationBuilder()
-                .AddPolicy(
-                    Authorization.Policies.Admin,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.Admin)
-                            .RequireScope(
-                                $"{Services.Ordering}_{Authorization.Actions.Read}",
-                                $"{Services.Ordering}_{Authorization.Actions.Write}"
-                            );
-                    }
-                )
-                .AddPolicy(
-                    Authorization.Policies.Reporter,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.Reporter)
-                            .RequireScope($"{Services.Ordering}_{Authorization.Actions.Read}");
-                    }
-                )
+                .AddPolicy(Authorization.Policies.Admin, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Ordering}_{Authorization.Actions.Read}",
+                            $"{Services.Ordering}_{Authorization.Actions.Write}"
+                        );
+                })
+                .AddPolicy(Authorization.Policies.Reporter, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Reporter)
+                        .RequireScope($"{Services.Ordering}_{Authorization.Actions.Read}");
+                })
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()

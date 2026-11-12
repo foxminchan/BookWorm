@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel.Helpers;
+using BookWorm.SharedKernel.Helpers;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using static BookWorm.Constants.Core.Http;
@@ -31,6 +31,11 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
                 $"{RequestIdHeader} header is required for {HttpMethods.Post} and {HttpMethods.Patch} requests."
             );
             throw new ValidationException([error]);
+        }
+
+        if (context.HttpContext.Response.StatusCode == StatusCodes.Status400BadRequest)
+        {
+            return await next(context);
         }
 
         var idempotencyKey = $"{requestMethod}:{requestPath}:{requestId}";

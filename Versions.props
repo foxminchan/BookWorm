@@ -1,17 +1,17 @@
 <Project>
   <PropertyGroup Label="Package Versions">
     <!-- Core Libraries -->
-    <AspireVersion>13.6.4</AspireVersion>
-    <AspireUnstableVersion>$(AspireVersion)-preview.1.26523.11</AspireUnstableVersion>
-    <DotnetPackagesVersion>10.0.14</DotnetPackagesVersion>
+    <AspireVersion>13.6.5</AspireVersion>
+    <AspireUnstableVersion>$(AspireVersion)-preview.1.26559.7</AspireUnstableVersion>
+    <DotnetPackagesVersion>11.0.0</DotnetPackagesVersion>
     <GrpcVersion>2.85.0</GrpcVersion>
     <!-- Integration Libraries -->
-    <WolverineVersion>6.62.0</WolverineVersion>
-    <QuartzVersion>4.7.2</QuartzVersion>
+    <WolverineVersion>6.64.0</WolverineVersion>
+    <QuartzVersion>4.7.3</QuartzVersion>
     <FusionCacheVersion>2.9.0</FusionCacheVersion>
     <!-- Microsoft Packages -->
-    <MsExtVersion>10.11.0</MsExtVersion>
-    <MsTestVersion>2.5.2</MsTestVersion>
+    <MsExtVersion>11.0.0</MsExtVersion>
+    <MsTestVersion>2.5.3</MsTestVersion>
     <ToolKitVersion>13.6.1</ToolKitVersion>
     <!-- Agent Framework Packages -->
     <AgentFrameworkVersion>1.28.0</AgentFrameworkVersion>

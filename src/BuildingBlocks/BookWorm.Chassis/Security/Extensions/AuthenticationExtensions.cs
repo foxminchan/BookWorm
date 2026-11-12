@@ -37,39 +37,35 @@ public static class AuthenticationExtensions
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 })
-                .AddKeycloakJwtBearer(
-                    Components.KeyCloak,
-                    realm,
-                    options =>
+                .AddKeycloakJwtBearer(Components.KeyCloak, realm, options =>
+                {
+                    options.Audience = audience ?? "account";
+                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+                    options.TokenValidationParameters.ValidateAudience =
+                        audience is not null || !builder.Environment.IsDevelopment();
+                    options.TokenValidationParameters.ValidateIssuer =
+                        !builder.Environment.IsDevelopment();
+
+                    options.SaveToken = true;
+                    options.Events = new()
                     {
-                        options.Audience = audience ?? "account";
-                        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-                        options.TokenValidationParameters.ValidateAudience =
-                            audience is not null || !builder.Environment.IsDevelopment();
-                        options.TokenValidationParameters.ValidateIssuer =
-                            !builder.Environment.IsDevelopment();
-
-                        options.SaveToken = true;
-                        options.Events = new()
+                        OnTokenValidated = ctx =>
                         {
-                            OnTokenValidated = ctx =>
-                            {
-                                if (
-                                    ctx is
-                                    {
-                                        SecurityToken: JwtSecurityToken jwt,
-                                        Principal.Identity: ClaimsIdentity identity
-                                    }
-                                )
+                            if (
+                                ctx is
                                 {
-                                    identity.AddClaim(new("access_token", jwt.RawData));
+                                    SecurityToken: JwtSecurityToken jwt,
+                                    Principal.Identity: ClaimsIdentity identity
                                 }
+                            )
+                            {
+                                identity.AddClaim(new("access_token", jwt.RawData));
+                            }
 
-                                return Task.CompletedTask;
-                            },
-                        };
-                    }
-                );
+                            return Task.CompletedTask;
+                        },
+                    };
+                });
 
             return builder;
         }

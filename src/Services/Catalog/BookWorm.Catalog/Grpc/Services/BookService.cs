@@ -48,8 +48,10 @@ internal sealed class BookService(
             );
         }
 
-        var book =
-            await repository.GetByIdAsync(Guid.Parse(request.BookId), context.CancellationToken)
+        var book = await repository.GetByIdAsync(
+            Guid.Parse(request.BookId),
+            context.CancellationToken
+        )
             ?? throw new RpcException(
                 new(StatusCode.NotFound, $"Book with id {request.BookId} not found.")
             );

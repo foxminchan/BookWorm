@@ -41,7 +41,7 @@ public sealed class ProductTests
     public async Task GivenApiReturnsEmptyList_WhenSearchCatalog_ThenShouldReturnNotFoundMessage()
     {
         // Arrange
-        var pagedResult = new PagedResult<Book>([], 1, 10, 0);
+        PagedResult<Book> pagedResult = [with([], 1, 10, 0)];
         var response = new ApiResponse<PagedResult<Book>>(
             CreateResponse(HttpStatusCode.OK),
             pagedResult,
@@ -63,8 +63,8 @@ public sealed class ProductTests
     public async Task GivenApiReturnsBooks_WhenSearchCatalog_ThenShouldReturnSerializedJson()
     {
         // Arrange
-        var books = new List<Book>
-        {
+        List<Book> books =
+        [
             new(
                 BookId.From(Guid.CreateVersion7()),
                 "Clean Code",
@@ -78,9 +78,9 @@ public sealed class ProductTests
                 4.5,
                 120
             ),
-        };
+        ];
 
-        var pagedResult = new PagedResult<Book>(books, 1, 10, 1);
+        PagedResult<Book> pagedResult = [with(books, 1, 10, 1)];
         var response = new ApiResponse<PagedResult<Book>>(
             CreateResponse(HttpStatusCode.OK),
             pagedResult,
@@ -226,11 +226,11 @@ public sealed class ProductTests
     public async Task GivenApiReturnsCategories_WhenListCategories_ThenShouldReturnSerializedJson()
     {
         // Arrange
-        var categories = new List<Category>
-        {
+        List<Category> categories =
+        [
             new(CategoryId.From(Guid.CreateVersion7()), "Programming"),
             new(CategoryId.From(Guid.CreateVersion7()), "Fiction"),
-        };
+        ];
 
         var response = new ApiResponse<List<Category>>(
             CreateResponse(HttpStatusCode.OK),
@@ -305,11 +305,11 @@ public sealed class ProductTests
     public async Task GivenApiReturnsAuthors_WhenListAuthors_ThenShouldReturnSerializedJson()
     {
         // Arrange
-        var authors = new List<Author>
-        {
+        List<Author> authors =
+        [
             new(AuthorId.From(Guid.CreateVersion7()), "Robert C. Martin"),
             new(AuthorId.From(Guid.CreateVersion7()), "Martin Fowler"),
-        };
+        ];
 
         var response = new ApiResponse<List<Author>>(
             CreateResponse(HttpStatusCode.OK),

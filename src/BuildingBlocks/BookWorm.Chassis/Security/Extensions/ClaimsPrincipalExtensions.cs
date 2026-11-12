@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using System.Text.Json.Nodes;
 
@@ -32,6 +32,17 @@ public static class ClaimsPrincipalExtensions
         {
             return claimsPrincipal.FindAll(ClaimTypes.Role).Any(c => c.Value == role);
         }
+
+        /// <summary>
+        ///     Gets the value of the first claim that matches the provided claim type.
+        /// </summary>
+        /// <param name="claimType">
+        ///     The claim type to search for.
+        /// </param>
+        /// <returns>
+        ///     The claim value when a matching claim exists; otherwise, <see langword="null" />.
+        /// </returns>
+        public string? this[string claimType] => claimsPrincipal.GetClaimValue(claimType);
 
         /// <summary>
         ///     Gets the value of the first claim that matches the provided claim type.

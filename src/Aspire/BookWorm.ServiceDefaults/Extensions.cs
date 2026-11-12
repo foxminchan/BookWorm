@@ -3,6 +3,7 @@ using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -43,13 +44,14 @@ public static class Extensions
             }
 
             // All health checks must pass for app to be considered ready to accept traffic after starting.
-            app.MapHealthChecks(Http.Endpoints.HealthEndpointPath);
+            app.MapHealthChecks(Http.Endpoints.HealthEndpointPath).ShortCircuit();
 
             // Only health checks tagged with the "live" tag must pass for app to be considered alive.
             app.MapHealthChecks(
-                Http.Endpoints.AlivenessEndpointPath,
-                new() { Predicate = r => r.Tags.Contains("live") }
-            );
+                    Http.Endpoints.AlivenessEndpointPath,
+                    new() { Predicate = r => r.Tags.Contains("live") }
+                )
+                .ShortCircuit();
         }
     }
 
@@ -62,6 +64,10 @@ public static class Extensions
 
             logger.EnableEnrichment();
             builder.AddApplicationEnricher();
+
+            builder.Services.AddRequestCheckpoint();
+            builder.Services.AddRequestLatencyTelemetry();
+            builder.Services.AddHttpServerLatencyTelemetry();
 
             logger.AddGlobalBuffer(loggerSection);
             logger.AddPerIncomingRequestBuffer(loggerSection);
@@ -150,8 +156,8 @@ public static class Extensions
             {
                 http.RemoveAllResilienceHandlers();
 
-                // Turn on resilience by default
-                http.AddStandardResilienceHandler();
+                // Turn on resilience by default with a sliding-window retry budget
+                http.AddStandardResilienceHandler().UseBudgetedRetries();
 
                 // Turn on service discovery by default
                 http.AddServiceDiscovery();
@@ -159,6 +165,7 @@ public static class Extensions
 
             builder.Services.Configure<KestrelServerOptions>(options =>
             {
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(10);
                 options.Limits.Http2.MaxStreamsPerConnection = 250;
                 options.Limits.Http2.InitialConnectionWindowSize = 1024 * 1024;
                 options.Limits.Http2.InitialStreamWindowSize = 768 * 1024;

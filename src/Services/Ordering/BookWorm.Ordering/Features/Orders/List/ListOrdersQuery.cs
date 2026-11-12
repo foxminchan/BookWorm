@@ -1,4 +1,4 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Extensions;
 using BookWorm.SharedKernel.Results;
 
@@ -33,8 +33,7 @@ internal sealed class ListOrdersHandler(
         {
             request = request with
             {
-                BuyerId = (Guid)
-                    claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId(),
+                BuyerId = (Guid)claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId(),
             };
         }
 

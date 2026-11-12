@@ -126,8 +126,7 @@ public sealed class DeleteBasketCommandTest
         var original = new DeleteBasketCommand();
 
         // Act
-        var copy = original with
-        { };
+        var copy = original with { };
 
         // Assert
         copy.ShouldBe(original);

@@ -4,10 +4,8 @@ internal sealed class UpdateBasketEndpoint : IEndpoint<NoContent, UpdateBasketCo
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
-                string.Empty,
-                async (UpdateBasketCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPut(string.Empty, async (UpdateBasketCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPut()
             .WithTags(nameof(Basket))

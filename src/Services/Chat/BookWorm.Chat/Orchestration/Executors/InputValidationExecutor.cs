@@ -3,7 +3,21 @@ using AgentGovernance;
 
 namespace BookWorm.Chat.Orchestration.Executors;
 
-internal sealed record InputValidationResult(bool IsAccepted, ChatMessage Message);
+internal sealed record AcceptedInput(ChatMessage Message);
+
+internal sealed record RejectedInput(ChatMessage Message);
+
+internal union InputValidationResult(AcceptedInput, RejectedInput)
+{
+    public bool IsAccepted => Value is AcceptedInput;
+
+    public readonly ChatMessage Message =>
+        this switch
+        {
+            AcceptedInput accepted => accepted.Message,
+            RejectedInput rejected => rejected.Message,
+        };
+}
 
 internal sealed partial class InputValidationExecutor(GovernanceKernel? governanceKernel = null)
     : Executor<ChatMessage, InputValidationResult>(nameof(InputValidationExecutor))
@@ -81,13 +95,15 @@ internal sealed partial class InputValidationExecutor(GovernanceKernel? governan
             content = content[..TruncateLength] + "... [Message truncated due to length]";
         }
 
-        return ValueTask.FromResult(new InputValidationResult(true, new(ChatRole.User, content)));
+        return ValueTask.FromResult<InputValidationResult>(
+            new AcceptedInput(new(ChatRole.User, content))
+        );
     }
 
     private static ValueTask<InputValidationResult> Rejected(string reason)
     {
-        return ValueTask.FromResult(
-            new InputValidationResult(false, new(ChatRole.Assistant, reason))
+        return ValueTask.FromResult<InputValidationResult>(
+            new RejectedInput(new(ChatRole.Assistant, reason))
         );
     }
 }

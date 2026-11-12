@@ -20,57 +20,48 @@ public static class CorsExtensions
             {
                 services.AddCors(options =>
                 {
-                    options.AddPolicy(
-                        CorsConstants.AllowAllCorsPolicy,
-                        policyBuilder =>
-                        {
-                            policyBuilder
-                                .SetIsOriginAllowed(origin =>
-                                    new Uri(origin).Host == Network.Localhost
-                                )
-                                .AllowAnyHeader()
-                                .AllowAnyMethod()
-                                .AllowCredentials();
-                        }
-                    );
+                    options.AddPolicy(CorsConstants.AllowAllCorsPolicy, policyBuilder =>
+                    {
+                        policyBuilder
+                            .SetIsOriginAllowed(origin => new Uri(origin).Host == Network.Localhost)
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    });
                 });
             }
             else
             {
                 builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
 
-                var corsSettings =
-                    builder
-                        .Configuration.GetRequiredSection(CorsSettings.ConfigurationSection)
-                        .Get<CorsSettings>()
+                var corsSettings = builder
+                    .Configuration.GetRequiredSection(CorsSettings.ConfigurationSection)
+                    .Get<CorsSettings>()
                     ?? throw new InvalidOperationException(
                         $"Failed to bind CORS settings from configuration section: {CorsSettings.ConfigurationSection}"
                     );
 
                 services.AddCors(options =>
                 {
-                    options.AddPolicy(
-                        CorsConstants.AllowSpecificCorsPolicy,
-                        policyBuilder =>
+                    options.AddPolicy(CorsConstants.AllowSpecificCorsPolicy, policyBuilder =>
+                    {
+                        policyBuilder
+                            .WithOrigins([.. corsSettings.Origins])
+                            .WithHeaders([.. corsSettings.Headers])
+                            .WithMethods([.. corsSettings.Methods]);
+
+                        if (corsSettings.MaxAge is not null)
                         {
-                            policyBuilder
-                                .WithOrigins([.. corsSettings.Origins])
-                                .WithHeaders([.. corsSettings.Headers])
-                                .WithMethods([.. corsSettings.Methods]);
-
-                            if (corsSettings.MaxAge is not null)
-                            {
-                                policyBuilder.SetPreflightMaxAge(
-                                    TimeSpan.FromSeconds(corsSettings.MaxAge.Value)
-                                );
-                            }
-
-                            if (corsSettings.AllowCredentials)
-                            {
-                                policyBuilder.AllowCredentials();
-                            }
+                            policyBuilder.SetPreflightMaxAge(
+                                TimeSpan.FromSeconds(corsSettings.MaxAge.Value)
+                            );
                         }
-                    );
+
+                        if (corsSettings.AllowCredentials)
+                        {
+                            policyBuilder.AllowCredentials();
+                        }
+                    });
                 });
             }
         }

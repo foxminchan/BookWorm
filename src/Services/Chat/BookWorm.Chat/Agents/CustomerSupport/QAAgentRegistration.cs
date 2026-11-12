@@ -8,32 +8,29 @@ internal static class QAAgentRegistration
     {
         public void AddQAAgent()
         {
-            builder.AddAIAgent(
-                Constants.Other.Agents.QAAgent,
-                (sp, key) =>
-                {
-                    var compactionProvider = CompactionPipelineFactory.CreateLight();
+            builder.AddAIAgent(Constants.Other.Agents.QAAgent, (sp, key) =>
+            {
+                var compactionProvider = CompactionPipelineFactory.CreateLight();
 
-                    var chatClient = sp.GetRequiredService<IChatClient>()
-                        .AsBuilder()
-                        .UsePIIMiddleware(sp)
-                        .UseGuardrailMiddleware()
-                        .UseAIContextProviders(compactionProvider)
-                        .Build(sp);
+                var chatClient = sp.GetRequiredService<IChatClient>()
+                    .AsBuilder()
+                    .UsePIIMiddleware(sp)
+                    .UseGuardrailMiddleware()
+                    .UseAIContextProviders(compactionProvider)
+                    .Build(sp);
 
-                    var skillsProvider = new AgentSkillsProvider(
-                        Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
-                        loggerFactory: sp.GetService<ILoggerFactory>()
-                    );
+                var skillsProvider = new AgentSkillsProvider(
+                    Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
+                    loggerFactory: sp.GetService<ILoggerFactory>()
+                );
 
-                    var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
-                    options.AIContextProviders = [skillsProvider];
+                var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
+                options.AIContextProviders = [skillsProvider];
 
-                    var agent = new ChatClientAgent(chatClient, options);
+                var agent = new ChatClientAgent(chatClient, options);
 
-                    return agent.WithBookWormGovernance(sp, key);
-                }
-            );
+                return agent.WithBookWormGovernance(sp, key);
+            });
         }
     }
 }

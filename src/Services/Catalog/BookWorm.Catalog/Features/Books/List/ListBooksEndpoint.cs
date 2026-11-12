@@ -7,10 +7,8 @@ internal sealed class ListBooksEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                "/books",
-                async ([AsParameters] ListBooksQuery query, ISender sender) =>
-                    await HandleAsync(query, sender)
+        app.MapGet("/books", async ([AsParameters] ListBooksQuery query, ISender sender) =>
+                await HandleAsync(query, sender)
             )
             .WithPaginationHeaders()
             .ProducesGet<PagedResult<BookDto>>(true)

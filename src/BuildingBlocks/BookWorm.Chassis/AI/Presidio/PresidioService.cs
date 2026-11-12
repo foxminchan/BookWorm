@@ -15,8 +15,7 @@ internal sealed class PresidioService(IPresidioAnalyzer analyzer, IPresidioAnony
             return text;
         }
 
-        var analyzerResults =
-            await analyzer.AnalyzeAsync(new(text), cancellationToken)
+        var analyzerResults = await analyzer.AnalyzeAsync(new(text), cancellationToken)
             ?? throw new JsonException("The Presidio analyzer returned a null response.");
 
         if (analyzerResults.Length == 0)
@@ -30,8 +29,7 @@ internal sealed class PresidioService(IPresidioAnalyzer analyzer, IPresidioAnony
             new Dictionary<string, ReplaceAnonymizer> { ["DEFAULT"] = new("<PII>") }
         );
 
-        var result =
-            await anonymizer.AnonymizeAsync(request, cancellationToken)
+        var result = await anonymizer.AnonymizeAsync(request, cancellationToken)
             ?? throw new JsonException("The Presidio anonymizer returned a null response.");
 
         return result.Text;

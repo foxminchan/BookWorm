@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Extensions;
@@ -29,7 +29,7 @@ internal sealed class CompleteOrderHandler(
         }
         else
         {
-            var buyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+            var buyerId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
             order = await repository.FirstOrDefaultAsync(
                 new OrderFilterSpec(request.OrderId, (Guid)buyerId),

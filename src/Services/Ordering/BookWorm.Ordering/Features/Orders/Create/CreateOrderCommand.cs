@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.CQRS;
+using System.Globalization;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
 using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
@@ -24,7 +25,7 @@ internal sealed class CreateOrderHandler(
         CancellationToken cancellationToken
     )
     {
-        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+        var userId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
         var basketItems = await basketService.GetBasket(cancellationToken);
 
@@ -48,7 +49,7 @@ internal sealed class CreateOrderHandler(
                 return new OrderItem(
                     Guid.Parse(book.Id),
                     item.Quantity,
-                    Convert.ToDecimal(bookPrice)
+                    Convert.ToDecimal(bookPrice, CultureInfo.InvariantCulture)
                 );
             }),
         ];

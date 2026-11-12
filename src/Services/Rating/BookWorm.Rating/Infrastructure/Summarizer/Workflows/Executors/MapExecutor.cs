@@ -26,7 +26,7 @@ internal sealed class MapExecutor(
             );
         }
 
-        List<PartialRatingSummary> summaries = [];
+        List<PartialRatingSummary> summaries = [with(message.WorkerBatches[workerIndex].Length)];
 
         foreach (var batch in message.WorkerBatches[workerIndex])
         {

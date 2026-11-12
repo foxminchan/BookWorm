@@ -31,28 +31,22 @@ internal static class Extensions
 
             services
                 .AddAuthorizationBuilder()
-                .AddPolicy(
-                    Authorization.Policies.Admin,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.Admin)
-                            .RequireScope(
-                                $"{Services.Rating}_{Authorization.Actions.Read}",
-                                $"{Services.Rating}_{Authorization.Actions.Write}"
-                            );
-                    }
-                )
-                .AddPolicy(
-                    Authorization.Policies.Read,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireScope($"{Services.Rating}_{Authorization.Actions.Read}");
-                    }
-                );
+                .AddPolicy(Authorization.Policies.Admin, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Rating}_{Authorization.Actions.Read}",
+                            $"{Services.Rating}_{Authorization.Actions.Write}"
+                        );
+                })
+                .AddPolicy(Authorization.Policies.Read, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireScope($"{Services.Rating}_{Authorization.Actions.Read}");
+                });
 
             // Add exception handlers
             services.AddValidationExceptionHandler();
@@ -71,15 +65,12 @@ internal static class Extensions
             builder.AddRateLimiting();
 
             // Add database configuration
-            builder.AddAzurePostgresDbContext<RatingDbContext>(
-                Components.Database.Rating,
-                _ =>
-                {
-                    services.AddMigration<RatingDbContext>();
+            builder.AddAzurePostgresDbContext<RatingDbContext>(Components.Database.Rating, _ =>
+            {
+                services.AddMigration<RatingDbContext>();
 
-                    services.AddRepositories(typeof(RatingApiMarker));
-                }
-            );
+                services.AddRepositories(typeof(RatingApiMarker));
+            });
 
             // Configure Redis Cache
             builder

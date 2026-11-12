@@ -97,8 +97,9 @@ public static class AgentDefinitionLoader
             (chatOptions.Reasoning ??= new()).Effort = reasoningEffort;
         }
 
-        var toolNames =
-            chatOptions.Tools?.Select(tool => tool.Name).ToHashSet(StringComparer.Ordinal)
+        var toolNames = chatOptions
+            .Tools?.Select(tool => tool.Name)
+            .ToHashSet(StringComparer.Ordinal)
             ?? [with(StringComparer.Ordinal)];
 
         var options = new ChatClientAgentOptions

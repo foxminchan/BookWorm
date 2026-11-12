@@ -4,10 +4,8 @@ internal sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCatego
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
-                "/categories",
-                async (UpdateCategoryCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPut("/categories", async (UpdateCategoryCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPut()
             .WithTags(nameof(Category))

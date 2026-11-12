@@ -9,17 +9,6 @@ public static class TelemetryPropagator
     private static readonly TextMapPropagator _propagator = Propagators.DefaultTextMapPropagator;
 
     public static PropagationContext Extract<T>(
-        PropagationContext context,
-        T carrier,
-        Func<T, string, IEnumerable<string>> getter
-    )
-    {
-        _propagator.Extract(context, carrier, getter);
-
-        return context;
-    }
-
-    public static PropagationContext Extract<T>(
         T carrier,
         Func<T, string, IEnumerable<string>> getter
     )
@@ -41,6 +30,13 @@ public static class TelemetryPropagator
 
     extension(PropagationContext context)
     {
+        public PropagationContext Extract<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
+        {
+            _propagator.Extract(context, carrier, getter);
+
+            return context;
+        }
+
         public void Inject<T>(T carrier, Action<T, string, string> setter)
         {
             _propagator.Inject(context, carrier, setter);

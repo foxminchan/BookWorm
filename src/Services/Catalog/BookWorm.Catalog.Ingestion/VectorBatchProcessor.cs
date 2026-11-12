@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using BookWorm.Chassis.AI.Ingestion;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.VectorData;
 using Npgsql;
 

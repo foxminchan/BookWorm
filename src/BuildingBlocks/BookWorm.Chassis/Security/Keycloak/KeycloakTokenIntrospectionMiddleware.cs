@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using BookWorm.Chassis.Security.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -21,7 +21,10 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
     {
         var endpoint = context.GetEndpoint();
 
-        var requiresAuth = endpoint?.Metadata.GetMetadata<IAuthorizeData>() is not null;
+        var requiresAuth =
+            endpoint?.Metadata.GetMetadata<IAuthorizeData>() is not null
+            || endpoint?.Metadata.GetMetadata<AuthorizationPolicy>() is not null
+            || endpoint?.Metadata.GetMetadata<IAuthorizationRequirementData>() is not null;
         var allowsAnonymous = endpoint?.Metadata.GetMetadata<IAllowAnonymous>() is not null;
 
         if (!requiresAuth || allowsAnonymous)
@@ -84,7 +87,7 @@ internal sealed class KeycloakTokenIntrospectionMiddleware(
             .Problem(
                 statusCode: StatusCodes.Status401Unauthorized,
                 title: title,
-                extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
+                extensions: [new(nameof(traceId), traceId)]
             )
             .ExecuteAsync(context);
     }

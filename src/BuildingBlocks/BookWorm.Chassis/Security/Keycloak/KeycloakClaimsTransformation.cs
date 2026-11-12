@@ -16,8 +16,7 @@ internal sealed class KeycloakRolesClaimsTransformation(
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
         var options = jwtBearerOptions.Get(JwtBearerDefaults.AuthenticationScheme);
-        var clientId =
-            options.TokenValidationParameters.ValidAudience
+        var clientId = options.TokenValidationParameters.ValidAudience
             ?? options.TokenValidationParameters.ValidAudiences.FirstOrDefault()
             ?? throw new InvalidOperationException("Audience is not set on JwtBearerOptions");
 

@@ -26,7 +26,7 @@ internal sealed class GetOrderHandler(
         }
         else
         {
-            var buyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+            var buyerId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
             order = await repository.FirstOrDefaultAsync(
                 new OrderFilterSpec((Guid)request.Id, (Guid)buyerId),

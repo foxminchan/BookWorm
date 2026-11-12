@@ -4,10 +4,8 @@ internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<AuthorId>, CreateAutho
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                "/authors",
-                async (CreateAuthorCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPost("/authors", async (CreateAuthorCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPostWithoutLocation<AuthorId>()
             .WithTags(nameof(Author))

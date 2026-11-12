@@ -5,10 +5,8 @@ internal sealed class CreateFeedbackEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                string.Empty,
-                async (CreateFeedbackCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPost(string.Empty, async (CreateFeedbackCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPostWithoutLocation<FeedbackId>()
             .WithTags(nameof(Feedback))

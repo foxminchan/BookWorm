@@ -37,39 +37,36 @@ internal static class Extensions
             services.AddSingleton<ReviewTool>();
 
             builder
-                .AddAIAgent(
-                    Agents.RatingAgent,
-                    (sp, key) =>
-                    {
-                        var compactionProvider = RatingCompactionPipelineFactory.Create(
-                            sp.GetRequiredService<IChatClient>()
-                        );
+                .AddAIAgent(Agents.RatingAgent, (sp, key) =>
+                {
+                    var compactionProvider = RatingCompactionPipelineFactory.Create(
+                        sp.GetRequiredService<IChatClient>()
+                    );
 
-                        var chatClient = sp.GetRequiredService<IChatClient>()
-                            .AsBuilder()
-                            .UsePIIMiddleware(sp)
-                            .UseGuardrailMiddleware()
-                            .Use(
-                                RatingOutputGuardrailMiddleware.InvokeAsync,
-                                RatingOutputGuardrailMiddleware.InvokeStreamingAsync
-                            )
-                            .UseAIContextProviders(compactionProvider)
-                            .Build(sp);
+                    var chatClient = sp.GetRequiredService<IChatClient>()
+                        .AsBuilder()
+                        .UsePIIMiddleware(sp)
+                        .UseGuardrailMiddleware()
+                        .Use(
+                            RatingOutputGuardrailMiddleware.InvokeAsync,
+                            RatingOutputGuardrailMiddleware.InvokeStreamingAsync
+                        )
+                        .UseAIContextProviders(compactionProvider)
+                        .Build(sp);
 
-                        var reviewPlugin = sp.GetRequiredService<ReviewTool>();
-                        var mcpClient = sp.GetRequiredService<McpClient>();
+                    var reviewPlugin = sp.GetRequiredService<ReviewTool>();
+                    var mcpClient = sp.GetRequiredService<McpClient>();
 
-                        var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
-                        var mcpTools = mcpClient.GetAgentTools(toolNames);
+                    var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
+                    var mcpTools = mcpClient.GetAgentTools(toolNames);
 
-                        options.AllowConcurrentInvocation = true;
-                        options.ChatOptions?.Tools = [.. reviewPlugin.AsAITools(), .. mcpTools];
+                    options.AllowConcurrentInvocation = true;
+                    options.ChatOptions?.Tools = [.. reviewPlugin.AsAITools(), .. mcpTools];
 
-                        var agent = new ChatClientAgent(chatClient, options);
+                    var agent = new ChatClientAgent(chatClient, options);
 
-                        return agent.WithBookWormGovernance(sp, key);
-                    }
-                )
+                    return agent.WithBookWormGovernance(sp, key);
+                })
                 .AddA2AServer();
         }
     }

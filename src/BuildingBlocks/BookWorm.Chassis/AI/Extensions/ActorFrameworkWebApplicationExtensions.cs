@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Microsoft.Agents.AI;
 using Microsoft.AspNetCore.Builder;
@@ -28,23 +28,20 @@ public static class ActorFrameworkWebApplicationExtensions
             var routeGroup = endpoints.MapGroup(path);
 
             routeGroup
-                .MapGet(
-                    "/",
-                    Ok<List<AgentDiscoveryCard>> () =>
-                    {
-                        // Project internal agent instances into a discovery-safe response model.
-                        var results = registeredAIAgents
-                            .Select(result => new AgentDiscoveryCard
-                            {
-                                Id = result.Id,
-                                Name = result.Name ?? "Unnamed Agent",
-                                Description = result.Description,
-                            })
-                            .ToList();
+                .MapGet("/", [ShortCircuit] Ok<List<AgentDiscoveryCard>> () =>
+                {
+                    // Project internal agent instances into a discovery-safe response model.
+                    var results = registeredAIAgents
+                        .Select(result => new AgentDiscoveryCard
+                        {
+                            Id = result.Id,
+                            Name = result.Name ?? "Unnamed Agent",
+                            Description = result.Description,
+                        })
+                        .ToList();
 
-                        return TypedResults.Ok(results);
-                    }
-                )
+                    return TypedResults.Ok(results);
+                })
                 .WithName("GetAgents");
         }
     }

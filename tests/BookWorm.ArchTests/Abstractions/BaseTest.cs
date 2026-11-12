@@ -13,7 +13,7 @@ using Assembly = System.Reflection.Assembly;
 
 namespace BookWorm.ArchTests.Abstractions;
 
-public abstract class BaseTest
+public closed class BaseTest
 {
     protected static readonly Assembly BasketAssembly = typeof(BasketApiMarker).Assembly;
     protected static readonly Assembly CatalogAssembly = typeof(CatalogApiMarker).Assembly;

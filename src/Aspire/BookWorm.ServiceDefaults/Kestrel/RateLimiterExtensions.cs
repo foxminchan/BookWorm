@@ -120,25 +120,21 @@ public static class RateLimiterExtensions
             IOptionsMonitor<TokenBucketRateLimiterOptions> userRateLimitingOptions
         )
         {
-            option.AddPolicy(
-                PerUserPolicy,
-                context =>
+            option.AddPolicy(PerUserPolicy, context =>
+            {
+                var username = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (string.IsNullOrEmpty(username))
                 {
-                    var username = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                    if (string.IsNullOrEmpty(username))
-                    {
-                        throw new UnauthorizedAccessException(
-                            "User is not authenticated. Rate limiting requires an authenticated user."
-                        );
-                    }
-
-                    return RateLimitPartition.GetTokenBucketLimiter(
-                        username,
-                        _ => userRateLimitingOptions.CurrentValue
+                    throw new UnauthorizedAccessException(
+                        "User is not authenticated. Rate limiting requires an authenticated user."
                     );
                 }
-            );
+
+                return RateLimitPartition.GetTokenBucketLimiter(username, _ =>
+                    userRateLimitingOptions.CurrentValue
+                );
+            });
         }
 
         private void AddRejectBehavior()

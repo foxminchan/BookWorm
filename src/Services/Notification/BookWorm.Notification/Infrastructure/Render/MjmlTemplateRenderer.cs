@@ -54,8 +54,7 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
         var resourceName =
             $"{_assembly.GetName().Name}.Templates.{templateName.Replace('/', '.')}.mjml";
 
-        await using var stream =
-            _assembly.GetManifestResourceStream(resourceName)
+        await using var stream = _assembly.GetManifestResourceStream(resourceName)
             ?? throw new FileNotFoundException(
                 $"Embedded MJML template '{templateName}' not found as resource '{resourceName}'"
             );
@@ -70,20 +69,17 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
         var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
         return VariablePattern()
-            .Replace(
-                mjml,
-                match =>
+            .Replace(mjml, match =>
+            {
+                var name = match.Groups[1].Value;
+                var property = properties.FirstOrDefault(p => p.Name == name);
+                if (property is null)
                 {
-                    var name = match.Groups[1].Value;
-                    var property = properties.FirstOrDefault(p => p.Name == name);
-                    if (property is null)
-                    {
-                        return match.Value;
-                    }
-
-                    return GetFormattedValue(property, model);
+                    return match.Value;
                 }
-            );
+
+                return GetFormattedValue(property, model);
+            });
     }
 
     private static string GetFormattedValue(PropertyInfo property, object model)

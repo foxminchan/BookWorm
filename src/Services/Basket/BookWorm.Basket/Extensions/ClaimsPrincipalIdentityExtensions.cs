@@ -9,7 +9,7 @@ internal static class ClaimsPrincipalIdentityExtensions
     {
         public string GetAuthenticatedUserId()
         {
-            var sub = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier);
+            var sub = claimsPrincipal[ClaimTypes.NameIdentifier];
             return Guard.Against.NotAuthenticated(sub);
         }
     }

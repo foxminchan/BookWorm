@@ -1,5 +1,6 @@
-﻿using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
+using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.AspNetCore.Routing;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 
@@ -19,7 +20,7 @@ public static class OpenApiExtensions
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
-                app.MapGet("/", () => TypedResults.Redirect("openapi/v1.json"))
+                app.MapGet("/", [ShortCircuit] () => TypedResults.Redirect("openapi/v1.json"))
                     .ExcludeFromDescription();
             }
         }
@@ -40,7 +41,6 @@ public static class OpenApiExtensions
         {
             services.AddOpenApi(options =>
             {
-                options.AddOperationTransformer<DeprecatedStatusTransformer>();
                 options.AddOperationTransformer<AuthorizationChecksTransformer>();
                 options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
                 configure?.Invoke(options);

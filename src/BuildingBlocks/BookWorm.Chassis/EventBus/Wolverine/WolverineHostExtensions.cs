@@ -98,43 +98,40 @@ public static class WolverineHostExtensions
 
             var applicationName = builder.Environment.ApplicationName;
 
-            builder.Services.AddWolverine(
-                ExtensionDiscovery.ManualOnly,
-                opts =>
-                {
-                    // ── Durable outbox/inbox ──────────────────────────────────────────
-                    opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
-                    opts.Policies.UseDurableInboxOnAllListeners();
+            builder.Services.AddWolverine(ExtensionDiscovery.ManualOnly, opts =>
+            {
+                // ── Durable outbox/inbox ──────────────────────────────────────────
+                opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
+                opts.Policies.UseDurableInboxOnAllListeners();
 
-                    // Ensures the Wolverine schema (wolverine_incoming, wolverine_outgoing, etc.)
-                    // is created on first boot without requiring a manual migration step (T040).
-                    opts.Services.AddResourceSetupOnStartup();
+                // Ensures the Wolverine schema (wolverine_incoming, wolverine_outgoing, etc.)
+                // is created on first boot without requiring a manual migration step (T040).
+                opts.Services.AddResourceSetupOnStartup();
 
-                    // Log the start of every message execution at Debug level so OTel/structured
-                    // logs capture message flow without flooding production logs (T045).
-                    opts.Policies.LogMessageStarting(LogLevel.Debug);
+                // Log the start of every message execution at Debug level so OTel/structured
+                // logs capture message flow without flooding production logs (T045).
+                opts.Policies.LogMessageStarting(LogLevel.Debug);
 
-                    // ── Envelope rules (BookWorm header propagation) ───────────────────
-                    var sourceUrn = $"urn:bookworm:{KafkaTopicRouter.ToKebabCase(applicationName)}";
-                    opts.MetadataRules.Add(new CloudEventHeaderPolicy(sourceUrn));
+                // ── Envelope rules (BookWorm header propagation) ───────────────────
+                var sourceUrn = $"urn:bookworm:{applicationName.ToKebabCase()}";
+                opts.MetadataRules.Add(new CloudEventHeaderPolicy(sourceUrn));
 
-                    // UserIdEnvelopeMiddleware stamps the HTTP user ID into envelope headers.
-                    // Resolves from DI so the shared IHttpContextAccessor instance is used.
-                    opts.Services.AddSingleton<IEnvelopeRule, UserIdEnvelopeMiddleware>(sp =>
-                        sp.GetRequiredService<UserIdEnvelopeMiddleware>()
-                    );
+                // UserIdEnvelopeMiddleware stamps the HTTP user ID into envelope headers.
+                // Resolves from DI so the shared IHttpContextAccessor instance is used.
+                opts.Services.AddSingleton<IEnvelopeRule, UserIdEnvelopeMiddleware>(sp =>
+                    sp.GetRequiredService<UserIdEnvelopeMiddleware>()
+                );
 
-                    // ── Kafka transport with CloudEvents interop ──────────────────────
-                    opts.UseKafkaWithCloudEvents(
-                        kafkaConnectionString,
-                        applicationName,
-                        builder.Environment.EnvironmentName
-                    );
+                // ── Kafka transport with CloudEvents interop ──────────────────────
+                opts.UseKafkaWithCloudEvents(
+                    kafkaConnectionString,
+                    applicationName,
+                    builder.Environment.EnvironmentName
+                );
 
-                    // ── Service-specific customisation ─────────────────────────────────
-                    configure?.Invoke(opts);
-                }
-            );
+                // ── Service-specific customisation ─────────────────────────────────
+                configure?.Invoke(opts);
+            });
 
             builder
                 .Services.AddOpenTelemetry()
@@ -151,7 +148,7 @@ public static class WolverineHostExtensions
             string environmentName
         )
         {
-            var serviceName = KafkaTopicRouter.ToKebabCase(applicationName);
+            var serviceName = applicationName.ToKebabCase();
             opts.ServiceName = serviceName;
 
             var cloudEventsJsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);

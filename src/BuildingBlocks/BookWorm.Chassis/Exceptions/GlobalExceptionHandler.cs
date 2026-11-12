@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +36,7 @@ internal sealed class GlobalExceptionHandler(
             .Problem(
                 title: title,
                 statusCode: statusCode,
-                extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
+                extensions: [new(nameof(traceId), traceId)]
             )
             .ExecuteAsync(httpContext);
 
