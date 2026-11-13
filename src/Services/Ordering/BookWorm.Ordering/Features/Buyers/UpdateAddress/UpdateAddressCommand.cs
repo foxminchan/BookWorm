@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
 
@@ -18,7 +18,7 @@ internal sealed class UpdateAddressHandler(
         CancellationToken cancellationToken
     )
     {
-        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+        var userId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
         var buyer = await repository.GetByIdAsync((Guid)userId, cancellationToken);
 

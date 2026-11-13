@@ -4,10 +4,8 @@ internal sealed class UpdateAuthorEndpoint : IEndpoint<NoContent, UpdateAuthorCo
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
-                "/authors",
-                async (UpdateAuthorCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPut("/authors", async (UpdateAuthorCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPut()
             .WithTags(nameof(Author))

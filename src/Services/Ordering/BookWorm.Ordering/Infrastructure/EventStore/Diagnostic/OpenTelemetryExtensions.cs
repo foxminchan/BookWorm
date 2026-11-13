@@ -8,10 +8,8 @@ internal static class DocumentSessionOpenTelemetryExtensions
     {
         public void PropagateTelemetry(Activity? activity, ILogger? logger = null)
         {
-            var propagationContext = activity.Propagate(
-                documentSession,
-                (session, key, value) =>
-                    session.InjectTelemetryIntoDocumentSession(key, value, logger)
+            var propagationContext = activity.Propagate(documentSession, (session, key, value) =>
+                session.InjectTelemetryIntoDocumentSession(key, value, logger)
             );
 
             if (!propagationContext.HasValue)

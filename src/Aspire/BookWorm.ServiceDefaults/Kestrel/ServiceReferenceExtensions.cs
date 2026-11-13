@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Grpc.Core;
 using Grpc.Health.V1;
+using Microsoft.Extensions.Http.Resilience;
 using Polly.Timeout;
 using Refit;
 
@@ -28,7 +29,8 @@ public static class ServiceReferenceExtensions
                     EnableMultipleHttp2Connections = true,
                 }
             )
-            .AddStandardResilienceHandler();
+            .AddStandardResilienceHandler()
+            .UseBudgetedRetries();
         services.AddHealthChecks().AddCheck<GrpcServiceHealthCheck>(healthCheckName, failureStatus);
     }
 
@@ -84,7 +86,7 @@ public static class ServiceReferenceExtensions
                 }
             );
 
-            builder.AddStandardResilienceHandler();
+            builder.AddStandardResilienceHandler().UseBudgetedRetries();
 
             AddGrpcHealthChecks(
                 services,

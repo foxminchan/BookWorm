@@ -17,7 +17,7 @@ internal sealed class MailKitSender(
     {
         try
         {
-            using var client = await factory.CreateClientAsync(cancellationToken);
+            await using var client = await factory.CreateClientAsync(cancellationToken);
 
             var pipeline = provider.GetPipeline(nameof(Notification));
 

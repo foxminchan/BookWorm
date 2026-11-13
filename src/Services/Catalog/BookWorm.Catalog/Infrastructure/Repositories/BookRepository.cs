@@ -4,8 +4,8 @@ namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class BookRepository(CatalogDbContext context) : IBookRepository
 {
-    private readonly CatalogDbContext _context =
-        context ?? throw new ArgumentNullException(nameof(context));
+    private readonly CatalogDbContext _context = context
+        ?? throw new ArgumentNullException(nameof(context));
 
     private static SpecificationEvaluator Specification => SpecificationEvaluator.Instance;
 

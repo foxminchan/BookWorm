@@ -55,50 +55,44 @@ internal static class ScalarExtensions
             IResourceBuilder<DotnetProjectResource> api
         )
         {
-            return builder.WithApiReference(
-                api,
-                async (options, ctx) =>
+            return builder.WithApiReference(api, async (options, ctx) =>
+            {
+                var clientId = api.Resource.Name;
+
+                var parameter = builder
+                    .ApplicationBuilder.Resources.OfType<ParameterResource>()
+                    .FirstOrDefault(r =>
+                        string.Equals(
+                            r.Name,
+                            $"{clientId}-secret",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    );
+
+                if (parameter is not null)
                 {
-                    var clientId = api.Resource.Name;
+                    var clientSecret = await parameter.GetValueAsync(ctx);
 
-                    var parameter = builder
-                        .ApplicationBuilder.Resources.OfType<ParameterResource>()
-                        .FirstOrDefault(r =>
-                            string.Equals(
-                                r.Name,
-                                $"{clientId}-secret",
-                                StringComparison.OrdinalIgnoreCase
-                            )
-                        );
+                    options
+                        .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
+                        .AddAuthorizationCodeFlow(OAuthDefaults.DisplayName, flow =>
+                        {
+                            flow.WithPkce(Pkce.Sha256)
+                                .WithClientId(clientId)
+                                .AddBodyParameter("audience", "account");
 
-                    if (parameter is not null)
-                    {
-                        var clientSecret = await parameter.GetValueAsync(ctx);
+                            if (!string.IsNullOrWhiteSpace(clientSecret))
+                            {
+                                flow.WithClientSecret(clientSecret);
+                            }
 
-                        options
-                            .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
-                            .AddAuthorizationCodeFlow(
-                                OAuthDefaults.DisplayName,
-                                flow =>
-                                {
-                                    flow.WithPkce(Pkce.Sha256)
-                                        .WithClientId(clientId)
-                                        .AddBodyParameter("audience", "account");
-
-                                    if (!string.IsNullOrWhiteSpace(clientSecret))
-                                    {
-                                        flow.WithClientSecret(clientSecret);
-                                    }
-
-                                    flow.WithSelectedScopes(
-                                        $"{clientId}_{Authorization.Actions.Read}",
-                                        $"{clientId}_{Authorization.Actions.Write}"
-                                    );
-                                }
+                            flow.WithSelectedScopes(
+                                $"{clientId}_{Authorization.Actions.Read}",
+                                $"{clientId}_{Authorization.Actions.Write}"
                             );
-                    }
+                        });
                 }
-            );
+            });
         }
     }
 }

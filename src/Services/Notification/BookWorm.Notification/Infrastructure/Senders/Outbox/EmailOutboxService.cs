@@ -8,8 +8,7 @@ internal sealed class EmailOutboxService(IOutboxRepository repository, IEmailSen
         CancellationToken cancellationToken = default
     )
     {
-        var mailbox =
-            mailMessage.To.Mailboxes.FirstOrDefault()
+        var mailbox = mailMessage.To.Mailboxes.FirstOrDefault()
             ?? throw new ArgumentNullException(
                 nameof(mailMessage),
                 "Message must have at least one recipient"

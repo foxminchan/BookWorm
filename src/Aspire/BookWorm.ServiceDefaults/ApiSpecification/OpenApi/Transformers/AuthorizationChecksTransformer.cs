@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Security.Settings;
+using BookWorm.Chassis.Security.Settings;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -21,7 +21,11 @@ internal sealed class AuthorizationChecksTransformer : IOpenApiOperationTransfor
 
         var metadata = context.Description.ActionDescriptor.EndpointMetadata;
 
-        if (!metadata.OfType<IAuthorizeData>().Any())
+        if (
+            !metadata.OfType<IAuthorizeData>().Any()
+            && !metadata.OfType<AuthorizationPolicy>().Any()
+            && !metadata.OfType<IAuthorizationRequirementData>().Any()
+        )
         {
             return Task.CompletedTask;
         }

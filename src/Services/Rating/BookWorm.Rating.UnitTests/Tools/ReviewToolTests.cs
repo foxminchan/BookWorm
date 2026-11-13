@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.List;
@@ -60,13 +60,13 @@ public sealed class ReviewToolTests
     public async Task GivenValidBookIdWithExistingReviews_WhenGetCustomerReviews_ThenShouldReturnJsonSerializedReviews()
     {
         // Arrange
-        var feedbackDtos = new List<FeedbackDto>
-        {
+        List<FeedbackDto> feedbackDtos =
+        [
             new(Guid.CreateVersion7(), "John", "Doe", "Great book!", 5, _validBookId),
             new(Guid.CreateVersion7(), "Jane", "Smith", "Good read", 4, _validBookId),
-        };
+        ];
 
-        var pagedResult = new PagedResult<FeedbackDto>(feedbackDtos, 1, int.MaxValue, 2);
+        PagedResult<FeedbackDto> pagedResult = [with(feedbackDtos, 1, int.MaxValue, 2)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -102,7 +102,7 @@ public sealed class ReviewToolTests
     public async Task GivenValidBookIdWithNoReviews_WhenGetCustomerReviews_ThenShouldReturnNoReviewsMessage()
     {
         // Arrange
-        var emptyResult = new PagedResult<FeedbackDto>([], 1, int.MaxValue, 0);
+        PagedResult<FeedbackDto> emptyResult = [with([], 1, int.MaxValue, 0)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -129,7 +129,7 @@ public sealed class ReviewToolTests
     {
         // Arrange
         var emptyBookId = Guid.Empty;
-        var emptyResult = new PagedResult<FeedbackDto>([], 1, int.MaxValue, 0);
+        PagedResult<FeedbackDto> emptyResult = [with([], 1, int.MaxValue, 0)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -178,7 +178,7 @@ public sealed class ReviewToolTests
     public async Task GivenValidBookIdWithMultipleReviews_WhenGetCustomerReviews_ThenShouldSerializeAllReviews()
     {
         // Arrange
-        var feedbackDtos = new List<FeedbackDto>();
+        List<FeedbackDto> feedbackDtos = [with(5)];
         for (var i = 1; i <= 5; i++)
         {
             feedbackDtos.Add(
@@ -193,7 +193,7 @@ public sealed class ReviewToolTests
             );
         }
 
-        var pagedResult = new PagedResult<FeedbackDto>(feedbackDtos, 1, int.MaxValue, 5);
+        PagedResult<FeedbackDto> pagedResult = [with(feedbackDtos, 1, int.MaxValue, 5)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -221,14 +221,14 @@ public sealed class ReviewToolTests
     public async Task GivenValidBookIdWithNullAndEmptyComments_WhenGetCustomerReviews_ThenShouldHandleNullValues()
     {
         // Arrange
-        var feedbackDtos = new List<FeedbackDto>
-        {
+        List<FeedbackDto> feedbackDtos =
+        [
             new(Guid.CreateVersion7(), "John", "Doe", null, 5, _validBookId),
             new(Guid.CreateVersion7(), null, null, "Great book!", 4, _validBookId),
             new(Guid.CreateVersion7(), "", "", "", 3, _validBookId),
-        };
+        ];
 
-        var pagedResult = new PagedResult<FeedbackDto>(feedbackDtos, 1, int.MaxValue, 3);
+        PagedResult<FeedbackDto> pagedResult = [with(feedbackDtos, 1, int.MaxValue, 3)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -254,7 +254,7 @@ public sealed class ReviewToolTests
     public async Task GivenValidBookId_WhenGetCustomerReviews_ThenShouldUseCorrectQueryParameters()
     {
         // Arrange
-        var pagedResult = new PagedResult<FeedbackDto>([], 1, int.MaxValue, 0);
+        PagedResult<FeedbackDto> pagedResult = [with([], 1, int.MaxValue, 0)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -284,12 +284,12 @@ public sealed class ReviewToolTests
     public async Task GivenValidBookIdWithExistingReviews_WhenGetCustomerReviews_ThenShouldSerializeOnlyItemsNotPaginationMetadata()
     {
         // Arrange
-        var feedbackDtos = new List<FeedbackDto>
-        {
+        List<FeedbackDto> feedbackDtos =
+        [
             new(Guid.CreateVersion7(), "John", "Doe", "Great book!", 5, _validBookId),
-        };
+        ];
 
-        var pagedResult = new PagedResult<FeedbackDto>(feedbackDtos, 1, int.MaxValue, 1);
+        PagedResult<FeedbackDto> pagedResult = [with(feedbackDtos, 1, int.MaxValue, 1)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -321,12 +321,12 @@ public sealed class ReviewToolTests
     public async Task GivenValidBookIdWithExistingReviews_WhenGetCustomerReviews_ThenShouldReturnValidJsonWithCorrectPropertyCasing()
     {
         // Arrange
-        var feedbackDtos = new List<FeedbackDto>
-        {
+        List<FeedbackDto> feedbackDtos =
+        [
             new(Guid.CreateVersion7(), "John", "Doe", "Great book!", 5, _validBookId),
-        };
+        ];
 
-        var pagedResult = new PagedResult<FeedbackDto>(feedbackDtos, 1, int.MaxValue, 1);
+        PagedResult<FeedbackDto> pagedResult = [with(feedbackDtos, 1, int.MaxValue, 1)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -362,12 +362,12 @@ public sealed class ReviewToolTests
     {
         // Arrange
         var feedbackId = Guid.CreateVersion7();
-        var feedbackDtos = new List<FeedbackDto>
-        {
+        List<FeedbackDto> feedbackDtos =
+        [
             new(feedbackId, "John", "Doe", "Great book!", 5, _validBookId),
-        };
+        ];
 
-        var pagedResult = new PagedResult<FeedbackDto>(feedbackDtos, 1, int.MaxValue, 1);
+        PagedResult<FeedbackDto> pagedResult = [with(feedbackDtos, 1, int.MaxValue, 1)];
 
         _senderMock
             .Setup(x => x.Send(It.IsAny<ListFeedbacksQuery>(), It.IsAny<CancellationToken>()))
@@ -453,9 +453,9 @@ public sealed class ReviewToolTests
     private static List<FeedbackDto> DeserializeFeedbackList(string json)
     {
         return JsonSerializer.Deserialize<List<FeedbackDto>>(
-                json,
-                TestFeedbackSerializationContext.Default.Options
-            ) ?? [];
+            json,
+            TestFeedbackSerializationContext.Default.Options
+        ) ?? [];
     }
 }
 

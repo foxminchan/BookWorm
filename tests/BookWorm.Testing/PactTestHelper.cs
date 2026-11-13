@@ -141,25 +141,18 @@ public sealed partial class PactTestHelper
             verifier
                 // PactNet 5.x requires an HTTP transport before configuring message verification.
                 .WithHttpEndpoint(new("http://localhost"))
-                .WithMessages(
-                    scenarios =>
-                        scenarios.Add(
-                            description,
-                            builder =>
-                            {
-                                builder
-                                    .WithMetadata(
-                                        new PactMessageMetadata(
-                                            MediaTypeNames.Application.Json,
-                                            messageType,
-                                            GetMessageSource(provider)
-                                        )
+                .WithMessages(scenarios => scenarios.Add(description, builder =>
+                        {
+                            builder
+                                .WithMetadata(
+                                    new PactMessageMetadata(
+                                        MediaTypeNames.Application.Json,
+                                        messageType,
+                                        GetMessageSource(provider)
                                     )
-                                    .WithContent(() => message, _jsonOptions);
-                            }
-                        ),
-                    _providerJsonSettings
-                )
+                                )
+                                .WithContent(() => message, _jsonOptions);
+                        }), _providerJsonSettings)
                 .WithFileSource(new(verificationPactPath))
                 .Verify();
         }

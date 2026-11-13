@@ -33,19 +33,16 @@ internal static class Extensions
 
             services
                 .AddAuthorizationBuilder()
-                .AddPolicy(
-                    Authorization.Policies.Admin,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.Admin)
-                            .RequireScope(
-                                $"{Services.Catalog}_{Authorization.Actions.Read}",
-                                $"{Services.Catalog}_{Authorization.Actions.Write}"
-                            );
-                    }
-                )
+                .AddPolicy(Authorization.Policies.Admin, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Catalog}_{Authorization.Actions.Read}",
+                            $"{Services.Catalog}_{Authorization.Actions.Write}"
+                        );
+                })
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()

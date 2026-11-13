@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Extensions;
 
@@ -18,9 +18,9 @@ internal sealed class CreateBuyerHandler(
         CancellationToken cancellationToken
     )
     {
-        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+        var userId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
-        var name = claimsPrincipal.GetClaimValue(KeycloakClaimTypes.Name) ?? "anonymous";
+        var name = claimsPrincipal[KeycloakClaimTypes.Name] ?? "anonymous";
 
         var buyer = new Buyer(userId, name, request.Street, request.City, request.Province);
 

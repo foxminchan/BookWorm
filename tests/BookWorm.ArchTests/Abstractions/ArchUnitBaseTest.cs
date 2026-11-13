@@ -1,10 +1,10 @@
-﻿using ArchUnitNET.Domain;
+using ArchUnitNET.Domain;
 using ArchUnitNET.Fluent;
 using ArchUnitNET.Loader;
 
 namespace BookWorm.ArchTests.Abstractions;
 
-public abstract class ArchUnitBaseTest : BaseTest
+public closed class ArchUnitBaseTest : BaseTest
 {
     protected static readonly Architecture Architecture = new ArchLoader()
         .LoadAssemblies(

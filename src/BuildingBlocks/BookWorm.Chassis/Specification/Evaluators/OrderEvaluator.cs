@@ -30,27 +30,23 @@ internal sealed class OrderEvaluator : IEvaluator
         var orderedQuery = specification.OrderExpressions.Aggregate<
             OrderExpression<T>?,
             IOrderedQueryable<T>?
-        >(
-            null,
-            (queryable, orderExpression) =>
-                orderExpression?.OrderType switch
-                {
-                    OrderType.OrderBy => queryable is null
-                        ? query.OrderBy(orderExpression.KeySelector)
-                        : queryable.ThenBy(orderExpression.KeySelector),
-                    OrderType.OrderByDescending => queryable is null
-                        ? query.OrderByDescending(orderExpression.KeySelector)
-                        : queryable.ThenByDescending(orderExpression.KeySelector),
-                    OrderType.ThenBy => queryable?.ThenBy(orderExpression.KeySelector),
-                    OrderType.ThenByDescending => queryable?.ThenByDescending(
-                        orderExpression.KeySelector
-                    ),
-                    _ => throw new ArgumentOutOfRangeException(
-                        nameof(OrderType),
-                        "Invalid order type."
-                    ),
-                }
-        );
+        >(null, (queryable, orderExpression) => orderExpression?.OrderType switch
+            {
+                OrderType.OrderBy => queryable is null
+                    ? query.OrderBy(orderExpression.KeySelector)
+                    : queryable.ThenBy(orderExpression.KeySelector),
+                OrderType.OrderByDescending => queryable is null
+                    ? query.OrderByDescending(orderExpression.KeySelector)
+                    : queryable.ThenByDescending(orderExpression.KeySelector),
+                OrderType.ThenBy => queryable?.ThenBy(orderExpression.KeySelector),
+                OrderType.ThenByDescending => queryable?.ThenByDescending(
+                    orderExpression.KeySelector
+                ),
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(OrderType),
+                    "Invalid order type."
+                ),
+            });
 
         if (orderedQuery is not null)
         {

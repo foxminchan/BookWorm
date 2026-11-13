@@ -1,4 +1,4 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.List;
 using BookWorm.SharedKernel.Helpers;
@@ -18,12 +18,22 @@ public sealed class ListOrdersEndpointsTests
     {
         // Arrange
         var query = new ListOrdersQuery(1, 10);
-        var expectedResult = new PagedResult<OrderDto>(
-            [new(OrderId.From(Guid.CreateVersion7()), DateTimeHelper.UtcNow(), 100.0m, Status.New)],
-            1,
-            10,
-            1
-        );
+        PagedResult<OrderDto> expectedResult =
+        [
+            with(
+                [
+                    new(
+                        OrderId.From(Guid.CreateVersion7()),
+                        DateTimeHelper.UtcNow(),
+                        100.0m,
+                        Status.New
+                    ),
+                ],
+                1,
+                10,
+                1
+            ),
+        ];
 
         _senderMock
             .Setup(x => x.Send(query, It.IsAny<CancellationToken>()))
@@ -46,7 +56,7 @@ public sealed class ListOrdersEndpointsTests
         var pageSize = 25;
         var query = new ListOrdersQuery(pageIndex, pageSize);
 
-        var expectedResult = new PagedResult<OrderDto>([], pageIndex, pageSize, 0);
+        PagedResult<OrderDto> expectedResult = [with([], pageIndex, pageSize, 0)];
 
         _senderMock
             .Setup(x =>
@@ -80,7 +90,7 @@ public sealed class ListOrdersEndpointsTests
         var status = Status.Completed;
         var query = new ListOrdersQuery(1, 10, status);
 
-        var expectedResult = new PagedResult<OrderDto>([], 1, 10, 0);
+        PagedResult<OrderDto> expectedResult = [with([], 1, 10, 0)];
 
         _senderMock
             .Setup(x =>
@@ -113,7 +123,7 @@ public sealed class ListOrdersEndpointsTests
         var buyerId = Guid.CreateVersion7();
         var query = new ListOrdersQuery(1, 10, null, buyerId);
 
-        var expectedResult = new PagedResult<OrderDto>([], 1, 10, 0);
+        PagedResult<OrderDto> expectedResult = [with([], 1, 10, 0)];
 
         _senderMock
             .Setup(x =>
@@ -150,7 +160,7 @@ public sealed class ListOrdersEndpointsTests
 
         var query = new ListOrdersQuery(pageIndex, pageSize, status, buyerId);
 
-        var expectedResult = new PagedResult<OrderDto>([], pageIndex, pageSize, 0);
+        PagedResult<OrderDto> expectedResult = [with([], pageIndex, pageSize, 0)];
 
         _senderMock
             .Setup(x =>

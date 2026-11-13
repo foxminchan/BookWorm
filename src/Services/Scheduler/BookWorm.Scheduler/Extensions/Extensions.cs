@@ -40,24 +40,21 @@ internal static class Extensions
 
             services.AddAntiforgery();
 
-            services.AddQuartz(
-                builder.Configuration.GetSection("Quartz"),
-                q =>
-                {
-                    q.UseJobHistoryLogging();
-                    q.UseStructuredTriggerLogging();
-                    q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Environment.ProcessorCount);
-                    q.AddJobListener<JobTelemetryListener>();
+            services.AddQuartz(builder.Configuration.GetSection("Quartz"), q =>
+            {
+                q.UseJobHistoryLogging();
+                q.UseStructuredTriggerLogging();
+                q.UseDefaultThreadPool(tp => tp.MaxConcurrency = Environment.ProcessorCount);
+                q.AddJobListener<JobTelemetryListener>();
 
-                    q.UseJsonSchedulingConfiguration(x =>
-                    {
-                        x.Files.Add("~/jobs.json");
-                        x.ScanInterval = TimeSpan.FromMinutes(1);
-                        x.FailOnFileNotFound = true;
-                        x.FailOnSchedulingError = true;
-                    });
-                }
-            );
+                q.UseJsonSchedulingConfiguration(x =>
+                {
+                    x.Files.Add("~/jobs.json");
+                    x.ScanInterval = TimeSpan.FromMinutes(1);
+                    x.FailOnFileNotFound = true;
+                    x.FailOnSchedulingError = true;
+                });
+            });
 
             services.AddQuartzExecutionHistory(options =>
             {

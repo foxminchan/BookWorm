@@ -12,21 +12,23 @@ internal sealed class BuyerConfiguration : IEntityTypeConfiguration<Buyer>
 
         builder.Property(e => e.Name).IsRequired().HasMaxLength(DataSchemaLength.Small);
 
+        builder.ComplexProperty(
+            p => p.Address,
+            e =>
+            {
+                e.IsRequired();
+                e.UsePropertyAccessMode(PropertyAccessMode.Property);
+            }
+        );
+
+        builder.Property(p => p.Address!.Street).HasMaxLength(DataSchemaLength.Medium).IsRequired();
+
+        builder.Property(p => p.Address!.City).HasMaxLength(DataSchemaLength.Medium).IsRequired();
+
         builder
-            .OwnsOne(
-                p => p.Address,
-                e =>
-                {
-                    e.WithOwner();
-
-                    e.Property(c => c.Street).HasMaxLength(DataSchemaLength.Medium).IsRequired();
-
-                    e.Property(c => c.City).HasMaxLength(DataSchemaLength.Medium).IsRequired();
-
-                    e.Property(c => c.Province).HasMaxLength(DataSchemaLength.Medium).IsRequired();
-                }
-            )
-            .UsePropertyAccessMode(PropertyAccessMode.Property);
+            .Property(p => p.Address!.Province)
+            .HasMaxLength(DataSchemaLength.Medium)
+            .IsRequired();
 
         builder
             .HasMany(e => e.Orders)

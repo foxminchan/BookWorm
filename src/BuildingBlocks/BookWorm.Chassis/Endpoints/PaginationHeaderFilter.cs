@@ -14,6 +14,11 @@ internal sealed class PaginationHeaderFilter : IEndpointFilter
         EndpointFilterDelegate next
     )
     {
+        if (context.HttpContext.Response.StatusCode == StatusCodes.Status400BadRequest)
+        {
+            return await next(context);
+        }
+
         var result = await next(context);
 
         if (result is null)
@@ -84,11 +89,11 @@ internal sealed class PaginationHeaderFilter : IEndpointFilter
         var basePath = request.Path.Value ?? "/";
         var queryParams = QueryHelpers.ParseQuery(request.QueryString.Value ?? string.Empty);
 
-        var links = new List<string>
-        {
+        List<string> links =
+        [
             BuildLink(basePath, queryParams, 1, metadata.PageSize, "first"),
             BuildLink(basePath, queryParams, metadata.PageIndex, metadata.PageSize, "self"),
-        };
+        ];
 
         if (metadata is { HasPreviousPage: true, PageIndex: > 1 })
         {
@@ -124,18 +129,19 @@ internal sealed class PaginationHeaderFilter : IEndpointFilter
         string rel
     )
     {
-        var updatedParams = new Dictionary<string, string?>(
-            queryParams
-                .Where(kvp =>
-                    !kvp.Key.Equals("pageIndex", StringComparison.OrdinalIgnoreCase)
-                    && !kvp.Key.Equals("pageSize", StringComparison.OrdinalIgnoreCase)
-                )
-                .Select(kvp => new KeyValuePair<string, string?>(kvp.Key, kvp.Value.ToString()))
-        )
-        {
-            ["pageIndex"] = pageIndex.ToString(),
-            ["pageSize"] = pageSize.ToString(),
-        };
+        Dictionary<string, string?> updatedParams =
+        [
+            with(
+                queryParams
+                    .Where(kvp =>
+                        !kvp.Key.Equals("pageIndex", StringComparison.OrdinalIgnoreCase)
+                        && !kvp.Key.Equals("pageSize", StringComparison.OrdinalIgnoreCase)
+                    )
+                    .Select(kvp => new KeyValuePair<string, string?>(kvp.Key, kvp.Value.ToString()))
+            ),
+        ];
+        updatedParams["pageIndex"] = pageIndex.ToString();
+        updatedParams["pageSize"] = pageSize.ToString();
 
         var queryString = QueryHelpers.AddQueryString(basePath, updatedParams);
         return $"<{queryString}>;rel={rel}";

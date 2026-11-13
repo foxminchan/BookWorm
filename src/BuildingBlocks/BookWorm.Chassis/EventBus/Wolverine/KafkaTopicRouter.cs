@@ -24,7 +24,7 @@ internal static class KafkaTopicRouter
             );
         }
 
-        var topicName = string.Join(".", ToKebabCase(owner.ServiceName), owner.TopicName);
+        var topicName = string.Join(".", owner.ServiceName.ToKebabCase(), owner.TopicName);
         if (!owner.AppendPrefix)
         {
             return topicName;
@@ -35,7 +35,7 @@ internal static class KafkaTopicRouter
         return string.Join(
             ".",
             nameParts[0].ToLowerInvariant(),
-            ToKebabCase(environmentName),
+            environmentName.ToKebabCase(),
             topicName
         );
     }
@@ -49,8 +49,8 @@ internal static class KafkaTopicRouter
         return string.Join(
             ".",
             projectName.ToLowerInvariant(),
-            ToKebabCase(environmentName),
-            ToKebabCase(serviceName),
+            environmentName.ToKebabCase(),
+            serviceName.ToKebabCase(),
             "dead-letter-queue"
         );
     }
@@ -68,20 +68,23 @@ internal static class KafkaTopicRouter
         return nameParts;
     }
 
-    public static string ToKebabCase(string name)
+    extension(string name)
     {
-        if (string.IsNullOrEmpty(name))
+        public string ToKebabCase()
         {
-            return name;
-        }
+            if (string.IsNullOrEmpty(name))
+            {
+                return name;
+            }
 
-        return string.Concat(
-            name.Select(
-                (c, i) =>
-                    i > 0 && char.IsUpper(c)
-                        ? "-" + char.ToLowerInvariant(c)
-                        : char.ToLowerInvariant(c).ToString()
-            )
-        );
+            return string.Concat(
+                name.Select(
+                    (c, i) =>
+                        i > 0 && char.IsUpper(c)
+                            ? "-" + char.ToLowerInvariant(c)
+                            : char.ToLowerInvariant(c).ToString()
+                )
+            );
+        }
     }
 }

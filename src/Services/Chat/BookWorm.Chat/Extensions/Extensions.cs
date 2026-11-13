@@ -30,32 +30,26 @@ internal static class Extensions
 
             services
                 .AddAuthorizationBuilder()
-                .AddPolicy(
-                    Authorization.Policies.Admin,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.Admin)
-                            .RequireScope(
-                                $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                $"{Services.Chatting}_{Authorization.Actions.Write}"
-                            );
-                    }
-                )
-                .AddPolicy(
-                    Authorization.Policies.User,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.User)
-                            .RequireScope(
-                                $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                $"{Services.Chatting}_{Authorization.Actions.Write}"
-                            );
-                    }
-                )
+                .AddPolicy(Authorization.Policies.Admin, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Chatting}_{Authorization.Actions.Read}",
+                            $"{Services.Chatting}_{Authorization.Actions.Write}"
+                        );
+                })
+                .AddPolicy(Authorization.Policies.User, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.User)
+                        .RequireScope(
+                            $"{Services.Chatting}_{Authorization.Actions.Read}",
+                            $"{Services.Chatting}_{Authorization.Actions.Write}"
+                        );
+                })
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()

@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using BookWorm.Chassis.AI.Presidio;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,12 +84,12 @@ internal static class PIIMiddleware
         CancellationToken cancellationToken
     )
     {
-        var result = new List<ChatMessage>();
+        List<ChatMessage> result = [];
 
         foreach (var message in messages)
         {
             var anonymizedMessage = message.Clone();
-            var contents = new List<AIContent>(message.Contents.Count);
+            List<AIContent> contents = [with(message.Contents.Count)];
 
             foreach (var content in message.Contents)
             {

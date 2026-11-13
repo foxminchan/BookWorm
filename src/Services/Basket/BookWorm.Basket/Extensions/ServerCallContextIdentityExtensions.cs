@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.Security.Extensions;
 using Grpc.Core;
 
 namespace BookWorm.Basket.Extensions;
@@ -9,7 +9,7 @@ internal static class ServerCallContextIdentityExtensions
     {
         public string? GetUserIdentity()
         {
-            return context.GetHttpContext().User.GetClaimValue(ClaimTypes.NameIdentifier);
+            return context.GetHttpContext().User[ClaimTypes.NameIdentifier];
         }
     }
 }

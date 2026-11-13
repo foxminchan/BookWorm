@@ -5,8 +5,8 @@ namespace BookWorm.Rating.Infrastructure.Repositories;
 
 internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRepository
 {
-    private readonly RatingDbContext _context =
-        context ?? throw new ArgumentNullException(nameof(context));
+    private readonly RatingDbContext _context = context
+        ?? throw new ArgumentNullException(nameof(context));
 
     private static SpecificationEvaluator Specification => SpecificationEvaluator.Instance;
 

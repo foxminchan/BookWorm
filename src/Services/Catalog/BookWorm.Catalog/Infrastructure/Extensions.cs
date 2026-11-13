@@ -14,22 +14,19 @@ internal static class Extensions
             var services = builder.Services;
 
             // Configure Azure Postgres Database
-            builder.AddAzurePostgresDbContext<CatalogDbContext>(
-                Components.Database.Catalog,
-                app =>
+            builder.AddAzurePostgresDbContext<CatalogDbContext>(Components.Database.Catalog, app =>
+            {
+                if (app.Environment.IsDevelopment())
                 {
-                    if (app.Environment.IsDevelopment())
-                    {
-                        services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
-                    }
-                    else
-                    {
-                        services.AddMigration<CatalogDbContext>();
-                    }
-
-                    services.AddRepositories(typeof(CatalogApiMarker));
+                    services.AddMigration<CatalogDbContext, CatalogDbContextSeed>();
                 }
-            );
+                else
+                {
+                    services.AddMigration<CatalogDbContext>();
+                }
+
+                services.AddRepositories(typeof(CatalogApiMarker));
+            });
 
             // Configure Qdrant
             builder.AddQdrantClient(Components.VectorDb);

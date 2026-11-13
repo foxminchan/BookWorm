@@ -6,10 +6,8 @@ internal sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookComman
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
-                "/books",
-                async ([FromForm] UpdateBookCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPut("/books", async ([FromForm] UpdateBookCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .Accepts<UpdateBookCommand>(MediaTypeNames.Multipart.FormData)
             .ProducesPut()

@@ -140,8 +140,7 @@ public sealed class ListAuthorsQueryTests
         var original = new ListAuthorsQuery();
 
         // Act
-        var copy = original with
-        { };
+        var copy = original with { };
 
         // Assert
         copy.ShouldBe(original);

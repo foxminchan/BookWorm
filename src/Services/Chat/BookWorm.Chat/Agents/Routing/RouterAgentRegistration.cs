@@ -8,26 +8,23 @@ internal static class RouterAgentRegistration
     {
         public void AddRouterAgent()
         {
-            builder.AddAIAgent(
-                Constants.Other.Agents.RouterAgent,
-                (sp, key) =>
-                {
-                    var compactionProvider = CompactionPipelineFactory.CreateLight();
+            builder.AddAIAgent(Constants.Other.Agents.RouterAgent, (sp, key) =>
+            {
+                var compactionProvider = CompactionPipelineFactory.CreateLight();
 
-                    var chatClient = sp.GetRequiredService<IChatClient>()
-                        .AsBuilder()
-                        .UsePIIMiddleware(sp)
-                        .UseGuardrailMiddleware()
-                        .UseAIContextProviders(compactionProvider)
-                        .Build(sp);
+                var chatClient = sp.GetRequiredService<IChatClient>()
+                    .AsBuilder()
+                    .UsePIIMiddleware(sp)
+                    .UseGuardrailMiddleware()
+                    .UseAIContextProviders(compactionProvider)
+                    .Build(sp);
 
-                    var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
+                var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);
 
-                    var agent = new ChatClientAgent(chatClient, options);
+                var agent = new ChatClientAgent(chatClient, options);
 
-                    return agent.WithBookWormGovernance(sp, key);
-                }
-            );
+                return agent.WithBookWormGovernance(sp, key);
+            });
         }
     }
 }

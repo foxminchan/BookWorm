@@ -28,13 +28,12 @@ public static class SubAgentFactory
             throw new ArgumentException("At least one subagent must be provided.", nameof(agents));
         }
 
-        var toolNames = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> toolNames = [with(StringComparer.Ordinal)];
         var tools = new AITool[agents.Length];
 
         for (var index = 0; index < agents.Length; index++)
         {
-            var agent =
-                agents[index]
+            var agent = agents[index]
                 ?? throw new ArgumentException(
                     "Subagents cannot contain null entries.",
                     nameof(agents)

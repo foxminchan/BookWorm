@@ -7,8 +7,8 @@ namespace BookWorm.Notification.Infrastructure.Repositories;
 
 internal sealed class OutboxRepository(NotificationDbContext context) : IOutboxRepository
 {
-    private readonly NotificationDbContext _context =
-        context ?? throw new ArgumentNullException(nameof(context));
+    private readonly NotificationDbContext _context = context
+        ?? throw new ArgumentNullException(nameof(context));
 
     private static SpecificationEvaluator Specification => SpecificationEvaluator.Instance;
 

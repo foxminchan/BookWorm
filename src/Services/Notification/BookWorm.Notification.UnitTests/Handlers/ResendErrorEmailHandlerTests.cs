@@ -205,7 +205,7 @@ public sealed class ResendErrorEmailHandlerTests
             .Setup(x => x.ListAsync(It.IsAny<UnsentOutboxSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([first, second, third]);
 
-        var sendOrder = new List<string>();
+        List<string> sendOrder = [with(3)];
         _senderMock
             .Setup(x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()))
             .Callback<MimeMessage, CancellationToken>(

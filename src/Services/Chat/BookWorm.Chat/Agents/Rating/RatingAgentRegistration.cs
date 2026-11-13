@@ -13,32 +13,26 @@ internal static class RatingAgentRegistration
 
             services.AddHttpContextAccessor();
             services
-                .AddHttpClient(
-                    Constants.Other.Agents.RatingAgent,
-                    client =>
-                    {
-                        client.BaseAddress = new(
-                            ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(Services.Rating)
-                        );
-                        client.Timeout = TimeSpan.FromMinutes(2);
-                    }
-                )
+                .AddHttpClient(Constants.Other.Agents.RatingAgent, client =>
+                {
+                    client.BaseAddress = new(
+                        ServiceDiscoveryUtilities.GetRequiredServiceEndpoint(Services.Rating)
+                    );
+                    client.Timeout = TimeSpan.FromMinutes(2);
+                })
                 .AddAuthTokenExchange(Services.Rating);
 
-            builder.AddAIAgent(
-                Constants.Other.Agents.RatingAgent,
-                (sp, _) =>
-                {
-                    var httpClient = sp.GetRequiredService<IHttpClientFactory>()
-                        .CreateClient(Constants.Other.Agents.RatingAgent);
+            builder.AddAIAgent(Constants.Other.Agents.RatingAgent, (sp, _) =>
+            {
+                var httpClient = sp.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient(Constants.Other.Agents.RatingAgent);
 
-                    return A2AClientFactory.CreateA2AAgentClient(
-                        Services.Rating,
-                        Constants.Other.Agents.RatingAgent,
-                        httpClient
-                    );
-                }
-            );
+                return A2AClientFactory.CreateA2AAgentClient(
+                    Services.Rating,
+                    Constants.Other.Agents.RatingAgent,
+                    httpClient
+                );
+            });
         }
     }
 }

@@ -7,10 +7,8 @@ internal sealed class ListFeedbacksEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                string.Empty,
-                async ([AsParameters] ListFeedbacksQuery query, ISender sender) =>
-                    await HandleAsync(query, sender)
+        app.MapGet(string.Empty, async ([AsParameters] ListFeedbacksQuery query, ISender sender) =>
+                await HandleAsync(query, sender)
             )
             .ProducesGet<PagedResult<FeedbackDto>>(true)
             .WithPaginationHeaders()

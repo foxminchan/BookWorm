@@ -5,10 +5,8 @@ internal sealed class CreatePublisherEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                "/publishers",
-                async (CreatePublisherCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPost("/publishers", async (CreatePublisherCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPostWithoutLocation<PublisherId>()
             .WithTags(nameof(Publisher))

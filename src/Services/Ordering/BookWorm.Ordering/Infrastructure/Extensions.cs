@@ -11,15 +11,12 @@ internal static class Extensions
             var services = builder.Services;
 
             // Add database configuration
-            builder.AddAzurePostgresDbContext<OrderingDbContext>(
-                Components.Database.Ordering,
-                _ =>
-                {
-                    services.AddMigration<OrderingDbContext>();
+            builder.AddAzurePostgresDbContext<OrderingDbContext>(Components.Database.Ordering, _ =>
+            {
+                services.AddMigration<OrderingDbContext>();
 
-                    services.AddRepositories(typeof(OrderingApiMarker));
-                }
-            );
+                services.AddRepositories(typeof(OrderingApiMarker));
+            });
 
             // Configure EventStore
             builder.AddEventStore(storeOptions =>

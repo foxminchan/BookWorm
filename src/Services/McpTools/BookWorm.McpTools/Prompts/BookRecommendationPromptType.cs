@@ -19,7 +19,7 @@ public static class BookRecommendationPromptType
             string? readerProfile = null
     )
     {
-        var constraints = new List<string>();
+        List<string> constraints = [with(4)];
         foreach (
             var (value, label, prefix) in new[]
             {

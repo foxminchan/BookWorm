@@ -61,16 +61,11 @@ public sealed class OrderStateMachineContractTests
         var @event = new BasketDeletedCompleteIntegrationEvent(orderId, basketId, TestTotalMoney);
 
         // Act
-        await PactTests.Helper.VerifyConsumerMessageAsync(
-            "Finance",
-            "Basket",
-            @event,
-            pactEvent =>
-            {
-                _ = saga.Handle(pactEvent);
-                return Task.CompletedTask;
-            }
-        );
+        await PactTests.Helper.VerifyConsumerMessageAsync("Finance", "Basket", @event, pactEvent =>
+        {
+            _ = saga.Handle(pactEvent);
+            return Task.CompletedTask;
+        });
     }
 
     [Test]
@@ -93,16 +88,11 @@ public sealed class OrderStateMachineContractTests
         );
 
         // Act
-        await PactTests.Helper.VerifyConsumerMessageAsync(
-            "Finance",
-            "Basket",
-            @event,
-            pactEvent =>
-            {
-                _ = saga.Handle(pactEvent, _logger);
-                return Task.CompletedTask;
-            }
-        );
+        await PactTests.Helper.VerifyConsumerMessageAsync("Finance", "Basket", @event, pactEvent =>
+        {
+            _ = saga.Handle(pactEvent, _logger);
+            return Task.CompletedTask;
+        });
 
         // Assert
         saga.CurrentState.ShouldBe(OrderSagaStatus.BasketDeletionFailed);

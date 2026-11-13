@@ -5,8 +5,8 @@ namespace BookWorm.Ordering.Infrastructure.Repositories;
 
 internal sealed class OrderRepository(OrderingDbContext context) : IOrderRepository
 {
-    private readonly OrderingDbContext _context =
-        context ?? throw new ArgumentNullException(nameof(context));
+    private readonly OrderingDbContext _context = context
+        ?? throw new ArgumentNullException(nameof(context));
 
     private static SpecificationEvaluator Specification => SpecificationEvaluator.Instance;
 

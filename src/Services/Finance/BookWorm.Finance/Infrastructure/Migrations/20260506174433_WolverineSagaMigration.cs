@@ -100,10 +100,11 @@ namespace BookWorm.Finance.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_inbox_state", x => x.id);
-                    table.UniqueConstraint(
-                        "ak_inbox_state_message_id_consumer_id",
-                        x => new { x.message_id, x.consumer_id }
-                    );
+                    table.UniqueConstraint("ak_inbox_state_message_id_consumer_id", x => new
+                    {
+                        x.message_id,
+                        x.consumer_id,
+                    });
                 }
             );
 

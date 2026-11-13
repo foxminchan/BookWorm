@@ -1,4 +1,4 @@
-﻿using BookWorm.Rating.Features;
+using BookWorm.Rating.Features;
 using BookWorm.Rating.Features.List;
 using BookWorm.SharedKernel.Results;
 using Mediator;
@@ -75,7 +75,7 @@ public sealed class ListFeedbacksEndpointTests
     public async Task GivenEmptyResult_WhenHandleAsync_ThenShouldReturnOkWithEmptyPagedResult()
     {
         // Arrange
-        var emptyResult = new PagedResult<FeedbackDto>([], 1, 10, 0);
+        PagedResult<FeedbackDto> emptyResult = [with([], 1, 10, 0)];
 
         _senderMock
             .Setup(x => x.Send(_validQuery, It.IsAny<CancellationToken>()))

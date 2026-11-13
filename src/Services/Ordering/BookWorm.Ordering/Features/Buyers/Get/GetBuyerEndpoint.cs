@@ -4,10 +4,8 @@ internal sealed class GetBuyerEndpoint : IEndpoint<Ok<BuyerDto>, GetBuyerQuery, 
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                "/buyers/me",
-                async ([AsParameters] GetBuyerQuery query, ISender sender) =>
-                    await HandleAsync(query, sender)
+        app.MapGet("/buyers/me", async ([AsParameters] GetBuyerQuery query, ISender sender) =>
+                await HandleAsync(query, sender)
             )
             .ProducesGet<BuyerDto>(hasNotFound: true)
             .WithTags(nameof(Buyer))

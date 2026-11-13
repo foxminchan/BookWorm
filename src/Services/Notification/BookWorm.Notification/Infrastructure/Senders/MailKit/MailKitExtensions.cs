@@ -1,5 +1,4 @@
 using BookWorm.Chassis.Utilities.Configurations;
-using MailKit;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
