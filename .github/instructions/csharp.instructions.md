@@ -8,7 +8,7 @@ applyTo: "**/*.cs"
 
 ## C# Instructions
 
-- Always use the latest version C#, currently C# 14 features.
+- Always use the latest version C#, currently C# 15 features.
 - Write clear and concise comments for each function.
 
 ## General Instructions

@@ -1,6 +1,6 @@
 # Agent Instructions
 
-BookWorm is a .NET 10 microservices application built around Aspire, DDD, and event-driven integration patterns. The codebase emphasizes Vertical Slice Architecture, CQRS, and clean service boundaries.
+BookWorm is a .NET 11 microservices application built around Aspire, DDD, and event-driven integration patterns. The codebase emphasizes Vertical Slice Architecture, CQRS, and clean service boundaries.
 
 ## Working style
 
@@ -20,7 +20,7 @@ BookWorm is a .NET 10 microservices application built around Aspire, DDD, and ev
 
 ## Project shape
 
-- .NET 10 / C# 14 microservices with Aspire orchestration.
+- .NET 11 / C# 15 microservices with Aspire orchestration.
 - AppHost: [src/Aspire/BookWorm.AppHost/AppHost.cs](src/Aspire/BookWorm.AppHost/AppHost.cs)
 - Shared libraries: [src/BuildingBlocks](src/BuildingBlocks)
 - Frontend: [src/Clients](src/Clients) (Bun + Turbo + Next.js 16 / React 19)
