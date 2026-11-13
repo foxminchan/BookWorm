@@ -1,4 +1,4 @@
-﻿using Polly.CircuitBreaker;
+using Polly.CircuitBreaker;
 using Polly.Retry;
 using Polly.Timeout;
 
@@ -19,7 +19,7 @@ internal static class ResilienceExtensions
 
             services.PostConfigure<CircuitBreakerStrategyOptions>(
                 nameof(CircuitBreakerStrategyOptions),
-                options => options.ShouldHandle = new PredicateBuilder().Handle<Exception>()
+                options => options.ShouldHandle = CreateTransientExceptionPredicate()
             );
 
             services.Configure<RetryStrategyOptions>(
@@ -29,7 +29,7 @@ internal static class ResilienceExtensions
 
             services.PostConfigure<RetryStrategyOptions>(nameof(RetryStrategyOptions), options =>
             {
-                options.ShouldHandle = new PredicateBuilder().Handle<Exception>();
+                options.ShouldHandle = CreateTransientExceptionPredicate();
                 options.BackoffType = DelayBackoffType.Exponential;
                 options.UseJitter = true;
             });
@@ -67,5 +67,15 @@ internal static class ResilienceExtensions
                 pipelineBuilder.AddTimeout(timeoutOptions);
             });
         }
+    }
+
+    private static PredicateBuilder<object> CreateTransientExceptionPredicate()
+    {
+        return new PredicateBuilder()
+            .Handle<CommandException>(ex => ex.IsTransient)
+            .Handle<ProtocolException>()
+            .Handle<IOException>()
+            .Handle<TimeoutException>()
+            .Handle<TimeoutRejectedException>();
     }
 }

@@ -8,7 +8,7 @@ internal sealed class MailKitClientFactory(MailKitSettings settings)
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A connected <see cref="ISmtpClient" /> instance.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when connection or authentication fails.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the SMTP endpoint is not configured.</exception>
     public async Task<SmtpClient> CreateClientAsync(CancellationToken cancellationToken = default)
     {
         if (settings.Endpoint is null)
@@ -29,13 +29,10 @@ internal sealed class MailKitClientFactory(MailKitSettings settings)
 
             return client;
         }
-        catch (Exception ex)
+        catch
         {
-            client.Dispose();
-            throw new InvalidOperationException(
-                $"Failed to create SMTP client. Exception: {ex.Message}",
-                ex
-            );
+            await client.DisposeAsync();
+            throw;
         }
     }
 }

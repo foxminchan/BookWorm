@@ -1,11 +1,10 @@
-﻿using Polly.Registry;
+using Polly.Registry;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
 internal sealed class MailKitSender(
     MailKitClientFactory factory,
     ILogger<MailKitSender> logger,
-    GlobalLogBuffer logBuffer,
     MailKitSettings settings,
     ResiliencePipelineProvider<string> provider
 ) : IEmailSender
@@ -15,31 +14,30 @@ internal sealed class MailKitSender(
         CancellationToken cancellationToken = default
     )
     {
-        try
+        if (mailMessage.From.Count == 0)
         {
-            await using var client = await factory.CreateClientAsync(cancellationToken);
-
-            var pipeline = provider.GetPipeline(nameof(Notification));
-
             mailMessage.From.Add(new MailboxAddress(settings.Name, settings.From));
-
-            await pipeline.ExecuteAsync(
-                async ct => await client.SendAsync(mailMessage, ct),
-                cancellationToken
-            );
-
-            await client.DisconnectAsync(true, cancellationToken);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Failed to send email to {Recipient} with subject {Subject}",
-                mailMessage.To.ToString(),
-                mailMessage.Subject
-            );
-            logBuffer.Flush();
-            throw new NotificationException($"Failed to send email. Exception: {ex.Message}", ex);
-        }
+
+        var request = new SmtpSendRequest(mailMessage);
+        var pipeline = provider.GetPipeline(nameof(Notification));
+
+        var result = await pipeline.ExecuteAsync(
+            async ct =>
+            {
+                await using var client = await factory.CreateClientAsync(ct);
+                var sendResult = (SmtpSendResult)await client.SendAsync(request, ct);
+                await client.DisconnectAsync(true, ct);
+                return sendResult;
+            },
+            cancellationToken
+        );
+
+        logger.LogDebug(
+            "Email sent to {Recipients} with status {StatusCode}: {Response}",
+            string.Join(", ", result.AcceptedRecipients.Select(r => r.Address)),
+            (int)result.StatusCode,
+            result.ResponseText
+        );
     }
 }
