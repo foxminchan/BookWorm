@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="KeycloakifyIntegration.targets" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup Label="Aspire">
     <PackageReference Include="Scalar.Aspire" />
+    <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.Dotnet" />
     <PackageReference Include="Aspire.Hosting.Yarp" />
     <PackageReference Include="Aspire.Hosting.Foundry" />
@@ -31,13 +32,7 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" />
   </ItemGroup>
   <ItemGroup Label="Integrations">
-    <ProjectReference
-      Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj"
-      IsAspireProjectResource="false"
-    />
-    <ProjectReference
-      Include="..\..\Integrations\BookWorm.Hosting.Presidio\BookWorm.Hosting.Presidio.csproj"
-      IsAspireProjectResource="false"
-    />
+    <ProjectReference Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" />
+    <ProjectReference Include="..\..\Integrations\BookWorm.Hosting.Presidio\BookWorm.Hosting.Presidio.csproj" />
   </ItemGroup>
 </Project>
