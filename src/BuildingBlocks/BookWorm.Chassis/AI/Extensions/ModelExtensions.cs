@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
@@ -16,9 +16,8 @@ public static class ModelExtensions
         ///     connection strings in the application configuration.
         /// </summary>
         /// <remarks>
-        ///     Conditionally adds an Azure AI Inference chat client with function invocation support if
-        ///     <c>Components.OpenAI.Chat</c> connection string is present, and an embedding
-        ///     generator if <c>Components.OpenAI.Embedding</c> connection string is present.
+        ///     Conditionally adds an Azure AI Project OpenAI client with chat and embedding support
+        ///     if the <c>Components.Foundry.Project</c> connection string is present.
         /// </remarks>
         /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
         /// <example>
@@ -29,28 +28,22 @@ public static class ModelExtensions
         public IHostApplicationBuilder AddAIServices()
         {
             if (
-                !string.IsNullOrWhiteSpace(
-                    builder.Configuration.GetConnectionString(Components.Foundry.Chat)
+                string.IsNullOrWhiteSpace(
+                    builder.Configuration.GetConnectionString(Components.Foundry.Project)
                 )
             )
             {
-                builder
-                    .AddAzureChatCompletionsClient(Components.Foundry.Chat)
-                    .AddChatClient()
-                    .UseFunctionInvocation()
-                    .UseModelLogging();
+                return builder;
             }
 
-            if (
-                !string.IsNullOrWhiteSpace(
-                    builder.Configuration.GetConnectionString(Components.Foundry.Embedding)
-                )
-            )
-            {
-                builder
-                    .AddAzureEmbeddingsClient(Components.Foundry.Embedding)
-                    .AddEmbeddingGenerator();
-            }
+            var clientBuilder = builder.AddAzureProjectOpenAIClient(Components.Foundry.Project);
+
+            clientBuilder
+                .AddChatClient(Components.Foundry.Chat)
+                .UseFunctionInvocation()
+                .UseModelLogging();
+
+            clientBuilder.AddEmbeddingGenerator(Components.Foundry.Embedding);
 
             return builder;
         }

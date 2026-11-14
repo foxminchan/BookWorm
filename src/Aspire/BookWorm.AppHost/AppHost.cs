@@ -1,4 +1,4 @@
-﻿var builder = DistributedApplication.CreateBuilder(args);
+var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
@@ -43,11 +43,8 @@ var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgr
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 var project = foundry.AddProject(Components.Foundry.Project);
 
-var chat = project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
-var embedding = project.AddModelDeployment(
-    Components.Foundry.Embedding,
-    FoundryModel.Cohere.EmbedV40
-);
+project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
+project.AddModelDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
 IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
     ? builder.AddLocalKeycloak(Components.KeyCloak)
@@ -77,8 +74,7 @@ var catalogApi = builder
     .WithKeycloak(keycloak)
     .WithReference(catalogContainer)
     .WaitFor(catalogContainer)
-    .WithReference(chat)
-    .WithReference(embedding)
+    .WithReference(project)
     .WithRoleAssignments(
         storage,
         StorageBuiltInRole.StorageBlobDataContributor,
@@ -129,8 +125,6 @@ var orderingApi = builder
 
 var chatApi = builder
     .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
-    .WithReference(chat)
-    .WithReference(embedding)
     .WithReference(project)
     .WithReference(mcp)
     .WaitFor(mcp)
@@ -150,8 +144,7 @@ var ratingApi = builder
         Services.Rating,
         "../../Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
     )
-    .WithReference(chat)
-    .WithReference(embedding)
+    .WithReference(project)
     .WithReference(ratingDb)
     .WaitFor(ratingDb)
     .WithReference(redis)
@@ -203,7 +196,7 @@ var catalogIngestion = builder
     .WaitFor(catalogApi)
     .WithReference(qdrant)
     .WaitFor(qdrant)
-    .WithReference(embedding)
+    .WithReference(project)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithRoleAssignments(
         storage,

@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup Label="Package Versions">
     <!-- Core Libraries -->
-    <AspireVersion>13.6.5</AspireVersion>
-    <AspireUnstableVersion>$(AspireVersion)-preview.1.26559.7</AspireUnstableVersion>
+    <AspireVersion>17.0.0</AspireVersion>
+    <AspireUnstableVersion>$(AspireVersion)-preview.1.26562.8</AspireUnstableVersion>
     <DotnetPackagesVersion>11.0.0</DotnetPackagesVersion>
     <GrpcVersion>2.85.0</GrpcVersion>
     <!-- Integration Libraries -->
@@ -12,7 +12,7 @@
     <!-- Microsoft Packages -->
     <MsExtVersion>11.0.0</MsExtVersion>
     <MsTestVersion>2.5.3</MsTestVersion>
-    <ToolKitVersion>13.6.1</ToolKitVersion>
+    <ToolKitVersion>17.0.0-beta.1051</ToolKitVersion>
     <!-- Agent Framework Packages -->
     <AgentFrameworkVersion>1.28.0</AgentFrameworkVersion>
     <AgentFrameworkUnstableVersion>$(AgentFrameworkVersion)-preview.261106.1</AgentFrameworkUnstableVersion>

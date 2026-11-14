@@ -25,7 +25,7 @@
   </ItemGroup>
   <ItemGroup Label="AI">
     <PackageReference Include="A2A.Grpc.AspNetCore" />
-    <PackageReference Include="Aspire.Azure.AI.Inference" />
+    <PackageReference Include="Aspire.Azure.AI.Extensions.OpenAI" />
     <PackageReference Include="Microsoft.Agents.AI.A2A" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" />
     <PackageReference Include="Microsoft.Agents.AI.Declarative" />
