@@ -28,3 +28,24 @@ export type ListOrdersQuery = {
   status?: OrderStatus;
   buyerId?: string;
 };
+
+export type OrderEventHistory = {
+  sequence: number;
+  version: number;
+  eventType: string;
+  timestamp: string;
+  status?: OrderStatus | null;
+  totalPrice?: number | null;
+};
+
+export type OrderSummarySnapshot = {
+  id: string;
+  status: OrderStatus;
+  totalPrice: number;
+  version: number;
+};
+
+export type OrderSummaryQuery = {
+  version?: number;
+  at?: string;
+};

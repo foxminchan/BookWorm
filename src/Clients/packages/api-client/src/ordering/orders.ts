@@ -2,6 +2,9 @@ import type {
   ListOrdersQuery,
   Order,
   OrderDetail,
+  OrderEventHistory,
+  OrderSummaryQuery,
+  OrderSummarySnapshot,
 } from "@workspace/types/ordering/orders";
 import type { PagedResult } from "@workspace/types/shared";
 
@@ -30,6 +33,24 @@ class OrdersApiClient {
   public async get(id: string): Promise<OrderDetail> {
     const response = await this.client.get<OrderDetail>(
       `/ordering/api/v1/orders/${id}`,
+    );
+    return response.data;
+  }
+
+  public async getHistory(id: string): Promise<OrderEventHistory[]> {
+    const response = await this.client.get<OrderEventHistory[]>(
+      `/ordering/api/v1/orders/${id}/history`,
+    );
+    return response.data;
+  }
+
+  public async getSummary(
+    id: string,
+    query?: OrderSummaryQuery,
+  ): Promise<OrderSummarySnapshot> {
+    const response = await this.client.get<OrderSummarySnapshot>(
+      `/ordering/api/v1/orders/${id}/summary`,
+      { params: query },
     );
     return response.data;
   }

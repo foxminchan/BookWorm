@@ -1,12 +1,178 @@
 import { HttpResponse, http } from "msw";
 
-import type { Order } from "@workspace/types/ordering/orders";
+import type {
+  Order,
+  OrderEventHistory,
+  OrderSummarySnapshot,
+} from "@workspace/types/ordering/orders";
 import { buildPaginationLinks } from "@workspace/utils/link";
 
 import { ORDERING_API_BASE_URL } from "../constants";
 import { ordersStoreManager } from "./data";
 
 export const ordersHandlers = [
+  http.get(
+    `${ORDERING_API_BASE_URL}/api/v1/orders/:id/history`,
+    ({ params }) => {
+      const { id } = params;
+
+      if (!id || typeof id !== "string") {
+        return new HttpResponse(null, { status: 400 });
+      }
+
+      const order = ordersStoreManager.get(id);
+
+      if (!order) {
+        return new HttpResponse(null, { status: 404 });
+      }
+
+      const history: OrderEventHistory[] = [
+        {
+          sequence: 1,
+          version: 1,
+          eventType: "order_placed",
+          timestamp: order.date,
+          status: "New",
+          totalPrice: order.total,
+        },
+      ];
+
+      if (order.status !== "New") {
+        history.push({
+          sequence: 2,
+          version: 2,
+          eventType:
+            order.status === "Completed"
+              ? "order_completed"
+              : "order_cancelled",
+          timestamp: order.date,
+          status: order.status,
+          totalPrice: order.total,
+        });
+      }
+
+      return HttpResponse.json(history, { status: 200 });
+    },
+  ),
+
+  http.get(
+    `${ORDERING_API_BASE_URL}/api/v1/orders/:id/summary`,
+    ({ params, request }) => {
+      const { id } = params;
+
+      if (!id || typeof id !== "string") {
+        return new HttpResponse(null, { status: 400 });
+      }
+
+      const order = ordersStoreManager.get(id);
+
+      if (!order) {
+        return new HttpResponse(null, { status: 404 });
+      }
+
+      const url = new URL(request.url);
+      const requestedVersion = url.searchParams.get("version");
+      const version = requestedVersion
+        ? Number.parseInt(requestedVersion, 10)
+        : order.status === "New"
+          ? 1
+          : 2;
+
+      const summary: OrderSummarySnapshot = {
+        id: order.id,
+        status: version === 1 ? "New" : order.status,
+        totalPrice: order.total,
+        version,
+      };
+
+      return HttpResponse.json(summary, {
+        status: 200,
+        headers: { ETag: `"${version}"` },
+      });
+    },
+  ),
+
+  http.get(
+    `${ORDERING_API_BASE_URL}/api/v1/orders/:id/history`,
+    ({ params }) => {
+      const { id } = params;
+
+      if (!id || typeof id !== "string") {
+        return new HttpResponse(null, { status: 400 });
+      }
+
+      const order = ordersStoreManager.get(id);
+
+      if (!order) {
+        return new HttpResponse(null, { status: 404 });
+      }
+
+      const history: OrderEventHistory[] = [
+        {
+          sequence: 1,
+          version: 1,
+          eventType: "order_placed",
+          timestamp: order.date,
+          status: "New",
+          totalPrice: order.total,
+        },
+      ];
+
+      if (order.status !== "New") {
+        history.push({
+          sequence: 2,
+          version: 2,
+          eventType:
+            order.status === "Completed"
+              ? "order_completed"
+              : "order_cancelled",
+          timestamp: order.date,
+          status: order.status,
+          totalPrice: order.total,
+        });
+      }
+
+      return HttpResponse.json(history, { status: 200 });
+    },
+  ),
+
+  http.get(
+    `${ORDERING_API_BASE_URL}/api/v1/orders/:id/summary`,
+    ({ params, request }) => {
+      const { id } = params;
+
+      if (!id || typeof id !== "string") {
+        return new HttpResponse(null, { status: 400 });
+      }
+
+      const order = ordersStoreManager.get(id);
+
+      if (!order) {
+        return new HttpResponse(null, { status: 404 });
+      }
+
+      const url = new URL(request.url);
+      const requestedVersion = url.searchParams.get("version");
+      const version = requestedVersion
+        ? Number.parseInt(requestedVersion, 10)
+        : order.status === "New"
+          ? 1
+          : 2;
+
+      const summary: OrderSummarySnapshot = {
+        id: order.id,
+        status: version === 1 ? "New" : order.status,
+        totalPrice: order.total,
+        version,
+      };
+
+      return HttpResponse.json(summary, {
+        status: 200,
+        headers: { ETag: `"${version}"` },
+      });
+    },
+  ),
+
   http.get(`${ORDERING_API_BASE_URL}/api/v1/orders/:id`, ({ params }) => {
     const { id } = params;
 

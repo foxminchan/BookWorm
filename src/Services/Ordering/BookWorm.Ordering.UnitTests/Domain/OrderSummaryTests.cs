@@ -1,7 +1,8 @@
-﻿using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.Events;
 using BookWorm.Ordering.Infrastructure.EventStore.Projections;
 using BookWorm.Ordering.UnitTests.Fakers;
+using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Ordering.UnitTests.Domain;
 
@@ -28,10 +29,11 @@ public sealed class OrderSummaryTests
     {
         // Arrange
         var order = new OrderFaker().Generate()[0];
+        var summary = OrderSummary.Create(new OrderPlacedEvent(order));
         var cancelledEvent = new OrderCancelledEvent(order);
 
         // Act
-        var result = OrderSummary.Apply(cancelledEvent);
+        var result = summary.Apply(cancelledEvent);
 
         // Assert
         result.Id.ShouldBe((Guid)order.Id);
@@ -44,12 +46,30 @@ public sealed class OrderSummaryTests
     {
         // Arrange
         var order = new OrderFaker().Generate()[0];
+        var summary = OrderSummary.Create(new OrderPlacedEvent(order));
         var completedEvent = new OrderCompletedEvent(order);
 
         // Act
-        var result = OrderSummary.Apply(completedEvent);
+        var result = summary.Apply(completedEvent);
 
         // Assert
+        result.Id.ShouldBe((Guid)order.Id);
+        result.Status.ShouldBe(Status.Completed);
+        result.TotalPrice.ShouldBe(order.TotalPrice);
+    }
+
+    [Test]
+    public void GivenEventStream_WhenEvolvingOrderSummary_ThenShouldTransitionThroughStates()
+    {
+        // Arrange
+        var order = new OrderFaker().Generate()[0];
+        DomainEvent[] events = [new OrderPlacedEvent(order), new OrderCompletedEvent(order)];
+
+        // Act
+        var result = events.Aggregate<DomainEvent, OrderSummary?>(null, OrderSummary.Transition);
+
+        // Assert
+        result.ShouldNotBeNull();
         result.Id.ShouldBe((Guid)order.Id);
         result.Status.ShouldBe(Status.Completed);
         result.TotalPrice.ShouldBe(order.TotalPrice);
