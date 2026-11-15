@@ -54,9 +54,14 @@ public sealed record Decider<TState, TEvent>(
         Func<TCommand, TState, TEvent[]> Decide
     )
     {
-        public TState Reconstitute(IEnumerable<TEvent> events) => Decider.Reconstitute(events);
+        public TState Reconstitute(IEnumerable<TEvent> events)
+        {
+            return Decider.Reconstitute(events);
+        }
 
-        public (TState NextState, TEvent[] Events) Handle(TCommand command, TState currentState) =>
-            Decider.Handle(command, currentState, Decide);
+        public (TState NextState, TEvent[] Events) Handle(TCommand command, TState currentState)
+        {
+            return Decider.Handle(command, currentState, Decide);
+        }
     }
 }
