@@ -83,4 +83,30 @@ public sealed class ConversationTests
         // Act & Assert
         Should.Throw<ChatDomainException>(() => conversation.RecordResponse(response));
     }
+
+    [Test]
+    public void GivenBlankRejectionReason_WhenCreatingRejectedTurn_ThenShouldThrowChatDomainException()
+    {
+        Should.Throw<ChatDomainException>(() => ChatTurn.CreateRejected("   "));
+    }
+
+    [Test]
+    public void GivenRejectedChatTurn_WhenAttachingResponse_ThenShouldThrowChatDomainException()
+    {
+        var turn = ChatTurn.CreateRejected("Blocked");
+        var response = AssistantResponse.Fallback();
+
+        Should.Throw<ChatDomainException>(() => turn.AttachResponse(response));
+    }
+
+    [Test]
+    public void GivenChatTurnWithResponse_WhenAttachingSecondResponse_ThenShouldThrowChatDomainException()
+    {
+        var turn = ChatTurn.CreateAccepted(UserPrompt.Create("Hello"));
+        turn.AttachResponse(AssistantResponse.Create("Hi!"));
+
+        Should.Throw<ChatDomainException>(() =>
+            turn.AttachResponse(AssistantResponse.Create("Again!"))
+        );
+    }
 }

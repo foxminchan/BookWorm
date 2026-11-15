@@ -18,7 +18,6 @@ internal static class Extensions
 
             services.AddSingleton<IPromptSafetyEvaluator, GovernancePromptSafetyEvaluator>();
             services.AddSingleton<PromptValidationService>();
-            services.AddSingleton<ResponseFormattingService>();
 
             services.AddAGUIServer();
         }

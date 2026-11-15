@@ -63,7 +63,51 @@ describe("OrderEventHistory", () => {
     await user.click(screen.getByRole("button", { name: "Replay v1" }));
 
     expect(screen.getByText("Replayed at v1:")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Latest/i })).toBeInTheDocument();
+    const latestButton = screen.getByRole("button", { name: /Latest/i });
+    expect(latestButton).toBeInTheDocument();
+
+    await user.click(latestButton);
+
+    expect(screen.getByText("Current stream state (v2):")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Latest/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders loading state while event history is fetching", () => {
+    mockUseOrderHistory.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    });
+    mockUseOrderSummary.mockReturnValue({ data: undefined });
+
+    render(<OrderEventHistory orderId="order-1" />);
+
+    expect(screen.getByText("Loading event stream...")).toBeInTheDocument();
+  });
+
+  it("renders event items without optional status badge", () => {
+    mockUseOrderHistory.mockReturnValue({
+      data: [
+        {
+          sequence: 1,
+          version: 1,
+          eventType: "order_placed",
+          timestamp: "2026-11-15T10:00:00Z",
+          status: undefined,
+          totalPrice: 150,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+    mockUseOrderSummary.mockReturnValue({ data: undefined });
+
+    render(<OrderEventHistory orderId="order-1" />);
+
+    expect(screen.getByText("order_placed")).toBeInTheDocument();
+    expect(screen.getByText("v1")).toBeInTheDocument();
   });
 
   it("renders empty message when no event stream exists", () => {

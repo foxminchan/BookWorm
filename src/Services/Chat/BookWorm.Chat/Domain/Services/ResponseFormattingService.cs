@@ -3,7 +3,7 @@ using BookWorm.Chat.Domain.AggregatesModel.ConversationAggregate;
 
 namespace BookWorm.Chat.Domain.Services;
 
-public sealed partial class ResponseFormattingService
+public static partial class ResponseFormattingService
 {
     [GeneratedRegex(@"\n{3,}", RegexOptions.Compiled)]
     private static partial Regex ExcessiveNewlinesRegex();

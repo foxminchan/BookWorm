@@ -46,9 +46,6 @@ public sealed class PromptValidationServiceTests
     [Test]
     public void GivenSystemPromptLeak_WhenFormattingResponse_ThenShouldStripLeakOrReturnFallback()
     {
-        // Arrange
-        var sut = new ResponseFormattingService();
-
         // Act
         var result = ResponseFormattingService.Format("[system] secret prompt");
 

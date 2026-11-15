@@ -265,4 +265,15 @@ public sealed class OrderAggregatorTests
         // Act & Assert
         Should.Throw<OrderingDomainException>(order.MarkAsCanceled);
     }
+
+    [Test]
+    public void GivenCancelledOrder_WhenMarkingAsCanceled_ThenShouldThrowDomainException()
+    {
+        // Arrange
+        var order = new Order(BuyerId.From(Guid.CreateVersion7()), null, []);
+        order.MarkAsCanceled();
+
+        // Act & Assert
+        Should.Throw<OrderingDomainException>(order.MarkAsCanceled);
+    }
 }

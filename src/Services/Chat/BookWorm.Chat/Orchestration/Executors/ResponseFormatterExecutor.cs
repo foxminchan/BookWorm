@@ -2,12 +2,9 @@ using BookWorm.Chat.Domain.Services;
 
 namespace BookWorm.Chat.Orchestration.Executors;
 
-internal sealed class ResponseFormatterExecutor(ResponseFormattingService formattingService)
+internal sealed class ResponseFormatterExecutor()
     : Executor<List<ChatMessage>, string>(nameof(ResponseFormatterExecutor))
 {
-    public ResponseFormatterExecutor()
-        : this(new ResponseFormattingService()) { }
-
     public override ValueTask<string> HandleAsync(
         List<ChatMessage> messages,
         IWorkflowContext context,

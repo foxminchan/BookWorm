@@ -66,9 +66,8 @@ internal static class WorkflowRegistration
 
                     // Create custom executors
                     var validationService = sp.GetRequiredService<PromptValidationService>();
-                    var formattingService = sp.GetRequiredService<ResponseFormattingService>();
                     InputValidationExecutor inputValidator = new(validationService);
-                    ResponseFormatterExecutor responseFormatter = new(formattingService);
+                    ResponseFormatterExecutor responseFormatter = new();
 
                     // Build workflow with 3-layer architecture:
                     // 1. Input Validation - Validates and preprocesses user input
