@@ -3,10 +3,18 @@ import { genericOAuth, microsoftEntraId } from "better-auth/plugins";
 
 import { env } from "@/env.mjs";
 
+function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === "/") {
+    end--;
+  }
+  return end === value.length ? value : value.slice(0, end);
+}
+
 const isDev = process.env.NODE_ENV === "development";
-const entraInstance = (
-  env.ENTRA_INSTANCE || "https://login.microsoftonline.com"
-).replace(/\/+$/, "");
+const entraInstance = stripTrailingSlashes(
+  env.ENTRA_INSTANCE || "https://login.microsoftonline.com",
+);
 const tenantId = env.ENTRA_TENANT_ID || "00000000-0000-0000-0000-000000000000";
 
 if (!env.ENTRA_TENANT_ID || !env.ENTRA_CLIENT_ID) {

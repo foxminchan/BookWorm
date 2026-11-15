@@ -16,7 +16,10 @@ export default function RegisterPage() {
         callbackURL: AUTH.CALLBACK_URL,
       })
       .catch((error: unknown) => {
-        console.error("Failed to start Microsoft Entra ID registration:", error);
+        console.error(
+          "Failed to start Microsoft Entra ID registration:",
+          error,
+        );
       });
   }, []);
 
