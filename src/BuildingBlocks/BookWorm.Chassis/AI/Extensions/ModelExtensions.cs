@@ -72,9 +72,14 @@ public static class ModelExtensions
         /// </example>
         public IHostApplicationBuilder WithDecisionModels()
         {
-            throw new NotImplementedException(
-                "Decision model configuration is not yet implemented."
-            );
+            var clientBuilder = builder.AddAzureProjectOpenAIClient(Components.Foundry.Project);
+
+            clientBuilder
+                .AddChatClient(Components.Foundry.Decision)
+                .UseFunctionInvocation()
+                .UseModelLogging();
+
+            return builder;
         }
 
         /// <summary>

@@ -58,6 +58,7 @@ var foundry = builder.AddFoundry(Components.Foundry.Resource);
 var project = foundry.AddProject(Components.Foundry.Project);
 
 project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
+project.AddModelDeployment(Components.Foundry.Decision, FoundryModel.Microsoft.MicrosoftDecision1);
 project.AddModelDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
 var presidioAnalyzer = builder

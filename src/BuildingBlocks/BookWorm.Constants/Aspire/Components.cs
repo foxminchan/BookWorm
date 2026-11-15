@@ -1,4 +1,4 @@
-namespace BookWorm.Constants.Aspire;
+﻿namespace BookWorm.Constants.Aspire;
 
 public static class Components
 {
@@ -27,6 +27,7 @@ public static class Components
     {
         public const string Resource = nameof(Foundry);
         public const string Chat = "chat";
+        public const string Decision = "decision";
         public const string Embedding = "embedding";
         public const string Project = $"{Resource}-project";
     }

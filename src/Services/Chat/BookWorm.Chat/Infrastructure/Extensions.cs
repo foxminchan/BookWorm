@@ -10,7 +10,7 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            builder.AddAIProject().WithLlmModels().WithAITelemetry();
+            builder.AddAIProject().WithLlmModels().WithDecisionModels().WithAITelemetry();
             builder.AddPresidio();
             builder.AddMcpClient(Services.McpTools);
 
