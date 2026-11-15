@@ -40,9 +40,11 @@ public static class OrderLifecycleDecider
 {
     public static readonly Decider<
         OrderLifecycleState,
-        OrderLifecycleCommand,
         OrderTransition
-    > Instance = new(Decide, Evolve, () => new(OrderLifecycleStage.NotCreated));
+    >.CommandDecider<OrderLifecycleCommand> Instance = new Decider<
+        OrderLifecycleState,
+        OrderTransition
+    >(Evolve, () => new(OrderLifecycleStage.NotCreated)).For<OrderLifecycleCommand>(Decide);
 
     private static OrderTransition[] Decide(
         OrderLifecycleCommand command,

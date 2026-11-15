@@ -1,5 +1,6 @@
-using System.Text.RegularExpressions;
 using AgentGovernance;
+using BookWorm.Chat.Domain.Services;
+using BookWorm.Chat.Infrastructure.Governance;
 
 namespace BookWorm.Chat.Orchestration.Executors;
 
@@ -19,36 +20,12 @@ internal union InputValidationResult(AcceptedInput, RejectedInput)
         };
 }
 
-internal sealed partial class InputValidationExecutor(GovernanceKernel? governanceKernel = null)
+internal sealed class InputValidationExecutor(PromptValidationService validationService)
     : Executor<ChatMessage, InputValidationResult>(nameof(InputValidationExecutor))
 {
-    private const int MinLength = 1;
-    private const int MaxLength = 2000;
-    private const int TruncateLength = 1900;
-
-    [GeneratedRegex(
-        @"(ignore\s+(previous|all|above)"
-            + @"|system\s*:\s"
-            + @"|role\s*:\s"
-            + @"|<\|.*?\|>"
-            + @"|###\s*instruction"
-            + @"|\[INST\]"
-            + "|<<SYS>>"
-            + @"|<\|im_start\|>"
-            + @"|\{\s*system_message"
-            + @"|<script[\s>]"
-            + @"|javascript:\s*"
-            + @"|on\w+=\s*[""']"
-            + @"|prompt\s*inject"
-            + @"|do\s+not\s+follow"
-            + @"|disregard\s+(all|your|the|previous)"
-            + @"|you\s+are\s+now\s+a"
-            + @"|act\s+as\s+(if|a|an)"
-            + @"|reveal\s+(your|the|system)\s*(prompt|instruction)"
-            + @"|<\/?\s*(div|span|iframe|img|a|body|html|head|form)\b)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
-    )]
-    private static partial Regex SuspiciousPatternRegex();
+    public InputValidationExecutor(GovernanceKernel? governanceKernel = null)
+        : this(new PromptValidationService(new GovernancePromptSafetyEvaluator(governanceKernel)))
+    { }
 
     public override ValueTask<InputValidationResult> HandleAsync(
         ChatMessage message,
@@ -58,52 +35,12 @@ internal sealed partial class InputValidationExecutor(GovernanceKernel? governan
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var content = message.Text.Trim();
+        var outcome = validationService.Validate(message.Text);
 
-        // Check minimum length
-        if (content.Length < MinLength)
-        {
-            return Rejected(
-                "Could you please provide more details? Your message appears to be empty."
-            );
-        }
+        InputValidationResult result = outcome.IsAccepted
+            ? new AcceptedInput(new(ChatRole.User, outcome.Prompt!.Value))
+            : new RejectedInput(new(ChatRole.Assistant, outcome.RejectionReason!));
 
-        // Fast-path: block obvious prompt injection attempts via regex
-        if (SuspiciousPatternRegex().IsMatch(content))
-        {
-            return Rejected(
-                "I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services."
-            );
-        }
-
-        // Deep injection analysis via Agent Governance Toolkit (7 attack types)
-        if (governanceKernel?.InjectionDetector is { } detector)
-        {
-            var injectionResult = detector.Detect(content);
-
-            if (injectionResult.IsInjection)
-            {
-                return Rejected(
-                    $"I'm sorry, but I can't process that request due to a security policy ({injectionResult.InjectionType}). Please rephrase your question about books or our bookstore services."
-                );
-            }
-        }
-
-        // Check maximum length and truncate if needed
-        if (content.Length > MaxLength)
-        {
-            content = content[..TruncateLength] + "... [Message truncated due to length]";
-        }
-
-        return ValueTask.FromResult<InputValidationResult>(
-            new AcceptedInput(new(ChatRole.User, content))
-        );
-    }
-
-    private static ValueTask<InputValidationResult> Rejected(string reason)
-    {
-        return ValueTask.FromResult<InputValidationResult>(
-            new RejectedInput(new(ChatRole.Assistant, reason))
-        );
+        return ValueTask.FromResult(result);
     }
 }

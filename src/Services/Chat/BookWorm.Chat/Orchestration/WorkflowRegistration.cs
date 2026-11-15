@@ -1,5 +1,5 @@
-using AgentGovernance;
 using Azure.Storage.Blobs;
+using BookWorm.Chat.Domain.Services;
 using BookWorm.Chat.Orchestration.Executors;
 using BookWorm.Constants.Other;
 
@@ -65,9 +65,10 @@ internal static class WorkflowRegistration
                     );
 
                     // Create custom executors
-                    var governanceKernel = sp.GetRequiredService<GovernanceKernel>();
-                    InputValidationExecutor inputValidator = new(governanceKernel);
-                    ResponseFormatterExecutor responseFormatter = new();
+                    var validationService = sp.GetRequiredService<PromptValidationService>();
+                    var formattingService = sp.GetRequiredService<ResponseFormattingService>();
+                    InputValidationExecutor inputValidator = new(validationService);
+                    ResponseFormatterExecutor responseFormatter = new(formattingService);
 
                     // Build workflow with 3-layer architecture:
                     // 1. Input Validation - Validates and preprocesses user input

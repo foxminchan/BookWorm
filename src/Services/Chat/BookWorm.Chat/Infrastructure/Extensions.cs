@@ -1,4 +1,6 @@
-﻿using BookWorm.Chassis.AI.Presidio;
+using BookWorm.Chassis.AI.Presidio;
+using BookWorm.Chat.Domain.Services;
+using BookWorm.Chat.Infrastructure.Governance;
 
 namespace BookWorm.Chat.Infrastructure;
 
@@ -13,6 +15,10 @@ internal static class Extensions
             builder.AddAIProject().WithLlmModels().WithDecisionModels().WithAITelemetry();
             builder.AddPresidio();
             builder.AddMcpClient(Services.McpTools);
+
+            services.AddSingleton<IPromptSafetyEvaluator, GovernancePromptSafetyEvaluator>();
+            services.AddSingleton<PromptValidationService>();
+            services.AddSingleton<ResponseFormattingService>();
 
             services.AddAGUIServer();
         }

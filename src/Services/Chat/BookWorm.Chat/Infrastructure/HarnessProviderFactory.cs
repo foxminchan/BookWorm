@@ -1,4 +1,5 @@
 using Azure.AI.Projects;
+using BookWorm.Chat.Domain.AggregatesModel.ConversationAggregate;
 using Microsoft.Agents.AI.Foundry;
 using Microsoft.Identity.Web;
 
@@ -85,9 +86,7 @@ internal static class HarnessProviderFactory
                 ?? user?.FindFirst(ClaimConstants.ObjectId)?.Value
                 ?? user?.FindFirst(ClaimConstants.Sub)?.Value;
 
-            return string.IsNullOrWhiteSpace(userId)
-                ? $"anonymous-{Guid.CreateVersion7()}"
-                : userId;
+            return UserScope.FromUserIdOrAnonymous(userId).Value;
         }
     }
 }

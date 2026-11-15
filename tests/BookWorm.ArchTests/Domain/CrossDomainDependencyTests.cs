@@ -27,6 +27,16 @@ public sealed class CrossDomainDependencyTests : ArchUnitBaseTest
     [Arguments(nameof(Notification), nameof(Ordering))]
     [Arguments(nameof(Notification), nameof(Rating))]
     [Arguments(nameof(Notification), nameof(Basket))]
+    [Arguments(nameof(Chat), nameof(Catalog))]
+    [Arguments(nameof(Chat), nameof(Ordering))]
+    [Arguments(nameof(Chat), nameof(Rating))]
+    [Arguments(nameof(Chat), nameof(Basket))]
+    [Arguments(nameof(Chat), nameof(Notification))]
+    [Arguments(nameof(Catalog), nameof(Chat))]
+    [Arguments(nameof(Ordering), nameof(Chat))]
+    [Arguments(nameof(Rating), nameof(Chat))]
+    [Arguments(nameof(Basket), nameof(Chat))]
+    [Arguments(nameof(Notification), nameof(Chat))]
     public void GivenDomains_WhenCheckingDependencies_ThenShouldNotDependOnOtherDomains(
         string sourceDomain,
         string targetDomain
