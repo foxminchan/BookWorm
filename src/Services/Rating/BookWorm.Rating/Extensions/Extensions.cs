@@ -3,13 +3,13 @@ using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.AI;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
+using Microsoft.Identity.Web;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
 
@@ -27,7 +27,7 @@ internal static class Extensions
 
             builder.AddAppSettings<RatingAppSettings>();
 
-            builder.AddDefaultAuthentication(Services.Rating).WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
@@ -122,8 +122,6 @@ internal static class Extensions
 
             builder.AddAgents();
             builder.AddSummarizer();
-
-            services.AddKeycloakTokenIntrospection();
         }
     }
 }

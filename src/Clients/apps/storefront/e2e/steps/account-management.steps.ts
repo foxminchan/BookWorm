@@ -268,9 +268,9 @@ Then("2FA should be enabled for my account", async ({ page }) => {
   ).toBeVisible();
 });
 
-Then("I should be redirected to Keycloak", async ({ page }) => {
+Then("I should be redirected to Microsoft Entra ID", async ({ page }) => {
   await page.waitForTimeout(1000);
-  expect(page.url()).toMatch(/keycloak|auth/i);
+  expect(page.url()).toMatch(/login\.microsoftonline\.com|auth/i);
 });
 
 Then("I should see the password change form", async ({ page }) => {

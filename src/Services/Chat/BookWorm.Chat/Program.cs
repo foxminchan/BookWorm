@@ -1,4 +1,3 @@
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chat.Extensions;
 using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults;
@@ -24,8 +23,6 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseDefaultCors();
-
-app.UseKeycloakTokenIntrospection();
 
 app.UseRateLimiter();
 

@@ -13,7 +13,7 @@ Only the latest release series receives security updates.
 
 The following are considered in scope for security reports:
 
-- Authentication and authorization bypasses (Keycloak integration)
+- Authentication and authorization bypasses (Microsoft Entra ID integration)
 - Injection vulnerabilities (SQL, command, prompt injection)
 - Sensitive data exposure or PII leakage
 - Insecure deserialization or message-bus exploits

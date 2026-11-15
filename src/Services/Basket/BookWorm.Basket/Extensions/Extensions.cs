@@ -1,14 +1,14 @@
-﻿using BookWorm.Basket.Configurations;
+using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Basket.Extensions;
 
@@ -24,7 +24,7 @@ internal static class Extensions
 
             builder.AddAppSettings<BasketAppSettings>();
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
@@ -100,8 +100,6 @@ internal static class Extensions
                     typeof(BasketApiMarker).Assembly
                 );
             });
-
-            services.AddKeycloakTokenIntrospection();
         }
     }
 }

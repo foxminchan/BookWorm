@@ -45,7 +45,7 @@
   - [x] Integrated event sourcing for storing domain events
   - [x] Implemented a microservices chassis for cross-cutting concerns and service infrastructure
 - [x] Implemented API versioning and feature flags for flexible application management
-- [x] Set up AuthN/AuthZ with Keycloak
+- [x] Set up AuthN/AuthZ with Microsoft Entra ID
   - [x] Used Authorization Code Flow with PKCE for user authentication
   - [x] Enabled Token Exchange for service-to-service authentication
 - [x] Implemented caching with FusionCache

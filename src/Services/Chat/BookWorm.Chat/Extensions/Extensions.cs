@@ -1,6 +1,5 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
@@ -11,6 +10,7 @@ using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Chat.Extensions;
 
@@ -26,7 +26,7 @@ internal static class Extensions
 
             builder.AddAppSettings<ChatAppSettings>();
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
@@ -110,8 +110,6 @@ internal static class Extensions
 
             // Compose the multi-agent workflow
             builder.AddChatWorkflow();
-
-            services.AddKeycloakTokenIntrospection();
         }
     }
 }

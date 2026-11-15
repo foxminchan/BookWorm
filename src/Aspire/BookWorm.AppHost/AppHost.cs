@@ -46,9 +46,7 @@ var project = foundry.AddProject(Components.Foundry.Project);
 project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
 project.AddModelDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
-IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
-    ? builder.AddLocalKeycloak(Components.KeyCloak)
-    : builder.AddHostedKeycloak(Components.KeyCloak);
+var entraId = builder.AddEntraId(Components.Azure.EntraId);
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
@@ -71,7 +69,7 @@ var catalogApi = builder
     .WaitFor(redis)
     .WithReference(qdrant)
     .WaitFor(qdrant)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithReference(catalogContainer)
     .WaitFor(catalogContainer)
     .WithReference(project)
@@ -89,7 +87,7 @@ var mcp = builder
         "../../Services/McpTools/BookWorm.McpTools/BookWorm.McpTools.csproj"
     )
     .WithReference(catalogApi)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithDisplayUrls();
 
 var basketApi = builder
@@ -102,7 +100,7 @@ var basketApi = builder
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(catalogApi)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithDisplayUrls();
 
 var orderingApi = builder
@@ -116,7 +114,7 @@ var orderingApi = builder
     .WaitFor(broker)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithReference(catalogApi)
     .WaitFor(catalogApi)
     .WithReference(basketApi)
@@ -128,7 +126,7 @@ var chatApi = builder
     .WithReference(project)
     .WithReference(mcp)
     .WaitFor(mcp)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
@@ -152,7 +150,7 @@ var ratingApi = builder
     .WithReference(mcp)
     .WithReference(broker)
     .WaitFor(broker)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
@@ -190,7 +188,7 @@ var catalogIngestion = builder
         Services.CatalogIngestion,
         "../../Services/Catalog/BookWorm.Catalog.Ingestion/BookWorm.Catalog.Ingestion.csproj"
     )
-    .WithKeycloak(keycloak, Services.CatalogIngestion)
+    .WithEntraId(entraId)
     .WithHostStorage(storage)
     .WithReference(catalogDb)
     .WaitFor(catalogApi)
@@ -209,7 +207,7 @@ builder
         Services.Scheduler,
         "../../Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
     )
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(schedulerDb)
@@ -228,12 +226,12 @@ var gateway = builder
     .WithService(catalogApi, true)
     .Build();
 
-var (storefront, backoffice) = builder.AddFrontendApps(gateway, keycloak);
+var (storefront, backoffice) = builder.AddFrontendApps(gateway, entraId);
 
 if (builder.ExecutionContext.IsRunMode)
 {
     builder
-        .AddScalar(keycloak)
+        .AddScalar(entraId)
         .WithOpenAPI(chatApi)
         .WithOpenAPI(basketApi)
         .WithOpenAPI(ratingApi)

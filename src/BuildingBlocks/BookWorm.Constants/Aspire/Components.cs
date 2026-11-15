@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants.Aspire;
+namespace BookWorm.Constants.Aspire;
 
 public static class Components
 {
@@ -8,7 +8,6 @@ public static class Components
     public const string MailPit = "mailpit";
     public const string Email = "email";
     public const string Postgres = "postgres";
-    public const string KeyCloak = "keycloak";
     public const string Inspector = "inspector";
     public const string VectorDb = "vectordb";
     public const string TurboRepo = "turborepo";
@@ -40,6 +39,7 @@ public static class Components
     public static class Azure
     {
         public const string ContainerApp = "aca";
+        public const string EntraId = "entra";
 
         public static class Storage
         {

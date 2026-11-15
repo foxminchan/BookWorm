@@ -1,136 +1,58 @@
-﻿using BookWorm.Chassis.Security.Keycloak;
-using BookWorm.Chassis.Security.Settings;
-using BookWorm.Chassis.Utilities.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Chassis.Security.TokenExchange;
 
 public static class Extensions
 {
-    extension(IServiceCollection services)
-    {
-        /// <summary>
-        ///     Registers the token-exchange service.
-        /// </summary>
-        /// <returns>The same <see cref="IServiceCollection" /> instance.</returns>
-        private void AddTokenExchange()
-        {
-            services.TryAddTransient<ITokenExchange, TokenExchange>();
-        }
-    }
-
-    extension(IHostApplicationBuilder builder)
-    {
-        /// <summary>
-        ///     Registers Keycloak token exchange services without enabling inbound authentication.
-        /// </summary>
-        /// <returns>The same <see cref="IHostApplicationBuilder" /> instance.</returns>
-        public IHostApplicationBuilder AddKeycloakTokenExchange()
-        {
-            builder.Configure<IdentityOptions>(IdentityOptions.ConfigurationSection);
-            builder.AddKeycloakClient();
-
-            builder.Services.AddTokenExchange();
-            return builder;
-        }
-    }
-
     extension(IHttpClientBuilder builder)
     {
         /// <summary>
-        ///     Adds token exchange support to the configured <see cref="IHttpClientBuilder" /> by
-        ///     registering the token exchange service and an authorization delegating handler.
+        ///     Configures user delegated token exchange using Microsoft.Identity.Web's user authentication handler.
         /// </summary>
-        /// <param name="serviceKey">
-        ///     Optional target service identifier used to resolve audience and scope for token exchange.
-        /// </param>
-        /// <returns>
-        ///     The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.
-        /// </returns>
-        public IHttpClientBuilder AddAuthTokenExchange(string? serviceKey = null)
+        /// <param name="serviceKey">Target service identifier used to name the handler configuration.</param>
+        /// <returns>The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.</returns>
+        public IHttpClientBuilder AddAuthTokenExchange(string serviceKey)
         {
-            var service = builder.Services;
+            builder.ConfigureScopes(serviceKey);
 
-            service.AddTokenExchange();
-
-            builder.AddHttpMessageHandler(sp => new HttpClientAuthorizationDelegatingHandler(
-                sp.GetRequiredService<IHttpContextAccessor>(),
-                serviceKey
-            ));
-
-            return builder;
-        }
-    }
-
-    private sealed class HttpClientAuthorizationDelegatingHandler(
-        IHttpContextAccessor httpContextAccessor,
-        string? serviceKey
-    ) : DelegatingHandler
-    {
-        protected override async Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken
-        )
-        {
-            if (httpContextAccessor.HttpContext is not { } context)
-            {
-                return await base.SendAsync(request, cancellationToken);
-            }
-
-            var identityOptions = context.RequestServices.GetService<IdentityOptions>();
-
-            var (audience, scope) = ResolveTokenExchangeTarget(identityOptions, serviceKey);
-
-            var tokenExchange = context.RequestServices.GetRequiredService<ITokenExchange>();
-
-            var exchangedToken = await tokenExchange.ExchangeAsync(
-                context.User,
-                audience,
-                scope,
-                cancellationToken
-            );
-
-            request.Headers.Authorization = new(
-                JwtBearerDefaults.AuthenticationScheme,
-                exchangedToken
-            );
-
-            return await base.SendAsync(request, cancellationToken);
+            return builder.AddMicrosoftIdentityUserAuthenticationHandler(serviceKey, _ => { });
         }
 
-        private static (string? Audience, string? Scope) ResolveTokenExchangeTarget(
-            IdentityOptions? identity,
-            string? serviceKey
-        )
+        /// <summary>
+        ///     Configures application client-credentials token acquisition using Microsoft.Identity.Web's
+        ///     application authentication handler.
+        /// </summary>
+        /// <param name="serviceKey">Target service identifier used to name the handler configuration.</param>
+        /// <returns>The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.</returns>
+        public IHttpClientBuilder AddClientCredentialsTokenExchange(string serviceKey)
         {
-            if (
-                string.IsNullOrWhiteSpace(serviceKey)
-                || identity?.TokenExchangeTargets is null
-                || identity.TokenExchangeTargets.Count == 0
-            )
-            {
-                return (null, null);
-            }
+            builder.ConfigureScopes(serviceKey);
 
-            if (identity.TokenExchangeTargets.TryGetValue(serviceKey, out var scope))
-            {
-                return (serviceKey, scope);
-            }
+            return builder.AddMicrosoftIdentityAppAuthenticationHandler(serviceKey, _ => { });
+        }
 
-            // fallback: find a configured key that is contained in the service key
-            var found = identity.TokenExchangeTargets.FirstOrDefault(kvp =>
-                !string.IsNullOrWhiteSpace(kvp.Key)
-                && (
-                    serviceKey.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase)
-                    || kvp.Key.Contains(serviceKey, StringComparison.OrdinalIgnoreCase)
+        private void ConfigureScopes(string serviceKey)
+        {
+            builder
+                .Services.AddOptions<MicrosoftIdentityAuthenticationMessageHandlerOptions>(
+                    serviceKey
                 )
-            );
+                .Configure<IOptionsMonitor<MicrosoftIdentityOptions>>(
+                    (options, entraOptions) =>
+                    {
+                        var clientId = entraOptions
+                            .Get(JwtBearerDefaults.AuthenticationScheme)
+                            .ClientId;
 
-            return !string.IsNullOrWhiteSpace(found.Key) ? (found.Key, found.Value) : (null, null);
+                        if (!string.IsNullOrWhiteSpace(clientId))
+                        {
+                            options.Scopes = $"api://{clientId}/.default";
+                        }
+                    }
+                );
         }
     }
 }

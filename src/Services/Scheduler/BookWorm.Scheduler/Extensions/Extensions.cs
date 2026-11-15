@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.EventBus.Wolverine;
+using BookWorm.Chassis.EventBus.Wolverine;
+using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Constants.Core;
@@ -14,7 +15,7 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            builder.AddKeycloakTokenExchange();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddHttpServiceReference<ICatalogIngestionApi>(

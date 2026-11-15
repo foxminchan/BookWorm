@@ -146,11 +146,7 @@ jobs:
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: 🔨 Build
-        run: >
-          dotnet build
-          --configuration Release
-          --no-incremental
-          -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
+        run: dotnet build --configuration Release --no-incremental
 
       - name: 🧪 Test
         env:

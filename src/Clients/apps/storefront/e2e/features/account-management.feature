@@ -108,7 +108,7 @@ Feature: User Account Management
   Scenario: Change password redirect
     Given I am on my account settings page
     When I click "Change Password"
-    Then I should be redirected to Keycloak
+    Then I should be redirected to Microsoft Entra ID
     And I should see the password change form
 
   @privacy

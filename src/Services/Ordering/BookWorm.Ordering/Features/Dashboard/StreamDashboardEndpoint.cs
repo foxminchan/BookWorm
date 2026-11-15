@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Ordering.Features.Dashboard;
 

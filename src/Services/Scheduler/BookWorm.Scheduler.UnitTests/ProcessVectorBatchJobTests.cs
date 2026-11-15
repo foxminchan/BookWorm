@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using BookWorm.Scheduler.Clients;
 using BookWorm.Scheduler.Jobs;
 using Microsoft.Extensions.Logging;
@@ -10,7 +10,7 @@ namespace BookWorm.Scheduler.UnitTests;
 public sealed class ProcessVectorBatchJobTests
 {
     [Test]
-    public async Task GivenScheduledBatch_WhenExecuting_ThenShouldSendOneAnonymousPost()
+    public async Task GivenScheduledBatch_WhenExecuting_ThenShouldSendOnePostRequest()
     {
         using var handler = new RecordingHandler(HttpStatusCode.NoContent);
         using var client = new HttpClient(handler);

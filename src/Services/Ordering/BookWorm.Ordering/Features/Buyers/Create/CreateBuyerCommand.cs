@@ -1,6 +1,6 @@
 using BookWorm.Chassis.CQRS;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Extensions;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
@@ -20,7 +20,7 @@ internal sealed class CreateBuyerHandler(
     {
         var userId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
-        var name = claimsPrincipal[KeycloakClaimTypes.Name] ?? "anonymous";
+        var name = claimsPrincipal[ClaimConstants.Name] ?? "anonymous";
 
         var buyer = new Buyer(userId, name, request.Street, request.City, request.Province);
 

@@ -1,6 +1,5 @@
 ﻿using AgentGovernance.Extensions.ModelContextProtocol;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
@@ -8,6 +7,7 @@ using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
+using Microsoft.Identity.Web;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol;
 
@@ -25,7 +25,7 @@ internal static class Extensions
 
             builder.AddDefaultCors();
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
@@ -39,7 +39,6 @@ internal static class Extensions
                 );
 
             services.AddHttpContextAccessor();
-            services.AddKeycloakTokenIntrospection();
 
             // Add exception handlers
             services.AddGlobalExceptionHandler();

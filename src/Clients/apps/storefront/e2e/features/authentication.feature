@@ -11,21 +11,21 @@ Feature: User Authentication
 
   @smoke
   @login
-  Scenario: Successful login redirects to Keycloak
+  Scenario: Successful login redirects to Microsoft Entra ID
     Given I am on the homepage
     When I click "Login"
     Then I should be redirected to the login page
     And I should see "Redirecting to login" message
-    And I should be redirected to Keycloak OAuth provider
+    And I should be redirected to Microsoft Entra ID OAuth provider
 
   @smoke
   @register
-  Scenario: Successful registration redirects to Keycloak
+  Scenario: Successful registration redirects to Microsoft Entra ID
     Given I am on the homepage
     When I click "Register"
     Then I should be redirected to the registration page
     And I should see "Redirecting to registration" message
-    And I should be redirected to Keycloak OAuth provider
+    And I should be redirected to Microsoft Entra ID OAuth provider
 
   @navigation
   Scenario: Access login from navigation header

@@ -33,9 +33,11 @@ export class RegisterPage extends BasePage {
     await this.goto(this.path);
   }
 
-  async waitForKeycloakRedirect(): Promise<void> {
-    // Wait for redirect to Keycloak OAuth provider
-    await this.page.waitForURL(/keycloak|auth/, { timeout: 10000 });
+  async waitForEntraRedirect(): Promise<void> {
+    // Wait for redirect to Microsoft Entra ID OAuth provider
+    await this.page.waitForURL(/login\.microsoftonline\.com|auth/, {
+      timeout: 10000,
+    });
   }
 
   // Assertions

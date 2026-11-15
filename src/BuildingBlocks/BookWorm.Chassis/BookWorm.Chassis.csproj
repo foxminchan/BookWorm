@@ -6,7 +6,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup Label="Integration">
-    <PackageReference Include="Aspire.Keycloak.Authentication" />
+    <PackageReference Include="Microsoft.Identity.Web" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="WolverineFx.Kafka" />
     <PackageReference Include="WolverineFx.Http.Marten" />

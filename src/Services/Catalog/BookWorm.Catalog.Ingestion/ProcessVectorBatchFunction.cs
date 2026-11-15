@@ -1,41 +1,24 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Catalog.Ingestion;
 
 public sealed class ProcessVectorBatchFunction(IVectorBatchProcessor processor)
 {
     [Function(nameof(ProcessVectorBatch))]
-    public async Task<
-        Results<UnauthorizedHttpResult, ForbidHttpResult, NoContent>
-    > ProcessVectorBatch(
+    public async Task<Results<UnauthorizedHttpResult, NoContent>> ProcessVectorBatch(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "vectors/batch")]
             HttpRequest request,
         CancellationToken cancellationToken
     )
     {
-        var authentication = await request.HttpContext.AuthenticateAsync(
-            JwtBearerDefaults.AuthenticationScheme
-        );
+        var (isAuthenticated, _) = await request.HttpContext.AuthenticateAzureFunctionAsync();
 
-        if (!authentication.Succeeded || authentication.Principal is null)
+        if (!isAuthenticated)
         {
             return TypedResults.Unauthorized();
-        }
-
-        if (
-            !string.Equals(
-                authentication.Principal.FindFirstValue("azp"),
-                Services.Scheduler,
-                StringComparison.Ordinal
-            )
-        )
-        {
-            return TypedResults.Forbid();
         }
 
         await processor.ProcessAsync(cancellationToken);

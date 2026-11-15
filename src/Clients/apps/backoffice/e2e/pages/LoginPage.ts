@@ -83,6 +83,6 @@ export class LoginPage extends BasePage {
    * Wait for redirect to external OAuth provider
    */
   async waitForOAuthRedirect(): Promise<void> {
-    await this.waitForUrl(/keycloak|oauth|auth/, 10000);
+    await this.waitForUrl(/login\.microsoftonline\.com|oauth|auth/, 10000);
   }
 }

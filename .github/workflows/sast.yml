@@ -80,12 +80,7 @@ jobs:
 
       - name: 🔨 Build .NET solution
         if: matrix.build-mode == 'manual'
-        run: >
-          dotnet build
-          --configuration Release
-          --no-incremental
-          -p:SkipK6Build=true
-          -p:SkipKeycloakifyBuild=true
+        run: dotnet build --configuration Release --no-incremental
 
       - name: 🛡️ Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4.39.2

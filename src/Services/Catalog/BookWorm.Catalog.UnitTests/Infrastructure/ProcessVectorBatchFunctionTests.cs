@@ -1,11 +1,10 @@
 using System.Security.Claims;
 using BookWorm.Catalog.Ingestion;
-using BookWorm.Constants.Aspire;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.DependencyInjection;
+using MicrosoftIdentityConstants = Microsoft.Identity.Web.Constants;
 
 namespace BookWorm.Catalog.UnitTests.Infrastructure;
 
@@ -19,13 +18,12 @@ public sealed class ProcessVectorBatchFunctionTests
         var processor = new Mock<IVectorBatchProcessor>();
         processor.Setup(x => x.ProcessAsync(cancellationToken)).ReturnsAsync(7);
         var function = new ProcessVectorBatchFunction(processor.Object);
+        var request = CreateRequest(CreateAuthenticatedService());
 
-        var response = await function.ProcessVectorBatch(
-            CreateRequest(CreateSchedulerAuthentication()),
-            cancellationToken
-        );
+        var response = await function.ProcessVectorBatch(request, cancellationToken);
 
         response.Result.ShouldBeOfType<NoContent>();
+        request.HttpContext.User.Identity?.IsAuthenticated.ShouldBeTrue();
         processor.Verify(x => x.ProcessAsync(cancellationToken), Times.Once);
         processor.VerifyNoOtherCalls();
     }
@@ -38,7 +36,7 @@ public sealed class ProcessVectorBatchFunctionTests
         var authenticationService = new Mock<IAuthenticationService>();
         authenticationService
             .Setup(x =>
-                x.AuthenticateAsync(It.IsAny<HttpContext>(), JwtBearerDefaults.AuthenticationScheme)
+                x.AuthenticateAsync(It.IsAny<HttpContext>(), MicrosoftIdentityConstants.Bearer)
             )
             .ReturnsAsync(AuthenticateResult.Fail("Invalid token"));
 
@@ -48,34 +46,6 @@ public sealed class ProcessVectorBatchFunctionTests
         );
 
         response.Result.ShouldBeOfType<UnauthorizedHttpResult>();
-        processor.VerifyNoOtherCalls();
-    }
-
-    [Test]
-    public async Task GivenDifferentClientRequest_WhenInvoked_ThenShouldReturnForbidden()
-    {
-        var processor = new Mock<IVectorBatchProcessor>();
-        var function = new ProcessVectorBatchFunction(processor.Object);
-        var authenticationService = new Mock<IAuthenticationService>();
-        authenticationService
-            .Setup(x =>
-                x.AuthenticateAsync(It.IsAny<HttpContext>(), JwtBearerDefaults.AuthenticationScheme)
-            )
-            .ReturnsAsync(
-                AuthenticateResult.Success(
-                    new(
-                        new(new ClaimsIdentity([new("azp", "other-client")], "Bearer")),
-                        JwtBearerDefaults.AuthenticationScheme
-                    )
-                )
-            );
-
-        var response = await function.ProcessVectorBatch(
-            CreateRequest(authenticationService.Object),
-            CancellationToken.None
-        );
-
-        response.Result.ShouldBeOfType<ForbidHttpResult>();
         processor.VerifyNoOtherCalls();
     }
 
@@ -90,7 +60,7 @@ public sealed class ProcessVectorBatchFunctionTests
 
         await Should.ThrowAsync<InvalidOperationException>(() =>
             function.ProcessVectorBatch(
-                CreateRequest(CreateSchedulerAuthentication()),
+                CreateRequest(CreateAuthenticatedService()),
                 CancellationToken.None
             )
         );
@@ -110,24 +80,24 @@ public sealed class ProcessVectorBatchFunctionTests
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
             function.ProcessVectorBatch(
-                CreateRequest(CreateSchedulerAuthentication()),
+                CreateRequest(CreateAuthenticatedService()),
                 cancellationToken
             )
         );
     }
 
-    private static IAuthenticationService CreateSchedulerAuthentication()
+    private static IAuthenticationService CreateAuthenticatedService()
     {
         var authenticationService = new Mock<IAuthenticationService>();
         authenticationService
             .Setup(x =>
-                x.AuthenticateAsync(It.IsAny<HttpContext>(), JwtBearerDefaults.AuthenticationScheme)
+                x.AuthenticateAsync(It.IsAny<HttpContext>(), MicrosoftIdentityConstants.Bearer)
             )
             .ReturnsAsync(
                 AuthenticateResult.Success(
                     new(
-                        new(new ClaimsIdentity([new("azp", Services.Scheduler)], "Bearer")),
-                        JwtBearerDefaults.AuthenticationScheme
+                        new(new ClaimsIdentity([], MicrosoftIdentityConstants.Bearer)),
+                        MicrosoftIdentityConstants.Bearer
                     )
                 )
             );

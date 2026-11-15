@@ -51,7 +51,7 @@ BookWorm is a .NET 11 microservices application built around Aspire, DDD, and ev
 ## Common patterns to preserve
 
 - Event-driven services use WolverineFx + Kafka with outbox/inbox patterns.
-- Auth is handled via Keycloak; apply authorization at endpoint boundaries.
+- Auth is handled via Microsoft Entra ID; apply authorization at endpoint boundaries.
 - Caching uses FusionCache; service boundaries should remain consistent with the existing architecture.
 - API versioning is explicit; follow the existing `ApiVersions.V1` patterns.
 

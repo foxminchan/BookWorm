@@ -1,5 +1,5 @@
-using BookWorm.Chassis.Security.Keycloak;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -11,7 +11,7 @@ internal static class AuthorizationExtensions
         {
             var services = builder.Services;
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
@@ -48,8 +48,6 @@ internal static class AuthorizationExtensions
                 s.GetRequiredService<IHttpContextAccessor>().HttpContext?.User
                 ?? new ClaimsPrincipal()
             );
-
-            services.AddKeycloakTokenIntrospection();
         }
     }
 }

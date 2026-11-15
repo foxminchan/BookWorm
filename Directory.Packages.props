@@ -8,11 +8,11 @@
     <!-- Hosting -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.EntraId" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Dotnet" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Foundry" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Qdrant" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Kafka" Version="$(AspireVersion)" />
@@ -32,7 +32,6 @@
       Include="Aspire.Microsoft.Azure.StackExchangeRedis"
       Version="$(AspireUnstableVersion)"
     />
-    <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <!-- Community Toolkit -->
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="$(ToolKitVersion)" />
@@ -63,6 +62,7 @@
       Include="Microsoft.AspNetCore.Diagnostics.Middleware"
       Version="$(MsExtVersion)"
     />
+    <PackageVersion Include="Microsoft.Identity.Web" Version="4.18.0" />
     <!-- Data -->
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
     <PackageVersion
@@ -163,7 +163,7 @@
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TngTech.ArchUnitNET.TUnit" Version="0.13.5" />
-    <PackageVersion Include="TUnit" Version="1.83.8" />
+    <PackageVersion Include="TUnit" Version="1.84.0" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
     <!-- Microsoft Testing Platform -->

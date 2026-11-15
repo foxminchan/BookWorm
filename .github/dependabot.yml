@@ -44,6 +44,7 @@ updates:
         patterns:
           - Microsoft.AspNetCore.*
           - Microsoft.Extensions.Features
+          - Microsoft.Identity.*
         update-types:
           - minor
           - patch
@@ -211,37 +212,6 @@ updates:
       - dependencies
       - javascript
       - testing
-    open-pull-requests-limit: 10
-    package-ecosystem: bun
-    schedule:
-      day: friday
-      interval: weekly
-      time: "10:00"
-      timezone: Asia/Ho_Chi_Minh
-    versioning-strategy: increase
-  - commit-message:
-      include: scope
-      prefix: Node (Keycloakify)
-    directory: /src/Aspire/BookWorm.AppHost/Container/keycloak/keycloakify
-    groups:
-      keycloakify:
-        patterns:
-          - keycloakify
-          - "@keycloakify/*"
-      react:
-        patterns:
-          - react
-          - react-dom
-          - "@types/react*"
-      storybook:
-        patterns:
-          - "@storybook/*"
-          - storybook
-    ignore:
-      - dependency-name: "tailwindcss"
-    labels:
-      - dependencies
-      - javascript
     open-pull-requests-limit: 10
     package-ecosystem: bun
     schedule:

@@ -5,13 +5,13 @@ using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Constants.Aspire;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
 
@@ -29,7 +29,7 @@ internal static class Extensions
 
             builder.AddAppSettings<CatalogAppSettings>();
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
@@ -129,8 +129,6 @@ internal static class Extensions
                     typeof(CatalogApiMarker).Assembly
                 );
             });
-
-            services.AddKeycloakTokenIntrospection();
         }
     }
 }

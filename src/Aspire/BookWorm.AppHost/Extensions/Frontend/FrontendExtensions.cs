@@ -14,12 +14,12 @@ internal static class FrontendExtensions
             IResourceBuilder<IResourceWithEndpoints> Backoffice
         ) AddFrontendApps(
             IResourceBuilder<YarpResource> gateway,
-            IResourceBuilder<IResource> keycloak
+            IResourceBuilder<EntraIdApplicationResource> entraId
         )
         {
             return builder.ExecutionContext.IsRunMode
-                ? AddTurborepoApps(builder, gateway, keycloak)
-                : AddPublishedContainerApps(builder, gateway, keycloak);
+                ? AddTurborepoApps(builder, gateway, entraId)
+                : AddPublishedContainerApps(builder, gateway, entraId);
         }
     }
 
@@ -29,7 +29,7 @@ internal static class FrontendExtensions
     ) AddTurborepoApps(
         IDistributedApplicationBuilder builder,
         IResourceBuilder<YarpResource> gateway,
-        IResourceBuilder<IResource> keycloak
+        IResourceBuilder<EntraIdApplicationResource> entraId
     )
     {
         var turbo = builder
@@ -51,7 +51,7 @@ internal static class FrontendExtensions
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
             .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
             .WaitFor(gateway)
-            .WithKeycloak(keycloak);
+            .WithEntraId(entraId);
 
         storefront.WithEnvironment(
             AppUrlEnvironmentVariable,
@@ -68,7 +68,7 @@ internal static class FrontendExtensions
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
             .WaitFor(gateway)
-            .WithKeycloak(keycloak);
+            .WithEntraId(entraId);
 
         backoffice.WithEnvironment(
             AppUrlEnvironmentVariable,
@@ -84,7 +84,7 @@ internal static class FrontendExtensions
     ) AddPublishedContainerApps(
         IDistributedApplicationBuilder builder,
         IResourceBuilder<YarpResource> gateway,
-        IResourceBuilder<IResource> keycloak
+        IResourceBuilder<EntraIdApplicationResource> entraId
     )
     {
         var storefront = ConfigurePublishedFrontend(
@@ -95,7 +95,7 @@ internal static class FrontendExtensions
                 "@bookworm/storefront"
             ),
             gateway,
-            keycloak,
+            entraId,
             true
         );
 
@@ -112,7 +112,7 @@ internal static class FrontendExtensions
                 "@bookworm/backoffice"
             ),
             gateway,
-            keycloak
+            entraId
         );
 
         backoffice.WithEnvironment(
@@ -126,7 +126,7 @@ internal static class FrontendExtensions
     private static IResourceBuilder<ContainerResource> ConfigurePublishedFrontend(
         IResourceBuilder<ContainerResource> frontend,
         IResourceBuilder<YarpResource> gateway,
-        IResourceBuilder<IResource> keycloak,
+        IResourceBuilder<EntraIdApplicationResource> entraId,
         bool includeCopilot = false
     )
     {
@@ -144,7 +144,7 @@ internal static class FrontendExtensions
             frontend.WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true");
         }
 
-        return KeycloakExtensions.ConfigureContainerKeycloak(frontend, keycloak);
+        return frontend.WithEntraId(entraId);
     }
 
     private static IResourceBuilder<ContainerResource> AddFrontendContainer(

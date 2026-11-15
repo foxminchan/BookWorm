@@ -10,7 +10,7 @@ var builder = FunctionsApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.ConfigureFunctionsWebApplication();
 builder.Services.AddOpenTelemetry().UseFunctionsWorkerDefaults();
-builder.AddDefaultAuthentication(Services.CatalogIngestion);
+builder.AddDefaultAuthentication();
 
 builder.AddAzureNpgsqlDataSource(Components.Database.Catalog);
 builder.AddQdrantClient(Components.VectorDb);
