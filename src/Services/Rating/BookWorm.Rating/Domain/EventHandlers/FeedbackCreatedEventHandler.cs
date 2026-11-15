@@ -1,11 +1,9 @@
-﻿using BookWorm.Rating.Domain.Events;
+using BookWorm.Rating.Domain.Events;
 
 namespace BookWorm.Rating.Domain.EventHandlers;
 
-internal sealed class FeedbackCreatedEventHandler(
-    IEventDispatcher eventDispatcher,
-    RatingDbContext dbContext
-) : INotificationHandler<FeedbackCreatedEvent>
+internal sealed class FeedbackCreatedEventHandler(IEventDispatcher eventDispatcher)
+    : INotificationHandler<FeedbackCreatedEvent>
 {
     public async ValueTask Handle(
         FeedbackCreatedEvent notification,
@@ -13,6 +11,5 @@ internal sealed class FeedbackCreatedEventHandler(
     )
     {
         await eventDispatcher.DispatchAsync(notification, cancellationToken);
-        await dbContext.SaveEntitiesAsync(cancellationToken);
     }
 }

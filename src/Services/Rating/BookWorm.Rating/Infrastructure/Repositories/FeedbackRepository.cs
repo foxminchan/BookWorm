@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Specification;
+using BookWorm.Chassis.Specification;
 using BookWorm.Chassis.Specification.Evaluators;
 
 namespace BookWorm.Rating.Infrastructure.Repositories;
@@ -26,7 +26,9 @@ internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRep
         CancellationToken cancellationToken = default
     )
     {
-        return await _context.Feedbacks.FindAsync([FeedbackId.From(id)], cancellationToken);
+        return await _context
+            .Feedbacks.AsTracking()
+            .FirstOrDefaultAsync(f => f.Id == FeedbackId.From(id), cancellationToken);
     }
 
     public async Task<IReadOnlyList<Feedback>> ListAsync(

@@ -1,3 +1,6 @@
+using Azure.AI.Projects;
+using Microsoft.Agents.AI.Foundry;
+
 namespace BookWorm.Chat.Agents.BookSearch;
 
 internal static class BookAgentRegistration
@@ -16,6 +19,15 @@ internal static class BookAgentRegistration
     {
         public void AddBookAgent()
         {
+            builder.Services.AddSingleton(sp =>
+                HarnessProviderFactory.CreateFoundryMemoryProvider(
+                    sp.GetRequiredService<AIProjectClient>(),
+                    sp.GetRequiredService<IConfiguration>(),
+                    sp.GetRequiredService<IHttpContextAccessor>(),
+                    sp.GetService<ILoggerFactory>()
+                )
+            );
+
             builder.AddAIAgent(Constants.Other.Agents.BookAgent, (sp, key) =>
             {
                 var compactionProvider = CompactionPipelineFactory.CreateFull(
@@ -69,13 +81,21 @@ internal static class BookAgentRegistration
                     .. SubAgentFactory.Create(catalogResearcher, recommendationResearcher),
                 ];
                 options.AllowConcurrentInvocation = true;
-                options.AIContextProviders =
+
+                List<AIContextProvider> contextProviders =
                 [
                     skillsProvider,
                     todoProvider,
                     modeProvider,
                     fileMemoryProvider,
                 ];
+
+                if (sp.GetService<FoundryMemoryProvider>() is { } foundryMemoryProvider)
+                {
+                    contextProviders.Add(foundryMemoryProvider);
+                }
+
+                options.AIContextProviders = contextProviders;
 
                 var agent = new ChatClientAgent(chatClient, options);
 

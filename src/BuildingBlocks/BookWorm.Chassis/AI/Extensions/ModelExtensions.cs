@@ -1,7 +1,6 @@
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -25,17 +24,28 @@ public static class ModelExtensions
         ///         builder.AddAIServices();
         ///     </code>
         /// </example>
-        public IHostApplicationBuilder AddAIServices()
+        public IHostApplicationBuilder AddAIProject()
         {
-            if (
-                string.IsNullOrWhiteSpace(
-                    builder.Configuration.GetConnectionString(Components.Foundry.Project)
-                )
-            )
-            {
-                return builder;
-            }
+            builder.AddAzureAIProjectClient(Components.Foundry.Project);
 
+            return builder;
+        }
+
+        /// <summary>
+        ///     Configures AI models for the application, including chat and embedding services.
+        /// </summary>
+        /// <remarks>
+        ///     Adds an Azure AI Project OpenAI client with chat and embedding support.
+        ///     Configures the chat client to use function invocation and model logging.
+        /// </remarks>
+        /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
+        /// <example>
+        ///     <code>
+        ///         builder.WithLlmModels();
+        ///     </code>
+        /// </example>
+        public IHostApplicationBuilder WithLlmModels()
+        {
             var clientBuilder = builder.AddAzureProjectOpenAIClient(Components.Foundry.Project);
 
             clientBuilder
@@ -46,6 +56,25 @@ public static class ModelExtensions
             clientBuilder.AddEmbeddingGenerator(Components.Foundry.Embedding);
 
             return builder;
+        }
+
+        /// <summary>
+        ///     Configures decision models for the application.
+        /// </summary>
+        /// <remarks>
+        ///     This method is a placeholder for future decision model configuration.
+        /// </remarks>
+        /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
+        /// <example>
+        ///     <code>
+        ///         builder.WithDecisionModels();
+        ///     </code>
+        /// </example>
+        public IHostApplicationBuilder WithDecisionModels()
+        {
+            throw new NotImplementedException(
+                "Decision model configuration is not yet implemented."
+            );
         }
 
         /// <summary>

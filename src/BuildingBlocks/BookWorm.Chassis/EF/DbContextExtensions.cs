@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel;
+using BookWorm.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -65,6 +65,19 @@ public static class DbContextExtensions
             builder.EnrichAzureNpgsqlDbContext<TDbContext>();
 
             action?.Invoke(builder);
+        }
+    }
+
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the domain event dispatch interceptor and Mediator domain event dispatcher.
+        /// </summary>
+        public IServiceCollection AddEventDispatchInterceptor()
+        {
+            services.AddScoped<IInterceptor, EventDispatchInterceptor>();
+            services.AddMediatorDomainEventDispatcher();
+            return services;
         }
     }
 }

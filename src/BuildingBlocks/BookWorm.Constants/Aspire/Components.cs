@@ -8,6 +8,7 @@ public static class Components
     public const string MailPit = "mailpit";
     public const string Email = "email";
     public const string Postgres = "postgres";
+    public const string Cosmos = "cosmos";
     public const string Inspector = "inspector";
     public const string VectorDb = "vectordb";
     public const string TurboRepo = "turborepo";

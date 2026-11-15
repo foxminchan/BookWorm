@@ -8,6 +8,7 @@
     <!-- Hosting -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Azure.CosmosDB" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.EntraId" Version="$(AspireUnstableVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
@@ -25,9 +26,14 @@
     />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
     <PackageVersion
+      Include="Aspire.Microsoft.EntityFrameworkCore.Cosmos"
+      Version="$(AspireVersion)"
+    />
+    <PackageVersion
       Include="Aspire.Azure.AI.Extensions.OpenAI"
       Version="$(AspireUnstableVersion)"
     />
+    <PackageVersion Include="Aspire.Azure.AI.Projects" Version="$(AspireUnstableVersion)" />
     <PackageVersion
       Include="Aspire.Microsoft.Azure.StackExchangeRedis"
       Version="$(AspireUnstableVersion)"
@@ -88,6 +94,10 @@
       Include="Microsoft.Agents.AI.Declarative"
       Version="$(AgentFrameworkVersion)-rc1"
     />
+    <PackageVersion
+      Include="Microsoft.Agents.AI.Foundry"
+      Version="$(AgentFrameworkUnstableVersion)"
+    />
     <PackageVersion Include="Microsoft.Agents.AI.A2A" Version="$(AgentFrameworkUnstableVersion)" />
     <PackageVersion
       Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore"
@@ -133,6 +143,7 @@
     <PackageVersion Include="WolverineFx.Kafka" Version="$(WolverineVersion)" />
     <PackageVersion Include="WolverineFx.Http.Marten" Version="$(WolverineVersion)" />
     <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="$(WolverineVersion)" />
+    <PackageVersion Include="WolverineFx.CosmosDb" Version="$(WolverineVersion)" />
     <!-- Quartz -->
     <PackageVersion Include="Quartz.Aspire" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Plugins" Version="$(QuartzVersion)" />

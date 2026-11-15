@@ -6,12 +6,13 @@ using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.AI;
+using BookWorm.Rating.Infrastructure.EntityConfigurations;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Identity.Web;
-using Wolverine.EntityFrameworkCore;
-using Wolverine.Postgresql;
+using Wolverine.CosmosDb;
 
 namespace BookWorm.Rating.Extensions;
 
@@ -59,18 +60,46 @@ internal static class Extensions
                 .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
                 .ApplyLoggingBehavior()
                 .ApplyActivityBehavior()
-                .ApplyValidationBehavior()
-                .ApplyTransactionBehavior<RatingDbContext>();
+                .ApplyValidationBehavior();
 
             builder.AddRateLimiting();
 
             // Add database configuration
-            builder.AddAzurePostgresDbContext<RatingDbContext>(Components.Database.Rating, _ =>
-            {
-                services.AddMigration<RatingDbContext>();
+            var cosmosCs = builder.Configuration.GetConnectionString(
+                FeedbackConfiguration.ContainerName
+            ) ?? builder.Configuration.GetConnectionString(Components.Database.Rating);
+            services.AddEventDispatchInterceptor();
+            services.AddDbContext<RatingDbContext>(
+                (sp, options) =>
+                {
+                    if (!string.IsNullOrWhiteSpace(cosmosCs))
+                    {
+                        options.UseCosmos(cosmosCs, Components.Database.Rating);
+                    }
 
-                services.AddRepositories(typeof(RatingApiMarker));
-            });
+                    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
+                    var interceptors = sp.GetServices<IInterceptor>().ToArray();
+
+                    if (interceptors.Length != 0)
+                    {
+                        options.AddInterceptors(interceptors);
+                    }
+                }
+            );
+            builder.EnrichCosmosDbContext<RatingDbContext>();
+            services.AddRepositories(typeof(RatingApiMarker));
+
+            if (!string.IsNullOrWhiteSpace(cosmosCs))
+            {
+                services.AddSingleton(sp =>
+                {
+                    using var scope = sp.CreateScope();
+                    return scope
+                        .ServiceProvider.GetRequiredService<RatingDbContext>()
+                        .Database.GetCosmosClient();
+                });
+            }
 
             // Configure Redis Cache
             builder
@@ -87,13 +116,11 @@ internal static class Extensions
             services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
             // Configure EventBus first
-            var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Rating);
             builder.AddEventBus(opts =>
             {
-                if (!string.IsNullOrWhiteSpace(postgresCs))
+                if (!string.IsNullOrWhiteSpace(cosmosCs))
                 {
-                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
-                    opts.UseEntityFrameworkCoreTransactions();
+                    opts.UseCosmosDbPersistence(Components.Database.Rating);
                 }
 
                 // Preserve per-book / per-feedback ordering on Kafka so concurrent

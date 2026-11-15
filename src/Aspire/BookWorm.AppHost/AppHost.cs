@@ -2,21 +2,25 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
 
+// Add Azure Managed Redis, Qdrant, and Kafka
 var redis = builder
     .AddAzureManagedRedis(Components.Redis)
     .WithAccessKeyAuthentication()
     .RunAsLocalContainer()
     .ProvisionAsService(builder.Environment);
 
-var qdrant = builder
-    .AddQdrant(Components.VectorDb)
-    .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent);
+var qdrant = builder.ExecutionContext.IsRunMode
+    ? builder
+        .AddQdrant(Components.VectorDb)
+        .WithDataVolume()
+        .WithLifetime(ContainerLifetime.Persistent)
+    : builder.AddConnectionString(Components.VectorDb);
 
 var broker = builder.ExecutionContext.IsRunMode
     ? builder.AddKafka(Components.Broker).WithKafkaUI().WithLifetime(ContainerLifetime.Persistent)
     : builder.AddConnectionString(Components.Broker);
 
+// Add Azure Blob Storage
 var storage = builder.AddAzureStorage(Components.Azure.Storage.Resource).RunAsLocalContainer();
 
 var catalogContainer = storage
@@ -27,27 +31,34 @@ var chatSessionContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Chatting))
     .WithAzureStorageExplorer();
 
+// Add Azure Postgres Flexible Server and Databases
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .WithPasswordAuthentication()
     .RunAsLocalContainer()
     .ProvisionAsService(builder.Environment);
 
-var ratingDb = postgres.AddDatabase(Components.Database.Rating).WithPostgresMcp();
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMcp();
 var financeDb = postgres.AddDatabase(Components.Database.Finance).WithPostgresMcp();
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
 var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
 
+// Add Azure Cosmos DB
+var cosmos = builder
+    .AddAzureCosmosDB(Components.Cosmos)
+    .RunAsLocalContainer()
+    .ProvisionAsService(builder.Environment);
+
+var ratingDb = cosmos.AddCosmosDatabase(Components.Database.Rating);
+var feedbacks = ratingDb.AddContainer("feedbacks", "/bookId");
+
+// Add AI and Foundry components
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
 var project = foundry.AddProject(Components.Foundry.Project);
 
 project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
 project.AddModelDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
-
-var entraId = builder.AddEntraId(Components.Azure.EntraId);
-var entraAgentIdentities = builder.AddEntraAgentIdentities("entra-agent-identities", entraId);
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
@@ -57,6 +68,11 @@ var presidioAnonymizer = builder
     .AddPresidioAnonymizer(Components.Presidio.Anonymizer)
     .WithLifetime(ContainerLifetime.Persistent);
 
+// Add Azure Entra ID and Agent Identities
+var entraId = builder.AddEntraId(Components.Azure.EntraId);
+var entraAgentIdentities = builder.AddEntraAgentIdentities("entra-agent-identities", entraId);
+
+// Add services and their dependencies
 var catalogApi = builder
     .AddDotnetProject(
         Services.Catalog,
@@ -145,8 +161,8 @@ var ratingApi = builder
         "../../Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
     )
     .WithReference(project)
-    .WithReference(ratingDb)
-    .WaitFor(ratingDb)
+    .WithReference(feedbacks)
+    .WaitFor(feedbacks)
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(mcp)
@@ -230,6 +246,7 @@ var gateway = builder
 
 var (storefront, backoffice) = builder.AddFrontendApps(gateway, entraId);
 
+// Add CORS origins for the APIs based on the environment
 if (builder.ExecutionContext.IsRunMode)
 {
     builder.AddScalar(entraId).WithOpenAPI(chatApi, basketApi, ratingApi, catalogApi, orderingApi);

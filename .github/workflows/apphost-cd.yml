@@ -63,6 +63,7 @@ jobs:
           EMAIL_SENDER_ADDRESS: ${{ vars.EMAIL_SENDER_ADDRESS }}
           EMAIL_SENDER_NAME: ${{ vars.EMAIL_SENDER_NAME }}
           KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
+          QDRANT_CLOUD_CONNECTION: ${{ secrets.QDRANT_CLOUD_CONNECTION }}
         run: |
           test -n "$AZURE_RESOURCE_GROUP" || { echo "AZURE_RESOURCE_GROUP is required for this GitHub Environment."; exit 1; }
           missing=()
@@ -95,3 +96,4 @@ jobs:
           Parameters__email_sender_address: ${{ vars.EMAIL_SENDER_ADDRESS }}
           Parameters__email_sender_name: ${{ vars.EMAIL_SENDER_NAME }}
           ConnectionStrings__broker: ${{ secrets.KAFKA_BROKER }}
+          ConnectionStrings__vectordb: ${{ secrets.QDRANT_CLOUD_CONNECTION }}

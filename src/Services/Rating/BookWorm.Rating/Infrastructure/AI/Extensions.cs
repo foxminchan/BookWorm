@@ -27,7 +27,7 @@ internal static class Extensions
                 sp.GetRequiredKeyedService<A2AServer>(Agents.RatingAgent)
             );
 
-            builder.AddAIServices().WithAITelemetry();
+            builder.AddAIProject().WithLlmModels().WithAITelemetry();
             builder.AddPresidio();
 
             builder.AddMcpClient(Constants.Aspire.Services.McpTools);

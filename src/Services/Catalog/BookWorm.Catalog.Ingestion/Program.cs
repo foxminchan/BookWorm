@@ -16,7 +16,7 @@ builder.AddAzureNpgsqlDataSource(Components.Database.Catalog);
 builder.AddQdrantClient(Components.VectorDb);
 builder.Services.AddQdrantCollection<Guid, TextSnippet>(TextSnippet.CollectionName);
 
-builder.AddAIServices().WithAITelemetry();
+builder.AddAIProject().WithLlmModels().WithAITelemetry();
 builder.Services.AddScoped<IVectorBatchProcessor, VectorBatchProcessor>();
 
 await builder.Build().RunAsync();

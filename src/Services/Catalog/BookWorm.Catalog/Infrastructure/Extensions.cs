@@ -47,7 +47,7 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            builder.AddAIServices().WithAITelemetry();
+            builder.AddAIProject().WithLlmModels().WithAITelemetry();
 
             services.AddHybridSearch();
         }
