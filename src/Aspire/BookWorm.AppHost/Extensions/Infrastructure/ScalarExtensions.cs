@@ -28,50 +28,54 @@ internal static class ScalarExtensions
     extension(IResourceBuilder<ScalarResource> builder)
     {
         /// <summary>
-        ///     Configures the Scalar resource builder to include an API reference with OAuth authorization.
+        ///     Configures the Scalar resource builder to include API references with OAuth authorization.
         /// </summary>
-        /// <param name="api">The .NET project resource builder representing the API project.</param>
+        /// <param name="apis">The .NET project resource builders representing the API projects.</param>
         /// <returns>The configured Scalar resource builder with OAuth authorization.</returns>
-        public IResourceBuilder<ScalarResource> WithOpenAPI(
-            IResourceBuilder<DotnetProjectResource> api
-        )
+        public void WithOpenAPI(params IResourceBuilder<DotnetProjectResource>[] apis)
         {
-            return builder.WithApiReference(api, async (options, ctx) =>
+            var entraId = builder
+                .ApplicationBuilder.Resources.OfType<EntraIdApplicationResource>()
+                .FirstOrDefault();
+
+            foreach (var api in apis)
             {
-                var clientId = api.Resource.Name;
-                var entraId = builder
-                    .ApplicationBuilder.Resources.OfType<EntraIdApplicationResource>()
-                    .FirstOrDefault();
-
-                if (entraId is null)
+                builder.WithApiReference(api, async (options, ctx) =>
                 {
-                    return;
-                }
-
-                var entraClientId = await entraId.ClientIdOutputReference.GetValueAsync(ctx);
-                var tenantId = await entraId.TenantIdOutputReference.GetValueAsync(ctx);
-                var effectiveTenantId = string.IsNullOrWhiteSpace(tenantId) ? "common" : tenantId;
-                var authority = $"{entraId.Instance.TrimEnd('/')}/{effectiveTenantId}/oauth2/v2.0";
-
-                options
-                    .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
-                    .AddAuthorizationCodeFlow(OAuthDefaults.DisplayName, flow =>
+                    if (entraId is null)
                     {
-                        flow.WithPkce(Pkce.Sha256)
-                            .WithAuthorizationUrl($"{authority}/authorize")
-                            .WithTokenUrl($"{authority}/token");
+                        return;
+                    }
 
-                        if (!string.IsNullOrWhiteSpace(entraClientId))
+                    var clientId = api.Resource.Name;
+                    var entraClientId = await entraId.ClientIdOutputReference.GetValueAsync(ctx);
+                    var tenantId = await entraId.TenantIdOutputReference.GetValueAsync(ctx);
+                    var effectiveTenantId = string.IsNullOrWhiteSpace(tenantId)
+                        ? "common"
+                        : tenantId;
+                    var authority =
+                        $"{entraId.Instance.TrimEnd('/')}/{effectiveTenantId}/oauth2/v2.0";
+
+                    options
+                        .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
+                        .AddAuthorizationCodeFlow(OAuthDefaults.DisplayName, flow =>
                         {
-                            flow.WithClientId(entraClientId);
-                        }
+                            flow.WithPkce(Pkce.Sha256)
+                                .WithAuthorizationUrl($"{authority}/authorize")
+                                .WithTokenUrl($"{authority}/token");
 
-                        flow.WithSelectedScopes(
-                            $"{clientId}_{Authorization.Actions.Read}",
-                            $"{clientId}_{Authorization.Actions.Write}"
-                        );
-                    });
-            });
+                            if (!string.IsNullOrWhiteSpace(entraClientId))
+                            {
+                                flow.WithClientId(entraClientId);
+                            }
+
+                            flow.WithSelectedScopes(
+                                $"{clientId}_{Authorization.Actions.Read}",
+                                $"{clientId}_{Authorization.Actions.Write}"
+                            );
+                        });
+                });
+            }
         }
     }
 }

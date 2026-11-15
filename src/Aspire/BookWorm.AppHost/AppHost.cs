@@ -232,13 +232,7 @@ var (storefront, backoffice) = builder.AddFrontendApps(gateway, entraId);
 
 if (builder.ExecutionContext.IsRunMode)
 {
-    builder
-        .AddScalar(entraId)
-        .WithOpenAPI(chatApi)
-        .WithOpenAPI(basketApi)
-        .WithOpenAPI(ratingApi)
-        .WithOpenAPI(catalogApi)
-        .WithOpenAPI(orderingApi);
+    builder.AddScalar(entraId).WithOpenAPI(chatApi, basketApi, ratingApi, catalogApi, orderingApi);
 
     builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
 }
