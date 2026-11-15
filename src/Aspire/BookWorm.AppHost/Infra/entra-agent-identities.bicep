@@ -33,10 +33,10 @@ resource agentBlueprint 'Microsoft.Graph/applications@v1.0' = {
 }
 
 resource agentBlueprintSp 'Microsoft.Graph/servicePrincipals@v1.0' = {
-  appId: agentBlueprint.appId
   tags: [
     integratedAppTag
   ]
+  appId: agentBlueprint.appId
 }
 
 resource chatAgentApp 'Microsoft.Graph/applications@v1.0' = {
@@ -56,10 +56,10 @@ resource chatAgentApp 'Microsoft.Graph/applications@v1.0' = {
 }
 
 resource chatAgentSp 'Microsoft.Graph/servicePrincipals@v1.0' = {
-  appId: chatAgentApp.appId
   tags: [
     integratedAppTag
   ]
+  appId: chatAgentApp.appId
 }
 
 resource ratingAgentApp 'Microsoft.Graph/applications@v1.0' = {
@@ -79,10 +79,10 @@ resource ratingAgentApp 'Microsoft.Graph/applications@v1.0' = {
 }
 
 resource ratingAgentSp 'Microsoft.Graph/servicePrincipals@v1.0' = {
-  appId: ratingAgentApp.appId
   tags: [
     integratedAppTag
   ]
+  appId: ratingAgentApp.appId
 }
 
 output blueprintAppId string = agentBlueprint.appId
