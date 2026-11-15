@@ -47,6 +47,7 @@ project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.Model
 project.AddModelDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
 var entraId = builder.AddEntraId(Components.Azure.EntraId);
+var entraAgentIdentities = builder.AddEntraAgentIdentities("entra-agent-identities", entraId);
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
@@ -127,6 +128,7 @@ var chatApi = builder
     .WithReference(mcp)
     .WaitFor(mcp)
     .WithEntraId(entraId)
+    .WithEntraAgentIdentity(entraAgentIdentities, "chatAgentId", (Services.Rating, "ratingAgentId"))
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
@@ -151,8 +153,8 @@ var ratingApi = builder
     .WithReference(broker)
     .WaitFor(broker)
     .WithEntraId(entraId)
+    .WithEntraAgentIdentity(entraAgentIdentities, "ratingAgentId")
     .WithReference(presidioAnalyzer)
-    .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)

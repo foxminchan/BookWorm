@@ -20,7 +20,7 @@ internal static class RatingAgentRegistration
                     );
                     client.Timeout = TimeSpan.FromMinutes(2);
                 })
-                .AddAuthTokenExchange(Services.Rating);
+                .AddAgentTokenExchange(Services.Rating);
 
             builder.AddAIAgent(Constants.Other.Agents.RatingAgent, (sp, _) =>
             {

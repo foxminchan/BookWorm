@@ -5,6 +5,35 @@ internal static class EntraIdExtensions
     extension(IDistributedApplicationBuilder builder)
     {
         /// <summary>
+        ///     Adds a Bicep-provisioned Microsoft Graph deployment for Entra Agent Identity
+        ///     registrations (blueprint, Chat agent, and Rating agent) when publishing to Azure.
+        /// </summary>
+        /// <param name="name">The name of the Bicep template resource.</param>
+        /// <param name="entraId">The parent Entra ID application resource builder.</param>
+        /// <returns>
+        ///     An <see cref="IResourceBuilder{AzureBicepResource}" /> when in publish mode; otherwise, <see langword="null" />.
+        /// </returns>
+        public IResourceBuilder<AzureBicepResource>? AddEntraAgentIdentities(
+            string name,
+            IResourceBuilder<EntraIdApplicationResource> entraId
+        )
+        {
+            if (!builder.ExecutionContext.IsPublishMode)
+            {
+                return null;
+            }
+
+            return builder
+                .AddBicepTemplate(name, "Infra/entra-agent-identities.bicep")
+                .WithParameter("tenantId", entraId.Resource.TenantIdOutputReference)
+                .WithParameter("parentServicePrincipalId", entraId.GetOutput("servicePrincipalId"))
+                .WithParameter(
+                    "uniqueSuffix",
+                    $"{builder.Environment.EnvironmentName.ToLowerInvariant()}-{name}"
+                );
+        }
+
+        /// <summary>
         ///     Adds a Microsoft Entra ID application registration resource to the distributed application builder
         ///     with application roles, ID token issuance, default application ID URI, and local/publish credentials.
         /// </summary>
@@ -76,6 +105,41 @@ internal static class EntraIdExtensions
                     )
             );
         }
+
+        /// <summary>
+        ///     Injects <c>AgentIdentities</c> configuration outputs from the Bicep-provisioned
+        ///     Entra Agent Identities resource into the .NET resource.
+        /// </summary>
+        /// <param name="agentIdentities">The Bicep agent identities resource builder, or <see langword="null" /> in run mode.</param>
+        /// <param name="defaultAgentOutputName">The Bicep output name for <c>AgentIdentities:DefaultAgentId</c>.</param>
+        /// <param name="agentOverrides">Optional per-service agent ID overrides mapped to Bicep output names.</param>
+        /// <returns>The resource builder for method chaining.</returns>
+        public IResourceBuilder<TResource> WithEntraAgentIdentity(
+            IResourceBuilder<AzureBicepResource>? agentIdentities,
+            string defaultAgentOutputName,
+            params (string ServiceKey, string OutputName)[] agentOverrides
+        )
+        {
+            if (agentIdentities is null)
+            {
+                return builder;
+            }
+
+            builder.WithEnvironment(
+                "AgentIdentities__DefaultAgentId",
+                agentIdentities.GetOutput(defaultAgentOutputName)
+            );
+
+            foreach (var (serviceKey, outputName) in agentOverrides)
+            {
+                builder.WithEnvironment(
+                    $"AgentIdentities__Agents__{serviceKey}",
+                    agentIdentities.GetOutput(outputName)
+                );
+            }
+
+            return builder;
+        }
     }
 
     extension(IResourceBuilder<ContainerResource> builder)
@@ -96,10 +160,10 @@ internal static class EntraIdExtensions
     extension(IResourceBuilder<TurborepoAppResource> builder)
     {
         /// <summary>
-        ///     Configures the turborepo app resource to integrate with Microsoft Entra ID as an Identity Provider (IdP).
+        ///     Configures the Turborepo app resource to integrate with Microsoft Entra ID as an Identity Provider (IdP).
         /// </summary>
         /// <param name="entraId">The Entra ID application resource builder.</param>
-        /// <returns>The turborepo app resource builder for method chaining.</returns>
+        /// <returns>The Turborepo app resource builder for method chaining.</returns>
         public IResourceBuilder<TurborepoAppResource> WithEntraId(
             IResourceBuilder<EntraIdApplicationResource> entraId
         )
