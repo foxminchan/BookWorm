@@ -2,7 +2,8 @@
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
-      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0"
+        assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
         <Configuration>
           <Format>xml</Format>
           <CodeCoverage>
@@ -74,7 +75,8 @@
                 <Source>.*\\Generated\\.*</Source>
                 <Source>.*\\.g\\.cs$</Source>
 
-                <!-- gRPC/Protobuf generated files (exclude generated, keep hand-written implementations) -->
+                <!-- gRPC/Protobuf generated files (exclude generated, keep hand-written
+                implementations) -->
                 <Source>.*Reflection\.cs$</Source>
                 <Source>.*GrpcService\.cs$</Source>
                 <Source>.*Request\.cs$</Source>
