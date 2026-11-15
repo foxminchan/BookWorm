@@ -72,11 +72,26 @@ export const ordersHandlers = [
 
       const url = new URL(request.url);
       const requestedVersion = url.searchParams.get("version");
+      const defaultVersion = order.status === "New" ? 1 : 2;
       const version = requestedVersion
         ? Number.parseInt(requestedVersion, 10)
-        : order.status === "New"
-          ? 1
-          : 2;
+        : defaultVersion;
+
+      const etag = `"${version}"`;
+      const ifNoneMatch = request.headers.get("If-None-Match");
+
+      if (
+        ifNoneMatch &&
+        ifNoneMatch
+          .split(",")
+          .map((tag) => tag.trim())
+          .some((tag) => tag === "*" || tag === etag)
+      ) {
+        return new HttpResponse(null, {
+          status: 304,
+          headers: { ETag: etag },
+        });
+      }
 
       const summary: OrderSummarySnapshot = {
         id: order.id,
@@ -87,7 +102,7 @@ export const ordersHandlers = [
 
       return HttpResponse.json(summary, {
         status: 200,
-        headers: { ETag: `"${version}"` },
+        headers: { ETag: etag },
       });
     },
   ),
@@ -153,11 +168,26 @@ export const ordersHandlers = [
 
       const url = new URL(request.url);
       const requestedVersion = url.searchParams.get("version");
+      const defaultVersion = order.status === "New" ? 1 : 2;
       const version = requestedVersion
         ? Number.parseInt(requestedVersion, 10)
-        : order.status === "New"
-          ? 1
-          : 2;
+        : defaultVersion;
+
+      const etag = `"${version}"`;
+      const ifNoneMatch = request.headers.get("If-None-Match");
+
+      if (
+        ifNoneMatch &&
+        ifNoneMatch
+          .split(",")
+          .map((tag) => tag.trim())
+          .some((tag) => tag === "*" || tag === etag)
+      ) {
+        return new HttpResponse(null, {
+          status: 304,
+          headers: { ETag: etag },
+        });
+      }
 
       const summary: OrderSummarySnapshot = {
         id: order.id,
@@ -168,7 +198,7 @@ export const ordersHandlers = [
 
       return HttpResponse.json(summary, {
         status: 200,
-        headers: { ETag: `"${version}"` },
+        headers: { ETag: etag },
       });
     },
   ),

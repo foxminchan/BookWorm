@@ -17,6 +17,13 @@ const DEFAULT_MAX_RETRIES = Number(process.env.NEXT_PUBLIC_MAX_RETRIES) || 5;
  */
 export type AccessTokenProvider = () => Promise<string | null> | string | null;
 
+export function isPreconditionFailedError(error: unknown): boolean {
+  return (
+    axios.isAxiosError(error) &&
+    error.response?.status === HttpStatusCode.PreconditionFailed
+  );
+}
+
 export default class ApiClient {
   private readonly client: AxiosInstance;
   private tokenProvider: AccessTokenProvider | null = null;

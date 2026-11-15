@@ -11,6 +11,7 @@ internal sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookComman
             )
             .Accepts<UpdateBookCommand>(MediaTypeNames.Multipart.FormData)
             .ProducesPut()
+            .WithETag()
             .WithTags(nameof(Book))
             .WithName(nameof(UpdateBookEndpoint))
             .WithSummary("Update Book")

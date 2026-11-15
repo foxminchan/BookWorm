@@ -78,4 +78,43 @@ public sealed class FeedbackDeletedIntegrationEventHandlerTests
             Times.Never
         );
     }
+
+    [Test]
+    public async Task GivenDuplicateEvent_WhenHandling_ThenShouldIgnoreWithoutMutatingBook()
+    {
+        var @event = new FeedbackDeletedIntegrationEvent(
+            Guid.CreateVersion7(),
+            4,
+            Guid.CreateVersion7()
+        );
+
+        var guardMock =
+            new Mock<BookWorm.Chassis.EventBus.Idempotency.IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    @event.Id,
+                    nameof(FeedbackDeletedIntegrationEventHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(false);
+
+        var handler = new FeedbackDeletedIntegrationEventHandler(
+            _repositoryMock.Object,
+            guardMock.Object
+        );
+
+        await handler.Handle(@event, CancellationToken.None);
+
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+        _unitOfWorkMock.Verify(
+            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
 }

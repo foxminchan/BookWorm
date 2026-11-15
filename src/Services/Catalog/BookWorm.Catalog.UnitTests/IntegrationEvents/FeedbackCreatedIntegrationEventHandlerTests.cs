@@ -97,4 +97,44 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
         );
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Test]
+    public async Task GivenDuplicateEvent_WhenHandling_ThenShouldIgnoreWithoutMutatingBook()
+    {
+        var @event = new FeedbackCreatedIntegrationEvent(
+            Guid.CreateVersion7(),
+            5,
+            Guid.CreateVersion7()
+        );
+
+        var guardMock =
+            new Mock<BookWorm.Chassis.EventBus.Idempotency.IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    @event.Id,
+                    nameof(FeedbackCreatedIntegrationEventHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(false);
+
+        var handler = new FeedbackCreatedIntegrationEventHandler(
+            _repositoryMock.Object,
+            _busMock.Object,
+            guardMock.Object
+        );
+
+        await handler.Handle(@event, CancellationToken.None);
+
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+        _unitOfWorkMock.Verify(
+            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
 }

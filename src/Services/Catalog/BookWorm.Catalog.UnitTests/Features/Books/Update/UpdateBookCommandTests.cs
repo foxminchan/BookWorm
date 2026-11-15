@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Features.Books.Update;
@@ -121,8 +121,8 @@ public sealed class UpdateBookCommandTests
             Description = book.Description!,
             Price = book.Price?.OriginalPrice ?? 0,
             PriceSale = book.Price?.DiscountPrice,
-            CategoryId = (Guid)(CategoryId)book.CategoryId,
-            PublisherId = (Guid)(PublisherId)book.PublisherId,
+            CategoryId = (Guid)(book.CategoryId ?? CategoryId.From(Guid.CreateVersion7())),
+            PublisherId = (Guid)(book.PublisherId ?? PublisherId.From(Guid.CreateVersion7())),
             AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
             IsRemoveImage = true,
         };
@@ -217,8 +217,8 @@ public sealed class UpdateBookCommandTests
             Description = book.Description!,
             Price = book.Price?.OriginalPrice ?? 0,
             PriceSale = book.Price?.DiscountPrice,
-            CategoryId = (Guid)(CategoryId)book.CategoryId,
-            PublisherId = (Guid)(PublisherId)book.PublisherId,
+            CategoryId = (Guid)(book.CategoryId ?? CategoryId.From(Guid.CreateVersion7())),
+            PublisherId = (Guid)(book.PublisherId ?? PublisherId.From(Guid.CreateVersion7())),
             AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
         };
 
@@ -229,5 +229,43 @@ public sealed class UpdateBookCommandTests
 
         // Assert
         book.Image.ShouldBe("existing-image.jpg");
+    }
+
+    [Test]
+    public async Task GivenMismatchedExpectedVersion_WhenHandling_ThenShouldThrowDbUpdateConcurrencyException()
+    {
+        // Arrange
+        var book = new BookFaker().Generate(1)[0];
+        book.RowVersion = 2;
+
+        var repository = new Mock<IBookRepository>();
+        repository
+            .Setup(x => x.GetByIdAsync((Guid)book.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(book);
+
+        var command = new UpdateBookCommand
+        {
+            Id = (Guid)book.Id,
+            Name = book.Name ?? string.Empty,
+            Description = book.Description!,
+            Price = book.Price?.OriginalPrice ?? 0,
+            CategoryId = (Guid)(book.CategoryId ?? CategoryId.From(Guid.CreateVersion7())),
+            PublisherId = (Guid)(book.PublisherId ?? PublisherId.From(Guid.CreateVersion7())),
+            AuthorIds = [.. book.BookAuthors.Select(x => (Guid)x.AuthorId)],
+            ExpectedVersion = 1,
+        };
+
+        var handler = new UpdateBookHandler(repository.Object);
+
+        // Act & Assert
+        await Should.ThrowAsync<Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException>(
+            async () =>
+                await handler.Handle(command, CancellationToken.None)
+        );
+
+        repository.Verify(
+            x => x.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
     }
 }

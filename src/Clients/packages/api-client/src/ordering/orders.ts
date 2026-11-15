@@ -55,6 +55,43 @@ class OrdersApiClient {
     return response.data;
   }
 
+  public async getSummaryConditional(
+    id: string,
+    query?: OrderSummaryQuery,
+    options?: { ifNoneMatch?: string },
+  ): Promise<{
+    data: OrderSummarySnapshot | null;
+    etag?: string;
+    notModified: boolean;
+  }> {
+    const headers: Record<string, string> = {};
+
+    if (options?.ifNoneMatch) {
+      headers["If-None-Match"] = options.ifNoneMatch;
+    }
+
+    const response = await this.client.get<OrderSummarySnapshot>(
+      `/ordering/api/v1/orders/${id}/summary`,
+      {
+        params: query,
+        headers,
+        validateStatus: (status) =>
+          (status >= 200 && status < 300) || status === 304,
+      },
+    );
+
+    const etag =
+      typeof response.headers["etag"] === "string"
+        ? response.headers["etag"]
+        : undefined;
+
+    if (response.status === 304) {
+      return { data: null, etag, notModified: true };
+    }
+
+    return { data: response.data, etag, notModified: false };
+  }
+
   public async create(basketId: string): Promise<string> {
     const response = await this.client.post<string>(
       "/ordering/api/v1/orders",

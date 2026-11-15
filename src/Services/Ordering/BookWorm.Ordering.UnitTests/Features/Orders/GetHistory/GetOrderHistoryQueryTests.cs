@@ -93,6 +93,67 @@ public sealed class GetOrderHistoryQueryTests
         await act.ShouldThrowAsync<NotFoundException>();
     }
 
+    [Test]
+    public async Task GivenCancelledAndUnknownEvents_WhenGettingOrderHistory_ThenShouldMapCancelledAndNullForUnknown()
+    {
+        // Arrange
+        var handler = CreateHandler(CreateAdminPrincipal());
+        var order = new OrderFaker().Generate()[0];
+        var cancelledEvent = CreateMockEvent(
+            1,
+            1,
+            "order_cancelled",
+            new OrderCancelledEvent(order)
+        );
+        var unknownEvent = CreateMockEvent(2, 2, "unknown_event", new object());
+
+        _eventsMock
+            .Setup(e =>
+                e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync([cancelledEvent, unknownEvent]);
+
+        // Act
+        var result = await handler.Handle(new(_orderId), CancellationToken.None);
+
+        // Assert
+        result.Count.ShouldBe(2);
+        result[0].Status.ShouldBe(Status.Cancelled);
+        result[0].TotalPrice.ShouldBe(order.TotalPrice);
+        result[1].Status.ShouldBeNull();
+        result[1].TotalPrice.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task GivenBuyerRoleAndOwnedOrder_WhenGettingOrderHistory_ThenShouldReturnChronologicalEvents()
+    {
+        // Arrange
+        var buyerId = Guid.CreateVersion7();
+        var handler = CreateHandler(CreateBuyerPrincipal(buyerId));
+        var order = new OrderFaker().Generate()[0];
+        var placedEvent = CreateMockEvent(1, 1, "order_placed", new OrderPlacedEvent(order));
+
+        _orderRepositoryMock
+            .Setup(r =>
+                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(order);
+        _eventsMock
+            .Setup(e =>
+                e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync([placedEvent]);
+
+        // Act
+        var result = await handler.Handle(new(_orderId), CancellationToken.None);
+
+        // Assert
+        result.Count.ShouldBe(1);
+        result[0].Version.ShouldBe(1);
+        result[0].Status.ShouldBe(Status.New);
+        result[0].TotalPrice.ShouldBe(order.TotalPrice);
+    }
+
     private GetOrderHistoryHandler CreateHandler(ClaimsPrincipal principal)
     {
         return new(_querySessionMock.Object, _orderRepositoryMock.Object, principal);

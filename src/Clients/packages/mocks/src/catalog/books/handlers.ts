@@ -15,6 +15,7 @@ import {
 
 import {
   createNotFoundResponse,
+  createPreconditionFailedResponse,
   createValidationErrorResponse,
 } from "../../helpers/index";
 import { CATALOG_API_BASE_URL } from "../constants";
@@ -162,6 +163,17 @@ export const booksHandlers = [
         return HttpResponse.json(formatValidationErrors(result.error), {
           status: 400,
         });
+      }
+
+      const ifMatch = request.headers.get("If-Match")?.trim();
+      if (
+        ifMatch &&
+        ifMatch !== "*" &&
+        ifMatch !== '"1"' &&
+        ifMatch !== 'W/"1"' &&
+        ifMatch !== "1"
+      ) {
+        return createPreconditionFailedResponse();
       }
 
       const updated = booksStore.update(result.data);

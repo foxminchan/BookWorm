@@ -80,14 +80,23 @@ class BooksApiClient {
     return response.data;
   }
 
-  public async update(request: UpdateBookRequest): Promise<Book> {
+  public async update(
+    request: UpdateBookRequest,
+    options?: { ifMatch?: string },
+  ): Promise<Book> {
+    const headers: Record<string, string> = {
+      "Content-Type": "multipart/form-data",
+    };
+
+    if (options?.ifMatch) {
+      headers["If-Match"] = options.ifMatch;
+    }
+
     const response = await this.client.put<Book>(
       `/catalog/api/v1/books`,
       this.buildFormData(request),
       {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers,
       },
     );
     return response.data;
