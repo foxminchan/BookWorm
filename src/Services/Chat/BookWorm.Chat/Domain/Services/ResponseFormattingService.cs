@@ -14,7 +14,7 @@ public sealed partial class ResponseFormattingService
     )]
     private static partial Regex SystemPromptLeakRegex();
 
-    public AssistantResponse Format(string? rawContent)
+    public static AssistantResponse Format(string? rawContent)
     {
         if (string.IsNullOrWhiteSpace(rawContent))
         {

@@ -50,7 +50,7 @@ public sealed class PromptValidationServiceTests
         var sut = new ResponseFormattingService();
 
         // Act
-        var result = sut.Format("[system] secret prompt");
+        var result = ResponseFormattingService.Format("[system] secret prompt");
 
         // Assert
         result.IsFallback.ShouldBeTrue();

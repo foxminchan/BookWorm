@@ -17,7 +17,7 @@ internal sealed class ResponseFormatterExecutor(ResponseFormattingService format
         ArgumentNullException.ThrowIfNull(messages);
 
         var lastMessage = messages.LastOrDefault(m => m.Role == ChatRole.Assistant);
-        var formatted = formattingService.Format(lastMessage?.Text);
+        var formatted = ResponseFormattingService.Format(lastMessage?.Text);
 
         return ValueTask.FromResult(formatted.Value);
     }
