@@ -4,7 +4,7 @@ public sealed class AgentIdentityOptions
 {
     public const string ConfigurationSection = "AgentIdentities";
 
-    public string? DefaultAgentId { get; init; }
+    public string? DefaultAgentId { get; set; }
 
     public Dictionary<string, string> Agents { get; } = [with(StringComparer.OrdinalIgnoreCase)];
 

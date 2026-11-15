@@ -14,7 +14,7 @@ param blueprintDisplayName string = 'BookWorm Agent Identity Blueprint'
 
 var integratedAppTag = 'WindowsAzureActiveDirectoryIntegratedApp'
 var tokenExchangeAudience = 'api://AzureADTokenExchange'
-var issuer = 'https://login.microsoftonline.com/${tenantId}/v2.0'
+var issuer = uri(environment().authentication.loginEndpoint, '${tenantId}/v2.0')
 
 resource agentBlueprint 'Microsoft.Graph/applications@v1.0' = {
   displayName: blueprintDisplayName

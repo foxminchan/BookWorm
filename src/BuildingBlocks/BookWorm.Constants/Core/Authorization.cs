@@ -5,15 +5,15 @@ public static class Authorization
     public static class Roles
     {
         public const string Admin = "admin";
-        public const string User = "user";
-        public const string Reporter = "reporter";
+        public const string BusinessUser = "business_user";
+        public const string Customer = "customer";
     }
 
     public static class Policies
     {
         public const string Admin = Roles.Admin;
-        public const string User = Roles.User;
-        public const string Reporter = Roles.Reporter;
+        public const string BusinessUser = Roles.BusinessUser;
+        public const string Customer = Roles.Customer;
         public const string Read = Actions.Read;
     }
 

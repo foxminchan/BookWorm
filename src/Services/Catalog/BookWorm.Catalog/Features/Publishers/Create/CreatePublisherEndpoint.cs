@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.Create;
+namespace BookWorm.Catalog.Features.Publishers.Create;
 
 internal sealed class CreatePublisherEndpoint
     : IEndpoint<Ok<PublisherId>, CreatePublisherCommand, ISender>
@@ -14,7 +14,7 @@ internal sealed class CreatePublisherEndpoint
             .WithSummary("Create Publisher")
             .WithDescription("Creates a new publisher")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

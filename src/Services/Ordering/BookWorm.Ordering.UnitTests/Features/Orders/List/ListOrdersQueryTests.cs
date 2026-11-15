@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BookWorm.Constants.Core;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
@@ -26,7 +26,7 @@ public sealed class ListOrdersQueryTests
         _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimTypes.NameIdentifier)).Returns(claim);
         _claimsPrincipalMock
             .Setup(x => x.FindAll(ClaimTypes.Role))
-            .Returns([new(ClaimTypes.Role, Authorization.Roles.User)]);
+            .Returns([new(ClaimTypes.Role, Authorization.Roles.Customer)]);
     }
 
     [Test]

@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Books.Delete;
+namespace BookWorm.Catalog.Features.Books.Delete;
 
 internal sealed class DeleteBookEndpoint : IEndpoint<NoContent, BookId, ISender>
 {
@@ -17,7 +17,7 @@ internal sealed class DeleteBookEndpoint : IEndpoint<NoContent, BookId, ISender>
             .WithSummary("Delete Book")
             .WithDescription("Delete a book if it exists")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

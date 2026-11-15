@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Features.Books.Get;
+using BookWorm.Catalog.Features.Books.Get;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Create;
@@ -24,7 +24,7 @@ internal sealed class CreateBookEndpoint
             .WithDescription("Create a book")
             .WithFormOptions(true)
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

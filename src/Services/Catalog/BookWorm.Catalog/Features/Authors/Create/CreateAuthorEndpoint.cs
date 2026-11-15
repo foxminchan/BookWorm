@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Create;
+namespace BookWorm.Catalog.Features.Authors.Create;
 
 internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<AuthorId>, CreateAuthorCommand, ISender>
 {
@@ -13,7 +13,7 @@ internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<AuthorId>, CreateAutho
             .WithSummary("Create Author")
             .WithDescription("Create a new author in the catalog system")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

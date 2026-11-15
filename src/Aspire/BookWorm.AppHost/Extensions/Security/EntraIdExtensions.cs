@@ -51,23 +51,23 @@ internal static class EntraIdExtensions
                     new(
                         Authorization.Roles.Admin,
                         "Admin",
-                        "Administrator role",
+                        "Administrator role for managing all aspects of the application",
                         ["User", "Application"]
                     )
                 )
                 .WithAppRole(
                     new(
-                        Authorization.Roles.User,
-                        "User",
-                        "Standard user role",
+                        Authorization.Roles.BusinessUser,
+                        "BusinessUser",
+                        "Business user role for managing books and catalog reference data",
                         ["User", "Application"]
                     )
                 )
                 .WithAppRole(
                     new(
-                        Authorization.Roles.Reporter,
-                        "Reporter",
-                        "Reporter role",
+                        Authorization.Roles.Customer,
+                        "Customer",
+                        "Customer role for browsing and purchasing books",
                         ["User", "Application"]
                     )
                 )

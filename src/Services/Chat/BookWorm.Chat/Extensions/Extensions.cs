@@ -40,11 +40,11 @@ internal static class Extensions
                             $"{Services.Chatting}_{Authorization.Actions.Write}"
                         );
                 })
-                .AddPolicy(Authorization.Policies.User, policy =>
+                .AddPolicy(Authorization.Policies.Customer, policy =>
                 {
                     policy
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.User)
+                        .RequireRole(Authorization.Roles.Customer)
                         .RequireScope(
                             $"{Services.Chatting}_{Authorization.Actions.Read}",
                             $"{Services.Chatting}_{Authorization.Actions.Write}"
@@ -53,7 +53,7 @@ internal static class Extensions
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.User)
+                        .RequireRole(Authorization.Roles.Customer)
                         .RequireScope(
                             $"{Services.Chatting}_{Authorization.Actions.Read}",
                             $"{Services.Chatting}_{Authorization.Actions.Write}"

@@ -25,17 +25,20 @@ internal static class AuthorizationExtensions
                             $"{Services.Ordering}_{Authorization.Actions.Write}"
                         );
                 })
-                .AddPolicy(Authorization.Policies.Reporter, policy =>
+                .AddPolicy(Authorization.Policies.Customer, policy =>
                 {
                     policy
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.Reporter)
-                        .RequireScope($"{Services.Ordering}_{Authorization.Actions.Read}");
+                        .RequireRole(Authorization.Roles.Customer)
+                        .RequireScope(
+                            $"{Services.Ordering}_{Authorization.Actions.Read}",
+                            $"{Services.Ordering}_{Authorization.Actions.Write}"
+                        );
                 })
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.User)
+                        .RequireRole(Authorization.Roles.Customer, Authorization.Roles.Admin)
                         .RequireScope(
                             $"{Services.Ordering}_{Authorization.Actions.Read}",
                             $"{Services.Ordering}_{Authorization.Actions.Write}"

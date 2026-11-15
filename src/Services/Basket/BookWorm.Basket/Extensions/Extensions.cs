@@ -31,7 +31,7 @@ internal static class Extensions
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.User)
+                        .RequireRole(Authorization.Roles.Customer)
                         .RequireScope(
                             $"{Services.Basket}_{Authorization.Actions.Read}",
                             $"{Services.Basket}_{Authorization.Actions.Write}"
