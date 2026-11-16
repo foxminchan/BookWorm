@@ -1,0 +1,51 @@
+{
+  "consumer": {
+    "name": "Catalog"
+  },
+  "messages": [
+    {
+      "contents": {
+        "creationDate": "2026-11-16T17:17:52.7613451Z",
+        "id": "01a1e55d-80f9-7624-911e-8c3af4cdfb0c"
+      },
+      "description": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent message",
+      "matchingRules": {
+        "body": {
+          "$.creationDate": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          },
+          "$.id": {
+            "combine": "AND",
+            "matchers": [
+              {
+                "match": "type"
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "contentType": "application/json",
+        "source": "urn:bookworm:book-worm-scheduler",
+        "type": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent"
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.27",
+      "models": "1.2.8"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "Scheduler"
+  }
+}
