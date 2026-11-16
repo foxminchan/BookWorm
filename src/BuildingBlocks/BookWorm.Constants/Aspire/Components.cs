@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants.Aspire;
+namespace BookWorm.Constants.Aspire;
 
 public static class Components
 {
@@ -16,7 +16,6 @@ public static class Components
     public static class Database
     {
         public const string Rating = "ratingdb";
-        public const string Finance = "financedb";
         public const string Catalog = "catalogdb";
         public const string Ordering = "orderingdb";
         public const string Notification = "notificationdb";
@@ -42,6 +41,12 @@ public static class Components
     {
         public const string ContainerApp = "aca";
         public const string EntraId = "entra";
+
+        public static class DurableTask
+        {
+            public const string Scheduler = "durable-task-scheduler";
+            public const string TaskHub = "finance-taskhub";
+        }
 
         public static class Storage
         {

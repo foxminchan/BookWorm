@@ -2,9 +2,16 @@ namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
 public enum OrderLifecycleStage : byte
 {
+    [Description("Not Created")]
     NotCreated = 0,
+
+    [Description("Pending")]
     Pending = 1,
+
+    [Description("Completed")]
     Completed = 2,
+
+    [Description("Cancelled")]
     Cancelled = 3,
 }
 
@@ -17,8 +24,13 @@ public sealed record OrderLifecycleState(
 
 public enum OrderLifecycleAction : byte
 {
+    [Description("Place Order")]
     Place = 0,
+
+    [Description("Complete Order")]
     Complete = 1,
+
+    [Description("Cancel Order")]
     Cancel = 2,
 }
 

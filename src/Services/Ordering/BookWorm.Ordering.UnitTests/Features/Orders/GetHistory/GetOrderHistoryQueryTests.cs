@@ -105,7 +105,7 @@ public sealed class GetOrderHistoryQueryTests
             "order_cancelled",
             new OrderCancelledEvent(order)
         );
-        var unknownEvent = CreateMockEvent(2, 2, "unknown_event", new object());
+        var unknownEvent = CreateMockEvent(2, 2, "unknown_event", new());
 
         _eventsMock
             .Setup(e =>

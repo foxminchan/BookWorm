@@ -1,6 +1,5 @@
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.ServiceDefaults.Kestrel;
 
 namespace BookWorm.Scheduler.Extensions;
 

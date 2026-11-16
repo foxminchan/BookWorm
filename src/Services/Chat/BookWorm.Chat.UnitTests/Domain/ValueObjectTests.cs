@@ -14,7 +14,7 @@ public sealed class ValueObjectTests
     [Test]
     public void GivenOversizedPrompt_WhenCreatingUserPrompt_ThenShouldTruncateAndFlag()
     {
-        var prompt = UserPrompt.Create(new string('a', 2500));
+        var prompt = UserPrompt.Create(new('a', 2500));
 
         prompt.WasTruncated.ShouldBeTrue();
         prompt.Value.ShouldEndWith(UserPrompt.TruncationSuffix);

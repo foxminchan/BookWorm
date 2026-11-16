@@ -1,0 +1,14 @@
+{
+  "version": "2.0",
+  "telemetryMode": "OpenTelemetry",
+  "functionTimeout": "00:05:00",
+  "extensions": {
+    "durableTask": {
+      "hubName": "%TASKHUB_NAME%",
+      "storageProvider": {
+        "type": "azureManaged",
+        "connectionStringName": "DTS_CONNECTION_STRING"
+      }
+    }
+  }
+}

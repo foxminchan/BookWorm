@@ -75,7 +75,8 @@ public static class ETagExtensions
     {
         /// <summary>
         ///     Applies <see cref="ETagEndpointFilter" /> to populate <see cref="IHasExpectedVersion" /> commands from
-        ///     <c>If-Match</c> headers and emit <c>ETag</c> / <c>304 Not Modified</c> responses for <see cref="IHasVersion" /> results.
+        ///     <c>If-Match</c> headers and emit <c>ETag</c> / <c>304 Not Modified</c> responses for <see cref="IHasVersion" />
+        ///     results.
         /// </summary>
         public RouteHandlerBuilder WithETag()
         {
@@ -92,7 +93,10 @@ public static class ETagExtensions
         ///     into a <see cref="uint" /> row version matching <c>AuditableEntity.RowVersion</c>.
         /// </summary>
         /// <param name="version">The parsed row version if successful; otherwise, 0.</param>
-        /// <returns><see langword="true" /> if the <c>If-Match</c> header was successfully parsed; otherwise, <see langword="false" />.</returns>
+        /// <returns>
+        ///     <see langword="true" /> if the <c>If-Match</c> header was successfully parsed; otherwise,
+        ///     <see langword="false" />.
+        /// </returns>
         public bool TryGetIfMatchVersion(out uint version)
         {
             version = 0;

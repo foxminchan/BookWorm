@@ -1,9 +1,16 @@
 using System.Reflection;
+using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.Chassis.EventBus.Wolverine;
 
-internal static class KafkaTopicRouter
+public static class KafkaTopicRouter
 {
+    public static string CreateTopicName<T>(IHostEnvironment environment)
+        where T : IntegrationEvent
+    {
+        return CreateTopicName(typeof(T), environment.ApplicationName, environment.EnvironmentName);
+    }
+
     public static string CreateTopicName(
         Type messageType,
         string applicationName,

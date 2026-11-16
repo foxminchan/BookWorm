@@ -29,7 +29,7 @@ public sealed class OrderSummaryTests
     {
         // Arrange
         var order = new OrderFaker().Generate()[0];
-        var summary = OrderSummary.Create(new OrderPlacedEvent(order));
+        var summary = OrderSummary.Create(new(order));
         var cancelledEvent = new OrderCancelledEvent(order);
 
         // Act
@@ -46,7 +46,7 @@ public sealed class OrderSummaryTests
     {
         // Arrange
         var order = new OrderFaker().Generate()[0];
-        var summary = OrderSummary.Create(new OrderPlacedEvent(order));
+        var summary = OrderSummary.Create(new(order));
         var completedEvent = new OrderCompletedEvent(order);
 
         // Act

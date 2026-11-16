@@ -8,7 +8,6 @@ namespace BookWorm.ArchTests.Dependencies;
 public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
 {
     [Test]
-    [Arguments(nameof(Finance))]
     [Arguments(nameof(Scheduler))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotExtendEntity(string serviceName)
     {
@@ -24,7 +23,6 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
     }
 
     [Test]
-    [Arguments(nameof(Finance))]
     [Arguments(nameof(Scheduler))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotExtendValueObject(
         string serviceName
@@ -42,7 +40,6 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
     }
 
     [Test]
-    [Arguments(nameof(Finance))]
     [Arguments(nameof(Scheduler))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotExtendDomainEvent(
         string serviceName

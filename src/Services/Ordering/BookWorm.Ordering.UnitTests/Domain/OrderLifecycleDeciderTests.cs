@@ -15,20 +15,16 @@ public sealed class OrderLifecycleDeciderTests
         var completedAt = placedAt.AddMinutes(5);
 
         var initial = OrderLifecycleDecider.Instance.Reconstitute([
-            new OrderTransition(OrderLifecycleStage.Pending, placedAt, orderId, buyerId),
+            new(OrderLifecycleStage.Pending, placedAt, orderId, buyerId),
         ]);
 
         var (nextState, transitions) = OrderLifecycleDecider.Instance.Handle(
-            new OrderLifecycleCommand(OrderLifecycleAction.Complete, completedAt),
+            new(OrderLifecycleAction.Complete, completedAt),
             initial
         );
 
-        transitions.ShouldBe([
-            new OrderTransition(OrderLifecycleStage.Completed, completedAt, orderId),
-        ]);
-        nextState.ShouldBe(
-            new OrderLifecycleState(OrderLifecycleStage.Completed, orderId, buyerId, completedAt)
-        );
+        transitions.ShouldBe([new(OrderLifecycleStage.Completed, completedAt, orderId)]);
+        nextState.ShouldBe(new(OrderLifecycleStage.Completed, orderId, buyerId, completedAt));
     }
 
     [Test]
@@ -39,12 +35,12 @@ public sealed class OrderLifecycleDeciderTests
         var now = DateTimeOffset.UtcNow;
 
         var state = OrderLifecycleDecider.Instance.Reconstitute([
-            new OrderTransition(OrderLifecycleStage.Pending, now, orderId, buyerId),
-            new OrderTransition(OrderLifecycleStage.Completed, now.AddMinutes(1), orderId),
+            new(OrderLifecycleStage.Pending, now, orderId, buyerId),
+            new(OrderLifecycleStage.Completed, now.AddMinutes(1), orderId),
         ]);
 
         var (nextState, transitions) = OrderLifecycleDecider.Instance.Handle(
-            new OrderLifecycleCommand(OrderLifecycleAction.Complete, now.AddMinutes(2)),
+            new(OrderLifecycleAction.Complete, now.AddMinutes(2)),
             state
         );
 
@@ -60,13 +56,13 @@ public sealed class OrderLifecycleDeciderTests
         var now = DateTimeOffset.UtcNow;
 
         var state = OrderLifecycleDecider.Instance.Reconstitute([
-            new OrderTransition(OrderLifecycleStage.Pending, now, orderId, buyerId),
-            new OrderTransition(OrderLifecycleStage.Cancelled, now.AddMinutes(1), orderId),
+            new(OrderLifecycleStage.Pending, now, orderId, buyerId),
+            new(OrderLifecycleStage.Cancelled, now.AddMinutes(1), orderId),
         ]);
 
         Should.Throw<OrderingDomainException>(() =>
             OrderLifecycleDecider.Instance.Handle(
-                new OrderLifecycleCommand(OrderLifecycleAction.Complete, now.AddMinutes(2)),
+                new(OrderLifecycleAction.Complete, now.AddMinutes(2)),
                 state
             )
         );
@@ -80,16 +76,12 @@ public sealed class OrderLifecycleDeciderTests
         var placedAt = DateTimeOffset.UtcNow;
 
         var (nextState, transitions) = OrderLifecycleDecider.Instance.Handle(
-            new OrderLifecycleCommand(OrderLifecycleAction.Place, placedAt, orderId, buyerId),
-            new OrderLifecycleState(OrderLifecycleStage.NotCreated)
+            new(OrderLifecycleAction.Place, placedAt, orderId, buyerId),
+            new(OrderLifecycleStage.NotCreated)
         );
 
-        transitions.ShouldBe([
-            new OrderTransition(OrderLifecycleStage.Pending, placedAt, orderId, buyerId),
-        ]);
-        nextState.ShouldBe(
-            new OrderLifecycleState(OrderLifecycleStage.Pending, orderId, buyerId, placedAt)
-        );
+        transitions.ShouldBe([new(OrderLifecycleStage.Pending, placedAt, orderId, buyerId)]);
+        nextState.ShouldBe(new(OrderLifecycleStage.Pending, orderId, buyerId, placedAt));
     }
 
     [Test]
@@ -100,15 +92,15 @@ public sealed class OrderLifecycleDeciderTests
 
         Should.Throw<OrderingDomainException>(() =>
             OrderLifecycleDecider.Instance.Handle(
-                new OrderLifecycleCommand(OrderLifecycleAction.Place, now),
-                new OrderLifecycleState(OrderLifecycleStage.NotCreated)
+                new(OrderLifecycleAction.Place, now),
+                new(OrderLifecycleStage.NotCreated)
             )
         );
 
         Should.Throw<OrderingDomainException>(() =>
             OrderLifecycleDecider.Instance.Handle(
-                new OrderLifecycleCommand(OrderLifecycleAction.Place, now, orderId),
-                new OrderLifecycleState(OrderLifecycleStage.NotCreated)
+                new(OrderLifecycleAction.Place, now, orderId),
+                new(OrderLifecycleStage.NotCreated)
             )
         );
     }
@@ -122,23 +114,19 @@ public sealed class OrderLifecycleDeciderTests
         var cancelledAt = placedAt.AddMinutes(5);
 
         var initial = OrderLifecycleDecider.Instance.Reconstitute([
-            new OrderTransition(OrderLifecycleStage.Pending, placedAt, orderId, buyerId),
+            new(OrderLifecycleStage.Pending, placedAt, orderId, buyerId),
         ]);
 
         var (cancelledState, transitions) = OrderLifecycleDecider.Instance.Handle(
-            new OrderLifecycleCommand(OrderLifecycleAction.Cancel, cancelledAt),
+            new(OrderLifecycleAction.Cancel, cancelledAt),
             initial
         );
 
-        transitions.ShouldBe([
-            new OrderTransition(OrderLifecycleStage.Cancelled, cancelledAt, orderId),
-        ]);
-        cancelledState.ShouldBe(
-            new OrderLifecycleState(OrderLifecycleStage.Cancelled, orderId, buyerId, cancelledAt)
-        );
+        transitions.ShouldBe([new(OrderLifecycleStage.Cancelled, cancelledAt, orderId)]);
+        cancelledState.ShouldBe(new(OrderLifecycleStage.Cancelled, orderId, buyerId, cancelledAt));
 
         var (idempotentState, emptyTransitions) = OrderLifecycleDecider.Instance.Handle(
-            new OrderLifecycleCommand(OrderLifecycleAction.Cancel, cancelledAt.AddMinutes(1)),
+            new(OrderLifecycleAction.Cancel, cancelledAt.AddMinutes(1)),
             cancelledState
         );
 
@@ -154,13 +142,13 @@ public sealed class OrderLifecycleDeciderTests
         var now = DateTimeOffset.UtcNow;
 
         var state = OrderLifecycleDecider.Instance.Reconstitute([
-            new OrderTransition(OrderLifecycleStage.Pending, now, orderId, buyerId),
-            new OrderTransition(OrderLifecycleStage.Completed, now.AddMinutes(1), orderId),
+            new(OrderLifecycleStage.Pending, now, orderId, buyerId),
+            new(OrderLifecycleStage.Completed, now.AddMinutes(1), orderId),
         ]);
 
         Should.Throw<OrderingDomainException>(() =>
             OrderLifecycleDecider.Instance.Handle(
-                new OrderLifecycleCommand(OrderLifecycleAction.Cancel, now.AddMinutes(2)),
+                new(OrderLifecycleAction.Cancel, now.AddMinutes(2)),
                 state
             )
         );
@@ -171,8 +159,8 @@ public sealed class OrderLifecycleDeciderTests
     {
         Should.Throw<OrderingDomainException>(() =>
             OrderLifecycleDecider.Instance.Handle(
-                new OrderLifecycleCommand(OrderLifecycleAction.Complete, DateTimeOffset.UtcNow),
-                new OrderLifecycleState(OrderLifecycleStage.NotCreated)
+                new(OrderLifecycleAction.Complete, DateTimeOffset.UtcNow),
+                new(OrderLifecycleStage.NotCreated)
             )
         );
     }
@@ -181,7 +169,7 @@ public sealed class OrderLifecycleDeciderTests
     public void GivenInvalidTransition_WhenReconstituting_ThenShouldLeaveStateUnchanged()
     {
         var state = OrderLifecycleDecider.Instance.Reconstitute([
-            new OrderTransition(OrderLifecycleStage.Completed, DateTimeOffset.UtcNow),
+            new(OrderLifecycleStage.Completed, DateTimeOffset.UtcNow),
         ]);
 
         state.Stage.ShouldBe(OrderLifecycleStage.NotCreated);

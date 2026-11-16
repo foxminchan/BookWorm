@@ -3,6 +3,7 @@ using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
 
@@ -88,8 +89,7 @@ public sealed class FeedbackDeletedIntegrationEventHandlerTests
             Guid.CreateVersion7()
         );
 
-        var guardMock =
-            new Mock<BookWorm.Chassis.EventBus.Idempotency.IIntegrationEventIdempotencyGuard>();
+        var guardMock = new Mock<IIntegrationEventIdempotencyGuard>();
         guardMock
             .Setup(x =>
                 x.TryAcquireAsync(

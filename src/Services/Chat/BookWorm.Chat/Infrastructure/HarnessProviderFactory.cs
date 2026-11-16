@@ -64,15 +64,15 @@ internal static class HarnessProviderFactory
         return new(
             projectClient,
             memoryStoreName,
-            stateInitializer: _ => new(new(httpContextAccessor.ResolveUserScope())),
-            options: new()
+            _ => new(new(httpContextAccessor.ResolveUserScope())),
+            new()
             {
                 ContextPrompt = """
                 ## User Reading Preferences & Memories
                 Consider the following remembered user preferences, constraints, and reading history when recommending books or answering questions:
                 """,
             },
-            loggerFactory: loggerFactory
+            loggerFactory
         );
     }
 

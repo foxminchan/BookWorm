@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.EventBus.Dispatcher;
+using BookWorm.Chassis.EventBus.Dispatcher;
 using BookWorm.Chassis.EventBus.Wolverine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

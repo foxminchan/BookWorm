@@ -4,6 +4,7 @@ using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Features.Books.Update;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.Update;
 
@@ -258,9 +259,8 @@ public sealed class UpdateBookCommandTests
         var handler = new UpdateBookHandler(repository.Object);
 
         // Act & Assert
-        await Should.ThrowAsync<Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException>(
-            async () =>
-                await handler.Handle(command, CancellationToken.None)
+        await Should.ThrowAsync<DbUpdateConcurrencyException>(async () =>
+            await handler.Handle(command, CancellationToken.None)
         );
 
         repository.Verify(

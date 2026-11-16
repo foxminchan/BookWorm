@@ -39,7 +39,6 @@ var postgres = builder
     .ProvisionAsService(builder.Environment);
 
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMcp();
-var financeDb = postgres.AddDatabase(Components.Database.Finance).WithPostgresMcp();
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
 var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
@@ -193,14 +192,40 @@ builder
 
 builder
     .AddDotnetProject(
+        Services.Scheduler,
+        "../../Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
+    )
+    .WithEntraId(entraId)
+    .WithReference(broker)
+    .WaitFor(broker)
+    .WithReference(schedulerDb)
+    .WaitFor(schedulerDb)
+    .WithDisplayUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
+    .WithExplicitStart();
+
+// Add Functions projects for Finance and Catalog Ingestion
+var durableTaskScheduler = builder
+    .AddDurableTaskScheduler(Components.Azure.DurableTask.Scheduler)
+    .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent));
+
+var financeTaskHub = durableTaskScheduler.AddTaskHub(Components.Azure.DurableTask.TaskHub);
+
+builder
+    .AddAzureFunctionsProject(
         Services.Finance,
         "../../Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj"
     )
-    .WithReference(financeDb)
-    .WaitFor(financeDb)
+    .WithHostStorage(storage)
+    .WithReference(financeTaskHub)
+    .WaitFor(financeTaskHub)
     .WithReference(broker)
     .WaitFor(broker)
-    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
+    .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
+    .WithRoleAssignments(
+        storage,
+        StorageBuiltInRole.StorageBlobDataReader,
+        StorageBuiltInRole.StorageQueueDataReader
+    );
 
 builder
     .AddAzureFunctionsProject(
@@ -222,19 +247,6 @@ builder
         StorageBuiltInRole.StorageBlobDataReader,
         StorageBuiltInRole.StorageQueueDataReader
     );
-
-builder
-    .AddDotnetProject(
-        Services.Scheduler,
-        "../../Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
-    )
-    .WithEntraId(entraId)
-    .WithReference(broker)
-    .WaitFor(broker)
-    .WithReference(schedulerDb)
-    .WaitFor(schedulerDb)
-    .WithDisplayUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
-    .WithExplicitStart();
 
 var gateway = builder
     .AddApiGatewayProxy()
