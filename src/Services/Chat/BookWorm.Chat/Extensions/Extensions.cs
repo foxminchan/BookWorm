@@ -1,13 +1,10 @@
 using System.Security.Claims;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.Rating;
 using BookWorm.Chat.Agents.Routing;
-using BookWorm.Chat.Configurations;
 using BookWorm.Chat.Orchestration;
-using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
@@ -23,8 +20,6 @@ internal static class Extensions
             var services = builder.Services;
 
             builder.AddDefaultCors();
-
-            builder.AddAppSettings<ChatAppSettings>();
 
             builder.AddDefaultAuthentication();
 
@@ -77,9 +72,6 @@ internal static class Extensions
 
             services.AddVersioning();
             services.AddEndpoints(typeof(IChatApiMarker));
-            services.AddDefaultOpenApi(options =>
-                options.ApplyOpenApiInfoDefinitions<ChatAppSettings>()
-            );
 
             // Configure ClaimsPrincipal
             services.AddTransient(s =>

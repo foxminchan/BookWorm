@@ -1,10 +1,7 @@
----
-openapi: 3.1.1
+openapi: 3.2.0
 info:
   title: Catalog Service API
-  description:
-    Manages the catalog of products for the BookWorm platform, including
-    books, authors, and categories
+  description: "Manages the catalog of products for the BookWorm platform, including books, authors, and categories"
   contact:
     name: BookWorm Engineering
     url: https://github.com/foxminchan
@@ -13,11 +10,9 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   version: "1.0"
-  summary:
-    A service responsible for managing the catalog of products for the BookWorm
-    platform
+  summary: A service responsible for managing the catalog of products for the BookWorm platform
 paths:
-  "/api/v1/publishers":
+  /api/v1/publishers:
     put:
       tags:
         - Publisher
@@ -28,7 +23,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/UpdatePublisherCommand"
+              $ref: "#/components/schemas/UpdatePublisherCommand"
         required: true
       responses:
         "204":
@@ -38,13 +33,13 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     get:
       tags:
         - Publisher
@@ -59,7 +54,7 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/PublisherDto"
+                  $ref: "#/components/schemas/PublisherDto"
     post:
       tags:
         - Publisher
@@ -70,7 +65,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/CreatePublisherCommand"
+              $ref: "#/components/schemas/CreatePublisherCommand"
         required: true
       responses:
         "200":
@@ -78,13 +73,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/PublisherId"
+                $ref: "#/components/schemas/PublisherId"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
   "/api/v1/publishers/{id}":
     delete:
       tags:
@@ -97,8 +92,7 @@ paths:
           in: path
           description: The unique identifier of the publisher to be deleted
           required: true
-          schema:
-            type: string
+          schema: {}
       responses:
         "204":
           description: No Content
@@ -107,8 +101,8 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/categories":
+                $ref: "#/components/schemas/ProblemDetails"
+  /api/v1/categories:
     put:
       tags:
         - Category
@@ -119,7 +113,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/UpdateCategoryCommand"
+              $ref: "#/components/schemas/UpdateCategoryCommand"
         required: true
       responses:
         "204":
@@ -129,13 +123,13 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     get:
       tags:
         - Category
@@ -150,7 +144,7 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/CategoryDto"
+                  $ref: "#/components/schemas/CategoryDto"
     post:
       tags:
         - Category
@@ -161,7 +155,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/CreateCategoryCommand"
+              $ref: "#/components/schemas/CreateCategoryCommand"
         required: true
       responses:
         "200":
@@ -169,13 +163,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/CategoryId"
+                $ref: "#/components/schemas/CategoryId"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
   "/api/v1/categories/{id}":
     delete:
       tags:
@@ -188,8 +182,7 @@ paths:
           in: path
           description: The unique identifier of the category to be deleted
           required: true
-          schema:
-            type: string
+          schema: {}
       responses:
         "204":
           description: No Content
@@ -198,8 +191,8 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/books":
+                $ref: "#/components/schemas/ProblemDetails"
+  /api/v1/books:
     put:
       tags:
         - Book
@@ -210,23 +203,25 @@ paths:
         content:
           multipart/form-data:
             schema:
-              "$ref": "#/components/schemas/UpdateBookCommand"
+              $ref: "#/components/schemas/UpdateBookCommand"
         required: true
       responses:
         "204":
           description: No Content
+        "304":
+          description: Not Modified
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     get:
       tags:
         - Book
@@ -258,7 +253,6 @@ paths:
           in: query
           description: Property to order results by
           schema:
-            type: string
             default: Name
         - name: IsDescending
           in: query
@@ -269,25 +263,16 @@ paths:
         - name: Search
           in: query
           description: Search term to filter results by
-          schema:
-            type: string
+          schema: {}
         - name: MinPrice
           in: query
           description: Minimum price to filter results by
           schema:
-            pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-            type:
-              - number
-              - string
             format: double
         - name: MaxPrice
           in: query
           description: Maximum price to filter results by
           schema:
-            pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-            type:
-              - number
-              - string
             format: double
         - name: CategoryId
           in: query
@@ -321,13 +306,13 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/BookDto"
+                  $ref: "#/components/schemas/BookDto"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
     post:
       tags:
         - Book
@@ -338,7 +323,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              "$ref": "#/components/schemas/CreateBookCommand"
+              $ref: "#/components/schemas/CreateBookCommand"
         required: true
       responses:
         "201":
@@ -346,13 +331,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/BookId"
+                $ref: "#/components/schemas/BookId"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
   "/api/v1/books/{id}":
     get:
       tags:
@@ -365,21 +350,20 @@ paths:
           in: path
           description: The unique identifier of the book to be retrieved
           required: true
-          schema:
-            type: string
+          schema: {}
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/BookDto"
+                $ref: "#/components/schemas/BookDto"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     delete:
       tags:
         - Book
@@ -391,8 +375,7 @@ paths:
           in: path
           description: The unique identifier of the book to be deleted
           required: true
-          schema:
-            type: string
+          schema: {}
       responses:
         "204":
           description: No Content
@@ -401,8 +384,8 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/authors":
+                $ref: "#/components/schemas/ProblemDetails"
+  /api/v1/authors:
     put:
       tags:
         - Author
@@ -413,7 +396,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/UpdateAuthorCommand"
+              $ref: "#/components/schemas/UpdateAuthorCommand"
         required: true
       responses:
         "204":
@@ -423,13 +406,13 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     get:
       tags:
         - Author
@@ -444,7 +427,7 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/AuthorDto"
+                  $ref: "#/components/schemas/AuthorDto"
     post:
       tags:
         - Author
@@ -455,7 +438,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/CreateAuthorCommand"
+              $ref: "#/components/schemas/CreateAuthorCommand"
         required: true
       responses:
         "200":
@@ -463,13 +446,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/AuthorId"
+                $ref: "#/components/schemas/AuthorId"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
   "/api/v1/authors/{id}":
     delete:
       tags:
@@ -482,8 +465,7 @@ paths:
           in: path
           description: The unique identifier of the author to be deleted
           required: true
-          schema:
-            type: string
+          schema: {}
       responses:
         "204":
           description: No Content
@@ -492,7 +474,7 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
 components:
   schemas:
     AuthorDto:
@@ -502,11 +484,8 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/AuthorId"
-        name:
-          type:
-            - "null"
-            - string
+          $ref: "#/components/schemas/AuthorId"
+        name: {}
     AuthorId:
       type: string
       format: uuid
@@ -527,46 +506,28 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/BookId"
-        name:
-          type:
-            - "null"
-            - string
-        description:
-          type:
-            - "null"
-            - string
-        imageUrl:
-          type:
-            - "null"
-            - string
+          $ref: "#/components/schemas/BookId"
+        name: {}
+        description: {}
+        imageUrl: {}
         price:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - number
-            - string
           format: double
         priceSale:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - "null"
-            - number
-            - string
           format: double
         status:
-          "$ref": "#/components/schemas/Status"
+          $ref: "#/components/schemas/Status"
         category:
           oneOf:
             - type: "null"
-            - "$ref": "#/components/schemas/CategoryDto"
+            - $ref: "#/components/schemas/CategoryDto"
         publisher:
           oneOf:
             - type: "null"
-            - "$ref": "#/components/schemas/PublisherDto"
+            - $ref: "#/components/schemas/PublisherDto"
         authors:
           type: array
           items:
-            "$ref": "#/components/schemas/AuthorDto"
+            $ref: "#/components/schemas/AuthorDto"
         averageRating:
           pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$"
           type:
@@ -589,11 +550,8 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/CategoryId"
-        name:
-          type:
-            - "null"
-            - string
+          $ref: "#/components/schemas/CategoryId"
+        name: {}
     CategoryId:
       type: string
       format: uuid
@@ -602,31 +560,19 @@ components:
         - name
       type: object
       properties:
-        name:
-          type: string
+        name: {}
     CreateBookCommand:
       type: object
       properties:
-        name:
-          type: string
-        description:
-          type: string
+        name: {}
+        description: {}
         image:
           oneOf:
             - type: "null"
-            - "$ref": "#/components/schemas/IFormFile"
+            - $ref: "#/components/schemas/IFormFile"
         price:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - number
-            - string
           format: double
         priceSale:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - "null"
-            - number
-            - string
           format: double
         categoryId:
           type: string
@@ -644,26 +590,18 @@ components:
         - name
       type: object
       properties:
-        name:
-          type: string
+        name: {}
     CreatePublisherCommand:
       required:
         - name
       type: object
       properties:
-        name:
-          type: string
+        name: {}
     HttpValidationProblemDetails:
       type: object
       properties:
-        type:
-          type:
-            - "null"
-            - string
-        title:
-          type:
-            - "null"
-            - string
+        type: {}
+        title: {}
         status:
           pattern: "^-?(?:0|[1-9]\\d*)$"
           type:
@@ -671,20 +609,12 @@ components:
             - integer
             - string
           format: int32
-        detail:
-          type:
-            - "null"
-            - string
-        instance:
-          type:
-            - "null"
-            - string
+        detail: {}
+        instance: {}
         errors:
           type: object
           additionalProperties:
             type: array
-            items:
-              type: string
     IFormFile:
       type:
         - "null"
@@ -693,14 +623,8 @@ components:
     ProblemDetails:
       type: object
       properties:
-        type:
-          type:
-            - "null"
-            - string
-        title:
-          type:
-            - "null"
-            - string
+        type: {}
+        title: {}
         status:
           pattern: "^-?(?:0|[1-9]\\d*)$"
           type:
@@ -708,14 +632,8 @@ components:
             - integer
             - string
           format: int32
-        detail:
-          type:
-            - "null"
-            - string
-        instance:
-          type:
-            - "null"
-            - string
+        detail: {}
+        instance: {}
     PublisherDto:
       required:
         - id
@@ -723,11 +641,8 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/PublisherId"
-        name:
-          type:
-            - "null"
-            - string
+          $ref: "#/components/schemas/PublisherId"
+        name: {}
     PublisherId:
       type: string
       format: uuid
@@ -742,35 +657,23 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/AuthorId"
-        name:
-          type: string
+          $ref: "#/components/schemas/AuthorId"
+        name: {}
     UpdateBookCommand:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        name:
-          type: string
-        description:
-          type: string
+        name: {}
+        description: {}
         image:
           oneOf:
             - type: "null"
-            - "$ref": "#/components/schemas/IFormFile"
+            - $ref: "#/components/schemas/IFormFile"
         price:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - number
-            - string
           format: double
         priceSale:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - "null"
-            - number
-            - string
           format: double
         categoryId:
           type: string
@@ -792,9 +695,8 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/CategoryId"
-        name:
-          type: string
+          $ref: "#/components/schemas/CategoryId"
+        name: {}
     UpdatePublisherCommand:
       required:
         - id
@@ -802,11 +704,10 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/PublisherId"
-        name:
-          type: string
+          $ref: "#/components/schemas/PublisherId"
+        name: {}
 tags:
-  - name: Publisher
-  - name: Category
-  - name: Book
   - name: Author
+  - name: Book
+  - name: Category
+  - name: Publisher

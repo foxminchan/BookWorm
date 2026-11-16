@@ -1,10 +1,7 @@
----
-openapi: 3.1.1
+openapi: 3.2.0
 info:
   title: Rating Service API
-  description:
-    Handles the collection, storage, and aggregation of user feedback and
-    ratings for books on the BookWorm platform
+  description: "Handles the collection, storage, and aggregation of user feedback and ratings for books on the BookWorm platform"
   contact:
     name: BookWorm Engineering
     url: https://github.com/foxminchan
@@ -13,9 +10,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   version: "1.0"
-  summary:
-    A service responsible for managing user feedback and ratings for books
-    on the BookWorm platform
+  summary: A service responsible for managing user feedback and ratings for books on the BookWorm platform
 paths:
   "/api/v1/feedbacks/{id}/summarize":
     get:
@@ -37,14 +32,14 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/SummarizeResult"
+                $ref: "#/components/schemas/SummarizeResult"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/feedbacks":
+                $ref: "#/components/schemas/ProblemDetails"
+  /api/v1/feedbacks:
     get:
       tags:
         - Feedback
@@ -99,13 +94,13 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/FeedbackDto"
+                  $ref: "#/components/schemas/FeedbackDto"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
     post:
       tags:
         - Feedback
@@ -116,7 +111,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/CreateFeedbackCommand"
+              $ref: "#/components/schemas/CreateFeedbackCommand"
         required: true
       responses:
         "200":
@@ -124,13 +119,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/FeedbackId"
+                $ref: "#/components/schemas/FeedbackId"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
   "/api/v1/feedbacks/{id}":
     delete:
       tags:
@@ -153,7 +148,7 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
 components:
   schemas:
     CreateFeedbackCommand:
@@ -281,6 +276,13 @@ components:
           type:
             - "null"
             - string
+    RatingClassification:
+      enum:
+        - NoData
+        - Bad
+        - Good
+        - TopRated
+      default: NoData
     SummarizeResult:
       required:
         - summary
@@ -289,23 +291,26 @@ components:
         summary:
           type: string
         classification:
-          type: string
-          enum:
-            - NoData
-            - Bad
-            - Good
-            - TopRated
+          $ref: "#/components/schemas/RatingClassification"
         averageRating:
+          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$"
           type:
-            - number
             - "null"
+            - number
+            - string
           format: double
         reviewCount:
-          type: integer
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
           format: int32
+          default: 0
         evidence:
           type: string
+          default: ""
         confidence:
           type: string
+          default: ""
 tags:
   - name: Feedback

@@ -1,10 +1,7 @@
----
-openapi: 3.1.1
+openapi: 3.2.0
 info:
   title: Basket Service API
-  description:
-    Manages the lifecycle of customer shopping baskets, including adding
-    and removing items, calculating totals, and handling checkout processes
+  description: "Manages the lifecycle of customer shopping baskets, including adding and removing items, calculating totals, and handling checkout processes"
   contact:
     name: BookWorm Engineering
     url: https://github.com/foxminchan
@@ -15,7 +12,7 @@ info:
   version: "1.0"
   summary: A service responsible for managing customer shopping baskets
 paths:
-  "/api/v1/baskets":
+  /api/v1/baskets:
     put:
       tags:
         - Basket
@@ -26,7 +23,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/UpdateBasketCommand"
+              $ref: "#/components/schemas/UpdateBasketCommand"
         required: true
       responses:
         "204":
@@ -36,13 +33,13 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     get:
       tags:
         - Basket
@@ -55,13 +52,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/CustomerBasketDto"
+                $ref: "#/components/schemas/CustomerBasketDto"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     delete:
       tags:
         - Basket
@@ -76,7 +73,7 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     post:
       tags:
         - Basket
@@ -87,7 +84,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/CreateBasketCommand"
+              $ref: "#/components/schemas/CreateBasketCommand"
         required: true
       responses:
         "201":
@@ -95,13 +92,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/CustomerId"
+                $ref: "#/components/schemas/CustomerId"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
 components:
   schemas:
     BasketItemDto:
@@ -160,7 +157,7 @@ components:
         items:
           type: array
           items:
-            "$ref": "#/components/schemas/BasketItemRequest"
+            $ref: "#/components/schemas/BasketItemRequest"
     CustomerBasketDto:
       required:
         - id
@@ -170,11 +167,11 @@ components:
         id:
           oneOf:
             - type: "null"
-            - "$ref": "#/components/schemas/CustomerId"
+            - $ref: "#/components/schemas/CustomerId"
         items:
           type: array
           items:
-            "$ref": "#/components/schemas/BasketItemDto"
+            $ref: "#/components/schemas/BasketItemDto"
     CustomerId:
       type:
         - "null"
@@ -247,6 +244,6 @@ components:
         items:
           type: array
           items:
-            "$ref": "#/components/schemas/BasketItemRequest"
+            $ref: "#/components/schemas/BasketItemRequest"
 tags:
   - name: Basket

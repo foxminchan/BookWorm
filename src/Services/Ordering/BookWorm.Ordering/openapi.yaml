@@ -1,10 +1,7 @@
----
-openapi: 3.1.1
+openapi: 3.2.0
 info:
   title: Ordering Service API
-  description:
-    Orchestrates the entire order lifecycle, from creation to completion
-    or cancellation, for the BookWorm platform
+  description: "Orchestrates the entire order lifecycle, from creation to completion or cancellation, for the BookWorm platform"
   contact:
     name: BookWorm Engineering
     url: https://github.com/foxminchan
@@ -13,11 +10,9 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   version: "1.0"
-  summary:
-    A service responsible for managing the order lifecycle for the BookWorm
-    platform
+  summary: A service responsible for managing the order lifecycle for the BookWorm platform
 paths:
-  "/api/v1/orders":
+  /api/v1/orders:
     get:
       tags:
         - Order
@@ -49,7 +44,7 @@ paths:
           in: query
           description: Status to filter results by
           schema:
-            "$ref": "#/components/schemas/Status"
+            $ref: "#/components/schemas/Status"
         - name: BuyerId
           in: query
           description: Buyer ID to filter results by
@@ -64,13 +59,13 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/OrderDto"
+                  $ref: "#/components/schemas/OrderDto"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
     post:
       tags:
         - Order
@@ -90,7 +85,7 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/OrderId"
+                $ref: "#/components/schemas/OrderId"
   "/api/v1/orders/{id}":
     get:
       tags:
@@ -111,13 +106,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/OrderDetailDto"
+                $ref: "#/components/schemas/OrderDetailDto"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
     delete:
       tags:
         - Order
@@ -139,7 +134,77 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
+  "/api/v{version}/orders/{id}/summary":
+    get:
+      tags:
+        - Order
+      summary: Get Order Event-Sourced Summary
+      description: Reconstructs the order summary from its event stream (optionally at a specific version) and returns its stream version as an ETag
+      operationId: GetOrderSummaryEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the order
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          description: Optional stream version for point-in-time replay
+          required: true
+          schema:
+            type: string
+        - name: at
+          in: query
+          description: Optional UTC timestamp for point-in-time replay
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderSummaryDto"
+        "304":
+          description: Not Modified
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+  "/api/v1/orders/{id}/history":
+    get:
+      tags:
+        - Order
+      summary: Get Order Event History
+      description: Get the chronological event stream history for an order
+      operationId: GetOrderHistoryEndpoint
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier of the order
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderEventHistoryDto"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
   "/api/v1/orders/{orderId}/complete":
     patch:
       tags:
@@ -166,13 +231,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/OrderDetailDto"
+                $ref: "#/components/schemas/OrderDetailDto"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
   "/api/v1/orders/{orderId}/cancel":
     patch:
       tags:
@@ -199,25 +264,68 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/OrderDetailDto"
+                $ref: "#/components/schemas/OrderDetailDto"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/buyers/address":
+                $ref: "#/components/schemas/ProblemDetails"
+  /api/v1/dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: Get backoffice dashboard
+      description: "Get store-wide totals, seven UTC daily buckets, categories, and the five newest orders"
+      operationId: GetDashboardEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardDto"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
+  /api/v1/dashboard/stream:
+    get:
+      tags:
+        - Dashboard
+      summary: Stream backoffice dashboard
+      description: Send cached dashboard snapshots every 15 seconds; reconnect to resynchronize
+      operationId: StreamDashboardEndpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            text/event-stream:
+              itemSchema:
+                required:
+                  - data
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DashboardDto"
+                  event:
+                    type: string
+                  id:
+                    type: string
+  /api/v1/buyers/address:
     patch:
       tags:
         - Buyer
       summary: Update Buyer Address
-      description: Update the current buyer's address
+      description: "Update the current buyer's address"
       operationId: UpdateAddressEndpoint
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/UpdateAddressCommand"
+              $ref: "#/components/schemas/UpdateAddressCommand"
         required: true
       responses:
         "200":
@@ -225,20 +333,20 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/BuyerDto"
+                $ref: "#/components/schemas/BuyerDto"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-  "/api/v1/buyers":
+                $ref: "#/components/schemas/ProblemDetails"
+  /api/v1/buyers:
     get:
       tags:
         - Buyer
@@ -274,7 +382,7 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/BuyerDto"
+                  $ref: "#/components/schemas/BuyerDto"
     post:
       tags:
         - Buyer
@@ -285,7 +393,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/CreateBuyerCommand"
+              $ref: "#/components/schemas/CreateBuyerCommand"
         required: true
       responses:
         "201":
@@ -293,24 +401,24 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/BuyerId"
+                $ref: "#/components/schemas/BuyerId"
         "400":
           description: Bad Request
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/HttpValidationProblemDetails"
-  "/api/v1/buyers/me":
+                $ref: "#/components/schemas/HttpValidationProblemDetails"
+  /api/v1/buyers/me:
     get:
       tags:
         - Buyer
       summary: Get Buyer
-      description: Get the current buyer's information
+      description: "Get the current buyer's information"
       operationId: GetBuyerEndpoint
       parameters:
         - name: Id
           in: query
-          description: Only 'ADMIN' role can retrieve other users' data
+          description: "Only 'ADMIN' role can retrieve other users' data"
           required: true
           schema:
             type: string
@@ -321,13 +429,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/BuyerDto"
+                $ref: "#/components/schemas/BuyerDto"
         "404":
           description: Not Found
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
   "/api/v1/buyers/{id}":
     delete:
       tags:
@@ -350,7 +458,7 @@ paths:
           content:
             application/problem+json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                $ref: "#/components/schemas/ProblemDetails"
 components:
   schemas:
     BuyerDto:
@@ -361,7 +469,7 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/BuyerId"
+          $ref: "#/components/schemas/BuyerId"
         name:
           type:
             - "null"
@@ -373,6 +481,20 @@ components:
     BuyerId:
       type: string
       format: uuid
+    CategoryCountDto:
+      required:
+        - name
+        - value
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
     CreateBuyerCommand:
       required:
         - street
@@ -386,6 +508,71 @@ components:
           type: string
         province:
           type: string
+    DailyOrdersDto:
+      required:
+        - date
+        - orders
+        - revenue
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        orders:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
+        revenue:
+          format: double
+    DashboardDto:
+      required:
+        - totalOrders
+        - totalRevenue
+        - totalCustomers
+        - totalBooks
+        - dailyOrders
+        - categories
+        - recentOrders
+        - updatedAt
+      type: object
+      properties:
+        totalOrders:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
+        totalRevenue:
+          format: double
+        totalCustomers:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
+        totalBooks:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
+        dailyOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyOrdersDto"
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryCountDto"
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentOrderDto"
+        updatedAt:
+          type: string
+          format: date-time
     HttpValidationProblemDetails:
       type: object
       properties:
@@ -428,22 +615,18 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/OrderId"
+          $ref: "#/components/schemas/OrderId"
         date:
           type: string
           format: date-time
         total:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - number
-            - string
           format: double
         status:
-          "$ref": "#/components/schemas/Status"
+          $ref: "#/components/schemas/Status"
         items:
           type: array
           items:
-            "$ref": "#/components/schemas/OrderItemDto"
+            $ref: "#/components/schemas/OrderItemDto"
     OrderDto:
       required:
         - id
@@ -453,18 +636,47 @@ components:
       type: object
       properties:
         id:
-          "$ref": "#/components/schemas/OrderId"
+          $ref: "#/components/schemas/OrderId"
         date:
           type: string
           format: date-time
         total:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - number
-            - string
           format: double
         status:
-          "$ref": "#/components/schemas/Status"
+          $ref: "#/components/schemas/Status"
+    OrderEventHistoryDto:
+      required:
+        - sequence
+        - version
+        - eventType
+        - timestamp
+        - status
+        - totalPrice
+      type: object
+      properties:
+        sequence:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
+        version:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
+        eventType:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Status"
+        totalPrice:
+          format: double
     OrderId:
       type: string
       format: uuid
@@ -485,15 +697,32 @@ components:
             - string
           format: int32
         price:
-          pattern: "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
-          type:
-            - number
-            - string
           format: double
         name:
           type:
             - "null"
             - string
+    OrderSummaryDto:
+      required:
+        - id
+        - status
+        - totalPrice
+        - version
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/Status"
+        totalPrice:
+          format: double
+        version:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
     ProblemDetails:
       type: object
       properties:
@@ -520,6 +749,24 @@ components:
           type:
             - "null"
             - string
+    RecentOrderDto:
+      required:
+        - id
+        - date
+        - total
+        - status
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date-time
+        total:
+          format: double
+        status:
+          type: string
     Status:
       enum:
         - New
@@ -539,5 +786,6 @@ components:
         province:
           type: string
 tags:
-  - name: Order
   - name: Buyer
+  - name: Dashboard
+  - name: Order
