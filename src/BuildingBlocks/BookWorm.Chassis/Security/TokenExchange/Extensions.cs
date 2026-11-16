@@ -12,11 +12,12 @@ public static class Extensions
     extension(IHttpClientBuilder builder)
     {
         /// <summary>
-        ///     Configures user delegated token exchange using Microsoft.Identity.Web's user authentication handler.
+        ///     Configures service-to-service token exchange using <c>Microsoft.Identity.Web</c> and
+        ///     <see cref="IAuthorizationHeaderProvider" /> for autonomous app-only flows.
         /// </summary>
         /// <param name="serviceKey">Target service identifier used to name the handler configuration.</param>
         /// <returns>The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.</returns>
-        public IHttpClientBuilder AddAuthTokenExchange(string serviceKey)
+        public IHttpClientBuilder AddUserTokenExchange(string serviceKey)
         {
             builder.ConfigureScopes(serviceKey);
 
@@ -24,12 +25,11 @@ public static class Extensions
         }
 
         /// <summary>
-        ///     Configures application client-credentials token acquisition using Microsoft.Identity.Web's
-        ///     application authentication handler.
+        ///     Configures machine-to-machine token exchange using Microsoft.Identity.Web's app authentication handler.
         /// </summary>
         /// <param name="serviceKey">Target service identifier used to name the handler configuration.</param>
         /// <returns>The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.</returns>
-        public IHttpClientBuilder AddClientCredentialsTokenExchange(string serviceKey)
+        public IHttpClientBuilder AddMachineTokenExchange(string serviceKey)
         {
             builder.ConfigureScopes(serviceKey);
 
