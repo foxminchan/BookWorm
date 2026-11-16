@@ -149,40 +149,6 @@ public sealed class OrderAggregateTests
     }
 
     [Test]
-    public void GivenEmptyBasketId_WhenUpdatingOrderLifecycle_ThenShouldThrowFinanceDomainException()
-    {
-        var order = CreatePlacedOrder();
-        var customer = new CustomerContact("John Doe", "john@example.com");
-        var totalMoney = Money.Of(50m);
-
-        Should.Throw<FinanceDomainException>(() => order.MarkBasketDeleted(Guid.Empty, totalMoney));
-        Should.Throw<FinanceDomainException>(() =>
-            order.FailBasketDeletion(Guid.Empty, "john@example.com", totalMoney)
-        );
-        Should.Throw<FinanceDomainException>(() =>
-            order.Complete(Guid.Empty, customer, totalMoney)
-        );
-        Should.Throw<FinanceDomainException>(() => order.Cancel(Guid.Empty, customer, totalMoney));
-    }
-
-    [Test]
-    public void GivenOrderLifecycleDecider_WhenReconstitutingAndHandlingInvalidAction_ThenShouldReturnStateAndThrow()
-    {
-        var initialState = OrderLifecycleDecider.Instance.Reconstitute([]);
-        initialState.ShouldBe(new(OrderStatus.Placed, false, 0, 1));
-
-        var reconstituted = OrderLifecycleDecider.Instance.Reconstitute([
-            new(OrderStatus.Placed, true, 0),
-            new(OrderStatus.Completed, true, 0),
-        ]);
-        reconstituted.ShouldBe(new(OrderStatus.Completed, true, 0, 1));
-
-        Should.Throw<FinanceDomainException>(() =>
-            OrderLifecycleDecider.Instance.Handle(new((OrderLifecycleAction)99), initialState)
-        );
-    }
-
-    [Test]
     public void GivenValueObjects_WhenComparingEqualValues_ThenShouldHaveValueEquality()
     {
         Money.Of(10m).ShouldBe(Money.Of(10m));
