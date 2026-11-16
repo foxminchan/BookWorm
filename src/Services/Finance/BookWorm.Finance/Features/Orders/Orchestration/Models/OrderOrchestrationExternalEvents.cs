@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using BookWorm.Contracts;
 
 namespace BookWorm.Finance.Features.Orders.Orchestration.Models;
 
+[ExcludeFromCodeCoverage]
 internal static class OrderOrchestrationExternalEvents
 {
     public const string BasketDeletedComplete = nameof(BasketDeletedCompleteIntegrationEvent);

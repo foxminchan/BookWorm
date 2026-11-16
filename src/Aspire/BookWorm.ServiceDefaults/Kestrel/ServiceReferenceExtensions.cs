@@ -126,7 +126,7 @@ public static class ServiceReferenceExtensions
 
             var uri = new Uri(address);
             return services
-                .AddRefitClient<TClient>(RefitSettings.ForJsonContext(jsonContext))
+                .AddRefitGeneratedClient<TClient>(RefitSettings.ForJsonContext(jsonContext))
                 .ConfigureHttpClient(c => c.BaseAddress = uri);
         }
 
