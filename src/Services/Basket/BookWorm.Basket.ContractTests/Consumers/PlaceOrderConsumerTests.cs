@@ -1,7 +1,6 @@
-﻿using BookWorm.Basket.Domain;
+using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
 using BookWorm.Contracts;
-using Wolverine;
 
 namespace BookWorm.Basket.ContractTests.Consumers;
 
@@ -29,10 +28,7 @@ public sealed class PlaceOrderConsumerTests
         _repositoryMock.Setup(x => x.DeleteBasketAsync(_basketId.ToString())).ReturnsAsync(true);
 
         var command = new PlaceOrderCommand(_basketId, "Test User", Email, _orderId, TotalMoney);
-        var handler = new PlaceOrderCommandHandler(
-            _repositoryMock.Object,
-            new TestMessageContext()
-        );
+        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object);
 
         // Act
         await PactTests.Helper.VerifyConsumerMessageAsync(

@@ -1,7 +1,6 @@
 using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Chassis.CQRS;
-using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -88,18 +87,11 @@ internal static class Extensions
             );
 
             // Configure EventBus
-            builder.AddEventBus(opts =>
-            {
+            builder.AddEventBus<BasketApiMarker>(opts =>
                 // Preserve per-order saga ordering on Kafka by routing all events that
                 // expose an OrderId to the same partition.
-                opts.MessagePartitioning.ByPropertyNamed("OrderId");
-
-                opts.Discovery.IncludeAssembly(typeof(BasketApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(BasketApiMarker).Assembly
-                );
-            });
+                opts.MessagePartitioning.ByPropertyNamed("OrderId")
+            );
         }
     }
 }

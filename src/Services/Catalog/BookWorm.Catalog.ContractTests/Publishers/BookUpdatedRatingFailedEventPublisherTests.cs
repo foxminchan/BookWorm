@@ -1,8 +1,7 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
-using Wolverine;
 
 namespace BookWorm.Catalog.ContractTests.Publishers;
 
@@ -39,17 +38,13 @@ public sealed class BookUpdatedRatingFailedEventPublisherTests
             .ReturnsAsync((Book?)null);
 
         var @event = new FeedbackCreatedIntegrationEvent(_bookId, Rating, _feedbackId);
-        var bus = new TestMessageContext();
-        var handler = new FeedbackCreatedIntegrationEventHandler(_repositoryMock.Object, bus);
+        var handler = new FeedbackCreatedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(@event, CancellationToken.None);
+        var publishedEvent = await handler.Handle(@event, CancellationToken.None)
+            ?? throw new InvalidOperationException("Expected rating failure integration event.");
 
         // Assert
-        var outgoingMessage = ((Envelope)bus.AllOutgoing.Single()).Message;
-        var publishedEvent =
-            outgoingMessage as BookUpdatedRatingFailedIntegrationEvent
-            ?? throw new InvalidOperationException("Expected rating failure integration event.");
         PactTests.Helper.VerifyProviderMessage("Rating", "Catalog", publishedEvent);
         _repositoryMock.Verify(
             x => x.GetByIdAsync(_bookId, It.IsAny<CancellationToken>()),

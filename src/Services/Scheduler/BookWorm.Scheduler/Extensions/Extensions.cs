@@ -1,4 +1,3 @@
-using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.Security.Extensions;
 
 namespace BookWorm.Scheduler.Extensions;
@@ -13,14 +12,7 @@ internal static class Extensions
 
             builder.AddDefaultAuthentication();
 
-            builder.AddEventBus(opts =>
-            {
-                opts.Discovery.IncludeAssembly(typeof(ISchedulerApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(ISchedulerApiMarker).Assembly
-                );
-            });
+            builder.AddEventBus<ISchedulerApiMarker>();
 
             services.AddAntiforgery();
 

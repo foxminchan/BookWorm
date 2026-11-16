@@ -5,8 +5,6 @@ using BookWorm.Chassis.Repository;
 using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 using BookWorm.Notification.Infrastructure.Senders.Outbox;
-using Wolverine.EntityFrameworkCore;
-using Wolverine.Postgresql;
 
 namespace BookWorm.Notification.Extensions;
 
@@ -42,26 +40,13 @@ internal static class Extensions
 
             builder.AddEmailOutbox();
 
-            var postgresCs = builder.Configuration.GetConnectionString(
-                Components.Database.Notification
-            );
-            builder.AddEventBus(opts =>
+            builder.AddEventBus<NotificationApiMarker>(opts =>
             {
-                if (!string.IsNullOrWhiteSpace(postgresCs))
-                {
-                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
-                    opts.UseEntityFrameworkCoreTransactions();
-                }
+                opts.UsePostgresOutbox(builder.Configuration, Components.Database.Notification);
 
                 // Preserve per-order saga ordering for outbound order emails by
                 // routing all events that expose an OrderId to the same partition.
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
-
-                opts.Discovery.IncludeAssembly(typeof(NotificationApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(NotificationApiMarker).Assembly
-                );
             });
         }
     }

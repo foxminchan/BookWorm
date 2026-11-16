@@ -5,8 +5,6 @@ using BookWorm.Ordering.Configurations;
 using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
-using Wolverine.EntityFrameworkCore;
-using Wolverine.Postgresql;
 
 namespace BookWorm.Ordering.Extensions;
 
@@ -52,26 +50,13 @@ internal static class Extensions
             );
 
             // Add event bus configuration
-            var postgresCs = builder.Configuration.GetConnectionString(
-                Components.Database.Ordering
-            );
-            builder.AddEventBus(opts =>
+            builder.AddEventBus<OrderingApiMarker>(opts =>
             {
-                if (!string.IsNullOrWhiteSpace(postgresCs))
-                {
-                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
-                    opts.UseEntityFrameworkCoreTransactions();
-                }
+                opts.UsePostgresOutbox(builder.Configuration, Components.Database.Ordering);
 
                 // Preserve per-order saga ordering on Kafka by routing all events that
                 // expose an OrderId to the same partition.
                 opts.MessagePartitioning.ByPropertyNamed("OrderId");
-
-                opts.Discovery.IncludeAssembly(typeof(OrderingApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(OrderingApiMarker).Assembly
-                );
             });
 
             // Configure gRPC

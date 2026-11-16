@@ -78,7 +78,7 @@ public sealed class Order : Entity, IAggregateRoot
     ///     Marks the order as having its associated basket deleted, typically after a successful order placement.
     /// </summary>
     /// <param name="basketId">The ID of the basket associated with the order.</param>
-    /// <param name="totalMoney">The total monetary value of the order.</param
+    /// <param name="totalMoney">The total monetary value of the order.</param>
     public void MarkBasketDeleted(Guid basketId, Money totalMoney)
     {
         EnsureValidBasketId(basketId);

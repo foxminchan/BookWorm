@@ -6,13 +6,11 @@ using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
-using Wolverine;
 
 namespace BookWorm.Catalog.UnitTests.IntegrationEvents;
 
 public sealed class FeedbackCreatedIntegrationEventHandlerTests
 {
-    private readonly Mock<IMessageBus> _busMock = new();
     private readonly FeedbackCreatedIntegrationEventHandler _handler;
     private readonly Mock<IBookRepository> _repositoryMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
@@ -21,7 +19,7 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
     {
         _repositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
 
-        _handler = new(_repositoryMock.Object, _busMock.Object);
+        _handler = new(_repositoryMock.Object);
     }
 
     [Test]
@@ -52,25 +50,18 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
             .Setup(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await _handler.Handle(@event, CancellationToken.None);
+        var result = await _handler.Handle(@event, CancellationToken.None);
 
+        result.ShouldBeNull();
         _repositoryMock.Verify(
             x => x.GetByIdAsync(bookId, It.IsAny<CancellationToken>()),
             Times.Once
-        );
-        _busMock.Verify(
-            x =>
-                x.PublishAsync(
-                    It.IsAny<BookUpdatedRatingFailedIntegrationEvent>(),
-                    It.IsAny<DeliveryOptions>()
-                ),
-            Times.Never
         );
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
-    public async Task GivenBookNotFound_WhenHandling_ThenShouldPublishFailedEventAndSave()
+    public async Task GivenBookNotFound_WhenHandling_ThenShouldReturnFailedEventAndSave()
     {
         var bookId = Guid.CreateVersion7();
         var feedbackId = Guid.CreateVersion7();
@@ -86,16 +77,10 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
             .Setup(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await _handler.Handle(@event, CancellationToken.None);
+        var result = await _handler.Handle(@event, CancellationToken.None);
 
-        _busMock.Verify(
-            x =>
-                x.PublishAsync(
-                    It.Is<BookUpdatedRatingFailedIntegrationEvent>(e => e.FeedbackId == feedbackId),
-                    It.IsAny<DeliveryOptions>()
-                ),
-            Times.Once
-        );
+        result.ShouldNotBeNull();
+        result.FeedbackId.ShouldBe(feedbackId);
         _unitOfWorkMock.Verify(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -122,12 +107,12 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
 
         var handler = new FeedbackCreatedIntegrationEventHandler(
             _repositoryMock.Object,
-            _busMock.Object,
             guardMock.Object
         );
 
-        await handler.Handle(@event, CancellationToken.None);
+        var result = await handler.Handle(@event, CancellationToken.None);
 
+        result.ShouldBeNull();
         _repositoryMock.Verify(
             x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never

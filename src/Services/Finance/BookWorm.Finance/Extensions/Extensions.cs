@@ -33,12 +33,9 @@ internal static class Extensions
                 }
             );
 
-            builder.AddEventBus(opts =>
-            {
-                opts.MessagePartitioning.ByPropertyNamed("OrderId");
-                opts.Discovery.IncludeAssembly(typeof(IFinanceApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(env, typeof(IFinanceApiMarker).Assembly);
-            });
+            builder.AddEventBus<IFinanceApiMarker>(opts =>
+                opts.MessagePartitioning.ByPropertyNamed("OrderId")
+            );
 
             builder.Configure<OrderStateMachineSettings>(
                 OrderStateMachineSettings.ConfigurationSection

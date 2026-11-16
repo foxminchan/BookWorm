@@ -1,6 +1,5 @@
 using BookWorm.Chassis.Caching;
 using BookWorm.Chassis.CQRS;
-using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -116,7 +115,7 @@ internal static class Extensions
             services.AddActivityScope().AddCommandHandlerMetrics().AddQueryHandlerMetrics();
 
             // Configure EventBus first
-            builder.AddEventBus(opts =>
+            builder.AddEventBus<RatingApiMarker>(opts =>
             {
                 if (!string.IsNullOrWhiteSpace(cosmosCs))
                 {
@@ -126,12 +125,6 @@ internal static class Extensions
                 // Preserve per-book / per-feedback ordering on Kafka so concurrent
                 // rating updates for the same book land on a single partition.
                 opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId");
-
-                opts.Discovery.IncludeAssembly(typeof(RatingApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(RatingApiMarker).Assembly
-                );
             });
 
             // Then register event-related services

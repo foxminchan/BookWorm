@@ -24,6 +24,26 @@ public static class Extensions
         {
             builder.UseEventFramework(configure);
         }
+
+        /// <summary>
+        ///     Registers and configures the event bus infrastructure, including handler
+        ///     discovery and integration event Kafka topics for <typeparamref name="TAssemblyMarker" />'s assembly.
+        /// </summary>
+        /// <typeparam name="TAssemblyMarker">Marker type in the assembly containing handlers and events.</typeparam>
+        /// <param name="configure">
+        ///     Optional callback for additional <see cref="WolverineOptions" /> customization.
+        /// </param>
+        public void AddEventBus<TAssemblyMarker>(Action<WolverineOptions>? configure = null)
+        {
+            var assembly = typeof(TAssemblyMarker).Assembly;
+
+            builder.UseEventFramework(opts =>
+            {
+                opts.Discovery.IncludeAssembly(assembly);
+                opts.ConfigureIntegrationEventTopicsIn(builder.Environment, assembly);
+                configure?.Invoke(opts);
+            });
+        }
     }
 
     extension(IServiceCollection services)

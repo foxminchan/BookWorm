@@ -12,8 +12,6 @@ using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
-using Wolverine.EntityFrameworkCore;
-using Wolverine.Postgresql;
 
 namespace BookWorm.Catalog.Extensions;
 
@@ -120,24 +118,13 @@ internal static class Extensions
             services.AddMapper(typeof(CatalogApiMarker));
 
             // Configure EventBus
-            var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Catalog);
-            builder.AddEventBus(opts =>
+            builder.AddEventBus<CatalogApiMarker>(opts =>
             {
-                if (!string.IsNullOrWhiteSpace(postgresCs))
-                {
-                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
-                    opts.UseEntityFrameworkCoreTransactions();
-                }
+                opts.UsePostgresOutbox(builder.Configuration, Components.Database.Catalog);
 
                 // Preserve per-book / per-feedback ordering on Kafka so concurrent
                 // rating updates for the same book land on a single partition.
                 opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId");
-
-                opts.Discovery.IncludeAssembly(typeof(CatalogApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(CatalogApiMarker).Assembly
-                );
             });
         }
     }
