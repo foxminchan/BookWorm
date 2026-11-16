@@ -202,13 +202,15 @@ builder
     .WaitFor(broker)
     .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
-var catalogIngestion = builder
+builder
     .AddAzureFunctionsProject(
         Services.CatalogIngestion,
         "../../Services/Catalog/BookWorm.Catalog.Ingestion/BookWorm.Catalog.Ingestion.csproj"
     )
-    .WithEntraId(entraId)
     .WithHostStorage(storage)
+    .WithReference(broker)
+    .WaitFor(broker)
+    .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
     .WithReference(catalogDb)
     .WaitFor(catalogApi)
     .WithReference(qdrant)
@@ -231,8 +233,6 @@ builder
     .WaitFor(broker)
     .WithReference(schedulerDb)
     .WaitFor(schedulerDb)
-    .WithReference(catalogIngestion)
-    .WaitFor(catalogIngestion)
     .WithDisplayUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
     .WithExplicitStart();
 

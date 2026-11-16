@@ -5,7 +5,7 @@
   "Schedule": {
     "Jobs": [
       {
-        "Description": "Calls the ingestion function to process pending catalog vector updates",
+        "Description": "Publishes an event to process pending catalog vector updates",
         "Durable": true,
         "Group": "Scheduler",
         "JobType": "BookWorm.Scheduler.Jobs.ProcessVectorBatchJob, BookWorm.Scheduler",

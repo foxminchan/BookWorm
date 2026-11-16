@@ -1,28 +1,29 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Identity.Web;
 
 namespace BookWorm.Catalog.Ingestion;
 
-public sealed class ProcessVectorBatchFunction(IVectorBatchProcessor processor)
+public sealed partial class ProcessVectorBatchFunction(
+    IVectorBatchProcessor processor,
+    ILogger<ProcessVectorBatchFunction> logger
+)
 {
+    private const string TopicName = $"{Services.Scheduler}.process-vector-batch";
+
     [Function(nameof(ProcessVectorBatch))]
-    public async Task<Results<UnauthorizedHttpResult, NoContent>> ProcessVectorBatch(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "vectors/batch")]
-            HttpRequest request,
+    public async Task ProcessVectorBatch(
+        [KafkaTrigger("%BrokerList%", TopicName, ConsumerGroup = Services.CatalogIngestion)]
+            string message,
         CancellationToken cancellationToken
     )
     {
-        var (isAuthenticated, _) = await request.HttpContext.AuthenticateAzureFunctionAsync();
-
-        if (!isAuthenticated)
-        {
-            return TypedResults.Unauthorized();
-        }
+        LogReceivedEvent(logger, message.Length);
 
         await processor.ProcessAsync(cancellationToken);
-
-        return TypedResults.NoContent();
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Received vector batch trigger event ({Length} chars)"
+    )]
+    private static partial void LogReceivedEvent(ILogger logger, int length);
 }

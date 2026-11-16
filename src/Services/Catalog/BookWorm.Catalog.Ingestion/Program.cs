@@ -1,6 +1,7 @@
 using BookWorm.Catalog.Ingestion;
 using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chassis.Security.Extensions;
+using BookWorm.Chassis.EventBus;
+using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.ServiceDefaults;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Azure.Functions.Worker.OpenTelemetry;
@@ -8,9 +9,14 @@ using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.ConfigureFunctionsWebApplication();
 builder.Services.AddOpenTelemetry().UseFunctionsWorkerDefaults();
-builder.AddDefaultAuthentication();
+
+builder.AddEventBus(opts =>
+    opts.ConfigureIntegrationEventTopicsIn(
+        builder.Environment,
+        typeof(ProcessVectorBatchFunction).Assembly
+    )
+);
 
 builder.AddAzureNpgsqlDataSource(Components.Database.Catalog);
 builder.AddQdrantClient(Components.VectorDb);

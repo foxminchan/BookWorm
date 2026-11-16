@@ -1,8 +1,5 @@
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.TokenExchange;
-using BookWorm.Chassis.Utilities;
-using BookWorm.Constants.Core;
 using BookWorm.ServiceDefaults.Kestrel;
 
 namespace BookWorm.Scheduler.Extensions;
@@ -16,19 +13,6 @@ internal static class Extensions
             var services = builder.Services;
 
             builder.AddDefaultAuthentication();
-
-            services
-                .AddHttpServiceReference<ICatalogIngestionApi>(
-                    HttpUtilities
-                        .AsUrlBuilder()
-                        .WithScheme(Http.Schemes.HttpOrHttps)
-                        .WithHost(Services.CatalogIngestion)
-                        .Build(),
-                    CatalogIngestionSerializationContext.Default
-                )
-                .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(5))
-                .AddClientCredentialsTokenExchange(Services.CatalogIngestion)
-                .RemoveAllResilienceHandlers();
 
             builder.AddEventBus(opts =>
             {

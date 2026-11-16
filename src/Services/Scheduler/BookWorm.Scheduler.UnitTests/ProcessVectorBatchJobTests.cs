@@ -1,58 +1,68 @@
-using System.Net;
-using BookWorm.Scheduler.Clients;
+using BookWorm.Contracts;
 using BookWorm.Scheduler.Jobs;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using Refit;
+using Wolverine;
 
 namespace BookWorm.Scheduler.UnitTests;
 
 public sealed class ProcessVectorBatchJobTests
 {
     [Test]
-    public async Task GivenScheduledBatch_WhenExecuting_ThenShouldSendOnePostRequest()
+    public async Task GivenValidDependencies_WhenExecutingJob_ThenShouldPublishExactlyOneEvent()
     {
-        using var handler = new RecordingHandler(HttpStatusCode.NoContent);
-        using var client = new HttpClient(handler);
-        client.BaseAddress = new("http://catalog-ingestion");
-        var api = RestService.For<ICatalogIngestionApi>(
-            client,
-            RefitSettings.ForJsonContext(CatalogIngestionSerializationContext.Default)
+        var busMock = new Mock<IMessageBus>();
+        var logger = Mock.Of<ILogger<ProcessVectorBatchJob>>();
+        var job = new ProcessVectorBatchJob(busMock.Object, logger);
+        var context = Mock.Of<IJobExecutionContext>(c =>
+            c.CancellationToken == CancellationToken.None
         );
-        var job = new ProcessVectorBatchJob(api, Mock.Of<ILogger<ProcessVectorBatchJob>>());
 
-        await job.Execute(Mock.Of<IJobExecutionContext>());
+        await job.Execute(context);
 
-        handler.RequestCount.ShouldBe(1);
-        handler.Method.ShouldBe(HttpMethod.Post);
-        handler.Uri?.AbsolutePath.ShouldBe("/api/vectors/batch");
-        handler.HeaderCount.ShouldBe(0);
+        busMock.Verify(
+            x =>
+                x.PublishAsync(
+                    It.IsAny<ProcessVectorBatchIntegrationEvent>(),
+                    It.IsAny<DeliveryOptions>()
+                ),
+            Times.Once
+        );
     }
 
     [Test]
-    public async Task GivenFailedBatch_WhenExecuting_ThenShouldSurfaceJobFailureWithoutRetrying()
+    public async Task GivenPublishThrows_WhenExecutingJob_ThenShouldWrapInJobExecutionException()
     {
-        using var handler = new RecordingHandler(HttpStatusCode.InternalServerError);
-        using var client = new HttpClient(handler);
-        client.BaseAddress = new("http://catalog-ingestion");
-        var api = RestService.For<ICatalogIngestionApi>(
-            client,
-            RefitSettings.ForJsonContext(CatalogIngestionSerializationContext.Default)
+        var busMock = new Mock<IMessageBus>();
+        var logger = Mock.Of<ILogger<ProcessVectorBatchJob>>();
+        var job = new ProcessVectorBatchJob(busMock.Object, logger);
+        var context = Mock.Of<IJobExecutionContext>(c =>
+            c.CancellationToken == CancellationToken.None
         );
-        var job = new ProcessVectorBatchJob(api, Mock.Of<ILogger<ProcessVectorBatchJob>>());
 
-        await Should.ThrowAsync<JobExecutionException>(() =>
-            job.Execute(Mock.Of<IJobExecutionContext>()).AsTask()
+        busMock
+            .Setup(x =>
+                x.PublishAsync(
+                    It.IsAny<ProcessVectorBatchIntegrationEvent>(),
+                    It.IsAny<DeliveryOptions>()
+                )
+            )
+            .ThrowsAsync(new InvalidOperationException("Bus failure"));
+
+        var exception = await Should.ThrowAsync<JobExecutionException>(() =>
+            job.Execute(context).AsTask()
         );
-        handler.RequestCount.ShouldBe(1);
+
+        exception.InnerException.ShouldBeOfType<InvalidOperationException>();
+        exception.InnerException?.Message.ShouldBe("Bus failure");
     }
 
     [Test]
-    public async Task GivenCancellation_WhenExecuting_ThenShouldNotSendRequest()
+    public async Task GivenCancellation_WhenExecutingJob_ThenShouldNotPublishEvent()
     {
-        var apiMock = new Mock<ICatalogIngestionApi>();
+        var busMock = new Mock<IMessageBus>();
         var job = new ProcessVectorBatchJob(
-            apiMock.Object,
+            busMock.Object,
             Mock.Of<ILogger<ProcessVectorBatchJob>>()
         );
         using var cancellation = new CancellationTokenSource();
@@ -61,27 +71,6 @@ public sealed class ProcessVectorBatchJobTests
         await Should.ThrowAsync<OperationCanceledException>(() =>
             job.Execute(Mock.Of<IJobExecutionContext>(), cancellation.Token).AsTask()
         );
-        apiMock.VerifyNoOtherCalls();
-    }
-
-    private sealed class RecordingHandler(HttpStatusCode statusCode) : HttpMessageHandler
-    {
-        public int RequestCount { get; private set; }
-        public HttpMethod? Method { get; private set; }
-        public Uri? Uri { get; private set; }
-        public int HeaderCount { get; private set; }
-
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken
-        )
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            RequestCount++;
-            Method = request.Method;
-            Uri = request.RequestUri;
-            HeaderCount = request.Headers.Count();
-            return Task.FromResult(new HttpResponseMessage(statusCode));
-        }
+        busMock.VerifyNoOtherCalls();
     }
 }
