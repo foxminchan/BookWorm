@@ -1,8 +1,9 @@
+using BookWorm.Chassis.Logging;
 using Polly.Registry;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
-internal sealed class MailKitSender(
+internal sealed partial class MailKitSender(
     MailKitClientFactory factory,
     ILogger<MailKitSender> logger,
     MailKitSettings settings,
@@ -35,8 +36,8 @@ internal sealed class MailKitSender(
                 cancellationToken
             );
 
-            logger.LogInformation(
-                "Email sent to {Recipients} with subject {Subject} (status {StatusCode}: {Response})",
+            LogEmailSent(
+                logger,
                 string.Join(", ", result.AcceptedRecipients.Select(r => r.Address)),
                 mailMessage.Subject,
                 (int)result.StatusCode,
@@ -49,11 +50,24 @@ internal sealed class MailKitSender(
         }
         catch (Exception ex)
         {
-            var recipients = string.Join(", ", mailMessage.To.Mailboxes.Select(m => m.Address));
             throw new NotificationException(
-                $"Failed to send email to {recipients} with subject {mailMessage.Subject}",
+                $"Failed to send email ({mailMessage.To.Mailboxes.Count()} recipient(s)) with subject {mailMessage.Subject}",
                 ex
             );
         }
     }
+
+    [LoggerMessage(
+        EventId = 0,
+        EventName = nameof(LogEmailSent),
+        Level = LogLevel.Information,
+        Message = "Email sent to {Recipients} with subject {Subject} (status {StatusCode}: {Response})"
+    )]
+    private static partial void LogEmailSent(
+        ILogger logger,
+        [PIIData] string recipients,
+        string? subject,
+        int statusCode,
+        string response
+    );
 }

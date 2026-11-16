@@ -5,8 +5,11 @@ using Microsoft.Identity.Web;
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
 [Transactional]
-public sealed record CreateBuyerCommand([PIIData] string Street, string City, string Province)
-    : ICommand<BuyerId>;
+public sealed record CreateBuyerCommand(
+    [property: PIIData] string Street,
+    [property: PIIData] string City,
+    [property: PIIData] string Province
+) : ICommand<BuyerId>;
 
 internal sealed class CreateBuyerHandler(
     IBuyerRepository repository,

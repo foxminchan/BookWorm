@@ -1,6 +1,7 @@
 using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -53,6 +54,8 @@ internal static class Extensions
                 .AddScoped<GetBasketPostProcessor>();
 
             builder.AddRateLimiting();
+
+            builder.AddRedaction();
 
             // Add database configuration
             builder

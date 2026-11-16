@@ -117,6 +117,7 @@ var basketApi = builder
     .WaitFor(broker)
     .WithReference(catalogApi)
     .WithEntraId(entraId)
+    .WithSecret("hmac-key", "HMAC__Key")
     .WithDisplayUrls();
 
 var orderingApi = builder
@@ -185,6 +186,7 @@ builder
     .WithEmailProvider()
     .WithReference(broker)
     .WaitFor(broker)
+    .WithSecret("hmac-key", "HMAC__Key")
     .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder

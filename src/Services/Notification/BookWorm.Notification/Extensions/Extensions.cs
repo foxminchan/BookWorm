@@ -1,3 +1,4 @@
+using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
 
@@ -12,6 +13,8 @@ internal static class Extensions
             var services = builder.Services;
 
             services.AddActivityScope();
+
+            builder.AddRedaction();
 
             builder.AddMailResiliencePipeline();
 
