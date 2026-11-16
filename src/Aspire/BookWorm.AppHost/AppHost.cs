@@ -5,7 +5,6 @@ builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).Provision
 // Add Azure Managed Redis, Qdrant, and Kafka
 var redis = builder
     .AddAzureManagedRedis(Components.Redis)
-    .WithAccessKeyAuthentication()
     .RunAsLocalContainer()
     .ProvisionAsService(builder.Environment);
 
@@ -34,7 +33,6 @@ var chatSessionContainer = storage
 // Add Azure Postgres Flexible Server and Databases
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
-    .WithPasswordAuthentication()
     .RunAsLocalContainer()
     .ProvisionAsService(builder.Environment);
 
@@ -252,8 +250,8 @@ var gateway = builder
     .WithService(chatApi)
     .WithService(ratingApi)
     .WithService(orderingApi)
-    .WithService(basketApi, true)
-    .WithService(catalogApi, true)
+    .WithService(basketApi)
+    .WithService(catalogApi)
     .Build();
 
 var (storefront, backoffice) = builder.AddFrontendApps(gateway, entraId);

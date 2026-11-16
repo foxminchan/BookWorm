@@ -17,11 +17,9 @@ class BooksApiClient {
   }
 
   public async list(query?: ListBooksQuery): Promise<PagedResult<Book>> {
-    const response = await this.client.get<PagedResult<Book>>(
+    const response = await this.client.query<PagedResult<Book>>(
       "/catalog/api/v1/books",
-      {
-        params: query,
-      },
+      query ?? {},
     );
 
     return response.data;

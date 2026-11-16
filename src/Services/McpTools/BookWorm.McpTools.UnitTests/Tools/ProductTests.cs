@@ -28,7 +28,9 @@ public sealed class ProductTests
             new()
         );
 
-        _catalogApi.Setup(x => x.ListBooksAsync(It.IsAny<string?>())).ReturnsAsync(response);
+        _catalogApi
+            .Setup(x => x.ListBooksAsync(It.IsAny<ListBooksRequest>()))
+            .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchCatalogAsync("test");
@@ -48,7 +50,9 @@ public sealed class ProductTests
             new()
         );
 
-        _catalogApi.Setup(x => x.ListBooksAsync(It.IsAny<string?>())).ReturnsAsync(response);
+        _catalogApi
+            .Setup(x => x.ListBooksAsync(It.IsAny<ListBooksRequest>()))
+            .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchCatalogAsync("nonexistent");
@@ -87,7 +91,9 @@ public sealed class ProductTests
             new()
         );
 
-        _catalogApi.Setup(x => x.ListBooksAsync(It.IsAny<string?>())).ReturnsAsync(response);
+        _catalogApi
+            .Setup(x => x.ListBooksAsync(It.IsAny<ListBooksRequest>()))
+            .ReturnsAsync(response);
 
         // Act
         var result = await _sut.SearchCatalogAsync("clean code");

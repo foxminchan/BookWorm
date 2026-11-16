@@ -222,82 +222,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-    get:
+    query:
       tags:
         - Book
       summary: List Books
       description: List all books with advanced filtering and pagination
       operationId: ListBooksEndpoint
-      parameters:
-        - name: PageIndex
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            pattern: "^-?(?:0|[1-9]\\d*)$"
-            type:
-              - integer
-              - string
-            format: int32
-            default: 1
-        - name: PageSize
-          in: query
-          description: Number of items to return in a single page of results
-          schema:
-            pattern: "^-?(?:0|[1-9]\\d*)$"
-            type:
-              - integer
-              - string
-            format: int32
-            default: 20
-        - name: OrderBy
-          in: query
-          description: Property to order results by
-          schema:
-            default: Name
-        - name: IsDescending
-          in: query
-          description: Whether to order results in descending order
-          schema:
-            type: boolean
-            default: false
-        - name: Search
-          in: query
-          description: Search term to filter results by
-          schema: {}
-        - name: MinPrice
-          in: query
-          description: Minimum price to filter results by
-          schema:
-            format: double
-        - name: MaxPrice
-          in: query
-          description: Maximum price to filter results by
-          schema:
-            format: double
-        - name: CategoryId
-          in: query
-          description: Category IDs to filter results by
-          schema:
-            type: array
-            items:
-              type: string
-              format: uuid
-        - name: PublisherId
-          in: query
-          description: Publisher IDs to filter results by
-          schema:
-            type: array
-            items:
-              type: string
-              format: uuid
-        - name: AuthorIds
-          in: query
-          description: Author IDs to filter results by
-          schema:
-            type: array
-            items:
-              type: string
-              format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListBooksQuery"
       responses:
         "200":
           description: OK
@@ -706,6 +641,78 @@ components:
         id:
           $ref: "#/components/schemas/PublisherId"
         name: {}
+    ListBooksQuery:
+      type: object
+      properties:
+        pageIndex:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          description: Number of items to return in a single page of results
+          format: int32
+          default: 1
+        pageSize:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          description: Number of items to return in a single page of results
+          format: int32
+          default: 20
+        orderBy:
+          type:
+            - string
+            - "null"
+          description: Property to order results by
+          default: Name
+        isDescending:
+          type: boolean
+          description: Whether to order results in descending order
+          default: false
+        search:
+          type:
+            - string
+            - "null"
+          description: Search term to filter results by
+        minPrice:
+          type:
+            - number
+            - string
+            - "null"
+          description: Minimum price to filter results by
+          format: double
+        maxPrice:
+          type:
+            - number
+            - string
+            - "null"
+          description: Maximum price to filter results by
+          format: double
+        categoryId:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+            format: uuid
+          description: Category IDs to filter results by
+        publisherId:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+            format: uuid
+          description: Publisher IDs to filter results by
+        authorIds:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+            format: uuid
+          description: Author IDs to filter results by
 tags:
   - name: Author
   - name: Book

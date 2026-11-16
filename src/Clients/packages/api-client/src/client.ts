@@ -95,6 +95,19 @@ export default class ApiClient {
     return this.client.get<T>(url, config);
   }
 
+  public query<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig,
+  ): Promise<AxiosResponse<T>> {
+    return this.client.request<T>({
+      ...config,
+      method: "QUERY",
+      url,
+      data,
+    });
+  }
+
   public post<T>(
     url: string,
     data?: unknown,

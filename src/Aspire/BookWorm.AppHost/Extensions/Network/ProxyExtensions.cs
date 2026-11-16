@@ -1,4 +1,4 @@
-﻿using Aspire.Hosting.Dotnet;
+using Aspire.Hosting.Dotnet;
 using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
 
@@ -31,11 +31,6 @@ internal static class ProxyExtensions
                             service.Resource
                         );
 
-                        if (service.UseProtobuf)
-                        {
-                            routeBuilder.WithTransformForwarded();
-                        }
-
                         routeBuilder
                             .WithOrder(service.Order ?? routeIndex)
                             .WithMaxRequestBodySize(service.MaxRequestBodySize)
@@ -61,7 +56,6 @@ internal sealed class Service
     public const long DefaultMaxRequestBodySize = 10 * 1024 * 1024;
     public required string Name { get; init; }
     public required IResourceBuilder<DotnetProjectResource> Resource { get; init; }
-    public bool UseProtobuf { get; init; }
     public long MaxRequestBodySize { get; init; } = DefaultMaxRequestBodySize;
     public int? Order { get; init; }
 }
@@ -79,7 +73,6 @@ internal sealed class ApiGatewayProxyBuilder
 
     public ApiGatewayProxyBuilder WithService(
         IResourceBuilder<DotnetProjectResource> service,
-        bool useProtobuf = false,
         long maxRequestBodySize = Service.DefaultMaxRequestBodySize,
         int? order = null
     )
@@ -89,7 +82,6 @@ internal sealed class ApiGatewayProxyBuilder
             {
                 Name = service.Resource.Name,
                 Resource = service,
-                UseProtobuf = useProtobuf,
                 MaxRequestBodySize = maxRequestBodySize,
                 Order = order,
             }

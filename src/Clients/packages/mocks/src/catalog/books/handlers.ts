@@ -1,8 +1,9 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http, passthrough } from "msw";
 
 import type {
   Book,
   CreateBookRequest,
+  ListBooksQuery,
   UpdateBookRequest,
 } from "@workspace/types/catalog/books";
 import { PagedResult } from "@workspace/types/shared";
@@ -22,17 +23,17 @@ import { CATALOG_API_BASE_URL } from "../constants";
 import { booksStore } from "./data";
 
 export const booksHandlers = [
-  http.get<never, never, PagedResult<Book>>(
+  http.all<never, ListBooksQuery, PagedResult<Book>>(
     `${CATALOG_API_BASE_URL}/api/v1/books`,
-    ({ request }) => {
-      const url = new URL(request.url);
-      const pageIndex = Number.parseInt(
-        url.searchParams.get("pageIndex") || "0",
-      );
-      const pageSize = Number.parseInt(
-        url.searchParams.get("pageSize") || "10",
-      );
-      const searchTerm = url.searchParams.get("search") || undefined;
+    async ({ request }) => {
+      if (request.method !== "QUERY") {
+        return passthrough();
+      }
+
+      const body = (await request.json().catch(() => ({}))) as ListBooksQuery;
+      const pageIndex = body.pageIndex ?? 0;
+      const pageSize = body.pageSize ?? 10;
+      const searchTerm = body.search || undefined;
 
       // Convert 0-indexed to 1-indexed for the store
       const result = booksStore.list({

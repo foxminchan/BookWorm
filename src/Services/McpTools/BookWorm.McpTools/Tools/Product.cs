@@ -1,4 +1,4 @@
-﻿namespace BookWorm.McpTools.Tools;
+namespace BookWorm.McpTools.Tools;
 
 [McpServerToolType]
 public sealed class Product(ICatalogApi catalogApi)
@@ -11,7 +11,7 @@ public sealed class Product(ICatalogApi catalogApi)
         [Description("The product description for which to search")] string description
     )
     {
-        var response = await catalogApi.ListBooksAsync(description);
+        var response = await catalogApi.ListBooksAsync(new(description));
 
         if (!response.IsSuccessStatusCode)
         {
