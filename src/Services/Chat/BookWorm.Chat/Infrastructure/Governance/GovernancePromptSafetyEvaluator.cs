@@ -18,7 +18,10 @@ internal sealed class GovernancePromptSafetyEvaluator(GovernanceKernel? governan
 
         return injectionResult.IsInjection
             ? PromptSafetyResult.Unsafe(
-                $"I'm sorry, but I can't process that request due to a security policy ({injectionResult.InjectionType}). Please rephrase your question about books or our bookstore services.",
+                $"""
+                I'm sorry, but I can't process that request due to a security policy ({injectionResult.InjectionType}). 
+                Please rephrase your question about books or our bookstore services.
+                """,
                 injectionResult.InjectionType.ToString()
             )
             : PromptSafetyResult.Safe();

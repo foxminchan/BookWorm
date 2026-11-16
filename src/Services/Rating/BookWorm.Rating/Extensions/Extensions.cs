@@ -5,7 +5,6 @@ using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Rating.Configurations;
 using BookWorm.Rating.Infrastructure.AI;
-using BookWorm.Rating.Infrastructure.EntityConfigurations;
 using BookWorm.Rating.Infrastructure.Summarizer;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
@@ -64,9 +63,8 @@ internal static class Extensions
             builder.AddRateLimiting();
 
             // Add database configuration
-            var cosmosCs = builder.Configuration.GetConnectionString(
-                FeedbackConfiguration.ContainerName
-            ) ?? builder.Configuration.GetConnectionString(Components.Database.Rating);
+            var cosmosCs = builder.Configuration.GetConnectionString(Components.Container.Feedbacks)
+                ?? builder.Configuration.GetConnectionString(Components.Database.Rating);
             services.AddEventDispatchInterceptor();
             services.AddDbContext<RatingDbContext>(
                 (sp, options) =>

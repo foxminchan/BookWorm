@@ -40,7 +40,6 @@ var postgres = builder
 
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMcp();
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
-var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
 
 // Add Azure Cosmos DB
@@ -50,7 +49,7 @@ var cosmos = builder
     .ProvisionAsService(builder.Environment);
 
 var ratingDb = cosmos.AddCosmosDatabase(Components.Database.Rating);
-var feedbacks = ratingDb.AddContainer("feedbacks", "/bookId");
+var feedbacks = ratingDb.AddContainer(Components.Container.Feedbacks, "/bookId");
 
 // Add AI and Foundry components
 var foundry = builder.AddFoundry(Components.Foundry.Resource);
@@ -186,8 +185,6 @@ builder
     .WithEmailProvider()
     .WithReference(broker)
     .WaitFor(broker)
-    .WithReference(notificationDb)
-    .WaitFor(notificationDb)
     .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
 
 builder

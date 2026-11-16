@@ -21,7 +21,7 @@ public closed class BaseTest
     protected static readonly Assembly FinanceAssembly = typeof(IFinanceApiMarker).Assembly;
 
     protected static readonly Assembly NotificationAssembly =
-        typeof(NotificationApiMarker).Assembly;
+        typeof(INotificationApiMarker).Assembly;
 
     protected static readonly Assembly OrderingAssembly = typeof(OrderingApiMarker).Assembly;
     protected static readonly Assembly RatingAssembly = typeof(RatingApiMarker).Assembly;

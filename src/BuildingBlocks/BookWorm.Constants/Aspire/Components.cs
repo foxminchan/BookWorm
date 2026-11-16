@@ -18,8 +18,12 @@ public static class Components
         public const string Rating = "ratingdb";
         public const string Catalog = "catalogdb";
         public const string Ordering = "orderingdb";
-        public const string Notification = "notificationdb";
         public const string Scheduler = "schedulerdb";
+    }
+
+    public static class Container
+    {
+        public const string Feedbacks = "feedbacks";
     }
 
     public static class Foundry

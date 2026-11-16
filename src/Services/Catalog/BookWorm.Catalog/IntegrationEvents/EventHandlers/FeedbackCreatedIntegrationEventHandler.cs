@@ -32,7 +32,7 @@ internal sealed class FeedbackCreatedIntegrationEventHandler(
         if (book is null)
         {
             await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-            return new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId);
+            return new(@event.FeedbackId);
         }
 
         book.AddRating(@event.Rating);

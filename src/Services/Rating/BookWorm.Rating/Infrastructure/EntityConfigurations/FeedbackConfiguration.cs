@@ -4,11 +4,9 @@ namespace BookWorm.Rating.Infrastructure.EntityConfigurations;
 
 internal sealed class FeedbackConfiguration : IEntityTypeConfiguration<Feedback>
 {
-    public const string ContainerName = "feedbacks";
-
     public void Configure(EntityTypeBuilder<Feedback> builder)
     {
-        builder.ToContainer(ContainerName);
+        builder.ToContainer(Components.Container.Feedbacks);
 
         builder.HasNoDiscriminator();
 

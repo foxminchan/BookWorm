@@ -7,7 +7,7 @@ internal sealed class MailKitSender(
     ILogger<MailKitSender> logger,
     MailKitSettings settings,
     ResiliencePipelineProvider<string> provider
-) : IEmailSender
+) : ISender
 {
     public async Task SendAsync(
         MimeMessage mailMessage,
@@ -22,22 +22,40 @@ internal sealed class MailKitSender(
         var request = new SmtpSendRequest(mailMessage);
         var pipeline = provider.GetPipeline(nameof(Notification));
 
-        var result = await pipeline.ExecuteAsync(
-            async ct =>
-            {
-                await using var client = await factory.CreateClientAsync(ct);
-                var sendResult = (SmtpSendResult)await client.SendAsync(request, ct);
-                await client.DisconnectAsync(true, ct);
-                return sendResult;
-            },
-            cancellationToken
-        );
+        try
+        {
+            var result = await pipeline.ExecuteAsync(
+                async ct =>
+                {
+                    await using var client = await factory.CreateClientAsync(ct);
+                    var sendResult = (SmtpSendResult)await client.SendAsync(request, ct);
+                    await client.DisconnectAsync(true, ct);
+                    return sendResult;
+                },
+                cancellationToken
+            );
 
-        logger.LogDebug(
-            "Email sent to {Recipients} with status {StatusCode}: {Response}",
-            string.Join(", ", result.AcceptedRecipients.Select(r => r.Address)),
-            (int)result.StatusCode,
-            result.ResponseText
-        );
+            logger.LogInformation(
+                "Email sent to {Recipients} with subject {Subject} (status {StatusCode}: {Response})",
+                string.Join(", ", result.AcceptedRecipients.Select(r => r.Address)),
+                mailMessage.Subject,
+                (int)result.StatusCode,
+                result.ResponseText
+            );
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to send email to {Recipients} with subject {Subject}",
+                string.Join(", ", mailMessage.To.Mailboxes.Select(m => m.Address)),
+                mailMessage.Subject
+            );
+            throw;
+        }
     }
 }
