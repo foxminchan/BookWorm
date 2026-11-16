@@ -53,7 +53,6 @@ env:
   JAVA_VERSION: "25"
   GLOBAL_JSON_PATH: global.json
   BUN_VERSION_FILE: .bun-version
-  HANG_TIMEOUT: 7m
   SESSION_TIMEOUT: 15m
 
 jobs:
@@ -150,7 +149,6 @@ jobs:
 
       - name: 🧪 Test
         env:
-          TEST_HANG_TIMEOUT: ${{ env.HANG_TIMEOUT }}
           TEST_SESSION_TIMEOUT: ${{ env.SESSION_TIMEOUT }}
           NO_BUILD: "true"
         run: bash .github/actions/test/scripts/run-tests.sh

@@ -185,8 +185,5 @@
     <PackageVersion Include="TUnit" Version="1.85.7" />
     <!-- Contract Testing -->
     <PackageVersion Include="PactNet" Version="5.0.1" />
-    <!-- Microsoft Testing Platform -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MsTestVersion)" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MsTestVersion)" />
   </ItemGroup>
 </Project>

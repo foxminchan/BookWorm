@@ -24,12 +24,10 @@ test_args=(
   --no-restore
   --report-trx
   --coverage
-  --coverage-settings Coverage.runsettings
+  --coverage-output-format xml
+  --coverage-settings coverage.settings
   --results-directory ./test-results
   --github-reporter-style full
-  --hangdump
-  --hangdump-timeout "$TEST_HANG_TIMEOUT"
-  --crashdump
   -p:SolutionDir="$GITHUB_WORKSPACE/"
 )
 if [[ "$NO_BUILD" == "true" ]]; then

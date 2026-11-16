@@ -1,34 +1,68 @@
+# ==============================================================================
+# Tools & Settings
+# ==============================================================================
+
 [tools]
-bun = "1.4"
 node = "24"
-dotnet = "11"
-java = "temurin-25"
-maven = "3.10.0"
-aspire = "13"
+aspire = "17"
 uv = "latest"
 azure-cli = { version = "2", depends = ["uv"] }
 github-cli = "2"
 
 [settings]
 task.run_auto_install = false
-idiomatic_version_file_enable_tools = ['bun', 'dotnet']
+idiomatic_version_file_enable_tools = ["bun", "dotnet"]
+
+[vars]
+solution = "BookWorm.slnx"
+coverage_args = "--no-build --coverage --coverage-output-format xml --coverage-settings coverage.settings --results-directory ./test-results"
+pact_consumer_filter = "--treenode-filter '/*/*/*/*[Category=PactConsumer]'"
+pact_provider_filter = "--treenode-filter '/*/*/*/*[Category=PactProvider]'"
+
+# ==============================================================================
+# Setup & Lifecycle
+# ==============================================================================
+
+[tasks.prepare]
+description = "First-time setup after cloning (restore + git hooks)"
+depends = ["restore", "hook"]
 
 [tasks.restore]
-description = "Restore NuGet packages and tools"
+description = "Restore NuGet packages and .NET tools"
 run = ["dotnet restore", "dotnet tool restore"]
+
+[tasks.hook]
+description = "Setup pre-commit hooks"
+run = "git config core.hooksPath .husky"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "dotnet clean {{ vars.solution }}"
+
+[tasks.run]
+description = "Run the application with Aspire"
+run = "aspire start"
+
+# ==============================================================================
+# Build
+# ==============================================================================
 
 [tasks.build]
 description = "Build the solution"
 depends = ["restore"]
-run = "dotnet build BookWorm.slnx"
+run = "dotnet build {{ vars.solution }}"
+
+# ==============================================================================
+# Testing
+# ==============================================================================
 
 [tasks.test]
-description = "Run tests"
-depends = ["build"]
-run = ["mise run test:unit", "mise run test:contracts"]
+description = "Run unit, architecture, and contract tests"
+depends = ["test:unit", "test:contracts"]
 
 [tasks."test:unit"]
 description = "Run unit and architecture tests"
+depends = ["build"]
 run = [
   "dotnet test src/Services/Basket/BookWorm.Basket.UnitTests/BookWorm.Basket.UnitTests.csproj",
   "dotnet test src/Services/Catalog/BookWorm.Catalog.UnitTests/BookWorm.Catalog.UnitTests.csproj",
@@ -42,22 +76,58 @@ run = [
   "dotnet test tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj",
 ]
 
+[tasks."test:coverage"]
+description = "Run unit tests with MTP code coverage matching SonarCloud"
+depends = ["build"]
+run = [
+  "dotnet test --project src/Services/Basket/BookWorm.Basket.UnitTests/BookWorm.Basket.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/Catalog/BookWorm.Catalog.UnitTests/BookWorm.Catalog.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/Chat/BookWorm.Chat.UnitTests/BookWorm.Chat.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/Finance/BookWorm.Finance.UnitTests/BookWorm.Finance.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/McpTools/BookWorm.McpTools.UnitTests/BookWorm.McpTools.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/Notification/BookWorm.Notification.UnitTests/BookWorm.Notification.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/Ordering/BookWorm.Ordering.UnitTests/BookWorm.Ordering.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/Rating/BookWorm.Rating.UnitTests/BookWorm.Rating.UnitTests.csproj {{ vars.coverage_args }}",
+  "dotnet test --project src/Services/Scheduler/BookWorm.Scheduler.UnitTests/BookWorm.Scheduler.UnitTests.csproj {{ vars.coverage_args }}",
+]
+
 [tasks."test:contracts"]
 description = "Generate consumer pacts and verify provider messages"
+depends = ["test:contracts:provider"]
+wait_for = ["test:unit"]
+
+[tasks."test:contracts:consumer"]
+description = "Generate consumer pact contracts"
+depends = ["build"]
+wait_for = ["test:unit"]
 run = [
-  "dotnet test src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
-  "dotnet test src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
-  "dotnet test src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
-  "dotnet test src/Services/Notification/BookWorm.Notification.ContractTests/BookWorm.Notification.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
-  "dotnet test src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
-  "dotnet test src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactConsumer]'",
-  "dotnet test src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
-  "dotnet test src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
-  "dotnet test src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
-  "dotnet test src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
-  "dotnet test src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
-  "dotnet test src/Services/Scheduler/BookWorm.Scheduler.ContractTests/BookWorm.Scheduler.ContractTests.csproj --treenode-filter '/*/*/*/*[Category=PactProvider]'",
+  "dotnet test src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj {{ vars.pact_consumer_filter }}",
+  "dotnet test src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj {{ vars.pact_consumer_filter }}",
+  "dotnet test src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj {{ vars.pact_consumer_filter }}",
+  "dotnet test src/Services/Notification/BookWorm.Notification.ContractTests/BookWorm.Notification.ContractTests.csproj {{ vars.pact_consumer_filter }}",
+  "dotnet test src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj {{ vars.pact_consumer_filter }}",
+  "dotnet test src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj {{ vars.pact_consumer_filter }}",
 ]
+
+[tasks."test:contracts:provider"]
+description = "Verify provider messages against consumer pacts"
+depends = ["test:contracts:consumer"]
+run = [
+  "dotnet test src/Services/Basket/BookWorm.Basket.ContractTests/BookWorm.Basket.ContractTests.csproj {{ vars.pact_provider_filter }}",
+  "dotnet test src/Services/Catalog/BookWorm.Catalog.ContractTests/BookWorm.Catalog.ContractTests.csproj {{ vars.pact_provider_filter }}",
+  "dotnet test src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj {{ vars.pact_provider_filter }}",
+  "dotnet test src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj {{ vars.pact_provider_filter }}",
+  "dotnet test src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj {{ vars.pact_provider_filter }}",
+  "dotnet test src/Services/Scheduler/BookWorm.Scheduler.ContractTests/BookWorm.Scheduler.ContractTests.csproj {{ vars.pact_provider_filter }}",
+]
+
+# ==============================================================================
+# Formatting
+# ==============================================================================
+
+[tasks.format]
+description = "Format all code and documentation"
+depends = ["format:cs", "format:fe", "format:eventcatalog", "format:docusaurus"]
 
 [tasks."format:cs"]
 description = "Format C# code"
@@ -65,63 +135,38 @@ run = "dnx csharpier format ."
 
 [tasks."format:fe"]
 description = "Format frontend code"
-run = "bun run format"
 dir = "src/Clients"
+run = "bun run format"
 
 [tasks."format:eventcatalog"]
 description = "Format EventCatalog"
-run = "bun run format"
 dir = "docs/eventcatalog"
+run = "bun run format"
 
 [tasks."format:docusaurus"]
 description = "Format Docusaurus"
+dir = "docs/docusaurus"
 run = "bun run format"
-dir = "docs/docusaurus"
 
-[tasks.format]
-description = "Format all code"
-depends = [
-  "format:cs",
-  "format:fe",
-  "format:eventcatalog",
-  "format:docusaurus",
-]
-
-[tasks.clean]
-description = "Clean build artifacts"
-run = "dotnet clean BookWorm.slnx"
-
-[tasks.hook]
-description = "Setup pre-commit hooks"
-run = "git config core.hooksPath .husky"
-
-[tasks.prepare]
-description = "First-time setup after cloning (restore + git hooks)"
-depends = ["restore", "hook"]
-
-[tasks.run]
-description = "Run the application with Aspire"
-run = "aspire start"
-
-[tasks."update:eventcatalog"]
-description = "Update EventCatalog bun packages"
-run = "bun update"
-dir = "docs/eventcatalog"
-
-[tasks."update:docusaurus"]
-description = "Update Docusaurus bun packages"
-run = "bun update"
-dir = "docs/docusaurus"
-
-[tasks."update:fe"]
-description = "Update frontend bun packages"
-run = "bun update --recursive"
-dir = "src/Clients"
+# ==============================================================================
+# Dependency Updates
+# ==============================================================================
 
 [tasks.update]
-description = "Update all packages"
-depends = [
-  "update:eventcatalog",
-  "update:docusaurus",
-  "update:fe",
-]
+description = "Update all Bun packages"
+depends = ["update:fe", "update:eventcatalog", "update:docusaurus"]
+
+[tasks."update:fe"]
+description = "Update frontend Bun packages"
+dir = "src/Clients"
+run = "bun update --recursive"
+
+[tasks."update:eventcatalog"]
+description = "Update EventCatalog Bun packages"
+dir = "docs/eventcatalog"
+run = "bun update"
+
+[tasks."update:docusaurus"]
+description = "Update Docusaurus Bun packages"
+dir = "docs/docusaurus"
+run = "bun update"

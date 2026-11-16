@@ -49,13 +49,11 @@ internal sealed class MailKitSender(
         }
         catch (Exception ex)
         {
-            logger.LogError(
-                ex,
-                "Failed to send email to {Recipients} with subject {Subject}",
-                string.Join(", ", mailMessage.To.Mailboxes.Select(m => m.Address)),
-                mailMessage.Subject
+            var recipients = string.Join(", ", mailMessage.To.Mailboxes.Select(m => m.Address));
+            throw new NotificationException(
+                $"Failed to send email to {recipients} with subject {mailMessage.Subject}",
+                ex
             );
-            throw;
         }
     }
 }
