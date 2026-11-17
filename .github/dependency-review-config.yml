@@ -82,5 +82,16 @@ allow-dependencies-licenses:
   - "pkg:npm/%40ag-ui/a2ui-middleware"
   - "pkg:npm/%40ag-ui/langgraph"
   - "pkg:npm/%40copilotkit/license-verifier"
+  # GitHub Copilot CLI packages used by GitHub Agentic Workflows (.github/workflows/package-lock.json)
+  # declare "SEE LICENSE IN LICENSE.md" (mapped to LicenseRef-bad-see-license-in-license.md).
+  - "pkg:npm/%40github/copilot"
+  - "pkg:npm/%40github/copilot-darwin-arm64"
+  - "pkg:npm/%40github/copilot-darwin-x64"
+  - "pkg:npm/%40github/copilot-linux-arm64"
+  - "pkg:npm/%40github/copilot-linux-x64"
+  - "pkg:npm/%40github/copilot-linuxmusl-arm64"
+  - "pkg:npm/%40github/copilot-linuxmusl-x64"
+  - "pkg:npm/%40github/copilot-win32-arm64"
+  - "pkg:npm/%40github/copilot-win32-x64"
   - "pkg:npm/khroma"
   - "pkg:npm/protobufjs"
