@@ -32,11 +32,16 @@ internal static partial class AzureExtensions
                     return;
                 }
 
-                if (environment.IsDevelopment())
+                if (!environment.IsProduction())
                 {
                     resource.Capabilities.Add(
                         new CosmosDBAccountCapability { Name = "EnableServerless" }
                     );
+                }
+
+                if (!environment.IsDevelopment())
+                {
+                    resource.DisableLocalAuth = true;
                 }
             });
 

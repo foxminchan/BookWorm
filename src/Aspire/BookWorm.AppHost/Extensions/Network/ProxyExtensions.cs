@@ -92,8 +92,8 @@ internal sealed class FrontendRoute
 
 internal sealed class ApiGatewayProxyBuilder
 {
-    private readonly List<Service> _services = [];
     private readonly List<FrontendRoute> _frontends = [];
+    private readonly List<Service> _services = [];
     private IResourceBuilder<ExternalServiceResource>? _entraExternal;
 
     internal ApiGatewayProxyBuilder(IDistributedApplicationBuilder builder)

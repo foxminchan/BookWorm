@@ -1,6 +1,8 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
+builder
+    .AddAzureContainerAppEnvironment(Components.Azure.ContainerApp)
+    .ProvisionAsService(builder.Environment);
 
 // Add Azure Managed Redis, Qdrant, and Kafka
 var redis = builder
@@ -226,7 +228,7 @@ builder
     .WaitFor(broker)
     .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
     .WithReference(catalogDb)
-    .WaitFor(catalogApi)
+    .WaitFor(catalogDb)
     .WithReference(qdrant)
     .WaitFor(qdrant)
     .WithReference(project)

@@ -67,7 +67,7 @@ jobs:
         run: |
           test -n "$AZURE_RESOURCE_GROUP" || { echo "AZURE_RESOURCE_GROUP is required for this GitHub Environment."; exit 1; }
           missing=()
-          for name in EMAIL_SMTP_ENDPOINT EMAIL_SMTP_USERNAME EMAIL_SMTP_PASSWORD EMAIL_SENDER_ADDRESS EMAIL_SENDER_NAME KAFKA_BROKER; do
+          for name in EMAIL_SMTP_ENDPOINT EMAIL_SMTP_USERNAME EMAIL_SMTP_PASSWORD EMAIL_SENDER_ADDRESS EMAIL_SENDER_NAME KAFKA_BROKER QDRANT_CLOUD_CONNECTION; do
             if [[ -z "${!name}" ]]; then
               missing+=("$name")
             fi

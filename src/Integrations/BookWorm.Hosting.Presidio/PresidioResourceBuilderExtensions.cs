@@ -75,25 +75,36 @@ internal static class PresidioContainerBuilderExtensions
         string image,
         string tag,
         string iconName,
-        int? httpsPort,
-        string endpointName
+        int? port,
+        string httpsEndpointName
     )
         where TResource : ContainerResource, IResourceWithConnectionString
     {
-        return builder
+        builder
             .WithImage(image)
             .WithImageRegistry(registry)
             .WithImageTag(tag)
-            .WithIconName(iconName)
-            .WithHttpsEndpoint(httpsPort, 3000, endpointName)
-            .WithHttpsDeveloperCertificate()
-            .WithHttpsCertificateConfiguration(ctx =>
-            {
-                ctx.EnvironmentVariables["GUNICORN_CMD_ARGS"] = ReferenceExpression.Create(
-                    $"--certfile={ctx.CertificatePath} --keyfile={ctx.KeyPath}"
-                );
-                return Task.CompletedTask;
-            })
-            .WithHttpHealthCheck("/health", endpointName: endpointName);
+            .WithIconName(iconName);
+
+        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        {
+            return builder
+                .WithHttpsEndpoint(port, 3000, httpsEndpointName)
+                .WithHttpsDeveloperCertificate()
+                .WithHttpsCertificateConfiguration(ctx =>
+                {
+                    ctx.EnvironmentVariables["GUNICORN_CMD_ARGS"] = ReferenceExpression.Create(
+                        $"--certfile={ctx.CertificatePath} --keyfile={ctx.KeyPath}"
+                    );
+                    return Task.CompletedTask;
+                })
+                .WithHttpHealthCheck("/health", endpointName: httpsEndpointName);
+        }
+
+        const string httpEndpointName = "http";
+
+        return builder
+            .WithHttpEndpoint(port, 3000, httpEndpointName)
+            .WithHttpHealthCheck("/health", endpointName: httpEndpointName);
     }
 }

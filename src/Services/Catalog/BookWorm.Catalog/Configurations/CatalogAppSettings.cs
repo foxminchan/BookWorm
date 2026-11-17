@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Chassis.Utilities.Configurations;
 using Microsoft.OpenApi;
 
 namespace BookWorm.Catalog.Configurations;
@@ -23,5 +23,5 @@ internal sealed class CatalogAppSettings : AppSettings
             License = new() { Name = "MIT", Url = new("https://opensource.org/licenses/MIT") },
         };
 
-    public int SasExpiryHours { get; set; }
+    public int SasExpiryHours { get; set; } = 1;
 }

@@ -88,7 +88,8 @@ internal static class FrontendExtensions
                 builder,
                 Clients.StoreFront,
                 Clients.StoreFrontTurboApp,
-                "@bookworm/storefront"
+                "@bookworm/storefront",
+                true
             ),
             gateway,
             entraId,
@@ -147,7 +148,8 @@ internal static class FrontendExtensions
         IDistributedApplicationBuilder builder,
         string name,
         string appName,
-        string turboFilter
+        string turboFilter,
+        bool includeCopilot = false
     )
     {
         var clientsPath = Path.GetFullPath("../../Clients", builder.AppHostDirectory);
@@ -157,10 +159,17 @@ internal static class FrontendExtensions
             clientsPath,
             context =>
             {
-                context
+                var buildStage = context
                     .Builder.From("oven/bun:1", BuildStage)
                     .WorkDir("/app")
-                    .Copy(".", ".")
+                    .Copy(".", ".");
+
+                if (includeCopilot)
+                {
+                    buildStage.Env("NEXT_PUBLIC_COPILOT_ENABLED", "true");
+                }
+
+                buildStage
                     .Run("bun install --frozen-lockfile")
                     .Run($"bunx turbo build --filter={turboFilter}");
 
