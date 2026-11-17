@@ -63,6 +63,7 @@ internal static class OrderIntegrationExtensions
                         OrderOrchestrationStatus.BasketDeletionFailed,
                     OrderStatus.Completed => OrderOrchestrationStatus.Completed,
                     OrderStatus.Cancelled => OrderOrchestrationStatus.Cancelled,
+                    OrderStatus.Failed => OrderOrchestrationStatus.Failed,
                     _ => throw new ArgumentOutOfRangeException(
                         nameof(order),
                         order.Status,
@@ -70,7 +71,8 @@ internal static class OrderIntegrationExtensions
                     ),
                 },
                 order.TimeoutRetryCount,
-                order.OrderPlacedDate
+                order.OrderPlacedDate,
+                order.FailureReason
             );
         }
     }

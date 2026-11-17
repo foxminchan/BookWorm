@@ -14,6 +14,13 @@ internal sealed class BasketDeletedCompleteStep : IOrderWorkflowStep
         var @event = await stepContext.Events.BasketDeletedComplete;
         var order = stepContext.Order;
         order.MarkBasketDeleted(@event.BasketId, Money.Of(@event.TotalMoney));
+        stepContext.OrchestrationContext.SetOrderStatus(order);
+
+        // Register compensation before publishing the forward basket-completion command
+        stepContext.Compensations.AddCompensation(
+            nameof(PublishDeleteBasketFailedActivity),
+            order.ToDeleteBasketFailedCommand()
+        );
 
         await stepContext.OrchestrationContext.PublishActivityAsync(
             nameof(PublishDeleteBasketCompleteActivity),

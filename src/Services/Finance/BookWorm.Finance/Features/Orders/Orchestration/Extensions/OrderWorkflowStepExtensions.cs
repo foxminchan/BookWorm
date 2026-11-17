@@ -18,13 +18,14 @@ internal static class OrderWorkflowStepExtensions
         public async Task<OrderStepOutcome> ExecuteNextOrderStepAsync(
             ExternalEventTasks events,
             Order order,
+            OrderSagaCompensations compensations,
             TimeSpan retryTimeout,
             ILogger logger
         )
         {
             var winner = await context.WaitForNextOrderStepAsync(events, order, retryTimeout);
 
-            var stepContext = new OrderStepContext(context, events, order, logger);
+            var stepContext = new OrderStepContext(context, events, order, compensations, logger);
             var step = _steps.First(s => s.CanHandle(winner, events));
 
             return await step.ExecuteAsync(stepContext);
@@ -32,10 +33,12 @@ internal static class OrderWorkflowStepExtensions
 
         public async Task<OrderOrchestrationResult> CancelDueToMaxRetriesAsync(
             Order order,
+            OrderSagaCompensations compensations,
             ILogger logger
         )
         {
             order.CancelDueToMaxRetries();
+            context.SetOrderStatus(order);
 
             logger.LogWarning(
                 "[OrderOrchestrator] Max retries ({MaxAttempts}) exceeded for {OrderId}; cancelling order",
@@ -51,6 +54,7 @@ internal static class OrderWorkflowStepExtensions
                 );
             }
 
+            compensations.Clear();
             return order.ToOrchestrationResult();
         }
     }

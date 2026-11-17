@@ -52,15 +52,12 @@ public sealed class Order : Entity, IAggregateRoot
     public int TimeoutRetryCount { get; private set; }
     public int MaxAttempts { get; }
     public bool BasketDeleted { get; private set; }
+    public string? FailureReason { get; private set; }
 
     public bool CanSendNotification => Customer.CanNotify;
     public bool HasExceededMaxRetries => TimeoutRetryCount >= MaxAttempts;
 
-    public bool IsTerminal =>
-        Status
-            is OrderStatus.Completed
-                or OrderStatus.Cancelled
-                or OrderStatus.BasketDeletionFailed;
+    public bool IsTerminal => OrderLifecycleDecider.IsTerminal(Status);
 
     public static Order Place(
         Guid orderId,
@@ -179,6 +176,16 @@ public sealed class Order : Entity, IAggregateRoot
             OrderLifecycleAction.CancelDueToMaxRetries,
             static order => new OrderCancelledEvent(order)
         );
+    }
+
+    /// <summary>
+    ///     Marks the order as failed due to an unrecoverable orchestration or domain error.
+    /// </summary>
+    /// <param name="reason">The reason for the failure.</param>
+    public void Fail(string? reason)
+    {
+        ApplyTransition(OrderLifecycleAction.Fail, static order => new OrderFailedEvent(order));
+        FailureReason = string.IsNullOrWhiteSpace(reason) ? "Order orchestration failed." : reason;
     }
 
     private void ApplyTransition(OrderLifecycleAction action, Func<Order, DomainEvent> createEvent)

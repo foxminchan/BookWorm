@@ -14,6 +14,7 @@ internal sealed class BasketDeletedFailedStep : IOrderWorkflowStep
         var @event = await stepContext.Events.BasketDeletedFailed;
         var order = stepContext.Order;
         order.FailBasketDeletion(@event.BasketId, @event.Email, Money.Of(@event.TotalMoney));
+        stepContext.OrchestrationContext.SetOrderStatus(order);
 
         stepContext.Logger.LogError(
             "[OrderOrchestrator] Basket deletion failed for {OrderId}",

@@ -65,6 +65,23 @@ public sealed class OrderAggregateTests
         order.BasketId.ShouldBe(newBasketId);
         order.TotalMoney.Amount.ShouldBe(55.50m);
         order.DomainEvents.OfType<BasketDeletedEvent>().ShouldHaveSingleItem();
+
+        Should.Throw<FinanceDomainException>(() =>
+            order.MarkBasketDeleted(newBasketId, Money.Of(55.50m))
+        );
+    }
+
+    [Test]
+    public void GivenPlacedOrder_WhenFailing_ThenShouldBecomeTerminalWithReasonAndRaiseEvent()
+    {
+        var order = CreatePlacedOrder();
+
+        order.Fail("Downstream activity failed");
+
+        order.Status.ShouldBe(OrderStatus.Failed);
+        order.IsTerminal.ShouldBeTrue();
+        order.FailureReason.ShouldBe("Downstream activity failed");
+        order.DomainEvents.OfType<OrderFailedEvent>().ShouldHaveSingleItem();
     }
 
     [Test]

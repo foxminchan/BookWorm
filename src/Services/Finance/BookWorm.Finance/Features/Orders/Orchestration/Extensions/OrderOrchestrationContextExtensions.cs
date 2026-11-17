@@ -16,6 +16,20 @@ internal static class OrderOrchestrationContextExtensions
             return context.CallActivityAsync(activityName, command, _activityRetryOptions);
         }
 
+        public void SetOrderStatus(Order order)
+        {
+            context.SetCustomStatus(
+                new
+                {
+                    OrderId = order.Id,
+                    Status = order.Status.ToString(),
+                    order.BasketDeleted,
+                    order.TimeoutRetryCount,
+                    order.FailureReason,
+                }
+            );
+        }
+
         public ExternalEventTasks CreateOrderExternalEventTasks()
         {
             return new(

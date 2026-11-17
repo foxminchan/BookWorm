@@ -1,4 +1,5 @@
 using BookWorm.Finance.Domain.AggregatesModel.OrderAggregate;
+using BookWorm.Finance.Domain.Exceptions;
 using Microsoft.Azure.Functions.Worker;
 
 namespace BookWorm.Finance.Features.Orders.Orchestration;
@@ -23,32 +24,69 @@ public sealed class OrderOrchestrator
             context.CurrentUtcDateTime
         );
 
+        var compensations = new OrderSagaCompensations(context);
+        context.SetOrderStatus(order);
+
         logger.LogInformation(
-            "[OrderOrchestrator] Order orchestration started for {OrderId}",
-            order.Id
-        );
-        await context.PublishActivityAsync(
-            nameof(PublishPlaceOrderActivity),
-            order.ToPlaceOrderCommand()
+            "[OrderOrchestrator] Order orchestration started for {OrderId} (InstanceId: {InstanceId})",
+            order.Id,
+            context.InstanceId
         );
 
-        var events = context.CreateOrderExternalEventTasks();
-
-        while (!order.HasExceededMaxRetries)
+        try
         {
-            var outcome = await context.ExecuteNextOrderStepAsync(
-                events,
-                order,
-                input.MaxRetryTimeout,
-                logger
+            if (order.CanSendNotification)
+            {
+                compensations.AddCompensation(
+                    nameof(PublishCancelOrderActivity),
+                    order.ToCancelOrderCommand()
+                );
+            }
+
+            await context.PublishActivityAsync(
+                nameof(PublishPlaceOrderActivity),
+                order.ToPlaceOrderCommand()
             );
 
-            if (outcome.IsCompleted)
+            var events = context.CreateOrderExternalEventTasks();
+
+            while (order is { IsTerminal: false, HasExceededMaxRetries: false })
             {
+                var outcome = await context.ExecuteNextOrderStepAsync(
+                    events,
+                    order,
+                    compensations,
+                    input.MaxRetryTimeout,
+                    logger
+                );
+
+                if (!outcome.IsCompleted)
+                {
+                    continue;
+                }
+
+                compensations.Clear();
                 return outcome.Result!;
             }
-        }
 
-        return await context.CancelDueToMaxRetriesAsync(order, logger);
+            return await context.CancelDueToMaxRetriesAsync(order, compensations, logger);
+        }
+        catch (Exception ex) when (ex is TaskFailedException or FinanceDomainException)
+        {
+            logger.LogError(
+                ex,
+                "[OrderOrchestrator] Error in order processing saga for {OrderId}; executing compensations",
+                order.Id
+            );
+
+            if (!order.IsTerminal)
+            {
+                order.Fail(ex.Message);
+                context.SetOrderStatus(order);
+            }
+
+            await compensations.CompensateAsync();
+            return order.ToOrchestrationResult();
+        }
     }
 }

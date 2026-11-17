@@ -8,6 +8,7 @@ global using BookWorm.Finance.Features.Orders.BasketDeletion;
 global using BookWorm.Finance.Features.Orders.Orchestration;
 global using BookWorm.Finance.Features.Orders.Orchestration.Extensions;
 global using BookWorm.Finance.Features.Orders.Orchestration.Models;
+global using BookWorm.Finance.Features.Orders.Orchestration.Saga;
 global using BookWorm.Finance.Features.Orders.Orchestration.Steps;
 global using BookWorm.Finance.Features.Orders.OrderCancellation;
 global using BookWorm.Finance.Features.Orders.OrderCompletion;

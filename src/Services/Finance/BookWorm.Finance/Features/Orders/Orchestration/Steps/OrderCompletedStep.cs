@@ -18,6 +18,7 @@ internal sealed class OrderCompletedStep : IOrderWorkflowStep
             new(@event.FullName, @event.Email),
             Money.Of(@event.TotalMoney)
         );
+        stepContext.OrchestrationContext.SetOrderStatus(order);
 
         stepContext.Logger.LogInformation(
             "[OrderOrchestrator] Order orchestration completed for {OrderId}",

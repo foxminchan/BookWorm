@@ -2,6 +2,7 @@ using BookWorm.Contracts;
 using BookWorm.Finance.Features.Orders.BasketDeletion;
 using BookWorm.Finance.Features.Orders.Orchestration;
 using BookWorm.Finance.Features.Orders.Orchestration.Models;
+using BookWorm.Finance.Features.Orders.Orchestration.Saga;
 using BookWorm.Finance.Features.Orders.OrderCancellation;
 using BookWorm.Finance.Features.Orders.OrderCompletion;
 using BookWorm.Finance.Features.Orders.PlaceOrder;
@@ -224,6 +225,85 @@ public sealed class OrderOrchestratorTests
         secondActivities.ShouldBe(firstActivities);
     }
 
+    [Test]
+    public async Task GivenActivityFailureAfterBasketDeleted_WhenTaskFailedExceptionThrown_ThenShouldCompensateInLifoOrderAndFail()
+    {
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        var input = CreateInput(orderId, basketId);
+        var harness = new OrchestratorTestHarness(input);
+
+        harness.FailActivity(
+            nameof(PublishDeleteBasketCompleteActivity),
+            new TaskFailedException(
+                nameof(PublishDeleteBasketCompleteActivity),
+                1,
+                new InvalidOperationException("Kafka broker unavailable")
+            )
+        );
+
+        var runTask = new OrderOrchestrator().RunAsync(harness.Context.Object, input);
+
+        harness.CompleteExternalEvent(
+            OrderOrchestrationExternalEvents.BasketDeletedComplete,
+            new BasketDeletedCompleteIntegrationEvent(orderId, basketId, 99.99m)
+        );
+
+        var result = await runTask;
+
+        result.FinalStatus.ShouldBe(OrderOrchestrationStatus.Failed);
+        result.FailureReason.ShouldNotBeNullOrWhiteSpace();
+        harness
+            .CalledActivities.Select(a => a.Name)
+            .ShouldBe([
+                nameof(PublishPlaceOrderActivity),
+                nameof(PublishDeleteBasketCompleteActivity),
+                nameof(PublishDeleteBasketFailedActivity),
+                nameof(PublishCancelOrderActivity),
+            ]);
+    }
+
+    [Test]
+    public async Task GivenCompensationFailure_WhenCompensatingInLifoOrder_ThenShouldContinueRemainingCompensations()
+    {
+        var orderId = Guid.CreateVersion7();
+        var basketId = Guid.CreateVersion7();
+        var input = CreateInput(orderId, basketId);
+        var harness = new OrchestratorTestHarness(input);
+
+        harness.FailActivity(
+            nameof(PublishDeleteBasketCompleteActivity),
+            new TaskFailedException(
+                nameof(PublishDeleteBasketCompleteActivity),
+                1,
+                new InvalidOperationException("Downstream failure")
+            )
+        );
+        harness.FailActivity(
+            nameof(PublishDeleteBasketFailedActivity),
+            new InvalidOperationException("Compensation failure")
+        );
+
+        var runTask = new OrderOrchestrator().RunAsync(harness.Context.Object, input);
+
+        harness.CompleteExternalEvent(
+            OrderOrchestrationExternalEvents.BasketDeletedComplete,
+            new BasketDeletedCompleteIntegrationEvent(orderId, basketId, 99.99m)
+        );
+
+        var result = await runTask;
+
+        result.FinalStatus.ShouldBe(OrderOrchestrationStatus.Failed);
+        harness
+            .CalledActivities.Select(a => a.Name)
+            .ShouldBe([
+                nameof(PublishPlaceOrderActivity),
+                nameof(PublishDeleteBasketCompleteActivity),
+                nameof(PublishDeleteBasketFailedActivity),
+                nameof(PublishCancelOrderActivity),
+            ]);
+    }
+
     private static OrderOrchestrationInput CreateInput(
         Guid orderId,
         Guid basketId,
@@ -247,6 +327,7 @@ public sealed class OrderOrchestratorTests
     {
         private readonly Dictionary<string, TaskCompletionSource<object>> _externalEvents = [];
         private readonly Queue<TaskCompletionSource> _timers = [];
+        private readonly Dictionary<string, Exception> _failingActivities = [];
 
         public OrchestratorTestHarness(OrderOrchestrationInput input)
         {
@@ -256,6 +337,9 @@ public sealed class OrderOrchestratorTests
             Context
                 .Setup(c => c.CreateReplaySafeLogger<OrderOrchestrator>())
                 .Returns(NullLogger<OrderOrchestrator>.Instance);
+            Context
+                .Setup(c => c.CreateReplaySafeLogger<OrderSagaCompensations>())
+                .Returns(NullLogger<OrderSagaCompensations>.Instance);
 
             Context
                 .Setup(c =>
@@ -265,10 +349,18 @@ public sealed class OrderOrchestratorTests
                         It.IsAny<TaskOptions?>()
                     )
                 )
-                .Callback<TaskName, object?, TaskOptions?>(
-                    (name, payload, _) => CalledActivities.Add((name.Name, payload))
-                )
-                .Returns(Task.CompletedTask);
+                .Returns<TaskName, object?, TaskOptions?>(
+                    (name, payload, _) =>
+                    {
+                        CalledActivities.Add((name.Name, payload));
+                        if (_failingActivities.TryGetValue(name.Name, out var ex))
+                        {
+                            return Task.FromException(ex);
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                );
 
             SetupExternalEvent<BasketDeletedCompleteIntegrationEvent>(
                 OrderOrchestrationExternalEvents.BasketDeletedComplete
@@ -300,6 +392,11 @@ public sealed class OrderOrchestratorTests
             ct.Register(() => tcs.TrySetCanceled(ct));
             _timers.Enqueue(tcs);
             return tcs.Task;
+        }
+
+        public void FailActivity(string activityName, Exception exception)
+        {
+            _failingActivities[activityName] = exception;
         }
 
         public void CompleteExternalEvent<T>(string eventName, T payload)

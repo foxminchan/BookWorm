@@ -13,8 +13,11 @@ internal sealed class PlaceOrderTimeoutStep : IOrderWorkflowStep
 
         if (!order.RecordTimeoutRetry())
         {
+            stepContext.OrchestrationContext.SetOrderStatus(order);
             return OrderStepOutcome.Continue;
         }
+
+        stepContext.OrchestrationContext.SetOrderStatus(order);
 
         stepContext.Logger.LogWarning(
             "[OrderOrchestrator] PlaceOrder timed out for {OrderId}; retry {Attempt}/{MaxAttempts}",

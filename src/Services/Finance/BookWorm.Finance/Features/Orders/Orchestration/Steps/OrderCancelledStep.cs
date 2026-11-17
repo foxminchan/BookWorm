@@ -18,6 +18,7 @@ internal sealed class OrderCancelledStep : IOrderWorkflowStep
             new(@event.FullName, @event.Email),
             Money.Of(@event.TotalMoney)
         );
+        stepContext.OrchestrationContext.SetOrderStatus(order);
 
         stepContext.Logger.LogInformation(
             "[OrderOrchestrator] Order orchestration cancelled for {OrderId}",

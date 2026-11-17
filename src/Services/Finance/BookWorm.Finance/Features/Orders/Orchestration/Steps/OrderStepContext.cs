@@ -6,5 +6,6 @@ internal sealed record OrderStepContext(
     TaskOrchestrationContext OrchestrationContext,
     ExternalEventTasks Events,
     Order Order,
+    OrderSagaCompensations Compensations,
     ILogger Logger
 );

@@ -15,4 +15,7 @@ public enum OrderStatus : byte
 
     [Description("Order Cancelled")]
     Cancelled = 3,
+
+    [Description("Order Failed")]
+    Failed = 4,
 }

@@ -23,6 +23,9 @@ public enum OrderLifecycleAction : byte
 
     [Description("Cancel Order Due to Max Retries")]
     CancelDueToMaxRetries = 5,
+
+    [Description("Fail Order")]
+    Fail = 6,
 }
 
 public sealed record OrderLifecycleState(
@@ -50,17 +53,21 @@ public static class OrderLifecycleDecider
         OrderTransition
     >(Evolve, () => new(OrderStatus.Placed, false, 0, 1)).For<OrderLifecycleCommand>(Decide);
 
+    public static bool IsTerminal(OrderStatus status)
+    {
+        return status
+            is OrderStatus.Completed
+                or OrderStatus.Cancelled
+                or OrderStatus.BasketDeletionFailed
+                or OrderStatus.Failed;
+    }
+
     private static OrderTransition[] Decide(
         OrderLifecycleCommand command,
         OrderLifecycleState state
     )
     {
-        if (
-            state.Status
-            is OrderStatus.Completed
-                or OrderStatus.Cancelled
-                or OrderStatus.BasketDeletionFailed
-        )
+        if (IsTerminal(state.Status))
         {
             throw new FinanceDomainException(
                 $"Cannot apply '{command.Action}' because order is already in terminal status '{state.Status}'."
@@ -69,6 +76,10 @@ public static class OrderLifecycleDecider
 
         return command.Action switch
         {
+            OrderLifecycleAction.MarkBasketDeleted when state.BasketDeleted =>
+                throw new FinanceDomainException(
+                    "Cannot mark basket deleted because basket has already been deleted."
+                ),
             OrderLifecycleAction.MarkBasketDeleted =>
             [
                 new(OrderStatus.Placed, true, state.TimeoutRetryCount),
@@ -97,6 +108,10 @@ public static class OrderLifecycleDecider
             OrderLifecycleAction.CancelDueToMaxRetries =>
             [
                 new(OrderStatus.Cancelled, state.BasketDeleted, state.TimeoutRetryCount),
+            ],
+            OrderLifecycleAction.Fail =>
+            [
+                new(OrderStatus.Failed, state.BasketDeleted, state.TimeoutRetryCount),
             ],
             _ => throw new FinanceDomainException(
                 $"Invalid action '{command.Action}' for status '{state.Status}'."

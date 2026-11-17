@@ -8,5 +8,6 @@ public sealed record OrderOrchestrationResult(
     decimal TotalMoney,
     OrderOrchestrationStatus FinalStatus,
     int TimeoutRetryCount,
-    DateTime OrderPlacedDate
+    DateTime OrderPlacedDate,
+    string? FailureReason = null
 );
