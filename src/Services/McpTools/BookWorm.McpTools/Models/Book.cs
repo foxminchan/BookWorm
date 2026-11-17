@@ -1,8 +1,8 @@
-﻿namespace BookWorm.McpTools.Models;
+namespace BookWorm.McpTools.Models;
 
 public sealed record Book(
     BookId Id,
-    string? Name,
+    string Name,
     string? Description,
     string? ImageUrl,
     decimal Price,

@@ -1,6 +1,5 @@
-﻿using AgentGovernance.Extensions.ModelContextProtocol;
+using AgentGovernance.Extensions.ModelContextProtocol;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Core;
 using BookWorm.McpTools.Options;
@@ -44,16 +43,8 @@ internal static class Extensions
             services.AddGlobalExceptionHandler();
             services.AddProblemDetails();
 
-            // Configure HTTP clients
-            services.AddHttpServiceReference<ICatalogApi>(
-                HttpUtilities
-                    .AsUrlBuilder()
-                    .WithScheme(Http.Schemes.HttpOrHttps)
-                    .WithHost(Constants.Aspire.Services.Catalog)
-                    .Build(),
-                HealthStatus.Degraded,
-                ApiSerializationContext.Default
-            );
+            // Configure gRPC clients
+            builder.AddGrpcServices();
 
             services
                 .AddMcpServer()

@@ -1,4 +1,9 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Features.Authors.List;
+using BookWorm.Catalog.Features.Books;
+using BookWorm.Catalog.Features.Books.Get;
+using BookWorm.Catalog.Features.Books.List;
+using BookWorm.Catalog.Features.Categories.List;
 using BookWorm.Catalog.Features.Dashboard;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
@@ -80,6 +85,135 @@ internal sealed class BookService(
         );
 
         return MapToBookResponse(books);
+    }
+
+    [AllowAnonymous]
+    public override async Task<ListBooksResponse> ListBooks(
+        ListBooksRequest request,
+        ServerCallContext context
+    )
+    {
+        var search = string.IsNullOrWhiteSpace(request.Search) ? null : request.Search;
+        var result = await sender.Send(
+            new ListBooksQuery(Search: search),
+            context.CancellationToken
+        );
+
+        var response = new ListBooksResponse();
+        response.Books.AddRange(result.Select(MapToBookItem));
+        return response;
+    }
+
+    [AllowAnonymous]
+    public override async Task<GetBookDetailsResponse> GetBookDetails(
+        GetBookDetailsRequest request,
+        ServerCallContext context
+    )
+    {
+        if (!Guid.TryParse(request.BookId, out var bookId))
+        {
+            throw new RpcException(
+                new(StatusCode.InvalidArgument, $"Invalid book id '{request.BookId}'.")
+            );
+        }
+
+        try
+        {
+            var book = await sender.Send(
+                new GetBookQuery(BookId.From(bookId)),
+                context.CancellationToken
+            );
+
+            return new() { Book = MapToBookItem(book) };
+        }
+        catch (NotFoundException)
+        {
+            throw new RpcException(
+                new(StatusCode.NotFound, $"Book with id {request.BookId} not found.")
+            );
+        }
+    }
+
+    [AllowAnonymous]
+    public override async Task<ListCategoriesResponse> ListCategories(
+        ListCategoriesRequest request,
+        ServerCallContext context
+    )
+    {
+        var categories = await sender.Send(new ListCategoriesQuery(), context.CancellationToken);
+
+        var response = new ListCategoriesResponse();
+        response.Categories.AddRange(
+            categories.Select(c => new CategoryItem
+            {
+                Id = c.Id.ToString(),
+                Name = c.Name ?? string.Empty,
+            })
+        );
+        return response;
+    }
+
+    [AllowAnonymous]
+    public override async Task<ListAuthorsResponse> ListAuthors(
+        ListAuthorsRequest request,
+        ServerCallContext context
+    )
+    {
+        var authors = await sender.Send(new ListAuthorsQuery(), context.CancellationToken);
+
+        var response = new ListAuthorsResponse();
+        response.Authors.AddRange(
+            authors.Select(a => new AuthorItem
+            {
+                Id = a.Id.ToString(),
+                Name = a.Name ?? string.Empty,
+            })
+        );
+        return response;
+    }
+
+    private static BookItem MapToBookItem(BookDto book)
+    {
+        var item = new BookItem
+        {
+            Id = book.Id.ToString(),
+            Name = book.Name ?? string.Empty,
+            Description = book.Description ?? string.Empty,
+            ImageUrl = book.ImageUrl ?? string.Empty,
+            Price = book.Price,
+            PriceSale = book.PriceSale,
+            Status = book.Status == Status.InStock ? BookStatus.InStock : BookStatus.OutOfStock,
+            AverageRating = book.AverageRating,
+            TotalReviews = book.TotalReviews,
+        };
+
+        if (book.Category is not null)
+        {
+            item.Category = new()
+            {
+                Id = book.Category.Id.ToString(),
+                Name = book.Category.Name ?? string.Empty,
+            };
+        }
+
+        if (book.Publisher is not null)
+        {
+            item.Publisher = new()
+            {
+                Id = book.Publisher.Id.ToString(),
+                Name = book.Publisher.Name ?? string.Empty,
+            };
+        }
+
+        item.Authors.AddRange(
+            book.Authors.Select(a => new AuthorItem
+            {
+                Id = a.Id.ToString(),
+                Name = a.Name ?? string.Empty,
+            })
+        );
+
+        return item;
     }
 
     private static GetBookResponse MapToBookResponse(Book book)

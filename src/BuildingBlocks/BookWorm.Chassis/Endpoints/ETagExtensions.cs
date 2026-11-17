@@ -106,19 +106,6 @@ public static class ETagExtensions
         }
     }
 
-    extension(HttpResponse response)
-    {
-        /// <summary>
-        ///     Sets the <c>ETag</c> response header from a <see cref="uint" /> row version.
-        /// </summary>
-        /// <param name="version">The row version to set as the ETag.</param>
-        public void SetETag(uint version)
-        {
-            response.Headers[HeaderNames.ETag] =
-                $"\"{version.ToString(CultureInfo.InvariantCulture)}\"";
-        }
-    }
-
     /// <summary>
     ///     Attempts to parse an ETag header value (strong <c>"123"</c> or weak <c>W/"123"</c>)
     ///     into a <see cref="uint" /> row version matching <c>AuditableEntity.RowVersion</c>.

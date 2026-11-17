@@ -9,6 +9,7 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
 {
     [Test]
     [Arguments(nameof(Scheduler))]
+    [Arguments(nameof(McpTools))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotExtendEntity(string serviceName)
     {
         Types()
@@ -24,6 +25,7 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
 
     [Test]
     [Arguments(nameof(Scheduler))]
+    [Arguments(nameof(McpTools))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotExtendValueObject(
         string serviceName
     )
@@ -41,6 +43,7 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
 
     [Test]
     [Arguments(nameof(Scheduler))]
+    [Arguments(nameof(McpTools))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotExtendDomainEvent(
         string serviceName
     )
@@ -58,6 +61,7 @@ public sealed class NonDddServiceGuardrailTests : ArchUnitBaseTest
 
     [Test]
     [Arguments(nameof(Scheduler))]
+    [Arguments(nameof(McpTools))]
     public void GivenNonDddService_WhenCheckingTypes_ThenShouldNotImplementIAggregateRoot(
         string serviceName
     )

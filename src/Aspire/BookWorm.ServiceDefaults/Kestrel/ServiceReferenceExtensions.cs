@@ -1,9 +1,7 @@
-using System.Text.Json.Serialization;
 using Grpc.Core;
 using Grpc.Health.V1;
 using Microsoft.Extensions.Http.Resilience;
 using Polly.Timeout;
-using Refit;
 
 namespace BookWorm.ServiceDefaults.Kestrel;
 
@@ -96,105 +94,6 @@ public static class ServiceReferenceExtensions
             );
 
             return builder;
-        }
-
-        /// <summary>
-        ///     Adds a typed HTTP client reference without an endpoint health check.
-        /// </summary>
-        /// <typeparam name="TClient">
-        ///     The typed Refit client contract.
-        /// </typeparam>
-        /// <param name="address">
-        ///     The absolute URI of the downstream HTTP service.
-        /// </param>
-        /// <param name="jsonContext">
-        ///     The source-generated JSON context for the client payloads.
-        /// </param>
-        public IHttpClientBuilder AddHttpServiceReference<TClient>(
-            string address,
-            JsonSerializerContext jsonContext
-        )
-            where TClient : class
-        {
-            if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
-            {
-                throw new ArgumentException(
-                    "Address must be a valid absolute URI.",
-                    nameof(address)
-                );
-            }
-
-            var uri = new Uri(address);
-            return services
-                .AddRefitGeneratedClient<TClient>(RefitSettings.ForJsonContext(jsonContext))
-                .ConfigureHttpClient(c => c.BaseAddress = uri);
-        }
-
-        /// <summary>
-        ///     Adds a typed HTTP client reference with endpoint health check registration.
-        /// </summary>
-        /// <typeparam name="TClient">
-        ///     The typed Refit client contract.
-        /// </typeparam>
-        /// <param name="address">
-        ///     The absolute URI of the downstream HTTP service.
-        /// </param>
-        /// <param name="failureStatus">
-        ///     One of the enumeration values that specifies the health status reported when the health probe fails.
-        /// </param>
-        /// <param name="jsonContext">
-        ///     The source-generated JSON context for the client payloads.
-        /// </param>
-        /// <param name="healthRelativePath">
-        ///     A relative URI path for the health endpoint. When <see langword="null" /> or empty, the default health path is
-        ///     used.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        ///     Address is not a valid absolute URI.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Health check path is not a valid relative URI.
-        /// </exception>
-        public void AddHttpServiceReference<TClient>(
-            string address,
-            HealthStatus failureStatus,
-            JsonSerializerContext jsonContext,
-            string? healthRelativePath = null
-        )
-            where TClient : class
-        {
-            if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
-            {
-                throw new ArgumentException(
-                    "Address must be a valid absolute URI.",
-                    nameof(address)
-                );
-            }
-
-            if (
-                !string.IsNullOrEmpty(healthRelativePath)
-                && !Uri.IsWellFormedUriString(healthRelativePath, UriKind.Relative)
-            )
-            {
-                throw new ArgumentException(
-                    "Health check path must be a valid relative URI.",
-                    nameof(healthRelativePath)
-                );
-            }
-
-            var uri = new Uri(address);
-
-            services.AddHttpServiceReference<TClient>(address, jsonContext);
-
-            services
-                .AddHealthChecks()
-                .AddUrlGroup(
-                    new Uri(uri, healthRelativePath ?? _healthCheckName),
-                    $"{typeof(TClient).Name}-{_healthCheckName}",
-                    failureStatus,
-                    configurePrimaryHttpMessageHandler: s =>
-                        s.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler()
-                );
         }
     }
 

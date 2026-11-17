@@ -4,6 +4,7 @@ using BookWorm.Chassis;
 using BookWorm.Chat;
 using BookWorm.Constants;
 using BookWorm.Finance;
+using BookWorm.McpTools;
 using BookWorm.Notification;
 using BookWorm.Ordering;
 using BookWorm.Rating;
@@ -26,6 +27,7 @@ public closed class BaseTest
     protected static readonly Assembly OrderingAssembly = typeof(OrderingApiMarker).Assembly;
     protected static readonly Assembly RatingAssembly = typeof(RatingApiMarker).Assembly;
     protected static readonly Assembly SchedulerAssembly = typeof(ISchedulerApiMarker).Assembly;
+    protected static readonly Assembly McpToolsAssembly = typeof(IMcpToolsApiMarker).Assembly;
     protected static readonly Assembly ChassisAssembly = typeof(IChassisMarker).Assembly;
     protected static readonly Assembly ConstantsAssembly = typeof(IConstantsMarker).Assembly;
     protected static readonly Assembly SharedKernelAssembly = typeof(ISharedKernelMarker).Assembly;

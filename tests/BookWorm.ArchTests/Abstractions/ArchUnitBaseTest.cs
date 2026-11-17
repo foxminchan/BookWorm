@@ -16,6 +16,7 @@ public closed class ArchUnitBaseTest : BaseTest
             OrderingAssembly,
             RatingAssembly,
             SchedulerAssembly,
+            McpToolsAssembly,
             ChassisAssembly,
             ConstantsAssembly,
             SharedKernelAssembly
@@ -86,6 +87,14 @@ public closed class ArchUnitBaseTest : BaseTest
         .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
         .As(nameof(Scheduler));
 
+    protected static readonly IObjectProvider<IType> McpToolsServiceTypes = ArchRuleDefinition
+        .Types()
+        .That()
+        .ResideInAssembly(McpToolsAssembly)
+        .And()
+        .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
+        .As(nameof(McpTools));
+
     protected static readonly IObjectProvider<IType> ChassisServiceTypes = ArchRuleDefinition
         .Types()
         .That()
@@ -122,6 +131,7 @@ public closed class ArchUnitBaseTest : BaseTest
             nameof(Ordering) => OrderingServiceTypes,
             nameof(Rating) => RatingServiceTypes,
             nameof(Scheduler) => SchedulerServiceTypes,
+            nameof(McpTools) => McpToolsServiceTypes,
             nameof(Chassis) => ChassisServiceTypes,
             nameof(Constants) => ConstantsServiceTypes,
             nameof(SharedKernel) => SharedKernelServiceTypes,
