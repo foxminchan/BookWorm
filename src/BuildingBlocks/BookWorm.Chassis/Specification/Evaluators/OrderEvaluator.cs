@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Chassis.Specification.Evaluators;
+using BookWorm.Chassis.Specification.Expressions;
+
+namespace BookWorm.Chassis.Specification.Evaluators;
 
 internal sealed class OrderEvaluator : IEvaluator
 {
@@ -19,7 +21,7 @@ internal sealed class OrderEvaluator : IEvaluator
 
         foreach (var orderExpression in specification.OrderExpressions)
         {
-            if (orderExpression.OrderType is OrderType.OrderBy or OrderType.OrderByDescending)
+            if (IsPrimaryOrder(orderExpression.OrderType))
             {
                 if (hasPrimaryOrder)
                 {
@@ -31,25 +33,41 @@ internal sealed class OrderEvaluator : IEvaluator
                 hasPrimaryOrder = true;
             }
 
-            orderedQuery = orderExpression.OrderType switch
-            {
-                OrderType.OrderBy => orderedQuery is null
-                    ? query.OrderBy(orderExpression.KeySelector)
-                    : orderedQuery.ThenBy(orderExpression.KeySelector),
-                OrderType.OrderByDescending => orderedQuery is null
-                    ? query.OrderByDescending(orderExpression.KeySelector)
-                    : orderedQuery.ThenByDescending(orderExpression.KeySelector),
-                OrderType.ThenBy => orderedQuery?.ThenBy(orderExpression.KeySelector),
-                OrderType.ThenByDescending => orderedQuery?.ThenByDescending(
-                    orderExpression.KeySelector
-                ),
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(OrderType),
-                    "Invalid order type."
-                ),
-            };
+            orderedQuery = ApplyOrder(query, orderedQuery, orderExpression);
         }
 
         return orderedQuery ?? query;
+    }
+
+    private static bool IsPrimaryOrder(OrderType orderType)
+    {
+        return orderType is OrderType.OrderBy or OrderType.OrderByDescending;
+    }
+
+    private static IOrderedQueryable<T>? ApplyOrder<T>(
+        IQueryable<T> query,
+        IOrderedQueryable<T>? orderedQuery,
+        OrderExpression<T> orderExpression
+    )
+        where T : class
+    {
+        return orderExpression.OrderType switch
+        {
+            OrderType.OrderBy => orderedQuery is null
+                ? query.OrderBy(orderExpression.KeySelector)
+                : orderedQuery.ThenBy(orderExpression.KeySelector),
+            OrderType.OrderByDescending => orderedQuery is null
+                ? query.OrderByDescending(orderExpression.KeySelector)
+                : orderedQuery.ThenByDescending(orderExpression.KeySelector),
+            OrderType.ThenBy => orderedQuery?.ThenBy(orderExpression.KeySelector),
+            OrderType.ThenByDescending => orderedQuery?.ThenByDescending(
+                orderExpression.KeySelector
+            ),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(orderExpression),
+                orderExpression.OrderType,
+                "Invalid order type."
+            ),
+        };
     }
 }

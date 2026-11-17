@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using StackExchange.Redis;
 
 namespace BookWorm.Basket.Infrastructure.Repositories;
@@ -15,12 +15,9 @@ internal sealed class BasketRepository(
         var database = redis.GetDatabase();
         var data = await database.StringGetAsync(GetBasketKey(id));
 
-        return data.IsNullOrEmpty
+        return data.IsNullOrEmpty || (byte[]?)data is not { } bytes
             ? null
-            : JsonSerializer.Deserialize(
-                (byte[])data!,
-                BasketSerializationContext.Default.CustomerBasket
-            );
+            : JsonSerializer.Deserialize(bytes, BasketSerializationContext.Default.CustomerBasket);
     }
 
     public async Task<CustomerBasket?> CreateOrUpdateBasketAsync(CustomerBasket basket)
