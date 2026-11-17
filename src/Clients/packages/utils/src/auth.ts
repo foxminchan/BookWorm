@@ -7,6 +7,7 @@ export interface EntraAuthEnv {
   ENTRA_TENANT_ID?: string;
   ENTRA_CLIENT_ID?: string;
   NEXT_PUBLIC_APP_URL?: string;
+  NEXT_PUBLIC_GATEWAY_HTTPS?: string;
   NEXT_PUBLIC_GATEWAY_HTTP?: string;
 }
 
@@ -47,14 +48,25 @@ export function createEntraAuth({
     env.ENTRA_CLIENT_ID ? `api://${env.ENTRA_CLIENT_ID}/${scope}` : scope,
   );
 
+  // Route server-side OIDC discovery and token exchange through YARP (/entra)
+  // while keeping browser authorization redirects pointed directly at Entra ID.
+  const gatewayUrl = stripTrailingSlashes(
+    (isDev ? env.NEXT_PUBLIC_GATEWAY_HTTP : env.NEXT_PUBLIC_GATEWAY_HTTPS) ||
+      env.NEXT_PUBLIC_GATEWAY_HTTP ||
+      env.NEXT_PUBLIC_GATEWAY_HTTPS ||
+      "",
+  );
+  const entraProxyBase = gatewayUrl ? `${gatewayUrl}/entra` : entraInstance;
+
   return betterAuth({
     baseURL: env.NEXT_PUBLIC_APP_URL || defaultBaseUrl,
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [
       entraInstance,
+      env.NEXT_PUBLIC_GATEWAY_HTTPS || "",
       env.NEXT_PUBLIC_GATEWAY_HTTP || "",
       env.NEXT_PUBLIC_APP_URL || "",
-      ...(isDev ? ["http://localhost:*"] : []),
+      ...(isDev ? ["http://localhost:*", "https://localhost:*"] : []),
     ].filter((origin): origin is string => Boolean(origin)),
     emailAndPassword: {
       enabled: false,
@@ -70,9 +82,9 @@ export function createEntraAuth({
               pkce: true,
               scopes: ["openid", "profile", "email", ...apiScopes],
             }),
-            discoveryUrl: `${entraInstance}/${tenantId}/v2.0/.well-known/openid-configuration`,
+            discoveryUrl: `${entraProxyBase}/${tenantId}/v2.0/.well-known/openid-configuration`,
             authorizationUrl: `${entraInstance}/${tenantId}/oauth2/v2.0/authorize`,
-            tokenUrl: `${entraInstance}/${tenantId}/oauth2/v2.0/token`,
+            tokenUrl: `${entraProxyBase}/${tenantId}/oauth2/v2.0/token`,
           },
         ],
       }),

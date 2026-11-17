@@ -13,40 +13,63 @@ internal static class ProxyExtensions
             return new(builder);
         }
 
-        internal IResourceBuilder<YarpResource> BuildApiGatewayProxy(
-            IReadOnlyList<Service> services
+        internal IResourceBuilder<YarpResource> ConfigureApiGatewayProxy(
+            IResourceBuilder<YarpResource> yarp,
+            IReadOnlyList<Service> services,
+            IResourceBuilder<ExternalServiceResource>? entraExternal,
+            IReadOnlyList<FrontendRoute> frontends
         )
         {
-            var yarp = builder
-                .AddYarp(Services.Gateway)
-                .WithHttpsDeveloperCertificate()
-                .WithIconName("SerialPort")
-                .WithConfiguration(yarpBuilder =>
+            return yarp.WithConfiguration(yarpBuilder =>
+            {
+                for (var routeIndex = 0; routeIndex < services.Count; routeIndex++)
                 {
-                    for (var routeIndex = 0; routeIndex < services.Count; routeIndex++)
-                    {
-                        var service = services[routeIndex];
-                        var routeBuilder = yarpBuilder.AddRoute(
-                            $"/{service.Name}/{{**remainder}}",
-                            service.Resource
+                    var service = services[routeIndex];
+                    var routeBuilder = yarpBuilder.AddRoute(
+                        $"/{service.Name}/{{**remainder}}",
+                        service.Resource
+                    );
+
+                    routeBuilder
+                        .WithOrder(service.Order ?? routeIndex)
+                        .WithMaxRequestBodySize(service.MaxRequestBodySize)
+                        .WithTransformPathPrefix("/")
+                        .WithTransformUseOriginalHostHeader()
+                        .WithTransformPathRemovePrefix($"/{service.Name}")
+                        .WithTransformXForwarded()
+                        .WithTransformResponseHeader(
+                            "X-Powered-By",
+                            $"{nameof(BookWorm)} {nameof(Services.Gateway)}"
                         );
+                }
 
-                        routeBuilder
-                            .WithOrder(service.Order ?? routeIndex)
-                            .WithMaxRequestBodySize(service.MaxRequestBodySize)
-                            .WithTransformPathPrefix("/")
-                            .WithTransformUseOriginalHostHeader()
-                            .WithTransformPathRemovePrefix($"/{service.Name}")
-                            .WithTransformXForwarded()
-                            .WithTransformResponseHeader(
-                                "X-Powered-By",
-                                $"{nameof(BookWorm)} {nameof(Services.Gateway)}"
-                            );
-                    }
-                })
-                .WithExplicitStart();
+                var nextOrder = services.Count;
 
-            return yarp;
+                if (entraExternal is not null)
+                {
+                    yarpBuilder
+                        .AddRoute("/entra/{**remainder}", entraExternal)
+                        .WithOrder(nextOrder++)
+                        .WithTransformPathRemovePrefix("/entra")
+                        .WithTransformUseOriginalHostHeader(false);
+                }
+
+                foreach (var frontend in frontends)
+                {
+                    var pattern = string.IsNullOrEmpty(frontend.PathPrefix)
+                        ? "/{**remainder}"
+                        : $"{frontend.PathPrefix.TrimEnd('/')}/{{**remainder}}";
+
+                    var order = frontend.Order
+                        ?? (string.IsNullOrEmpty(frontend.PathPrefix) ? int.MaxValue : nextOrder++);
+
+                    yarpBuilder
+                        .AddRoute(pattern, frontend.Resource.GetEndpoint(Uri.UriSchemeHttp))
+                        .WithOrder(order)
+                        .WithTransformUseOriginalHostHeader()
+                        .WithTransformXForwarded();
+                }
+            });
         }
     }
 }
@@ -60,16 +83,31 @@ internal sealed class Service
     public int? Order { get; init; }
 }
 
+internal sealed class FrontendRoute
+{
+    public required IResourceBuilder<IResourceWithEndpoints> Resource { get; init; }
+    public string? PathPrefix { get; init; }
+    public int? Order { get; init; }
+}
+
 internal sealed class ApiGatewayProxyBuilder
 {
     private readonly List<Service> _services = [];
+    private readonly List<FrontendRoute> _frontends = [];
+    private IResourceBuilder<ExternalServiceResource>? _entraExternal;
 
     internal ApiGatewayProxyBuilder(IDistributedApplicationBuilder builder)
     {
         Builder = builder;
+        Resource = builder
+            .AddYarp(Services.Gateway)
+            .WithHttpsDeveloperCertificate()
+            .WithExternalHttpEndpoints();
     }
 
     private IDistributedApplicationBuilder Builder { get; }
+
+    public IResourceBuilder<YarpResource> Resource { get; }
 
     public ApiGatewayProxyBuilder WithService(
         IResourceBuilder<DotnetProjectResource> service,
@@ -90,8 +128,37 @@ internal sealed class ApiGatewayProxyBuilder
         return this;
     }
 
+    public ApiGatewayProxyBuilder WithEntraProxy(
+        IResourceBuilder<EntraIdApplicationResource> entraId
+    )
+    {
+        _entraExternal = Builder.AddExternalService(
+            "entra",
+            entraId.Resource.Instance.TrimEnd('/')
+        );
+        return this;
+    }
+
+    public ApiGatewayProxyBuilder WithFrontend(
+        IResourceBuilder<IResourceWithEndpoints> frontend,
+        string? pathPrefix = null,
+        int? order = null
+    )
+    {
+        _frontends.Add(
+            new()
+            {
+                Resource = frontend,
+                PathPrefix = pathPrefix,
+                Order = order,
+            }
+        );
+
+        return this;
+    }
+
     public IResourceBuilder<YarpResource> Build()
     {
-        return Builder.BuildApiGatewayProxy(_services);
+        return Builder.ConfigureApiGatewayProxy(Resource, _services, _entraExternal, _frontends);
     }
 }

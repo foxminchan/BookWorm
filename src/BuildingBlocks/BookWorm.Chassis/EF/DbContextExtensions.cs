@@ -42,7 +42,11 @@ public static class DbContextExtensions
                 (sp, options) =>
                 {
                     options
-                        .UseNpgsql(builder.Configuration.GetConnectionString(name))
+                        .UseNpgsql(
+                            builder.Configuration.GetConnectionString(name),
+                            npgsqlDbContextOptionsBuilder =>
+                                npgsqlDbContextOptionsBuilder.EnableRetryOnFailure()
+                        )
                         .UseSnakeCaseNamingConvention()
                         .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                         // Suppresses known EF Core pending model changes warning.

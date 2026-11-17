@@ -46,16 +46,14 @@ internal static class FrontendExtensions
             .WithHttpEndpoint(env: "PORT")
             .WithMappedEndpointPort()
             .WithHttpHealthCheck()
-            .WithExternalHttpEndpoints()
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
             .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
-            .WaitFor(gateway)
-            .WithEntraId(entraId);
+            .WithEntraId(entraId, gateway);
 
         storefront.WithEnvironment(
             AppUrlEnvironmentVariable,
-            storefront.GetEndpoint(Uri.UriSchemeHttp)
+            gateway.GetEndpoint(Uri.UriSchemeHttps)
         );
 
         var backoffice = turbo
@@ -64,15 +62,13 @@ internal static class FrontendExtensions
             .WithHttpEndpoint(env: "PORT")
             .WithMappedEndpointPort()
             .WithHttpHealthCheck()
-            .WithExternalHttpEndpoints()
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
-            .WaitFor(gateway)
-            .WithEntraId(entraId);
+            .WithEntraId(entraId, gateway, "/backoffice");
 
         backoffice.WithEnvironment(
             AppUrlEnvironmentVariable,
-            backoffice.GetEndpoint(Uri.UriSchemeHttp)
+            ReferenceExpression.Create($"{gateway.GetEndpoint(Uri.UriSchemeHttps)}/backoffice")
         );
 
         return (storefront, backoffice);
@@ -101,7 +97,7 @@ internal static class FrontendExtensions
 
         storefront.WithEnvironment(
             AppUrlEnvironmentVariable,
-            storefront.GetEndpoint(Uri.UriSchemeHttp)
+            gateway.GetEndpoint(Uri.UriSchemeHttps)
         );
 
         var backoffice = ConfigurePublishedFrontend(
@@ -112,12 +108,13 @@ internal static class FrontendExtensions
                 "@bookworm/backoffice"
             ),
             gateway,
-            entraId
+            entraId,
+            pathPrefix: "/backoffice"
         );
 
         backoffice.WithEnvironment(
             AppUrlEnvironmentVariable,
-            backoffice.GetEndpoint(Uri.UriSchemeHttp)
+            ReferenceExpression.Create($"{gateway.GetEndpoint(Uri.UriSchemeHttps)}/backoffice")
         );
 
         return (storefront, backoffice);
@@ -127,24 +124,23 @@ internal static class FrontendExtensions
         IResourceBuilder<ContainerResource> frontend,
         IResourceBuilder<YarpResource> gateway,
         IResourceBuilder<EntraIdApplicationResource> entraId,
-        bool includeCopilot = false
+        bool includeCopilot = false,
+        string? pathPrefix = null
     )
     {
         frontend
             .WithOtlpExporter()
             .WithHttpEndpoint(targetPort: 3000, env: "PORT")
             .WithHttpHealthCheck()
-            .WithExternalHttpEndpoints()
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
-            .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
-            .WaitFor(gateway);
+            .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp));
 
         if (includeCopilot)
         {
             frontend.WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true");
         }
 
-        return frontend.WithEntraId(entraId);
+        return frontend.WithEntraId(entraId, gateway, pathPrefix);
     }
 
     private static IResourceBuilder<ContainerResource> AddFrontendContainer(

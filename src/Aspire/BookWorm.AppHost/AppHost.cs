@@ -233,18 +233,21 @@ builder
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner);
 
-var gateway = builder
+// Add API Gateway and Frontend Apps
+var gatewayBuilder = builder
     .AddApiGatewayProxy()
     .WithService(chatApi)
     .WithService(ratingApi)
     .WithService(orderingApi)
     .WithService(basketApi)
     .WithService(catalogApi)
-    .Build();
+    .WithEntraProxy(entraId);
 
-var (storefront, backoffice) = builder.AddFrontendApps(gateway, entraId);
+var (storefront, backoffice) = builder.AddFrontendApps(gatewayBuilder.Resource, entraId);
 
-// Add CORS origins for the APIs based on the environment
+gatewayBuilder.WithFrontend(backoffice, "/backoffice").WithFrontend(storefront).Build();
+
+// Add Scalar and MCP Inspector in run mode, or provision storage in publish mode
 if (builder.ExecutionContext.IsRunMode)
 {
     builder.AddScalar(entraId).WithOpenAPI(chatApi, basketApi, ratingApi, catalogApi, orderingApi);
@@ -254,13 +257,6 @@ if (builder.ExecutionContext.IsRunMode)
 else
 {
     storage.ProvisionAsService(builder.Environment);
-    var frontendScheme = Uri.UriSchemeHttps;
-
-    catalogApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    basketApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    orderingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    chatApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    ratingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
 }
 
 await builder.Build().RunAsync();

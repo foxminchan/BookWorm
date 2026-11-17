@@ -4,7 +4,7 @@ import { env } from "@/env.mjs";
 
 export const auth = createEntraAuth({
   env,
-  defaultBaseUrl: "http://localhost:3001",
+  defaultBaseUrl: "http://localhost:3001/backoffice",
   scopes: [
     "catalog_read",
     "catalog_write",
