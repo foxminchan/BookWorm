@@ -31,7 +31,7 @@ public sealed partial class PromptValidationService(IPromptSafetyEvaluator? safe
             + @"|act\s+as\s+(if|a|an)"
             + @"|reveal\s+(your|the|system)\s*(prompt|instruction)"
             + @"|<\/?\s*(div|span|iframe|img|a|body|html|head|form)\b)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
+        RegexOptions.IgnoreCase
     )]
     private static partial Regex SuspiciousPatternRegex();
 

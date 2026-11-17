@@ -27,26 +27,25 @@ public static class CachingExtensions
         public void AddCaching(Action<IFusionCacheBuilder>? configure = null)
         {
             var services = builder.Services;
-            var provider = services.BuildServiceProvider();
 
             builder.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
 
-            var cachingOptions = provider.GetRequiredService<CachingOptions>();
-
             var fusionBuilder = services
                 .AddFusionCache()
-                .WithDefaultEntryOptions(
-                    new FusionCacheEntryOptions
-                    {
-                        Duration = cachingOptions.Expiration,
-                        DistributedCacheDuration = cachingOptions.Expiration,
-                    }
-                )
                 .WithSerializer(new FusionCacheSystemTextJsonSerializer());
 
-            var multiplexer = provider.GetService<IConnectionMultiplexer>();
+            services
+                .AddOptions<FusionCacheOptions>()
+                .Configure<CachingOptions>(
+                    (options, cachingOptions) =>
+                    {
+                        options.DefaultEntryOptions.Duration = cachingOptions.Expiration;
+                        options.DefaultEntryOptions.DistributedCacheDuration =
+                            cachingOptions.Expiration;
+                    }
+                );
 
-            if (multiplexer is not null)
+            if (services.Any(d => d.ServiceType == typeof(IConnectionMultiplexer)))
             {
                 fusionBuilder.WithDistributedCache(sp => new RedisCache(
                     new RedisCacheOptions

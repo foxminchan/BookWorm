@@ -1,6 +1,4 @@
-﻿using BookWorm.Chassis.Specification.Expressions;
-
-namespace BookWorm.Chassis.Specification.Evaluators;
+﻿namespace BookWorm.Chassis.Specification.Evaluators;
 
 internal sealed class OrderEvaluator : IEvaluator
 {
@@ -16,43 +14,42 @@ internal sealed class OrderEvaluator : IEvaluator
             return query;
         }
 
-        if (
-            specification.OrderExpressions.Count(x =>
-                x.OrderType is OrderType.OrderBy or OrderType.OrderByDescending
-            ) > 1
-        )
-        {
-            throw new InvalidOperationException(
-                "Only one OrderBy or OrderByDescending is allowed."
-            );
-        }
+        IOrderedQueryable<T>? orderedQuery = null;
+        var hasPrimaryOrder = false;
 
-        var orderedQuery = specification.OrderExpressions.Aggregate<
-            OrderExpression<T>?,
-            IOrderedQueryable<T>?
-        >(null, (queryable, orderExpression) => orderExpression?.OrderType switch
+        foreach (var orderExpression in specification.OrderExpressions)
+        {
+            if (orderExpression.OrderType is OrderType.OrderBy or OrderType.OrderByDescending)
             {
-                OrderType.OrderBy => queryable is null
+                if (hasPrimaryOrder)
+                {
+                    throw new InvalidOperationException(
+                        "Only one OrderBy or OrderByDescending is allowed."
+                    );
+                }
+
+                hasPrimaryOrder = true;
+            }
+
+            orderedQuery = orderExpression.OrderType switch
+            {
+                OrderType.OrderBy => orderedQuery is null
                     ? query.OrderBy(orderExpression.KeySelector)
-                    : queryable.ThenBy(orderExpression.KeySelector),
-                OrderType.OrderByDescending => queryable is null
+                    : orderedQuery.ThenBy(orderExpression.KeySelector),
+                OrderType.OrderByDescending => orderedQuery is null
                     ? query.OrderByDescending(orderExpression.KeySelector)
-                    : queryable.ThenByDescending(orderExpression.KeySelector),
-                OrderType.ThenBy => queryable?.ThenBy(orderExpression.KeySelector),
-                OrderType.ThenByDescending => queryable?.ThenByDescending(
+                    : orderedQuery.ThenByDescending(orderExpression.KeySelector),
+                OrderType.ThenBy => orderedQuery?.ThenBy(orderExpression.KeySelector),
+                OrderType.ThenByDescending => orderedQuery?.ThenByDescending(
                     orderExpression.KeySelector
                 ),
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(OrderType),
                     "Invalid order type."
                 ),
-            });
-
-        if (orderedQuery is not null)
-        {
-            query = orderedQuery;
+            };
         }
 
-        return query;
+        return orderedQuery ?? query;
     }
 }

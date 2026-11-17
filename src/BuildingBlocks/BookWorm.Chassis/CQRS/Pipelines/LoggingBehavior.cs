@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Reflection;
 using Mediator;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Logging;
@@ -31,9 +30,7 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
             var props = message.GetType().GetProperties();
             foreach (var prop in props)
             {
-                var isSensitive = prop.GetCustomAttributes()
-                    .OfType<DataClassificationAttribute>()
-                    .Any();
+                var isSensitive = prop.IsDefined(typeof(DataClassificationAttribute), true);
 
                 if (isSensitive)
                 {
@@ -61,13 +58,13 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
 
         const int threshold = 3;
 
-        if (timeTaken.Seconds >= threshold)
+        if (timeTaken.TotalSeconds >= threshold)
         {
             logger.LogWarning(
                 "[{Behavior}] The request {Request} took {TimeTaken} seconds.",
                 behavior,
                 message.GetType().Name,
-                timeTaken.Seconds
+                timeTaken.TotalSeconds
             );
         }
         else
@@ -77,7 +74,7 @@ internal sealed class LoggingBehavior<TMessage, TResponse>(
                 behavior,
                 message.GetType().Name,
                 typeof(TResponse).Name, // Log type name only to prevent PII exposure via response DTOs
-                Stopwatch.GetElapsedTime(start).TotalMilliseconds
+                timeTaken.TotalMilliseconds
             );
         }
 

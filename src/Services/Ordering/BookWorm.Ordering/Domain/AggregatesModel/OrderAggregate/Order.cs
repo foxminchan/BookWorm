@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 
@@ -25,7 +24,7 @@ public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDel
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     [NotMapped]
-    public decimal TotalPrice => OrderItems.Select(item => item.GetTotalPrice()).Sum();
+    public decimal TotalPrice => OrderItems.Sum(item => item.GetTotalPrice());
 
     public bool IsDeleted { get; set; }
 
@@ -95,7 +94,7 @@ public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDel
         };
 
         var (_, transitions) = OrderLifecycleDecider.Instance.Handle(
-            new(action, DateTimeHelper.UtcNow()),
+            new(action, DateTime.UtcNow),
             new(currentStage, Id, BuyerId)
         );
 

@@ -23,52 +23,45 @@ public static class WolverineHostExtensions
 {
     private static Type[] ScanIntegrationTypes(IEnumerable<Assembly> assemblies)
     {
-        var scannedServices = new ServiceCollection();
-
-        scannedServices.Scan(scan =>
-            scan.FromAssemblies([.. assemblies])
-                .AddClasses(classes => classes.Where(IsIntegrationMessageOrHandler), false)
-                .AsSelf()
-                .WithTransientLifetime()
-        );
-
         return
         [
-            .. scannedServices
-                .Select(descriptor => descriptor.ImplementationType)
-                .Where(type => type is not null)
-                .Cast<Type>()
+            .. assemblies
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type =>
+                    type is { IsClass: true, IsAbstract: false }
+                    && IsIntegrationMessageOrHandler(type)
+                )
                 .Distinct(),
         ];
     }
 
     private static bool IsIntegrationMessageOrHandler(Type type)
     {
-        return typeof(IntegrationEvent).IsAssignableFrom(type)
+        return type.IsAssignableTo(typeof(IntegrationEvent))
             || type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
                 .Any(method =>
                     IsMessageHandlerMethod(method)
-                    && typeof(IntegrationEvent).IsAssignableFrom(
-                        method.GetParameters()[0].ParameterType
-                    )
+                    && method
+                        .GetParameters()[0]
+                        .ParameterType.IsAssignableTo(typeof(IntegrationEvent))
                 );
     }
 
     private static IEnumerable<Type> GetHandledIntegrationEventTypes(IEnumerable<Type> types)
     {
         return types
-            .Where(t => !typeof(IntegrationEvent).IsAssignableFrom(t))
+            .Where(t => !t.IsAssignableTo(typeof(IntegrationEvent)))
             .SelectMany(t =>
                 t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             )
             .Where(IsMessageHandlerMethod)
             .Select(m => m.GetParameters()[0].ParameterType)
-            .Where(t => typeof(IntegrationEvent).IsAssignableFrom(t));
+            .Where(t => t.IsAssignableTo(typeof(IntegrationEvent)));
     }
 
     private static IEnumerable<Type> GetIntegrationEventTypes(IEnumerable<Type> types)
     {
-        return types.Where(t => typeof(IntegrationEvent).IsAssignableFrom(t));
+        return types.Where(t => t.IsAssignableTo(typeof(IntegrationEvent)));
     }
 
     private static bool IsMessageHandlerMethod(MethodInfo method)

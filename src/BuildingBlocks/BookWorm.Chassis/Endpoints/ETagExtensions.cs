@@ -50,13 +50,11 @@ internal sealed class ETagEndpointFilter : IEndpointFilter
         var etag = $"\"{versioned.Version.ToString(CultureInfo.InvariantCulture)}\"";
         context.HttpContext.Response.Headers.ETag = etag;
 
+        var ifNoneMatch = context.HttpContext.Request.GetTypedHeaders().IfNoneMatch;
+
         if (
-            context.HttpContext.Request.Headers.TryGetValue(
-                HeaderNames.IfNoneMatch,
-                out var ifNoneMatch
-            )
-            && EntityTagHeaderValue.TryParseList(ifNoneMatch, out var parsedTags)
-            && parsedTags.Any(tag =>
+            ifNoneMatch.Count > 0
+            && ifNoneMatch.Any(tag =>
                 tag.Equals(EntityTagHeaderValue.Any)
                 || string.Equals(tag.Tag.Value, etag, StringComparison.Ordinal)
             )

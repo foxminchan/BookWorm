@@ -76,12 +76,7 @@ public static class ConfigurationExtensions
             }
 
             // Expose the bound options value directly for consumers that depend on TSetting.
-            services.TryAddSingleton(sp =>
-            {
-                var options = sp.GetRequiredService<IOptions<TSetting>>();
-                var setting = options.Value;
-                return setting;
-            });
+            services.TryAddSingleton(sp => sp.GetRequiredService<IOptions<TSetting>>().Value);
         }
 
         /// <summary>

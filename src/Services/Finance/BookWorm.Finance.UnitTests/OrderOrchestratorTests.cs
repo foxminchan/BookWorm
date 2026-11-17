@@ -326,8 +326,8 @@ public sealed class OrderOrchestratorTests
     private sealed class OrchestratorTestHarness
     {
         private readonly Dictionary<string, TaskCompletionSource<object>> _externalEvents = [];
-        private readonly Queue<TaskCompletionSource> _timers = [];
         private readonly Dictionary<string, Exception> _failingActivities = [];
+        private readonly Queue<TaskCompletionSource> _timers = [];
 
         public OrchestratorTestHarness(OrderOrchestrationInput input)
         {

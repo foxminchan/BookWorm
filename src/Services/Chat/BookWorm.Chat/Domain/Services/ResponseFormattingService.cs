@@ -5,12 +5,12 @@ namespace BookWorm.Chat.Domain.Services;
 
 public static partial class ResponseFormattingService
 {
-    [GeneratedRegex(@"\n{3,}", RegexOptions.Compiled)]
+    [GeneratedRegex(@"\n{3,}")]
     private static partial Regex ExcessiveNewlinesRegex();
 
     [GeneratedRegex(
         @"(\[system\]|<<SYS>>|<\|im_start\|>system|###\s*System\s*Prompt|\[INST\])[\s\S]{0,200}",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
+        RegexOptions.IgnoreCase
     )]
     private static partial Regex SystemPromptLeakRegex();
 
@@ -28,13 +28,7 @@ public static partial class ResponseFormattingService
             return AssistantResponse.Fallback();
         }
 
-        if (
-            !content.EndsWith('.')
-            && !content.EndsWith('!')
-            && !content.EndsWith('?')
-            && !content.EndsWith('"')
-            && !content.EndsWith(')')
-        )
+        if (content[^1] is not ('.' or '!' or '?' or '"' or ')'))
         {
             content += ".";
         }

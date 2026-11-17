@@ -50,13 +50,13 @@ internal sealed partial class BasketService(
 
     private static GetBasketResponse MapToBasketResponse(CustomerBasket basket)
     {
-        var response = new GetBasketResponse { Id = (string)basket.Id };
-        var items = basket.Items.Select(item => new Item
+        return new()
         {
-            Id = item.Id,
-            Quantity = item.Quantity,
-        });
-        response.Items.AddRange(items);
-        return response;
+            Id = (string)basket.Id,
+            Items =
+            {
+                basket.Items.Select(item => new Item { Id = item.Id, Quantity = item.Quantity }),
+            },
+        };
     }
 }

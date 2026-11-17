@@ -11,27 +11,32 @@ internal static class Extensions
         {
             var env = builder.Environment;
 
-            builder.Configuration.AddInMemoryCollection(
-                new Dictionary<string, string?>
-                {
-                    ["KafkaTopics:UserCheckedOut"] =
-                        KafkaTopicRouter.CreateTopicName<UserCheckedOutIntegrationEvent>(env),
-                    ["KafkaTopics:BasketDeletedComplete"] =
-                        KafkaTopicRouter.CreateTopicName<BasketDeletedCompleteIntegrationEvent>(
-                            env
-                        ),
-                    ["KafkaTopics:BasketDeletedFailed"] =
-                        KafkaTopicRouter.CreateTopicName<BasketDeletedFailedIntegrationEvent>(env),
-                    ["KafkaTopics:OrderStatusChangedToComplete"] =
-                        KafkaTopicRouter.CreateTopicName<OrderStatusChangedToCompleteIntegrationEvent>(
-                            env
-                        ),
-                    ["KafkaTopics:OrderStatusChangedToCancel"] =
-                        KafkaTopicRouter.CreateTopicName<OrderStatusChangedToCancelIntegrationEvent>(
-                            env
-                        ),
-                }
-            );
+            builder.Configuration.AddInMemoryCollection([
+                new(
+                    "KafkaTopics:UserCheckedOut",
+                    KafkaTopicRouter.CreateTopicName<UserCheckedOutIntegrationEvent>(env)
+                ),
+                new(
+                    "KafkaTopics:BasketDeletedComplete",
+                    KafkaTopicRouter.CreateTopicName<BasketDeletedCompleteIntegrationEvent>(env)
+                ),
+                new(
+                    "KafkaTopics:BasketDeletedFailed",
+                    KafkaTopicRouter.CreateTopicName<BasketDeletedFailedIntegrationEvent>(env)
+                ),
+                new(
+                    "KafkaTopics:OrderStatusChangedToComplete",
+                    KafkaTopicRouter.CreateTopicName<OrderStatusChangedToCompleteIntegrationEvent>(
+                        env
+                    )
+                ),
+                new(
+                    "KafkaTopics:OrderStatusChangedToCancel",
+                    KafkaTopicRouter.CreateTopicName<OrderStatusChangedToCancelIntegrationEvent>(
+                        env
+                    )
+                ),
+            ]);
 
             builder.AddEventBus<IFinanceApiMarker>(opts =>
                 opts.MessagePartitioning.ByPropertyNamed("OrderId")

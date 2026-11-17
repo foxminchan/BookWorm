@@ -1,6 +1,7 @@
 using AgentGovernance.Extensions.ModelContextProtocol;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.Cors;
@@ -31,9 +32,7 @@ internal static class Extensions
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireScope(
-                            $"{Constants.Aspire.Services.McpTools}_{Authorization.Actions.Read}"
-                        )
+                        .RequireScope($"{Services.McpTools}_{Authorization.Actions.Read}")
                         .Build()
                 );
 

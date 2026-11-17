@@ -1,5 +1,4 @@
 using BookWorm.Notification.Domain.Models;
-using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Notification.UnitTests.Domain;
 
@@ -31,7 +30,7 @@ public sealed class OrderTests
         var order = new Order(OrderId.From(Guid.CreateVersion7()), "Test User", 50.00m, Status.New);
 
         // Assert
-        order.CreatedAt.ShouldBe(DateOnly.FromDateTime(DateTimeHelper.UtcNow()));
+        order.CreatedAt.ShouldBe(DateOnly.FromDateTime(DateTime.UtcNow));
     }
 
     [Test]

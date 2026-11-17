@@ -92,7 +92,7 @@ paths:
           in: path
           description: The unique identifier of the publisher to be deleted
           required: true
-          schema: {}
+          schema: { }
       responses:
         "204":
           description: No Content
@@ -182,7 +182,7 @@ paths:
           in: path
           description: The unique identifier of the category to be deleted
           required: true
-          schema: {}
+          schema: { }
       responses:
         "204":
           description: No Content
@@ -285,7 +285,7 @@ paths:
           in: path
           description: The unique identifier of the book to be retrieved
           required: true
-          schema: {}
+          schema: { }
       responses:
         "200":
           description: OK
@@ -310,7 +310,7 @@ paths:
           in: path
           description: The unique identifier of the book to be deleted
           required: true
-          schema: {}
+          schema: { }
       responses:
         "204":
           description: No Content
@@ -400,7 +400,7 @@ paths:
           in: path
           description: The unique identifier of the author to be deleted
           required: true
-          schema: {}
+          schema: { }
       responses:
         "204":
           description: No Content
@@ -420,7 +420,7 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/AuthorId"
-        name: {}
+        name: { }
     AuthorId:
       type: string
       format: uuid
@@ -442,9 +442,9 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/BookId"
-        name: {}
-        description: {}
-        imageUrl: {}
+        name: { }
+        description: { }
+        imageUrl: { }
         price:
           format: double
         priceSale:
@@ -486,7 +486,7 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/CategoryId"
-        name: {}
+        name: { }
     CategoryId:
       type: string
       format: uuid
@@ -495,12 +495,12 @@ components:
         - name
       type: object
       properties:
-        name: {}
+        name: { }
     CreateBookCommand:
       type: object
       properties:
-        name: {}
-        description: {}
+        name: { }
+        description: { }
         image:
           oneOf:
             - type: "null"
@@ -525,18 +525,18 @@ components:
         - name
       type: object
       properties:
-        name: {}
+        name: { }
     CreatePublisherCommand:
       required:
         - name
       type: object
       properties:
-        name: {}
+        name: { }
     HttpValidationProblemDetails:
       type: object
       properties:
-        type: {}
-        title: {}
+        type: { }
+        title: { }
         status:
           pattern: "^-?(?:0|[1-9]\\d*)$"
           type:
@@ -544,8 +544,8 @@ components:
             - integer
             - string
           format: int32
-        detail: {}
-        instance: {}
+        detail: { }
+        instance: { }
         errors:
           type: object
           additionalProperties:
@@ -558,8 +558,8 @@ components:
     ProblemDetails:
       type: object
       properties:
-        type: {}
-        title: {}
+        type: { }
+        title: { }
         status:
           pattern: "^-?(?:0|[1-9]\\d*)$"
           type:
@@ -567,8 +567,8 @@ components:
             - integer
             - string
           format: int32
-        detail: {}
-        instance: {}
+        detail: { }
+        instance: { }
     PublisherDto:
       required:
         - id
@@ -577,7 +577,7 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/PublisherId"
-        name: {}
+        name: { }
     PublisherId:
       type: string
       format: uuid
@@ -593,15 +593,15 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/AuthorId"
-        name: {}
+        name: { }
     UpdateBookCommand:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        name: {}
-        description: {}
+        name: { }
+        description: { }
         image:
           oneOf:
             - type: "null"
@@ -631,7 +631,7 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/CategoryId"
-        name: {}
+        name: { }
     UpdatePublisherCommand:
       required:
         - id
@@ -640,7 +640,7 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/PublisherId"
-        name: {}
+        name: { }
     ListBooksQuery:
       type: object
       properties:

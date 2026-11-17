@@ -17,6 +17,11 @@ internal sealed class ScopedPactFile : IDisposable
 
     public string FilePath { get; }
 
+    public void Dispose()
+    {
+        File.Delete(FilePath);
+    }
+
     public static ScopedPactFile Create(string pactPath, string description)
     {
         var pactDocument = JsonNode.Parse(File.ReadAllText(pactPath))!;
@@ -45,10 +50,5 @@ internal sealed class ScopedPactFile : IDisposable
         File.WriteAllText(verificationPactPath, pactDocument.ToJsonString(_indentedJsonOptions));
 
         return new(verificationPactPath);
-    }
-
-    public void Dispose()
-    {
-        File.Delete(FilePath);
     }
 }

@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,17 +14,9 @@ internal sealed class AgentDiscoveryClient(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await httpClient.GetAsync(
-            new Uri("/agents", UriKind.Relative),
-            cancellationToken
-        );
-
-        response.EnsureSuccessStatusCode();
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var agents = await JsonSerializer.DeserializeAsync<List<AgentDiscoveryCard>>(
-            stream,
-            AgentDiscoveryCardSerializationContext.Default.Options,
+        var agents = await httpClient.GetFromJsonAsync(
+            "/agents",
+            AgentDiscoveryCardSerializationContext.Default.ListAgentDiscoveryCard,
             cancellationToken
         ) ?? [];
 

@@ -1,7 +1,6 @@
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Categories.Delete;
-using BookWorm.Catalog.UnitTests.Fakers;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.Delete;
 
@@ -26,9 +25,9 @@ public sealed class DeleteCategoryValidatorTests
 
         _mockRepository
             .Setup(r =>
-                r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
+                r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync([]);
+            .ReturnsAsync(0);
 
         // Act
         var result = await _deleteCategoryValidator.ValidateAsync(command, CancellationToken.None);
@@ -38,7 +37,7 @@ public sealed class DeleteCategoryValidatorTests
         result.Errors.ShouldBeEmpty();
 
         _mockRepository.Verify(
-            r => r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
+            r => r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -48,14 +47,12 @@ public sealed class DeleteCategoryValidatorTests
     {
         // Arrange
         var command = new DeleteCategoryCommand(_categoryId);
-        var bookFaker = new BookFaker();
-        var booksWithCategory = bookFaker.Generate(2);
 
         _mockRepository
             .Setup(r =>
-                r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
+                r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync(booksWithCategory);
+            .ReturnsAsync(2);
 
         // Act
         var result = await _deleteCategoryValidator.ValidateAsync(command, CancellationToken.None);
@@ -67,7 +64,7 @@ public sealed class DeleteCategoryValidatorTests
         result.Errors[0].PropertyName.ShouldBe("Id");
 
         _mockRepository.Verify(
-            r => r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
+            r => r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -80,9 +77,9 @@ public sealed class DeleteCategoryValidatorTests
 
         _mockRepository
             .Setup(r =>
-                r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
+                r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync([]);
+            .ReturnsAsync(0);
 
         // Act
         var result = await _deleteCategoryValidator.ValidateAsync(command, CancellationToken.None);
@@ -91,7 +88,7 @@ public sealed class DeleteCategoryValidatorTests
         result.IsValid.ShouldBeTrue();
 
         _mockRepository.Verify(
-            r => r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
+            r => r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -105,7 +102,7 @@ public sealed class DeleteCategoryValidatorTests
 
         _mockRepository
             .Setup(r =>
-                r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
+                r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
             )
             .ThrowsAsync(expectedException);
 
@@ -117,7 +114,7 @@ public sealed class DeleteCategoryValidatorTests
         exception.Message.ShouldBe("Database connection failed");
 
         _mockRepository.Verify(
-            r => r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
+            r => r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -132,9 +129,9 @@ public sealed class DeleteCategoryValidatorTests
 
         _mockRepository
             .Setup(r =>
-                r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
+                r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync([]);
+            .ReturnsAsync(0);
 
         // Act
         var result = await _deleteCategoryValidator.ValidateAsync(command, cancellationToken);
@@ -143,7 +140,7 @@ public sealed class DeleteCategoryValidatorTests
         result.IsValid.ShouldBeTrue();
 
         _mockRepository.Verify(
-            r => r.ListAsync(It.Is<BookFilterSpec>(spec => true), cancellationToken),
+            r => r.CountAsync(It.Is<BookFilterSpec>(spec => true), cancellationToken),
             Times.Once
         );
     }
@@ -157,7 +154,7 @@ public sealed class DeleteCategoryValidatorTests
 
         _mockRepository
             .Setup(r =>
-                r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
+                r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
             )
             .ThrowsAsync(new OperationCanceledException());
 
@@ -175,16 +172,16 @@ public sealed class DeleteCategoryValidatorTests
 
         _mockRepository
             .Setup(r =>
-                r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
+                r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync([]);
+            .ReturnsAsync(0);
 
         // Act
         await _deleteCategoryValidator.ValidateAsync(command, CancellationToken.None);
 
         // Assert
         _mockRepository.Verify(
-            r => r.ListAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
+            r => r.CountAsync(It.Is<BookFilterSpec>(spec => true), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }

@@ -41,6 +41,7 @@ public sealed class UrlBuilder
 
     public UrlBuilder WithHost(string host)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(host);
         return WithHost(new HostString(host.Trim()));
     }
 
@@ -68,10 +69,7 @@ public sealed class UrlBuilder
             return this;
         }
 
-        foreach (var segment in path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries))
-        {
-            _pathSegments.Add(segment);
-        }
+        _pathSegments.AddRange(path.Split('/', StringSplitOptions.RemoveEmptyEntries));
 
         return this;
     }

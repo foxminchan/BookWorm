@@ -99,9 +99,7 @@ internal sealed class BookService(
             context.CancellationToken
         );
 
-        var response = new ListBooksResponse();
-        response.Books.AddRange(result.Select(MapToBookItem));
-        return response;
+        return new() { Books = { result.Select(MapToBookItem) } };
     }
 
     [AllowAnonymous]
@@ -142,15 +140,17 @@ internal sealed class BookService(
     {
         var categories = await sender.Send(new ListCategoriesQuery(), context.CancellationToken);
 
-        var response = new ListCategoriesResponse();
-        response.Categories.AddRange(
-            categories.Select(c => new CategoryItem
+        return new()
+        {
+            Categories =
             {
-                Id = c.Id.ToString(),
-                Name = c.Name ?? string.Empty,
-            })
-        );
-        return response;
+                categories.Select(c => new CategoryItem
+                {
+                    Id = c.Id.ToString(),
+                    Name = c.Name ?? string.Empty,
+                }),
+            },
+        };
     }
 
     [AllowAnonymous]
@@ -161,20 +161,22 @@ internal sealed class BookService(
     {
         var authors = await sender.Send(new ListAuthorsQuery(), context.CancellationToken);
 
-        var response = new ListAuthorsResponse();
-        response.Authors.AddRange(
-            authors.Select(a => new AuthorItem
+        return new()
+        {
+            Authors =
             {
-                Id = a.Id.ToString(),
-                Name = a.Name ?? string.Empty,
-            })
-        );
-        return response;
+                authors.Select(a => new AuthorItem
+                {
+                    Id = a.Id.ToString(),
+                    Name = a.Name ?? string.Empty,
+                }),
+            },
+        };
     }
 
     private static BookItem MapToBookItem(BookDto book)
     {
-        var item = new BookItem
+        return new()
         {
             Id = book.Id.ToString(),
             Name = book.Name ?? string.Empty,
@@ -185,35 +187,29 @@ internal sealed class BookService(
             Status = book.Status == Status.InStock ? BookStatus.InStock : BookStatus.OutOfStock,
             AverageRating = book.AverageRating,
             TotalReviews = book.TotalReviews,
+            Category = book.Category is null
+                ? null
+                : new()
+                {
+                    Id = book.Category.Id.ToString(),
+                    Name = book.Category.Name ?? string.Empty,
+                },
+            Publisher = book.Publisher is null
+                ? null
+                : new()
+                {
+                    Id = book.Publisher.Id.ToString(),
+                    Name = book.Publisher.Name ?? string.Empty,
+                },
+            Authors =
+            {
+                book.Authors.Select(a => new AuthorItem
+                {
+                    Id = a.Id.ToString(),
+                    Name = a.Name ?? string.Empty,
+                }),
+            },
         };
-
-        if (book.Category is not null)
-        {
-            item.Category = new()
-            {
-                Id = book.Category.Id.ToString(),
-                Name = book.Category.Name ?? string.Empty,
-            };
-        }
-
-        if (book.Publisher is not null)
-        {
-            item.Publisher = new()
-            {
-                Id = book.Publisher.Id.ToString(),
-                Name = book.Publisher.Name ?? string.Empty,
-            };
-        }
-
-        item.Authors.AddRange(
-            book.Authors.Select(a => new AuthorItem
-            {
-                Id = a.Id.ToString(),
-                Name = a.Name ?? string.Empty,
-            })
-        );
-
-        return item;
     }
 
     private static GetBookResponse MapToBookResponse(Book book)
@@ -230,10 +226,6 @@ internal sealed class BookService(
 
     private static GetBooksResponse MapToBookResponse(IReadOnlyList<Book> books)
     {
-        var response = new GetBooksResponse();
-
-        response.Books.AddRange(books.Select(MapToBookResponse));
-
-        return response;
+        return new() { Books = { books.Select(MapToBookResponse) } };
     }
 }

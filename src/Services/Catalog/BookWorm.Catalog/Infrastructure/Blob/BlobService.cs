@@ -57,16 +57,13 @@ internal sealed partial class BlobService(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(urn);
 
-        var parts = urn.Split(':').AsSpan();
-        if (parts.Length != 4)
+        if (urn.Split(':') is not [var prefix, var account, var container, var blobName])
         {
             throw new ArgumentException(
                 "URN must follow the format: urn:{account}:{container}:{blobName}",
                 nameof(urn)
             );
         }
-
-        var (prefix, account, container, blobName) = (parts[0], parts[1], parts[2], parts[3]);
 
         _ = (prefix, account, container, blobName) switch
         {

@@ -51,13 +51,13 @@ public sealed class OrderSagaCompensationsTests
         compensations.AddCompensation("FirstCompensation", "cmd-1");
         compensations.AddCompensation("SecondCompensation", "cmd-2");
 
-        await compensations.CompensateAsync(inParallel: true);
+        await compensations.CompensateAsync(true);
 
         called.Count.ShouldBe(2);
         called.ShouldContain(("FirstCompensation", "cmd-1"));
         called.ShouldContain(("SecondCompensation", "cmd-2"));
 
-        await compensations.CompensateAsync(inParallel: true);
+        await compensations.CompensateAsync(true);
 
         called.Count.ShouldBe(2);
     }
@@ -90,7 +90,7 @@ public sealed class OrderSagaCompensationsTests
         compensations.AddCompensation("FailingCompensation", "cmd-1");
         compensations.AddCompensation("HealthyCompensation", "cmd-2");
 
-        await compensations.CompensateAsync(inParallel: true);
+        await compensations.CompensateAsync(true);
 
         called.Count.ShouldBe(2);
         called.ShouldContain("FailingCompensation");

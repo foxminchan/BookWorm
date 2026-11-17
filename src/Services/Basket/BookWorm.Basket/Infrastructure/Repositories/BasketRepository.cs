@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using StackExchange.Redis;
 
 namespace BookWorm.Basket.Infrastructure.Repositories;
@@ -19,7 +18,7 @@ internal sealed class BasketRepository(
         return data.IsNullOrEmpty
             ? null
             : JsonSerializer.Deserialize(
-                Encoding.UTF8.GetString(data!),
+                (byte[])data!,
                 BasketSerializationContext.Default.CustomerBasket
             );
     }
