@@ -35,7 +35,7 @@ internal static class EntraIdExtensions
 
         /// <summary>
         ///     Adds a Microsoft Entra ID application registration resource to the distributed application builder
-        ///     with application roles, ID token issuance, default application ID URI, and local/publish credentials.
+        ///     with application roles, default application ID URI, ACL-based authorization, and local/publish credentials.
         /// </summary>
         /// <param name="name">The name of the Entra ID resource.</param>
         /// <returns>
@@ -45,7 +45,6 @@ internal static class EntraIdExtensions
         {
             return builder
                 .AddEntraIdApplication(name)
-                .WithIdTokenIssuance()
                 .WithApplicationIdUri()
                 .WithAppRole(
                     new(
