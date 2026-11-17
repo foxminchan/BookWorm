@@ -13,7 +13,7 @@ internal static class ProxyExtensions
             return new(builder);
         }
 
-        internal IResourceBuilder<YarpResource> ConfigureApiGatewayProxy(
+        internal static IResourceBuilder<YarpResource> ConfigureApiGatewayProxy(
             IResourceBuilder<YarpResource> yarp,
             IReadOnlyList<Service> services,
             IResourceBuilder<ExternalServiceResource>? entraExternal,
@@ -159,6 +159,11 @@ internal sealed class ApiGatewayProxyBuilder
 
     public IResourceBuilder<YarpResource> Build()
     {
-        return Builder.ConfigureApiGatewayProxy(Resource, _services, _entraExternal, _frontends);
+        return IDistributedApplicationBuilder.ConfigureApiGatewayProxy(
+            Resource,
+            _services,
+            _entraExternal,
+            _frontends
+        );
     }
 }
