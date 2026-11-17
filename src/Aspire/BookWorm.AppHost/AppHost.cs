@@ -87,11 +87,7 @@ var catalogApi = builder
     .WithReference(catalogContainer)
     .WaitFor(catalogContainer)
     .WithReference(project)
-    .WithRoleAssignments(
-        storage,
-        StorageBuiltInRole.StorageBlobDataContributor,
-        StorageBuiltInRole.StorageBlobDataOwner
-    )
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
     .WithDisplayUrls();
 
@@ -218,11 +214,7 @@ builder
     .WithReference(broker)
     .WaitFor(broker)
     .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
-    .WithRoleAssignments(
-        storage,
-        StorageBuiltInRole.StorageBlobDataReader,
-        StorageBuiltInRole.StorageQueueDataReader
-    );
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner);
 
 builder
     .AddAzureFunctionsProject(
@@ -239,11 +231,7 @@ builder
     .WaitFor(qdrant)
     .WithReference(project)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithRoleAssignments(
-        storage,
-        StorageBuiltInRole.StorageBlobDataReader,
-        StorageBuiltInRole.StorageQueueDataReader
-    );
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner);
 
 var gateway = builder
     .AddApiGatewayProxy()
