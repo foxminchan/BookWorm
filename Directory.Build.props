@@ -25,4 +25,7 @@
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="Allure.TestingPlatform" />
+  </ItemGroup>
 </Project>

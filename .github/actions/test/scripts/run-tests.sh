@@ -53,7 +53,7 @@ mapfile -d '' unit_projects < <(
     -print0 | sort -z
 )
 for project in "${unit_projects[@]}"; do
-  run_test "$project"
+  run_test "$project" --allure-results-directory ./allure-results/unit
 done
 
 consumer_projects=(
@@ -65,7 +65,7 @@ consumer_projects=(
   src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj
 )
 for project in "${consumer_projects[@]}"; do
-  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactConsumer]'
+  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactConsumer]' --allure-results-directory ./allure-results/contract
 done
 
 provider_projects=(
@@ -77,5 +77,5 @@ provider_projects=(
   src/Services/Scheduler/BookWorm.Scheduler.ContractTests/BookWorm.Scheduler.ContractTests.csproj
 )
 for project in "${provider_projects[@]}"; do
-  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactProvider]'
+  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactProvider]' --allure-results-directory ./allure-results/contract
 done

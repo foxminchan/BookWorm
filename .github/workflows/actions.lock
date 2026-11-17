@@ -7,7 +7,7 @@ workflows:
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
         - 'actions/github-script@v9.0.0'
-        - 'github/gh-aw-actions@v1.0.1'
+        - 'github/gh-aw-actions@v1.2.2'
     '.github/workflows/apphost-cd.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-dotnet@v6.1.0'
@@ -19,6 +19,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/github-script@v9.0.0'
         - 'actions/setup-dotnet@v6.1.0'
+        - 'actions/upload-artifact@v7.0.2'
         - 'oven-sh/setup-bun@v2.2.0'
     '.github/workflows/contribution-guidelines-checker.lock.yml':
         - 'actions/checkout@v7.0.1'
@@ -26,7 +27,7 @@ workflows:
         - 'actions/github-script@v9.0.0'
         - 'actions/setup-node@v7.1.0'
         - 'actions/upload-artifact@v7.0.2'
-        - 'github/gh-aw-actions@v1.0.1'
+        - 'github/gh-aw-actions@v1.2.2'
     '.github/workflows/copilot-setup-steps.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-dotnet@v6.1.0'
@@ -55,7 +56,7 @@ workflows:
         - 'actions/github-script@v9.0.0'
         - 'actions/setup-node@v7.1.0'
         - 'actions/upload-artifact@v7.0.2'
-        - 'github/gh-aw-actions@v1.0.1'
+        - 'github/gh-aw-actions@v1.2.2'
     '.github/workflows/pr-validation.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/dependency-review-action@v5.0.0'
@@ -231,9 +232,9 @@ dependencies:
         commit: 'sha1-1fc58d04a4d4374f921bdac573c3811c240f9c26'
         owner_id: 9919
         repo_id: 259445878
-    'github/gh-aw-actions@v1.0.1':
-        ref: 'v1.0.1'
-        commit: 'sha1-221ba4f4319de6b8e809d1a15528b3ae6a818aa5'
+    'github/gh-aw-actions@v1.2.2':
+        ref: 'v1.2.2'
+        commit: 'sha1-53d0749e19424a918acd82b4d140264ce48f2f14'
         owner_id: 9919
         repo_id: 1156386970
     'jdx/mise-action@v5.2.6':

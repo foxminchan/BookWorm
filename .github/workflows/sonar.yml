@@ -153,6 +153,24 @@ jobs:
           NO_BUILD: "true"
         run: bash .github/actions/test/scripts/run-tests.sh
 
+      - name: ⬆️ Upload Allure Results (Backend Unit)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-be-unit
+          path: allure-results/unit/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: ⬆️ Upload Allure Results (Backend Contract)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-be-contract
+          path: allure-results/contract/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: 🔍 Sonarqube End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

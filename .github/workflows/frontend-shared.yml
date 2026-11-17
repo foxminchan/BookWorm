@@ -60,6 +60,24 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./node_modules/.bin/turbo run allure:generate --affected --continue
 
+      - name: ⬆️ Upload Allure Results (Backoffice)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-fe-bo
+          path: ${{ env.FRONTEND_APPS_DIR }}/backoffice/allure-results/
+          retention-days: ${{ inputs.retention-days }}
+          if-no-files-found: ignore
+
+      - name: ⬆️ Upload Allure Results (Storefront)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-fe-sf
+          path: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-results/
+          retention-days: ${{ inputs.retention-days }}
+          if-no-files-found: ignore
+
       - name: ⬆️ Upload Allure Report (Backoffice)
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2

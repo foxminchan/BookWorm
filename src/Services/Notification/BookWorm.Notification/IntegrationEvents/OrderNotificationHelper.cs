@@ -1,4 +1,4 @@
-namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+namespace BookWorm.Notification.IntegrationEvents;
 
 internal static class OrderNotificationHelper
 {
