@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -122,5 +123,87 @@ describe("SimpleDialog", () => {
     await user.click(cancelButton);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("should submit when pressing Enter with a non-empty value", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    renderWithProviders(
+      <SimpleDialog
+        open={true}
+        onOpenChange={() => {}}
+        title="Create Item"
+        description="Enter item name"
+        placeholder="Item name"
+        onSubmit={onSubmit}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("Item name");
+    await user.type(input, "  Enter Item  {Enter}");
+
+    expect(onSubmit).toHaveBeenCalledWith("Enter Item");
+  });
+
+  it("should ignore Enter key during IME composition", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    renderWithProviders(
+      <SimpleDialog
+        open={true}
+        onOpenChange={() => {}}
+        title="Create Item"
+        description="Enter item name"
+        placeholder="Item name"
+        onSubmit={onSubmit}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("Item name");
+    await user.type(input, "IME Item");
+
+    fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(input, { key: "Enter", keyCode: 229 });
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("should not submit on Enter when value is whitespace or while loading", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    const { rerender } = renderWithProviders(
+      <SimpleDialog
+        open={true}
+        onOpenChange={() => {}}
+        title="Create Item"
+        description="Enter item name"
+        placeholder="Item name"
+        onSubmit={onSubmit}
+        isLoading={false}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("Item name");
+    await user.type(input, "   {Enter}");
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    await user.type(input, "Valid Item");
+    rerender(
+      <SimpleDialog
+        open={true}
+        onOpenChange={() => {}}
+        title="Create Item"
+        description="Enter item name"
+        placeholder="Item name"
+        onSubmit={onSubmit}
+        isLoading={true}
+      />,
+    );
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });

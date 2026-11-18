@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -223,5 +223,66 @@ describe("SimpleTable", () => {
 
     // onUpdate should not be called for empty string
     expect(mockOnUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should cancel editing when pressing Escape", async () => {
+    const user = userEvent.setup();
+    render(<SimpleTable {...defaultProps} />);
+
+    await user.click(screen.getAllByRole("button", { name: /edit/i })[0]!);
+    expect(screen.getByDisplayValue("Item 1")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByDisplayValue("Item 1")).not.toBeInTheDocument();
+    expect(screen.getByText("Item 1")).toBeInTheDocument();
+  });
+
+  it("should ignore Enter key during IME composition", async () => {
+    const user = userEvent.setup();
+    render(<SimpleTable {...defaultProps} />);
+
+    await user.click(screen.getAllByRole("button", { name: /edit/i })[0]!);
+    const input = screen.getByDisplayValue("Item 1");
+
+    fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(input, { key: "Enter", keyCode: 229 });
+
+    expect(mockOnUpdate).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("Item 1")).toBeInTheDocument();
+  });
+
+  it("should report delete failures without leaving an unhandled rejection", async () => {
+    const user = userEvent.setup();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockOnDelete.mockRejectedValueOnce(new Error("Delete failed"));
+    render(<SimpleTable {...defaultProps} />);
+
+    await user.click(screen.getAllByRole("button", { name: /delete/i })[0]!);
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to delete item");
+    });
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Failed to delete table item:",
+      expect.any(Error),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("should use fallback name when editing or deleting an item with null name", async () => {
+    const user = userEvent.setup();
+    const itemsWithNull = [{ id: "1", name: null }] as TestItem[];
+    render(<SimpleTable {...defaultProps} items={itemsWithNull} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit item" }));
+    expect(screen.getByDisplayValue("")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    await user.click(screen.getByRole("button", { name: "Delete item" }));
+    expect(
+      screen.getByText(/are you sure you want to delete "this item"\?/i),
+    ).toBeInTheDocument();
   });
 });

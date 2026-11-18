@@ -83,6 +83,7 @@ workflows:
         - 'actions/setup-dotnet@v6.1.0'
         - 'actions/setup-java@v6.2.0'
         - 'actions/upload-artifact@v7.0.2'
+        - 'allure-framework/allure-action@v0.12.0'
         - 'oven-sh/setup-bun@v2.2.0'
     '.github/workflows/supply-chain-security.yml':
         - 'actions/checkout@v7.0.1'

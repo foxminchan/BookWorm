@@ -1,9 +1,10 @@
 import { faker } from "@faker-js/faker";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { Book } from "@workspace/types/catalog/books";
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
 
 import { BookCard } from "@/components/book-card";
 
@@ -177,5 +178,51 @@ describe("BookCard", () => {
     const expectedAltText = `Cover of Test Book Title by ${authorNames}`;
     const image = screen.getByAltText(expectedAltText);
     expect(image).toBeInTheDocument();
+  });
+
+  it("should call onClick when Space key is pressed and ignore non-activation keys", async () => {
+    const user = userEvent.setup();
+    const handleClick = vi.fn();
+
+    renderWithProviders(<BookCard book={mockBook} onClick={handleClick} />);
+
+    const card = screen.getByRole("button");
+    card.focus();
+    await user.keyboard("a");
+    expect(handleClick).not.toHaveBeenCalled();
+
+    await user.keyboard(" ");
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("should fall back to default image when imageUrl is missing or image fails to load", () => {
+    const bookWithoutImage: Book = { ...mockBook, imageUrl: null };
+    const { rerender } = renderWithProviders(
+      <BookCard book={bookWithoutImage} />,
+    );
+
+    expect(screen.getByRole("img")).toHaveAttribute("src", DEFAULT_BOOK_IMAGE);
+
+    const bookWithImage: Book = {
+      ...mockBook,
+      imageUrl: "https://example.com/broken.jpg",
+    };
+    rerender(<BookCard book={bookWithImage} />);
+
+    const img = screen.getByRole("img");
+    expect(img).toHaveAttribute("src", "https://example.com/broken.jpg");
+
+    fireEvent.error(img);
+    expect(img).toHaveAttribute("src", DEFAULT_BOOK_IMAGE);
+  });
+
+  it("should display '0.0' when averageRating is undefined", () => {
+    const book: Book = {
+      ...mockBook,
+      averageRating: undefined as unknown as number,
+    };
+    renderWithProviders(<BookCard book={book} />);
+
+    expect(screen.getByText("0.0")).toBeInTheDocument();
   });
 });
