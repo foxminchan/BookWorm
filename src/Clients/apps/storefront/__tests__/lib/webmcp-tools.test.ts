@@ -1,31 +1,30 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import booksApiClient from "@workspace/api-client/catalog/books";
 
 import { searchBooksParameters, searchBooksTool } from "@/lib/webmcp-tools";
 
-const { mockList } = vi.hoisted(() => ({
-  mockList: vi.fn(),
-}));
-
-vi.mock("@workspace/api-client/catalog/books", () => ({
-  default: {
-    list: mockList,
-  },
-}));
-
 describe("searchBooksTool", () => {
+  let listSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    listSpy = vi.spyOn(booksApiClient, "list");
+  });
+
+  afterEach(() => {
+    listSpy.mockRestore();
   });
 
   it("uses default maxResults and omits category when not provided", async () => {
-    mockList.mockResolvedValue({
+    listSpy.mockResolvedValue({
       items: [{ id: "1", name: "Clean Code" }],
       totalCount: 1,
-    });
+    } as never);
 
     const result = await searchBooksTool.handler({ query: "clean code" });
 
-    expect(mockList).toHaveBeenCalledWith({
+    expect(listSpy).toHaveBeenCalledWith({
       search: "clean code",
       pageSize: 10,
     });
@@ -39,10 +38,10 @@ describe("searchBooksTool", () => {
   });
 
   it("includes category and custom maxResults when provided", async () => {
-    mockList.mockResolvedValue({
+    listSpy.mockResolvedValue({
       items: [{ id: "2", name: "Dune" }],
       totalCount: 1,
-    });
+    } as never);
 
     const result = await searchBooksTool.handler({
       query: "dune",
@@ -50,7 +49,7 @@ describe("searchBooksTool", () => {
       maxResults: 5,
     });
 
-    expect(mockList).toHaveBeenCalledWith({
+    expect(listSpy).toHaveBeenCalledWith({
       search: "dune",
       category: "fiction",
       pageSize: 5,
@@ -65,7 +64,7 @@ describe("searchBooksTool", () => {
   });
 
   it("falls back to empty results and zero total when API response omits them", async () => {
-    mockList.mockResolvedValue({});
+    listSpy.mockResolvedValue({} as never);
 
     const result = await searchBooksTool.handler({ query: "unknown" });
 
