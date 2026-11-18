@@ -35,6 +35,14 @@ run = ["dotnet restore", "dotnet tool restore"]
 description = "Setup pre-commit hooks"
 run = "git config core.hooksPath .husky"
 
+[tasks."setup:buf"]
+description = "Install Buf CLI for gRPC schema & codegen (optional)"
+run = "mise use --pin buf@latest"
+
+[tasks."setup:copilot"]
+description = "Install GitHub Copilot CLI extension (optional)"
+run = "gh extension install github/gh-copilot"
+
 [tasks.clean]
 description = "Clean build artifacts"
 run = "dotnet clean {{ vars.solution }}"
