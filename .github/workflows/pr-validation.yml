@@ -12,6 +12,7 @@ on:
       - .github/workflows/**
       # Build configuration
       - .config/dotnet-tools.json
+      - aspire.config.json
       - BookWorm.slnx
       - Directory.Build.props
       - Directory.Packages.props
@@ -58,7 +59,7 @@ jobs:
             case "$file" in
               src/Clients/*) frontend=true ;;
               .github/workflows/*|.github/actions/*) backend=true; frontend=true ;;
-              src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx) backend=true ;;
+              src/*|tests/*|Directory.*|global.json|Versions.props|.config/*|BookWorm.slnx|aspire.config.json) backend=true ;;
               *) echo "Ignoring unmatched path: $file" ;;
             esac
           done <<< "$CHANGED"

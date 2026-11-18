@@ -8,6 +8,22 @@ on:
         description: Aspire environment (Development, Staging, or Production)
         required: true
         type: environment
+      clear_cache:
+        description: Clear cached Aspire deployment state before deploying
+        required: false
+        default: false
+        type: boolean
+      pipeline_log_level:
+        description: Minimum log level for Aspire pipeline logs
+        required: false
+        default: information
+        type: choice
+        options:
+          - information
+          - debug
+          - trace
+          - warning
+          - error
 
 env:
   GLOBAL_JSON_PATH: global.json
@@ -38,6 +54,24 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: 📦 Cache NuGet packages
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: 💾 Cache Aspire deployment state
+        if: ${{ !inputs.clear_cache }}
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.aspire/deployments
+          key: aspire-deploy-${{ inputs.environment }}-${{ hashFiles('src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj', 'aspire.config.json') }}-${{ github.sha }}
+          restore-keys: |
+            aspire-deploy-${{ inputs.environment }}-${{ hashFiles('src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj', 'aspire.config.json') }}-
+            aspire-deploy-${{ inputs.environment }}-
+
       - name: 🔧 Setup .NET Core
         uses: actions/setup-dotnet@v6.1.0
         with:
@@ -61,13 +95,12 @@ jobs:
           EMAIL_SMTP_USERNAME: ${{ vars.EMAIL_SMTP_USERNAME }}
           EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
           EMAIL_SENDER_ADDRESS: ${{ vars.EMAIL_SENDER_ADDRESS }}
-          EMAIL_SENDER_NAME: ${{ vars.EMAIL_SENDER_NAME }}
           KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
           QDRANT_CLOUD_CONNECTION: ${{ secrets.QDRANT_CLOUD_CONNECTION }}
         run: |
           test -n "$AZURE_RESOURCE_GROUP" || { echo "AZURE_RESOURCE_GROUP is required for this GitHub Environment."; exit 1; }
           missing=()
-          for name in EMAIL_SMTP_ENDPOINT EMAIL_SMTP_USERNAME EMAIL_SMTP_PASSWORD EMAIL_SENDER_ADDRESS EMAIL_SENDER_NAME KAFKA_BROKER QDRANT_CLOUD_CONNECTION; do
+          for name in EMAIL_SMTP_ENDPOINT EMAIL_SMTP_USERNAME EMAIL_SMTP_PASSWORD EMAIL_SENDER_ADDRESS KAFKA_BROKER QDRANT_CLOUD_CONNECTION; do
             if [[ -z "${!name}" ]]; then
               missing+=("$name")
             fi
@@ -79,17 +112,28 @@ jobs:
 
       - name: 🚀 Deploy with Aspire
         run: |
+          CLEAR_CACHE_FLAG=""
+          if [[ "${{ inputs.clear_cache }}" == "true" ]]; then
+            CLEAR_CACHE_FLAG="--clear-cache"
+          fi
           aspire deploy \
-            --environment ${{ inputs.environment }} \
-            --non-interactive
+            --environment "${{ inputs.environment }}" \
+            --pipeline-log-level "${{ inputs.pipeline_log_level }}" \
+            --include-exception-details \
+            --non-interactive \
+            --nologo \
+            $CLEAR_CACHE_FLAG
         env:
           DOTNET_GENERATE_ASPNET_CERTIFICATE: false
           DOTNET_ADD_GLOBAL_TOOLS_TO_PATH: false
           DOTNET_MULTILEVEL_LOOKUP: 0
           DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
           Azure__SubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          Azure__TenantId: ${{ secrets.AZURE_TENANT_ID }}
           Azure__Location: ${{ vars.AZURE_LOCATION || secrets.AZURE_LOCATION || 'southeastasia' }}
           Azure__ResourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          Azure__CredentialSource: AzureCli
+          Azure__CredentialProcessTimeoutSeconds: 120
           Parameters__email_smtp_endpoint: ${{ vars.EMAIL_SMTP_ENDPOINT }}
           Parameters__email_smtp_username: ${{ vars.EMAIL_SMTP_USERNAME }}
           Parameters__email_smtp_password: ${{ secrets.EMAIL_SMTP_PASSWORD }}
@@ -97,3 +141,12 @@ jobs:
           Parameters__email_sender_name: ${{ vars.EMAIL_SENDER_NAME }}
           ConnectionStrings__broker: ${{ secrets.KAFKA_BROKER }}
           ConnectionStrings__vectordb: ${{ secrets.QDRANT_CLOUD_CONNECTION }}
+
+      - name: ⬆️ Upload Aspire CLI logs
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: aspire-cli-logs-${{ inputs.environment }}
+          path: ~/.aspire/cli/logs/
+          retention-days: 7
+          if-no-files-found: ignore
