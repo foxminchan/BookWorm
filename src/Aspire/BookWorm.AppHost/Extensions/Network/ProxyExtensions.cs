@@ -159,6 +159,11 @@ internal sealed class ApiGatewayProxyBuilder
 
     public IResourceBuilder<YarpResource> Build()
     {
+        foreach (var service in _services)
+        {
+            service.Resource.WithGatewayCors(Resource);
+        }
+
         return IDistributedApplicationBuilder.ConfigureApiGatewayProxy(
             Resource,
             _services,

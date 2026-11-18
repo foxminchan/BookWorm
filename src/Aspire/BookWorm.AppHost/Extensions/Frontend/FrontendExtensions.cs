@@ -51,10 +51,7 @@ internal static class FrontendExtensions
             .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
             .WithEntraId(entraId, gateway);
 
-        storefront.WithEnvironment(
-            AppUrlEnvironmentVariable,
-            gateway.GetEndpoint(Uri.UriSchemeHttps)
-        );
+        storefront.WithEnvironment(AppUrlEnvironmentVariable, GatewayBrowserOrigin(gateway));
 
         var backoffice = turbo
             .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)
@@ -68,7 +65,7 @@ internal static class FrontendExtensions
 
         backoffice.WithEnvironment(
             AppUrlEnvironmentVariable,
-            ReferenceExpression.Create($"{gateway.GetEndpoint(Uri.UriSchemeHttps)}/backoffice")
+            ReferenceExpression.Create($"{GatewayBrowserOrigin(gateway)}/backoffice")
         );
 
         return (storefront, backoffice);
@@ -96,10 +93,7 @@ internal static class FrontendExtensions
             true
         );
 
-        storefront.WithEnvironment(
-            AppUrlEnvironmentVariable,
-            gateway.GetEndpoint(Uri.UriSchemeHttps)
-        );
+        storefront.WithEnvironment(AppUrlEnvironmentVariable, GatewayBrowserOrigin(gateway));
 
         var backoffice = ConfigurePublishedFrontend(
             AddFrontendContainer(
@@ -115,10 +109,22 @@ internal static class FrontendExtensions
 
         backoffice.WithEnvironment(
             AppUrlEnvironmentVariable,
-            ReferenceExpression.Create($"{gateway.GetEndpoint(Uri.UriSchemeHttps)}/backoffice")
+            ReferenceExpression.Create($"{GatewayBrowserOrigin(gateway)}/backoffice")
         );
 
         return (storefront, backoffice);
+    }
+
+    /// <summary>
+    ///     Resolves the origin the browser actually uses to reach the gateway (Aspire 17 browser origins).
+    ///     Accounts for <c>*.dev.localhost</c> hosts, custom public URLs, Codespaces forwarding, and the
+    ///     public deployed origin, so it stays aligned with the Entra ID redirect URIs.
+    /// </summary>
+    private static ReferenceExpression GatewayBrowserOrigin(IResourceBuilder<YarpResource> gateway)
+    {
+        return ReferenceExpression.Create(
+            $"{gateway.GetEndpoint(Uri.UriSchemeHttps).PrimaryBrowserOrigin}"
+        );
     }
 
     private static IResourceBuilder<ContainerResource> ConfigurePublishedFrontend(

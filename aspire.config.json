@@ -1,9 +1,12 @@
 {
-  "$schema": "https://aspire.dev/reference/cli/configuration/schema.json",
   "appHost": {
     "path": "src/Aspire/BookWorm.AppHost/BookWorm.AppHost.csproj"
   },
+  "channel": "stable",
   "sdk": {
     "version": "17.0.0"
+  },
+  "features": {
+    "appHostServerV2": "true"
   }
 }

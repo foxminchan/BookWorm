@@ -8,7 +8,8 @@ builder
 var redis = builder
     .AddAzureManagedRedis(Components.Redis)
     .RunAsLocalContainer()
-    .ProvisionAsService(builder.Environment);
+    .ProvisionAsService(builder.Environment)
+    .InGroup(ResourceGroups.Data);
 
 var qdrant = builder.ExecutionContext.IsRunMode
     ? builder
@@ -17,12 +18,19 @@ var qdrant = builder.ExecutionContext.IsRunMode
         .WithLifetime(ContainerLifetime.Persistent)
     : builder.AddConnectionString(Components.VectorDb);
 
+qdrant.InGroup(ResourceGroups.Data);
+
 var broker = builder.ExecutionContext.IsRunMode
     ? builder.AddKafka(Components.Broker).WithKafkaUI().WithLifetime(ContainerLifetime.Persistent)
     : builder.AddConnectionString(Components.Broker);
 
+broker.InGroup(ResourceGroups.Messaging);
+
 // Add Azure Blob Storage
-var storage = builder.AddAzureStorage(Components.Azure.Storage.Resource).RunAsLocalContainer();
+var storage = builder
+    .AddAzureStorage(Components.Azure.Storage.Resource)
+    .RunAsLocalContainer()
+    .InGroup(ResourceGroups.Data);
 
 var catalogContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
@@ -36,7 +44,8 @@ var chatSessionContainer = storage
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
     .RunAsLocalContainer()
-    .ProvisionAsService(builder.Environment);
+    .ProvisionAsService(builder.Environment)
+    .InGroup(ResourceGroups.Data);
 
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMcp();
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
@@ -46,13 +55,14 @@ var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgr
 var cosmos = builder
     .AddAzureCosmosDB(Components.Cosmos)
     .RunAsLocalContainer()
-    .ProvisionAsService(builder.Environment);
+    .ProvisionAsService(builder.Environment)
+    .InGroup(ResourceGroups.Data);
 
 var ratingDb = cosmos.AddCosmosDatabase(Components.Database.Rating);
 var feedbacks = ratingDb.AddContainer(Components.Container.Feedbacks, "/bookId");
 
 // Add AI and Foundry components
-var foundry = builder.AddFoundry(Components.Foundry.Resource);
+var foundry = builder.AddFoundry(Components.Foundry.Resource).InGroup(ResourceGroups.AI);
 var project = foundry.AddProject(Components.Foundry.Project);
 
 project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
@@ -61,14 +71,16 @@ project.AddModelDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.Emb
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .InGroup(ResourceGroups.AI);
 
 var presidioAnonymizer = builder
     .AddPresidioAnonymizer(Components.Presidio.Anonymizer)
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .InGroup(ResourceGroups.AI);
 
 // Add Azure Entra ID and Agent Identities
-var entraId = builder.AddEntraId(Components.Azure.EntraId);
+var entraId = builder.AddEntraId(Components.Azure.EntraId).InGroup(ResourceGroups.Security);
 var entraAgentIdentities = builder.AddEntraAgentIdentities("entra-agent-identities", entraId);
 
 // Add services and their dependencies
@@ -91,7 +103,8 @@ var catalogApi = builder
     .WithReference(project)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var mcp = builder
     .AddDotnetProject(
@@ -100,7 +113,8 @@ var mcp = builder
     )
     .WithReference(catalogApi)
     .WithEntraId(entraId)
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var basketApi = builder
     .AddDotnetProject(
@@ -114,7 +128,8 @@ var basketApi = builder
     .WithReference(catalogApi)
     .WithEntraId(entraId)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var orderingApi = builder
     .AddDotnetProject(
@@ -132,7 +147,8 @@ var orderingApi = builder
     .WaitFor(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var chatApi = builder
     .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
@@ -149,7 +165,8 @@ var chatApi = builder
     .WaitFor(chatSessionContainer)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var ratingApi = builder
     .AddDotnetProject(
@@ -170,7 +187,8 @@ var ratingApi = builder
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
@@ -183,7 +201,8 @@ builder
     .WithReference(broker)
     .WaitFor(broker)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
+    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath)
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 builder
     .AddDotnetProject(
@@ -196,12 +215,14 @@ builder
     .WithReference(schedulerDb)
     .WaitFor(schedulerDb)
     .WithDisplayUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
-    .WithExplicitStart();
+    .WithExplicitStart()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 // Add Functions projects for Finance and Catalog Ingestion
 var durableTaskScheduler = builder
     .AddDurableTaskScheduler(Components.Azure.DurableTask.Scheduler)
-    .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent));
+    .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent))
+    .InGroup(ResourceGroups.Functions);
 
 var financeTaskHub = durableTaskScheduler.AddTaskHub(Components.Azure.DurableTask.TaskHub);
 
@@ -216,7 +237,8 @@ builder
     .WithReference(broker)
     .WaitFor(broker)
     .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner);
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner)
+    .InGroup(ResourceGroups.Functions, ResourceDisplayOrder.Functions);
 
 builder
     .AddAzureFunctionsProject(
@@ -233,7 +255,8 @@ builder
     .WaitFor(qdrant)
     .WithReference(project)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner);
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner)
+    .InGroup(ResourceGroups.Functions, ResourceDisplayOrder.Functions);
 
 // Add API Gateway and Frontend Apps
 var gatewayBuilder = builder
@@ -247,14 +270,30 @@ var gatewayBuilder = builder
 
 var (storefront, backoffice) = builder.AddFrontendApps(gatewayBuilder.Resource, entraId);
 
-gatewayBuilder.WithFrontend(backoffice, "/backoffice").WithFrontend(storefront).Build();
+gatewayBuilder
+    .WithFrontend(backoffice, "/backoffice")
+    .WithFrontend(storefront)
+    .Build()
+    .InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
+
+storefront.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
+backoffice.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
+
+// MCP tools are not routed through the gateway but still need a CORS policy outside Development
+mcp.WithGatewayCors(gatewayBuilder.Resource);
 
 // Add Scalar and MCP Inspector in run mode, or provision storage in publish mode
 if (builder.ExecutionContext.IsRunMode)
 {
-    builder.AddScalar(entraId).WithOpenAPI(chatApi, basketApi, ratingApi, catalogApi, orderingApi);
+    builder
+        .AddScalar(entraId)
+        .InGroup(ResourceGroups.Tooling, ResourceDisplayOrder.Tooling)
+        .WithOpenAPI(chatApi, basketApi, ratingApi, catalogApi, orderingApi);
 
-    builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
+    builder
+        .AddMcpInspector(Components.Inspector)
+        .WithMcpServer(mcp)
+        .InGroup(ResourceGroups.Tooling, ResourceDisplayOrder.Tooling);
 }
 else
 {
