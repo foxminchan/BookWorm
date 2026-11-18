@@ -1,0 +1,92 @@
+---
+title: Deploying BookWorm to Azure
+summary: Step-by-step how-to guide for provisioning and verifying BookWorm's subscription-scoped Bicep infrastructure in Azure.
+owners:
+  - platform-team
+badges:
+  - content: How-to Guide
+    backgroundColor: green
+    textColor: green
+---
+
+This guide explains how to publish BookWorm's Aspire-generated Azure infrastructure to an Azure subscription and verify the provisioned environment.
+
+:::info
+For local development setup using Aspire and containers/emulators, see [[doc|development/002-getting-started]] instead.
+:::
+
+## Prerequisites
+
+Ensure you have the following before starting a deployment:
+
+1. **Tooling:** Azure CLI (`az`) with Bicep CLI (`az bicep version`), or Azure Developer CLI (`azd`).
+2. **Subscription Permissions:** `Owner` or `User Access Administrator` + `Contributor` on the target Azure subscription (required to create the resource group and assign RBAC roles).
+3. **Microsoft Graph Permissions:** Entra ID permissions to create application registrations, service principals, and Federated Identity Credentials (`entra` and `entra-agent-identities` modules).
+4. **External Service Endpoints:** Connection parameters for the external **Kafka** broker, **Qdrant Cloud** cluster ([[container|catalog-vector]]), and **SMTP** relay ([[system|sendgrid]]).
+
+## Step 1: Authenticate & Capture Principal ID
+
+Sign in to the target Azure tenant and capture the deploying user or CI/CD service principal object ID (`principalId`):
+
+```bash
+az login
+az account set --subscription "<SUBSCRIPTION_ID>"
+
+PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv)
+# For a service principal in CI/CD:
+# PRINCIPAL_ID=$(az ad sp show --id "<APP_ID>" --query id -o tsv)
+```
+
+## Step 2: Validate the Generated Bicep Template
+
+First generate the Aspire Azure deployment artifacts from `src/Aspire/BookWorm.AppHost`, then run a subscription-scoped `what-if` preview before applying changes:
+
+```bash
+az deployment sub what-if \
+  --location "eastus2" \
+  --template-file <aspire-output>/main.bicep \
+  --parameters \
+    resourceGroupName="rg-bookworm-prod" \
+    location="eastus2" \
+    principalId="$PRINCIPAL_ID" \
+    tenantResourceSuffix="prod"
+```
+
+## Step 3: Deploy Infrastructure & Push Images
+
+Deploy the generated `main.bicep` at subscription scope:
+
+```bash
+az deployment sub create \
+  --name "bookworm-prod-$(date +%Y%m%d%H%M)" \
+  --location "eastus2" \
+  --template-file <aspire-output>/main.bicep \
+  --parameters \
+    resourceGroupName="rg-bookworm-prod" \
+    location="eastus2" \
+    principalId="$PRINCIPAL_ID" \
+    tenantResourceSuffix="prod"
+```
+
+Once the shared `aca-acr` and `aca` modules complete, build and push container images to the provisioned Azure Container Registry (`aca_AZURE_CONTAINER_REGISTRY_ENDPOINT`) and deploy the 15 container app modules (or run `azd up` if orchestrating via Aspire/AZD).
+
+## Step 4: Post-Deployment Verification
+
+Confirm that the gateway, internal apps, and identity callbacks are healthy:
+
+1. **Check Gateway External FQDN:**
+   ```bash
+   az containerapp show \
+     --name gateway \
+     --resource-group rg-bookworm-prod \
+     --query "properties.configuration.ingress.fqdn" -o tsv
+   ```
+2. **Verify All 15 Container Apps Are Running:**
+   ```bash
+   az containerapp list \
+     --resource-group rg-bookworm-prod \
+     --query "[].{Name:name, Status:properties.runningStatus, Replicas:properties.template.scale.minReplicas}" \
+     -o table
+   ```
+3. **Confirm Entra Redirect URIs:** Verify that the [[system|identity-provider]] app registration includes `https://gateway.<ACA_DEFAULT_DOMAIN>/api/auth/oauth2/callback/microsoft-entra-id` and `/backoffice/api/auth/oauth2/callback/microsoft-entra-id`.
+4. **Verify Managed Identity RBAC:** Confirm that `catalog-identity`, `ordering-identity`, `rating-identity`, `finance-identity`, and `catalog-ingestion-identity` appear in the RBAC assignments for PostgreSQL, Redis, Cosmos DB, Storage, and Foundry.

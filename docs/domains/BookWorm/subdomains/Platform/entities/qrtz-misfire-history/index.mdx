@@ -1,0 +1,63 @@
+---
+id: qrtz-misfire-history
+name: Quartz Misfire History
+version: 1.0.0
+identifier: entry_id
+aggregateRoot: false
+summary: Optional records of missed Quartz trigger executions and their causes.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: entry_id
+    type: text
+    required: true
+  - name: instance_name
+    type: text
+    required: true
+  - name: trigger_name
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_name
+    relationType: belongsTo
+  - name: trigger_group
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_group
+    relationType: belongsTo
+  - name: job_name
+    type: text
+    required: false
+    references: qrtz-job-details
+    referencesIdentifier: job_name
+    relationType: belongsTo
+  - name: job_group
+    type: text
+    required: false
+    references: qrtz-job-details
+    referencesIdentifier: job_group
+    relationType: belongsTo
+  - name: misfire_time
+    type: bigint
+    required: true
+  - name: sched_time
+    type: bigint
+    required: false
+  - name: reason
+    type: integer
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name` and `entry_id`.
+- Misfire history records missed executions of [[entity|qrtz-triggers]] and
+  may reference [[entity|qrtz-job-details]].

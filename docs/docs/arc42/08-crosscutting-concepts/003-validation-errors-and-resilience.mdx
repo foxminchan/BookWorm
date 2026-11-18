@@ -1,0 +1,31 @@
+---
+title: Validation, Errors, and Resilience
+summary: Shared request validation, HTTP error mapping, and capability-specific retry and duplicate-request behavior.
+owners:
+  - contributor-team
+badges:
+  - content: Cross-cutting Concept
+    backgroundColor: purple
+    textColor: purple
+---
+
+BookWorm validates input before executing business handlers and returns structured errors at HTTP boundaries. Resilience mechanisms are selected by interaction: a retry suitable for a transient outbound call must not be interpreted as proof that an asynchronous business operation completed.
+
+## Request validation and error mapping
+
+The shared CQRS validation behavior runs applicable FluentValidation validators before a message handler. A failed validation raises a `ValidationException`, the HTTP exception handler groups failures by field and returns a validation-problem response. The global handler maps common argument errors to `400`, state conflicts to `409`, and unexpected errors to a generic `500` response that includes a trace identifier. Internal exception details are logged rather than included in that generic response.
+
+The following class view shows the shared request path. It describes the mechanism, each service must register the handlers and validators it needs.
+
+<MermaidFileLoader file="mermaids/validation-and-error-handling.mmd" />
+
+The exception handlers are shared building blocks, but the service must register them in its dependency-injection setup and use the ASP.NET Core exception pipeline. Do not assume every service maps every domain exception identically.
+
+## Retries, durable work, and idempotency
+
+- Service hosts use the shared Aspire defaults for outbound `HttpClient` resilience. The specific retry and timeout behavior should be checked in the configured standard handler and any service-level overrides, this section does not claim a system-wide retry budget.
+- [[service|notification-api]] defines a mail-specific resilience pipeline with a circuit breaker, exponential backoff and jitter, and a 30-second timeout. Its outbox records the email before sending and marks it sent after the send call. An outbox and retry policy preserve work and make failures manageable, they do not prove that an external mail provider delivered exactly once.
+- [[service|order-api]]'s idempotency filter requires a request identifier for applicable `POST` and `PATCH` operations, stores the method/path/identifier key in Redis for one hour, and returns a conflict for a key it has already seen. The current existence check and write are separate operations, and the key is written before the handler runs. Treat this as a duplicate-request guard, not an atomic or exactly-once transaction.
+- [[service|order-orchestration]] uses a persisted saga to coordinate checkout and Basket cleanup. Its timeout may reissue a command, so repeated effects are possible, the Order's status remains owned by Ordering. The [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] explains the concrete timeout and failure path.
+
+Choose retries according to operation semantics. Reads and idempotent state transitions may be retryable under defined conditions, a repeated command or external side effect must be checked against the owning state and its deduplication behavior. Never infer business completion from a timeout, retry, transport acknowledgement, or notification request alone.

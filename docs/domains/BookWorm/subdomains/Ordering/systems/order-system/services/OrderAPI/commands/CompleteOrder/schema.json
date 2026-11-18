@@ -1,0 +1,17 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CompleteOrderRequest",
+	"description": "Path and header parameters for completing an Order. The operation has no request body.",
+	"type": "object",
+	"required": ["orderId", "x-request-id"],
+	"properties": {
+		"orderId": {
+			"type": "string",
+			"description": "Unique identifier of the Order to complete."
+		},
+		"x-request-id": {
+			"type": "string",
+			"description": "Idempotency key for the completion request."
+		}
+	}
+}

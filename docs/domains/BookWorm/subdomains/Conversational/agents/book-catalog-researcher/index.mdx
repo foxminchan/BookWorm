@@ -1,0 +1,75 @@
+---
+id: book-catalog-researcher
+name: Book Catalog Researcher
+version: 1.0.0
+summary: Finds catalog-backed book, author, category, and detail information for the Book Agent to use in customer responses.
+owners:
+  - contributor-team
+repository:
+  language: C#
+  url: https://github.com/foxminchan/BookWorm
+sends:
+  - id: AnalyzeText
+    version: 1.0.0
+  - id: AnonymizeText
+    version: 1.0.0
+tools:
+  - name: search_catalog
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Searches the book catalog by description or keyword.
+  - name: get_book
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Retrieves full catalog details for a known book ID.
+  - name: list_categories
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Lists available book categories.
+  - name: list_authors
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Lists authors available in the catalog.
+badges:
+  - content: Delegated Subagent
+    backgroundColor: teal
+    textColor: teal
+model:
+  provider: Microsoft
+  name: model-router
+  version: "2025-11-18"
+---
+
+The Book Catalog Researcher is an internal subagent initialized by the
+[[agent|book-agent]] and exposed as a delegated tool. It researches catalog
+facts about books, authors, categories, and details, then returns concise
+findings with book IDs for Book Agent to use in its response.
+
+It uses catalog tool results as its only source for factual claims and does
+not invent book details, availability, ratings, or prices. Its model provider
+is inherited from the shared chat client; the agent definition does not specify
+a provider or model.
+
+## Privacy middleware
+
+`InitSubAgent` receives the [[agent|book-agent]]'s chat client, already wrapped
+with `UsePIIMiddleware(sp)`; this subagent does not register a separate PII
+middleware. Its input and output text therefore passes through
+[[service|PresidioAPI]] via [[command|AnalyzeText]] and, when PII is detected,
+[[command|AnonymizeText]]. These are middleware HTTP calls, not model-selected
+tools or brokered messages.
+
+## Tools
+
+<AgentTools />
+
+## Architecture
+
+<NodeGraph />
+
+## Runtime settings
+
+- Temperature: 0.2
+- Maximum output: 1,200 tokens
+- Reasoning effort: medium
+- Multiple tool calls: enabled

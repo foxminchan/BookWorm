@@ -1,0 +1,137 @@
+---
+id: notification-delivery
+name: Notification delivery
+version: 1.0.0
+summary: >-
+  Finance emits a notification command and the Notification System renders the
+  MJML email template and submits it through SMTP with MailKit resilience
+  without owning the business state behind the message.
+owners:
+  - contributor-team
+badges:
+  - content: Platform Capability
+    backgroundColor: blue
+    textColor: blue
+steps:
+  - id: finance
+    title: Finance emits a notification request
+    actor:
+      name: Finance workflow
+    next_step:
+      id: place-order
+      label: Publish the order notification command
+  - id: place-order
+    title: PlaceOrderCommand reaches Notification
+    message:
+      id: PlaceOrderCommand
+      version: 1.0.0
+    next_step:
+      id: notification-api
+      label: Render and submit the email request
+  - id: notification-api
+    title: Notification API renders and submits the email
+    summary: >-
+      The service validates the recipient, renders the Orders/OrderEmail MJML
+      template, and submits the MIME message over SMTP via MailKit.
+    service:
+      id: notification-api
+      version: 1.0.0
+    next_step:
+      id: smtp-provider
+      label: Submit the message through SMTP
+  - id: smtp-provider
+    title: SMTP provider accepts or rejects the message
+    summary: >-
+      Delivery success completes the handler; failures trigger the MailKit
+      resilience pipeline and Wolverine retries before dead-lettering.
+    externalSystem:
+      name: SMTP provider
+      summary: Mail delivery provider used by BookWorm Notification.
+    next_steps:
+      - id: notification-sent
+        label: Submission succeeded
+      - id: notification-failed
+        label: Submission failed after retries
+  - id: notification-sent
+    title: Notification completes SMTP submission
+    custom:
+      title: Email submitted
+      type: Outcome
+      icon: CheckCircleIcon
+      color: green
+  - id: notification-failed
+    title: Message routed to dead-letter queue
+    custom:
+      title: Dead-lettered notification
+      type: Outcome
+      icon: ExclamationTriangleIcon
+      color: red
+---
+
+## Purpose and scope
+
+This flow documents the operational platform boundary for BookWorm's email
+notifications. Finance and the domains that initiate business actions provide the
+intent and content; the Notification System owns the durable outbox, delivery
+attempt, and maintenance policy.
+
+Scheduler is the trigger mechanism, not the owner of notification business
+state. The important outcome is that delivery state remains explicit and
+observable without confusing email submission with order or purchase success.
+
+## Business context
+
+BookWorm treats notifications as a platform capability rather than a business
+state domain. The business systems say what should be sent, while the
+Notification System owns the durable mechanics of rendering, retrying, and
+cleaning up those sends. This makes the platform reliable without causing a
+notification failure to mutate the source of truth for the original order,
+feedback, or workflow event.
+
+The result is an operational model that remains observable: the system records
+what was requested, whether it was accepted by the SMTP provider, and whether a
+later resend or cleanup cycle is still needed. That explicit state is crucial for
+reliability, because email delivery is naturally uncertain even when upstream
+business events already succeeded.
+
+## Participants and responsibilities
+
+| Participant                         | Responsibility                                                                                       |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Finance workflow                    | Issues the business intent to send an email for an order or status update.                           |
+| [[service\|notification-api]]       | Persists the outgoing message in the outbox, validates the request, and tries SMTP delivery.         |
+| [[database\|notification-database]] | Stores durable email state and the retry/cleanup lifecycle of pending and sent items.                |
+| SMTP provider                       | Accepts or rejects the actual email submission attempt.                                              |
+| [[service\|sheduler-dashboard]]     | Triggers resend and cleanup jobs to maintain the notification outbox without owning business intent. |
+
+## Reliability model
+
+This flow uses the outbox pattern to separate business intent from delivery
+execution. The Notification API writes a durable record before SMTP is called,
+meaning the notification request can survive restarts and service retries. The
+outbox item remains marked as pending while delivery is in progress or has not
+yet succeeded.
+
+When the SMTP provider accepts the email, the system records that the send was
+attempted successfully. When it rejects or defers the email, the item remains in
+pending state so Scheduler can re-run the send under bounded retry rules. Sent
+records are later eligible for cleanup, which prevents the outbox from growing
+without bound.
+
+## Operational safety rules
+
+- The source business workflow owns the message's meaning and intent.
+- The Notification System owns the operational mechanics of delivery.
+- Delivery success is not the same as business success; a message may be
+  accepted by the provider while the underlying order or event remains unchanged.
+- Retrying or cleaning up notification records never rewrites the original
+  business outcome associated with the message.
+
+## Why this flow matters
+
+This is the platform layer that keeps BookWorm's downstream communication
+reliable without contaminating the transactional domains with message-delivery
+state. It turns a potentially fragile external dependency into a controllable,
+observable system with explicit retry and cleanup behavior.
+
+<NodeGraph />

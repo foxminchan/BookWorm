@@ -1,0 +1,30 @@
+---
+title: Crosscutting Concepts
+summary: Shared security, integration, resilience, observability, AI governance, and verification practices across BookWorm.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This section describes practices and mechanisms that span the [[domain|BookWorm]] services and business capabilities. It focuses on concepts that influence multiple building blocks rather than repeating service-specific behavior.
+
+## Chapter contents
+
+- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] explains identity boundaries, authorization, sensitive-data handling, and where protections are currently applied.
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] describes owned contracts, event envelopes, durable message handling, and compatibility checks.
+- [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] covers validation, consistent HTTP errors, retries, timeouts, idempotency, and their limits.
+- [[doc|arc42/08-crosscutting-concepts/004-observability]] describes shared logs, traces, metrics, health checks, and operational signals.
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] documents the controls applied to the [[domain|conversational]] and [[agent|rating-agent]] workflows.
+- [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] explains how tests and compatibility checks protect service behavior and boundaries.
+
+## Shared principles
+
+- **Keep ownership local.** A cross-cutting mechanism supports a capability, it does not transfer ownership of that capability's business data or decisions. See the [[doc|arc42/05-building-block-view]].
+- **Treat asynchronous outcomes explicitly.** Publishing a message, receiving an acknowledgement, or retrying work does not by itself prove a business operation completed. See the [[doc|arc42/06-runtime-view]].
+- **Distinguish common defaults from universal guarantees.** Some safeguards are registered through shared building blocks, while others are currently wired only into specific services. Each concept page identifies that scope.
+- **Do not infer unstated service levels.** The repository does not establish system-wide latency, availability, recovery, or retention targets. See the [[doc|arc42/01-introduction-and-goals/003-quality-goals]].
+
+These pages describe the current implementation where it is evidenced in the BookWorm source checkout. They also call out important limits so that a configured mechanism is not mistaken for an end-to-end guarantee.

@@ -1,0 +1,35 @@
+---
+id: qrtz-paused-trigger-grps
+name: Quartz Paused Trigger Groups
+version: 1.0.0
+identifier: trigger_group
+aggregateRoot: false
+summary: Pause state and audit metadata for Quartz trigger groups.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: trigger_group
+    type: text
+    required: true
+  - name: pause_reason
+    type: varchar(250)
+    required: false
+  - name: paused_by
+    type: varchar(200)
+    required: false
+  - name: paused_at
+    type: bigint
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name` and `trigger_group`.
+- The record applies to all [[entity|qrtz-triggers]] in the named group.

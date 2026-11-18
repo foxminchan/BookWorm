@@ -1,0 +1,151 @@
+---
+id: platform
+name: Platform
+summary: |
+  Provides cross-cutting capabilities for scheduled processing and durable
+  email notification delivery across BookWorm.
+version: 1.0.0
+owners:
+  - platform-team
+systems:
+  - id: scheduler-system
+    version: 1.0.0
+  - id: notification-system
+    version: 1.0.0
+  - id: sendgrid
+    version: 1.0.0
+badges:
+  - content: Generic Domain
+    backgroundColor: purple
+    textColor: purple
+    icon: LayersIcon
+  - content: Cross-Cutting Capability
+    backgroundColor: gray
+    textColor: gray
+    icon: ArrowsRightLeftIcon
+---
+
+## Business purpose
+
+Platform supplies the cross-cutting capabilities that other BookWorm
+subdomains use without owning their business rules. It schedules recurring
+background work and delivers email notifications through a configured SMTP
+provider.
+
+Platform is a **Generic Domain**: it enables the Core and Supporting domains,
+but it does not own [[entity|book]]s, [[entity|basket]]s, orders, payments, or
+customer [[entity|feedback]].
+Consumers ask Platform to perform infrastructure work through explicit
+contracts rather than sharing its internal storage or job implementation.
+
+### Business outcomes
+
+- Recurring maintenance and integration work runs on a predictable schedule.
+- Email requests are persisted before delivery so transient provider failures
+  can be retried.
+- Delivery attempts remain observable to operators without changing the
+  business state owned by [[domain|ordering]], [[domain|shopping]],
+  [[domain|catalog]], or [[domain|reviews]].
+
+## Capability map
+
+| Capability           | Responsibility                                                  | Strategic importance |
+| -------------------- | --------------------------------------------------------------- | -------------------- |
+| Scheduled processing | Trigger recurring jobs and background workflows                 | Enabling             |
+| Email notification   | Persist email requests and submit them through SMTP             | Enabling             |
+| Delivery integration | Use a configured external SMTP provider                         | Commodity            |
+| Retry and cleanup    | Retry unsent records and delete sent records in bounded batches | Enabling             |
+| Operational liveness | Run heartbeat and health-oriented jobs                          | Enabling             |
+
+## Owned systems
+
+### Scheduler System
+
+[[system|scheduler-system]] orchestrates recurring work. It publishes
+[[event|ProcessVectorBatchIntegrationEvent]] for [[domain|catalog]] every five
+minutes (UTC) over Kafka. A job trigger starts work; the target system remains
+responsible for validating and processing that work.
+
+The Scheduler is therefore a coordination capability, not the owner of the
+data processed by each job. Job execution must be idempotent or protected by
+the target system's concurrency controls so a retry does not create duplicate
+business effects.
+
+### Notification System
+
+[[system|notification-system]] owns the email notification workflow. It
+consumes order commands, renders email content, and submits messages over SMTP
+with a resilience pipeline.
+
+The Notification System owns rendering and delivery resilience, but it does not
+own the business meaning of the email. Calling domains provide the recipient,
+subject, and body needed to communicate their own business outcomes. The
+current implementation submits through MailKit over SMTP; it does not call
+SendGrid's HTTP Mail Send API.
+
+### SendGrid boundary
+
+[[system|sendgrid]] documents an external email-provider boundary, not a
+BookWorm system of record. The current Notification integration uses a
+configured SMTP provider, so SendGrid's HTTP API is not the active submission
+path. Provider availability, rate limits, and response errors remain
+integration conditions to account for in delivery operations.
+
+## Interaction surface
+
+| Relationship                                                  | Direction | Integration intent                         |
+| ------------------------------------------------------------- | --------- | ------------------------------------------ |
+| Finance → Notification                                        | Inbound   | Send order commands that may create emails |
+| [[system\|scheduler-system]] → [[service\|catalog-ingestion]] | Outbound  | Trigger scheduled vector-index maintenance |
+| Notification → SMTP provider                                  | Outbound  | Submit an email for external delivery      |
+| Notification → BookWorm domains                               | None      | No application-level result event is sent  |
+
+Platform should be integrated through versioned commands, events, or service
+contracts. It must not reach into another domain's database or infer business
+state from email delivery state.
+
+## Processing lifecycle
+
+1. Finance publishes an order command; Notification skips blank email
+   addresses and renders an email for valid requests.
+2. Notification submits the rendered email through SMTP with MailKit resilience.
+3. Scheduler publishes `ProcessVectorBatchIntegrationEvent` every five minutes
+   to trigger Catalog vector index maintenance over Kafka.
+4. Operators correlate Scheduler execution history with provider health and
+   dead-letter queues to identify stalled processing or delivery failures.
+
+## Business invariants
+
+- SMTP acceptance is not proof that an email reached its recipient.
+- Repeated commands can produce duplicate email submissions.
+- Scheduler completion is not proof that downstream work completed.
+- Platform delivery outcomes must not mutate Order, Basket, Book, or Feedback
+  ownership.
+
+## Operational concerns
+
+| Concern         | High-level expectation                                                              |
+| --------------- | ----------------------------------------------------------------------------------- |
+| Reliability     | Outbox records preserve pending requests; retries may produce duplicate submissions |
+| Observability   | Job execution, delivery state, and provider responses are traceable                 |
+| Security        | Scheduler calls are authenticated; notification data and credentials are restricted |
+| Resilience      | Provider outages do not discard pending notification requests                       |
+| Consistency     | Delivery status is explicit and is not treated as business completion               |
+| Maintainability | New scheduled jobs reuse the Scheduler boundary without moving domain ownership     |
+
+## Platform context
+
+The context view keeps [[system|scheduler-system]] and
+[[system|notification-system]] inside Platform. Finance supplies order commands,
+while [[system|product-catalog-system]] owns the ingestion work invoked by
+Scheduler. The configured SMTP provider is an external delivery boundary, not
+an owned Platform system; [[system|sendgrid]] represents one possible provider.
+
+<LikeC4View viewId="platformContext" project="platform" />
+
+## Architecture Graph
+
+The graph below shows Platform's scheduler and notification capabilities and the
+external email delivery boundary.
+
+<NodeGraph mode="full" search="false" legend="false" />

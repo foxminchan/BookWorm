@@ -1,0 +1,40 @@
+---
+id: DeleteBasket
+name: Delete basket
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Deletes the current basket.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: DELETE
+  path: /api/v1/baskets
+  statusCodes: ["204", "404"]
+sidebar:
+  badge: "DELETE"
+---
+
+## Overview
+
+Deletes a [[entity|basket]]. This command has no documented parameters or request body.
+
+<NodeGraph />
+
+## Request and response
+
+Send the `DELETE` request without a request body. `204` confirms deletion and
+does not include a response payload. `404` returns
+`application/problem+json` with `ProblemDetails`.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="Empty request body contract"
+	maxHeight="500"
+	search="true"
+/>

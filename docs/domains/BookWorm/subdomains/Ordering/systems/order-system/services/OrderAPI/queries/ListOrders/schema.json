@@ -1,0 +1,27 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "OrderDtoArray",
+	"description": "Order list response documented by the Ordering API OpenAPI contract.",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": ["id", "date", "total", "status"],
+		"properties": {
+			"id": {
+				"type": "string",
+				"format": "uuid"
+			},
+			"date": {
+				"type": "string",
+				"format": "date-time"
+			},
+			"total": {
+				"type": "number"
+			},
+			"status": {
+				"type": "string",
+				"enum": ["New", "Cancelled", "Completed"]
+			}
+		}
+	}
+}

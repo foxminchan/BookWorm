@@ -1,0 +1,35 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Getting Started",
+			"icon": "Rocket",
+			"pages": ["[[doc|guides/getting-started]]"]
+		},
+		{
+			"title": "Business capabilities",
+			"icon": "BriefcaseBusiness",
+			"pages": ["[[doc|guides/business-capabilities]]"]
+		},
+		{
+			"title": "Domain principles",
+			"icon": "ShieldCheck",
+			"pages": ["[[doc|guides/domain-principles-and-boundaries]]"]
+		},
+		"$architecture",
+		"$diagrams",
+		"$subdomains",
+		"$systems",
+		"$services",
+		"$flows",
+		"$entities",
+		"$domain-events",
+		"$external-events",
+		"$resource-groups",
+		"$external-integrations",
+		"$data-products",
+		"$api-and-contracts",
+		"$decision-records",
+		"$owners"
+	]
+}

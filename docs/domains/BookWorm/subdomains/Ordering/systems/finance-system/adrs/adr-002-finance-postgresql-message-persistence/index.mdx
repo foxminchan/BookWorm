@@ -1,0 +1,99 @@
+---
+id: adr-002-finance-postgresql-message-persistence
+name: "ADR-002: Persist saga state and messages in Finance PostgreSQL"
+version: 1.0.0
+summary: Finance combines EF Core saga storage with Wolverine PostgreSQL envelope persistence and transaction integration in its own database.
+status: superseded
+date: 2026-11-03
+owners:
+  - contributor-team
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+appliesTo:
+  - type: system
+    id: finance-system
+  - type: service
+    id: order-orchestration
+---
+
+## Context
+
+A message handler can change saga state and emit follow-up commands. Persisting
+those operations independently would introduce failure windows between saving
+coordination progress and recording outbound work. Finance also needs its own
+storage boundary rather than direct access to Ordering or Basket persistence.
+The database must support recovery of Finance's workflow without being mistaken
+for a shared domain database or a transaction coordinator for remote systems.
+
+This retrospective ADR records the current implementation, not a new database
+deployment or an assertion about historical approval.
+
+## Decision
+
+Use [[container|finance-database]] for EF Core saga storage and Wolverine durable
+message envelopes. When the Finance connection string is available, configure
+`PersistMessagesWithPostgresql` with the `wolverine` schema and enable
+`UseEntityFrameworkCoreTransactions`.
+
+Map saga records through `FinanceDbContext` and `OrderSagaConfiguration`. Use
+the PostgreSQL `xmin` row-version token for optimistic concurrency and
+`numeric(18,2)` for the saga total. The AppHost provides the separate
+`financedb` database resource.
+
+Prefer the existing EF Core and Wolverine transaction integration over custom
+dual-write code or a shared domain database.
+
+This persistence boundary covers Finance's local saga and Wolverine-managed
+message envelopes. It does not create an atomic transaction with Kafka
+consumers or with Basket, Ordering, Notification, or SMTP. The configured
+transaction integration is conditional on the Finance connection string and
+must remain aligned with the actual EF Core and Wolverine persistence
+configuration.
+
+## Consequences
+
+- Saga changes and durable message processing can participate in the
+  configured local database transaction integration.
+- Operators must manage database migrations, message persistence, and
+  concurrency failures as part of Finance availability.
+- This is not a distributed transaction across Kafka, Basket, Ordering, or
+  SMTP, and it does not provide exactly-once downstream side effects.
+- Recipient details and message payloads require confidential-data handling.
+  No retention duration or residency policy is inferred from this choice.
+- Historical inbox/outbox migrations are not a substitute for inspecting the
+  current Wolverine-managed storage and EF Core model.
+- The Finance database is a runtime dependency for handling and recovering
+  messages; database unavailability can pause saga progress.
+- Optimistic concurrency detects conflicting saga writes but requires
+  handlers and operational recovery to account for concurrency failures.
+- Schema evolution must keep saga mappings and Wolverine envelope storage
+  compatible with deployed message-processing code.
+
+## Alternatives considered
+
+### Persist saga state without durable message envelopes
+
+This would retain workflow state but leave outbound and incoming message
+processing exposed to additional failure windows. The chosen configuration
+uses the local PostgreSQL persistence integration for both kinds of Finance
+state.
+
+### Use custom dual-write logic
+
+Writing saga state and outbound message records with separate custom steps
+would require bespoke handling for partial failure and recovery. The existing
+EF Core and Wolverine integration is preferred to that custom coordination.
+
+### Share Ordering or Basket persistence
+
+Sharing a domain database would couple Finance to another system's schema and
+blur data ownership. A dedicated Finance database keeps its coordination
+state separate.
+
+### Treat PostgreSQL as a distributed transaction boundary
+
+PostgreSQL transactions cannot atomically commit remote Kafka consumption,
+other services' side effects, or SMTP delivery. Those interactions still
+require asynchronous processing and recovery behavior.

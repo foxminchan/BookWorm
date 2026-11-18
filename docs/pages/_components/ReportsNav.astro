@@ -1,0 +1,36 @@
+---
+import { REPORT_SUITES } from "../_data/reports";
+
+const currentPath = Astro.url.pathname.replace(/\/$/, "");
+const links = [
+	{ href: "/custom/reports", label: "Overview" },
+	...REPORT_SUITES.map((suite) => ({
+		href: `/custom/reports/${suite.id}`,
+		label: suite.name,
+	})),
+	{ href: "/custom/reports/tunit", label: "TUnit HTML (Backend)" },
+];
+---
+
+<nav
+	aria-label="Test Reports Navigation"
+	class="flex flex-wrap items-center gap-2 border-b border-[rgb(var(--ec-page-border))] pb-3"
+>
+	{
+		links.map(({ href, label }) => {
+			const isActive = currentPath === href;
+			return (
+				<a
+					href={href}
+					class={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+						isActive
+							? "border border-[rgb(var(--ec-accent)/0.4)] bg-[rgb(var(--ec-accent-subtle))] text-[rgb(var(--ec-accent))]"
+							: "text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-accent-subtle))] hover:text-[rgb(var(--ec-page-text))]"
+					}`}
+				>
+					{label}
+				</a>
+			);
+		})
+	}
+</nav>

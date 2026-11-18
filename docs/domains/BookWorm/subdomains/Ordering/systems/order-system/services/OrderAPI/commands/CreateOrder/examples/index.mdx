@@ -1,0 +1,53 @@
+---
+summary: Create an Order from the authenticated Buyer's current basket.
+---
+
+## 1. Create an Order
+
+Send the required idempotency key. Order API reads the basket and book data
+from the connected services; the request has no body.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request POST "$BASE_URL/api/v1/orders" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "x-request-id: checkout-2026-001"
+```
+
+</CodeGroup>
+
+The same request from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts create-order.ts
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const response = await fetch(`${baseUrl}/api/v1/orders`, {
+	method: "POST",
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		"x-request-id": "checkout-2026-001",
+	},
+});
+
+if (!response.ok) {
+	throw new Error(`CreateOrder failed with ${response.status}`);
+}
+
+const orderId = (await response.json()) as string;
+console.log(`Created order ${orderId}`);
+```
+
+</CodeGroup>
+
+`201 Created` returns the new Order UUID:
+
+<CodeGroup dropdown>
+
+```json
+"44444444-4444-4444-4444-444444444444"
+```
+
+</CodeGroup>

@@ -1,0 +1,69 @@
+---
+id: adr-004-protect-credentials-and-auth-telemetry
+name: "ADR-004: Protect identity credentials and authentication telemetry"
+version: 1.0.0
+summary: Identity credentials and provider configuration remain secret, while authentication telemetry excludes token contents and unnecessary personal data.
+status: accepted
+date: 2026-11-02
+owners:
+  - contributor-team
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+appliesTo:
+  - type: system
+    id: identity-provider
+  - type: service
+    id: oauthapi
+---
+
+## Context
+
+Access tokens, refresh credentials, client secrets, provider configuration,
+and signing keys can grant access to protected operations. Authentication
+telemetry is needed to operate the integration but can expose credentials or
+unnecessary personal data if it records request contents indiscriminately.
+Credentials committed to source control or copied into logs are difficult to
+contain and can turn a routine diagnostic or repository exposure into an
+account compromise. At the same time, operators need enough signal to
+investigate authentication failures and provider availability.
+
+## Decision
+
+Keep tokens, credentials, provider configuration, and signing keys out of
+source control and application logs. Monitor authentication failures,
+token-validation failures, and provider availability using outcome and
+operational data rather than token contents or unnecessary personal data.
+Rotate provider credentials and signing keys according to the provider's
+operational policy, and use a controlled rollover path so consumers can
+validate tokens during key changes without weakening their validation rules.
+
+Operational telemetry should record only the information needed to understand
+authentication outcomes and provider health, such as failure categories and
+availability signals. Access to that telemetry and any retained identity
+metadata should follow least-privilege and data-minimization principles;
+diagnostic convenience is not a reason to capture raw authorization headers,
+token payloads, or secrets.
+
+## Alternatives considered
+
+- **Log complete authentication requests or tokens for debugging.** This
+  would create additional copies of reusable credentials and personal data,
+  expanding the impact of log access or retention failures.
+- **Use long-lived credentials without a rotation path.** This simplifies
+  routine configuration but increases exposure if a credential is disclosed
+  and can leave consumers unprepared for signing-key changes.
+
+## Consequences
+
+Operational monitoring can identify authentication failures and availability
+issues without creating another store of sensitive identity data. Operators
+must manage secret storage and rotation separately from ordinary application
+configuration, and consumers must be prepared for planned credential and
+signing-key changes. Rotation must account for consumers that validate tokens,
+so changes are coordinated and verified without accepting tokens under
+weakened validation rules. Restricting diagnostic detail can make some
+investigations less convenient, so telemetry should retain useful failure
+categories and availability signals without capturing secret values or
+unnecessary personal data.

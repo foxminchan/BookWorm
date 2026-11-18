@@ -1,0 +1,135 @@
+---
+id: sheduler-dashboard
+name: Scheduler Dashboard
+version: 1.0.0
+summary: |
+  Operator-facing Quartz dashboard and HTTP management surface for inspecting
+  Scheduler System jobs, triggers, executions, and runtime health.
+styles:
+  icon: /icons/languages/dotnet.svg
+owners:
+  - contributor-team
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: Operations
+    backgroundColor: yellow
+    textColor: yellow
+sends:
+  - id: ProcessVectorBatchIntegrationEvent
+    version: 1.0.0
+    group: Catalog Maintenance
+    to:
+      - id: scheduler.process-vector-batch
+        version: 1.0.0
+readsFrom:
+  - id: sheduler-database
+    version: 1.0.0
+writesTo:
+  - id: sheduler-database
+    version: 1.0.0
+specifications:
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Scheduler Dashboard is the operator surface of the [[system|scheduler-system]].
+It is hosted by the Scheduler service and exposes the Quartz dashboard together
+with the Quartz HTTP API. The surface is intended for operational inspection
+and controlled schedule management; it does not own Catalog, Notification, or
+email business state.
+
+The dashboard reads Quartz's operational state, including job definitions,
+trigger schedules, fired triggers, scheduler-instance check-ins, execution
+history, and misfire information. These records explain what the scheduler
+attempted and whether the invocation completed. They do not prove that a
+downstream business operation succeeded.
+
+## Operator capabilities
+
+| Capability          | Operational use                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Job inspection      | Review the registered job type, group, durability, and description.                                                            |
+| Trigger inspection  | Check cron expressions, time zone, next fire time, and misfire policy.                                                         |
+| Runtime monitoring  | Inspect active firings, scheduler check-ins, execution duration, and failures.                                                 |
+| Schedule management | Use the Quartz management surface to pause, resume, or otherwise control eligible schedules according to operator permissions. |
+| Failure diagnosis   | Correlate a failed or delayed firing with its job, trigger, fire instance, and execution history.                              |
+
+## Scheduled jobs
+
+The current schedule is loaded from `jobs.json` and is refreshed by Quartz
+periodically. All jobs use the `Scheduler` group and are durable.
+
+| Job                     | Cadence               | Responsibility                                                           | Downstream ownership                                                  |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `ProcessVectorBatchJob` | Every 5 minutes, UTC  | Publishes `ProcessVectorBatchIntegrationEvent` to trigger vector updates | [[service\|catalog-ingestion]] owns queue processing and index state. |
+| `HeartbeatJob`          | Every 30 seconds, UTC | Emits a scheduler liveness signal to logs and telemetry.                 | Operators and platform observability consume the signal.              |
+
+Each cron trigger uses `FireOnceNow` for misfires. A missed trigger is therefore
+made eligible for one immediate execution rather than being silently replayed
+for every missed interval. The dashboard should be used to verify the resulting
+firing and its completion status.
+
+## Messaging contract
+
+The dashboard shares the Scheduler host process with the Quartz jobs and
+Wolverine bus. Its `sends` relationships document that host's publications,
+not messages emitted by the dashboard UI.
+
+- `ProcessVectorBatchJob` publishes [[event|ProcessVectorBatchIntegrationEvent]]
+  to [[channel|scheduler.process-vector-batch]]. The event inherits only `id`
+  and `creationDate` from `IntegrationEvent` and triggers one bounded Azure
+  Functions batch in [[service|catalog-ingestion]].
+- `HeartbeatJob` only logs liveness and does not publish a Kafka message.
+
+The attached AsyncAPI specification covers the Kafka publication for
+`ProcessVectorBatchIntegrationEvent`.
+
+## Execution and failure semantics
+
+Jobs that publish integration work report failures back to Quartz as failed
+executions. The dashboard can therefore distinguish a completed scheduler
+invocation from a failed invocation.
+
+The vector batch job disallows concurrent executions. This prevents overlapping
+scheduler attempts, while downstream idempotency is enforced by
+[[service|catalog-ingestion]] using a PostgreSQL advisory lock.
+replace target-side concurrency controls. For example, Catalog Ingestion also
+uses its own lock and durable pending-update revisions. A successful
+`ProcessVectorBatchJob` execution means that the ingestion endpoint was called;
+operators must check Catalog's pending queue and index health to confirm that
+the backlog was processed.
+
+Timeouts and process interruptions can leave the caller uncertain about the
+downstream result. Operators should avoid treating a retry or repeated firing
+as evidence of duplicate business work: downstream services are responsible
+for idempotency and durable work preservation.
+
+## Operational checks
+
+When investigating a scheduled-work issue:
+
+1. Check the scheduler instance check-in and whether the expected trigger is
+   paused, blocked, or misfired.
+2. Inspect the fired-trigger and execution-history records for the job and
+   trigger, including duration and failure details.
+3. Confirm the next fire time and the trigger's UTC schedule.
+4. Check the downstream system's own queue, outbox, or processing metrics.
+5. Correlate the scheduler fire instance with sanitized application logs and
+   traces; never use the dashboard as a substitute for downstream business
+   state.
+
+The dashboard and HTTP API must be protected as an administrative surface.
+Credentials, authorization headers, notification contents, and personal data
+must not be placed in Quartz job metadata or copied into routine logs.
+
+## Architecture
+
+<NodeGraph />

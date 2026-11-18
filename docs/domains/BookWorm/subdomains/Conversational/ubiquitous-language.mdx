@@ -1,0 +1,45 @@
+---
+dictionary:
+  - id: Customer Request
+    name: Customer Request
+    summary: A BookWorm-related message being handled by the agents.
+    description: |
+      A request is the interaction being routed or answered. Books, Baskets,
+      and Orders mentioned in it remain owned by their respective contexts.
+    icon: MessageCircle
+  - id: Router Agent
+    name: Router Agent
+    summary: Chooses the next handler for a customer request.
+    description: |
+      The Router Agent selects a specialist based on language, topic, length,
+      or sentiment and does not handle the request directly.
+    icon: Route
+  - id: Book Agent
+    name: Book Agent
+    summary: Helps customers search for books and receive recommendations.
+    description: |
+      The Book Agent uses Catalog capabilities for search, details, categories,
+      authors, and recommendations. Catalog remains the source of book data.
+    icon: Search
+  - id: QA Agent
+    name: QA Agent
+    summary: Answers general questions about bookstore policies and services.
+    description: |
+      The QA Agent handles shipping, returns, account, order, billing, and
+      store-policy questions without changing business records.
+    icon: CircleHelp
+  - id: Sentiment Agent
+    name: Sentiment Agent
+    summary: Classifies the emotional tone of a customer message.
+    description: |
+      The Sentiment Agent classifies text as positive, negative, or neutral.
+      Sentiment is message interpretation, not a customer profile or review.
+    icon: HeartPulse
+  - id: Handoff
+    name: Handoff
+    summary: Transfer of a request between agents.
+    description: |
+      A handoff routes a request to another specialist or back to the Router
+      Agent. It is not a business process such as placing an Order.
+    icon: Forward
+---

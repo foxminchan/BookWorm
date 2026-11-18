@@ -1,0 +1,109 @@
+---
+id: adr-002-durable-outbox-and-bounded-retries
+name: "ADR-002: Use a durable outbox with bounded provider retries"
+version: 1.0.0
+summary: Notification delivery attempts are driven by durable outbox records and a bounded retry policy so provider outages do not lose work or create unbounded duplicate sends.
+status: accepted
+date: 2026-10-27
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: sendgrid
+  - type: system
+    id: notification-system
+  - type: service
+    id: sendgrid-api
+badges:
+  - content: Reliability
+    backgroundColor: green
+    textColor: green
+---
+
+## Context
+
+[[system|sendgrid]] may be unavailable, reject a request, or apply a rate limit after a
+notification has been created. Sending directly from the business operation
+would risk losing notifications when the provider is unavailable, while
+retrying every failure indefinitely could create duplicate messages and hide a
+permanent configuration error. The design must distinguish work durably
+accepted by BookWorm from attempts to submit it externally, and make the
+retry outcome observable without claiming an exactly-once transaction with
+the provider.
+
+## Decision
+
+The [[system|notification-system]] persists each notification as a durable
+[[entity|outbox]] item
+before attempting provider delivery. A delivery worker selects eligible items,
+submits them through the [[service|sendgrid-api]], and records the provider outcome.
+
+Transient failures and rate limits use a bounded, observable retry schedule.
+Invalid requests and other permanent failures are recorded as terminal failures
+and are not retried indefinitely. A successful provider response advances the
+[[entity|outbox]] item exactly once from the Notification System's perspective. Delivery
+attempts must carry a stable notification identifier so retries can be
+correlated and duplicate-send risk can be diagnosed.
+
+This is the intended outbox and retry policy, not a guarantee of exactly-once
+delivery. PostgreSQL and the external email provider do not share an atomic
+transaction. If a provider accepts a message but the response or subsequent
+database update is lost, the item may be eligible for another submission.
+Stable identifiers and recorded outcomes improve correlation but do not by
+themselves prevent duplicate delivery.
+
+## Implementation alignment
+
+The current Notification implementation does not fully realize this ADR's
+bounded-lifetime retry and terminal-failure behavior. Its email outbox has no
+persisted attempt count or terminal-failure classification; hourly resend
+selects unsent rows again, and the resend path can create a new outbox row for
+each attempt. It also uses MailKit over SMTP and does not persist provider
+responses. See [[adr|adr-002-notification-postgresql-email-outbox]] and
+[[adr|adr-003-notification-smtp-provider-boundary]] for the current
+implementation details. These accepted design statements must not be used as
+evidence that the implementation already provides those guarantees.
+
+## Consequences
+
+- Provider outages do not discard accepted notification work.
+- Delivery is eventually consistent and requires monitoring of pending age,
+  retry count, and terminal failures.
+- A retry policy and failure classification must be maintained as part of the
+  integration.
+- The provider may still receive a duplicate if a response is lost after
+  acceptance; downstream handling and support tooling must account for that
+  ambiguity.
+- Notification storage and the delivery worker become operational
+  dependencies of the integration.
+- Bounded retry requires an explicit persisted attempt policy and a defined
+  terminal-failure path; batch size or sender-level retries alone do not
+  establish a lifetime limit.
+- Durable local state does not eliminate the ambiguous-outcome window between
+  external submission and recording the provider result.
+- Before relying on the proposed guarantees operationally, implement and test
+  attempt accounting, failure classification, correlation, and recovery
+  behavior against duplicate, timeout, rate-limit, and provider-outage cases.
+
+## Alternatives considered
+
+### Send without a durable outbox
+
+This would reduce local storage, but a provider outage or process failure
+could lose the notification request after the originating operation
+completed.
+
+### Retry indefinitely
+
+Unbounded retries can amplify provider or configuration failures and obscure
+permanent errors. A bounded policy with an observable terminal state is the
+intended design.
+
+### Claim exactly-once delivery from the local outbox
+
+The database and external provider cannot commit one atomic transaction.
+Retries may still duplicate a message when provider acceptance is ambiguous;
+the architecture records and manages that risk rather than claiming it can be
+eliminated.

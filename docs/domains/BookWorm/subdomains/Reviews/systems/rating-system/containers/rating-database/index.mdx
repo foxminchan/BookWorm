@@ -1,0 +1,84 @@
+---
+id: rating-database
+name: Rating Database
+version: 1.0.0
+summary: Azure Cosmos DB system of record for customer feedback owned by the Rating service.
+owners:
+  - contributor-team
+container_type: database
+badges:
+  - content: Database
+    backgroundColor: blue
+    textColor: blue
+technology: cosmosdb
+authoritative: true
+access_mode: readWrite
+purpose: >-
+  Stores individual feedback records (book ID, reviewer name, comment, and
+  rating) owned by Reviews in the feedbacks container partitioned by /bookId.
+classification: internal
+retention: indefinite
+---
+
+<NodeGraph />
+
+### What is this?
+
+The **Rating Database** is the authoritative **Azure Cosmos DB** store
+(`feedbacks` container, partitioned by `/bookId`) for individual
+[[entity|feedback]] records. The Rating service uses Entity Framework Core's
+Cosmos DB provider (`Microsoft.EntityFrameworkCore.Cosmos`) to persist
+feedback creation and deletion here. The [[agent|rating-agent]] reads reviews
+through the [[query|ListFeedbacks]] query; it does not modify stored feedback.
+
+## Schema
+
+The displayed schema is a snapshot of the current application table. The
+provided `schema.sql` contains the EF Core migration history, including
+inbox/outbox tables that were later removed; those historical objects are not
+part of the current application schema.
+
+<AccordionGroup>
+	<Accordion title="Rating Database schema">
+		<Schema file="schema.sql" lang="sql" title="schema.sql" />
+	</Accordion>
+</AccordionGroup>
+
+## What does it store?
+
+Each [[entity|feedback]] record represents one review of a Catalog
+[[entity|book]] and includes:
+
+- **Identity and relationship** — a UUID `id` (with a database-side UUID v7
+  default) and the referenced `bookId`.
+- **Reviewer** — required `firstName` and `lastName`.
+- **Review content** — an integer `rating` and an optional `comment` of up to
+  1,000 characters.
+- **Lifecycle metadata** — required `createdAt` and optional `lastModifiedAt`.
+
+The database enforces uniqueness for the combination of book, first name, and
+last name. The API validates that ratings are from 0 through 5; the database
+table does not define a rating-range check constraint.
+
+## Access patterns
+
+- The Rating service owns writes for feedback creation and deletion.
+- The [[agent|rating-agent]] reads reviews for a book through the
+  [[query|ListFeedbacks]] query, which returns review IDs, ratings, and
+  comments. The agent's documented access is read-only and limited to 30 calls
+  per minute by its governance policy.
+- [[service|catalog-api]] does not read this database. It consumes the
+  [[event|FeedbackCreatedIntegrationEvent]] and
+  [[event|FeedbackDeletedIntegrationEvent]],
+  which carry `bookId`, `feedbackId`, and `rating`, to update the denormalized
+  `average_rating` and `total_reviews` stored with Catalog books.
+- The agent's analysis is a read-time insight. It does not update feedback or
+  persist its classification in this database.
+
+## Data ownership
+
+Reviews owns the individual feedback records in this database. Catalog owns
+book metadata and its denormalized rating summary; it receives feedback-created
+and feedback-deleted integration events to maintain that summary. Do not treat
+the Catalog summary as the source for individual reviews, or this database as
+the source for Catalog book details.

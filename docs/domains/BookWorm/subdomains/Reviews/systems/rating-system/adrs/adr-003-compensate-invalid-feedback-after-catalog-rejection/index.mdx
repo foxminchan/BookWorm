@@ -1,0 +1,94 @@
+---
+id: adr-003-compensate-invalid-feedback-after-catalog-rejection
+name: "ADR-003: Compensate feedback rejected by Catalog"
+version: 1.0.0
+summary: Rating removes feedback when Catalog reports that a feedback-created event referenced a missing book, and treats repeated compensation signals as idempotent no-ops.
+status: accepted
+date: 2026-10-25
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: rating-system
+  - type: service
+    id: rating-api
+  - type: event
+    id: FeedbackCreatedIntegrationEvent
+  - type: event
+    id: BookUpdatedRatingFailedIntegrationEvent
+  - type: channel
+    id: bookworm.{env}.rating.feedback-create
+  - type: channel
+    id: bookworm.{env}.catalog.book-update-rating-failed
+badges:
+  - content: Reliability
+    backgroundColor: green
+    textColor: green
+---
+
+## Context
+
+[[entity|feedback]] references a Catalog [[entity|book]], but asynchronous processing means a book
+can be absent when Catalog receives the created-feedback event. Leaving the
+feedback in [[domain|reviews]] would retain a record that cannot be represented in
+Catalog's rating projection. Since Rating and Catalog own separate databases
+and communicate asynchronously, creation cannot rely on a cross-domain
+foreign-key check or a distributed transaction to prevent this case.
+
+## Decision
+
+When Catalog cannot find the referenced book, it publishes
+[[event|BookUpdatedRatingFailedIntegrationEvent]]. [[service|rating-api]]
+uses its `feedbackId` to locate and delete the feedback as a compensating
+action. If the feedback is already absent, the consumer completes without
+changing another record.
+
+This compensation applies only to a missing book for a created-feedback event;
+it is not a general-purpose failure protocol for the Rating service.
+It is safe to process repeatedly: the feedback ID identifies the specific
+record to compensate, and an already-absent record is an idempotent no-op.
+
+## Consequences
+
+- Reviews does not retain feedback for an invalid Catalog reference
+  indefinitely.
+- The Catalog boundary remains asynchronous and does not require distributed
+  transactions or shared persistence.
+- The compensation consumer is safe when the failure signal is retried.
+- Operations must distinguish this business compensation from customer- or
+  administrator-initiated feedback deletion.
+- A feedback record can exist temporarily before Catalog validates its book
+  reference; the compensation signal closes that inconsistency after the
+  asynchronous check.
+- Compensation is scoped by `feedbackId`; it must not delete other feedback
+  for the same book or reviewer.
+- Missing feedback is an expected replay-safe outcome, not evidence that an
+  unrelated record should be changed or that Rating should retry indefinitely.
+- The event is specific to Catalog rejecting a created-feedback reference.
+  Other message delivery, validation, or Catalog failures require their own
+  handling and must not be interpreted as this compensation case.
+- Operators should correlate the created-feedback event, Catalog's
+  rating-update-failed event, and the targeted feedback record when
+  diagnosing compensation.
+
+## Alternatives considered
+
+### Share a database or enforce a cross-system foreign key
+
+This would couple Rating persistence to Catalog storage and still cross
+independently owned database boundaries. The event-driven compensation keeps
+each system's data private.
+
+### Keep the invalid feedback and retry the projection forever
+
+If Catalog cannot find the book, repeated projection attempts cannot make the
+missing reference valid. Rating removes the specific feedback record rather
+than retaining unprojectable data indefinitely.
+
+### Delete feedback for any Catalog processing error
+
+Only a missing book is the defined business rejection for this flow. Treating
+every processing failure as rejection could delete valid feedback during a
+transient outage or unrelated consumer failure.

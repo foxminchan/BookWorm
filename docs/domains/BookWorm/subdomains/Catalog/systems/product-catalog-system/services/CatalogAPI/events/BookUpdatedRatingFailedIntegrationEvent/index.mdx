@@ -1,0 +1,33 @@
+---
+id: BookUpdatedRatingFailedIntegrationEvent
+name: Book rating update failed
+version: 1.0.0
+summary: |
+  Indicates that Catalog could not apply a feedback-created event because the
+  referenced book was not found.
+owners:
+  - contributor-team
+schemaPath: schema.json
+badges:
+  - content: Reviews
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Overview
+
+The [[service|catalog-api]] publishes this event when a
+[[event|FeedbackCreatedIntegrationEvent]] references a [[entity|book]] that
+does not exist. The event contains the [[entity|feedback]] identifier so the
+Rating service can
+identify the failed update and apply its retry or reconciliation behavior.
+
+<NodeGraph />
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]
+
+## Schema
+
+<SchemaViewer file="schema.json" title="Book rating update failed schema" maxHeight="500" />

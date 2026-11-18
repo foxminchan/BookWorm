@@ -1,0 +1,70 @@
+---
+id: bookworm.{env}.catalog.book-update-rating-failed
+name: Book Rating Update Failed Channel
+version: 1.0.0
+summary: |
+  Kafka channel used by Catalog to publish failures when a feedback-created
+  event references a book that does not exist.
+owners:
+  - contributor-team
+address: bookworm.{env}.catalog.book-update-rating-failed
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: Environment to use.
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel carries [[service|catalog-api]]'s
+[[event|BookUpdatedRatingFailedIntegrationEvent]] back to
+[[service|rating-api]] when Catalog cannot apply a feedback-created event for
+a missing [[entity|book]]. It provides a compensating signal without exposing
+Catalog persistence to the Rating service.
+
+<ChannelInformation />
+
+## Message contract
+
+| Field        | Type | Required | Description                                       |
+| ------------ | ---- | -------- | ------------------------------------------------- |
+| `feedbackId` | UUID | Yes      | Feedback whose rating update could not be applied |
+
+The payload schema is defined by
+[[event|BookUpdatedRatingFailedIntegrationEvent]]. Messages are serialized as
+camelCase JSON inside the BookWorm CloudEvents-compatible Kafka envelope.
+
+## Producers and consumers
+
+- **Producer:** [[service|catalog-api]], when a
+  [[event|FeedbackCreatedIntegrationEvent]] references a missing book.
+- **Consumer:** [[service|rating-api]], which locates the feedback by `feedbackId` and
+  deletes it when the failure event is received.
+- No failure event is emitted for a deleted feedback whose book is already
+  absent; the delete handler treats that case as a no-op.
+
+## Delivery and operations
+
+- The topic is created as `bookworm.<environment>.catalog.book-update-rating-failed`;
+  `{env}` is replaced with `development`, `staging`, or `production`.
+- Delivery is at least once. The Rating consumer is safe to retry because it
+  checks whether the feedback still exists before deleting it.
+- Kafka message keys use the Wolverine partition key/group ID when available.
+- Trace context is propagated through the `traceparent` Kafka header.
+- Messages that exhaust Wolverine's retry policy are routed to the service's
+  native dead-letter topic.
+
+## Architecture diagram
+
+<NodeGraph />

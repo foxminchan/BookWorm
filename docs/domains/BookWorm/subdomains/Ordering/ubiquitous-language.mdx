@@ -1,0 +1,47 @@
+---
+dictionary:
+  - id: Buyer
+    name: Buyer
+    summary: The named person associated with Orders.
+    description: A Buyer has a name, address, and collection of Orders.
+    icon: User
+  - id: Address
+    name: Address
+    summary: A Buyer's street, city, and province information.
+    description: An Address is the delivery location held by a Buyer.
+    icon: MapPin
+  - id: Order
+    name: Order
+    summary: A purchase record containing one or more Order items.
+    description: |
+      An Order belongs to a Buyer and moves from New to either Completed or
+      Cancelled.
+    icon: ClipboardList
+  - id: Order Item
+    name: Order Item
+    summary: A book identifier, quantity, and price on an Order.
+    description: |
+      An Order item has a positive quantity and non-negative price. Its line
+      total is price multiplied by quantity.
+    icon: ListOrdered
+  - id: Order Total
+    name: Order Total
+    summary: The sum of all Order item line totals.
+    description: The Order total is calculated from the items recorded on the Order.
+    icon: Calculator
+  - id: New
+    name: New
+    summary: The initial status of an Order.
+    description: An Order can transition to Completed or Cancelled from New.
+    icon: CircleDashed
+  - id: Completed
+    name: Completed
+    summary: A terminal status for a successfully completed Order.
+    description: Completed is reached from New when the Order is completed.
+    icon: CircleCheck
+  - id: Cancelled
+    name: Cancelled
+    summary: A terminal status for an Order that will not complete.
+    description: Cancelled is reached from New when the Order is cancelled.
+    icon: CircleX
+---

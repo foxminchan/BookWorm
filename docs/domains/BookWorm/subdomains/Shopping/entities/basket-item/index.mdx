@@ -1,0 +1,36 @@
+---
+id: basket-item
+name: Basket Item
+version: 1.0.0
+identifier: bookId
+aggregateRoot: false
+summary: Requested item quantity within a customer's Basket.
+owners:
+  - contributor-team
+properties:
+  - name: bookId
+    type: UUID
+    required: true
+    description: Identifier of the item requested in the basket.
+    references: book
+    referencesIdentifier: id
+    relationType: references
+  - name: quantity
+    type: int
+    required: true
+    description: Positive number of copies requested for the referenced book.
+---
+
+## Overview
+
+A Basket Item represents one requested [[entity|book]] and its quantity within
+a [[entity|basket]]. It is a child of the Basket aggregate, not an independently
+owned product or an Order line.
+
+[[service|basket-api]] rejects quantities less than or equal to zero.
+[[domain|catalog]] owns the product name, price, and sale price that may enrich
+the basket response, but they are not owned by the Basket Item domain model.
+
+## Entity Properties
+
+<EntityPropertiesTable />

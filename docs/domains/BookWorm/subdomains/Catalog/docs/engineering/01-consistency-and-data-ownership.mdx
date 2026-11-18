@@ -1,0 +1,45 @@
+---
+title: Consistency and data ownership
+summary: What is authoritative, what is derived, and how changes propagate in Catalog.
+version: 1.0.0
+type: engineering
+order: 1
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Source of truth and projections
+
+| Store / data                                    | Role                              | Rebuildable | Consistency              |
+| ----------------------------------------------- | --------------------------------- | ----------- | ------------------------ |
+| [[container\|catalog-database]]                 | System of record                  | No          | Strong                   |
+| [[container\|catalog-cache]]                    | Read optimization                 | Yes         | Short-lived, invalidated |
+| [[container\|catalog-vector]]                   | Derived search index              | Yes         | Eventual (queue-driven)  |
+| [[container\|catalog-blob]]                     | Image bytes                       | No          | Referenced by URN        |
+| Rating summary via [[query\|SummarizeFeedback]] | Projection of [[domain\|reviews]] | Replayable  | Eventual (messages)      |
+
+## Change propagation
+
+1. API validates and commits the change to PostgreSQL.
+2. A domain event invalidates `book:{id}` in the cache.
+3. Database triggers upsert the [[entity|book]] into `pending_vector_updates`, coalescing
+   repeated changes by `book_id` with a new `revision`.
+4. [[service|catalog-ingestion]] processes batches under an advisory lock and
+   acknowledges an item only if its revision is unchanged, so concurrent edits
+   are never lost.
+
+## Rules for contributors
+
+- Add new indexed fields by updating both the searchable text builder and the
+  triggers that enqueue changes.
+- Never read price or availability for a purchase decision from the cache or the
+  vector record.
+- Keep ingestion idempotent: re-processing a book must produce the same index
+  record.
+- Treat cache and vector as disposable in design and in tests.
+
+<Footer />

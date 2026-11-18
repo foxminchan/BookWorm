@@ -1,0 +1,99 @@
+---
+summary: Retrieve Order details by identifier.
+---
+
+## 1. Retrieve an Order
+
+Provide an Order UUID in the path. Customers can retrieve their own Orders;
+administrators can retrieve any Order.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request GET \
+  "$BASE_URL/api/v1/orders/44444444-4444-4444-4444-444444444444" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "Accept: application/json"
+```
+
+</CodeGroup>
+
+The same query from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts get-order.ts
+type OrderDetailDto = {
+	id: string;
+	date: string;
+	total: number;
+	status: "New" | "Cancelled" | "Completed";
+	items: Array<{
+		id: string;
+		quantity: number;
+		price: number;
+		name: string | null;
+	}>;
+};
+
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const orderId = "44444444-4444-4444-4444-444444444444";
+const response = await fetch(`${baseUrl}/api/v1/orders/${orderId}`, {
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		Accept: "application/json",
+	},
+});
+
+if (response.status === 404) {
+	throw new Error("Order was not found or is not accessible");
+}
+if (!response.ok) {
+	throw new Error(`GetOrder failed with ${response.status}`);
+}
+
+const order = (await response.json()) as OrderDetailDto;
+console.log(`${order.status}: ${order.total}`);
+```
+
+</CodeGroup>
+
+`200 OK` returns the Order and its item details:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"id": "44444444-4444-4444-4444-444444444444",
+	"date": "2026-11-03T10:00:00Z",
+	"total": 33.98,
+	"status": "New",
+	"items": [
+		{
+			"id": "55555555-5555-5555-5555-555555555555",
+			"quantity": 2,
+			"price": 16.99,
+			"name": "Example book"
+		}
+	]
+}
+```
+
+</CodeGroup>
+
+## 2. Handle an unavailable Order
+
+An unknown Order or one outside the caller's permitted scope returns
+`404 Not Found`.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "Not Found",
+	"status": 404
+}
+```
+
+</CodeGroup>

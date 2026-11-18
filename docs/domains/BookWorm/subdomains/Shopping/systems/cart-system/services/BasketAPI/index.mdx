@@ -1,0 +1,174 @@
+---
+id: basket-api
+name: Basket API
+version: 1.0.0
+summary: |
+  Internal HTTP and gRPC service for managing shopping baskets and cart items.
+readsFrom:
+  - id: basket-database
+    version: 1.0.0
+writesTo:
+  - id: basket-database
+    version: 1.0.0
+owners:
+  - contributor-team
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: HTTP + gRPC
+    backgroundColor: teal
+    textColor: teal
+receives:
+  - id: CreateBasket
+    version: 1.0.0
+    group: Basket Commands
+  - id: UpdateBasket
+    version: 1.0.0
+    group: Basket Commands
+  - id: DeleteBasket
+    version: 1.0.0
+    group: Basket Commands
+  - id: GetBasket
+    version: 1.0.0
+    group: Basket Queries
+  - id: GetBasketGrpc
+    version: 1.0.0
+    group: Basket Queries
+  - id: PlaceOrderCommand
+    version: 1.0.0
+    from:
+      - id: bookworm.{env}.finance.place-order
+        version: 1.0.0
+sends:
+  - id: GetBookGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: GetBooksGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: BasketDeletedCompleteIntegrationEvent
+    version: 1.0.0
+    group: Basket Cleanup Outcomes
+    to:
+      - id: bookworm.{env}.basket.delete-complete
+  - id: BasketDeletedFailedIntegrationEvent
+    version: 1.0.0
+    group: Basket Cleanup Outcomes
+    to:
+      - id: bookworm.{env}.basket.delete-failed
+styles:
+  icon: /icons/languages/dotnet.svg
+specifications:
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Basket API is the [[system|cart-system]]'s customer-scoped service for managing the active
+[[entity|basket]] during the pre-order journey. It exposes versioned HTTP endpoints for
+the storefront and a gRPC contract for internal service-to-service access.
+
+The service owns basket state and item quantities. It does not own
+[[entity|book]] metadata, accepted orders, payment state, or fulfilment state.
+
+## Responsibilities
+
+| Responsibility     | Description                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------- |
+| Basket lifecycle   | Create, retrieve, replace, and delete the authenticated customer's basket.                   |
+| Item validation    | Require at least one item and reject missing book IDs or quantities less than or equal to 0. |
+| Basket persistence | Store the complete basket under a customer-scoped key in [[container\|basket-database]].     |
+| Product enrichment | Resolve distinct [[entity\|book]] IDs through [[domain\|catalog]] when a basket is read.     |
+| Checkout cleanup   | Report whether a submitted basket was deleted successfully or requires recovery.             |
+
+## HTTP API
+
+All HTTP operations use `/api/v1/baskets`, require authorization, and apply
+the service's per-user rate limit. The customer identity is obtained from the
+authenticated request; callers do not choose another customer's basket ID.
+
+| Operation | Purpose                                    | Success response                    | Failure responses                  |
+| --------- | ------------------------------------------ | ----------------------------------- | ---------------------------------- |
+| `POST`    | Create a basket from an initial item list. | `201 Created` with the customer ID. | `400 Bad Request`                  |
+| `GET`     | Retrieve the current customer's basket.    | `200 OK` with `CustomerBasketDto`.  | `404 Not Found`                    |
+| `PUT`     | Replace the current item collection.       | `204 No Content`.                   | `400 Bad Request`, `404 Not Found` |
+| `DELETE`  | Delete the current customer's basket.      | `204 No Content`.                   | `404 Not Found`                    |
+
+## Basket model and invariants
+
+The service persists a [[entity|basket]] identified by the authenticated
+customer. Each item contains a Catalog book ID and a positive quantity.
+
+- A create or update request must contain at least one item.
+- Every item must have a book ID.
+- Every item quantity must be greater than zero.
+- An update replaces the entire item collection; it does not merge with the
+  previously stored collection.
+- The Redis key is derived from the customer identity as `basket:{customerId}`.
+- Basket state is transient pre-order state and must not be used to reconstruct
+  an accepted order.
+
+## Catalog enrichment
+
+Basket configures a `BookGrpcService` client for Catalog through
+`AddGrpcServiceReference`. During a `GET`, when the basket contains items, the
+service collects distinct book IDs and sends the [[query|GetBooksGrpc]] query
+to Catalog in one gRPC call. When a matching book is available, the response
+includes its current name, regular price, and sale price. These fields are
+presentation data; Catalog remains their source of truth.
+
+If Catalog returns no matching record, the [[entity|basket-item]] remains in the response
+without silently changing the stored basket or inventing product details.
+
+Basket API is the producer of these synchronous Catalog queries, and
+[[service|catalog-api]] is their consumer. The registered client also implements
+[[query|GetBookGrpc]] through `BookService.GetBookByIdAsync`, although no current
+feature calls that single-book helper; basket enrichment uses the batch query.
+These service-to-service calls do not use integration-event channels.
+
+Basket API consumes [[query|GetBasketGrpc]] from [[service|order-api]] during
+Order creation, returning the authenticated customer's basket ID and item
+quantities.
+
+## Checkout cleanup
+
+After checkout, [[service|order-orchestration]] publishes
+[[command|PlaceOrderCommand]] through
+[[channel|bookworm.&#123;env&#125;.finance.place-order]]. Basket consumes the
+command to delete the submitted basket, then publishes the deletion result
+for downstream coordination:
+
+- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] carries the
+  successful cleanup outcome.
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] carries the failure
+  outcome and allows the workflow to trigger recovery or notification.
+
+The completion event contains `OrderId`, `BasketId`, and `TotalMoney`. The
+failure event also carries the customer's email for downstream recovery
+behavior. A deletion failure must not be treated as successful cleanup.
+
+Finance can reissue the command after a timeout. Notification independently
+consumes the same command for the new-order email, so retries can repeat both
+consumers' work.
+
+## Operational guidance
+
+- Scope every operation to the authenticated customer identity.
+- Monitor Redis read, write, and delete failures as basket-journey failures.
+- Keep Catalog enrichment out of the persistence model so product ownership
+  remains with Catalog.
+- Monitor the delete-complete and delete-failed channels independently; both
+  outcomes are part of the checkout contract.
+
+## Architecture diagram
+
+<NodeGraph />

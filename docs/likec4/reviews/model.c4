@@ -1,0 +1,96 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element system
+  element container
+  element database {
+    style {
+      shape storage
+    }
+  }
+}
+
+model {
+  customer = actor 'Customer' {
+    description 'Submits feedback and reads reviews for BookWorm books.'
+  }
+
+  administrator = actor 'Administrator' {
+    description 'Deletes feedback through the administrator-authorized API.'
+  }
+
+  idp = system 'Identity Provider' {
+    description 'External identity infrastructure for authenticating BookWorm users.'
+
+    oauthApi = container 'OAuth API' {
+      technology 'OAuth 2.0'
+      description 'Issues and verifies access tokens used by protected BookWorm APIs.'
+    }
+  }
+
+  presidio = system 'Data Privacy (Presidio)' {
+    description 'External PII detection and anonymization system used by Reviews chat middleware.'
+  }
+
+  catalog = system 'Catalog context' {
+    description 'Owns book identity and the denormalized rating projection.'
+
+    contract = container 'Published catalog contract' {
+      technology 'Versioned API and integration contract'
+      description 'Provides current book metadata and rating context to Reviews.'
+    }
+
+    ratingFailure = container 'Rating update failure topic' {
+      technology 'Kafka topic'
+      description 'Publishes when a feedback rating cannot be applied because the Book does not exist.'
+    }
+  }
+
+  rating = system 'Rating System' {
+    description 'Owns customer feedback and publishes rating changes to Catalog.'
+
+    api = container 'Rating API' {
+      technology 'HTTP API and Kafka integration'
+      description 'Creates, lists, deletes, and summarizes customer feedback.'
+    }
+
+    agent = container 'Rating Agent' {
+      technology 'Governed AI agent'
+      description 'Reads book context and raw feedback to produce a derived, read-only summary.'
+    }
+
+    persistence = database 'Rating Database' {
+      technology 'PostgreSQL'
+      description 'Authoritative store for individual feedback records.'
+    }
+
+    feedbackCreated = container 'Feedback created topic' {
+      technology 'Kafka topic'
+      description 'Carries committed feedback-created integration events to Catalog.'
+    }
+
+    feedbackDeleted = container 'Feedback deleted topic' {
+      technology 'Kafka topic'
+      description 'Carries committed feedback-deleted integration events to Catalog.'
+    }
+
+    api -> persistence 'reads and writes'
+    api -> idp.oauthApi 'introspects access tokens' {
+      technology 'Entra ID token introspection'
+    }
+    agent -> persistence 'reads through governed review tool'
+    agent -> catalog.contract 'reads current book context through get_book'
+    agent -> presidio 'detects and redacts PII through chat middleware'
+    api -> feedbackCreated 'publishes FeedbackCreatedIntegrationEvent'
+    feedbackCreated -> catalog 'updates rating projection'
+    api -> feedbackDeleted 'publishes FeedbackDeletedIntegrationEvent'
+    feedbackDeleted -> catalog 'updates rating projection'
+    catalog.ratingFailure -> api 'publishes BookUpdatedRatingFailedIntegrationEvent'
+  }
+
+  customer -> rating.api 'submits and reads feedback'
+  administrator -> rating.api 'deletes feedback'
+}

@@ -1,0 +1,18 @@
+edition = "2023";
+
+package book.v1;
+
+service BookGrpcService {
+  rpc ListAuthors (ListAuthorsRequest) returns (ListAuthorsResponse);
+}
+
+message ListAuthorsRequest {}
+
+message ListAuthorsResponse {
+  repeated AuthorItem authors = 1;
+}
+
+message AuthorItem {
+  string id = 1;
+  string name = 2;
+}

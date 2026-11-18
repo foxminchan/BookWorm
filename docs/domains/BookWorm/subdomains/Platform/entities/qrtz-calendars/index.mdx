@@ -1,0 +1,29 @@
+---
+id: qrtz-calendars
+name: Quartz Calendars
+version: 1.0.0
+identifier: calendar_name
+aggregateRoot: false
+summary: Serialized Quartz calendars used to include or exclude schedule dates.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: calendar_name
+    type: text
+    required: true
+  - name: calendar
+    type: bytea
+    required: true
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name` and `calendar_name`.
+- [[entity|qrtz-triggers]] may refer to a calendar through `calendar_name`.

@@ -1,0 +1,147 @@
+---
+id: chat-system
+name: Chat System
+version: 1.0.0
+summary: |
+  Internal system that hosts BookWorm's conversational workflow and specialist
+  AI agents for customer support and catalog-backed book discovery.
+scope: internal
+owners:
+  - contributor-team
+services:
+  - id: chat-api
+    version: 1.0.0
+containers:
+  - id: chat-session-blob
+    version: 1.0.0
+flows:
+  - id: agent-orchestration
+    version: 1.0.0
+relationships:
+  - id: mcp-tools
+    version: 1.0.0
+    label: retrieves catalog data and reusable AI prompts through MCP
+  - id: rating-system
+    version: 1.0.0
+    label: discovers and calls Rating agents through A2A
+  - id: data-privacy
+    version: 1.0.0
+    label: analyzes and anonymizes agent input and output through Presidio
+  - id: identity-provider
+    version: 1.0.0
+    label: validates tokens for protected agent-to-agent endpoints
+actors:
+  - id: customer
+    name: Customer
+    label: submits a bookstore or book-discovery request
+    direction: inbound
+repository:
+  language: C#
+  url: https://github.com/foxminchan/BookWorm
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+    icon: LockClosedIcon
+---
+
+## Context diagram
+
+The Chat System accepts customer requests, uses the shared
+[[system|mcp-tools]] server for Catalog-backed book data, and applies PII
+processing through the external [[system|data-privacy]] system. It discovers
+Rating agents through the Rating system's agent-discovery endpoint and can
+call a Rating-hosted agent through A2A. Protected agent-to-agent endpoints
+validate tokens using the external [[system|identity-provider]].
+
+<ContextDiagram />
+
+## Purpose and boundary
+
+The Chat System hosts the interactive conversational workflow and five
+specialist agents: [[agent|router-agent]], [[agent|book-agent]],
+[[agent|qa-agent]], [[agent|book-catalog-researcher]], and
+[[agent|book-recommendation-researcher]]. The Router selects a book or
+customer-support specialist; the Book Agent can delegate complex Catalog work
+to its two researchers.
+
+The system provides assistance, not ownership of the business records it
+discusses:
+
+- Catalog remains authoritative for book details, categories, and authors.
+- The QA Agent uses supplied store-policy information; it has no live account,
+  Basket, or Order lookup or mutation tool.
+- Book feedback in a conversation is not a Reviews feedback record.
+- The workflow does not place Orders, modify Baskets, or publish business
+  events.
+
+## Request workflow
+
+1. A request enters the interactive AG-UI workflow at `/ag-ui`.
+2. `InputValidationExecutor` rejects empty input and detected prompt-injection
+   patterns, consults the configured governance injection detector, and
+   truncates messages over 2,000 characters to a 1,900-character prefix plus a
+   truncation notice.
+3. The Router Agent declines requests outside BookWorm's scope, asks for
+   English when input is in another language, and hands supported questions
+   to the Book Agent or QA Agent.
+4. The QA Agent can hand book-specific follow-up work to the Book Agent. The
+   Book Agent can return follow-up work to the Router. For complex book
+   requests, the two research agents can run concurrently.
+5. `ResponseFormatterExecutor` selects the last assistant response, removes
+   detected system-prompt fragments, normalizes whitespace, and returns the
+   formatted response. Rejected input bypasses the agent handoff.
+
+The workflow persists conversation session state and Microsoft Foundry memory
+in [[container|chat-session-blob]] (Azure Blob Storage).
+
+## Endpoints and protocols
+
+| Surface            | Purpose                                                                       | Access notes                                      |
+| ------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| `/ag-ui`           | Interactive access to the composed Chat workflow.                             | Mapped as the AG-UI server endpoint.              |
+| `/agents`          | Agent discovery.                                                              | Exposes the registered agent discovery surface.   |
+| `/a2a/{agentName}` | Per-agent A2A JSON-RPC and HTTP JSON endpoints for agents with an A2A server. | Both mapped HTTP endpoints require authorization. |
+| gRPC A2A           | gRPC agent-to-agent access.                                                   | Mapped by the Chat host.                          |
+
+The Chat host registers a Microsoft Model Router deployment and shares the
+`mcptools` MCP client across its book agents. The client uses service discovery,
+Streamable HTTP transport at `/mcp`, and token exchange. Chat's MCP client only
+loads the four Catalog tools declared by Book Agent and its researchers; it
+does not grant these agents every capability on the shared MCP server.
+
+Separately, Chat can connect to a Rating-hosted agent through the A2A client
+integration. This is agent-to-agent communication, not an MCP tool call or a
+local handoff in the Chat workflow. The A2A client supports gRPC, JSON-RPC, and
+HTTP JSON bindings, preferring them in that order.
+
+## Agent responsibilities
+
+| Agent                                     | Responsibility                                                                    | MCP access                                  |
+| ----------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------- |
+| [[agent\|router-agent]]                   | Routes in-scope requests and declines unrelated or unsupported-language requests. | None                                        |
+| [[agent\|qa-agent]]                       | Answers store policy and service questions from the supplied policy context.      | None                                        |
+| [[agent\|book-agent]]                     | Handles book search, detail, recommendation, and feedback conversations.          | Catalog tools and delegated research agents |
+| [[agent\|book-catalog-researcher]]        | Finds Catalog-backed book, author, category, and detail facts.                    | Catalog tools                               |
+| [[agent\|book-recommendation-researcher]] | Finds a Catalog-backed shortlist matched to stated preferences.                   | Catalog tools                               |
+
+## Privacy and governance
+
+Router, QA, and Book Agent register PII middleware directly. The two
+researchers inherit Book Agent's wrapped chat client. For non-empty text, the
+middleware calls [[service|PresidioAPI]] using [[command|AnalyzeText]] and,
+when PII is detected, [[command|AnonymizeText]]. It filters input and output;
+streaming output is buffered until filtering completes. Middleware failures
+propagate rather than bypassing privacy processing.
+
+The Chat host also applies per-agent governance policies. Router and QA have no
+permitted catalog tools; Book Agent and its researchers are allow-listed for
+their documented Catalog tools and delegation paths.
+
+## Architecture
+
+<NodeGraph />
+
+## Architecture decisions
+
+<ADRTable />

@@ -1,6 +1,6 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder
+var containerAppEnvironment = builder
     .AddAzureContainerAppEnvironment(Components.Azure.ContainerApp)
     .ProvisionAsService(builder.Environment);
 
@@ -201,18 +201,13 @@ builder
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 // Add Functions projects for Finance and Catalog Ingestion
-var durableTaskScheduler = builder
-    .AddDurableTaskScheduler(Components.Azure.DurableTask.Scheduler)
-    .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent))
-    .InGroup(ResourceGroups.Functions);
-
-var financeTaskHub = durableTaskScheduler.AddTaskHub(Components.Azure.DurableTask.TaskHub);
-
 builder
     .AddAzureFunctionsProject(Services.Finance, RepositoryPaths.ServiceProjectPath("Finance"))
     .WithHostStorage(storage)
-    .WithReference(financeTaskHub)
-    .WaitFor(financeTaskHub)
+    .WithDurableTaskHub(
+        Components.Azure.DurableTask.Scheduler,
+        Components.Azure.DurableTask.TaskHub
+    )
     .WithReference(broker)
     .WaitFor(broker)
     .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
@@ -247,6 +242,8 @@ var gatewayBuilder = builder
     .WithService(catalogApi)
     .WithEntraProxy(entraId);
 
+gatewayBuilder.Resource.WithComputeEnvironment(containerAppEnvironment);
+
 var (storefront, backoffice) = builder.AddFrontendApps(gatewayBuilder.Resource, entraId);
 
 gatewayBuilder
@@ -277,6 +274,7 @@ if (builder.ExecutionContext.IsRunMode)
 else
 {
     storage.ProvisionAsService(builder.Environment);
+    containerAppEnvironment.AssignComputeResources();
 }
 
 await builder.Build().RunAsync();

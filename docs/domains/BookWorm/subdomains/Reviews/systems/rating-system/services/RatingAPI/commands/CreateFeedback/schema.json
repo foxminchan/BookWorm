@@ -1,0 +1,32 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CreateFeedbackCommand",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["bookId", "firstName", "lastName", "comment", "rating"],
+	"properties": {
+		"bookId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the Catalog book being reviewed."
+		},
+		"firstName": {
+			"type": ["string", "null"],
+			"description": "First name of the reviewer."
+		},
+		"lastName": {
+			"type": ["string", "null"],
+			"description": "Last name of the reviewer."
+		},
+		"comment": {
+			"type": ["string", "null"],
+			"description": "Optional written feedback."
+		},
+		"rating": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 5,
+			"description": "Rating value from 0 through 5."
+		}
+	}
+}

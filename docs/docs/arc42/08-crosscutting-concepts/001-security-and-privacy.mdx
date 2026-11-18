@@ -1,0 +1,59 @@
+---
+title: Security and Privacy
+summary: Identity, authorization, and sensitive-data protections at BookWorm's API, AI, and logging boundaries.
+owners:
+  - contributor-team
+badges:
+  - content: Cross-cutting Concept
+    backgroundColor: purple
+    textColor: purple
+---
+
+<MermaidFileLoader file="mermaids/security-boundaries.mmd" />
+
+Security controls are applied at the boundaries where a request enters a service, where an AI agent processes content, and where application data is recorded. They complement service ownership, a shared identity provider or redaction helper does not make every service's policy identical.
+
+## Identity and authorization
+
+Entra ID is the identity provider used by the application. [[service|order-api]] configures bearer authentication and token introspection, then applies authorization policies that combine a role with service-specific OAuth scopes. Its default policy requires an authenticated user with the user role and an Ordering read or write scope, the admin and reporter policies make their own role and scope requirements explicit.
+
+The shared `RequireScope` helper accepts a request when the token contains **any** of the scopes listed by the policy. It does not require every listed scope. Endpoint-level authorization still needs to be checked against the policy and role expected for that operation.
+
+These policies are evidenced in [[system|order-system]]'s authorization setup. Do not infer that every API uses the same policy: verify each service's startup and endpoint configuration when adding or reviewing a new boundary.
+
+## Security boundaries
+
+The diagram distinguishes the API identity and authorization path from the AI data-protection path. The AI path applies to [[service|chat-api]] and [[service|rating-api]] agent clients, including the [[agent|rating-agent]], where the middleware is registered; it is not a universal control on every model integration.
+
+## Personal and sensitive data
+
+- [[service|chat-api]] and [[service|rating-api]] agent clients register Presidio-backed middleware that anonymizes text sent to the model and text returned by it. This is a processing safeguard, not a substitute for limiting the data collected or deciding which data an agent needs.
+- The shared logging building block defines separate classifications for sensitive data and personally identifiable information (PII). Its redactors mask sensitive values and apply deterministic HMAC redaction to PII when a host enables the helper.
+- The CQRS logging behavior records message and response type names and property names, rather than serializing request or response values. Properties marked as classified are explicitly logged as redacted.
+- [[service|order-api]] currently wires the shared logging redaction helper. Treat the helper's availability as reusable capability, not evidence that every host has enabled the same redaction configuration.
+
+## STRIDE threat model
+
+This high-level assessment covers the documented Ordering identity and authorization path, Chat and Rating agent paths, their model and tool interactions, and operational logging. It identifies threats to validate during design and deployment; it is not a penetration test or a claim that every control is enabled on every service. The diagram shows the main trust boundaries and representative STRIDE threats.
+
+<MermaidFileLoader file="mermaids/security-stride-threat-model.mmd" />
+
+| STRIDE category            | BookWorm threat scenario                                                                                   | Documented safeguards and deployment checks                                                                                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Spoofing**               | An attacker impersonates a user or reuses a forged or stolen token to call an API.                         | Ordering configures Entra ID bearer authentication, token introspection, and role-and-scope authorization. Verify token validation, transport protection, and token lifetime at each deployed API; do not assume every service shares Ordering's policy.         |
+| **Tampering**              | A caller manipulates API input, user/tool content, model output, or a message crossing a service boundary. | Chat validates input and applies guardrails to untrusted content; service contracts define boundary shapes. Validate data at each receiving boundary and verify message integrity and compatibility in the configured transport.                                 |
+| **Repudiation**            | A user or service denies initiating an API operation or downstream work.                                   | Request and user identifiers can be propagated for correlation, and exceptions include a trace identifier. Correlation is not an immutable audit trail; confirm actor attribution, audit coverage, and retention for operations that require it.                 |
+| **Information disclosure** | PII, credentials, or user content escapes through model requests, responses, logs, or telemetry.           | Chat and Rating register Presidio-backed anonymization; CQRS logging avoids serializing request and response values, and redaction helpers are available. Confirm redaction is enabled on each host and review model-provider and telemetry data handling.       |
+| **Denial of service**      | Excessive requests or expensive agent/tool/model work exhausts service or provider capacity.               | Chat bounds accepted input length; governance policies support tool rate limits and a circuit breaker. Confirm effective per-service and provider quotas, timeouts, concurrency limits, and failure behavior in deployment.                                      |
+| **Elevation of privilege** | A caller gains access to an operation or agent tool beyond their intended role.                            | Ordering policies combine roles and scopes; the shared scope helper accepts any listed scope. The governance kernel supports deny-overrides and deny-by-default tool policies. Verify each endpoint's exact policy and each agent's registered tool permissions. |
+
+## Boundary checklist
+
+When introducing a new API or agent:
+
+1. Define who may call it and which role and scope authorize the operation.
+2. Keep tokens, credentials, PII, and user content out of logs unless there is a documented and approved need.
+3. If an AI model receives user data, determine whether it needs the raw value and apply the established PII and governance middleware.
+4. Confirm the control is registered on the actual service path, a helper defined in the chassis is not automatically active everywhere.
+
+See [[doc|arc42/03-context-and-scope/003-technical-context]] for the system's external identity and integration boundaries.

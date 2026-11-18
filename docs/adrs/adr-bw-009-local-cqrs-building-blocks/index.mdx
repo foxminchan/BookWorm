@@ -1,0 +1,50 @@
+---
+id: adr-bw-009-local-cqrs-building-blocks
+name: "ADR-BW-009: Use local CQRS handlers and the established Mediator"
+version: 1.0.0
+summary: Reuse CQRS and Mediator.SourceGenerator for in-process request handling without treating local messages as service integration contracts.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-011-shared-validation-and-error-contracts
+  - id: adr-bw-016-layered-architecture-verification
+---
+
+## Context
+
+Service endpoints need testable business handlers and common validation and logging behaviors. Embedding all logic in endpoints duplicates technical concerns and makes focused tests harder.
+
+## Decision
+
+Follow the established local CQRS pattern with Mediator.SourceGenerator and reusable handler behaviors where applicable. Do not introduce MediatR as a competing mediator or expose another service's handlers as a shortcut around its contract.
+
+CQRS here is an in-process organization technique. It does not mandate event sourcing, separate physical read/write databases, or broker delivery for every command.
+
+## Decision drivers
+
+- Testability of handlers and domain behavior.
+- Consistent validation and logging pipelines.
+- Compatibility with existing repository libraries and conventions.
+
+## Alternatives considered
+
+| Alternative                                  | Assessment                                                                 |
+| -------------------------------------------- | -------------------------------------------------------------------------- |
+| Endpoint-only business logic                 | Reduces indirection but repeats cross-cutting behavior and mixes concerns. |
+| Introduce a second mediator library          | Adds dependency and pipeline variation without an established need.        |
+| Use local handlers across service boundaries | Reuses implementation at the cost of deployment and ownership coupling.    |
+
+## Consequences
+
+- Business behavior can be tested apart from transport entry points.
+- Contributors must understand handler and pipeline conventions.
+- Shared pipeline changes need tests at registered host boundaries; local command types are not automatically integration contracts.
+
+## Evidence
+
+See [[doc|development/004-engineering-standards]] and [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]].

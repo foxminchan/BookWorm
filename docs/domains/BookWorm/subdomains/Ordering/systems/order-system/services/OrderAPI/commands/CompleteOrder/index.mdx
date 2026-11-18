@@ -1,0 +1,44 @@
+---
+id: CompleteOrder
+name: Complete order
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Marks an existing Order as Completed when its current status is New.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: PATCH
+  path: /api/v1/orders/{orderId}/complete
+  statusCodes: ["200", "404"]
+sidebar:
+  badge: "PATCH"
+---
+
+## Overview
+
+Completes an [[entity|order]] through the Order API. The transition is
+available only while the Order is **New**; completion raises the corresponding
+Order lifecycle event for downstream coordination.
+
+<NodeGraph />
+
+## Contract
+
+Provide the Order UUID in the `{orderId}` path parameter and a required
+`x-request-id` idempotency header. The operation has no request body.
+
+`200 OK` returns the updated `OrderDetailDto`. `404 Not Found` is returned
+when the Order cannot be found within the caller's permitted scope.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="Request parameter JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

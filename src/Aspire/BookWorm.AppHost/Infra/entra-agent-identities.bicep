@@ -1,4 +1,7 @@
-extension microsoftGraph
+extension 'br:mcr.microsoft.com/bicep/extensions/microsoftgraph/v1.0:1.0.0'
+
+@description('Azure region (passed by Aspire publish; unused for Microsoft Graph resources).')
+param location string = resourceGroup().location
 
 @description('Microsoft Entra ID tenant ID.')
 param tenantId string

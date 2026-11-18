@@ -1,0 +1,30 @@
+---
+title: Quality Requirements
+summary: Chapter guide to BookWorm's quality overview, measurable scenarios, requirement status, and supporting references.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This chapter makes BookWorm's architectural qualities concrete through a quality tree and measurable scenarios. It covers the complete platform, including commerce, derived Catalog views, asynchronous work, and AI-assisted discovery.
+
+The five leading goals and their priority order remain authoritative in [[doc|arc42/01-introduction-and-goals/003-quality-goals]]: **correctness, interoperability, deployability, modifiability, and operability**. This chapter refines those goals and adds reliability, security, privacy, efficiency, and usability requirements rather than repeating the introduction.
+
+## Chapter contents
+
+| Page                                                                     | What it establishes                                                                                                   |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| [[doc\|arc42/10-quality-requirements/001-quality-requirements-overview]] | Priority tiers, the Mermaid quality tree, stakeholder concerns, and traceability to architectural strategy            |
+| [[doc\|arc42/10-quality-requirements/002-quality-scenarios]]             | Seventeen measurable usage and change scenarios, verification evidence, known limits, trade-offs, and open agreements |
+
+## Status and interpretation
+
+This is a **proposed quality-requirements baseline**, not an approved SLA, a test report, or a statement that every scenario already passes.
+
+- **Behavioral criteria** turn documented business invariants and ownership rules into assertions to verify. Existing mechanisms are evidence for the design, not proof of end-to-end fulfillment.
+- **Quantitative proposals** provide concrete starting points where the repository has no approved budget. Product, service, and operations stakeholders must agree their values and measurement conditions before adoption.
+- **Known limits** remain explicit, especially duplicate effects, partial middleware coverage, eventual consistency, sampled telemetry, and unspecified production topology.
+- The page owner maintains the documentation; stakeholder roles on the overview page are proposed reviewers, not named approvers.

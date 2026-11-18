@@ -1,0 +1,85 @@
+---
+id: adr-005-authenticate-and-govern-mcp-calls
+name: "ADR-005: Authenticate and govern MCP requests"
+version: 1.0.0
+summary: The MCP endpoint requires an authenticated caller with the read scope and applies authorization filters and default-deny tool governance.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: mcp-tools
+  - type: service
+    id: mcp-server
+  - type: system
+    id: identity-provider
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+---
+
+## Context
+
+The shared MCP endpoint exposes [[domain|catalog]] and [[domain|reviews]] data to multiple AI
+clients. A network-accessible endpoint needs caller authentication and an
+explicit policy boundary so a client cannot invoke capabilities simply
+because they are present on the server. Client-side tool selection alone is
+not a sufficient server authorization boundary: clients may be misconfigured,
+or call a capability directly after discovery.
+
+## Decision
+
+The `/mcp` endpoint on [[service|mcp-server]] requires authorization. The default policy requires an
+authenticated caller with the `mcptools_read` scope, and [[system|identity-provider]] token
+introspection and MCP authorization filters are enabled. MCP governance is
+configured with a default-deny policy and allow rules for approved tool
+categories; dangerous tool patterns are denied. These checks are enforced at
+the MCP server boundary for requests and tool invocations.
+
+Clients receive only the tools they configure, in addition to the server-side
+authorization and governance checks. [[service|chat-api]] and [[service|rating-api]] use service-to-service
+token exchange when connecting. Discovery indicates available MCP
+capabilities; it does not grant permission to invoke them.
+
+## Consequences
+
+- Unauthenticated requests and callers without the required scope are denied.
+- Tool invocation remains subject to server-side governance even when a client
+  has discovered a tool.
+- Policy and client tool declarations must be reviewed together when
+  capabilities change.
+- Authentication and governance failures are availability dependencies for
+  MCP-backed agent behavior.
+- A new client must be configured for service authentication and the required
+  scope before it can use the endpoint.
+- Allow rules must remain narrowly scoped and reviewed when tools or
+  categories change; client-side allow-lists do not replace server-side
+  default-deny policy.
+- Token introspection and governance add dependencies to MCP request
+  availability and should be observable separately from upstream data API
+  failures.
+
+## Alternatives considered
+
+### Allow unauthenticated access on the internal network
+
+Network location alone does not identify a caller or limit which capabilities
+it may invoke. The endpoint requires an authenticated principal and scope
+regardless of client network placement.
+
+### Rely only on client-side tool declarations
+
+Client configuration controls which tools an application intends to load,
+but cannot enforce the server boundary. Authorization filters and
+server-side governance remain necessary if a client is misconfigured or calls
+the endpoint outside its expected path.
+
+### Allow all tools to every authenticated caller
+
+Authentication establishes who is calling, not that every caller should be
+able to invoke every capability. Default-deny governance limits access to
+approved tool categories.

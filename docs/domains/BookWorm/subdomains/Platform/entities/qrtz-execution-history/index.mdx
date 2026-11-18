@@ -1,0 +1,96 @@
+---
+id: qrtz-execution-history
+name: Quartz Execution History
+version: 1.0.0
+identifier: entry_id
+aggregateRoot: false
+summary: Optional Quartz execution results, diagnostics, retries, and metrics.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: entry_id
+    type: text
+    required: true
+  - name: instance_name
+    type: text
+    required: true
+  - name: job_name
+    type: text
+    required: true
+    references: qrtz-job-details
+    referencesIdentifier: job_name
+    relationType: belongsTo
+  - name: job_group
+    type: text
+    required: true
+    references: qrtz-job-details
+    referencesIdentifier: job_group
+    relationType: belongsTo
+  - name: trigger_name
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_name
+    relationType: belongsTo
+  - name: trigger_group
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_group
+    relationType: belongsTo
+  - name: fired_time
+    type: bigint
+    required: true
+  - name: run_time
+    type: bigint
+    required: true
+  - name: succeeded
+    type: boolean
+    required: true
+  - name: error_message
+    type: text
+    required: false
+  - name: retry_attempt
+    type: integer
+    required: true
+  - name: retry_scheduled
+    type: boolean
+    required: true
+  - name: execution_log
+    type: text
+    required: false
+  - name: result
+    type: integer
+    required: false
+  - name: summary
+    type: text
+    required: false
+  - name: metrics
+    type: text
+    required: false
+  - name: manual
+    type: boolean
+    required: false
+  - name: fire_instance_id
+    type: text
+    required: false
+  - name: job_input
+    type: text
+    required: false
+  - name: job_input_too_large
+    type: boolean
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name` and `entry_id`.
+- Execution history records executions of [[entity|qrtz-job-details]] and
+  [[entity|qrtz-triggers]].

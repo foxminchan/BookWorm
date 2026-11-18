@@ -1,0 +1,105 @@
+---
+summary: Report an Order transition from New to Completed to Finance.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish Order completion
+
+[[service|order-api]] publishes this event after an Order transitions from
+New to Completed, through
+[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]].
+
+- `id` identifies this event, separately from the earlier checkout event.
+- `orderId` correlates the completed Order with its checkout.
+- `basketId` currently contains the Order's Buyer ID, supplied by EventMapper.
+- `fullName` and `email` remain required even when their values are null.
+- `totalMoney` preserves the accepted purchase amount.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp OrderStatusChangedToCompleteIntegrationEvent.cs
+[IntegrationMessageOwner(
+    ServiceName = Services.Ordering,
+    TopicName = "order-status-change-to-complete"
+)]
+[MessageIdentity("BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent")]
+public sealed record OrderStatusChangedToCompleteIntegrationEvent(
+    Guid OrderId,
+    Guid BasketId,
+    string? FullName,
+    string? Email,
+    decimal TotalMoney
+) : IntegrationEvent;
+```
+
+```csharp EventMapper.cs
+OrderCompletedEvent completedEvent => new OrderStatusChangedToCompleteIntegrationEvent(
+    (Guid)completedEvent.Order.Id,
+    (Guid)completedEvent.Order.BuyerId,
+    fullName,
+    email,
+    completedEvent.Order.TotalPrice
+)
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Payload
+
+<CodeGroup dropdown>
+
+```json completed-order-payload.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000002",
+	"creationDate": "2026-11-01T14:05:00Z",
+	"orderId": "44444444-4444-4444-4444-444444444444",
+	"basketId": "11111111-1111-1111-1111-111111111111",
+	"fullName": "Example Customer",
+	"email": "customer@example.com",
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Report business status
+
+The example shows the camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope. It reports an already completed Order to
+Finance; it does not request completion or confirm email delivery. Finance's
+[[command|CompleteOrderCommand]] is a separate message.
+
+Finance's saga copies the event details, sets its state to Completed, and
+finalizes. It emits the notification command only when both email and full
+name are nonblank. This excerpt shows the outgoing-message selection after
+the state update:
+
+<CodeGroup dropdown>
+
+```csharp OrderSaga.cs
+MarkCompleted();
+
+var messages = new OutgoingMessages();
+
+if (CanSendNotification)
+{
+    messages.Add(new CompleteOrderCommand(OrderId, FullName!, Email!, EffectiveTotalMoney));
+}
+
+return messages;
+```
+
+</CodeGroup>

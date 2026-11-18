@@ -1,0 +1,37 @@
+---
+id: bookworm.{env}.ordering.order-status-change-to-complete
+name: Order Completion Event Channel
+version: 1.0.0
+summary: |
+  Kafka topic carrying Order API events when an Order transitions from New
+  to Completed.
+owners:
+  - business-strategy
+address: bookworm.{env}.ordering.order-status-change-to-complete
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    description: BookWorm deployment environment.
+protocols:
+  - kafka
+---
+
+## Overview
+
+[[service|order-api]] publishes
+[[event|OrderStatusChangedToCompleteIntegrationEvent]] after completing an
+Order. This reports the Order's business status to Finance; it is not Finance's
+separate completion command or confirmation of email delivery.
+
+The camelCase JSON payload is carried inside the BookWorm CloudEvents-compatible
+envelope. Its `basketId` currently contains the Order's Buyer ID.
+
+<ChannelInformation />
+
+## Architecture
+
+<NodeGraph />

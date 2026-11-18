@@ -122,9 +122,7 @@ internal static class FrontendExtensions
     /// </summary>
     private static ReferenceExpression GatewayBrowserOrigin(IResourceBuilder<YarpResource> gateway)
     {
-        return ReferenceExpression.Create(
-            $"{gateway.GetEndpoint(Uri.UriSchemeHttps).PrimaryBrowserOrigin}"
-        );
+        return ReferenceExpression.Create($"{gateway.GetBrowserEndpoint().PrimaryBrowserOrigin}");
     }
 
     private static IResourceBuilder<ContainerResource> ConfigurePublishedFrontend(
@@ -139,7 +137,7 @@ internal static class FrontendExtensions
             .WithOtlpExporter()
             .WithHttpEndpoint(targetPort: 3000, env: "PORT")
             .WithHttpHealthCheck()
-            .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
+            .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", GatewayBrowserOrigin(gateway))
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp));
 
         if (includeCopilot)

@@ -1,0 +1,50 @@
+## 1. Delete feedback
+
+Send the feedback UUID in the path. A successful deletion returns `204 No
+Content` and has no response body.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request DELETE \
+  "$BASE_URL/api/v1/feedbacks/22222222-2222-2222-2222-222222222222"
+```
+
+</CodeGroup>
+
+The equivalent TypeScript request:
+
+<CodeGroup dropdown>
+
+```ts delete-feedback.ts
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const feedbackId = "22222222-2222-2222-2222-222222222222";
+const response = await fetch(`${baseUrl}/api/v1/feedbacks/${feedbackId}`, {
+	method: "DELETE",
+});
+
+if (response.status === 404) {
+	throw new Error("Feedback was not found");
+}
+if (!response.ok) {
+	throw new Error(`DeleteFeedback failed with ${response.status}`);
+}
+```
+
+</CodeGroup>
+
+## 2. Handle a missing feedback record
+
+If the UUID does not identify an existing feedback record, the service returns
+`404 Not Found`.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "Not Found",
+	"status": 404
+}
+```
+
+</CodeGroup>

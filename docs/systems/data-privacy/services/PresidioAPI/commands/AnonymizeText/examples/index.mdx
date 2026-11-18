@@ -1,0 +1,43 @@
+## Anonymize detected text with `HttpClient`
+
+Send the original text, the matching Analyzer detections, and optional
+operator settings to the Anonymizer. The offsets and entity types must come
+from analysis of this same text.
+
+<CodeGroup dropdown>
+
+```csharp AnonymizeText.cs
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Collections.Generic;
+
+var anonymizerUrl = Environment.GetEnvironmentVariable("ANONYMIZER_URL")
+    ?? throw new InvalidOperationException("Set ANONYMIZER_URL to the Presidio Anonymizer base URL.");
+
+using var httpClient = new HttpClient { BaseAddress = new Uri(anonymizerUrl) };
+using var response = await httpClient.PostAsJsonAsync("/anonymize", new
+{
+    text = "Contact Jane Example at jane@example.test.",
+    anonymizers = new Dictionary<string, object>
+    {
+        ["PERSON"] = new { type = "replace", new_value = "[PERSON]" },
+        ["EMAIL_ADDRESS"] = new { type = "redact" }
+    },
+    analyzer_results = new[]
+    {
+        new { start = 8, end = 20, score = 0.85, entity_type = "PERSON" },
+        new { start = 24, end = 41, score = 0.99, entity_type = "EMAIL_ADDRESS" }
+    }
+});
+
+response.EnsureSuccessStatusCode();
+
+using var result = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+Console.WriteLine(result.RootElement.GetProperty("text").GetString());
+```
+
+</CodeGroup>
+
+Keep the input text and its analysis results together; stale offsets can
+anonymize the wrong portion of the text. Do not log the original request when
+it may contain PII.

@@ -1,0 +1,37 @@
+---
+id: bookworm.{env}.ordering.order-status-change-to-cancel
+name: Order Cancellation Event Channel
+version: 1.0.0
+summary: |
+  Kafka topic carrying Order API events when an Order transitions from New
+  to Cancelled.
+owners:
+  - business-strategy
+address: bookworm.{env}.ordering.order-status-change-to-cancel
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    description: BookWorm deployment environment.
+protocols:
+  - kafka
+---
+
+## Overview
+
+[[service|order-api]] publishes
+[[event|OrderStatusChangedToCancelIntegrationEvent]] after cancelling an
+Order. This reports the Order's business status to Finance; it is distinct
+from soft deletion and Finance's separate cancellation command.
+
+The camelCase JSON payload is carried inside the BookWorm CloudEvents-compatible
+envelope. Its `basketId` currently contains the Order's Buyer ID.
+
+<ChannelInformation />
+
+## Architecture
+
+<NodeGraph />

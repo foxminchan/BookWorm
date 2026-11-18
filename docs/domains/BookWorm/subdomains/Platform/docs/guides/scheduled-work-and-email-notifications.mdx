@@ -1,0 +1,80 @@
+---
+title: Scheduled work and email notifications
+summary: A practical guide to Platform schedules, target-system ownership, and the durable email workflow.
+version: 1.0.0
+type: guides
+order: 1
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Audience
+
+Teams integrating with Platform capabilities, and operators checking whether
+scheduled work or an email notification has progressed.
+
+## Scheduled jobs
+
+The [[service|sheduler-dashboard]] exposes the Quartz job and trigger state.
+Current schedules are in UTC:
+
+| Job                     | Cadence          | Work started                                                                   |
+| ----------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| `ProcessVectorBatchJob` | Every 5 minutes  | Calls Catalog Ingestion to process pending vector updates                      |
+| `CleanUpSentEmailJob`   | Every hour       | Publishes a request for Notification to delete a bounded batch of sent records |
+| `ResendErrorEmailJob`   | Every hour       | Publishes a request for Notification to try a bounded batch of unsent records  |
+| `HeartbeatJob`          | Every 30 seconds | Emits Scheduler liveness to logs and telemetry                                 |
+
+Triggers use `FireOnceNow` misfire handling. A missed trigger can therefore
+become eligible for one immediate execution; it does not replay every missed
+interval.
+
+Scheduler completion means the invocation or publication completed. It does
+not prove that the target system finished its work. Check the target system's
+own state:
+
+- For Catalog vector work, check the pending-update queue and index health in
+  [[system|product-catalog-system]].
+- For email maintenance, check unsent outbox counts and SMTP health in
+  [[system|notification-system]].
+
+## Email lifecycle
+
+1. Finance publishes an order command to its Kafka channel.
+2. Notification consumes the command. A blank email address is skipped;
+   otherwise, the service renders an email and stores an unsent record in
+   [[container|notification-database]].
+3. The sender submits the email over SMTP. A successful submission marks the
+   outbox record sent.
+4. Scheduler publishes the cleanup and resend integration events hourly.
+   Notification handles at most 100 records per event, ordered by sequence
+   number.
+
+[[event|ResendErrorEmailIntegrationEvent]] selects all unsent records; the name does
+not mean the database records a separate failed state. Resend can create a new
+outbox record for each attempt. Repeated commands, retries, or an ambiguous
+SMTP response can therefore lead to duplicate submissions.
+
+Cleanup selects sent records only and has no retention cutoff. Do not use it
+to address a delivery backlog.
+
+## Working with these contracts
+
+- Send order commands through the documented Finance channel; do not write to
+  the Notification database.
+- Do not use SMTP acceptance or `is_sent` as proof that an email reached a
+  recipient or that the order completed.
+- Keep sensitive recipient and message data out of job metadata and routine
+  logs.
+- Before manually retrying work, inspect the target state and account for
+  duplicate-submission risk.
+
+For ownership and failure semantics, see
+[[doc|engineering/platform-integration-boundaries]] and the
+[[system|scheduler-system]] and [[system|notification-system]] documentation.
+
+<Footer />

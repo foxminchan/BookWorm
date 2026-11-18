@@ -1,0 +1,61 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Guides",
+			"icon": "BookOpen",
+			"pages": ["[[doc|guides/scheduled-work-and-email-notifications]]"]
+		},
+		{
+			"title": "Engineering",
+			"icon": "Wrench",
+			"pages": ["[[doc|engineering/platform-integration-boundaries]]"]
+		},
+		"$architecture",
+		"$systems",
+		"$entities",
+		{
+			"title": "Runbooks",
+			"icon": "Siren",
+			"pages": [
+				"[[doc|runbooks/notification-delivery-backlog]]",
+				"[[doc|runbooks/scheduled-job-failure]]"
+			]
+		},
+		{
+			"title": "Decisions",
+			"icon": "ClipboardList",
+			"collapsed": true,
+			"pages": [
+				{
+					"title": "Scheduler",
+					"pages": [
+						"[[adr|adr-001-postgresql-quartz-persistence]]",
+						"[[adr|adr-002-scheduler-invocation-boundary]]",
+						"[[adr|adr-003-idempotent-misfire-aware-jobs]]",
+						"[[adr|adr-004-protect-scheduler-secrets-and-telemetry]]"
+					]
+				},
+				{
+					"title": "Notification",
+					"pages": [
+						"[[adr|adr-001-notification-kafka-command-intake]]",
+						"[[adr|adr-002-notification-postgresql-email-outbox]]",
+						"[[adr|adr-003-notification-smtp-provider-boundary]]",
+						"[[adr|adr-004-notification-scheduled-maintenance-boundary]]",
+						"[[adr|adr-005-notification-confidential-data-boundary]]"
+					]
+				},
+				{
+					"title": "SendGrid",
+					"pages": [
+						"[[adr|adr-001-provider-boundary-and-ownership]]",
+						"[[adr|adr-002-durable-outbox-and-bounded-retries]]",
+						"[[adr|adr-003-secret-and-sensitive-data-boundary]]"
+					]
+				}
+			]
+		},
+		"$owners"
+	]
+}

@@ -171,6 +171,15 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      - name: ⬆️ Upload TUnit HTML Reports (Backend)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: tunit-report-backend
+          path: test-results/**/*.html
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: 🔍 Sonarqube End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

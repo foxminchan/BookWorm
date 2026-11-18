@@ -1,0 +1,103 @@
+---
+summary: Publish checkout details after placing an Order for Finance coordination.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a checkout event
+
+[[service|order-api]] publishes this event after placing an Order, through
+[[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]].
+
+- `id` identifies this integration event; `creationDate` is its UTC timestamp.
+- `orderId` identifies the accepted Order.
+- `basketId` currently contains the Order's Buyer ID, supplied by EventMapper.
+- `fullName` and `email` are required fields but may contain null.
+- `totalMoney` is the accepted purchase amount.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp UserCheckedOutIntegrationEvent.cs
+[IntegrationMessageOwner(ServiceName = Services.Ordering, TopicName = "user-checked-out")]
+[MessageIdentity("BookWorm.Contracts.UserCheckedOutIntegrationEvent")]
+public sealed record UserCheckedOutIntegrationEvent(
+    Guid OrderId,
+    Guid BasketId,
+    string? FullName,
+    string? Email,
+    decimal TotalMoney
+) : IntegrationEvent;
+```
+
+```csharp EventMapper.cs
+OrderPlacedEvent orderPlacedEvent => new UserCheckedOutIntegrationEvent(
+    (Guid)orderPlacedEvent.Order.Id,
+    (Guid)orderPlacedEvent.Order.BuyerId,
+    fullName,
+    email,
+    orderPlacedEvent.Order.TotalPrice
+)
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Payload
+
+<CodeGroup dropdown>
+
+```json checkout-payload.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000001",
+	"creationDate": "2026-11-01T14:00:00Z",
+	"orderId": "44444444-4444-4444-4444-444444444444",
+	"basketId": "11111111-1111-1111-1111-111111111111",
+	"fullName": "Example Customer",
+	"email": "customer@example.com",
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Coordinate checkout
+
+The example shows the camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope, not the full transport message. Finance uses
+these checkout details for subsequent coordination. Publication does not
+confirm basket cleanup, payment settlement, or Order completion.
+
+Finance's `OrderSaga.Start` stores the checkout details in a new saga and
+returns the placement command and initial timeout. This excerpt shows the
+outgoing messages after that state has been initialized:
+
+<CodeGroup dropdown>
+
+```csharp OrderSaga.cs
+var messages = new OutgoingMessages
+{
+    new PlaceOrderCommand(
+        saga.BasketId,
+        saga.FullName,
+        saga.Email,
+        saga.OrderId,
+        saga.EffectiveTotalMoney
+    ),
+    new PlaceOrderTimeout(@event.OrderId, settings.MaxRetryTimeout),
+};
+
+return (saga, messages);
+```
+
+</CodeGroup>

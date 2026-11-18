@@ -1,0 +1,32 @@
+---
+title: Solution Strategy
+summary: Fundamental architectural decisions and quality-driven strategies guiding BookWorm's design and evolution.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+BookWorm is organized as independently deployable services aligned with business capabilities. Its solution strategy makes ownership explicit, integrates capabilities through owned contracts, and evolves services independently only when those contracts remain compatible. These choices prioritize the correctness, interoperability, deployability, and modifiability scenarios in [[doc|arc42/01-introduction-and-goals/003-quality-goals]].
+
+## Quality goals and solution approaches
+
+| Quality goal         | Architectural scenario                                                                                                                                               | Solution approach                                                                                                                                                                 | Details                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Correctness**      | At checkout, use the persisted basket and current Catalog facts; do not create an order for a missing book, and keep the accepted order lifecycle owned by Ordering. | Keep basket, book, and order responsibilities with their owning capabilities. Verify checkout behavior against those ownership boundaries and the documented business invariants. | [[doc\|arc42/01-introduction-and-goals/003-quality-goals]] |
+| **Interoperability** | A capability needs another capability's information or behavior, or a consumer must adopt a changed contract.                                                        | Integrate through explicit, owned service contracts and integration events. Review compatibility and consumer impact before adopting contract changes.                            | [[doc\|arc42/02-architecture-constraints]]                 |
+| **Deployability**    | A change is confined to one context and does not break its consumers.                                                                                                | Test and release that service independently when its contracts remain compatible; coordinate consumer migration for breaking changes.                                             | [[doc\|arc42/02-architecture-constraints]]                 |
+| **Modifiability**    | A business rule changes without transferring ownership of its data or changing unrelated contexts.                                                                   | Keep behavior and data with the responsible capability; avoid direct cross-service dependencies and shared mutable business state.                                                | [[doc\|arc42/02-architecture-constraints]]                 |
+| **Operability**      | A scheduled job or email delivery attempt fails, and an operator must identify the responsible capability and inspect its execution state.                           | Keep processing and delivery state observable, and distinguish those failures from business completion. The required operational detail and guarantees remain to be established.  | [[doc\|arc42/01-introduction-and-goals/003-quality-goals]] |
+
+## Fundamental decisions
+
+- **Decompose by business capability.** [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]] have distinct responsibilities. This makes ownership and change impact easier to identify than a shared business layer would.
+- **Make cross-capability dependencies explicit.** Use documented service interfaces and integration events with clear ownership. Protocol Buffers are used for defined service interfaces; do not assume that every interaction uses that protocol or that an unspecified broker or transport is in place.
+- **Adopt the repository's .NET foundation.** The documented platform targets .NET 11 and C# 15, with .NET Aspire supporting the cloud-native service model. Use this established setup rather than introducing an incompatible runtime. Production topology and external providers are not specified here.
+- **Validate boundaries and contracts as they evolve.** Combine business and integration tests, schema linting and compatibility checks for defined Protocol Buffer contracts, and architecture fitness checks. Keep documentation aligned with the implementation so drift is visible.
+- **Use shared platform capabilities without centralizing business ownership.** Common infrastructure may support cross-cutting needs such as notifications and scheduled work, while business rules and data remain with their owning capability.
+
+The strategy trades some coordination and integration work for clearer ownership and reduced hidden coupling. It does not claim numerical latency, availability, throughput, or recovery targets; those require stakeholder agreement. See [[doc\|arc42/02-architecture-constraints]] for system-wide constraints and [[doc\|arc42/03-context-and-scope/003-technical-context]] for known technical neighbors and unresolved mechanisms.

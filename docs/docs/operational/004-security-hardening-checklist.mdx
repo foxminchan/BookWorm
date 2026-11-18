@@ -1,0 +1,40 @@
+---
+title: Production Hardening & Operational Gaps Checklist
+summary: Checklist for closing pre-production gaps in networking, autoscaling, backup/restore drills, and external secret management.
+owners:
+  - platform-team
+badges:
+  - content: Checklist
+    backgroundColor: amber
+    textColor: amber
+---
+
+The Aspire-generated Bicep templates establish strong defaults—passwordless managed-identity authentication, zone-redundant PostgreSQL HA, enterprise Redis HA, and `Standard_GZRS` storage—but several environment-specific hardening steps must be completed before production traffic is served.
+
+See [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] for the architectural context behind these items.
+
+## 1. Network Isolation & Ingress Hardening
+
+- [ ] **Virtual Network Integration:** Attach the Azure Container Apps environment (`cae-<token>`) to a dedicated VNet subnet.
+- [ ] **Private Endpoints:** Disable public network access and provision Private Endpoints for PostgreSQL, Azure Managed Redis, Azure Cosmos DB, Azure Storage, and Microsoft Foundry.
+- [ ] **Durable Task Scheduler IP Allowlist:** Replace the default `['0.0.0.0/0']` `ipAllowlist` on the Durable Task Scheduler resource with the ACA environment's outbound IP addresses or private networking.
+- [ ] **Edge TLS, Custom DNS & WAF:** Configure a custom domain, managed/Key Vault TLS certificate, and Azure Front Door or Application Gateway WAF in front of `gateway` (port `5000`).
+
+## 2. Compute & Scaling Governance
+
+- [ ] **Upper Autoscaling Limits:** Define `maxReplicas` and HTTP/CPU/KEDA Kafka-lag scaling rules per container app (currently only `minReplicas: 1` is set).
+- [ ] **Presidio & Functions Sizing:** Load-test `presidio-analyzer`, `presidio-anonymizer`, `catalog-ingestion`, and `finance` to right-size CPU/memory allocations under peak traffic.
+- [ ] **Foundry Model Quotas:** Increase `GlobalStandard` deployment capacities (`chat`, `decision`, `embedding`) from the template baseline (`capacity: 1`) to match expected RPM/TPM.
+
+## 3. Backup, Recovery & Disaster Preparedness
+
+- [ ] **PostgreSQL Restore Drill:** Execute and document a point-in-time restore exercise using the 35-day geo-redundant backups ([[container|catalog-database]], [[container|order-database]], [[container|sheduler-database]]).
+- [ ] **Cosmos DB Backup Policy:** Confirm continuous vs. periodic backup mode and regional failover configuration for [[container|rating-database]].
+- [ ] **Qdrant Cloud Rebuild Runbook:** Document and test full vector re-indexing from PostgreSQL via [[service|catalog-ingestion]] in case [[container|catalog-vector]] must be rebuilt.
+- [ ] **Kafka Topic Governance:** Verify broker retention, partitioning, dead-letter topic (DLT) handling, and disaster recovery with the external Kafka provider.
+
+## 4. Secrets, Alerts & SLOs
+
+- [ ] **External Secret Rotation:** Establish rotation schedules for external Kafka credentials, Qdrant Cloud API keys, SMTP/[[system|sendgrid]] credentials, and application signing secrets.
+- [ ] **Alerting Rules:** Configure Azure Monitor alert rules on `law-<token>` and Application Insights for 5xx error spikes, container restarts, PostgreSQL/Redis saturation, and Foundry throttling.
+- [ ] **Service-Level Objectives:** Define availability, p95 latency, RTO, and RPO targets per service boundary.

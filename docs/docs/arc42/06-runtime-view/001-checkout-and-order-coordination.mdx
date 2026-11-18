@@ -1,0 +1,33 @@
+---
+title: Checkout and Order Coordination
+summary: Runtime path from checkout through Order creation and Finance-coordinated Basket cleanup.
+owners:
+  - contributor-team
+badges:
+  - content: Runtime Scenario
+    backgroundColor: purple
+    textColor: purple
+---
+
+## 6.1 Checkout and Order coordination
+
+Checkout turns a customer's mutable [[entity|basket]] into an [[entity|order]] owned by [[domain|ordering]]. The [[service|order-api]] reads the persisted Basket and current [[domain|catalog]] facts, stores the accepted purchase and its item-price snapshot, and returns the Order ID. It then publishes a checkout event ([[event|UserCheckedOutIntegrationEvent]]) for [[system|finance-system]]'s asynchronous coordination workflow.
+
+<MermaidFileLoader file="mermaids/checkout-and-order-coordination.mmd" />
+
+### Interaction and ownership
+
+1. The storefront submits checkout to [[domain|ordering]].
+2. [[domain|ordering]] reads the customer's persisted quantities from [[service|basket-api]] and resolves current book details and prices from [[service|catalog-api]]. [[domain|shopping]] and [[domain|catalog]] remain the sources of truth for those respective records.
+3. [[service|order-api]] persists the new [[entity|order]] and purchase-time item snapshot before returning `201 Created` with the Order ID.
+4. The checkout event starts a [[service|order-orchestration]] saga correlated by Order ID. Finance persists coordination state and publishes [[command|PlaceOrderCommand]], which is consumed independently by [[service|basket-api]] and [[service|notification-api]].
+5. [[service|basket-api]] deletes the submitted Basket and reports an explicit success or failure outcome ([[event|BasketDeletedCompleteIntegrationEvent]] or [[event|BasketDeletedFailedIntegrationEvent]]). Finance forwards that cleanup outcome to Ordering; cleanup success is not Order completion.
+6. On cleanup failure, Ordering may soft-delete the Order if it is still present. This does not change its business status or mean Ordering published a cancellation event.
+
+### Timeout and failure behavior
+
+Finance schedules a 30-minute timeout and allows a maximum of three attempts (the initial command and up to two reissues). An unresolved cleanup outcome can therefore cause [[command|PlaceOrderCommand]] to be published again. Because [[service|basket-api]] and [[service|notification-api]] consume that command independently, repeated processing can repeat cleanup and email work.
+
+Finance timeout exhaustion cancels the saga and may request a cancellation email when recipient details are available. It does **not** call Ordering to cancel the Order. Confirm the Order's actual status through Ordering rather than inferring it from the Basket, saga state, or an email.
+
+See the [[flow|order-lifecycle]], [[service|order-orchestration]], and [[doc|arc42/05-building-block-view/002-level-2]] for message and ownership details.

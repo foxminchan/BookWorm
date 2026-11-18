@@ -1,0 +1,34 @@
+---
+title: Pull Request Process
+summary: Prepare a BookWorm pull request, meet review requirements, and find help.
+owners:
+  - contributor-team
+badges:
+  - content: Onboarding
+    backgroundColor: teal
+    textColor: teal
+---
+
+# Submit a pull request
+
+## Pull request checklist
+
+1. **Title:** Use `<type>: <description>` with a Conventional Commit type: `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`.
+2. **Description:** Complete the [pull request template](https://github.com/foxminchan/BookWorm/blob/main/.github/pull_request_template.md), summarize the proposed changes, select the type of change, and complete the checklist. Link related issues when applicable.
+3. **Quality:** Follow [[doc|development/004-engineering-standards]] and run the relevant [[doc|development/005-testing]].
+4. **Documentation:** Update documentation when functionality changes; include clear examples for API changes.
+5. **CI/CD:** Ensure all required checks for the changed files pass. Backend and frontend checks are path-filtered; dependency review runs when the PR validation workflow is triggered, and SonarQube analysis applies to relevant source changes.
+6. **Review:** Request maintainer reviews and address feedback promptly.
+7. **Merge:** At least one maintainer approval, passing automated checks, and no merge conflicts are required.
+
+<MermaidFileLoader file="mermaids/pull-request-process.mmd" />
+
+## Get help
+
+- Start with the repository [AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) and [README](https://github.com/foxminchan/BookWorm/blob/main/README.md).
+- Report bugs using the [bug report form](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml).
+- Propose features using the [feature request form](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml).
+- For security vulnerabilities, do **not** open a public issue; follow the process in [SECURITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/SECURITY.md).
+- For other questions, reach out through GitHub issues. Maintainers are volunteers; responses may take time.
+
+When asking for help, be respectful, include details, search for existing answers, and follow up if you find a solution. Avoid duplicate issues or demanding immediate responses.

@@ -1,0 +1,8 @@
+views {
+  view ratingContext of rating {
+    title 'Rating System context'
+    include *
+    include customer, administrator, catalog.contract, catalog.ratingFailure, presidio, idp.oauthApi
+    autoLayout LeftRight
+  }
+}

@@ -1,0 +1,57 @@
+---
+id: GetBasketGrpc
+name: Get basket over gRPC
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Returns the current basket through the basket.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `BasketGrpcService.GetBasket` RPC retrieves the current customer's [[entity|basket]]
+for internal service-to-service clients. It accepts an empty request and
+returns the basket identifier and its item quantities.
+
+[[service|order-api]] produces this query during Order creation, using a
+token exchanged for Basket. [[service|basket-api]] consumes it over a
+synchronous service-to-service gRPC call; it does not use an
+integration-event channel.
+
+<NodeGraph />
+
+## Contract
+
+Send `google.protobuf.Empty`. The response is `GetBasketResponse`, containing
+the basket `id` and a repeated `items` collection. Each item contains an
+identifier and an `int32` quantity.
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="GetBasket gRPC schema" />
+
+## Example
+
+<CodeGroup dropdown>
+
+```csharp title="GetBasket gRPC example"
+using Grpc.Net.Client;
+using Google.Protobuf.WellKnownTypes;
+using BookWorm.Basket.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.BasketApi);
+var client = new BasketGrpcService.BasketGrpcServiceClient(channel);
+
+var response = await client.GetBasketAsync(new Empty());
+
+Console.WriteLine($"Basket {response.Id} contains {response.Items.Count} item(s)");
+```
+
+</CodeGroup>

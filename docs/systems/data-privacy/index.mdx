@@ -1,0 +1,60 @@
+---
+id: data-privacy
+name: Data Privacy
+version: 1.0.0
+summary: |
+  External Presidio system that detects and anonymizes personally identifiable
+  information in the Reviews feedback-summarization and Chat agent pipelines.
+scope: external
+owners:
+  - contributor-team
+services:
+  - id: PresidioAPI
+    version: 1.0.0
+badges:
+  - content: External
+    backgroundColor: purple
+    textColor: purple
+    icon: GlobeAltIcon
+---
+
+## Context Diagram
+
+The [[system|rating-system]] uses Presidio through its PII middleware to
+detect and redact sensitive text in the [[agent|rating-agent]] chat pipeline
+before it reaches the model or the output.
+
+The [[domain|conversational]] agents also use this middleware:
+[[agent|router-agent]], [[agent|qa-agent]], and [[agent|book-agent]] register it
+directly, while [[agent|book-catalog-researcher]] and
+[[agent|book-recommendation-researcher]] reuse Book Agent's wrapped chat client.
+
+<ContextDiagram />
+
+## Responsibilities and boundary
+
+Presidio provides PII detection and anonymization through
+[[service|PresidioAPI]]. The Reviews system retains ownership of
+[[entity|feedback]], its database, and the generated read-time summary.
+Privacy processing does not modify persisted feedback or Catalog's rating
+projection.
+
+The documented Reviews integration covers email addresses, phone numbers,
+and credit-card information. Presidio's broader API capabilities do not imply
+that all of them are enabled in BookWorm.
+
+## Operational considerations
+
+- Treat text sent for privacy processing as sensitive; do not log raw reviews,
+  chat text, or detected PII.
+- Configure the deployed Presidio endpoints independently of the example
+  servers in the upstream OpenAPI contract.
+- Monitor detection and anonymization failures without recording sensitive
+  payloads. Privacy-processing errors should remain explicit rather than
+  silently bypassing the middleware.
+- PII detection depends on configured recognizers and policies; it is not a
+  guarantee that every sensitive value will be identified.
+
+## Resource Diagram
+
+<NodeGraph />

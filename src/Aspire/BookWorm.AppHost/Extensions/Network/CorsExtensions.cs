@@ -38,7 +38,7 @@ internal static class CorsExtensions
             builder
                 .WithEnvironment(
                     $"{CorsSection}__Origins__0",
-                    gateway.GetEndpoint(Uri.UriSchemeHttps).PrimaryBrowserOrigin
+                    gateway.GetBrowserEndpoint().PrimaryBrowserOrigin
                 )
                 .WithEnvironment($"{CorsSection}__Headers__0", AnyHeader)
                 .WithEnvironment($"{CorsSection}__AllowCredentials", bool.TrueString);

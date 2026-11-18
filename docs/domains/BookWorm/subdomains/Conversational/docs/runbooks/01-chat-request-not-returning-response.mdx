@@ -1,0 +1,51 @@
+---
+title: Chat request does not return a usable response
+summary: Triage an interactive request that fails to return a useful assistant response.
+version: 1.0.0
+type: runbooks
+order: 1
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- A customer submits a request but receives no useful answer.
+- The workflow returns a rephrasing prompt instead of an expected response.
+- A request appears to stop before or after specialist handling.
+
+## Diagnose
+
+1. Confirm that the customer used the interactive `/ag-ui` workflow rather
+   than calling an individual agent endpoint.
+2. Determine whether input validation rejected the message or accepted it for
+   routing. Keep a validation rejection distinct from an agent response.
+3. If accepted, identify the selected specialist and whether the request
+   completed its handoff.
+4. Check the final assistant message and response-formatting outcome. The
+   formatter returns a rephrasing prompt when no usable assistant text remains.
+5. If the issue followed a host restart, remember that Chat sessions are
+   in-memory and are not recoverable durable conversation history.
+
+## Recover
+
+- For rejected input, explain the applicable input limitation and ask the
+  customer to submit a suitable request.
+- For an accepted request, retry only after confirming the request can be
+  handled and the relevant agent path is available.
+- If the final message is empty or unusable, capture the route, workflow
+  outcome, and sanitized diagnostic details for the responsible team.
+- Do not infer success from a request being accepted; acceptance only means
+  it can proceed to agent handling.
+
+## Escalation
+
+Contact [[team\|contributor-team]] with the environment, approximate time,
+request path, validation outcome, selected specialist, and observed final
+result. Do not include unnecessary customer-sensitive content in diagnostics.
+
+<Footer />

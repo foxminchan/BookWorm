@@ -1,0 +1,36 @@
+---
+id: DeleteBuyer
+name: Delete Buyer
+version: 1.0.0
+badges:
+  - content: Customer Management
+    backgroundColor: orange
+    textColor: orange
+summary: Deletes a Buyer profile by identifier; the operation is restricted to administrators.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: DELETE
+  path: /api/v1/buyers/{id}
+  statusCodes: ["204", "404"]
+sidebar:
+  badge: "DELETE"
+---
+
+## Overview
+
+Deletes a [[entity|buyer]] profile by its identifier. The endpoint requires
+the administrator authorization policy.
+
+<NodeGraph />
+
+## Contract
+
+Provide the Buyer identifier in the `{id}` path parameter. The operation has
+no request body. `204 No Content` confirms deletion; `404 Not Found` indicates
+that no matching Buyer exists.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="Path parameter JSON Schema" maxHeight="500" search="true" />

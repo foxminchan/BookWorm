@@ -1,0 +1,85 @@
+---
+summary: Publish and consume the failed basket deletion outcome.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish failed cleanup
+
+Basket publishes this event when the checkout workflow cannot delete the
+submitted basket. Wolverine routes it to
+[[channel|bookworm.&#123;env&#125;.basket.delete-failed]].
+
+- `orderId` correlates the failure with the accepted order.
+- `basketId` identifies the basket requiring recovery.
+- `email` is nullable and may be used for downstream notification.
+- `totalMoney` preserves the purchase total for recovery processing.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp BasketDeletedFailedIntegrationEvent.cs
+[IntegrationMessageOwner(ServiceName = Services.Basket, TopicName = "delete-failed")]
+[MessageIdentity("BookWorm.Contracts.BasketDeletedFailedIntegrationEvent")]
+public sealed record BasketDeletedFailedIntegrationEvent(
+    Guid OrderId,
+    Guid BasketId,
+    string? Email,
+    decimal TotalMoney
+) : IntegrationEvent;
+```
+
+```csharp PlaceOrderCommandHandler.cs
+if (!basketDeleted)
+{
+    await bus.PublishAsync(
+        new BasketDeletedFailedIntegrationEvent(
+            command.OrderId,
+            command.BasketId,
+            command.Email,
+            command.TotalMoney
+        )
+    );
+}
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Consume the failure outcome
+
+Ordering consumes the failure and marks the corresponding order for the
+recovery path. A missing order is treated as an idempotent no-op.
+
+<CodeGroup dropdown>
+
+```csharp DeleteBasketFailedCommandHandler.cs
+[WolverineHandler]
+public async Task Handle(
+    DeleteBasketFailedCommand message,
+    CancellationToken cancellationToken
+)
+{
+    var order = await repository.GetByIdAsync(message.OrderId, cancellationToken);
+
+    if (order is null)
+    {
+        return;
+    }
+
+    order.Delete();
+    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+}
+```
+
+</CodeGroup>

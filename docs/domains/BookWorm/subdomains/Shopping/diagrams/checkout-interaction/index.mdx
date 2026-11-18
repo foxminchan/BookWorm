@@ -1,0 +1,48 @@
+---
+id: checkout-interaction
+name: Checkout Interaction
+version: 1.0.0
+summary: |
+  Sequence diagram of checkout acceptance and the independent basket cleanup,
+  order-email, and Finance timeout outcomes.
+owners:
+  - contributor-team
+---
+
+## Checkout acceptance and downstream outcomes
+
+This sequence shows how the Storefront submits the authenticated customer's
+persisted basket to Ordering. After Ordering saves the purchase snapshot, the
+HTTP confirmation and the asynchronous Finance workflow proceed independently.
+Finance coordinates basket cleanup, Notification email submission, and saga
+timeouts; it does not own Order status or payment settlement.
+
+<MermaidFileLoader file="mermaids/checkout-interaction.mmd" />
+
+## What the diagram shows
+
+1. Ordering reads persisted basket quantities and current Catalog prices,
+   saves the Order, and returns its ID. Confirmation does not wait for
+   downstream work.
+2. Finance consumes [[event|UserCheckedOutIntegrationEvent]] and publishes
+   [[command|PlaceOrderCommand]] to independent Basket and Notification consumers.
+3. Basket reports either
+   [[event|BasketDeletedCompleteIntegrationEvent]] or
+   [[event|BasketDeletedFailedIntegrationEvent]]. Success is logged by Ordering;
+   failure can soft-delete the Order without changing its business status.
+4. Notification persists an outbox record before SMTP submission. A missing
+   recipient skips email work; SMTP acceptance is not proof of inbox delivery.
+5. Finance timeout retries can repeat the shared command. Exhaustion cancels
+   the saga, not the Order, and may request a cancellation email.
+
+## Ownership and recovery
+
+The [[system|cart-system]] owns basket state and deletion. Ordering owns the
+accepted Order lifecycle; Finance coordinates cleanup and timeout handling;
+Notification owns email submission. The [[flow|user-checkout]] documents the
+complete process and its recovery paths.
+
+The branches are independent: cleanup failure does not undo checkout
+acceptance or withhold an already-submitted email. A Finance saga cancellation
+is not an Order cancellation, and a sent outbox record does not confirm
+delivery. For recovery details, consult the checkout flow before replaying work.

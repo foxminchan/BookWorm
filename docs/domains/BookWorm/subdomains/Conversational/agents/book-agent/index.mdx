@@ -1,0 +1,93 @@
+---
+id: book-agent
+name: Book Agent
+version: 1.0.0
+summary: Helps customers discover books and get catalog-backed information and recommendations using BookWorm catalog tools and delegated research.
+owners:
+  - contributor-team
+repository:
+  language: C#
+  url: https://github.com/foxminchan/BookWorm
+sends:
+  - id: AnalyzeText
+    version: 1.0.0
+  - id: AnonymizeText
+    version: 1.0.0
+tools:
+  - name: search_catalog
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Searches the book catalog by description or keyword.
+  - name: get_book
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Retrieves full catalog details for a known book ID.
+  - name: list_categories
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Lists available book categories.
+  - name: list_authors
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Lists authors available in the catalog.
+  - name: Book Catalog Researcher
+    type: subagent
+    icon: /icons/languages/dotnet.svg
+    description: Calls the Book Catalog Researcher subagent for catalog fact-finding.
+  - name: Book Recommendation Researcher
+    type: subagent
+    icon: /icons/languages/dotnet.svg
+    description: Calls the Book Recommendation Researcher subagent for preference-based recommendations.
+badges:
+  - content: AI Agent
+    backgroundColor: purple
+    textColor: purple
+model:
+  provider: Microsoft
+  name: model-router
+  version: "2025-11-18"
+---
+
+The Book Agent handles book discovery, factual book questions, recommendations,
+gift ideas, and book feedback. It uses catalog results as the source of truth
+and does not invent book details, availability, ratings, or prices.
+
+For complex requests with independent catalog and recommendation work, it can
+invoke the internal [[agent|book-catalog-researcher]] and
+[[agent|book-recommendation-researcher]] subagents concurrently, then
+synthesize their findings. These subagents are registered as delegated tools
+of Book Agent rather than as top-level handoff workflow participants. Simple
+lookups use catalog tools directly. Non-book requests can be handed back to the
+[[agent|router-agent]].
+
+The agent also receives the `book-catalog` skill and planning, mode, todo, and
+file-memory context providers. Its model provider is inherited from the shared
+chat client; no provider or model is set in the agent definition.
+
+## Privacy middleware
+
+The agent's chat client registers `UsePIIMiddleware(sp)`. It calls
+[[service|PresidioAPI]] through [[command|AnalyzeText]] for non-empty text
+and [[command|AnonymizeText]] when PII is detected, replacing detected values
+with `<PII>`. The middleware filters input and output text, buffering streaming
+responses before filtering and emitting them. Failures propagate rather than
+bypassing privacy processing. These are middleware HTTP calls, not
+model-selected tools or brokered messages.
+
+Both researchers are initialized through `InitSubAgent` using this same
+middleware-wrapped chat client, so their model calls also use Presidio.
+
+## Tools
+
+<AgentTools />
+
+## Architecture
+
+<NodeGraph />
+
+## Runtime settings
+
+- Temperature: 0.7
+- Maximum output: 2,000 tokens
+- Reasoning effort: high
+- Multiple tool calls: enabled

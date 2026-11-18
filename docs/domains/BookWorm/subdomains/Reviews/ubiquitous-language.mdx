@@ -1,0 +1,41 @@
+---
+dictionary:
+  - id: Feedback
+    name: Feedback
+    summary: A customer's rating and optional comment about a Book.
+    description: |
+      Feedback is the service's individual record and contains a Book reference,
+      rating, optional name, and optional comment.
+    icon: MessageSquare
+  - id: Review
+    name: Review
+    summary: The customer-facing name for a Feedback submission.
+    description: |
+      Review and Feedback refer to the same individual submission. The service
+      model uses the name Feedback.
+    icon: MessageCircle
+  - id: Rating
+    name: Rating
+    summary: An integer score from 0 through 5 on a Feedback submission.
+    description: A Rating belongs to one Feedback submission.
+    icon: Star
+  - id: Comment
+    name: Comment
+    summary: Optional written text supplied with Feedback.
+    description: A Comment records the customer's written response about a Book.
+    icon: MessageSquareText
+  - id: Book Reference
+    name: Book Reference
+    summary: The identifier of the Book that Feedback concerns.
+    description: |
+      Reviews references a Book by identifier; Catalog owns and defines the
+      Book itself.
+    icon: BookOpen
+  - id: Rating Summary
+    name: Rating Summary
+    summary: Catalog's aggregate average and review count for a Book.
+    description: |
+      A Rating summary is not an individual Review. It is updated from feedback
+      changes for use in Catalog discovery.
+    icon: BarChart3
+---

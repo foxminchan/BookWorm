@@ -1,0 +1,84 @@
+---
+id: qrtz-fired-triggers
+name: Quartz Fired Triggers
+version: 1.0.0
+identifier: entry_id
+aggregateRoot: false
+summary: Runtime records for Quartz trigger firings and scheduler instances.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: entry_id
+    type: text
+    required: true
+  - name: trigger_name
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_name
+    relationType: belongsTo
+  - name: trigger_group
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_group
+    relationType: belongsTo
+  - name: instance_name
+    type: text
+    required: true
+  - name: fired_time
+    type: bigint
+    required: true
+  - name: sched_time
+    type: bigint
+    required: true
+  - name: priority
+    type: integer
+    required: true
+  - name: state
+    type: text
+    required: true
+  - name: job_name
+    type: text
+    required: false
+    references: qrtz-job-details
+    referencesIdentifier: job_name
+    relationType: belongsTo
+  - name: job_group
+    type: text
+    required: false
+    references: qrtz-job-details
+    referencesIdentifier: job_group
+    relationType: belongsTo
+  - name: is_nonconcurrent
+    type: boolean
+    required: true
+  - name: requests_recovery
+    type: boolean
+    required: false
+  - name: execution_group
+    type: varchar(200)
+    required: false
+  - name: progress
+    type: integer
+    required: false
+  - name: progress_message
+    type: varchar(250)
+    required: false
+  - name: interrupt_requested_time
+    type: bigint
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name` and `entry_id`.
+- A fired trigger records runtime execution for
+  [[entity|qrtz-triggers]] and may reference [[entity|qrtz-job-details]].

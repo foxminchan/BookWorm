@@ -1,0 +1,61 @@
+---
+title: Create and manage Orders
+summary: Create an Order from the current basket, retrieve it, and request a valid lifecycle transition.
+version: 1.0.0
+type: guides
+order: 1
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Create an Order
+
+Order operations are authenticated and subject to per-user rate limiting.
+Before checkout, the customer needs a Buyer profile and a current basket with
+items whose book IDs resolve in Catalog.
+
+1. Send `POST /api/v1/orders` to [[service\|order-api]] with a unique
+   `x-request-id` header. The request uses the authenticated customer's
+   identity; it does not select another Buyer.
+2. Ordering reads the basket and resolves its books through Catalog. It
+   records each item's book ID, quantity, and selected price, then creates the
+   Order with status **New**.
+3. A successful response is `201 Created` with the Order ID and a retrieval
+   location. Use that location or `GET /api/v1/orders/{id}` to retrieve the
+   Order.
+4. Use `GET /api/v1/orders` for history. It supports pagination and optional
+   `Status` and `BuyerId` filters; non-administrators see only their own
+   Orders.
+
+The Order preserves the price selected at checkout. Its total is the sum of
+the recorded item prices multiplied by their quantities; later Catalog price
+changes do not change this accepted purchase.
+
+## Complete or cancel an Order
+
+Only a **New** Order can be completed or cancelled:
+
+- `PATCH /api/v1/orders/{orderId}/complete`
+- `PATCH /api/v1/orders/{orderId}/cancel`
+
+Both operations require a unique `x-request-id`. The successful transition
+publishes the matching status event for Finance. **Completed** and
+**Cancelled** are terminal states; an Order cannot be reopened or moved from
+one terminal state to the other.
+
+Order deletion is a separate, administrator-only soft-delete operation. It
+does not transition the Order to Cancelled.
+
+## What checkout does not confirm
+
+Creating an Order starts Finance's separate workflow for basket cleanup and
+follow-up notifications. A successful `201 Created` confirms Order creation;
+it does not confirm payment settlement, basket deletion, or email delivery.
+See [[domain\|ordering]] for the domain boundary and
+[[diagram\|order-lifecycle]] for the status model.
+
+<Footer />

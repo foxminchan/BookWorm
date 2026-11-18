@@ -55,13 +55,9 @@ jobs:
       - name: 🔨 Build
         run: dotnet build --configuration Debug
 
-      - name: 📦 Install docusaurus dependencies
+      - name: 📦 Install docs dependencies
         run: bun install --frozen-lockfile --ignore-scripts
-        working-directory: docs/docusaurus
-
-      - name: 📦 Install eventcatalog dependencies
-        run: bun install --frozen-lockfile --ignore-scripts
-        working-directory: docs/eventcatalog
+        working-directory: docs
 
       - name: 📦 Install frontend dependencies
         run: bun install --frozen-lockfile --ignore-scripts

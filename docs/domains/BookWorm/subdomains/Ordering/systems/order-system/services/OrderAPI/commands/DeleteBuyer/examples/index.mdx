@@ -1,0 +1,42 @@
+---
+summary: Delete a Buyer profile as an administrator.
+---
+
+## 1. Delete a Buyer
+
+The endpoint requires administrator authorization and has no request body.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request DELETE "$BASE_URL/api/v1/buyers/66666666-6666-6666-6666-666666666666" \
+  --header "Authorization: Bearer <admin-access-token>"
+```
+
+</CodeGroup>
+
+The same request from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts delete-buyer.ts
+const baseUrl = "https://api.example.com";
+const adminToken = "<admin-access-token>";
+const buyerId = "66666666-6666-6666-6666-666666666666";
+const response = await fetch(`${baseUrl}/api/v1/buyers/${buyerId}`, {
+	method: "DELETE",
+	headers: { Authorization: `Bearer ${adminToken}` },
+});
+
+if (response.status === 404) {
+	throw new Error("Buyer was not found");
+}
+if (!response.ok) {
+	throw new Error(`DeleteBuyer failed with ${response.status}`);
+}
+```
+
+</CodeGroup>
+
+`204 No Content` confirms the Buyer profile was deleted. There is no response
+body.

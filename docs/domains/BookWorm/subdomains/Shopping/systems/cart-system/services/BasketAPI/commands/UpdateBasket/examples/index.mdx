@@ -1,0 +1,84 @@
+## 1. Replace the basket item collection
+
+Replace the basket with the complete list of intended items. The endpoint
+returns no body when the update succeeds.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request PUT "$BASE_URL/api/v1/baskets" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "items": [
+      { "id": "book-9780141182803", "quantity": 1 },
+      { "id": "book-9780061120084", "quantity": 3 }
+    ]
+  }'
+```
+
+</CodeGroup>
+
+The same replacement from TypeScript expects no response body:
+
+<CodeGroup dropdown>
+
+```ts update-basket.ts
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const response = await fetch(`${baseUrl}/api/v1/baskets`, {
+	method: "PUT",
+	headers: { "Content-Type": "application/json" },
+	body: JSON.stringify({
+		items: [
+			{ id: "book-9780141182803", quantity: 1 },
+			{ id: "book-9780061120084", quantity: 3 },
+		],
+	}),
+});
+
+if (response.status === 400) {
+	throw new Error("UpdateBasket validation failed");
+}
+if (response.status === 404) {
+	throw new Error("Basket was not found");
+}
+if (!response.ok) {
+	throw new Error(`UpdateBasket failed with ${response.status}`);
+}
+```
+
+</CodeGroup>
+
+The successful response is `204 No Content`.
+
+## 2. Handle validation and missing-basket outcomes
+
+A body that fails validation returns `400 Bad Request` with
+`application/problem+json`:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"items": ["The items field is required."]
+	}
+}
+```
+
+</CodeGroup>
+
+When the basket does not exist, the service returns `404 Not Found` with
+`application/problem+json`:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "Not Found",
+	"status": 404
+}
+```
+
+</CodeGroup>

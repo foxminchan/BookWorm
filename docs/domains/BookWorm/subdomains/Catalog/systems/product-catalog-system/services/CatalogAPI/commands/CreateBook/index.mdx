@@ -1,0 +1,39 @@
+---
+id: CreateBook
+name: Create book
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Creates a book listing and returns its generated UUID.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /api/v1/books
+  statusCodes: ["201", "400"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+Creates a [[entity|book]] using a `multipart/form-data` request, including its catalog relationships and optional cover image.
+
+<NodeGraph />
+
+## Contract
+
+Send the required title, description, price, [[entity|category]], [[entity|publisher]], and at least one [[entity|author]] as multipart fields. Use `image` for an optional binary cover upload.
+
+The response body is a JSON string containing the new book UUID.
+
+## Operational notes
+
+`400` indicates validation failure, including malformed UUIDs, missing fields, invalid prices, or an invalid multipart payload.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

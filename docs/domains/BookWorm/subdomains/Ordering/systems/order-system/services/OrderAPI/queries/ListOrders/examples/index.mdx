@@ -1,0 +1,95 @@
+---
+summary: List Orders with pagination and optional status and Buyer filters.
+---
+
+## 1. List New Orders
+
+Use the query parameters to select a page and optionally filter by status or
+Buyer. Non-administrators are scoped to their authenticated Buyer.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request GET \
+  "$BASE_URL/api/v1/orders?PageIndex=1&PageSize=20&Status=New" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "Accept: application/json"
+```
+
+</CodeGroup>
+
+The same query from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts list-orders.ts
+type OrderDto = {
+	id: string;
+	date: string;
+	total: number;
+	status: "New" | "Cancelled" | "Completed";
+};
+
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const params = new URLSearchParams({
+	PageIndex: "1",
+	PageSize: "20",
+	Status: "New",
+});
+const response = await fetch(`${baseUrl}/api/v1/orders?${params.toString()}`, {
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		Accept: "application/json",
+	},
+});
+
+if (response.status === 400) {
+	throw new Error("ListOrders validation failed");
+}
+if (!response.ok) {
+	throw new Error(`ListOrders failed with ${response.status}`);
+}
+
+const orders = (await response.json()) as OrderDto[];
+console.log(`Received ${orders.length} order(s)`);
+```
+
+</CodeGroup>
+
+The OpenAPI contract describes a `200 OK` response as an array of Order
+summaries:
+
+<CodeGroup dropdown>
+
+```json
+[
+	{
+		"id": "44444444-4444-4444-4444-444444444444",
+		"date": "2026-11-03T10:00:00Z",
+		"total": 33.98,
+		"status": "New"
+	}
+]
+```
+
+</CodeGroup>
+
+## 2. Handle invalid filters
+
+Invalid parameter values return `400 Bad Request` with validation problem
+details.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"Status": ["The value is not valid."]
+	}
+}
+```
+
+</CodeGroup>

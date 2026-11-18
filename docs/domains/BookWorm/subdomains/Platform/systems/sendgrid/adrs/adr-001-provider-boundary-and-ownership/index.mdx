@@ -1,0 +1,99 @@
+---
+id: adr-001-provider-boundary-and-ownership
+name: "ADR-001: Keep notification ownership inside BookWorm"
+version: 1.0.0
+summary: BookWorm treats SendGrid as an external delivery provider while the Notification System owns notification state, business meaning, and delivery policy.
+status: accepted
+date: 2026-10-27
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: sendgrid
+  - type: system
+    id: notification-system
+  - type: service
+    id: sendgrid-api
+badges:
+  - content: Ownership
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Context
+
+BookWorm uses [[system|sendgrid]] to deliver notification messages, but the provider does
+not understand the business operation that caused a notification. Treating a
+provider response as the business result would couple domain state to an
+external system and make provider changes harder to manage. The provider
+boundary must distinguish accepting a submission for processing from the
+message reaching a recipient and from the Order or other business operation
+that prompted it.
+
+## Decision
+
+[[system|sendgrid]] is an external delivery boundary.
+The [[system|notification-system]] remains the system of record for
+notification state, [[entity|outbox]] records, retry policy,
+idempotency decisions, and the business interpretation of delivery outcomes.
+The [[service|sendgrid-api]] integration maps BookWorm notification data to the provider
+contract and records provider responses without transferring ownership of that
+data or business meaning.
+
+An accepted SendGrid request means that the provider accepted the submission. It
+does not mean that the underlying business operation completed or that the
+message reached its final recipient.
+
+Notification is responsible for translating the provider interaction into
+its own notification-processing state and for correlating it with the
+originating outbox item. Provider-specific identifiers and responses may help
+with diagnosis, but do not transfer ownership of the notification record or
+business meaning to SendGrid.
+
+The cataloged [[service|sendgrid-api]] documents SendGrid's HTTP API contract.
+The current Notification implementation uses MailKit over SMTP, with MailPit
+in development, and does not call that HTTP Mail Send API or persist provider
+responses. The API resource is therefore a documented provider contract, not
+evidence that the HTTP integration is active.
+
+## Consequences
+
+- Notification workflows remain independent of provider-specific concepts.
+- SendGrid can be replaced without changing the ownership of notification state.
+- The Notification System must translate provider responses into its own
+  delivery states.
+- Operators need correlation between BookWorm notification records and
+  provider identifiers when those identifiers are available.
+- Consumers must use BookWorm notification state and domain events rather than
+  treating SendGrid acceptance as a domain completion event.
+- Provider acceptance is not final delivery confirmation. Any user-facing
+  status or support diagnosis must preserve that distinction.
+- Provider failures, rate limits, and ambiguous responses must be interpreted
+  within Notification's delivery policy rather than changing the status of an
+  Order or other originating business record.
+- Switching between SMTP and the provider HTTP API requires an explicit
+  integration and operational change; documenting an HTTP contract alone
+  does not implement that transport.
+
+## Alternatives considered
+
+### Let the provider own notification state
+
+This would couple BookWorm's record of pending and completed notification work
+to provider-specific status and retention behavior. BookWorm retains its own
+notification state and uses the provider only for external submission and
+delivery processing.
+
+### Treat provider acceptance as delivery or business completion
+
+Acceptance means that the provider accepted a request for processing. It
+does not prove final delivery or that the originating business operation
+completed, so those outcomes remain separate.
+
+### Put provider-specific behavior in every business service
+
+This would duplicate credentials, request mapping, retry decisions, and
+provider-specific error handling across callers. Notification remains the
+delivery boundary for the current email workflow.

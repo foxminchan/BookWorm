@@ -1,0 +1,48 @@
+---
+title: Search and discovery
+summary: How book search works, what consistency to expect, and how to use filters.
+version: 1.0.0
+type: guides
+order: 2
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Two ways to find books
+
+| Need                                     | Use                                                                                                                       | Source of results                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Browse with filters and paging           | [[query\|ListBooks]] with [[entity\|category]], [[entity\|publisher]], [[entity\|author]], price bounds, sort, and paging | [[container\|catalog-database]]       |
+| Free-text (semantic + keyword) discovery | [[query\|ListBooks]] with a search term                                                                                   | [[container\|catalog-vector]] then DB |
+
+For a text search, [[service|catalog-api]] generates a query embedding, combines vector and
+keyword matching in Qdrant to find candidate book IDs, then loads the current
+records from PostgreSQL and applies filters and paging.
+
+## Consistency expectations
+
+- The vector index is **eventually consistent**. A new or edited book may not
+  appear in text search until the next ingestion batch completes.
+- Result data (title, price, availability, image) always comes from the
+  database, never from the vector record.
+- Deleted books are removed from the index during ingestion; a short window can
+  exist where an ID is returned but the record is no longer visible.
+
+## Troubleshooting from a consumer view
+
+| Symptom                                            | Likely cause             | Action                                                   |
+| -------------------------------------------------- | ------------------------ | -------------------------------------------------------- |
+| New [[entity\|book]] missing from text search only | Ingestion lag            | Follow the [[doc\|runbooks/vector-index-lag]]            |
+| Old price shown after an update                    | Stale cache entry        | Follow the [[doc\|runbooks/stale-cache-or-redis-outage]] |
+| Image link returns 403 or expired                  | SAS URL lifetime elapsed | Re-fetch the book to obtain a new URL                    |
+
+## Related
+
+- [[adr|adr-002-hybrid-vector-search-qdrant]]: Hybrid vector search
+- [[adr|adr-003-database-queue-for-vector-indexing]]: Database queue for indexing
+
+<Footer />

@@ -1,0 +1,509 @@
+asyncapi: 3.1.0
+info:
+  title: Order Orchestration integration messages
+  version: 1.0.0
+  description: |
+    AsyncAPI contract for Finance's Order Orchestration service. The service
+    consumes checkout, Order lifecycle, and basket-cleanup messages, then
+    publishes basket-cleanup outcomes and order-notification commands.
+
+    Payload schemas describe camelCase JSON data inside BookWorm's
+    CloudEvents-compatible envelope, not the complete transport envelope.
+    Message identities are the BookWorm.Contracts types represented below.
+    All topics use the deployment environment parameter.
+
+    The place-order command is shared with both Basket and Notification:
+    Basket consumes it to delete the submitted basket, while Notification
+    consumes it to submit a new-order email. Re-publishing on timeout can
+    repeat both consumers' work; this contract does not promise exactly-once
+    processing or email delivery.
+defaultContentType: application/cloudevents+json
+channels:
+  userCheckedOut:
+    address: bookworm.{env}.ordering.user-checked-out
+    description: Ordering publishes checkout details to start Finance coordination.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      userCheckedOut:
+        $ref: "#/components/messages/UserCheckedOutIntegrationEvent"
+  orderStatusChangedToComplete:
+    address: bookworm.{env}.ordering.order-status-change-to-complete
+    description: Ordering publishes this event after an Order transitions to Completed.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      orderStatusChangedToComplete:
+        $ref: "#/components/messages/OrderStatusChangedToCompleteIntegrationEvent"
+  orderStatusChangedToCancel:
+    address: bookworm.{env}.ordering.order-status-change-to-cancel
+    description: Ordering publishes this event after an Order transitions to Cancelled.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      orderStatusChangedToCancel:
+        $ref: "#/components/messages/OrderStatusChangedToCancelIntegrationEvent"
+  basketDeleteComplete:
+    address: bookworm.{env}.basket.delete-complete
+    description: Basket publishes this event after successfully deleting the submitted basket.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      basketDeleteComplete:
+        $ref: "#/components/messages/BasketDeletedCompleteIntegrationEvent"
+  basketDeleteFailed:
+    address: bookworm.{env}.basket.delete-failed
+    description: Basket publishes this event when it cannot delete the submitted basket.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      basketDeleteFailed:
+        $ref: "#/components/messages/BasketDeletedFailedIntegrationEvent"
+  placeOrder:
+    address: bookworm.{env}.finance.place-order
+    description: Finance asks Basket to delete the checkout basket; Notification also consumes this command for a new-order email.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      placeOrder:
+        $ref: "#/components/messages/PlaceOrderCommand"
+  deleteBasketComplete:
+    address: bookworm.{env}.finance.delete-basket-complete
+    description: Finance reports successful basket cleanup to Ordering.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      deleteBasketComplete:
+        $ref: "#/components/messages/DeleteBasketCompleteCommand"
+  deleteBasketFailed:
+    address: bookworm.{env}.finance.delete-basket-failed
+    description: Finance reports failed basket cleanup to Ordering for recovery.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      deleteBasketFailed:
+        $ref: "#/components/messages/DeleteBasketFailedCommand"
+  completeOrder:
+    address: bookworm.{env}.finance.complete-order
+    description: Finance asks Notification to send an Order-completed email.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      completeOrder:
+        $ref: "#/components/messages/CompleteOrderCommand"
+  cancelOrder:
+    address: bookworm.{env}.finance.cancel-order
+    description: Finance asks Notification to send an Order-cancelled email.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      cancelOrder:
+        $ref: "#/components/messages/CancelOrderCommand"
+operations:
+  receiveUserCheckedOut:
+    action: receive
+    channel:
+      $ref: "#/channels/userCheckedOut"
+    summary: Start checkout coordination
+    description: |
+      Creates a persisted saga correlated by Order ID, publishes PlaceOrderCommand,
+      and schedules the first basket-cleanup timeout.
+    messages:
+      - $ref: "#/channels/userCheckedOut/messages/userCheckedOut"
+  receiveOrderStatusChangedToComplete:
+    action: receive
+    channel:
+      $ref: "#/channels/orderStatusChangedToComplete"
+    summary: Handle an Order completion
+    description: |
+      Marks the saga Completed and publishes CompleteOrderCommand when both
+      recipient name and email are present.
+    messages:
+      - $ref: "#/channels/orderStatusChangedToComplete/messages/orderStatusChangedToComplete"
+  receiveOrderStatusChangedToCancel:
+    action: receive
+    channel:
+      $ref: "#/channels/orderStatusChangedToCancel"
+    summary: Handle an explicit Order cancellation
+    description: |
+      Marks the saga Cancelled and publishes CancelOrderCommand when both
+      recipient name and email are present.
+    messages:
+      - $ref: "#/channels/orderStatusChangedToCancel/messages/orderStatusChangedToCancel"
+  receiveBasketDeleteComplete:
+    action: receive
+    channel:
+      $ref: "#/channels/basketDeleteComplete"
+    summary: Handle successful basket cleanup
+    description: |
+      Publishes DeleteBasketCompleteCommand to Ordering. Successful cleanup
+      does not complete the Order or finish the saga.
+    messages:
+      - $ref: "#/channels/basketDeleteComplete/messages/basketDeleteComplete"
+  receiveBasketDeleteFailed:
+    action: receive
+    channel:
+      $ref: "#/channels/basketDeleteFailed"
+    summary: Handle failed basket cleanup
+    description: |
+      Marks the saga BasketDeletionFailed, completes it, and publishes
+      DeleteBasketFailedCommand to Ordering. Ordering may soft-delete the
+      Order; its business status is not changed by this outcome.
+    messages:
+      - $ref: "#/channels/basketDeleteFailed/messages/basketDeleteFailed"
+  sendPlaceOrder:
+    action: send
+    channel:
+      $ref: "#/channels/placeOrder"
+    summary: Request basket cleanup and order-placement notification
+    description: |
+      Published when checkout coordination starts and re-published when a
+      timeout triggers a retry. Basket deletes the basket and Notification
+      processes the same command as an email request.
+    messages:
+      - $ref: "#/channels/placeOrder/messages/placeOrder"
+  sendDeleteBasketComplete:
+    action: send
+    channel:
+      $ref: "#/channels/deleteBasketComplete"
+    summary: Report successful basket cleanup to Ordering
+    messages:
+      - $ref: "#/channels/deleteBasketComplete/messages/deleteBasketComplete"
+  sendDeleteBasketFailed:
+    action: send
+    channel:
+      $ref: "#/channels/deleteBasketFailed"
+    summary: Report failed basket cleanup to Ordering
+    messages:
+      - $ref: "#/channels/deleteBasketFailed/messages/deleteBasketFailed"
+  sendCompleteOrder:
+    action: send
+    channel:
+      $ref: "#/channels/completeOrder"
+    summary: Request an Order-completed email
+    description: |
+      Published after Ordering reports the Order's explicit Completed status,
+      when recipient name and email are present.
+    messages:
+      - $ref: "#/channels/completeOrder/messages/completeOrder"
+  sendCancelOrder:
+    action: send
+    channel:
+      $ref: "#/channels/cancelOrder"
+    summary: Request an Order-cancelled email
+    description: |
+      Published after Ordering reports the Order's explicit Cancelled status,
+      or after the Finance saga exhausts basket-cleanup retries. Timeout
+      exhaustion cancels only the Finance saga; it does not cancel the Order
+      in Ordering.
+    messages:
+      - $ref: "#/channels/cancelOrder/messages/cancelOrder"
+components:
+  parameters:
+    env:
+      description: BookWorm deployment environment transformed to kebab case by the Kafka topic router.
+      enum:
+        - development
+        - staging
+        - production
+      default: development
+  messages:
+    UserCheckedOutIntegrationEvent:
+      name: UserCheckedOutIntegrationEvent
+      title: User checked out
+      summary: An Order was placed and checkout details are ready for Finance coordination.
+      description: "Wolverine message identity: BookWorm.Contracts.UserCheckedOutIntegrationEvent."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderLifecyclePayload"
+      examples:
+        - name: checkedOut
+          payload:
+            id: "019a1c00-0000-7000-8000-000000000001"
+            creationDate: "2026-11-01T14:00:00Z"
+            orderId: "019a1c00-0000-7000-8000-000000000020"
+            basketId: "019a1c00-0000-7000-8000-000000000010"
+            fullName: Example Customer
+            email: customer@example.com
+            totalMoney: 49.95
+    OrderStatusChangedToCompleteIntegrationEvent:
+      name: OrderStatusChangedToCompleteIntegrationEvent
+      title: Order completed
+      summary: An Order transitioned from New to Completed.
+      description: "Wolverine message identity: BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderLifecyclePayload"
+    OrderStatusChangedToCancelIntegrationEvent:
+      name: OrderStatusChangedToCancelIntegrationEvent
+      title: Order cancelled
+      summary: An Order transitioned from New to Cancelled.
+      description: "Wolverine message identity: BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderLifecyclePayload"
+    BasketDeletedCompleteIntegrationEvent:
+      name: BasketDeletedCompleteIntegrationEvent
+      title: Basket deletion completed
+      summary: Basket successfully deleted the submitted basket after checkout.
+      description: "Wolverine message identity: BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/BasketDeletedCompletePayload"
+    BasketDeletedFailedIntegrationEvent:
+      name: BasketDeletedFailedIntegrationEvent
+      title: Basket deletion failed
+      summary: Basket could not delete the submitted basket after checkout.
+      description: "Wolverine message identity: BookWorm.Contracts.BasketDeletedFailedIntegrationEvent."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/BasketDeletedFailedPayload"
+    PlaceOrderCommand:
+      name: PlaceOrderCommand
+      title: Place order
+      summary: Shared Finance command consumed by Basket for cleanup and Notification for a new-order email.
+      description: "Wolverine message identity: BookWorm.Contracts.PlaceOrderCommand."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/PlaceOrderPayload"
+      examples:
+        - name: placeOrder
+          payload:
+            id: "019a1c00-0000-7000-8000-000000000002"
+            creationDate: "2026-11-01T14:00:01Z"
+            basketId: "019a1c00-0000-7000-8000-000000000010"
+            orderId: "019a1c00-0000-7000-8000-000000000020"
+            fullName: Example Customer
+            email: customer@example.com
+            totalMoney: 49.95
+    DeleteBasketCompleteCommand:
+      name: DeleteBasketCompleteCommand
+      title: Basket deletion completed
+      summary: Finance reports successful basket cleanup to Ordering.
+      description: "Wolverine message identity: BookWorm.Contracts.DeleteBasketCompleteCommand."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DeleteBasketCompletePayload"
+    DeleteBasketFailedCommand:
+      name: DeleteBasketFailedCommand
+      title: Basket deletion failed
+      summary: Finance reports failed basket cleanup to Ordering for recovery.
+      description: "Wolverine message identity: BookWorm.Contracts.DeleteBasketFailedCommand."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DeleteBasketFailedPayload"
+    CompleteOrderCommand:
+      name: CompleteOrderCommand
+      title: Complete order
+      summary: Shared Finance command consumed by Notification to request a completed-order email.
+      description: "Wolverine message identity: BookWorm.Contracts.CompleteOrderCommand."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderNotificationPayload"
+    CancelOrderCommand:
+      name: CancelOrderCommand
+      title: Cancel order
+      summary: Shared Finance command consumed by Notification to request a canceled-order email.
+      description: "Wolverine message identity: BookWorm.Contracts.CancelOrderCommand."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderNotificationPayload"
+  schemas:
+    OrderLifecyclePayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - basketId
+        - fullName
+        - email
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        basketId:
+          type: string
+          format: uuid
+          description: Basket identifier in the event payload. The current Order mapper supplies the Buyer's ID for this field.
+        fullName:
+          $ref: "#/components/schemas/FullName"
+        email:
+          $ref: "#/components/schemas/Email"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    BasketDeletedCompletePayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - basketId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        basketId:
+          type: string
+          format: uuid
+          description: Identifier of the basket deleted during checkout cleanup.
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    BasketDeletedFailedPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - basketId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        basketId:
+          type: string
+          format: uuid
+          description: Identifier of the basket whose cleanup failed.
+        email:
+          $ref: "#/components/schemas/Email"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    PlaceOrderPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - basketId
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        basketId:
+          type: string
+          format: uuid
+          description: Basket identifier used by Basket to delete the checkout basket.
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        fullName:
+          $ref: "#/components/schemas/FullName"
+        email:
+          $ref: "#/components/schemas/Email"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    DeleteBasketCompletePayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    DeleteBasketFailedPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - basketId
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        basketId:
+          type: string
+          format: uuid
+          description: Identifier of the basket whose cleanup failed.
+        email:
+          $ref: "#/components/schemas/Email"
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    OrderNotificationPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        fullName:
+          $ref: "#/components/schemas/FullName"
+        email:
+          $ref: "#/components/schemas/Email"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    EventId:
+      type: string
+      format: uuid
+      description: UUID v7 generated when the integration message is constructed.
+    CreationDate:
+      type: string
+      format: date-time
+      description: UTC timestamp when the integration message is constructed.
+    OrderId:
+      type: string
+      format: uuid
+      description: Order identifier used to correlate saga state and partition messages.
+    FullName:
+      type:
+        - string
+        - "null"
+      description: Customer display name, when available.
+    Email:
+      type:
+        - string
+        - "null"
+      format: email
+      description: Customer email address, when available. Notification skips blank addresses.
+    TotalMoney:
+      type: number
+      description: C# decimal total associated with the Order. No currency is specified in this contract.

@@ -1,0 +1,80 @@
+---
+id: feedback
+name: Feedback
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: A customer's persisted rating and optional comment about a Catalog book.
+owners:
+  - business-strategy
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: UUID v7 identifier generated when the feedback is created.
+  - name: bookId
+    type: UUID
+    required: true
+    description: Identifier of the Catalog book the feedback concerns.
+    references: book
+    referencesIdentifier: id
+    relationType: references
+  - name: firstName
+    type: string
+    required: true
+    description: Reviewer's first name.
+  - name: lastName
+    type: string
+    required: true
+    description: Reviewer's last name.
+  - name: comment
+    type: string
+    required: false
+    description: Optional written feedback about the book.
+  - name: rating
+    type: integer
+    required: true
+    description: Integer score from 0 through 5, inclusive.
+  - name: createdAt
+    type: DateTime
+    required: true
+    description: UTC timestamp at which the feedback was created.
+  - name: lastModifiedAt
+    type: DateTime
+    required: false
+    description: UTC timestamp of the most recent change.
+  - name: rowVersion
+    type: uint
+    required: true
+    description: Optimistic-concurrency token managed by the persistence layer.
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Feedback is the [[domain|reviews]] aggregate root for one customer's rating and optional
+comment about a [[entity|book]]. It owns the customer-feedback lifecycle while
+Catalog remains the owner of book identity and product metadata.
+
+The aggregate generates its identifier as UUID v7 when constructed. Its
+`bookId`, `firstName`, and `lastName` are required, and its `rating` must be an
+integer from 0 through 5. The persistence model also enforces a unique
+combination of Book ID, first name, and last name, preventing duplicate
+feedback from the same named reviewer for one book.
+
+Creating Feedback raises a feedback-created domain event; removing it raises a
+feedback-deleted domain event. Reviews publishes the corresponding integration
+events so Catalog can update its derived rating summary without storing
+individual feedback.
+
+## Entity properties
+
+<EntityPropertiesTable />
+
+## Relationships
+
+- Feedback belongs to one [[entity|book]] through `bookId`.
+- Catalog derives a rating summary from feedback-created and feedback-deleted
+  events; that summary does not become part of the Feedback aggregate.

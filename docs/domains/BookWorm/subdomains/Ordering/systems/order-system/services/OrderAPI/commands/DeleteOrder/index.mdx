@@ -1,0 +1,37 @@
+---
+id: DeleteOrder
+name: Delete order
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Soft-deletes an Order by its identifier without changing its business status.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: DELETE
+  path: /api/v1/orders/{id}
+  statusCodes: ["204", "404"]
+sidebar:
+  badge: "DELETE"
+---
+
+## Overview
+
+Soft-deletes an [[entity|order]] by setting its deletion flag. This operation
+is restricted to administrators and does not transition the Order's business
+status.
+
+<NodeGraph />
+
+## Contract
+
+Provide the Order identifier in the `{id}` path parameter. The operation has
+no request body. `204 No Content` confirms the deletion; `404 Not Found`
+indicates that no matching Order exists.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="Path parameter JSON Schema" maxHeight="500" search="true" />

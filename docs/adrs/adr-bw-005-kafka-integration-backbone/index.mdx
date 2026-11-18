@@ -1,0 +1,52 @@
+---
+id: adr-bw-005-kafka-integration-backbone
+name: "ADR-BW-005: Use Kafka for configured asynchronous integration"
+version: 1.0.0
+summary: Retain the shared Wolverine Kafka integration for asynchronous cross-capability messages where a broker is configured.
+status: proposed
+date: 2026-11-07
+owners:
+  - platform-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-008-durable-message-handoffs
+  - id: adr-bw-010-cross-boundary-correlation
+  - id: adr-003-finance-kafka-order-correlation
+  - id: adr-001-notification-kafka-command-intake
+---
+
+## Context
+
+BookWorm coordinates work across capabilities without requiring every consumer to finish inside the initiating request. Several documented flows already use Kafka through a shared event framework.
+
+## Decision
+
+Retain Kafka through Wolverine as the configured asynchronous integration backbone for those flows. Producers and consumers use owned message contracts and routing metadata. A missing broker connection means the shared framework does not configure that transport; asynchronous capability must be verified in the deployed host.
+
+This is a whole-system transport choice, not a replacement for the Finance or Notification intake ADRs, nor a requirement to replace every local queue.
+
+## Decision drivers
+
+- Decouple request latency from downstream processing.
+- Reuse the existing messaging framework and contract conventions.
+- Keep ownership explicit across asynchronous boundaries.
+
+## Alternatives considered
+
+| Alternative                                    | Assessment                                                                          |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Synchronous calls for all coordination         | Simplifies immediate outcomes but couples availability and execution time.          |
+| Different broker per integration               | Allows local choices but adds adapters and operational variation.                   |
+| Database polling for all cross-capability work | Can preserve local work but lacks the established shared integration contract path. |
+
+## Consequences
+
+- Consumers can process independently of the originating request.
+- Broker deployment, routing, permissions, and failure diagnosis become operational responsibilities.
+- Ordering, replay, retention, and delivery guarantees must be checked for the actual configuration rather than assumed system-wide.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] and [[doc|arc42/07-deployment-view/001-infrastructure-level-1]]. Local flows remain in the related system ADRs.

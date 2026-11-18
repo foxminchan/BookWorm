@@ -1,0 +1,71 @@
+---
+summary: Show how Finance publishes a completion notification after the Order status changes.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a completed-order notification
+
+Finance consumes [[event|OrderStatusChangedToCompleteIntegrationEvent]] after
+Ordering reports that the Order is complete. Its saga marks itself completed,
+then emits [[command|CompleteOrderCommand]] only when both the customer's name
+and email are nonblank. This command requests an email; it does not complete or
+change the Order.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp OrderSaga.cs
+MarkCompleted();
+
+var messages = new OutgoingMessages();
+
+if (CanSendNotification)
+{
+    messages.Add(new CompleteOrderCommand(OrderId, FullName!, Email!, EffectiveTotalMoney));
+}
+
+return messages;
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Command payload
+
+This is the camelCase message data inside BookWorm's CloudEvents-compatible
+envelope; the transport envelope is omitted. The command carries the Order ID,
+customer details, and accepted total used to render the completed-order email.
+
+<CodeGroup dropdown>
+
+```json completed-order-command.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000003",
+	"creationDate": "2026-11-01T14:02:00Z",
+	"orderId": "44444444-4444-4444-4444-444444444444",
+	"fullName": "Example Customer",
+	"email": "customer@example.com",
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Notification handling
+
+Notification maps the command to the completed status for the email template;
+the Order's status is owned by Ordering. A blank email skips email work. For a
+nonblank email, Notification renders the message, persists an outbox record,
+and submits it through SMTP. Successful SMTP submission is not confirmation of
+delivery, and the command has no notification-result event.

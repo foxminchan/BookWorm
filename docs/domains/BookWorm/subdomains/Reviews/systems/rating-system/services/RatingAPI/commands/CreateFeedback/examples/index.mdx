@@ -1,0 +1,80 @@
+## 1. Create feedback for a book
+
+Submit the book UUID, reviewer details, optional comment, and a rating from 0
+through 5. A successful request returns the new feedback UUID.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request POST "$BASE_URL/api/v1/feedbacks" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "bookId": "11111111-1111-1111-1111-111111111111",
+    "firstName": "Avery",
+    "lastName": "Nguyen",
+    "comment": "A thoughtful and engaging read.",
+    "rating": 5
+  }'
+```
+
+</CodeGroup>
+
+The response body is a JSON string:
+
+<CodeGroup dropdown>
+
+```json
+"22222222-2222-2222-2222-222222222222"
+```
+
+</CodeGroup>
+
+The same request from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts create-feedback.ts
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const response = await fetch(`${baseUrl}/api/v1/feedbacks`, {
+	method: "POST",
+	headers: { "Content-Type": "application/json" },
+	body: JSON.stringify({
+		bookId: "11111111-1111-1111-1111-111111111111",
+		firstName: "Avery",
+		lastName: "Nguyen",
+		comment: "A thoughtful and engaging read.",
+		rating: 5,
+	}),
+});
+
+if (response.status === 400) {
+	throw new Error("CreateFeedback validation failed");
+}
+if (!response.ok) {
+	throw new Error(`CreateFeedback failed with ${response.status}`);
+}
+
+const feedbackId = (await response.json()) as string;
+console.log(`Created feedback ${feedbackId}`);
+```
+
+</CodeGroup>
+
+## 2. Handle validation errors
+
+Missing required fields, an invalid book UUID, or a rating outside the
+0-through-5 range returns `400 Bad Request`.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"rating": ["The rating must be between 0 and 5."]
+	}
+}
+```
+
+</CodeGroup>

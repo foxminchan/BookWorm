@@ -1,0 +1,75 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element domain
+  element system
+}
+
+model {
+  customer = actor 'Customer' {
+    description 'Checks out a basket and manages their Orders.'
+  }
+
+  administrator = actor 'Administrator' {
+    description 'Manages Orders and Buyer records under administrative access rules.'
+  }
+
+  idp = system 'Identity Provider' {
+    description 'Authenticates customers and administrators for protected Ordering APIs.'
+  }
+
+  shopping = system 'Shopping context' {
+    description 'Owns customer baskets before checkout.'
+  }
+
+  catalog = system 'Catalog context' {
+    description 'Owns book identity and current product information, including prices.'
+  }
+
+  platform = domain 'Platform context' {
+    description 'Provides shared notification capabilities.'
+
+    notification = system 'Notification System' {
+      description 'Consumes order commands and owns email rendering, persistence, and delivery.'
+    }
+  }
+
+  ordering = domain 'Ordering context' {
+    description 'Owns accepted Orders, their business lifecycle, and post-checkout coordination.'
+
+    orderSystem = system 'Order System' {
+      description 'Creates Orders from customer baskets, stores purchase-time item values, and owns Order status.'
+    }
+
+    financeSystem = system 'Finance System' {
+      description 'Coordinates basket cleanup and order notifications through a persisted saga; it does not process payments.'
+    }
+  }
+
+  customer -> ordering.orderSystem 'creates and views Orders'
+  administrator -> ordering.orderSystem 'manages Orders and Buyer records'
+  ordering.orderSystem -> idp 'verifies identity for protected requests' {
+    technology 'OAuth 2.0'
+  }
+  ordering.orderSystem -> shopping 'reads the current basket during checkout'
+  ordering.orderSystem -> catalog 'resolves books and current prices for Order items'
+  ordering.orderSystem -> ordering.financeSystem 'publishes checkout and Order status events' {
+    technology 'Kafka'
+    description 'Publishes UserCheckedOutIntegrationEvent and OrderStatusChanged events.'
+  }
+  ordering.financeSystem -> ordering.orderSystem 'reports basket-deletion outcomes' {
+    technology 'Kafka'
+    description 'Successful deletion is acknowledged; failure may cause the Order to be soft-deleted.'
+  }
+  ordering.financeSystem -> shopping 'requests basket cleanup and receives deletion results' {
+    technology 'Kafka'
+    description 'Sends PlaceOrderCommand and handles basket deletion success or failure.'
+  }
+  ordering.financeSystem -> platform.notification 'publishes order email commands' {
+    technology 'Kafka'
+    description 'Requests placement, completion, or cancellation emails; does not confirm delivery.'
+  }
+}
