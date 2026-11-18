@@ -14,12 +14,12 @@ internal static class FrontendExtensions
             IResourceBuilder<IResourceWithEndpoints> Backoffice
         ) AddFrontendApps(
             IResourceBuilder<YarpResource> gateway,
-            IResourceBuilder<IResource> keycloak
+            IResourceBuilder<EntraIdApplicationResource> entraId
         )
         {
             return builder.ExecutionContext.IsRunMode
-                ? AddTurborepoApps(builder, gateway, keycloak)
-                : AddPublishedContainerApps(builder, gateway, keycloak);
+                ? AddTurborepoApps(builder, gateway, entraId)
+                : AddPublishedContainerApps(builder, gateway, entraId);
         }
     }
 
@@ -29,7 +29,7 @@ internal static class FrontendExtensions
     ) AddTurborepoApps(
         IDistributedApplicationBuilder builder,
         IResourceBuilder<YarpResource> gateway,
-        IResourceBuilder<IResource> keycloak
+        IResourceBuilder<EntraIdApplicationResource> entraId
     )
     {
         var turbo = builder
@@ -46,17 +46,12 @@ internal static class FrontendExtensions
             .WithHttpEndpoint(env: "PORT")
             .WithMappedEndpointPort()
             .WithHttpHealthCheck()
-            .WithExternalHttpEndpoints()
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
             .WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true")
-            .WaitFor(gateway)
-            .WithKeycloak(keycloak);
+            .WithEntraId(entraId, gateway);
 
-        storefront.WithEnvironment(
-            AppUrlEnvironmentVariable,
-            storefront.GetEndpoint(Uri.UriSchemeHttp)
-        );
+        storefront.WithEnvironment(AppUrlEnvironmentVariable, GatewayBrowserOrigin(gateway));
 
         var backoffice = turbo
             .AddApp(Clients.BackOffice, Clients.BackOfficeTurboApp)
@@ -64,15 +59,13 @@ internal static class FrontendExtensions
             .WithHttpEndpoint(env: "PORT")
             .WithMappedEndpointPort()
             .WithHttpHealthCheck()
-            .WithExternalHttpEndpoints()
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
-            .WaitFor(gateway)
-            .WithKeycloak(keycloak);
+            .WithEntraId(entraId, gateway, "/backoffice");
 
         backoffice.WithEnvironment(
             AppUrlEnvironmentVariable,
-            backoffice.GetEndpoint(Uri.UriSchemeHttp)
+            ReferenceExpression.Create($"{GatewayBrowserOrigin(gateway)}/backoffice")
         );
 
         return (storefront, backoffice);
@@ -84,7 +77,7 @@ internal static class FrontendExtensions
     ) AddPublishedContainerApps(
         IDistributedApplicationBuilder builder,
         IResourceBuilder<YarpResource> gateway,
-        IResourceBuilder<IResource> keycloak
+        IResourceBuilder<EntraIdApplicationResource> entraId
     )
     {
         var storefront = ConfigurePublishedFrontend(
@@ -92,17 +85,15 @@ internal static class FrontendExtensions
                 builder,
                 Clients.StoreFront,
                 Clients.StoreFrontTurboApp,
-                "@bookworm/storefront"
+                "@bookworm/storefront",
+                true
             ),
             gateway,
-            keycloak,
+            entraId,
             true
         );
 
-        storefront.WithEnvironment(
-            AppUrlEnvironmentVariable,
-            storefront.GetEndpoint(Uri.UriSchemeHttp)
-        );
+        storefront.WithEnvironment(AppUrlEnvironmentVariable, GatewayBrowserOrigin(gateway));
 
         var backoffice = ConfigurePublishedFrontend(
             AddFrontendContainer(
@@ -112,46 +103,59 @@ internal static class FrontendExtensions
                 "@bookworm/backoffice"
             ),
             gateway,
-            keycloak
+            entraId,
+            pathPrefix: "/backoffice"
         );
 
         backoffice.WithEnvironment(
             AppUrlEnvironmentVariable,
-            backoffice.GetEndpoint(Uri.UriSchemeHttp)
+            ReferenceExpression.Create($"{GatewayBrowserOrigin(gateway)}/backoffice")
         );
 
         return (storefront, backoffice);
     }
 
+    /// <summary>
+    ///     Resolves the origin the browser actually uses to reach the gateway (Aspire 17 browser origins).
+    ///     Accounts for <c>*.dev.localhost</c> hosts, custom public URLs, Codespaces forwarding, and the
+    ///     public deployed origin, so it stays aligned with the Entra ID redirect URIs.
+    /// </summary>
+    private static ReferenceExpression GatewayBrowserOrigin(IResourceBuilder<YarpResource> gateway)
+    {
+        return ReferenceExpression.Create(
+            $"{gateway.GetEndpoint(Uri.UriSchemeHttps).PrimaryBrowserOrigin}"
+        );
+    }
+
     private static IResourceBuilder<ContainerResource> ConfigurePublishedFrontend(
         IResourceBuilder<ContainerResource> frontend,
         IResourceBuilder<YarpResource> gateway,
-        IResourceBuilder<IResource> keycloak,
-        bool includeCopilot = false
+        IResourceBuilder<EntraIdApplicationResource> entraId,
+        bool includeCopilot = false,
+        string? pathPrefix = null
     )
     {
         frontend
             .WithOtlpExporter()
             .WithHttpEndpoint(targetPort: 3000, env: "PORT")
             .WithHttpHealthCheck()
-            .WithExternalHttpEndpoints()
             .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTPS", gateway.GetEndpoint(Uri.UriSchemeHttps))
-            .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp))
-            .WaitFor(gateway);
+            .WithEnvironment("NEXT_PUBLIC_GATEWAY_HTTP", gateway.GetEndpoint(Uri.UriSchemeHttp));
 
         if (includeCopilot)
         {
             frontend.WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true");
         }
 
-        return KeycloakExtensions.ConfigureContainerKeycloak(frontend, keycloak);
+        return frontend.WithEntraId(entraId, gateway, pathPrefix);
     }
 
     private static IResourceBuilder<ContainerResource> AddFrontendContainer(
         IDistributedApplicationBuilder builder,
         string name,
         string appName,
-        string turboFilter
+        string turboFilter,
+        bool includeCopilot = false
     )
     {
         var clientsPath = Path.GetFullPath("../../Clients", builder.AppHostDirectory);
@@ -161,10 +165,17 @@ internal static class FrontendExtensions
             clientsPath,
             context =>
             {
-                context
+                var buildStage = context
                     .Builder.From("oven/bun:1", BuildStage)
                     .WorkDir("/app")
-                    .Copy(".", ".")
+                    .Copy(".", ".");
+
+                if (includeCopilot)
+                {
+                    buildStage.Env("NEXT_PUBLIC_COPILOT_ENABLED", "true");
+                }
+
+                buildStage
                     .Run("bun install --frozen-lockfile")
                     .Run($"bunx turbo build --filter={turboFilter}");
 

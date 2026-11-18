@@ -1,5 +1,4 @@
 using BookWorm.Chassis.AI.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Rating.Extensions;
 using BookWorm.ServiceDefaults.Cors;
 
@@ -23,8 +22,6 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseDefaultCors();
-
-app.UseKeycloakTokenIntrospection();
 
 app.UseRateLimiter();
 

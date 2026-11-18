@@ -20,10 +20,10 @@ Feature: Admin Authentication
 
   @smoke
   @login-redirect
-  Scenario: Login redirects to Keycloak OAuth provider
+  Scenario: Login redirects to Microsoft Entra ID OAuth provider
     Given I am on the homepage
     When I navigate to the login page
-    Then I should be redirected to Keycloak OAuth provider
+    Then I should be redirected to Microsoft Entra ID OAuth provider
 
   @validation
   @login-error

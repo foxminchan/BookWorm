@@ -101,12 +101,7 @@ internal static class PIIMiddleware
                     );
 
                     contents.Add(
-                        new TextContent(anonymizedText)
-                        {
-                            Annotations = textContent.Annotations,
-                            AdditionalProperties = textContent.AdditionalProperties,
-                            RawRepresentation = textContent.RawRepresentation,
-                        }
+                        GuardrailMiddleware.CreateTextContent(textContent, anonymizedText)
                     );
                 }
                 else

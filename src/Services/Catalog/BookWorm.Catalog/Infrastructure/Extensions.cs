@@ -1,6 +1,7 @@
 using BookWorm.Chassis.AI.Extensions;
 using BookWorm.Chassis.AI.Search;
 using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Constants.Aspire;
 
 namespace BookWorm.Catalog.Infrastructure;
@@ -38,6 +39,7 @@ internal static class Extensions
                 .WithAzureAuthentication();
 
             builder.AddCaching();
+            services.AddIntegrationEventIdempotency();
 
             // Add Blob services
             builder.AddAzureBlobStorage();
@@ -47,7 +49,7 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            builder.AddAIServices().WithAITelemetry();
+            builder.AddAIProject().WithLlmModels().WithAITelemetry();
 
             services.AddHybridSearch();
         }

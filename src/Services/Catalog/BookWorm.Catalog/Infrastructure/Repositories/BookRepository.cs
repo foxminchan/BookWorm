@@ -4,22 +4,19 @@ namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class BookRepository(CatalogDbContext context) : IBookRepository
 {
-    private readonly CatalogDbContext _context = context
-        ?? throw new ArgumentNullException(nameof(context));
-
     private static SpecificationEvaluator Specification => SpecificationEvaluator.Instance;
 
-    public IUnitOfWork UnitOfWork => _context;
+    public IUnitOfWork UnitOfWork => context;
 
     public async Task<Book> AddAsync(Book book, CancellationToken cancellationToken = default)
     {
-        var entry = await _context.Books.AddAsync(book, cancellationToken);
+        var entry = await context.Books.AddAsync(book, cancellationToken);
         return entry.Entity;
     }
 
     public async Task<Book?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Books.FindAsync([id], cancellationToken);
+        return await context.Books.FindAsync([id], cancellationToken);
     }
 
     public async Task<IReadOnlyList<Book>> ListAsync(
@@ -27,7 +24,7 @@ internal sealed class BookRepository(CatalogDbContext context) : IBookRepository
         CancellationToken cancellationToken = default
     )
     {
-        return await Specification.GetQuery(_context.Books, spec).ToListAsync(cancellationToken);
+        return await Specification.GetQuery(context.Books, spec).ToListAsync(cancellationToken);
     }
 
     public async Task<long> CountAsync(
@@ -35,14 +32,14 @@ internal sealed class BookRepository(CatalogDbContext context) : IBookRepository
         CancellationToken cancellationToken = default
     )
     {
-        return await Specification.GetQuery(_context.Books, spec).LongCountAsync(cancellationToken);
+        return await Specification.GetQuery(context.Books, spec).LongCountAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<BookCategoryCount>> CountByCategoryAsync(
         CancellationToken cancellationToken = default
     )
     {
-        return await _context
+        return await context
             .Books.AsNoTracking()
             .GroupBy(book => book.Category == null ? "Other" : book.Category.Name ?? "Other")
             .OrderBy(group => group.Key)

@@ -53,7 +53,6 @@ env:
   JAVA_VERSION: "25"
   GLOBAL_JSON_PATH: global.json
   BUN_VERSION_FILE: .bun-version
-  HANG_TIMEOUT: 7m
   SESSION_TIMEOUT: 15m
 
 jobs:
@@ -106,7 +105,7 @@ jobs:
           fetch-depth: 0
 
       - name: ☕ Set up JDK
-        uses: actions/setup-java@v6.1.0
+        uses: actions/setup-java@v6.2.0
         with:
           distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
@@ -146,18 +145,31 @@ jobs:
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: 🔨 Build
-        run: >
-          dotnet build
-          --configuration Release
-          --no-incremental
-          -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
+        run: dotnet build --configuration Release --no-incremental
 
       - name: 🧪 Test
         env:
-          TEST_HANG_TIMEOUT: ${{ env.HANG_TIMEOUT }}
           TEST_SESSION_TIMEOUT: ${{ env.SESSION_TIMEOUT }}
           NO_BUILD: "true"
         run: bash .github/actions/test/scripts/run-tests.sh
+
+      - name: ⬆️ Upload Allure Results (Backend Unit)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-be-unit
+          path: allure-results/unit/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: ⬆️ Upload Allure Results (Backend Contract)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-be-contract
+          path: allure-results/contract/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: 🔍 Sonarqube End
         env:

@@ -63,7 +63,7 @@ describe("AuthGuard", () => {
 
     await waitFor(() => {
       expect(signIn.social).toHaveBeenCalledWith({
-        provider: "keycloak",
+        provider: "microsoft-entra-id",
         callbackURL: "/",
       });
     });

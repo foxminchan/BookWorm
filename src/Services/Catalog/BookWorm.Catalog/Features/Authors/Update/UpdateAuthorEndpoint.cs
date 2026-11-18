@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Update;
+namespace BookWorm.Catalog.Features.Authors.Update;
 
 internal sealed class UpdateAuthorEndpoint : IEndpoint<NoContent, UpdateAuthorCommand, ISender>
 {
@@ -13,7 +13,7 @@ internal sealed class UpdateAuthorEndpoint : IEndpoint<NoContent, UpdateAuthorCo
             .WithSummary("Update Author")
             .WithDescription("Update an author if it exists")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

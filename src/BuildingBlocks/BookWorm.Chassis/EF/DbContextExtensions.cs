@@ -1,4 +1,4 @@
-﻿using BookWorm.SharedKernel;
+using BookWorm.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -42,7 +42,11 @@ public static class DbContextExtensions
                 (sp, options) =>
                 {
                     options
-                        .UseNpgsql(builder.Configuration.GetConnectionString(name))
+                        .UseNpgsql(
+                            builder.Configuration.GetConnectionString(name),
+                            npgsqlDbContextOptionsBuilder =>
+                                npgsqlDbContextOptionsBuilder.EnableRetryOnFailure()
+                        )
                         .UseSnakeCaseNamingConvention()
                         .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                         // Suppresses known EF Core pending model changes warning.
@@ -65,6 +69,19 @@ public static class DbContextExtensions
             builder.EnrichAzureNpgsqlDbContext<TDbContext>();
 
             action?.Invoke(builder);
+        }
+    }
+
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        ///     Registers the domain event dispatch interceptor and Mediator domain event dispatcher.
+        /// </summary>
+        public IServiceCollection AddEventDispatchInterceptor()
+        {
+            services.AddScoped<IInterceptor, EventDispatchInterceptor>();
+            services.AddMediatorDomainEventDispatcher();
+            return services;
         }
     }
 }

@@ -16,6 +16,8 @@ compliance-reports/
 Output/
 coveragereport/
 test-results/
+allure-results/
+allure-report/
 
 # Secrets
 *.secrets
@@ -25,9 +27,6 @@ test-results/
 aspirate-state.json
 aspirate-output/
 deploys/
-
-# Generated Keycloakify theme artifact
-src/Aspire/BookWorm.AppHost/Container/keycloak/themes/BookWormThemes.jar
 
 # Betterleaks report
 betterleaks-results.*

@@ -1,12 +1,13 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.Logging;
 
 namespace BookWorm.Rating.Features.Create;
 
 [Transactional]
 public sealed record CreateFeedbackCommand(
     Guid BookId,
-    string? FirstName,
-    string? LastName,
+    [property: PIIData] string? FirstName,
+    [property: PIIData] string? LastName,
     string? Comment,
     int Rating
 ) : ICommand<FeedbackId>;

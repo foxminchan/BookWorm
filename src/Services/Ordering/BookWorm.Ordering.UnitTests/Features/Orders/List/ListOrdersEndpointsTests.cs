@@ -1,7 +1,6 @@
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.List;
-using BookWorm.SharedKernel.Helpers;
 using BookWorm.SharedKernel.Results;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,14 +20,7 @@ public sealed class ListOrdersEndpointsTests
         PagedResult<OrderDto> expectedResult =
         [
             with(
-                [
-                    new(
-                        OrderId.From(Guid.CreateVersion7()),
-                        DateTimeHelper.UtcNow(),
-                        100.0m,
-                        Status.New
-                    ),
-                ],
+                [new(OrderId.From(Guid.CreateVersion7()), DateTime.UtcNow, 100.0m, Status.New)],
                 1,
                 10,
                 1

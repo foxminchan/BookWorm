@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 using System.Security.Claims;
 using BookWorm.Chassis.Repository;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
 using BookWorm.Ordering.Features.Buyers.Create;
 using BookWorm.SharedKernel.SeedWork;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Ordering.UnitTests.Features.Buyers.Create;
 
@@ -30,8 +30,8 @@ public sealed class CreateBuyerCommandTests
             .Setup(x => x.FindFirst(ClaimTypes.NameIdentifier))
             .Returns(new Claim(ClaimTypes.NameIdentifier, userId.ToString()));
         _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Name))
-            .Returns(new Claim(KeycloakClaimTypes.Name, _userName));
+            .Setup(x => x.FindFirst(ClaimConstants.Name))
+            .Returns(new Claim(ClaimConstants.Name, _userName));
 
         // Setup repository
         _buyerRepositoryMock.Setup(x => x.UnitOfWork).Returns(_unitOfWorkMock.Object);
@@ -127,9 +127,7 @@ public sealed class CreateBuyerCommandTests
     {
         // Arrange
         var command = new CreateBuyerCommand("123 Main St", "Seattle", "Washington");
-        _claimsPrincipalMock
-            .Setup(x => x.FindFirst(KeycloakClaimTypes.Name))
-            .Returns((Claim?)null!);
+        _claimsPrincipalMock.Setup(x => x.FindFirst(ClaimConstants.Name)).Returns((Claim?)null!);
 
         Buyer? buyerEntity = null;
         _buyerRepositoryMock

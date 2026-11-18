@@ -1,7 +1,6 @@
-﻿using BookWorm.Basket.Domain;
+using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
 using BookWorm.Contracts;
-using Wolverine;
 
 namespace BookWorm.Basket.ContractTests.Publishers;
 
@@ -29,14 +28,12 @@ public sealed class BasketDeletedEventPublisherTests
         _repositoryMock.Setup(x => x.DeleteBasketAsync(_basketId.ToString())).ReturnsAsync(true);
 
         var command = new PlaceOrderCommand(_basketId, "Test User", Email, _orderId, TotalMoney);
-        var bus = new TestMessageContext();
-        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object, bus);
+        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
+        var outgoingMessage = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var outgoingMessage = ((Envelope)bus.AllOutgoing.Single()).Message;
         var publishedEvent =
             outgoingMessage as BasketDeletedCompleteIntegrationEvent
             ?? throw new InvalidOperationException("Expected basket deletion completion event.");
@@ -51,14 +48,12 @@ public sealed class BasketDeletedEventPublisherTests
         _repositoryMock.Setup(x => x.DeleteBasketAsync(_basketId.ToString())).ReturnsAsync(false);
 
         var command = new PlaceOrderCommand(_basketId, "Test User", Email, _orderId, TotalMoney);
-        var bus = new TestMessageContext();
-        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object, bus);
+        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
+        var outgoingMessage = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var outgoingMessage = ((Envelope)bus.AllOutgoing.Single()).Message;
         var publishedEvent =
             outgoingMessage as BasketDeletedFailedIntegrationEvent
             ?? throw new InvalidOperationException("Expected basket deletion failure event.");

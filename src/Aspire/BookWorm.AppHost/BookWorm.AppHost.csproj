@@ -1,28 +1,27 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
-  <Import Project="KeycloakifyIntegration.targets" />
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AspireUseCliBundle>true</AspireUseCliBundle>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
-    <NoWarn>ASPIREPOSTGRES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001;ASPIREDOCKERFILEBUILDER001</NoWarn>
+    <NoWarn>
+      $(NoWarn);ASPIREPOSTGRES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001;ASPIREENTRAID001;ASPIREDURABLETASK001;ASPIRERESOURCETRAITS001
+    </NoWarn>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="**/node_modules/**/*.cs" />
-  </ItemGroup>
   <ItemGroup Label="Aspire">
     <PackageReference Include="Scalar.Aspire" />
+    <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.Dotnet" />
     <PackageReference Include="Aspire.Hosting.Yarp" />
     <PackageReference Include="Aspire.Hosting.Foundry" />
     <PackageReference Include="Aspire.Hosting.Qdrant" />
-    <PackageReference Include="Aspire.Hosting.Keycloak" />
     <PackageReference Include="Aspire.Hosting.Kafka" />
   </ItemGroup>
   <ItemGroup Label="Azure">
+    <PackageReference Include="Aspire.Hosting.Azure.EntraId" />
     <PackageReference Include="Aspire.Hosting.Azure.Functions" />
     <PackageReference Include="Aspire.Hosting.Azure.Redis" />
     <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
+    <PackageReference Include="Aspire.Hosting.Azure.CosmosDB" />
   </ItemGroup>
   <ItemGroup Label="CommunityToolkit">
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
@@ -31,13 +30,7 @@
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.JavaScript.Extensions" />
   </ItemGroup>
   <ItemGroup Label="Integrations">
-    <ProjectReference
-      Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj"
-      IsAspireProjectResource="false"
-    />
-    <ProjectReference
-      Include="..\..\Integrations\BookWorm.Hosting.Presidio\BookWorm.Hosting.Presidio.csproj"
-      IsAspireProjectResource="false"
-    />
+    <ProjectReference Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" />
+    <ProjectReference Include="..\..\Integrations\BookWorm.Hosting.Presidio\BookWorm.Hosting.Presidio.csproj" />
   </ItemGroup>
 </Project>

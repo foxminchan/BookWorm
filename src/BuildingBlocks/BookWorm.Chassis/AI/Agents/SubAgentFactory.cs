@@ -81,8 +81,13 @@ public static class SubAgentFactory
 
     private static string SanitizeName(string name)
     {
-        return string.Concat(
-            name.Select(character => char.IsAsciiLetterOrDigit(character) ? character : '_')
-        );
+        return string.Create(name.Length, name, static (span, source) =>
+        {
+            for (var i = 0; i < source.Length; i++)
+            {
+                var character = source[i];
+                span[i] = char.IsAsciiLetterOrDigit(character) ? character : '_';
+            }
+        });
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using BookWorm.SharedKernel.Helpers;
 
 namespace BookWorm.Ordering.Infrastructure.Idempotency;
 
@@ -10,5 +9,5 @@ public sealed class ClientRequest
     [Required]
     public string Name { get; set; } = string.Empty;
 
-    public DateTime Time { get; set; } = DateTimeHelper.UtcNow();
+    public DateTime Time { get; set; } = DateTime.UtcNow;
 }

@@ -2,14 +2,20 @@ using System.Reflection;
 using System.Text.Json;
 using BookWorm.Constants.Aspire;
 using JasperFx.Resources;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Wolverine;
 using Wolverine.Attributes;
 using Wolverine.Configuration;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.ErrorHandling;
+using Wolverine.HealthChecks;
 using Wolverine.Kafka;
+using Wolverine.Postgresql;
 
 namespace BookWorm.Chassis.EventBus.Wolverine;
 
@@ -17,52 +23,45 @@ public static class WolverineHostExtensions
 {
     private static Type[] ScanIntegrationTypes(IEnumerable<Assembly> assemblies)
     {
-        var scannedServices = new ServiceCollection();
-
-        scannedServices.Scan(scan =>
-            scan.FromAssemblies([.. assemblies])
-                .AddClasses(classes => classes.Where(IsIntegrationMessageOrHandler), false)
-                .AsSelf()
-                .WithTransientLifetime()
-        );
-
         return
         [
-            .. scannedServices
-                .Select(descriptor => descriptor.ImplementationType)
-                .Where(type => type is not null)
-                .Cast<Type>()
+            .. assemblies
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type =>
+                    type is { IsClass: true, IsAbstract: false }
+                    && IsIntegrationMessageOrHandler(type)
+                )
                 .Distinct(),
         ];
     }
 
     private static bool IsIntegrationMessageOrHandler(Type type)
     {
-        return typeof(IntegrationEvent).IsAssignableFrom(type)
+        return type.IsAssignableTo(typeof(IntegrationEvent))
             || type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
                 .Any(method =>
                     IsMessageHandlerMethod(method)
-                    && typeof(IntegrationEvent).IsAssignableFrom(
-                        method.GetParameters()[0].ParameterType
-                    )
+                    && method
+                        .GetParameters()[0]
+                        .ParameterType.IsAssignableTo(typeof(IntegrationEvent))
                 );
     }
 
     private static IEnumerable<Type> GetHandledIntegrationEventTypes(IEnumerable<Type> types)
     {
         return types
-            .Where(t => !typeof(IntegrationEvent).IsAssignableFrom(t))
+            .Where(t => !t.IsAssignableTo(typeof(IntegrationEvent)))
             .SelectMany(t =>
                 t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             )
             .Where(IsMessageHandlerMethod)
             .Select(m => m.GetParameters()[0].ParameterType)
-            .Where(t => typeof(IntegrationEvent).IsAssignableFrom(t));
+            .Where(t => t.IsAssignableTo(typeof(IntegrationEvent)));
     }
 
     private static IEnumerable<Type> GetIntegrationEventTypes(IEnumerable<Type> types)
     {
-        return types.Where(t => typeof(IntegrationEvent).IsAssignableFrom(t));
+        return types.Where(t => t.IsAssignableTo(typeof(IntegrationEvent)));
     }
 
     private static bool IsMessageHandlerMethod(MethodInfo method)
@@ -85,6 +84,7 @@ public static class WolverineHostExtensions
         /// </param>
         public void UseEventFramework(Action<WolverineOptions>? configure = null)
         {
+            var services = builder.Services;
             var kafkaConnectionString = builder.Configuration.GetConnectionString(
                 Components.Broker
             );
@@ -94,15 +94,18 @@ public static class WolverineHostExtensions
                 return;
             }
 
-            builder.Services.AddSingleton<UserIdEnvelopeMiddleware>();
+            services.AddSingleton<UserIdEnvelopeMiddleware>();
 
             var applicationName = builder.Environment.ApplicationName;
 
-            builder.Services.AddWolverine(ExtensionDiscovery.ManualOnly, opts =>
+            services.AddWolverine(ExtensionDiscovery.ManualOnly, opts =>
             {
                 // ── Durable outbox/inbox ──────────────────────────────────────────
                 opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
                 opts.Policies.UseDurableInboxOnAllListeners();
+                opts.Durability.KeepAfterMessageHandling = TimeSpan.FromHours(1);
+                opts.Durability.DeadLetterQueueExpirationEnabled = true;
+                opts.Durability.DeadLetterQueueExpiration = TimeSpan.FromDays(7);
 
                 // Ensures the Wolverine schema (wolverine_incoming, wolverine_outgoing, etc.)
                 // is created on first boot without requiring a manual migration step (T040).
@@ -115,12 +118,16 @@ public static class WolverineHostExtensions
                 // ── Envelope rules (BookWorm header propagation) ───────────────────
                 var sourceUrn = $"urn:bookworm:{applicationName.ToKebabCase()}";
                 opts.MetadataRules.Add(new CloudEventHeaderPolicy(sourceUrn));
+                opts.Policies.PropagateIncomingHeadersToOutgoing("requestid");
 
                 // UserIdEnvelopeMiddleware stamps the HTTP user ID into envelope headers.
                 // Resolves from DI so the shared IHttpContextAccessor instance is used.
                 opts.Services.AddSingleton<IEnvelopeRule, UserIdEnvelopeMiddleware>(sp =>
                     sp.GetRequiredService<UserIdEnvelopeMiddleware>()
                 );
+
+                // ── Resilient error handling ──────────────────────────────────────
+                opts.ConfigureDefaultErrorHandling();
 
                 // ── Kafka transport with CloudEvents interop ──────────────────────
                 opts.UseKafkaWithCloudEvents(
@@ -133,15 +140,56 @@ public static class WolverineHostExtensions
                 configure?.Invoke(opts);
             });
 
-            builder
-                .Services.AddOpenTelemetry()
+            services
+                .AddOpenTelemetry()
                 .WithTracing(tracing => tracing.AddSource("Wolverine").AddSource("Confluent.Kafka"))
                 .WithMetrics(metrics => metrics.AddMeter("Wolverine"));
+
+            services
+                .AddHealthChecks()
+                .AddWolverine(tags: ["live", "ready"])
+                .AddWolverineListeners(tags: ["ready"]);
         }
     }
 
     extension(WolverineOptions opts)
     {
+        private void ConfigureDefaultErrorHandling()
+        {
+            opts.OnException<TimeoutException>()
+                .Or<HttpRequestException>()
+                .Or<DbUpdateConcurrencyException>()
+                .Or<NpgsqlException>(ex => ex.IsTransient)
+                .RetryWithCooldown(
+                    TimeSpan.FromMilliseconds(50),
+                    TimeSpan.FromMilliseconds(250),
+                    TimeSpan.FromSeconds(1)
+                )
+                .WithFullJitter()
+                .Then.MoveToErrorQueue();
+
+            opts.OnException<JsonException>().MoveToErrorQueue();
+        }
+
+        /// <summary>
+        ///     Configures PostgreSQL durable outbox/inbox storage and EF Core transactional
+        ///     middleware when the specified connection string is present.
+        /// </summary>
+        /// <param name="configuration">Application configuration containing connection strings.</param>
+        /// <param name="connectionName">Name of the PostgreSQL connection string.</param>
+        public void UsePostgresOutbox(IConfiguration configuration, string connectionName)
+        {
+            var connectionString = configuration.GetConnectionString(connectionName);
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return;
+            }
+
+            opts.PersistMessagesWithPostgresql(connectionString, "wolverine");
+            opts.UseEntityFrameworkCoreTransactions();
+        }
+
         private void UseKafkaWithCloudEvents(
             string kafkaConnectionString,
             string applicationName,

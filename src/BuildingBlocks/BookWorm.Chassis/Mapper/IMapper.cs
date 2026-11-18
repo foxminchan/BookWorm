@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Chassis.Mapper;
+namespace BookWorm.Chassis.Mapper;
 
 public interface IMapper<in TSource, out TDestination>
     where TSource : class
@@ -16,5 +16,8 @@ public interface IMapper<in TSource, out TDestination>
     /// </summary>
     /// <param name="sources">The collection of source models to map from.</param>
     /// <returns>A read-only collection of mapped destination objects.</returns>
-    IReadOnlyList<TDestination> Map(IReadOnlyList<TSource> sources);
+    IReadOnlyList<TDestination> Map(IReadOnlyList<TSource> sources)
+    {
+        return [.. sources.Select(Map)];
+    }
 }

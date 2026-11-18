@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using BookWorm.SharedKernel;
 using BookWorm.SharedKernel.SeedWork;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -27,7 +27,10 @@ internal sealed class EventDispatchInterceptor(IDomainEventDispatcher dispatcher
             .Where(x => x.DomainEvents.Count != 0)
             .ToImmutableList();
 
-        await dispatcher.DispatchAndClearEvents(entitiesWithEvents);
+        if (!entitiesWithEvents.IsEmpty)
+        {
+            await dispatcher.DispatchAndClearEvents(entitiesWithEvents, cancellationToken);
+        }
 
         return await base.SavedChangesAsync(eventData, result, cancellationToken);
     }

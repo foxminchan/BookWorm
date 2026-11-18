@@ -4,9 +4,18 @@ using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Features.Authors;
+using BookWorm.Catalog.Features.Authors.List;
+using BookWorm.Catalog.Features.Books;
+using BookWorm.Catalog.Features.Books.Get;
+using BookWorm.Catalog.Features.Books.List;
+using BookWorm.Catalog.Features.Categories;
+using BookWorm.Catalog.Features.Categories.List;
 using BookWorm.Catalog.Features.Dashboard;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Catalog.UnitTests.Grpc.Context;
+using BookWorm.Chassis.Exceptions;
+using BookWorm.SharedKernel.Results;
 using BookWorm.SharedKernel.SeedWork;
 using Grpc.Core;
 using Mediator;
@@ -434,5 +443,175 @@ public sealed class BookServiceTests
                 ),
             Times.Once
         );
+    }
+
+    [Test]
+    public async Task GivenSearchTerm_WhenListBooksCalled_ThenShouldReturnMappedBooks()
+    {
+        // Arrange
+        var bookId = BookId.From(Guid.CreateVersion7());
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
+        var publisherId = PublisherId.From(Guid.CreateVersion7());
+        var authorId = AuthorId.From(Guid.CreateVersion7());
+        IReadOnlyList<BookDto> dtos =
+        [
+            new(
+                bookId,
+                "Clean Code",
+                "A handbook of agile software craftsmanship",
+                "https://example.com/clean-code.jpg",
+                29.99m,
+                24.99m,
+                Status.InStock,
+                new(categoryId, "Programming"),
+                new(publisherId, "Prentice Hall"),
+                [new(authorId, "Robert C. Martin")],
+                4.8,
+                100
+            ),
+        ];
+        PagedResult<BookDto> pagedResult = [with(dtos, 1, 10, 1)];
+
+        _senderMock
+            .Setup(s =>
+                s.Send(It.Is<ListBooksQuery>(q => q.Search == "clean code"), CancellationToken.None)
+            )
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await _bookService.ListBooks(
+            new() { Search = "clean code" },
+            new TestServerCallContext()
+        );
+
+        // Assert
+        result.Books.Count.ShouldBe(1);
+        var item = result.Books[0];
+        item.Id.ShouldBe(bookId.ToString());
+        item.Name.ShouldBe("Clean Code");
+        item.Description.ShouldBe("A handbook of agile software craftsmanship");
+        item.ImageUrl.ShouldBe("https://example.com/clean-code.jpg");
+        ((decimal?)item.Price).ShouldBe(29.99m);
+        ((decimal?)item.PriceSale).ShouldBe(24.99m);
+        item.Status.ShouldBe(BookStatus.InStock);
+        item.Category.Name.ShouldBe("Programming");
+        item.Publisher.Name.ShouldBe("Prentice Hall");
+        item.Authors.Count.ShouldBe(1);
+        item.Authors[0].Name.ShouldBe("Robert C. Martin");
+        item.AverageRating.ShouldBe(4.8);
+        item.TotalReviews.ShouldBe(100);
+    }
+
+    [Test]
+    public async Task GivenValidBookId_WhenGetBookDetailsCalled_ThenShouldReturnBookDetails()
+    {
+        // Arrange
+        var id = Guid.CreateVersion7();
+        var dto = new BookDto(
+            BookId.From(id),
+            "Clean Code",
+            "Description",
+            "https://example.com/clean-code.jpg",
+            29.99m,
+            null,
+            Status.OutOfStock,
+            null,
+            null,
+            [],
+            4.5,
+            10
+        );
+
+        _senderMock
+            .Setup(s => s.Send(new GetBookQuery(BookId.From(id)), CancellationToken.None))
+            .ReturnsAsync(dto);
+
+        // Act
+        var result = await _bookService.GetBookDetails(
+            new() { BookId = id.ToString() },
+            new TestServerCallContext()
+        );
+
+        // Assert
+        result.Book.ShouldNotBeNull();
+        result.Book.Id.ShouldBe(id.ToString());
+        result.Book.Name.ShouldBe("Clean Code");
+        result.Book.Status.ShouldBe(BookStatus.OutOfStock);
+        ((decimal?)result.Book.PriceSale).ShouldBeNull();
+    }
+
+    [Test]
+    public async Task GivenInvalidBookId_WhenGetBookDetailsCalled_ThenShouldThrowInvalidArgumentRpcException()
+    {
+        // Act & Assert
+        var ex = await Should.ThrowAsync<RpcException>(() =>
+            _bookService.GetBookDetails(
+                new() { BookId = "not-a-guid" },
+                new TestServerCallContext()
+            )
+        );
+
+        ex.StatusCode.ShouldBe(StatusCode.InvalidArgument);
+    }
+
+    [Test]
+    public async Task GivenNonExistentBookId_WhenGetBookDetailsCalled_ThenShouldThrowNotFoundRpcException()
+    {
+        // Arrange
+        var id = Guid.CreateVersion7();
+
+        _senderMock
+            .Setup(s => s.Send(new GetBookQuery(BookId.From(id)), CancellationToken.None))
+            .ThrowsAsync(NotFoundException.For<Book>(id));
+
+        // Act & Assert
+        var ex = await Should.ThrowAsync<RpcException>(() =>
+            _bookService.GetBookDetails(
+                new() { BookId = id.ToString() },
+                new TestServerCallContext()
+            )
+        );
+
+        ex.StatusCode.ShouldBe(StatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task GivenCategoriesExist_WhenListCategoriesCalled_ThenShouldReturnCategories()
+    {
+        // Arrange
+        var categoryId = CategoryId.From(Guid.CreateVersion7());
+        IReadOnlyList<CategoryDto> categories = [new(categoryId, "Programming")];
+
+        _senderMock
+            .Setup(s => s.Send(It.IsAny<ListCategoriesQuery>(), CancellationToken.None))
+            .ReturnsAsync(categories);
+
+        // Act
+        var result = await _bookService.ListCategories(new(), new TestServerCallContext());
+
+        // Assert
+        result.Categories.Count.ShouldBe(1);
+        result.Categories[0].Id.ShouldBe(categoryId.ToString());
+        result.Categories[0].Name.ShouldBe("Programming");
+    }
+
+    [Test]
+    public async Task GivenAuthorsExist_WhenListAuthorsCalled_ThenShouldReturnAuthors()
+    {
+        // Arrange
+        var authorId = AuthorId.From(Guid.CreateVersion7());
+        IReadOnlyList<AuthorDto> authors = [new(authorId, "Robert C. Martin")];
+
+        _senderMock
+            .Setup(s => s.Send(It.IsAny<ListAuthorsQuery>(), CancellationToken.None))
+            .ReturnsAsync(authors);
+
+        // Act
+        var result = await _bookService.ListAuthors(new(), new TestServerCallContext());
+
+        // Assert
+        result.Authors.Count.ShouldBe(1);
+        result.Authors[0].Id.ShouldBe(authorId.ToString());
+        result.Authors[0].Name.ShouldBe("Robert C. Martin");
     }
 }

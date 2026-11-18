@@ -1,6 +1,5 @@
-﻿using Azure.Provisioning.Redis;
+﻿using Azure.Provisioning.RedisEnterprise;
 using Microsoft.Extensions.Hosting;
-using RedisResource = Azure.Provisioning.Redis.RedisResource;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
@@ -26,34 +25,29 @@ internal static partial class AzureExtensions
         {
             builder.ConfigureInfrastructure(infra =>
             {
-                var resource = infra
+                var cluster = infra
                     .GetProvisionableResources()
-                    .OfType<RedisResource>()
+                    .OfType<RedisEnterpriseCluster>()
                     .FirstOrDefault();
 
-                if (resource is null)
+                if (cluster is null)
                 {
                     return;
                 }
 
-                resource.Sku = new()
+                cluster.Sku = new()
                 {
-                    Family = environment.IsProduction()
-                        ? RedisSkuFamily.Premium
-                        : RedisSkuFamily.BasicOrStandard,
-                    Name = (environment.IsDevelopment(), environment.IsProduction()) switch
+                    Name = (environment.IsDevelopment(), environment.IsStaging()) switch
                     {
-                        (true, _) => RedisSkuName.Basic,
-                        (false, true) => RedisSkuName.Premium,
-                        _ => RedisSkuName.Standard,
-                    },
-                    Capacity = (environment.IsDevelopment(), environment.IsStaging()) switch
-                    {
-                        (true, _) => 0,
-                        (false, true) => 2,
-                        _ => 1,
+                        (true, _) => RedisEnterpriseSkuName.BalancedB0,
+                        (false, true) => RedisEnterpriseSkuName.BalancedB1,
+                        _ => RedisEnterpriseSkuName.BalancedB5,
                     },
                 };
+
+                cluster.HighAvailability = environment.IsDevelopment()
+                    ? RedisEnterpriseHighAvailability.Disabled
+                    : RedisEnterpriseHighAvailability.Enabled;
             });
 
             return builder;

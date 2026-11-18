@@ -1,12 +1,11 @@
-﻿using BookWorm.Chassis.Security.Keycloak;
-using BookWorm.Chassis.Security.Settings;
-using BookWorm.Chassis.Utilities;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 
-internal sealed class SecuritySchemeDefinitionsTransformer : IOpenApiDocumentTransformer
+internal sealed class SecuritySchemeDefinitionsTransformer(IConfiguration configuration)
+    : IOpenApiDocumentTransformer
 {
     public Task TransformAsync(
         OpenApiDocument document,
@@ -14,49 +13,20 @@ internal sealed class SecuritySchemeDefinitionsTransformer : IOpenApiDocumentTra
         CancellationToken cancellationToken
     )
     {
-        var identityOptions = context.ApplicationServices.GetService<IdentityOptions>();
+        var scopes = configuration[$"{Microsoft.Identity.Web.Constants.AzureAd}:Scopes"]
+            ?.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .ToDictionary(scope => scope, scope => scope);
 
-        if (identityOptions is null)
+        if (scopes is not { Count: > 0 })
         {
             return Task.CompletedTask;
         }
-
-        var keycloakUrl = ServiceDiscoveryUtilities.GetServiceEndpoint(
-            Components.KeyCloak,
-            Uri.UriSchemeHttp
-        );
-
-        if (string.IsNullOrWhiteSpace(keycloakUrl))
-        {
-            return Task.CompletedTask;
-        }
-
-        var authUrl = HttpUtilities
-            .AsUrlBuilder()
-            .WithBase(keycloakUrl)
-            .WithPath(KeycloakEndpoints.Authorize(identityOptions.Realm))
-            .Build();
-
-        var tokenUrl = HttpUtilities
-            .AsUrlBuilder()
-            .WithScheme(Uri.UriSchemeHttp)
-            .WithHost(Components.KeyCloak)
-            .WithPath(KeycloakEndpoints.Token(identityOptions.Realm))
-            .Build();
 
         var securityScheme = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.OAuth2,
             Description = "OAuth2 security scheme for the BookWorm API",
-            Flows = new()
-            {
-                AuthorizationCode = new()
-                {
-                    Scopes = identityOptions.Scopes!,
-                    AuthorizationUrl = new(authUrl),
-                    TokenUrl = new(tokenUrl),
-                },
-            },
+            Flows = new() { AuthorizationCode = new() { Scopes = scopes } },
         };
 
         document.Components ??= new();

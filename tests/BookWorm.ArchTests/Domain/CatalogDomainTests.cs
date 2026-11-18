@@ -115,13 +115,9 @@ public sealed class CatalogDomainTests : ArchUnitBaseTest
             .That()
             .ResideInNamespaceMatching(DomainNamespace)
             .And()
-            .HaveName(nameof(Book))
-            .Or()
-            .HaveName(nameof(Author))
-            .Or()
-            .HaveName(nameof(Category))
-            .Or()
-            .HaveName(nameof(Publisher))
+            .HaveNameMatching(
+                $"^({nameof(Book)}|{nameof(Author)}|{nameof(Category)}|{nameof(Publisher)})$"
+            )
             .Should()
             .ImplementInterface(typeof(IAggregateRoot))
             .Because(

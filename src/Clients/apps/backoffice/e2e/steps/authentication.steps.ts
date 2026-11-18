@@ -51,7 +51,7 @@ Then("I should be redirected to the login page", async ({ page }) => {
 });
 
 Then(
-  "I should be redirected to Keycloak OAuth provider",
+  "I should be redirected to Microsoft Entra ID OAuth provider",
   async ({ loginPage }) => {
     await loginPage.waitForOAuthRedirect();
   },

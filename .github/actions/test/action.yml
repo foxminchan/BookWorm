@@ -1,8 +1,7 @@
 name: Test
 description: >-
   Execute the full BookWorm test suite (unit, contract, integration) in Release
-  configuration with TRX reporting, code coverage collection, and hang/crash
-  dump diagnostics
+  configuration with TRX reporting and code coverage collection
 author: BookWorm Team
 branding:
   icon: check-circle
@@ -17,12 +16,6 @@ inputs:
     description: Path to the .bun-version file specifying the Bun runtime version
     required: false
     default: .bun-version
-  testHangTimeout:
-    description: >-
-      Maximum duration to wait before generating a hang dump for an unresponsive
-      test (e.g., '7m', '10m')
-    required: false
-    default: "7m"
   testSessionTimeout:
     description: >-
       Maximum total duration for the entire test session before forceful
@@ -69,7 +62,6 @@ runs:
       shell: bash
       if: success()
       env:
-        TEST_HANG_TIMEOUT: ${{ inputs.testHangTimeout }}
         TEST_SESSION_TIMEOUT: ${{ inputs.testSessionTimeout }}
         NO_BUILD: ${{ inputs.no-build }}
         ACTION_PATH: ${{ github.action_path }}

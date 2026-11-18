@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Update;
+namespace BookWorm.Catalog.Features.Categories.Update;
 
 internal sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategoryCommand, ISender>
 {
@@ -13,7 +13,7 @@ internal sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCatego
             .WithSummary("Update Category")
             .WithDescription("Update a category if it exists")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

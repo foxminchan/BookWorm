@@ -1,7 +1,6 @@
 using BookWorm.SharedKernel.Results;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 
@@ -26,64 +25,24 @@ internal sealed class PaginationHeaderFilter : IEndpointFilter
             return result;
         }
 
-        object? pagedResult = null;
-
-        var resultType = result.GetType();
-        if (resultType.IsGenericType && resultType.GetGenericTypeDefinition() == typeof(Ok<>))
+        var pagedResult = result switch
         {
-            var valueProperty = resultType.GetProperty("Value");
-            var value = valueProperty?.GetValue(result);
-            if (value is not null && IsPagedResultType(value.GetType()))
-            {
-                pagedResult = value;
-            }
-        }
-        else if (IsPagedResultType(resultType))
-        {
-            pagedResult = result;
-        }
+            IPagedResult direct => direct,
+            IValueHttpResult { Value: IPagedResult wrapped } => wrapped,
+            _ => null,
+        };
 
         if (pagedResult is null)
         {
             return result;
         }
 
-        var metadata = ExtractPaginationMetadata(pagedResult);
-        AddLinkHeader(context.HttpContext, metadata);
+        AddLinkHeader(context.HttpContext, pagedResult);
 
         return result;
     }
 
-    private static bool IsPagedResultType(Type type)
-    {
-        return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(PagedResult<>);
-    }
-
-    private static PaginationMetadata ExtractPaginationMetadata(object pagedResult)
-    {
-        var type = pagedResult.GetType();
-
-        return new(
-            Convert.ToInt32(
-                type.GetProperty(nameof(PagedResult<>.PageIndex))?.GetValue(pagedResult)
-            ),
-            Convert.ToInt32(
-                type.GetProperty(nameof(PagedResult<>.PageSize))?.GetValue(pagedResult)
-            ),
-            Convert.ToInt32(
-                type.GetProperty(nameof(PagedResult<>.TotalItems))?.GetValue(pagedResult)
-            ),
-            Convert.ToInt32(
-                type.GetProperty(nameof(PagedResult<>.TotalPages))?.GetValue(pagedResult)
-            ),
-            (bool?)type.GetProperty(nameof(PagedResult<>.HasPreviousPage))?.GetValue(pagedResult)
-                ?? false,
-            (bool?)type.GetProperty(nameof(PagedResult<>.HasNextPage))?.GetValue(pagedResult)
-                ?? false
-        );
-    }
-
-    private static void AddLinkHeader(HttpContext context, PaginationMetadata metadata)
+    private static void AddLinkHeader(HttpContext context, IPagedResult metadata)
     {
         var request = context.Request;
         var basePath = request.Path.Value ?? "/";
@@ -115,9 +74,11 @@ internal sealed class PaginationHeaderFilter : IEndpointFilter
             );
         }
 
-        links.Add(BuildLink(basePath, queryParams, metadata.TotalPages, metadata.PageSize, "last"));
+        links.Add(
+            BuildLink(basePath, queryParams, (int)metadata.TotalPages, metadata.PageSize, "last")
+        );
 
-        context.Response.Headers.Append("Link", string.Join(",", links));
+        context.Response.Headers.Link = new([.. links]);
         context.Response.Headers.Append("Pagination-Count", metadata.TotalItems.ToString());
     }
 
@@ -146,15 +107,6 @@ internal sealed class PaginationHeaderFilter : IEndpointFilter
         var queryString = QueryHelpers.AddQueryString(basePath, updatedParams);
         return $"<{queryString}>;rel={rel}";
     }
-
-    private sealed record PaginationMetadata(
-        int PageIndex,
-        int PageSize,
-        int TotalItems,
-        int TotalPages,
-        bool HasPreviousPage,
-        bool HasNextPage
-    );
 }
 
 public static class PaginationHeaderFilterExtensions

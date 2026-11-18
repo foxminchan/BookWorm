@@ -1,4 +1,4 @@
-<Project Sdk="Azure.Functions.Sdk/1.0.2">
+<Project Sdk="Azure.Functions.Sdk">
   <PropertyGroup>
     <NoWarn>$(NoWarn);AZFW0108</NoWarn>
   </PropertyGroup>
@@ -6,7 +6,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Kafka" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" />
     <PackageReference Include="Aspire.Azure.Npgsql" />
     <PackageReference Include="Aspire.Qdrant.Client" />

@@ -5,8 +5,11 @@ using BookWorm.Ordering.Extensions;
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
 [Transactional]
-public sealed record UpdateAddressCommand(string Street, string City, string Province)
-    : ICommand<BuyerDto>;
+public sealed record UpdateAddressCommand(
+    [property: PIIData] string Street,
+    [property: PIIData] string City,
+    [property: PIIData] string Province
+) : ICommand<BuyerDto>;
 
 internal sealed class UpdateAddressHandler(
     IBuyerRepository repository,

@@ -22,7 +22,7 @@ const jsonResponse = (status: number, body: Record<string, unknown>) =>
   });
 
 /**
- * Resolves the Keycloak access token for the current Better Auth session.
+ * Resolves the Microsoft Entra ID access token for the current Better Auth session.
  * Better Auth refreshes the token automatically when it has expired.
  */
 const getAccessToken = async (

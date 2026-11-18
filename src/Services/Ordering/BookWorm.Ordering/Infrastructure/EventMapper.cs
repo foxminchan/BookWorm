@@ -1,5 +1,5 @@
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Contracts;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Ordering.Infrastructure;
 
@@ -7,8 +7,8 @@ internal sealed class EventMapper(ClaimsPrincipal claimsPrincipal) : IEventMappe
 {
     public IntegrationEvent MapToIntegrationEvent(DomainEvent @event)
     {
-        var email = claimsPrincipal[KeycloakClaimTypes.Email];
-        var fullName = claimsPrincipal[KeycloakClaimTypes.Name];
+        var email = claimsPrincipal[ClaimTypes.Email];
+        var fullName = claimsPrincipal[ClaimConstants.Name];
 
         return @event switch
         {

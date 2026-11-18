@@ -3,7 +3,11 @@ using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.List;
 using BookWorm.SharedKernel.Results;
 using Mediator;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.List;
 
@@ -107,5 +111,28 @@ public sealed class ListBooksEndpointTests
         exception.Message.ShouldBe("Test exception");
 
         _senderMock.Verify(x => x.Send(_validQuery, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public void GivenEndpoint_WhenMappingEndpoint_ThenShouldRegisterHttpQueryMethod()
+    {
+        // Arrange
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.AddApiVersioning();
+        builder.Services.AddSingleton(_senderMock.Object);
+        var app = builder.Build();
+        var group = app.NewVersionedApi().MapGroup("/api/v{version:apiVersion}");
+
+        // Act
+        _endpoint.MapEndpoint(group);
+
+        // Assert
+        var routeEndpoint = ((IEndpointRouteBuilder)app)
+            .DataSources.SelectMany(ds => ds.Endpoints)
+            .OfType<RouteEndpoint>()
+            .ShouldHaveSingleItem();
+        var methodMetadata = routeEndpoint.Metadata.GetMetadata<IHttpMethodMetadata>();
+        methodMetadata.ShouldNotBeNull();
+        methodMetadata.HttpMethods.ShouldBe([HttpMethods.Query]);
     }
 }

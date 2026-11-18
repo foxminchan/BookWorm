@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.Delete;
+namespace BookWorm.Catalog.Features.Publishers.Delete;
 
 internal sealed class DeletePublisherEndpoint : IEndpoint<NoContent, PublisherId, ISender>
 {
@@ -18,7 +18,7 @@ internal sealed class DeletePublisherEndpoint : IEndpoint<NoContent, PublisherId
             .WithSummary("Delete Publisher")
             .WithDescription("Delete a publisher from the catalog system")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

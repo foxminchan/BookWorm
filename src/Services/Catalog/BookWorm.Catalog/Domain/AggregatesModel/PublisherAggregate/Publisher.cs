@@ -5,13 +5,18 @@ public sealed class Publisher() : Entity<PublisherId>, IAggregateRoot
     public Publisher(string name)
         : this()
     {
-        Name = !string.IsNullOrWhiteSpace(name)
-            ? name
-            : throw new CatalogDomainException("Publisher name must be provided.");
+        Name = name;
     }
 
     [DisallowNull]
-    public string? Name { get; private set; }
+    public string? Name
+    {
+        get;
+        private set =>
+            field = !string.IsNullOrWhiteSpace(value)
+                ? value
+                : throw new CatalogDomainException("Publisher name must be provided.");
+    }
 
     /// <summary>
     ///     Updates the name of the publisher.
@@ -21,9 +26,7 @@ public sealed class Publisher() : Entity<PublisherId>, IAggregateRoot
     /// <exception cref="CatalogDomainException">Thrown when the provided name is null or whitespace.</exception>
     public Publisher UpdateName(string name)
     {
-        Name = !string.IsNullOrWhiteSpace(name)
-            ? name
-            : throw new CatalogDomainException("Publisher name must be provided.");
+        Name = name;
         return this;
     }
 }

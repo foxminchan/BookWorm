@@ -1,9 +1,8 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.IntegrationEvents.EventHandlers;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
-using Wolverine;
 
 namespace BookWorm.Catalog.ContractTests.Consumers;
 
@@ -40,11 +39,7 @@ public sealed class FeedbackCreatedConsumerTests
             .ReturnsAsync(_book);
 
         var @event = new FeedbackCreatedIntegrationEvent((Guid)_book.Id, Rating, _feedbackId);
-        var busMock = new Mock<IMessageBus>();
-        var handler = new FeedbackCreatedIntegrationEventHandler(
-            _repositoryMock.Object,
-            busMock.Object
-        );
+        var handler = new FeedbackCreatedIntegrationEventHandler(_repositoryMock.Object);
 
         // Act
         await PactTests.Helper.VerifyConsumerMessageAsync(

@@ -1,23 +1,36 @@
-﻿var builder = DistributedApplication.CreateBuilder(args);
+var builder = DistributedApplication.CreateBuilder(args);
 
-builder.AddAzureContainerAppEnvironment(Components.Azure.ContainerApp).ProvisionAsService();
-
-var redis = builder
-    .AddAzureManagedRedis(Components.Redis)
-    .WithAccessKeyAuthentication()
-    .RunAsLocalContainer()
+builder
+    .AddAzureContainerAppEnvironment(Components.Azure.ContainerApp)
     .ProvisionAsService(builder.Environment);
 
-var qdrant = builder
-    .AddQdrant(Components.VectorDb)
-    .WithDataVolume()
-    .WithLifetime(ContainerLifetime.Persistent);
+// Add Azure Managed Redis, Qdrant, and Kafka
+var redis = builder
+    .AddAzureManagedRedis(Components.Redis)
+    .RunAsLocalContainer()
+    .ProvisionAsService(builder.Environment)
+    .InGroup(ResourceGroups.Data);
+
+var qdrant = builder.ExecutionContext.IsRunMode
+    ? builder
+        .AddQdrant(Components.VectorDb)
+        .WithDataVolume()
+        .WithLifetime(ContainerLifetime.Persistent)
+    : builder.AddConnectionString(Components.VectorDb);
+
+qdrant.InGroup(ResourceGroups.Data);
 
 var broker = builder.ExecutionContext.IsRunMode
     ? builder.AddKafka(Components.Broker).WithKafkaUI().WithLifetime(ContainerLifetime.Persistent)
     : builder.AddConnectionString(Components.Broker);
 
-var storage = builder.AddAzureStorage(Components.Azure.Storage.Resource).RunAsLocalContainer();
+broker.InGroup(ResourceGroups.Messaging);
+
+// Add Azure Blob Storage
+var storage = builder
+    .AddAzureStorage(Components.Azure.Storage.Resource)
+    .RunAsLocalContainer()
+    .InGroup(ResourceGroups.Data);
 
 var catalogContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Catalog))
@@ -27,45 +40,55 @@ var chatSessionContainer = storage
     .AddBlobContainer(Components.Azure.Storage.BlobContainer(Services.Chatting))
     .WithAzureStorageExplorer();
 
+// Add Azure Postgres Flexible Server and Databases
 var postgres = builder
     .AddAzurePostgresFlexibleServer(Components.Postgres)
-    .WithPasswordAuthentication()
     .RunAsLocalContainer()
-    .ProvisionAsService(builder.Environment);
+    .ProvisionAsService(builder.Environment)
+    .InGroup(ResourceGroups.Data);
 
-var ratingDb = postgres.AddDatabase(Components.Database.Rating).WithPostgresMcp();
 var catalogDb = postgres.AddDatabase(Components.Database.Catalog).WithPostgresMcp();
-var financeDb = postgres.AddDatabase(Components.Database.Finance).WithPostgresMcp();
 var orderingDb = postgres.AddDatabase(Components.Database.Ordering).WithPostgresMcp();
-var notificationDb = postgres.AddDatabase(Components.Database.Notification).WithPostgresMcp();
 var schedulerDb = postgres.AddDatabase(Components.Database.Scheduler).WithPostgresMcp();
 
-var foundry = builder.AddFoundry(Components.Foundry.Resource);
+// Add Azure Cosmos DB
+var cosmos = builder
+    .AddAzureCosmosDB(Components.Cosmos)
+    .RunAsLocalContainer()
+    .ProvisionAsService(builder.Environment)
+    .InGroup(ResourceGroups.Data);
+
+var ratingDb = cosmos.AddCosmosDatabase(Components.Database.Rating);
+var feedbacks = ratingDb.AddContainer(Components.Container.Feedbacks, "/bookId");
+
+// Add AI and Foundry components
+var foundry = builder.AddFoundry(Components.Foundry.Resource).InGroup(ResourceGroups.AI);
 var project = foundry.AddProject(Components.Foundry.Project);
 
-var chat = project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
-var embedding = project.AddModelDeployment(
-    Components.Foundry.Embedding,
-    FoundryModel.Cohere.EmbedV40
-);
-
-IResourceBuilder<IResource> keycloak = builder.ExecutionContext.IsRunMode
-    ? builder.AddLocalKeycloak(Components.KeyCloak)
-    : builder.AddHostedKeycloak(Components.KeyCloak);
+project.AddModelDeployment(Components.Foundry.Chat, FoundryModel.Microsoft.ModelRouter);
+project.AddModelDeployment(Components.Foundry.Decision, FoundryModel.Microsoft.MicrosoftDecision1);
+project.AddModelDeployment(Components.Foundry.Embedding, FoundryModel.Cohere.EmbedV40);
 
 var presidioAnalyzer = builder
     .AddPresidioAnalyzer(Components.Presidio.Analyzer)
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .InGroup(ResourceGroups.AI);
 
 var presidioAnonymizer = builder
     .AddPresidioAnonymizer(Components.Presidio.Anonymizer)
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .InGroup(ResourceGroups.AI);
 
+// Add Azure Entra ID and Agent Identities
+var entraId = builder.AddEntraId(Components.Azure.EntraId).InGroup(ResourceGroups.Security);
+var entraAgentIdentities = builder.AddEntraAgentIdentities(
+    Components.Azure.EntraAgentIdentities,
+    entraId
+);
+
+// Add services and their dependencies
 var catalogApi = builder
-    .AddDotnetProject(
-        Services.Catalog,
-        "../../Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj"
-    )
+    .AddDotnetProject(Services.Catalog, RepositoryPaths.ServiceProjectPath("Catalog"))
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(catalogDb)
@@ -74,67 +97,57 @@ var catalogApi = builder
     .WaitFor(redis)
     .WithReference(qdrant)
     .WaitFor(qdrant)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithReference(catalogContainer)
     .WaitFor(catalogContainer)
-    .WithReference(chat)
-    .WithReference(embedding)
-    .WithRoleAssignments(
-        storage,
-        StorageBuiltInRole.StorageBlobDataContributor,
-        StorageBuiltInRole.StorageBlobDataOwner
-    )
+    .WithReference(project)
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var mcp = builder
-    .AddDotnetProject(
-        Services.McpTools,
-        "../../Services/McpTools/BookWorm.McpTools/BookWorm.McpTools.csproj"
-    )
+    .AddDotnetProject(Services.McpTools, RepositoryPaths.ServiceProjectPath("McpTools"))
     .WithReference(catalogApi)
-    .WithKeycloak(keycloak)
-    .WithDisplayUrls();
+    .WithEntraId(entraId)
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var basketApi = builder
-    .AddDotnetProject(
-        Services.Basket,
-        "../../Services/Basket/BookWorm.Basket/BookWorm.Basket.csproj"
-    )
+    .AddDotnetProject(Services.Basket, RepositoryPaths.ServiceProjectPath("Basket"))
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(catalogApi)
-    .WithKeycloak(keycloak)
-    .WithDisplayUrls();
+    .WithEntraId(entraId)
+    .WithSecret("hmac-key", "HMAC__Key")
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var orderingApi = builder
-    .AddDotnetProject(
-        Services.Ordering,
-        "../../Services/Ordering/BookWorm.Ordering/BookWorm.Ordering.csproj"
-    )
+    .AddDotnetProject(Services.Ordering, RepositoryPaths.ServiceProjectPath("Ordering"))
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(redis)
     .WaitFor(redis)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
     .WithReference(catalogApi)
     .WaitFor(catalogApi)
     .WithReference(basketApi)
     .WithSecret("hmac-key", "HMAC__Key")
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var chatApi = builder
-    .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
-    .WithReference(chat)
-    .WithReference(embedding)
+    .AddDotnetProject(Services.Chatting, RepositoryPaths.ServiceProjectPath("Chat"))
     .WithReference(project)
     .WithReference(mcp)
     .WaitFor(mcp)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
+    .WithEntraAgentIdentity(entraAgentIdentities, "chatAgentId", (Services.Rating, "ratingAgentId"))
     .WithReference(presidioAnalyzer)
     .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
@@ -143,122 +156,127 @@ var chatApi = builder
     .WaitFor(chatSessionContainer)
     .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataContributor)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var ratingApi = builder
-    .AddDotnetProject(
-        Services.Rating,
-        "../../Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
-    )
-    .WithReference(chat)
-    .WithReference(embedding)
-    .WithReference(ratingDb)
-    .WaitFor(ratingDb)
+    .AddDotnetProject(Services.Rating, RepositoryPaths.ServiceProjectPath("Rating"))
+    .WithReference(project)
+    .WithReference(feedbacks)
+    .WaitFor(feedbacks)
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(mcp)
     .WithReference(broker)
     .WaitFor(broker)
-    .WithKeycloak(keycloak)
+    .WithEntraId(entraId)
+    .WithEntraAgentIdentity(entraAgentIdentities, "ratingAgentId")
     .WithReference(presidioAnalyzer)
-    .WaitFor(presidioAnalyzer)
     .WithReference(presidioAnonymizer)
     .WaitFor(presidioAnonymizer)
     .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithDisplayUrls();
+    .WithDisplayUrls()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 builder
-    .AddDotnetProject(
-        Services.Notification,
-        "../../Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj"
-    )
+    .AddDotnetProject(Services.Notification, RepositoryPaths.ServiceProjectPath("Notification"))
     .WithEmailProvider()
     .WithReference(broker)
     .WaitFor(broker)
-    .WithReference(notificationDb)
-    .WaitFor(notificationDb)
-    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
+    .WithSecret("hmac-key", "HMAC__Key")
+    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath)
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 builder
-    .AddDotnetProject(
-        Services.Finance,
-        "../../Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj"
-    )
-    .WithReference(financeDb)
-    .WaitFor(financeDb)
-    .WithReference(broker)
-    .WaitFor(broker)
-    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath);
-
-var catalogIngestion = builder
-    .AddAzureFunctionsProject(
-        Services.CatalogIngestion,
-        "../../Services/Catalog/BookWorm.Catalog.Ingestion/BookWorm.Catalog.Ingestion.csproj"
-    )
-    .WithKeycloak(keycloak, Services.CatalogIngestion)
-    .WithHostStorage(storage)
-    .WithReference(catalogDb)
-    .WaitFor(catalogApi)
-    .WithReference(qdrant)
-    .WaitFor(qdrant)
-    .WithReference(embedding)
-    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
-    .WithRoleAssignments(
-        storage,
-        StorageBuiltInRole.StorageBlobDataReader,
-        StorageBuiltInRole.StorageQueueDataReader
-    );
-
-builder
-    .AddDotnetProject(
-        Services.Scheduler,
-        "../../Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
-    )
-    .WithKeycloak(keycloak)
+    .AddDotnetProject(Services.Scheduler, RepositoryPaths.ServiceProjectPath("Scheduler"))
+    .WithEntraId(entraId)
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(schedulerDb)
     .WaitFor(schedulerDb)
-    .WithReference(catalogIngestion)
-    .WaitFor(catalogIngestion)
     .WithDisplayUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
-    .WithExplicitStart();
+    .WithExplicitStart()
+    .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
-var gateway = builder
+// Add Functions projects for Finance and Catalog Ingestion
+var durableTaskScheduler = builder
+    .AddDurableTaskScheduler(Components.Azure.DurableTask.Scheduler)
+    .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent))
+    .InGroup(ResourceGroups.Functions);
+
+var financeTaskHub = durableTaskScheduler.AddTaskHub(Components.Azure.DurableTask.TaskHub);
+
+builder
+    .AddAzureFunctionsProject(Services.Finance, RepositoryPaths.ServiceProjectPath("Finance"))
+    .WithHostStorage(storage)
+    .WithReference(financeTaskHub)
+    .WaitFor(financeTaskHub)
+    .WithReference(broker)
+    .WaitFor(broker)
+    .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner)
+    .InGroup(ResourceGroups.Functions, ResourceDisplayOrder.Functions);
+
+builder
+    .AddAzureFunctionsProject(
+        Services.CatalogIngestion,
+        RepositoryPaths.ServiceProjectPath("Catalog", "BookWorm.Catalog.Ingestion")
+    )
+    .WithHostStorage(storage)
+    .WithReference(broker)
+    .WaitFor(broker)
+    .WithEnvironment("BrokerList", broker.Resource.ConnectionStringExpression)
+    .WithReference(catalogDb)
+    .WaitFor(catalogDb)
+    .WithReference(qdrant)
+    .WaitFor(qdrant)
+    .WithReference(project)
+    .WithRoleAssignments(foundry, CognitiveServicesBuiltInRole.CognitiveServicesUser)
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner)
+    .InGroup(ResourceGroups.Functions, ResourceDisplayOrder.Functions);
+
+// Add API Gateway and Frontend Apps
+var gatewayBuilder = builder
     .AddApiGatewayProxy()
     .WithService(chatApi)
     .WithService(ratingApi)
     .WithService(orderingApi)
-    .WithService(basketApi, true)
-    .WithService(catalogApi, true)
-    .Build();
+    .WithService(basketApi)
+    .WithService(catalogApi)
+    .WithEntraProxy(entraId);
 
-var (storefront, backoffice) = builder.AddFrontendApps(gateway, keycloak);
+var (storefront, backoffice) = builder.AddFrontendApps(gatewayBuilder.Resource, entraId);
 
+gatewayBuilder
+    .WithFrontend(backoffice, "/backoffice")
+    .WithFrontend(storefront)
+    .Build()
+    .InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
+
+storefront.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
+backoffice.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
+
+// MCP tools are not routed through the gateway but still need a CORS policy outside Development
+mcp.WithGatewayCors(gatewayBuilder.Resource);
+
+// Add Scalar and MCP Inspector in run mode, or provision storage in publish mode
 if (builder.ExecutionContext.IsRunMode)
 {
     builder
-        .AddScalar(keycloak)
-        .WithOpenAPI(chatApi)
-        .WithOpenAPI(basketApi)
-        .WithOpenAPI(ratingApi)
-        .WithOpenAPI(catalogApi)
-        .WithOpenAPI(orderingApi);
+        .AddScalar(entraId)
+        .InGroup(ResourceGroups.Tooling, ResourceDisplayOrder.Tooling)
+        .WithOpenAPI(chatApi, basketApi, ratingApi, catalogApi, orderingApi);
 
-    builder.AddMcpInspector(Components.Inspector).WithMcpServer(mcp);
+    builder
+        .AddMcpInspector(Components.Inspector)
+        .WithMcpServer(mcp)
+        .InGroup(ResourceGroups.Tooling, ResourceDisplayOrder.Tooling);
 }
 else
 {
     storage.ProvisionAsService(builder.Environment);
-    var frontendScheme = Uri.UriSchemeHttps;
-
-    catalogApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    basketApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    orderingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    chatApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
-    ratingApi.WithCorsOrigins(storefront, backoffice, frontendScheme);
 }
 
 await builder.Build().RunAsync();

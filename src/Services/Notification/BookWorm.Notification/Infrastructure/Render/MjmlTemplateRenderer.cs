@@ -1,7 +1,7 @@
-﻿using System.Reflection;
+using System.Collections.Frozen;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using BookWorm.Notification.Domain.Attributes;
-using BookWorm.SharedKernel.Helpers;
 using Mjml.Net;
 
 namespace BookWorm.Notification.Infrastructure.Render;
@@ -28,7 +28,7 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
 
         // Substitute model properties and built-in variables
         combinedMjml = SubstituteModelProperties(combinedMjml, model);
-        combinedMjml = combinedMjml.Replace("{{Year}}", DateTimeHelper.UtcNow().Year.ToString());
+        combinedMjml = combinedMjml.Replace("{{Year}}", DateTime.UtcNow.Year.ToString());
 
         // Remove any remaining unreplaced variables (e.g., {{PreviewText}} when not provided)
         combinedMjml = VariablePattern().Replace(combinedMjml, string.Empty);
@@ -66,20 +66,16 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
     private static string SubstituteModelProperties<T>(string mjml, T model)
         where T : notnull
     {
-        var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        var properties = typeof(T)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .ToFrozenDictionary(p => p.Name, StringComparer.Ordinal);
 
         return VariablePattern()
             .Replace(mjml, match =>
-            {
-                var name = match.Groups[1].Value;
-                var property = properties.FirstOrDefault(p => p.Name == name);
-                if (property is null)
-                {
-                    return match.Value;
-                }
-
-                return GetFormattedValue(property, model);
-            });
+                properties.TryGetValue(match.Groups[1].Value, out var property)
+                    ? GetFormattedValue(property, model)
+                    : match.Value
+            );
     }
 
     private static string GetFormattedValue(PropertyInfo property, object model)

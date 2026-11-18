@@ -17,11 +17,14 @@ Then("I should be redirected to the registration page", async ({ page }) => {
   await expect(page).toHaveURL(/\/register/);
 });
 
-Then("I should be redirected to Keycloak OAuth provider", async ({ page }) => {
-  await page.waitForTimeout(2000);
-  const url = page.url();
-  expect(url).toMatch(/keycloak|auth|oauth/i);
-});
+Then(
+  "I should be redirected to Microsoft Entra ID OAuth provider",
+  async ({ page }) => {
+    await page.waitForTimeout(2000);
+    const url = page.url();
+    expect(url).toMatch(/login\.microsoftonline\.com|auth|oauth/i);
+  },
+);
 
 // Protected routes
 Given("I am not logged in", async ({ page }) => {

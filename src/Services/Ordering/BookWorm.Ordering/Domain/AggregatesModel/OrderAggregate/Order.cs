@@ -18,13 +18,13 @@ public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDel
 
     public Status Status { get; private set; }
     public string? Note { get; private set; }
-    public BuyerId BuyerId { get; private set; }
+    public BuyerId BuyerId { get; }
     public Buyer? Buyer { get; private set; } = null!;
 
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     [NotMapped]
-    public decimal TotalPrice => OrderItems.Select(item => item.GetTotalPrice()).Sum();
+    public decimal TotalPrice => OrderItems.Sum(item => item.GetTotalPrice());
 
     public bool IsDeleted { get; set; }
 
@@ -50,16 +50,12 @@ public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDel
     /// </remarks>
     public Order MarkAsCompleted()
     {
-        if (Status != Status.New)
-        {
-            throw new OrderingDomainException(
-                $"Cannot complete order in '{Status}' status; only '{Status.New}' orders can be completed."
-            );
-        }
-
-        Status = Status.Completed;
-        RegisterDomainEvent(new OrderCompletedEvent(this));
-        return this;
+        return Transition(
+            OrderLifecycleAction.Complete,
+            Status.Completed,
+            "complete",
+            static order => new OrderCompletedEvent(order)
+        );
     }
 
     /// <summary>
@@ -74,15 +70,43 @@ public sealed class Order() : AuditableEntity<OrderId>, IAggregateRoot, ISoftDel
     /// </remarks>
     public Order MarkAsCanceled()
     {
-        if (Status != Status.New)
+        return Transition(
+            OrderLifecycleAction.Cancel,
+            Status.Cancelled,
+            "cancel",
+            static order => new OrderCancelledEvent(order)
+        );
+    }
+
+    private Order Transition(
+        OrderLifecycleAction action,
+        Status targetStatus,
+        string actionVerb,
+        Func<Order, DomainEvent> createEvent
+    )
+    {
+        var currentStage = Status switch
+        {
+            Status.New => OrderLifecycleStage.Pending,
+            Status.Completed => OrderLifecycleStage.Completed,
+            Status.Cancelled => OrderLifecycleStage.Cancelled,
+            _ => OrderLifecycleStage.NotCreated,
+        };
+
+        var (_, transitions) = OrderLifecycleDecider.Instance.Handle(
+            new(action, DateTime.UtcNow),
+            new(currentStage, Id, BuyerId)
+        );
+
+        if (transitions.Length == 0)
         {
             throw new OrderingDomainException(
-                $"Cannot cancel order in '{Status}' status; only '{Status.New}' orders can be cancelled."
+                $"Cannot {actionVerb} order in '{Status}' status; only '{Status.New}' orders can be {(actionVerb == "complete" ? "completed" : "cancelled")}."
             );
         }
 
-        Status = Status.Cancelled;
-        RegisterDomainEvent(new OrderCancelledEvent(this));
+        Status = targetStatus;
+        RegisterDomainEvent(createEvent(this));
         return this;
     }
 }

@@ -4,17 +4,19 @@ import { useEffect } from "react";
 
 import { Loader2 } from "lucide-react";
 
+import { AUTH } from "@workspace/utils/constants";
+
 import { signIn } from "@/lib/auth-client";
 
 export default function LoginPage() {
   useEffect(() => {
     void signIn
       .social({
-        provider: "keycloak",
-        callbackURL: "/",
+        provider: AUTH.PROVIDER,
+        callbackURL: AUTH.CALLBACK_URL,
       })
       .catch((error: unknown) => {
-        console.error("Failed to start Keycloak login:", error);
+        console.error("Failed to start Microsoft Entra ID login:", error);
       });
   }, []);
 

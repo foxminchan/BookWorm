@@ -4,22 +4,19 @@ namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class AuthorRepository(CatalogDbContext context) : IAuthorRepository
 {
-    private readonly CatalogDbContext _context = context
-        ?? throw new ArgumentNullException(nameof(context));
-
     private static SpecificationEvaluator Specification => SpecificationEvaluator.Instance;
 
-    public IUnitOfWork UnitOfWork => _context;
+    public IUnitOfWork UnitOfWork => context;
 
     public async Task<Author> AddAsync(Author author, CancellationToken cancellationToken)
     {
-        var entry = await _context.Authors.AddAsync(author, cancellationToken);
+        var entry = await context.Authors.AddAsync(author, cancellationToken);
         return entry.Entity;
     }
 
     public async Task<IReadOnlyList<Author>> ListAsync(CancellationToken cancellationToken)
     {
-        return await _context
+        return await context
             .Authors.AsNoTracking()
             .Take(Pagination.DefaultQueryLimit)
             .ToListAsync(cancellationToken);
@@ -27,12 +24,12 @@ internal sealed class AuthorRepository(CatalogDbContext context) : IAuthorReposi
 
     public void Delete(Author author)
     {
-        _context.Authors.Remove(author);
+        context.Authors.Remove(author);
     }
 
     public async Task<Author?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return await _context.Authors.FindAsync([id], cancellationToken);
+        return await context.Authors.FindAsync([id], cancellationToken);
     }
 
     public async Task<Author?> FirstOrDefaultAsync(
@@ -41,7 +38,7 @@ internal sealed class AuthorRepository(CatalogDbContext context) : IAuthorReposi
     )
     {
         return await Specification
-            .GetQuery(_context.Authors.AsQueryable(), spec)
+            .GetQuery(context.Authors.AsQueryable(), spec)
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

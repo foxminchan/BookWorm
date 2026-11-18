@@ -156,6 +156,8 @@ internal sealed class VectorBatchProcessor(
     }
 }
 
+[ExcludeFromCodeCoverage]
 internal sealed record VectorUpdateBatch(IReadOnlyList<PendingVectorUpdate> Updates);
 
+[ExcludeFromCodeCoverage]
 internal sealed record PendingVectorUpdate(Guid BookId, Guid Revision, string? Content);

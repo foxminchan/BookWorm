@@ -4,10 +4,9 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     BETTER_AUTH_SECRET: z.string().optional(),
-    KEYCLOAK_HTTPS: z.url().optional(),
-    KEYCLOAK_HTTP: z.url().optional(),
-    KEYCLOAK_REALM: z.string().optional(),
-    KEYCLOAK_CLIENT_ID: z.string().optional(),
+    ENTRA_INSTANCE: z.url().optional(),
+    ENTRA_TENANT_ID: z.string().min(1).optional(),
+    ENTRA_CLIENT_ID: z.string().min(1).optional(),
     NEXT_PUBLIC_APP_URL: z.url().optional(),
   },
 
@@ -19,10 +18,9 @@ export const env = createEnv({
 
   runtimeEnv: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    KEYCLOAK_HTTPS: process.env.KEYCLOAK_HTTPS,
-    KEYCLOAK_HTTP: process.env.KEYCLOAK_HTTP,
-    KEYCLOAK_REALM: process.env.KEYCLOAK_REALM,
-    KEYCLOAK_CLIENT_ID: process.env.KEYCLOAK_CLIENT_ID,
+    ENTRA_INSTANCE: process.env.ENTRA_INSTANCE,
+    ENTRA_TENANT_ID: process.env.ENTRA_TENANT_ID,
+    ENTRA_CLIENT_ID: process.env.ENTRA_CLIENT_ID,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_GATEWAY_HTTPS: process.env.NEXT_PUBLIC_GATEWAY_HTTPS,
     NEXT_PUBLIC_GATEWAY_HTTP: process.env.NEXT_PUBLIC_GATEWAY_HTTP,

@@ -45,7 +45,7 @@
   - [x] Integrated event sourcing for storing domain events
   - [x] Implemented a microservices chassis for cross-cutting concerns and service infrastructure
 - [x] Implemented API versioning and feature flags for flexible application management
-- [x] Set up AuthN/AuthZ with Keycloak
+- [x] Set up AuthN/AuthZ with Microsoft Entra ID
   - [x] Used Authorization Code Flow with PKCE for user authentication
   - [x] Enabled Token Exchange for service-to-service authentication
 - [x] Implemented caching with FusionCache
@@ -85,11 +85,10 @@
 - [mise](https://mise.jdx.dev/) — tool version manager
 - [Docker](https://www.docker.com/get-started) — container runtime _(must be running before starting the app)_
 
-**Optional**
+**Optional** — install with `mise run setup:<tool>`:
 
-- [Buf CLI](https://docs.buf.build/installation) — gRPC schema & codegen
-- [Spec-Kit](https://github.com/github/spec-kit) — spec-driven development
-- [GitHub Copilot CLI](https://github.com/github/copilot-cli) — AI-assisted development
+- `mise run setup:buf` — [Buf CLI](https://docs.buf.build/installation) for gRPC schema & codegen
+- `mise run setup:copilot` — [GitHub Copilot CLI](https://github.com/github/copilot-cli) for AI-assisted development
 
 > [!NOTE]
 >
@@ -102,21 +101,15 @@
 ```sh
 # 1. Clone the repository
 git clone git@github.com:foxminchan/BookWorm.git
-
-# 2. Navigate to the project directory
 cd BookWorm
 
-# 3. Install tools (.NET SDK, Bun, JDK & tools — skip if already installed globally)
+# 2. Install tools (.NET SDK, Bun, JDK & tools — skip if already installed globally)
 mise install
 
-# 4. Setup Azure subscription and location for deployment
-aspire secret set "Azure:SubscriptionId" "your-subscription-id"
-aspire secret set "Azure:Location" "your-location"
-
-# 5. First-time setup
+# 3. First-time setup (restore packages + git hooks)
 mise run prepare
 
-# 6. Start the application
+# 4. Start the application
 mise run run
 ```
 
@@ -124,12 +117,14 @@ mise run run
 >
 > On first run, you'll be prompted to enter the required environment variables.
 
-### Self-Deploy to Azure
+### Deploy to Azure
 
-1. **Authenticate with Azure**
+1. **Authenticate and configure**
 
 ```sh
 az login
+aspire secret set "Azure:SubscriptionId" "your-subscription-id"
+aspire secret set "Azure:Location" "your-location"
 ```
 
 2. **Deploy**
@@ -147,27 +142,15 @@ az containerapp show --name <app-name> --resource-group <resource-group> \
 
 4. **Clean up resources**
 
-```sh
-az group delete --name <resource-group> --yes --no-wait
-```
-
-5. **Clean up resources**:
-
 To remove all deployed resources and avoid charges:
 
 ```sh
 az group delete --name <resource-group> --yes --no-wait
 ```
 
-## Documentation
-
-For full documentation, visit the [GitHub Wiki](https://github.com/foxminchan/BookWorm/wiki).
-
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING](./.github/CONTRIBUTING.md) and [CODE OF CONDUCT](./.github/CODE-OF-CONDUCT.md) for details. Thanks to all [contributors](https://github.com/foxminchan/BookWorm/graphs/contributors)!
-
-For bugs or feature requests, [open an issue](https://github.com/foxminchan/BookWorm/issues/new/choose).
+For full documentation, visit the [BookWorm Catalog](https://foxminchan.github.io/BookWorm/). Contributions are welcome — see [CONTRIBUTING](./.github/CONTRIBUTING.md) and [CODE OF CONDUCT](./.github/CODE-OF-CONDUCT.md) for details. For bugs or feature requests, [open an issue](https://github.com/foxminchan/BookWorm/issues/new/choose).
 
 ## License
 

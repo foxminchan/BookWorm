@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.OpenTelemetry.ActivityScope;
+using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Extensions;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
@@ -19,13 +19,14 @@ internal sealed class OrderEventHandler(
         CancellationToken cancellationToken
     )
     {
-        OrderingTrace.LogOrderCancelled(logger, (Guid)notification.Order.Id, Status.Cancelled);
+        var orderId = (Guid)notification.Order.Id;
+        OrderingTrace.LogOrderCancelled(logger, orderId, Status.Cancelled);
         documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.GetAndUpdate<OrderSummary>(
-            Guid.CreateVersion7(),
+            orderId,
             notification,
             activityScope,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
     }
 
@@ -34,13 +35,14 @@ internal sealed class OrderEventHandler(
         CancellationToken cancellationToken
     )
     {
-        OrderingTrace.LogOrderCompleted(logger, (Guid)notification.Order.Id, Status.Completed);
+        var orderId = (Guid)notification.Order.Id;
+        OrderingTrace.LogOrderCompleted(logger, orderId, Status.Completed);
         documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.GetAndUpdate<OrderSummary>(
-            Guid.CreateVersion7(),
+            orderId,
             notification,
             activityScope,
-            cancellationToken
+            cancellationToken: cancellationToken
         );
     }
 
@@ -49,10 +51,11 @@ internal sealed class OrderEventHandler(
         CancellationToken cancellationToken
     )
     {
-        OrderingTrace.LogOrderPlaced(logger, (Guid)notification.Order.Id, Status.New);
+        var orderId = (Guid)notification.Order.Id;
+        OrderingTrace.LogOrderPlaced(logger, orderId, Status.New);
         documentSession.PropagateUserId(claimsPrincipal);
         await documentSession.Add<OrderSummary>(
-            Guid.CreateVersion7(),
+            orderId,
             notification,
             activityScope,
             cancellationToken

@@ -2,6 +2,7 @@ import "./env.mjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: "/backoffice",
   transpilePackages: ["@workspace/ui"],
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "date-fns"],

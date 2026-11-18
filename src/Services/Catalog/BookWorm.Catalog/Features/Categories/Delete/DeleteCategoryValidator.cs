@@ -12,24 +12,16 @@ internal sealed class DeleteCategoryValidator : AbstractValidator<DeleteCategory
 
 internal sealed class CategoryValidator : AbstractValidator<Guid>
 {
-    private readonly IBookRepository _repository;
-
     public CategoryValidator(IBookRepository repository)
     {
-        _repository = repository;
-
         RuleFor(x => x)
-            .MustAsync(IsNotCategoryBook)
+            .MustAsync(
+                async (categoryId, cancellationToken) =>
+                    await repository.CountAsync(
+                        new BookFilterSpec([categoryId], null),
+                        cancellationToken
+                    ) == 0
+            )
             .WithMessage("Category has books and cannot be deleted");
-    }
-
-    private async Task<bool> IsNotCategoryBook(Guid categoryId, CancellationToken cancellationToken)
-    {
-        var category = await _repository.ListAsync(
-            new BookFilterSpec([categoryId], null),
-            cancellationToken
-        );
-
-        return category.Count == 0;
     }
 }

@@ -2,17 +2,14 @@ namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class CategoryRepository(CatalogDbContext context) : ICategoryRepository
 {
-    private readonly CatalogDbContext _context = context
-        ?? throw new ArgumentNullException(nameof(context));
-
-    public IUnitOfWork UnitOfWork => _context;
+    public IUnitOfWork UnitOfWork => context;
 
     public async Task<Category> AddAsync(
         Category category,
         CancellationToken cancellationToken = default
     )
     {
-        await _context.Categories.AddAsync(category, cancellationToken);
+        await context.Categories.AddAsync(category, cancellationToken);
         return category;
     }
 
@@ -20,7 +17,7 @@ internal sealed class CategoryRepository(CatalogDbContext context) : ICategoryRe
         CancellationToken cancellationToken = default
     )
     {
-        return await _context
+        return await context
             .Categories.AsNoTracking()
             .Take(Pagination.DefaultQueryLimit)
             .ToListAsync(cancellationToken);
@@ -31,11 +28,11 @@ internal sealed class CategoryRepository(CatalogDbContext context) : ICategoryRe
         CancellationToken cancellationToken = default
     )
     {
-        return await _context.Categories.FindAsync([id], cancellationToken);
+        return await context.Categories.FindAsync([id], cancellationToken);
     }
 
     public void Delete(Category category)
     {
-        _context.Categories.Remove(category);
+        context.Categories.Remove(category);
     }
 }

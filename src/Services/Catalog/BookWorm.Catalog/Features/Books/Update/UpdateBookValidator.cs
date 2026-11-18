@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Books.Update;
+namespace BookWorm.Catalog.Features.Books.Update;
 
 internal sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 {
@@ -20,11 +20,6 @@ internal sealed class UpdateBookValidator : AbstractValidator<UpdateBookCommand>
 
         RuleFor(x => x.AuthorIds).NotEmpty();
 
-        When(IsHasFiles, () => RuleFor(x => x.Image).ApplyImageRules());
-    }
-
-    private static bool IsHasFiles(UpdateBookCommand command)
-    {
-        return command.Image is not null;
+        When(x => x.Image is not null, () => RuleFor(x => x.Image).ApplyImageRules());
     }
 }

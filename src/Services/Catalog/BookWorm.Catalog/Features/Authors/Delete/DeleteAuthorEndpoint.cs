@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Delete;
+namespace BookWorm.Catalog.Features.Authors.Delete;
 
 internal sealed class DeleteAuthorEndpoint : IEndpoint<NoContent, AuthorId, ISender>
 {
@@ -17,7 +17,7 @@ internal sealed class DeleteAuthorEndpoint : IEndpoint<NoContent, AuthorId, ISen
             .WithSummary("Delete Author")
             .WithDescription("Delete an author from the catalog system")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

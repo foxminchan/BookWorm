@@ -1,3 +1,5 @@
+using Microsoft.Identity.Web;
+
 namespace BookWorm.Ordering.Features.Dashboard;
 
 internal sealed class GetDashboardEndpoint : IEndpoint<Ok<DashboardDto>, ISender>

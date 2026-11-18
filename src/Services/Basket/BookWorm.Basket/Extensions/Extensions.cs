@@ -1,14 +1,14 @@
-﻿using BookWorm.Basket.Configurations;
+using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
 using BookWorm.Chassis.CQRS;
-using BookWorm.Chassis.EventBus.Wolverine;
+using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Basket.Extensions;
 
@@ -24,14 +24,14 @@ internal static class Extensions
 
             builder.AddAppSettings<BasketAppSettings>();
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.User)
+                        .RequireRole(Authorization.Roles.Customer)
                         .RequireScope(
                             $"{Services.Basket}_{Authorization.Actions.Read}",
                             $"{Services.Basket}_{Authorization.Actions.Write}"
@@ -54,6 +54,8 @@ internal static class Extensions
                 .AddScoped<GetBasketPostProcessor>();
 
             builder.AddRateLimiting();
+
+            builder.AddRedaction();
 
             // Add database configuration
             builder
@@ -88,20 +90,11 @@ internal static class Extensions
             );
 
             // Configure EventBus
-            builder.AddEventBus(opts =>
-            {
+            builder.AddEventBus<BasketApiMarker>(opts =>
                 // Preserve per-order saga ordering on Kafka by routing all events that
                 // expose an OrderId to the same partition.
-                opts.MessagePartitioning.ByPropertyNamed("OrderId");
-
-                opts.Discovery.IncludeAssembly(typeof(BasketApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(BasketApiMarker).Assembly
-                );
-            });
-
-            services.AddKeycloakTokenIntrospection();
+                opts.MessagePartitioning.ByPropertyNamed("OrderId")
+            );
         }
     }
 }

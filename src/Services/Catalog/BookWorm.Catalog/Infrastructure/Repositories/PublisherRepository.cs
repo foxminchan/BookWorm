@@ -2,21 +2,18 @@ namespace BookWorm.Catalog.Infrastructure.Repositories;
 
 internal sealed class PublisherRepository(CatalogDbContext context) : IPublisherRepository
 {
-    private readonly CatalogDbContext _context = context
-        ?? throw new ArgumentNullException(nameof(context));
-
-    public IUnitOfWork UnitOfWork => _context;
+    public IUnitOfWork UnitOfWork => context;
 
     public async Task<Publisher> AddAsync(Publisher publisher, CancellationToken cancellationToken)
     {
-        var result = await _context.Publishers.AddAsync(publisher, cancellationToken);
+        var result = await context.Publishers.AddAsync(publisher, cancellationToken);
 
         return result.Entity;
     }
 
     public async Task<IReadOnlyList<Publisher>> ListAsync(CancellationToken cancellationToken)
     {
-        return await _context
+        return await context
             .Publishers.AsNoTracking()
             .Take(Pagination.DefaultQueryLimit)
             .ToListAsync(cancellationToken);
@@ -24,11 +21,11 @@ internal sealed class PublisherRepository(CatalogDbContext context) : IPublisher
 
     public async Task<Publisher?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return await _context.Publishers.FindAsync([id], cancellationToken);
+        return await context.Publishers.FindAsync([id], cancellationToken);
     }
 
     public void Delete(Publisher publisher)
     {
-        _context.Publishers.Remove(publisher);
+        context.Publishers.Remove(publisher);
     }
 }

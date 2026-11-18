@@ -10,6 +10,7 @@ import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
 
 import { OrderDetailSkeleton } from "@/components/loading-skeleton";
 import { PageHeader } from "@/components/page-header";
+import { OrderEventHistory } from "@/features/orders/order-event-history";
 import { OrderItemsTable } from "@/features/orders/order-items-table";
 import { OrderSummaryCards } from "@/features/orders/order-summary-cards";
 
@@ -59,6 +60,7 @@ export default function OrderDetailPage({
         itemCount={order.items.length}
       />
       <OrderItemsTable items={order.items} total={order.total} />
+      <OrderEventHistory orderId={order.id} />
     </div>
   );
 }

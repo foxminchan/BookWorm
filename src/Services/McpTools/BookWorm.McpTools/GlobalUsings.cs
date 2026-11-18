@@ -1,10 +1,12 @@
-﻿global using System.ComponentModel;
+global using System.ComponentModel;
+global using System.Diagnostics.CodeAnalysis;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
 global using BookWorm.Chassis.Exceptions;
 global using BookWorm.McpTools.Extensions;
+global using BookWorm.McpTools.Grpc;
+global using BookWorm.McpTools.Grpc.Services.Book;
 global using BookWorm.McpTools.Models;
-global using BookWorm.McpTools.Services;
 global using BookWorm.ServiceDefaults;
 global using BookWorm.ServiceDefaults.ApiSpecification.OpenApi;
 global using BookWorm.ServiceDefaults.Kestrel;

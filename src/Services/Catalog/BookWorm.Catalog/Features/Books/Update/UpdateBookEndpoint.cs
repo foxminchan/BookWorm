@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
@@ -11,13 +11,14 @@ internal sealed class UpdateBookEndpoint : IEndpoint<NoContent, UpdateBookComman
             )
             .Accepts<UpdateBookCommand>(MediaTypeNames.Multipart.FormData)
             .ProducesPut()
+            .WithETag()
             .WithTags(nameof(Book))
             .WithName(nameof(UpdateBookEndpoint))
             .WithSummary("Update Book")
             .WithDescription("Update a book if it exists")
             .WithFormOptions(true)
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

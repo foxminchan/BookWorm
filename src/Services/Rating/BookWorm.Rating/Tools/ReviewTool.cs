@@ -39,7 +39,7 @@ public sealed class ReviewTool
     {
         var reviews = await sender.Send(new ListFeedbacksQuery(bookId, 1, int.MaxValue));
 
-        return reviews.Any()
+        return reviews.Count > 0
             ? JsonSerializer.Serialize(
                 reviews,
                 FeedbackSerializationContext.Default.IReadOnlyListFeedbackDto

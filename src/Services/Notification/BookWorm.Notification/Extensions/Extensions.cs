@@ -1,12 +1,6 @@
-using BookWorm.Chassis.EF;
-using BookWorm.Chassis.EventBus.Wolverine;
+using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
-using BookWorm.Chassis.Repository;
-using BookWorm.Notification.Infrastructure;
 using BookWorm.Notification.Infrastructure.Senders.MailKit;
-using BookWorm.Notification.Infrastructure.Senders.Outbox;
-using Wolverine.EntityFrameworkCore;
-using Wolverine.Postgresql;
 
 namespace BookWorm.Notification.Extensions;
 
@@ -20,18 +14,8 @@ internal static class Extensions
 
             services.AddActivityScope();
 
-            builder.AddAzurePostgresDbContext<NotificationDbContext>(
-                Components.Database.Notification,
-                _ =>
-                {
-                    services.AddMigration<NotificationDbContext>();
+            builder.AddRedaction();
 
-                    services.AddRepositories(typeof(NotificationApiMarker));
-                },
-                true
-            );
-
-            // Resilience pipeline for the notification service
             builder.AddMailResiliencePipeline();
 
             services.AddSingleton<IRenderer, MjmlTemplateRenderer>();
@@ -40,29 +24,9 @@ internal static class Extensions
                 builder.Environment.IsDevelopment() ? Components.MailPit : Components.Email
             );
 
-            builder.AddEmailOutbox();
-
-            var postgresCs = builder.Configuration.GetConnectionString(
-                Components.Database.Notification
+            builder.AddEventBus<INotificationApiMarker>(opts =>
+                opts.MessagePartitioning.ByPropertyNamed(nameof(OrderId))
             );
-            builder.AddEventBus(opts =>
-            {
-                if (!string.IsNullOrWhiteSpace(postgresCs))
-                {
-                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
-                    opts.UseEntityFrameworkCoreTransactions();
-                }
-
-                // Preserve per-order saga ordering for outbound order emails by
-                // routing all events that expose an OrderId to the same partition.
-                opts.MessagePartitioning.ByPropertyNamed("OrderId");
-
-                opts.Discovery.IncludeAssembly(typeof(NotificationApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(NotificationApiMarker).Assembly
-                );
-            });
         }
     }
 }
