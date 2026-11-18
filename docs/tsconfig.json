@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"allowJs": true,
+		"jsx": "preserve",
+		"paths": {
+			"@catalog/components/*": ["./components/*", "./federated/components/*"],
+			"@catalog/layouts/*": [
+				"./node_modules/@eventcatalog/core/eventcatalog/src/toolkit/layouts/*"
+			],
+			"@catalog/utils": [
+				"./node_modules/@eventcatalog/core/eventcatalog/src/toolkit/utils/index.ts"
+			],
+			"@catalog/utils/*": ["./node_modules/@eventcatalog/core/eventcatalog/src/toolkit/utils/*"]
+		}
+	},
+	"include": ["pages/**/*", "components/**/*"]
+}

@@ -15,8 +15,8 @@ export default {
 
 	linkValidation: {
 		onBrokenLinks: "error",
-		onBrokenAnchors: "warn",
-		ignore: ["/BookWorm", "/miro"],
+		onBrokenAnchors: process.env.CI ? "error" : "warn",
+		ignore: ["/BookWorm", "/miro", "/reports/**"],
 	},
 
 	search: {
@@ -25,6 +25,25 @@ export default {
 
 	navigation: {
 		pages: ["list:top-level-domains", "list:top-level-diagrams", "list:all"],
+		groups: [
+			{ id: "main", items: [{ id: "home" }, { id: "docs" }] },
+			{ id: "browse", label: "Browse", items: [{ id: "catalog" }, { id: "schemas" }] },
+			{
+				id: "quality",
+				label: "Quality",
+				items: [
+					{
+						id: "test-reports",
+						label: "Test Reports",
+						href: "/custom/reports",
+						icon: "FlaskConical",
+						match: "/custom/reports",
+					},
+				],
+			},
+			{ id: "people", label: "Organization", items: [{ id: "teams" }, { id: "users" }] },
+			{ id: "settings-group", position: "bottom", items: [{ id: "settings" }] },
+		],
 	},
 
 	customDocs: {

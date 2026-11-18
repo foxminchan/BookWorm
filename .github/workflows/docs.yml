@@ -8,6 +8,12 @@ on:
     paths:
       - .github/workflows/docs.yml
       - docs/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/docs.yml
+      - docs/**
   workflow_run:
     workflows:
       - BookWorm CI (Frontend)
@@ -21,8 +27,8 @@ on:
 permissions: {}
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.head_ref || github.run_id) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   BUN_VERSION_FILE: .bun-version
@@ -56,17 +62,44 @@ jobs:
             ${{ runner.os }}-bun-
 
       - name: 📄 Setup Pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v6.0.0
 
       - name: 📦 Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
         working-directory: docs
 
+      - name: 🔑 Configure EventCatalog license
+        env:
+          EVENTCATALOG_LICENSE: ${{ secrets.EVENTCATALOG_LICENSE }}
+        run: |
+          if [ -n "$EVENTCATALOG_LICENSE" ]; then
+            printf '%s' "$EVENTCATALOG_LICENSE" > docs/license.jwt
+          fi
+
+      - name: 🧹 Lint and format check
+        run: bun run check
+        working-directory: docs
+
+      - name: 🛡️ Run architecture fitness checks
+        run: bun run fitness
+        working-directory: docs
+
+      - name: ⬆️ Upload fitness report
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: eventcatalog-fitness-report
+          path: docs/.eventcatalog/fitness/results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: 🔨 Build documentation
         run: bun run build
         working-directory: docs
 
       - name: ⬇️ Download Allure Results (Backend Unit)
+        if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-be-unit
@@ -79,6 +112,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: ⬇️ Download Allure Results (Backend Contract)
+        if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-be-contract
@@ -91,6 +125,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: ⬇️ Download Allure Results (Backoffice)
+        if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-fe-bo
@@ -103,6 +138,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: ⬇️ Download Allure Results (Storefront)
+        if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-fe-sf
@@ -115,6 +151,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: 💾 Cache Clients Bun dependencies
+        if: github.event_name != 'pull_request'
         uses: actions/cache@v6.1.0
         with:
           path: ~/.bun/install/cache
@@ -123,10 +160,12 @@ jobs:
             ${{ runner.os }}-bun-
 
       - name: 📦 Install Clients dependencies (for Allure CLI)
+        if: github.event_name != 'pull_request'
         run: bun install --frozen-lockfile --ignore-scripts
         working-directory: src/Clients
 
       - name: 📊 Generate Unified Allure Report
+        if: github.event_name != 'pull_request'
         working-directory: src/Clients
         run: |
           shopt -s nullglob
@@ -138,6 +177,7 @@ jobs:
           fi
 
       - name: ⬇️ Download Allure Report (Backoffice)
+        if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-report-backoffice
@@ -150,6 +190,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: ⬇️ Download Allure Report (Storefront)
+        if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-report-storefront
@@ -161,13 +202,47 @@ jobs:
           search_artifacts: true
           if_no_artifact_found: warn
 
+      - name: ⬇️ Download TUnit HTML Reports (Backend)
+        if: github.event_name != 'pull_request'
+        uses: dawidd6/action-download-artifact@v28
+        with:
+          name: tunit-report-backend
+          path: docs/dist/reports/tunit
+          workflow: sonar.yml
+          workflow_search: true
+          branch: main
+          event: push
+          search_artifacts: true
+          if_no_artifact_found: warn
+
+      - name: 📝 Generate TUnit Reports Manifest
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p docs/dist/reports/tunit
+          shopt -s globstar nullglob
+          files=(docs/dist/reports/tunit/**/*.html)
+          {
+            echo "["
+            for i in "${!files[@]}"; do
+              rel="${files[$i]#docs/dist/reports/tunit/}"
+              name=$(basename "$rel" .html)
+              comma=","
+              if [ "$i" -eq $((${#files[@]} - 1)) ]; then comma=""; fi
+              printf '  {"name": "%s", "path": "/reports/tunit/%s"}%s\n' "$name" "$rel" "$comma"
+            done
+            echo "]"
+          } > docs/dist/reports/tunit/manifest.json
+
       - name: ⬆️ Upload artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: docs/dist
 
   deploy:
     name: 🚀 Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

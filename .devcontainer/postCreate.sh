@@ -9,7 +9,4 @@ sudo apt-get update && \
 echo "Installing tools via mise..."
 mise install
 
-echo "Installing Buf CLI"
-bun install -g @bufbuild/buf --ignore-scripts
-
 echo "✅ BookWorm development environment setup complete!"
