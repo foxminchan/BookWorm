@@ -1,3 +1,5 @@
+[![BookWorm Documentation](https://github.com/foxminchan/BookWorm/actions/workflows/docs.yaml/badge.svg)](https://github.com/foxminchan/BookWorm/actions/workflows/docs.yaml)
+
 # BookWorm architecture catalog
 
 This repository is the living architecture documentation for BookWorm, an online bookstore and commerce platform. It uses EventCatalog to describe the business domains, systems, services, flows, contracts, and operational guardrails that shape the product.
