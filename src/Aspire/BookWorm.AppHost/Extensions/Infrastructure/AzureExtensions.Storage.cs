@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
@@ -87,11 +87,25 @@ internal static partial class AzureExtensions
     {
         public IResourceBuilder<AzureBlobStorageContainerResource> WithAzureStorageExplorer()
         {
-            var storageContainerResource = builder.ApplicationBuilder.CreateResourceBuilder(
-                builder.Resource.Parent
-            );
+            if (!builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+            {
+                return builder;
+            }
 
-            storageContainerResource.WithAzureStorageExplorer();
+            var explorerName = $"{builder.Resource.Parent.Name}-explorer";
+
+            if (
+                !builder.ApplicationBuilder.Resources.Any(r =>
+                    string.Equals(r.Name, explorerName, StringComparison.OrdinalIgnoreCase)
+                )
+            )
+            {
+                var storageContainerResource = builder.ApplicationBuilder.CreateResourceBuilder(
+                    builder.Resource.Parent
+                );
+
+                storageContainerResource.WithAzureStorageExplorer();
+            }
 
             return builder;
         }

@@ -1,4 +1,4 @@
-﻿using Aspire.Hosting.Azure.AppContainers;
+using Aspire.Hosting.Azure.AppContainers;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.OperationalInsights;
 using Microsoft.Extensions.Hosting;
@@ -9,9 +9,11 @@ internal static partial class AzureExtensions
 {
     extension(IResourceBuilder<AzureContainerAppEnvironmentResource> builder)
     {
-        public void ProvisionAsService(IHostEnvironment environment)
+        public IResourceBuilder<AzureContainerAppEnvironmentResource> ProvisionAsService(
+            IHostEnvironment environment
+        )
         {
-            builder
+            return builder
                 .WithDashboard()
                 .WithAzdResourceNaming()
                 .ConfigureInfrastructure(infra =>
@@ -48,6 +50,18 @@ internal static partial class AzureExtensions
 
                     workspace?.RetentionInDays = environment.IsProduction() ? 90 : 30;
                 });
+        }
+
+        public void AssignComputeResources()
+        {
+            foreach (
+                var resource in builder.ApplicationBuilder.Resources.OfType<IComputeResource>()
+            )
+            {
+                builder
+                    .ApplicationBuilder.CreateResourceBuilder(resource)
+                    .WithComputeEnvironment(builder);
+            }
         }
     }
 }

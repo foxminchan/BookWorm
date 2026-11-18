@@ -6,6 +6,18 @@ namespace BookWorm.AppHost.Extensions.Network;
 
 internal static class ProxyExtensions
 {
+    extension(IResourceBuilder<YarpResource> builder)
+    {
+        public EndpointReference GetBrowserEndpoint()
+        {
+            var scheme = builder.ApplicationBuilder.ExecutionContext.IsRunMode
+                ? Uri.UriSchemeHttps
+                : Uri.UriSchemeHttp;
+
+            return builder.GetEndpoint(scheme);
+        }
+    }
+
     extension(IDistributedApplicationBuilder builder)
     {
         public ApiGatewayProxyBuilder AddApiGatewayProxy()
@@ -133,7 +145,7 @@ internal sealed class ApiGatewayProxyBuilder
     )
     {
         _entraExternal = Builder.AddExternalService(
-            "entra",
+            $"{entraId.Resource.Name}-proxy",
             entraId.Resource.Instance.TrimEnd('/')
         );
         return this;

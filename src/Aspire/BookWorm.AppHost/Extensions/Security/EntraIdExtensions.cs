@@ -199,12 +199,12 @@ internal static class EntraIdExtensions
             ? "/api/auth/oauth2/callback/microsoft-entra-id"
             : $"{pathPrefix.TrimEnd('/')}/api/auth/oauth2/callback/microsoft-entra-id";
 
+        entraId.WithRedirectUris(gateway.GetBrowserEndpoint(), callbackPath);
+
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
             entraId.WithRedirectUris(gateway.GetEndpoint(Uri.UriSchemeHttp), callbackPath);
         }
-
-        entraId.WithRedirectUris(gateway.GetEndpoint(Uri.UriSchemeHttps), callbackPath);
 
         return builder
             .WithReference(entraId)
