@@ -98,6 +98,7 @@ function NameCell(
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
+            if (e.nativeEvent.isComposing || e.keyCode === 229) return;
             void handleEditSave(item.id);
           }
           if (e.key === "Escape") {
