@@ -65,10 +65,9 @@ For complex layouts where visual and DOM order cannot naturally align, use the *
 ```css
 .task {
   display: grid;
-  grid-template-columns: auto minmax(
-      0,
-      1fr
-    ) auto; /* minmax(0, ...) lets the middle column shrink at narrow widths */
+  grid-template-columns:
+    auto minmax(0, 1fr)
+    auto; /* minmax(0, ...) lets the middle column shrink at narrow widths */
   reading-flow: grid-rows; /* Follows visual layout and tab order by row */
 }
 ```

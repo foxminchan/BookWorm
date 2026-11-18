@@ -1,9 +1,7 @@
 "use client";
 
 import { useFrontendTool } from "@copilotkit/react-core/v2";
-import { z } from "zod";
 
-import booksApiClient from "@workspace/api-client/catalog/books";
 import type { Book } from "@workspace/types/catalog/books";
 import {
   Card,
@@ -15,37 +13,11 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner";
 import { formatPrice } from "@workspace/utils/format";
 
+import { searchBooksTool } from "@/lib/webmcp-tools";
+
 export function useBookSearchActions() {
   useFrontendTool({
-    name: "searchBooks",
-    description:
-      "Search for books by title, author, category, or keywords. Returns a list of matching books.",
-    parameters: z.object({
-      query: z
-        .string()
-        .describe("The search query (title, author, or keywords)"),
-      category: z
-        .string()
-        .optional()
-        .describe("Optional category filter (fiction, non-fiction, etc.)"),
-      maxResults: z
-        .number()
-        .optional()
-        .describe("Maximum number of results to return (default 10)"),
-    }),
-    handler: async ({ query, category, maxResults = 10 }) => {
-      const data = await booksApiClient.list({
-        search: query,
-        ...(category && { category }),
-        pageSize: maxResults,
-      });
-
-      return JSON.stringify({
-        results: data.items || [],
-        total: data.totalCount || 0,
-        query,
-      });
-    },
+    ...searchBooksTool,
     render: ({ status, result }) => {
       const parsedResult =
         status === "complete" && result

@@ -7,6 +7,8 @@ import { useBookSearchActions } from "@/hooks/useBookSearchActions";
 
 const registeredActions: Array<{
   name: string;
+  description?: string;
+  webmcp?: unknown;
   handler: (args: any) => Promise<any>;
   render: (args: any) => JSX.Element;
 }> = [];
@@ -47,6 +49,12 @@ describe("useBookSearchActions", () => {
     const action = registeredActions.find((a) => a.name === "searchBooks");
 
     expect(action).toBeDefined();
+    expect(action?.description).toBeTruthy();
+    expect(action?.webmcp).toEqual({
+      annotations: {
+        readOnlyHint: true,
+      },
+    });
 
     const result = await action?.handler({ query: "test", maxResults: 5 });
 

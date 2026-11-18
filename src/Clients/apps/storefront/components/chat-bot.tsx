@@ -237,17 +237,22 @@ const ChatBotContent = forwardRef<ChatBotRef>(function ChatBotContent(_, ref) {
 
   if (!uiState.isOpen) {
     return (
-      <Button
-        ref={triggerButtonRef}
-        onClick={() => dispatch({ type: "OPEN" })}
-        size="icon"
-        className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
-        aria-label="Open BookWorm Literary Guide chat"
-        aria-haspopup="dialog"
-        data-copilot-chat-trigger
-      >
-        <MessageCircle className="h-6 w-6" aria-hidden="true" />
-      </Button>
+      <>
+        {/* Keep confirmation dialog and live region mounted for WebMCP calls when chat is closed */}
+        <ConfirmationDialog />
+        {liveRegion}
+        <Button
+          ref={triggerButtonRef}
+          onClick={() => dispatch({ type: "OPEN" })}
+          size="icon"
+          className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
+          aria-label="Open BookWorm Literary Guide chat"
+          aria-haspopup="dialog"
+          data-copilot-chat-trigger
+        >
+          <MessageCircle className="h-6 w-6" aria-hidden="true" />
+        </Button>
+      </>
     );
   }
 

@@ -15,6 +15,7 @@ import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { BackToTop } from "@/components/back-to-top";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { env } from "@/env.mjs";
+import { useWebMCPTools } from "@/hooks/useWebMCPTools";
 import { authClient, useSession } from "@/lib/auth-client";
 import { initMocks } from "@/lib/msw";
 import { getQueryClient } from "@/lib/query-client";
@@ -51,6 +52,8 @@ export function Providers({
   // The chat agent (AG-UI) requires an authenticated user
   const shouldShowCopilot =
     !!isCopilotEnabled && !!gatewayUrl && !!session?.user;
+
+  useWebMCPTools(!shouldShowCopilot);
 
   return (
     <QueryClientProvider client={queryClient}>

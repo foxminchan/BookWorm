@@ -3,17 +3,14 @@ import type { NextRequest } from "next/server";
 
 import { HttpAgent } from "@ag-ui/client";
 import {
-  CopilotRuntime,
-  ExperimentalEmptyAdapter,
-  copilotRuntimeNextJSAppRouterEndpoint,
+  CopilotKitRuntime,
+  createCopilotKitRuntimeHandler,
 } from "@copilotkit/runtime";
 
 import { AUTH } from "@workspace/utils/constants";
 
 import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
-
-const serviceAdapter = new ExperimentalEmptyAdapter();
 
 const jsonResponse = (status: number, body: Record<string, unknown>) =>
   new Response(JSON.stringify(body), {
@@ -67,17 +64,18 @@ const getRuntime = (accessToken: string) => {
   const agUiUrl = `${gatewayUrl}/chatting/ag-ui`;
   const agentName = env.NEXT_PUBLIC_COPILOT_AGENT_NAME;
 
-  const agents = {
-    [agentName]: new HttpAgent({
-      url: agUiUrl,
-      headers: { authorization: `Bearer ${accessToken}` },
-    }),
-  };
-
-  return new CopilotRuntime({ agents, a2ui: true } as any);
+  return new CopilotKitRuntime({
+    agents: {
+      [agentName]: new HttpAgent({
+        url: agUiUrl,
+        headers: { authorization: `Bearer ${accessToken}` },
+      }),
+    },
+    generativeUI: { a2uiVersion: "0.9" },
+  });
 };
 
-export const POST = async (req: NextRequest) => {
+const handleRequest = async (req: NextRequest) => {
   const accessToken = await getAccessToken(await headers());
 
   if (!accessToken) {
@@ -89,13 +87,12 @@ export const POST = async (req: NextRequest) => {
 
   try {
     const runtime = getRuntime(accessToken);
-    const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
+    const handler = createCopilotKitRuntimeHandler({
       runtime,
-      serviceAdapter,
-      endpoint: "/api/copilotkit",
+      basePath: "/api/copilotkit",
     });
 
-    return handleRequest(req);
+    return await handler(req);
   } catch (error) {
     console.error("CopilotKit runtime error:", error);
     return jsonResponse(500, {
@@ -105,3 +102,6 @@ export const POST = async (req: NextRequest) => {
     });
   }
 };
+
+export const GET = handleRequest;
+export const POST = handleRequest;
