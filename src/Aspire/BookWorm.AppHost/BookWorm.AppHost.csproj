@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AspireUseCliBundle>true</AspireUseCliBundle>
     <UserSecretsId>78a33324-5add-4731-b2fc-e0fc06ef0564</UserSecretsId>
-    <NoWarn>$(NoWarn);ASPIREPOSTGRES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001;ASPIREENTRAID001;ASPIREDURABLETASK001;ASPIRERESOURCETRAITS001</NoWarn>
+    <NoWarn>
+      $(NoWarn);ASPIREPOSTGRES001;ASPIRECOMPUTE003;ASPIRECERTIFICATES001;ASPIREENTRAID001;ASPIREDURABLETASK001;ASPIRERESOURCETRAITS001
+    </NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Aspire">
     <PackageReference Include="Scalar.Aspire" />

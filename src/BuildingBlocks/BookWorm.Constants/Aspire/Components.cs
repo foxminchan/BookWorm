@@ -45,6 +45,7 @@ public static class Components
     {
         public const string ContainerApp = "aca";
         public const string EntraId = "entra";
+        public const string EntraAgentIdentities = "entra-agent-identities";
 
         public static class DurableTask
         {

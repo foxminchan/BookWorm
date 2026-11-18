@@ -2,6 +2,7 @@ global using Aspire.Hosting.Azure;
 global using Aspire.Hosting.Foundry;
 global using Azure.Provisioning.CognitiveServices;
 global using Azure.Provisioning.Storage;
+global using BookWorm.AppHost;
 global using BookWorm.AppHost.Extensions.Dashboard;
 global using BookWorm.AppHost.Extensions.Frontend;
 global using BookWorm.AppHost.Extensions.Infrastructure;

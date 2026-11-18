@@ -8,7 +8,7 @@ internal static class CorsExtensions
     private const string CorsSection = "Cors";
     private const string AnyHeader = "*";
 
-    private static readonly string[] AllowedMethods =
+    private static readonly string[] _allowedMethods =
     [
         HttpMethod.Get.Method,
         HttpMethod.Post.Method,
@@ -43,9 +43,9 @@ internal static class CorsExtensions
                 .WithEnvironment($"{CorsSection}__Headers__0", AnyHeader)
                 .WithEnvironment($"{CorsSection}__AllowCredentials", bool.TrueString);
 
-            for (var i = 0; i < AllowedMethods.Length; i++)
+            for (var i = 0; i < _allowedMethods.Length; i++)
             {
-                builder.WithEnvironment($"{CorsSection}__Methods__{i}", AllowedMethods[i]);
+                builder.WithEnvironment($"{CorsSection}__Methods__{i}", _allowedMethods[i]);
             }
 
             return builder;

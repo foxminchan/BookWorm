@@ -16,7 +16,7 @@ internal static class EntraIdExtensions
         ///     An <see cref="IResourceBuilder{AzureBicepResource}" /> when in publish mode; otherwise, <see langword="null" />.
         /// </returns>
         public IResourceBuilder<AzureBicepResource>? AddEntraAgentIdentities(
-            string name,
+            [ResourceName] string name,
             IResourceBuilder<EntraIdApplicationResource> entraId
         )
         {

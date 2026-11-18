@@ -1,4 +1,4 @@
-using BookWorm.Chassis.Utilities.Configurations;
+﻿using BookWorm.Chassis.Utilities.Configurations;
 using Microsoft.Extensions.Configuration;
 
 namespace BookWorm.ServiceDefaults.Cors;

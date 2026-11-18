@@ -38,12 +38,9 @@ internal static class DashboardExtensions
             int displayOrder = ResourceDisplayOrder.Infrastructure
         )
         {
-            if (builder.ApplicationBuilder.ExecutionContext.IsPublishMode)
-            {
-                return builder;
-            }
-
-            return builder.WithTags(group).WithDisplayOrder(displayOrder);
+            return builder.ApplicationBuilder.ExecutionContext.IsPublishMode
+                ? builder
+                : builder.WithTags(group).WithDisplayOrder(displayOrder);
         }
     }
 }

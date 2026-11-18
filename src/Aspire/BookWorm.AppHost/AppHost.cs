@@ -81,14 +81,14 @@ var presidioAnonymizer = builder
 
 // Add Azure Entra ID and Agent Identities
 var entraId = builder.AddEntraId(Components.Azure.EntraId).InGroup(ResourceGroups.Security);
-var entraAgentIdentities = builder.AddEntraAgentIdentities("entra-agent-identities", entraId);
+var entraAgentIdentities = builder.AddEntraAgentIdentities(
+    Components.Azure.EntraAgentIdentities,
+    entraId
+);
 
 // Add services and their dependencies
 var catalogApi = builder
-    .AddDotnetProject(
-        Services.Catalog,
-        "../../Services/Catalog/BookWorm.Catalog/BookWorm.Catalog.csproj"
-    )
+    .AddDotnetProject(Services.Catalog, RepositoryPaths.ServiceProjectPath("Catalog"))
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(catalogDb)
@@ -107,20 +107,14 @@ var catalogApi = builder
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var mcp = builder
-    .AddDotnetProject(
-        Services.McpTools,
-        "../../Services/McpTools/BookWorm.McpTools/BookWorm.McpTools.csproj"
-    )
+    .AddDotnetProject(Services.McpTools, RepositoryPaths.ServiceProjectPath("McpTools"))
     .WithReference(catalogApi)
     .WithEntraId(entraId)
     .WithDisplayUrls()
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var basketApi = builder
-    .AddDotnetProject(
-        Services.Basket,
-        "../../Services/Basket/BookWorm.Basket/BookWorm.Basket.csproj"
-    )
+    .AddDotnetProject(Services.Basket, RepositoryPaths.ServiceProjectPath("Basket"))
     .WithReference(redis)
     .WaitFor(redis)
     .WithReference(broker)
@@ -132,10 +126,7 @@ var basketApi = builder
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var orderingApi = builder
-    .AddDotnetProject(
-        Services.Ordering,
-        "../../Services/Ordering/BookWorm.Ordering/BookWorm.Ordering.csproj"
-    )
+    .AddDotnetProject(Services.Ordering, RepositoryPaths.ServiceProjectPath("Ordering"))
     .WithReference(orderingDb)
     .WaitFor(orderingDb)
     .WithReference(broker)
@@ -151,7 +142,7 @@ var orderingApi = builder
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var chatApi = builder
-    .AddDotnetProject(Services.Chatting, "../../Services/Chat/BookWorm.Chat/BookWorm.Chat.csproj")
+    .AddDotnetProject(Services.Chatting, RepositoryPaths.ServiceProjectPath("Chat"))
     .WithReference(project)
     .WithReference(mcp)
     .WaitFor(mcp)
@@ -169,10 +160,7 @@ var chatApi = builder
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 var ratingApi = builder
-    .AddDotnetProject(
-        Services.Rating,
-        "../../Services/Rating/BookWorm.Rating/BookWorm.Rating.csproj"
-    )
+    .AddDotnetProject(Services.Rating, RepositoryPaths.ServiceProjectPath("Rating"))
     .WithReference(project)
     .WithReference(feedbacks)
     .WaitFor(feedbacks)
@@ -193,10 +181,7 @@ var ratingApi = builder
 chatApi.WithReference(ratingApi).WaitFor(ratingApi);
 
 builder
-    .AddDotnetProject(
-        Services.Notification,
-        "../../Services/Notification/BookWorm.Notification/BookWorm.Notification.csproj"
-    )
+    .AddDotnetProject(Services.Notification, RepositoryPaths.ServiceProjectPath("Notification"))
     .WithEmailProvider()
     .WithReference(broker)
     .WaitFor(broker)
@@ -205,10 +190,7 @@ builder
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
 builder
-    .AddDotnetProject(
-        Services.Scheduler,
-        "../../Services/Scheduler/BookWorm.Scheduler/BookWorm.Scheduler.csproj"
-    )
+    .AddDotnetProject(Services.Scheduler, RepositoryPaths.ServiceProjectPath("Scheduler"))
     .WithEntraId(entraId)
     .WithReference(broker)
     .WaitFor(broker)
@@ -227,10 +209,7 @@ var durableTaskScheduler = builder
 var financeTaskHub = durableTaskScheduler.AddTaskHub(Components.Azure.DurableTask.TaskHub);
 
 builder
-    .AddAzureFunctionsProject(
-        Services.Finance,
-        "../../Services/Finance/BookWorm.Finance/BookWorm.Finance.csproj"
-    )
+    .AddAzureFunctionsProject(Services.Finance, RepositoryPaths.ServiceProjectPath("Finance"))
     .WithHostStorage(storage)
     .WithReference(financeTaskHub)
     .WaitFor(financeTaskHub)
@@ -243,7 +222,7 @@ builder
 builder
     .AddAzureFunctionsProject(
         Services.CatalogIngestion,
-        "../../Services/Catalog/BookWorm.Catalog.Ingestion/BookWorm.Catalog.Ingestion.csproj"
+        RepositoryPaths.ServiceProjectPath("Catalog", "BookWorm.Catalog.Ingestion")
     )
     .WithHostStorage(storage)
     .WithReference(broker)
