@@ -1,0 +1,20 @@
+---
+title: BookWorm business context
+---
+flowchart LR
+	customer([Customer])
+	bookworm["BookWorm commerce platform"]
+
+	identity["Identity provider"]
+	payment["Payment provider"]
+	fulfillment["Fulfillment provider"]
+	email["Email delivery provider"]
+	model["AI model hosting"]
+
+	customer -->|"Search, browse, purchase intent,<br/>reviews, and support questions"| bookworm
+	bookworm -->|"Product information, commerce outcomes,<br/>and customer guidance"| customer
+	identity <-->|"Authentication request and<br/>identity/token verification"| bookworm
+	bookworm -->|"Payment settlement"| payment
+	bookworm -->|"Fulfillment handoff"| fulfillment
+	bookworm -->|"Notification for delivery"| email
+	bookworm -->|"Model request"| model

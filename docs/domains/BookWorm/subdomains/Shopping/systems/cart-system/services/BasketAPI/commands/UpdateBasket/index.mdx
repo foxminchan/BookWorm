@@ -1,0 +1,44 @@
+---
+id: UpdateBasket
+name: Update basket
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Replaces a basket's item collection with the supplied items.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: PUT
+  path: /api/v1/baskets
+  statusCodes: ["204", "400", "404"]
+sidebar:
+  badge: "PUT"
+---
+
+## Overview
+
+Updates a [[entity|basket]] using an `UpdateBasketCommand`. The request contains the
+complete `items` collection to apply to the basket.
+
+<NodeGraph />
+
+## Request and response
+
+Send `application/json` with the required `items` array. Each item requires an
+`id` and `quantity`. `204` has no response body.
+
+`400` returns `application/problem+json` with
+`HttpValidationProblemDetails`; `404` returns `application/problem+json` with
+`ProblemDetails`.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="UpdateBasketCommand JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

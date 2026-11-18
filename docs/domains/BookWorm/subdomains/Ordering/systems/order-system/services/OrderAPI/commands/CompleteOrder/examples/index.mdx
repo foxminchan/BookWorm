@@ -1,0 +1,70 @@
+---
+summary: Complete a New Order with an idempotent request.
+---
+
+## 1. Complete an Order
+
+Provide the Order UUID and an idempotency key. The operation has no request
+body.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request PATCH "$BASE_URL/api/v1/orders/44444444-4444-4444-4444-444444444444/complete" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "x-request-id: complete-order-2026-001"
+```
+
+</CodeGroup>
+
+The same request from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts complete-order.ts
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const orderId = "44444444-4444-4444-4444-444444444444";
+const response = await fetch(`${baseUrl}/api/v1/orders/${orderId}/complete`, {
+	method: "PATCH",
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		"x-request-id": "complete-order-2026-001",
+	},
+});
+
+if (response.status === 404) {
+	throw new Error("Order was not found or is not accessible");
+}
+if (!response.ok) {
+	throw new Error(`CompleteOrder failed with ${response.status}`);
+}
+
+const order = await response.json();
+console.log(order);
+```
+
+</CodeGroup>
+
+`200 OK` returns the updated Order details:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"id": "44444444-4444-4444-4444-444444444444",
+	"date": "2026-11-03T10:00:00Z",
+	"total": 33.98,
+	"status": "Completed",
+	"items": [
+		{
+			"id": "55555555-5555-5555-5555-555555555555",
+			"quantity": 2,
+			"price": 16.99,
+			"name": "Example book"
+		}
+	]
+}
+```
+
+</CodeGroup>

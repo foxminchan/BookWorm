@@ -1,0 +1,78 @@
+---
+id: SummarizeFeedback
+name: Summarize feedback
+version: 1.0.0
+badges:
+  - content: Reviews
+    backgroundColor: purple
+    textColor: purple
+summary: Returns a generated feedback summary, classification, rating metrics, evidence, and confidence for a book.
+owners:
+  - contributor-team
+diagrams:
+  - id: rating-summarizer-workflow
+    version: 1.0.0
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/feedbacks/{id}/summarize
+  statusCodes: ["200", "404"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Generates a summary of the [[entity|feedback]] for the [[entity|book]] identified by the `id` path
+parameter. This read-only query does not create, update, or delete feedback.
+
+<NodeGraph />
+
+## Path parameter and response
+
+Provide the book identifier in the required `id` path parameter. The `200 OK`
+response is an `application/json` object containing the generated `summary`,
+classification, rating metrics, supporting evidence, and confidence. The
+classification is a read-time insight and is not persisted.
+
+### Response fields
+
+The OpenAPI `SummarizeResult` schema requires only `summary`; the remaining
+fields are optional in the contract.
+
+| Field            | Type             | Description                                                                              |
+| ---------------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| `summary`        | string, required | Generated feedback summary.                                                              |
+| `classification` | string           | `NoData`, `Bad`, `Good`, or `TopRated`, determined by application-owned rules.           |
+| `averageRating`  | number or null   | Application-computed arithmetic mean; null when there are no reviews.                    |
+| `reviewCount`    | integer          | Number of feedback records included in the summary.                                      |
+| `evidence`       | string           | Supporting evidence from the final quality assessment.                                   |
+| `confidence`     | string           | Confidence from the final quality assessment; the contract does not restrict its values. |
+
+### No feedback and errors
+
+A book with no feedback returns `200 OK` with summary
+`No feedback found for this book.`, classification `NoData`, `reviewCount`
+`0`, a null `averageRating`, and empty `evidence` and `confidence`. This path
+does not invoke the model workflow; lack of feedback is not itself a `404`.
+
+The endpoint also declares `404 Not Found` with `application/problem+json`
+and `ProblemDetails`. Dependency and workflow failures must not be represented
+as successful no-feedback results.
+
+## Summarizer workflow
+
+The workflow partitions the input across parallel map executors, joins their
+results, and reduces them. Quality assessment either sends the reduction for
+refinement or proceeds to classification.
+
+See [[diagram|rating-summarizer-workflow]] for the complete workflow.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="SummarizeResult JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

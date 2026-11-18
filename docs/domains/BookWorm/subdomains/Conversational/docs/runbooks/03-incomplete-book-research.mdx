@@ -1,0 +1,53 @@
+---
+title: Book research is incomplete or inconsistent
+summary: Triage incomplete or conflicting findings from direct book handling or delegated research.
+version: 1.0.0
+type: runbooks
+order: 3
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- A recommendation omits part of the customer's stated preferences.
+- A complex request is answered with only book details or only a shortlist.
+- The response contains duplicate recommendations or unsupported claims.
+- A direct answer is expected to include research that was not delegated.
+
+## Diagnose
+
+1. Confirm the request reached [[agent\|book-agent]] and determine whether it
+   was handled directly or delegated.
+2. For delegated work, check that both
+   [[agent\|book-catalog-researcher]] and
+   [[agent\|book-recommendation-researcher]] completed and returned findings.
+3. Check whether Plan Mode required customer approval before multi-step work
+   and whether that approval was given.
+4. Compare the final response with the available findings. Missing Catalog
+   evidence must remain unknown; it must not be replaced with invented facts.
+5. Remember that simple lookups and clarifications can be handled directly.
+   The absence of delegated work alone does not establish a failure.
+
+## Recover
+
+- If a research branch did not return, retry the relevant work after confirming
+  the request is still valid and any required approval is present.
+- If findings conflict, avoid making a definitive claim until the source facts
+  are confirmed.
+- If one branch is unavailable, provide only the supported portion and state
+  what could not be confirmed.
+- Preserve the request category, selected handling mode, branch outcomes, and
+  sanitized findings when escalating.
+
+## Escalation
+
+Contact [[team\|contributor-team]] with the environment, approximate time,
+whether the request was direct or delegated, the status of both research
+branches, and the final response outcome.
+
+<Footer />

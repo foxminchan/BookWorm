@@ -1,0 +1,37 @@
+---
+id: chat-session-blob
+name: Chat Session Blob Storage
+version: 1.0.0
+summary: Azure Blob Storage container for Chat conversation session state and Microsoft Foundry memory.
+owners:
+  - contributor-team
+container_type: objectStore
+badges:
+  - content: Object Storage
+    backgroundColor: teal
+    textColor: teal
+technology: azure-storage-account
+authoritative: true
+access_mode: readWrite
+purpose: Stores durable Chat conversation session state and Microsoft Foundry memory blobs.
+classification: confidential
+styles:
+  icon: /icons/database/blob.svg
+---
+
+<NodeGraph />
+
+## Overview
+
+Chat Session Blob Storage holds conversational session state and Microsoft
+Foundry memory for [[system|chat-system]]. The Aspire AppHost provisions this
+container (`chatSessionContainer`) on the shared Azure Storage account and
+grants [[service|chat-api]] `StorageBlobDataContributor` access.
+
+## Access and ownership
+
+- [[service|chat-api]] is the sole reader and writer of this container.
+- Stored conversation session data is classified as confidential and must not be
+  shared directly across domain boundaries.
+- Chat does not own Catalog, Basket, Ordering, or Reviews business state; only
+  conversational session history and memory are persisted here.

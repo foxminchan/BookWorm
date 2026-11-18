@@ -1,0 +1,53 @@
+---
+id: scheduler.process-vector-batch
+name: Process Vector Batch Channel
+version: 1.0.0
+summary: |
+  Kafka channel used by Scheduler to trigger Catalog Ingestion vector batch
+  processing every five minutes.
+owners:
+  - contributor-team
+address: scheduler.process-vector-batch
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel carries [[service|sheduler-dashboard]]'s
+[[event|ProcessVectorBatchIntegrationEvent]] to [[service|catalog-ingestion]].
+`ProcessVectorBatchIntegrationEvent` sets `AppendPrefix = false` in
+`IntegrationMessageOwnerAttribute`, so the Kafka topic is addressed directly as
+`scheduler.process-vector-batch` across environments.
+
+<ChannelInformation />
+
+## Message contract
+
+| Field          | Type     | Required | Description                              |
+| -------------- | -------- | -------- | ---------------------------------------- |
+| `id`           | UUID     | Yes      | Inherited integration event identifier   |
+| `creationDate` | DateTime | Yes      | UTC timestamp when the event was created |
+
+The payload schema is defined by
+[[event|ProcessVectorBatchIntegrationEvent]]. Messages are serialized as
+camelCase JSON inside the BookWorm CloudEvents-compatible Kafka envelope.
+
+## Producers and consumers
+
+- **Producer:** [[service|sheduler-dashboard]], via `ProcessVectorBatchJob`
+  every five minutes in UTC.
+- **Consumer:** [[service|catalog-ingestion]], via the `ProcessVectorBatch`
+  Azure Functions Kafka trigger (`ConsumerGroup = catalog-ingestion`).
+
+## Delivery and operations
+
+- Delivery is at least once. `CatalogIngestion` uses a PostgreSQL advisory lock
+  and revision-checked acknowledgments in [[container|catalog-database]] so
+  duplicate or overlapping triggers remain safe.
+- Trace context is propagated through the `traceparent` Kafka header.
+
+## Architecture diagram
+
+<NodeGraph />

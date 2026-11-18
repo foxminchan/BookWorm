@@ -1,0 +1,51 @@
+---
+id: ListBuyers
+name: List Buyers
+version: 1.0.0
+badges:
+  - content: Customer Management
+    backgroundColor: orange
+    textColor: orange
+summary: Returns Buyer profiles with pagination.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/buyers
+  statusCodes: ["200"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Lists [[entity|buyer]] profiles. This endpoint is available to authorized
+callers and provides pagination controls.
+
+<NodeGraph />
+
+## Query parameters and response
+
+| Parameter   | Description                 | Default |
+| ----------- | --------------------------- | ------- |
+| `PageIndex` | Page number to return.      | `1`     |
+| `PageSize`  | Number of results per page. | `20`    |
+
+The OpenAPI contract documents the `200 OK` response as a JSON array of
+`BuyerDto` values containing ID, name, and address.
+
+## Query using CURL
+
+<CodeGroup dropdown>
+
+```sh list-buyers.sh
+curl -H "Authorization: Bearer <access-token>" \
+  "https://api.example.com/api/v1/buyers?PageIndex=1&PageSize=20"
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer file="schema.json" title="BuyerDto array JSON Schema" maxHeight="500" search="true" />

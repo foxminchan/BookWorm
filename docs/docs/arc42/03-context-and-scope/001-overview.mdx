@@ -1,0 +1,40 @@
+---
+title: Context and Scope Overview
+summary: Whole-platform boundary covered by the BookWorm arc42 architecture.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+The system under consideration is the complete BookWorm platform. This section intentionally stays at the platform boundary: it describes users, neighboring capabilities, and technical interaction styles without assigning detailed responsibilities to a particular domain or service.
+
+## System boundary
+
+The system in scope is the BookWorm commerce platform as a whole, not an individual service. It includes the customer-facing commerce capabilities and the shared platform capabilities that support them. The diagram shows the main capabilities and external neighbors at a high level; it is not a deployment view or a complete inventory of providers.
+
+<MermaidFileLoader file="mermaids/bookworm-scope.mmd" />
+
+## In-scope behavior
+
+| Capability                   | Included behavior                                                         |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| Catalog and shopping         | Product discovery, search, browsing, basket creation, and checkout intent |
+| Ordering                     | Acceptance of purchases and management of order state                     |
+| Reviews                      | Customer review and rating journeys                                       |
+| Conversational assistance    | AI-assisted product discovery and customer support                        |
+| Shared platform capabilities | Notifications, scheduling, and operational support                        |
+
+## Outside the boundary
+
+Identity, payment processing, fulfillment, email delivery, and AI model hosting are neighboring systems, not BookWorm-owned business capabilities. The platform may depend on them, but their internal behavior and operation are outside this system boundary.
+
+## Context assumptions and open points
+
+- The exact inventory of external providers, their owners, and their interfaces is not established by the repository-level architecture sources.
+- This chapter identifies the known interaction categories without implying specific endpoints, protocols, payload schemas, or production topology.
+- Detailed service responsibilities and contracts belong in the relevant service and system documentation.
+
+The following pages separate business-level data exchanges from the technical channels that realize them.

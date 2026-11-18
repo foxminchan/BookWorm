@@ -1,0 +1,15 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Integrate with this service",
+			"icon": "Plug",
+			"pages": ["[[spec|openapi-v1.yaml]]", "[[spec|asyncapi-v1.yml]]", "[[spec|sla.yaml]]"]
+		},
+		"$outbound-messages",
+		"$inbound-messages",
+		"$architecture",
+		"$state-and-persistence",
+		"$owners"
+	]
+}

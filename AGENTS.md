@@ -27,7 +27,7 @@ BookWorm is a .NET 11 microservices application built around Aspire, DDD, and ev
 - Services: [src/Services](src/Services)
 - Integrations: [src/Integrations](src/Integrations)
 - Tests: [tests](tests)
-- Documentation: [README.md](README.md), [docs/docusaurus](docs/docusaurus), [docs/eventcatalog](docs/eventcatalog)
+- Documentation: [README.md](README.md), [docs](docs)
 
 ## Common pitfalls
 
@@ -59,8 +59,7 @@ BookWorm is a .NET 11 microservices application built around Aspire, DDD, and ev
 
 - [README.md](README.md)
 - [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)
-- [docs/docusaurus](docs/docusaurus)
-- [docs/eventcatalog](docs/eventcatalog)
+- [docs](docs) (EventCatalog; `llms.txt` at https://foxminchan.github.io/BookWorm/llms.txt)
 - [.agents/skills](.agents/skills)
 
 ## Official docs to prefer
@@ -68,3 +67,4 @@ BookWorm is a .NET 11 microservices application built around Aspire, DDD, and ev
 - https://aspire.dev
 - https://learn.microsoft.com/dotnet/aspire
 - https://nuget.org
+- https://www.eventcatalog.dev/llms.txt

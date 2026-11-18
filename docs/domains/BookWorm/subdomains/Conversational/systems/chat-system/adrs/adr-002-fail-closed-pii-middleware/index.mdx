@@ -1,0 +1,88 @@
+---
+id: adr-002-fail-closed-pii-middleware
+name: "ADR-002: Apply PII filtering to agent input and output"
+version: 1.0.0
+summary: Chat agents use Presidio middleware to analyze and anonymize sensitive text, and privacy-processing failures are not bypassed.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: chat-system
+  - type: service
+    id: chat-api
+  - type: system
+    id: data-privacy
+  - type: service
+    id: PresidioAPI
+  - type: command
+    id: AnalyzeText
+  - type: command
+    id: AnonymizeText
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+---
+
+## Context
+
+Customer conversations can contain personally identifiable information.
+Sending unfiltered input to an AI model or returning unfiltered output can
+expose sensitive values beyond the intended processing boundary. Applying
+privacy filtering only to requests would leave generated responses unfiltered;
+applying it only to the final answer would still send the original input to the
+model.
+
+## Decision
+
+All five Chat agents use the shared PII middleware, directly or through the
+Book Agent's wrapped client inherited by its researchers. For non-empty text,
+the middleware calls [[service|PresidioAPI]] in [[system|data-privacy]] to
+analyze content using [[command|AnalyzeText]] and, when PII is detected,
+anonymize it using [[command|AnonymizeText]]. The middleware applies to both
+input and output. Streaming output is buffered until filtering is complete,
+then emitted after processing. If privacy processing fails, the request fails
+rather than allowing unfiltered text through.
+
+This policy describes the shared model-call middleware. It does not imply
+that every kind of data is detected or that anonymized text can never be
+reidentified.
+
+## Consequences
+
+- Agent input and output receive consistent privacy processing.
+- Input and output processing add calls to Presidio; streaming responses are
+  delayed until output filtering completes.
+- Presidio availability and correct configuration are dependencies for agent
+  requests using this middleware. A processing failure prevents the affected
+  request from completing.
+- PII detection and anonymization are not a guarantee that every sensitive
+  value will be recognized or that transformed text contains no sensitive
+  information. Agents and callers must not treat the middleware as a
+  substitute for data minimization.
+- Researchers must continue to use Book Agent's wrapped client so delegated
+  model calls receive the same input and output processing.
+
+## Alternatives considered
+
+### Fail open when privacy processing is unavailable
+
+This would preserve response availability during a Presidio outage, but could
+send unfiltered input to the model or unfiltered output to the caller. It
+would defeat the privacy boundary precisely when its dependency is unhealthy.
+
+### Filter only input or only output
+
+Filtering only input would not protect sensitive content generated in an
+answer; filtering only output would not protect the content sent to a model.
+Both directions are therefore covered.
+
+### Rely only on agent instructions
+
+Instructions can guide agent behavior but do not provide a consistent
+application-level processing boundary. Shared middleware applies the same
+behavior across the registered Chat agents.

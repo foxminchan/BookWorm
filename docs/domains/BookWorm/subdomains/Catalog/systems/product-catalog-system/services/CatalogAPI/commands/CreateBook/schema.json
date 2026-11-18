@@ -1,0 +1,55 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CreateBook",
+	"description": "Multipart payload for creating a book listing.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["name", "description", "price", "categoryId", "publisherId", "authorIds"],
+	"properties": {
+		"name": {
+			"type": "string",
+			"minLength": 1,
+			"description": "Book title."
+		},
+		"description": {
+			"type": "string",
+			"minLength": 1,
+			"description": "Book description."
+		},
+		"image": {
+			"type": ["string", "null"],
+			"contentEncoding": "base64",
+			"description": "Optional cover image file."
+		},
+		"price": {
+			"type": "number",
+			"minimum": 0,
+			"description": "Regular price."
+		},
+		"priceSale": {
+			"type": ["number", "null"],
+			"minimum": 0,
+			"description": "Optional sale price."
+		},
+		"categoryId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Category UUID."
+		},
+		"publisherId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Publisher UUID."
+		},
+		"authorIds": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "string",
+				"format": "uuid",
+				"description": "A UUID identifying the resource."
+			},
+			"description": "Authors associated with the book."
+		}
+	}
+}

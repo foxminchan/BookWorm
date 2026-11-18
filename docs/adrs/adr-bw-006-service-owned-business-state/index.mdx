@@ -1,0 +1,54 @@
+---
+id: adr-bw-006-service-owned-business-state
+name: "ADR-BW-006: Keep business state and persistence access capability-owned"
+version: 1.0.0
+summary: Preserve one accountable owner for each business model and integrate through contracts rather than shared mutable tables.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-001-capability-aligned-boundaries
+  - id: adr-bw-007-derived-eventually-consistent-views
+  - id: adr-001-postgresql-system-of-record
+  - id: adr-001-redis-authoritative-basket-store
+  - id: adr-001-postgresql-order-system-of-record
+  - id: adr-001-postgresql-feedback-system-of-record
+---
+
+## Context
+
+Catalog facts, baskets, accepted orders, feedback, and workflow state have different owners and lifecycles. Shared writable tables would allow a consumer or platform mechanism to bypass the owning capability's rules.
+
+## Decision
+
+Keep each model and persistence access with its capability. Other capabilities request operations or consume published information through contracts. Shared infrastructure does not transfer business ownership.
+
+This records logical data ownership, not a requirement for a dedicated physical database server per service. Engine choices remain in existing system ADRs.
+
+## Decision drivers
+
+- Correctness through explicit authority over state transitions.
+- Schema and business-rule evolution without hidden consumers.
+- Clear separation between operational support and business responsibility.
+
+## Alternatives considered
+
+| Alternative                                    | Assessment                                                                   |
+| ---------------------------------------------- | ---------------------------------------------------------------------------- |
+| Shared mutable business schema                 | Makes joins convenient but exposes schemas and bypasses owner rules.         |
+| Central data-owning platform service           | Simplifies central access while erasing capability ownership.                |
+| Require physically separate servers everywhere | Adds infrastructure isolation but exceeds the documented logical constraint. |
+
+## Consequences
+
+- State transitions remain attributable to one owning capability.
+- Cross-context reads require calls, projections, or composition rather than direct joins.
+- Distributed workflows cannot rely on a single shared database transaction.
+
+## Evidence
+
+See [[doc|arc42/02-architecture-constraints]] and [[doc|arc42/05-building-block-view]]. The related persistence ADRs remain authoritative for their respective systems.

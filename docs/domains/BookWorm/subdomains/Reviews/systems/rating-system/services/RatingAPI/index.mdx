@@ -1,0 +1,201 @@
+---
+id: rating-api
+name: Rating API
+version: 1.0.0
+summary: |
+  Internal HTTP service for collecting, listing, deleting, and summarizing
+  customer feedback for Catalog books.
+readsFrom:
+  - id: rating-database
+    version: 1.0.0
+  - id: rating-cache
+    version: 1.0.0
+writesTo:
+  - id: rating-database
+    version: 1.0.0
+  - id: rating-cache
+    version: 1.0.0
+owners:
+  - contributor-team
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: HTTP API
+    backgroundColor: teal
+    textColor: teal
+diagrams:
+  - id: rating-summarizer-workflow
+    version: 1.0.0
+receives:
+  - id: CreateFeedback
+    version: 1.0.0
+    group: Feedback Commands
+  - id: DeleteFeedback
+    version: 1.0.0
+    group: Feedback Commands
+  - id: ListFeedbacks
+    version: 1.0.0
+    group: Feedback Queries
+  - id: SummarizeFeedback
+    version: 1.0.0
+    group: Feedback Queries
+  - id: BookUpdatedRatingFailedIntegrationEvent
+    version: 1.0.0
+    from:
+      - id: "bookworm.{env}.catalog.book-update-rating-failed"
+        parameters:
+          env: development
+sends:
+  - id: FeedbackCreatedIntegrationEvent
+    version: 1.0.0
+    group: Feedback Events
+    to:
+      - id: "bookworm.{env}.rating.feedback-create"
+        parameters:
+          env: development
+  - id: FeedbackDeletedIntegrationEvent
+    version: 1.0.0
+    group: Feedback Events
+    to:
+      - id: "bookworm.{env}.rating.feedback-delete"
+        parameters:
+          env: development
+styles:
+  icon: /icons/languages/dotnet.svg
+specifications:
+  - type: openapi
+    path: openapi-v1.yaml
+    name: OpenAPI V1
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Rating API is the [[domain|reviews]] system's application boundary for customer feedback
+about [[entity|book]]. It persists the [[entity|feedback]] aggregate in
+[[container|rating-database]], publishes committed changes for Catalog's
+denormalized rating projection, and exposes a read-time summarization workflow
+through the [[agent|rating-agent]].
+
+The service owns individual feedback records and their lifecycle. It does not
+own book metadata or Catalog's average-rating and review-count projection.
+Other services must use the integration events rather than access the Rating
+Database directly.
+
+## Core capabilities
+
+| Capability                    | Behavior                                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Feedback creation             | Validates and stores a book rating, reviewer name, and optional comment, then returns the generated feedback UUID.   |
+| Feedback retrieval            | Lists feedback for a book with pagination, ordering, and problem-details validation responses.                       |
+| Feedback deletion             | Removes an existing feedback record through the administrator-only endpoint.                                         |
+| Feedback summarization        | Runs a read-only agent workflow that combines Catalog book context with raw reviews and returns a generated summary. |
+| Rating projection integration | Publishes create and delete events, and compensates for a Catalog update failure by removing the affected feedback.  |
+
+## HTTP API
+
+The version 1 contract is available in the accompanying `openapi-v1.yaml`
+specification. The service maps these routes under `/api/v1/feedbacks`.
+
+| Operation                              | Purpose                                            | Success response                       | Access                      |
+| -------------------------------------- | -------------------------------------------------- | -------------------------------------- | --------------------------- |
+| `POST /api/v1/feedbacks`               | [[command\|CreateFeedback]] for a book.            | `200 OK` with the new feedback ID.     | Authenticated API caller    |
+| `GET /api/v1/feedbacks`                | [[query\|ListFeedbacks]] with paging and ordering. | `200 OK` with a paged feedback result. | Service API                 |
+| `DELETE /api/v1/feedbacks/{id}`        | [[command\|DeleteFeedback]] when feedback exists.  | `204 No Content`.                      | Authenticated administrator |
+| `GET /api/v1/feedbacks/{id}/summarize` | [[query\|SummarizeFeedback]] for a book ID.        | `200 OK` with `SummarizeResult`.       | Authenticated caller        |
+
+The list operation accepts `BookId`, `PageIndex`, `PageSize`, `OrderBy`, and
+`IsDescending`. Page index and page size must be greater than zero. Create
+validation requires a book ID, first name, last name, and a rating from 0
+through 5; comments are optional and limited by the shared maximum text
+length.
+
+## Feedback lifecycle
+
+1. A caller submits feedback for a Catalog book.
+2. The transactional command handler creates the
+   [[entity|feedback]] aggregate and saves it to
+   [[container|rating-database]]. New feedback receives a client-generated
+   UUID v7 identifier.
+3. The aggregate raises a domain event, which is mapped to
+   [[event|FeedbackCreatedIntegrationEvent]] and published on
+   [[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
+4. Catalog consumes the event and updates its local average-rating and
+   review-count projection. It does not read the Rating Database.
+5. If Catalog cannot find the referenced book, it publishes
+   [[event|BookUpdatedRatingFailedIntegrationEvent]] on
+   [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]. Rating
+   locates the feedback by `feedbackId` and deletes it as a compensating
+   action.
+
+Deletion raises the corresponding domain event before publishing
+[[event|FeedbackDeletedIntegrationEvent]] on
+[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]. Catalog subtracts
+the rating from its projection when the book is available. The failure
+consumer is retry-safe: a missing feedback record is treated as an idempotent
+no-op.
+
+All integration channels use at-least-once delivery. Wolverine partitions
+messages by `BookId` and `FeedbackId` to preserve ordering for related rating
+updates, so consumers must still tolerate retries and duplicate delivery.
+
+## Feedback invariants and persistence
+
+- `bookId`, `firstName`, and `lastName` identify the review context; the book
+  itself remains owned by Catalog.
+- `rating` is an integer from 0 through 5, inclusive.
+- `comment` is optional and is bounded by the shared maximum text length.
+- The database enforces a unique combination of book, first name, and last
+  name, preventing duplicate feedback from the same named reviewer for one
+  book.
+- Feedback deletion publishes the rating value and book ID needed by Catalog
+  to apply a delta to its projection.
+- Azure Cosmos DB (`feedbacks` container partitioned by `/bookId`) is the
+  source of truth for individual feedback; Catalog's rating summary is derived
+  and eventually consistent.
+
+## Feedback summarization
+
+See [[diagram|rating-summarizer-workflow]] for the summarizer's execution stages.
+
+The summarize endpoint is a read-time workflow and does not mutate feedback
+or persist the generated classification. The Rating service connects to
+[[service|mcp-server]] through the shared MCP client. The
+[[agent|rating-agent]]:
+
+1. Retrieves current book metadata and Catalog rating totals through the
+   `get_book` MCP tool.
+2. Gets the `summarize_rating` and `analyze_book_quality` prompt templates from
+   the MCP server to guide review analysis.
+3. Reads raw reviews through the in-process `GetCustomerReviews` function;
+   individual feedback is not fetched through the MCP server.
+4. Classifies the result as **Best Seller**, **Good**, **Bad**, or **No Data**.
+5. Returns metrics, a brief justification, sentiment-oriented analysis, and a
+   confidence level.
+
+The agent is configured with a default-deny governance policy. Only
+allow-listed read tools run; destructive SQL and write operations are blocked.
+Review reads are rate-limited to 30 calls per minute, and PII middleware
+redacts email addresses, phone numbers, and credit-card patterns from the
+summarization pipeline.
+
+## Runtime and security
+
+Rating API uses API version `v1`, centralized validation and exception
+handling, Entra ID token introspection, default CORS, HSTS outside
+development, and per-user rate limiting. Administrator deletion requires an
+authenticated user with the administrator role and both Rating read and write
+scopes. The service publishes OpenAPI metadata and the agent discovery
+surface alongside the default health and telemetry endpoints.
+
+## Architecture diagram
+
+<NodeGraph />
+
+<MessageTable format="all" limit={8} />

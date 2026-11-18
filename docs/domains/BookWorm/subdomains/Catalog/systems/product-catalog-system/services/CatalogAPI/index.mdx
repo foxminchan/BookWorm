@@ -1,0 +1,218 @@
+---
+id: catalog-api
+name: Catalog API
+version: 1.0.0
+summary: |
+  Internal HTTP and gRPC service for Catalog product management, discovery,
+  and book metadata.
+writesTo:
+  - id: catalog-database
+  - id: catalog-cache
+  - id: catalog-blob
+readsFrom:
+  - id: catalog-database
+  - id: catalog-cache
+  - id: catalog-blob
+  - id: catalog-vector
+owners:
+  - contributor-team
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: HTTP + gRPC
+    backgroundColor: teal
+    textColor: teal
+receives:
+  - id: CreatePublisher
+    version: 1.0.0
+    group: Publisher Management
+  - id: UpdatePublisher
+    version: 1.0.0
+    group: Publisher Management
+  - id: DeletePublisher
+    version: 1.0.0
+    group: Publisher Management
+  - id: CreateCategory
+    version: 1.0.0
+    group: Category Management
+  - id: UpdateCategory
+    version: 1.0.0
+    group: Category Management
+  - id: DeleteCategory
+    version: 1.0.0
+    group: Category Management
+  - id: CreateAuthor
+    version: 1.0.0
+    group: Author Management
+  - id: UpdateAuthor
+    version: 1.0.0
+    group: Author Management
+  - id: DeleteAuthor
+    version: 1.0.0
+    group: Author Management
+  - id: CreateBook
+    version: 1.0.0
+    group: Book Management
+  - id: UpdateBook
+    version: 1.0.0
+    group: Book Management
+  - id: DeleteBook
+    version: 1.0.0
+    group: Book Management
+  - id: ListPublishers
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListCategories
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListAuthors
+    version: 1.0.0
+    group: Catalog Queries
+  - id: GetBook
+    version: 1.0.0
+    group: Catalog Queries
+  - id: GetBookGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: GetBooksGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: GetDashboardGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListBooks
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListBooksGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: GetBookDetailsGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListCategoriesGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListAuthorsGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: FeedbackCreatedIntegrationEvent
+    version: 1.0.0
+    group: Feedback Projection
+    from:
+      - id: "bookworm.{env}.rating.feedback-create"
+        parameters:
+          env: development
+  - id: FeedbackDeletedIntegrationEvent
+    version: 1.0.0
+    group: Feedback Projection
+    from:
+      - id: "bookworm.{env}.rating.feedback-delete"
+        parameters:
+          env: development
+sends:
+  - id: BookUpdatedRatingFailedIntegrationEvent
+    version: 1.0.0
+    to:
+      - id: "bookworm.{env}.catalog.book-update-rating-failed"
+        parameters:
+          env: development
+styles:
+  icon: /icons/languages/dotnet.svg
+specifications:
+  - type: openapi
+    path: openapi-v1.yml
+    name: OpenAPI V1
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Catalog API is the internal application surface for maintaining and
+discovering Catalog [[entity|book]]s and their descriptive metadata. It reads
+and writes the authoritative records in [[container|catalog-database]], uses
+[[container|catalog-cache]] for selected read paths, stores book image files
+in [[container|catalog-blob]], and registers the [[container|catalog-vector]]
+integration for vector and hybrid-search capabilities.
+
+The API also maintains the rating summary stored with each book. Individual
+[[entity|feedback]] remains owned by [[domain|reviews]]; Catalog stores only
+the derived average rating and review count used by product discovery.
+
+<Visibility for="humans">
+	<Tiles>
+		<Tile
+			icon="BoltIcon"
+			href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+			title={`Sends ${frontmatter.sends.length} messages`}
+			description="Catalog integration events"
+		/>
+		<Tile
+			icon="BoltIcon"
+			href={`/visualiser/services/${frontmatter.id}/${frontmatter.version}`}
+			title={`Receives ${frontmatter.receives.length} messages`}
+			description="Catalog commands and queries"
+		/>
+	</Tiles>
+</Visibility>
+
+<Visibility for="agents">
+	Use the `sends` and `receives` relationships in this service's metadata to identify its outbound
+	and inbound contracts. Refer to the linked event, command, and query resources for contract
+	semantics; the Visualiser tiles above are browser navigation only.
+</Visibility>
+
+## Core capabilities
+
+| Capability                | Behavior                                                                                                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Book management           | Create, update, retrieve, list, and delete [[entity\|book]]s. Book lists support pagination, sorting, text search, price bounds, and [[entity\|category]], [[entity\|publisher]], and [[entity\|author]] filters. |
+| Catalog metadata          | Create, update, list, and delete [[entity\|author]]s, [[entity\|category]]s, and [[entity\|publisher]]s.                                                                                                          |
+| Book images               | Upload image files to Blob Storage and retain their URNs with book data; image removal deletes the referenced blob.                                                                                               |
+| Rating summary            | Process feedback-created and feedback-deleted integration messages and update the book's denormalized `average_rating` and `total_reviews`.                                                                       |
+| Service-to-service lookup | Expose gRPC methods to retrieve compact or full book details, search books, list categories and authors, and return an admin-protected catalog dashboard summary.                                                 |
+
+## HTTP API
+
+The version 1 REST contract is documented in the accompanying OpenAPI specification, `openapi-v1.yml`.
+
+- `/api/v1/books` supports create, update, and filtered list operations; `/api/v1/books/{id}` supports retrieval and deletion.
+- Book list queries accept page index and size, sort property and direction, a search term, minimum and maximum prices, and category, publisher, and author IDs.
+- `/api/v1/authors`, `/api/v1/categories`, and `/api/v1/publishers` support create, update, and list operations. Their `{id}` routes support deletion.
+- Book create and update requests accept multipart form data to support image uploads.
+
+## gRPC and integration behavior
+
+The version 1 `Catalog gRPC` service provides [[query|GetBookGrpc]] and
+[[query|GetBooksGrpc]] for book identity, price, and availability, as well as
+[[query|ListBooksGrpc]], [[query|GetBookDetailsGrpc]],
+[[query|ListCategoriesGrpc]], and [[query|ListAuthorsGrpc]] for full catalog
+metadata lookups consumed by [[service|mcp-server]]. Those lookup methods allow
+anonymous access. [[query|GetDashboardGrpc]] requires the admin authorization
+policy and returns the total book count with category counts.
+
+Wolverine integration handlers process feedback-created and feedback-deleted messages from Reviews and update the corresponding book's rating summary. If a created feedback message refers to a missing book, Catalog publishes a rating-update-failed integration event. Database triggers enqueue changed books for asynchronous vector refresh by [[service|catalog-ingestion]].
+
+### gRPC schema
+
+The copied Protobuf contract defines the `book.v1` package and the
+`BookGrpcService` methods exposed by Catalog. It is also registered as the
+service's Protobuf specification so it is available from the service
+integration surface.
+
+<Schema file="book-v1.proto" lang="protobuf" title="book/v1 Catalog gRPC schema" />
+
+## Runtime and access
+
+The service configures Entra ID token introspection, rate limiting, CORS, centralized exception and status-code handling, and HSTS outside development. The application is versioned around the v1 HTTP and gRPC contracts; see `openapi-v1.yml` for the REST request and response schemas.
+
+## Architecture diagram
+
+<NodeGraph />
+
+<MessageTable format="all" limit={12} />

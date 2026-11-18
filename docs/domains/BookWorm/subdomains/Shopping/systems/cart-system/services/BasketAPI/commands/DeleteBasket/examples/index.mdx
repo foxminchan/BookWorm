@@ -1,0 +1,50 @@
+## 1. Delete a basket
+
+Delete the basket with no request body. A successful deletion returns `204 No
+Content`.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request DELETE "$BASE_URL/api/v1/baskets"
+```
+
+</CodeGroup>
+
+The equivalent TypeScript request has no body:
+
+<CodeGroup dropdown>
+
+```ts delete-basket.ts
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const response = await fetch(`${baseUrl}/api/v1/baskets`, {
+	method: "DELETE",
+});
+
+if (response.status === 404) {
+	throw new Error("Basket was not found");
+}
+if (!response.ok) {
+	throw new Error(`DeleteBasket failed with ${response.status}`);
+}
+```
+
+</CodeGroup>
+
+The successful response has no payload.
+
+## 2. Handle a missing basket
+
+If no basket can be found, the service returns `404 Not Found` with
+`application/problem+json`.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "Not Found",
+	"status": 404
+}
+```
+
+</CodeGroup>

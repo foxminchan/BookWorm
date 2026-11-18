@@ -6,8 +6,8 @@ on:
     branches:
       - main
     paths:
-      - .github/workflows/docs.yaml
-      - docs/docusaurus/**
+      - .github/workflows/docs.yml
+      - docs/**
   workflow_run:
     workflows:
       - BookWorm CI (Frontend)
@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('docs/docusaurus/bun.lock') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('docs/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-
 
@@ -60,11 +60,11 @@ jobs:
 
       - name: 📦 Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
-        working-directory: docs/docusaurus
+        working-directory: docs
 
       - name: 🔨 Build documentation
         run: bun run build
-        working-directory: docs/docusaurus
+        working-directory: docs
 
       - name: ⬇️ Download Allure Results (Backend Unit)
         uses: dawidd6/action-download-artifact@v28
@@ -132,7 +132,7 @@ jobs:
           shopt -s nullglob
           result_dirs=(../../allure-results-all/*)
           if [ ${#result_dirs[@]} -gt 0 ]; then
-            ./node_modules/.bin/allure generate "${result_dirs[@]}" --config ./allurerc.mjs --output ../../docs/docusaurus/build/reports
+            ./node_modules/.bin/allure generate "${result_dirs[@]}" --config ./allurerc.mjs --output ../../docs/dist/reports
           else
             echo "No Allure results found to merge."
           fi
@@ -141,7 +141,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-report-backoffice
-          path: docs/docusaurus/build/reports/backoffice
+          path: docs/dist/reports/backoffice
           workflow: frontend-ci.yml
           workflow_search: true
           branch: main
@@ -153,7 +153,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-report-storefront
-          path: docs/docusaurus/build/reports/storefront
+          path: docs/dist/reports/storefront
           workflow: frontend-ci.yml
           workflow_search: true
           branch: main
@@ -164,7 +164,7 @@ jobs:
       - name: ⬆️ Upload artifact
         uses: actions/upload-pages-artifact@v5.0.0
         with:
-          path: docs/docusaurus/build
+          path: docs/dist
 
   deploy:
     name: 🚀 Deploy to GitHub Pages

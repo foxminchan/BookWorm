@@ -1,0 +1,10 @@
+---
+title: Pull request process
+---
+flowchart LR
+	pr["Open PR<br/>title + description"] --> checks{"Required checks<br/>pass?"}
+	checks -->|Yes| review{"Maintainer<br/>approves?"}
+	checks -->|No| update["Fix issues<br/>and update PR"]
+	review -->|Changes requested| update
+	review -->|Approved| merge["Merge PR"]
+	update --> checks

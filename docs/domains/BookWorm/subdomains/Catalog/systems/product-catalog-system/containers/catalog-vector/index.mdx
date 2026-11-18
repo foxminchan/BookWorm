@@ -1,0 +1,63 @@
+---
+id: catalog-vector
+name: Catalog Vector
+version: 1.0.0
+owners:
+  - contributor-team
+container_type: searchIndex
+badges:
+  - content: Search Index
+    backgroundColor: purple
+    textColor: purple
+technology: qdrant
+authoritative: false
+access_mode: readWrite
+classification: internal
+retention: transient
+residency: eastasia
+summary: >-
+  Non-authoritative Qdrant index of book text and embeddings for hybrid catalog
+  search.
+purpose: >-
+  Store searchable text and vector representations of active Catalog books for
+  semantic and keyword-based discovery.
+styles:
+  icon: /icons/database/qdrant.svg
+---
+
+<NodeGraph />
+
+## Overview
+
+Catalog Vector is the Qdrant-backed search index used by
+[[service|catalog-api]]. It is a derived, rebuildable projection of
+[[entity|book]] data, not a system of record;
+[[container|catalog-database]] remains authoritative for the book and its
+metadata.
+
+The collection is named `data-bookworm-snippets`. It stores one record per book, keyed by the book UUID, with searchable text and a 1,536-dimension embedding using cosine similarity.
+
+## Indexed content
+
+For each active [[entity|book]], the indexed text is assembled from its title,
+description, associated [[entity|author]] names, [[entity|category]], and
+[[entity|publisher]]. The text is stored alongside the embedding and full-text
+indexed. Book images, prices, and rating summaries are not part of this vector
+record.
+
+## Search and ingestion
+
+- When a book list request includes a search term, Catalog API generates a query embedding and performs hybrid vector and keyword search. The returned book IDs are then used to query the Catalog Database, where normal filters, paging, sorting, and DTO mapping are applied.
+- The [[service|catalog-ingestion]] service reads pending updates from the database in batches of up to 200 and generates embeddings for active books.
+- Ingestion upserts the current text and vector for active books. If the book no longer exists or is soft-deleted, the corresponding vector record is deleted.
+- Database triggers maintain the pending-update queue when books or their
+  [[entity|author]], [[entity|category]], [[entity|publisher]], and
+  [[entity|book-author]] relationships change. See
+  [[container|catalog-database]] for queue and trigger details.
+- A PostgreSQL advisory lock prevents concurrent ingestion batches from processing at the same time. An update is acknowledged only when its queued revision still matches, so a concurrent change remains pending for a later batch.
+
+## Operational guidance
+
+- Expect the index to be eventually consistent with PostgreSQL while pending vector updates are processed.
+- Monitor pending queue count and age in [[container|catalog-database]] together with ingestion execution and Qdrant availability when investigating stale or incomplete search results.
+- Because the index is non-authoritative, it can be rebuilt from current Catalog data and queued updates; do not use it to serve canonical book fields.

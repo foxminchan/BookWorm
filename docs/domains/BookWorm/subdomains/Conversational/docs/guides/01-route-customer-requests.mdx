@@ -1,0 +1,48 @@
+---
+title: Route customer requests
+summary: How the Chat workflow validates requests and chooses a BookWorm specialist.
+version: 1.0.0
+type: guides
+order: 1
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Start with the request outcome
+
+Requests enter the composed workflow through `/ag-ui`. Input validation runs
+before agent routing. Empty or detected suspicious input can be rejected, and
+accepted messages over the configured length limit are shortened before
+processing.
+
+After validation, the Router checks whether the request is in English and
+within BookWorm's scope. These are routing decisions, separate from input
+validation.
+
+## Choose the specialist
+
+| Customer intent                                                  | Route                                    |
+| ---------------------------------------------------------------- | ---------------------------------------- |
+| Book search, recommendations, book information, or book feedback | [[agent\|book-agent]]                    |
+| Store policies, services, accounts, orders, or billing           | [[agent\|qa-agent]]                      |
+| Request unrelated to BookWorm                                    | Return a brief boundary response         |
+| Request is not in English                                        | Ask the customer to resend it in English |
+
+The QA Agent can hand book-specific follow-up work to Book Agent. Book Agent
+can return a request to Router for further handling.
+
+## Handle mixed or unsupported questions
+
+For a mixed request, route based on the work that can be handled. QA can answer
+the supported policy portion and hand off book-specific questions. Do not imply
+that Conversational has performed a live account, Basket, or Order lookup.
+When supplied information is insufficient, make that limitation clear and
+direct the customer to support.
+
+See the [[flow\|agent-orchestration]] for the full request path.
+
+<Footer />

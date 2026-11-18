@@ -1,0 +1,102 @@
+---
+id: adr-002-publish-feedback-events-for-catalog-projection
+name: "ADR-002: Publish feedback events for Catalog's rating projection"
+version: 1.0.0
+summary: Rating publishes committed feedback-created and feedback-deleted events so Catalog can maintain its own eventually consistent rating summary.
+status: accepted
+date: 2026-10-25
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: rating-system
+  - type: service
+    id: rating-api
+  - type: event
+    id: FeedbackCreatedIntegrationEvent
+  - type: event
+    id: FeedbackDeletedIntegrationEvent
+  - type: channel
+    id: bookworm.{env}.rating.feedback-create
+  - type: channel
+    id: bookworm.{env}.rating.feedback-delete
+related:
+  - id: adr-006-reviews-rating-projection-on-book
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+Catalog listings need average ratings and review counts without depending on
+[[domain|reviews]] availability for every read. Direct Catalog access to
+[[entity|feedback]] would
+violate ownership, while copying entire feedback records would duplicate
+Reviews data unnecessarily. The integration must therefore communicate
+enough information to update the projection without exposing review content
+or requiring a synchronous cross-domain call during a Catalog read.
+
+## Decision
+
+After [[service|rating-api]] commits a feedback creation or deletion, it
+publishes [[event|FeedbackCreatedIntegrationEvent]] or
+[[event|FeedbackDeletedIntegrationEvent]] through the corresponding Kafka
+channel. Catalog consumes these events to update its local rating projection;
+it never reads [[container|rating-database]] directly.
+
+The integration channels provide at-least-once delivery. Event handlers must
+be safe under retries and duplicate delivery. Events carry the book ID,
+feedback ID, and rating needed to apply the change; review comments and
+reviewer details are not part of this projection contract. Messages are
+partitioned by book and feedback identifiers to preserve ordering for related
+updates where possible, but consumers still need duplicate-safe handling.
+
+Publication follows the committed feedback change. Catalog applies its own
+projection update independently, so the two systems do not share a
+transaction and the projection may temporarily lag.
+
+## Consequences
+
+- Catalog reads remain independent of the Rating service at request time.
+- Catalog's average rating and review count are eventually consistent with
+  individual feedback.
+- Events carry the [[entity|book]] ID, [[entity|feedback]] ID, and rating
+  needed to apply a delta
+  without replicating review text or reviewer details.
+- Producers and consumers must monitor delivery, preserve ordering for related
+  updates where possible, and implement idempotent processing.
+- A successful feedback write does not prove that Catalog has already applied
+  its rating delta. Projection freshness depends on message delivery and
+  Catalog consumer processing.
+- At-least-once delivery means a consumer may see the same create or delete
+  event more than once. Applying a rating delta must not blindly count a
+  duplicate as another distinct review.
+- Event schemas and identifiers are compatibility contracts; changing which
+  fields are emitted or how consumers apply deltas requires coordinated
+  producer and consumer updates.
+- Rating remains responsible for individual feedback correctness and Catalog
+  remains responsible for its own projection; neither service reads the
+  other's database to reconcile normal changes.
+
+## Alternatives considered
+
+### Query Rating synchronously for every Catalog read
+
+This could return current individual review data, but would make Catalog read
+availability and latency depend on the Reviews service and still couple its
+query path to feedback ownership.
+
+### Copy complete feedback records into Catalog
+
+This would expose reviewer details and comments beyond what the Catalog rating
+summary needs and create a second copy of Reviews-owned content.
+
+### Update the Catalog projection through direct database access
+
+Direct writes would bypass Catalog's ownership and persistence boundary.
+Published integration events keep the change asynchronous and let Catalog
+apply its own projection rules.

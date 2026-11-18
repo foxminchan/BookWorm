@@ -1,0 +1,122 @@
+---
+id: adr-006-reviews-rating-projection-on-book
+name: "ADR-006: Keep only a derived rating summary on Catalog books"
+version: 1.0.0
+summary: Reviews owns individual feedback; Catalog stores just an average rating and review count per book, updated from feedback integration messages.
+status: accepted
+date: 2026-10-20
+owners:
+  - platform-team
+decisionMakers:
+  - platform-team
+appliesTo:
+  - type: system
+    id: product-catalog-system
+  - type: service
+    id: catalog-api
+  - type: container
+    id: catalog-database
+  - type: event
+    id: FeedbackCreatedIntegrationEvent
+  - type: event
+    id: FeedbackDeletedIntegrationEvent
+  - type: event
+    id: BookUpdatedRatingFailedIntegrationEvent
+related:
+  - id: adr-001-postgresql-system-of-record
+badges:
+  - content: Ownership
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Context
+
+Product listings need to show ratings and sort or filter by them. Querying the
+[[domain|reviews]] domain for every listing would couple catalog reads to
+Reviews availability, but copying full [[entity|feedback]] into Catalog would
+blur ownership and duplicate review content and lifecycle decisions. Catalog
+needs a local summary for product discovery without taking ownership of
+individual feedback records.
+
+## Decision
+
+Reviews remains the owner of individual [[entity|feedback]].
+[[service|catalog-api]] handles Reviews feedback integration messages and
+updates a derived average rating and review count on the [[entity|book]] in
+[[container|catalog-database]]. A feedback-created message adds its rating; a
+feedback-deleted message removes that rating. The integration contract
+identifies both the book and feedback, and the feedback ID is used when
+reporting a failed update for a missing book. No individual feedback records
+are stored in Catalog.
+
+If a created-feedback message refers to a book that does not exist, Catalog
+publishes [[event|BookUpdatedRatingFailedIntegrationEvent]]. If a
+feedback-deleted message refers to a missing book, the handler performs no
+local update because there is no Catalog projection to correct.
+
+## Decision drivers
+
+Catalog needs rating information for browsing and ranking, but it must not
+become the owner of customer feedback data. The Reviews domain is the
+authoritative place for the actual review content, moderation decisions, and
+future customer-specific decisions.
+
+Maintaining the aggregate beside each book lets product reads return the
+summary with the catalog record, while asynchronous integration messages keep
+the domain boundary explicit. The projection can be reconciled from Reviews
+data if messages fail or the stored summary drifts.
+
+## Alternatives considered
+
+### Copy the full feedback records and summaries into Catalog
+
+This would make feedback queries available locally, but it would create an
+ownership conflict and risk inconsistent moderation or deletion logic across
+domains. Catalog would inherit more of the Reviews domain's data lifecycle
+than it needs for product discovery.
+
+### Let Shopping and customer experiences read Reviews directly
+
+This would increase coupling between subdomains and create a runtime
+dependency on Reviews for product listing and discovery. A summary projection
+lets Catalog answer common book reads locally, while Reviews remains the
+authority for feedback details.
+
+### Make the rating summary a separate fact table without relation to the book
+
+This would keep the summary separate from the book row, but require additional
+lookup or join work for a value that is displayed as part of the product
+listing. Keeping the average rating and count on each book aligns the
+projection with the browsing experience without transferring ownership of
+feedback.
+
+## Consistency and recovery constraints
+
+- The summary is a projection, not editable Catalog-owned source data.
+  Business-user book create and update operations must not treat
+  `average_rating` or `total_reviews` as writable product fields.
+- The projection is eventually consistent with Reviews. Delayed or failed
+  integration-message handling can leave a book's summary stale; inspect
+  message delivery and Catalog handler logs before applying any correction.
+- Reviews remains the source for repair and reconciliation. Replay failed
+  messages or recalculate the summary from Reviews data through an approved
+  recovery process; do not invent rating values by editing the book directly.
+- A created-feedback message for an unknown book is surfaced through the
+  rating-update-failed event. A deleted-feedback message for an unknown book
+  is a no-op, since there is no local book projection to update.
+- Rating summaries are not part of the Qdrant search record. Search-index
+  membership and rating freshness are separate concerns.
+
+## Consequences
+
+- Catalog listings can return rating summaries without making a synchronous
+  read to Reviews for each book.
+- Reviews remains authoritative for feedback, while Catalog is responsible
+  for the correctness and observability of its local projection.
+- Ratings are eventually consistent with Reviews and may require message
+  replay or reconciliation after delivery or handler failures.
+- Catalog handles the missing-book case explicitly for created-feedback
+  messages and treats deletion for an unknown book as a no-op.
+- Rating summaries are not part of the vector index and do not affect semantic
+  or keyword candidate generation.

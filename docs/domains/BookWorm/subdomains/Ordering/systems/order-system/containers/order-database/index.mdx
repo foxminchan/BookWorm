@@ -1,0 +1,90 @@
+---
+id: order-database
+name: Order Database
+version: 1.0.0
+summary: PostgreSQL system of record for Buyer profiles, Orders, and purchase-time items, with Ordering event and message persistence.
+owners:
+  - business-strategy
+container_type: database
+badges:
+  - content: Database
+    backgroundColor: blue
+    textColor: blue
+technology: postgresql
+authoritative: true
+access_mode: readWrite
+classification: confidential
+purpose: Persist accepted purchases and Buyer profiles alongside Marten event streams, projections, and Wolverine message storage.
+styles:
+  icon: /icons/database/postgresql.svg
+---
+
+<NodeGraph />
+
+## Overview
+
+Order Database is the authoritative PostgreSQL store owned by
+[[system|order-system]] and accessed by [[service|order-api]]. The service uses
+EF Core for domain records, Marten for Order events and projections, and
+Wolverine for durable messaging. All three use the same Ordering database
+connection.
+
+The AppHost provisions a separate Ordering database on the shared PostgreSQL
+server, running PostgreSQL locally and using Azure Database for PostgreSQL
+Flexible Server when deployed.
+
+## Stored data
+
+| Data                      | Purpose                                                                                                                     |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| [[entity\|buyer]]         | Buyer identity, name, and address, including street, city, and province.                                                    |
+| [[entity\|order]]         | Buyer association, business status, note, lifecycle timestamps, concurrency token, and soft-delete flag.                    |
+| [[entity\|order-item]]    | Book ID, quantity, and purchase-time unit price associated with an Order.                                                   |
+| Marten event streams      | Persisted Order placement, completion, and cancellation domain events.                                                      |
+| Marten projections        | Live `OrderSummary` aggregation and asynchronous `OrderSummaryView` documents containing Order ID, status, and total price. |
+| Wolverine message storage | Durable message envelopes used by Ordering's integration messaging, configured in the `wolverine` schema.                   |
+
+Marten's event and document schemas default to `public`; configuration can
+override the write/read schema names, and `SchemaName` overrides both. The
+asynchronous projection is derived data, not a replacement for the EF Core
+Order aggregate.
+
+## Access and consistency
+
+- [[service|order-api]] creates and reads Buyer profiles, updates addresses,
+  and supports administrative Buyer deletion.
+- Order creation persists the accepted purchase and its item snapshot.
+  Completion and cancellation update the business status; administrative
+  deletion and failed basket cleanup use soft deletion.
+- Order reads and dashboard queries use the service's repositories. EF Core
+  filters out soft-deleted Orders and their items.
+- The database enforces a unique combination of Book ID and Order ID for
+  Order Items and uses an Order row-version concurrency token.
+- Marten records Order domain events and maintains projections. Its
+  asynchronous daemon also runs the event publisher subscription.
+- Wolverine uses PostgreSQL message persistence and EF Core transaction
+  integration. Historical migration inbox/outbox objects should not be
+  treated as the current Wolverine schema.
+
+## Ownership and data handling
+
+Buyer names and addresses are confidential customer data. Retention and
+residency are deployment policies and are not specified here.
+
+Shopping owns mutable baskets, and Catalog owns current book details and
+prices. Neither is stored here as an authoritative copy. Order Items preserve
+the price and quantity accepted at checkout even when Catalog data changes.
+Finance owns its separate saga state, not the Ordering database.
+
+[[container|order-cache]] coordinates creation locks and stores transient
+request markers and cached responses; it does not own Buyer profiles or
+accepted Orders.
+
+## Implementation references
+
+- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/OrderingDbContext.cs`
+- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EntityConfigurations/`
+- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Extensions.cs`
+- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EventStore/`
+- `src/Services/Ordering/BookWorm.Ordering/Extensions/Extensions.cs`
+- `src/Aspire/BookWorm.AppHost/AppHost.cs`

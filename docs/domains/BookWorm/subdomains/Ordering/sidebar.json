@@ -1,0 +1,60 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Guides",
+			"icon": "BookOpen",
+			"pages": [
+				"[[doc|guides/create-and-manage-orders]]",
+				"[[doc|guides/understand-order-and-finance-status]]"
+			]
+		},
+		"$diagrams",
+		{
+			"title": "Engineering",
+			"icon": "Wrench",
+			"pages": [
+				"[[doc|engineering/order-consistency-and-data-ownership]]",
+				"[[doc|engineering/order-change-checklist]]"
+			]
+		},
+		"$architecture",
+		"$systems",
+		"$entities",
+		{
+			"title": "Runbooks",
+			"icon": "Siren",
+			"pages": [
+				"[[doc|runbooks/checkout-basket-cleanup-stalled-or-failed]]",
+				"[[doc|runbooks/order-creation-conflict-or-failure]]"
+			]
+		},
+		{
+			"title": "Decisions",
+			"icon": "ClipboardList",
+			"collapsed": true,
+			"pages": [
+				{
+					"title": "Ordering",
+					"pages": [
+						"[[adr|adr-001-postgresql-order-system-of-record]]",
+						"[[adr|adr-002-preserve-checkout-purchase-snapshot]]",
+						"[[adr|adr-003-separate-order-status-from-finance-saga]]"
+					]
+				},
+				{
+					"title": "Finance",
+					"pages": [
+						"[[adr|adr-001-finance-persisted-order-saga]]",
+						"[[adr|adr-002-finance-postgresql-message-persistence]]",
+						"[[adr|adr-003-finance-kafka-order-correlation]]",
+						"[[adr|adr-004-finance-bounded-scheduled-retries]]",
+						"[[adr|adr-005-finance-separate-workflow-and-order-status]]",
+						"[[adr|adr-006-finance-delegate-notification-delivery]]"
+					]
+				}
+			]
+		},
+		"$owners"
+	]
+}

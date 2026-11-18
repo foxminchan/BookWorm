@@ -1,0 +1,80 @@
+---
+title: Recover a failed Catalog rating projection
+summary: Investigate and compensate when Catalog cannot apply a feedback rating change because the Book is missing.
+version: 1.0.0
+type: runbooks
+order: 1
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## When to use this runbook
+
+Use this procedure when
+[[event|BookUpdatedRatingFailedIntegrationEvent]] is published on
+[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]], or when a
+created [[entity|feedback]] record remains unprojectable because its Catalog
+[[entity|book]] no
+longer exists.
+
+This is a compensating path for an invalid Book reference. It is not a generic
+Rating service outage and must not be described to the customer as a manual
+feedback deletion.
+
+## Safety rules
+
+- Preserve the `feedbackId`, `bookId`, event ID, correlation ID, environment,
+  and failure timestamp before taking action.
+- Confirm that Catalog's failure identifies a missing Book, not a transient
+  database, Kafka, or application failure.
+- Never delete a feedback record by Book ID alone. The compensation targets
+  the feedback ID from the failed integration event.
+- Do not modify Catalog's database or the Reviews database manually unless an
+  approved recovery action is unavailable and the owner has authorized it.
+
+## Investigate
+
+1. Inspect the failure event and confirm its `feedbackId` and `bookId`.
+2. Check Catalog logs for the original
+   [[event|FeedbackCreatedIntegrationEvent]] and the reason the rating update
+   failed.
+3. Verify whether the Book exists in Catalog. If it exists, stop the
+   compensation and escalate the projection or contract failure.
+4. Check [[container|rating-database]] for the feedback ID and record its
+   current state.
+5. Check the failure-channel consumer and retry/dead-letter status for
+   duplicate delivery or a processing outage.
+
+## Recover an invalid reference
+
+1. Restore the failure consumer or its dependency if the issue was transient.
+2. Process the failure through the normal Rating compensation handler.
+3. The handler locates the feedback by `feedbackId` and deletes it when
+   present.
+4. Treat an already-missing feedback record as an idempotent no-op.
+5. Do not publish a second customer deletion action; retain the original
+   failure event and compensation evidence for auditability.
+
+## If the failure is not a missing Book
+
+Stop before deleting feedback when the Book exists or the event is malformed.
+Escalate with the event payload, Catalog logs, consumer status, and database
+lookup result to [[team|platform-team]] for infrastructure or messaging
+failures and [[team|contributor-team]] for service or contract failures.
+
+## Verify
+
+- The invalid feedback record is removed, or the handler confirms it was
+  already absent.
+- No unrelated feedback record was changed.
+- The failed event is correlated with the compensation result.
+- The failure channel is healthy and no unbounded retry or dead-letter backlog
+  remains.
+- Valid feedback creation and deletion flows still publish their normal
+  events.
+
+<Footer />

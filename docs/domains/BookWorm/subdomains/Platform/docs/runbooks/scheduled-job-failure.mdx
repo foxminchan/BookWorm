@@ -1,0 +1,69 @@
+---
+title: Scheduled job failure
+summary: Investigate missed, failing, or apparently successful jobs in the Platform Scheduler.
+version: 1.0.0
+type: runbooks
+order: 2
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- A Platform job has not fired at its expected UTC cadence.
+- A trigger is paused, misfired, or blocked, or the execution history records a
+  failure.
+- Scheduler reports success but the target system's work is not progressing.
+
+## Diagnose
+
+1. Open the [[service|sheduler-dashboard]] and check Scheduler instance
+   check-ins, job and trigger state, next-fire time, and UTC time zone.
+2. Inspect fired-trigger and execution-history records for the job and
+   trigger. Note duration and sanitized failure details; do not copy
+   authorization headers or credentials.
+3. Check whether the trigger is paused and review the configured misfire
+   behavior. Jobs use `FireOnceNow`, which makes one execution eligible after
+   a misfire instead of replaying every missed interval.
+4. If the Scheduler invocation completed, inspect the target system:
+   - `ProcessVectorBatchJob`: check Catalog Ingestion authorization,
+     `pending_vector_updates`, and vector-store health.
+   - `ResendErrorEmailJob` or `CleanUpSentEmailJob`: check Kafka publication,
+     Notification consumer health, and outbox state.
+5. For Catalog's protected HTTP request, distinguish `401` (missing or invalid
+   credentials) from `403` (the caller identity is not authorized). Check
+   runtime secret configuration and service identity; never reveal token
+   values.
+
+## Recover
+
+- Restore Scheduler database or downstream connectivity, and correct the
+  runtime configuration through the normal deployment process.
+- Resume or otherwise adjust a paused trigger only with the approved
+  operational permissions and change process.
+- Prefer the next scheduled firing after restoring the target. Before a manual
+  retry, confirm target-side state and account for timeouts or duplicate
+  submissions; Scheduler history cannot prove whether downstream work finished.
+- Do not edit target-system records through the Scheduler database.
+
+## Verify
+
+- The expected trigger has a valid next-fire time and new execution history.
+- The target system's own queue or outbox shows progress.
+- For email, confirm Notification state and SMTP health; for vector indexing,
+  confirm the Catalog queue and search index. A successful Scheduler execution
+  by itself is not sufficient.
+
+## Escalation
+
+- Contact [[team|platform-team]] for Scheduler health, schedules,
+  authentication configuration, or infrastructure.
+- Contact [[team|contributor-team]] for target-system processing behavior.
+- Use the established support or on-call channel for urgent incidents; no
+  specific channel or rotation is documented here.
+
+<Footer />

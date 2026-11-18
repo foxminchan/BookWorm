@@ -1,0 +1,69 @@
+---
+title: Order consistency and data ownership
+summary: Which Ordering data is authoritative, what is captured at checkout, and how the Finance workflow stays separate from Order status.
+version: 1.0.0
+type: engineering
+order: 1
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Sources of truth
+
+| Data                            | Owner and role                                                                                       | Consistency                                                                     |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [[container\|order-database]]   | Authoritative Buyer profiles, Orders, purchase-time items, Order events, and durable message storage | PostgreSQL-backed                                                               |
+| [[container\|order-cache]]      | Distributed locks, idempotency markers, cached Catalog responses, and dashboard responses            | Transient; may affect coordination as well as read latency                      |
+| Shopping basket                 | Mutable customer intent before checkout                                                              | Read during Order creation; not copied as an authoritative basket               |
+| Catalog book details and prices | Current product information                                                                          | Resolved during checkout; not the source for an accepted Order's recorded price |
+| Finance saga                    | Post-checkout coordination state                                                                     | Separate persisted workflow, correlated by Order ID                             |
+
+## Checkout snapshot
+
+When [[service\|order-api]] creates an [[entity\|order]], it reads the buyer's
+current basket and resolves the referenced books through Catalog. Each
+[[entity\|order-item]] records the book ID, requested quantity, and selected
+unit price: the sale price when present, otherwise the regular price. The
+Order total is calculated from those recorded values.
+
+Later changes to the basket or Catalog do not rewrite an accepted Order's
+purchase-time items or total. Order reads may enrich the response with current
+book names, but that presentation data does not replace the stored snapshot.
+
+## Separate lifecycles
+
+Ordering owns the Order's business status. The Order starts as **New** and
+can transition to **Completed** or **Cancelled** through explicit Ordering
+operations. Finance owns the saga that coordinates basket cleanup and
+notifications.
+
+- A successful basket deletion does not complete the Order.
+- A failed basket deletion can cause Ordering to soft-delete the Order; this
+  does not change its business status.
+- Exhausting Finance's timeout retries can cancel the saga and request a
+  cancellation notification, but does not invoke Ordering's cancel operation.
+- A notification command is not proof of an Order status change or email
+  delivery.
+
+Read Order status from Ordering, and inspect Finance saga progress separately.
+See [[adr\|adr-001-postgresql-order-system-of-record]],
+[[adr\|adr-002-preserve-checkout-purchase-snapshot]], and
+[[adr\|adr-003-separate-order-status-from-finance-saga]].
+
+## Derived and transient data
+
+Marten event streams persist Order placement, completion, and cancellation
+events. The `OrderSummary` and asynchronous `OrderSummaryView` projections are
+derived from those events; they do not replace the authoritative Order
+aggregate. Dashboard and Catalog response caches are also not authoritative.
+
+Redis participates in more than caching: Ordering uses it for creation locks
+and request markers. Clearing cache entries can affect in-flight coordination
+or duplicate-request detection, even though persisted Orders remain in
+PostgreSQL.
+
+<Footer />

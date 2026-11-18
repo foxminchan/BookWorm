@@ -1,0 +1,64 @@
+---
+id: adr-004-catalog-enrichment-at-read-time
+name: "ADR-004: Enrich basket items from Catalog at read time"
+version: 1.0.0
+summary: Basket persistence stores book references and quantities, while current book presentation data is resolved from Catalog when a basket is read.
+status: accepted
+date: 2026-10-21
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: cart-system
+  - type: service
+    id: basket-api
+  - type: entity
+    id: basket-item
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+Customers need names and current price information while reviewing a
+[[entity|basket]], but [[domain|catalog]] is the owner of
+[[entity|book]] metadata.
+Copying those fields into the basket store would create stale duplicated data
+and an ownership conflict.
+
+A basket stores a book ID and requested quantity, not a quoted or reserved
+price. The Basket API can collect the distinct book IDs and use Catalog's
+batch gRPC query when serving a read, avoiding a separate lookup for every
+line item while keeping product presentation data with its owner.
+
+## Decision
+
+The [[system|cart-system]] persists only book identifiers and positive requested
+quantities. On a basket read, [[service|basket-api]] resolves distinct
+[[entity|book]]
+identifiers through the Catalog gRPC contract and enriches the response with
+the currently available name, regular price, and sale price. Missing Catalog
+records remain missing from the presentation; the stored basket is not
+silently rewritten and product details are not invented. This response is
+current presentation data, not a price guarantee, inventory reservation, or
+checkout snapshot.
+
+## Consequences
+
+- Catalog remains the source of truth for book presentation data.
+- Basket reads depend on Catalog availability for complete enrichment.
+- The persistence model stays small and avoids duplicated metadata.
+- Resolving distinct IDs in a batch avoids per-item Catalog calls as basket
+  size grows.
+- An unavailable or unmatched Catalog record does not authorize the Basket
+  service to manufacture details or alter the saved selection.
+- Price and product validity at purchase time must still be established by
+  the downstream checkout workflow; checkout must not treat a basket's
+  displayed price as an accepted price.
+- This decision does not define stale-data caching or a specific response
+  policy for Catalog transport failures; those behaviors must remain explicit
+  in the service contract and implementation.

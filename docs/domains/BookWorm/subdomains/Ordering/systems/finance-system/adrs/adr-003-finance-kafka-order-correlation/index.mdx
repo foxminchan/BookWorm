@@ -1,0 +1,99 @@
+---
+id: adr-003-finance-kafka-order-correlation
+name: "ADR-003: Integrate through Kafka contracts correlated by Order ID"
+version: 1.0.0
+summary: Finance exchanges environment-scoped integration messages through Kafka and partitions messages exposing OrderId by that identifier.
+status: accepted
+date: 2026-11-03
+owners:
+  - contributor-team
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+appliesTo:
+  - type: system
+    id: finance-system
+  - type: service
+    id: order-orchestration
+  - type: event
+    id: UserCheckedOutIntegrationEvent
+  - type: channel
+    id: bookworm.{env}.ordering.user-checked-out
+  - type: channel
+    id: bookworm.{env}.finance.place-order
+---
+
+## Context
+
+[[domain|ordering]], [[service|basket-api]], and [[system|notification-system]] must evolve independently while exchanging
+enough information to correlate checkout work. Multiple Order workflows can
+run concurrently, so a global processing sequence would unnecessarily couple
+unrelated purchases. Finance also needs a stable key that can be used
+consistently by the persisted saga and the messages that advance it.
+
+This retrospective ADR describes the implemented message contract and routing
+configuration.
+
+## Decision
+
+Use Kafka integration contracts discovered from Finance's assembly and topic
+ownership attributes. Exchange Ordering and Basket events and Finance commands
+through environment-scoped topics such as
+[[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] and
+[[channel|bookworm.&#123;env&#125;.finance.place-order]].
+
+Configure `MessagePartitioning.ByPropertyNamed("OrderId")` so messages exposing
+that property use the Order identifier for partitioning. Keep the payload
+contracts and send/receive directions documented in the [[service|order-orchestration]]
+AsyncAPI specification.
+
+Use published contracts instead of reading another service's tables or
+holding a synchronous request open for the entire workflow.
+
+Order ID is the correlation and partitioning key for the relevant contracts.
+Partitioning provides per-key routing within a Kafka topic; it does not
+establish a single total order across topics, replace saga persistence, or
+guarantee that every consumer has completed its work when a message is
+published.
+
+## Consequences
+
+- Order ID connects saga state, integration messages, and operational traces.
+- Partitioning supports per-Order processing within a topic partition; it is
+  not a total order across different topics or a replacement for database
+  concurrency control.
+- Consumers must tolerate asynchronous processing and possible repeated
+  delivery. Message publication is not proof that a consumer completed work.
+- Contract evolution must preserve compatibility with the participating
+  producers and consumers.
+- The current Ordering mapper supplies Buyer ID as `basketId`; Finance
+  forwards the received value rather than independently resolving a basket.
+- A message lacking the expected `OrderId` property cannot rely on the
+  configured key-based partitioning behavior; producers and contract changes
+  must preserve the correlation field.
+- Asynchronous consumers must handle repeated delivery and distinguish
+  message acceptance from completion of their own side effects.
+- Environment-scoped topics isolate routing by environment but do not by
+  themselves guarantee identical deployment or consumer configuration across
+  environments.
+
+## Alternatives considered
+
+### Read another service's database
+
+This could avoid a message exchange for some information, but would couple
+Finance to private schemas and bypass the service contracts and ownership of
+Ordering and Basket.
+
+### Keep the entire checkout workflow synchronous
+
+This would provide a direct request-response path, but would couple progress
+to the availability and latency of every participant and would not fit the
+independently processed outcome messages.
+
+### Serialize all messages through a global ordering key
+
+This would unnecessarily serialize unrelated Orders. Per-Order correlation
+allows work for separate checkouts to proceed independently while preserving
+the intended partitioning for messages that carry the Order ID.

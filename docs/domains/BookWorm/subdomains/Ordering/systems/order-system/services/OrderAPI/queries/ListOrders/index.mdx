@@ -1,0 +1,55 @@
+---
+id: ListOrders
+name: List Orders
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Returns Orders with pagination and optional status and Buyer filters.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/orders
+  statusCodes: ["200", "400"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Lists [[entity|order]] summaries with pagination and optional filters.
+Non-administrators receive only their own Orders; the service scopes their
+results to the authenticated Buyer.
+
+<NodeGraph />
+
+## Query parameters and response
+
+| Parameter   | Description                                                                                   | Default |
+| ----------- | --------------------------------------------------------------------------------------------- | ------- |
+| `PageIndex` | Page number to return.                                                                        | `1`     |
+| `PageSize`  | Number of results per page.                                                                   | `20`    |
+| `Status`    | Optional Order status filter: `New`, `Cancelled`, or `Completed`.                             | None    |
+| `BuyerId`   | Optional Buyer identifier filter. Non-administrators are scoped to their authenticated Buyer. | None    |
+
+The OpenAPI contract documents the `200 OK` response as a JSON array of
+`OrderDto` values containing ID, date, total, and status. `400 Bad Request`
+returns validation problem details.
+
+## Query using CURL
+
+<CodeGroup dropdown>
+
+```sh list-orders.sh
+curl -H "Authorization: Bearer <access-token>" \
+  "https://api.example.com/api/v1/orders?PageIndex=1&PageSize=20&Status=New"
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer file="schema.json" title="OrderDto array JSON Schema" maxHeight="500" search="true" />

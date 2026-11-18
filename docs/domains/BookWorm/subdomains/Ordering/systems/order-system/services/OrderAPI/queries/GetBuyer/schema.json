@@ -1,0 +1,19 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "BuyerDto",
+	"description": "Buyer profile response documented by the Ordering API OpenAPI contract.",
+	"type": "object",
+	"required": ["id", "name", "address"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid"
+		},
+		"name": {
+			"type": ["string", "null"]
+		},
+		"address": {
+			"type": ["string", "null"]
+		}
+	}
+}

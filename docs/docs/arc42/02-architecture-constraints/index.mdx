@@ -1,0 +1,46 @@
+---
+title: Architecture Constraints
+summary: System-wide architectural and engineering constraints documented for BookWorm.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This section records constraints and conventions that shape system-wide design decisions. It distinguishes technical constraints from organizational constraints and engineering conventions; it does not treat an undocumented external mandate as a confirmed requirement. The technical details follow the repository's [[doc|development/004-engineering-standards]] and the system-wide [[doc|arc42/04-solution-strategy]].
+
+## 2.1 Technical Constraints
+
+| ID  | Constraint                                                                                                                                                          | Rationale and architectural consequence                                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC1 | **Preserve service and bounded-context boundaries.** Business behavior and data belong to their owning context; avoid direct cross-service dependencies.            | Changes should be made in the context that owns the rule or data. Cross-boundary needs require an explicit contract, keeping ownership clear and limiting hidden coupling.                  |
+| TC2 | **Integrate through explicit, owned contracts.** Use documented interfaces and integration events for cross-service communication.                                  | Events carry ownership and routing metadata, and a stable message identity. Event payloads should contain only what consumers need. Contract changes therefore need consumer-impact review. |
+| TC3 | **Evolve Protocol Buffer interfaces deliberately.** For defined `.proto` contracts, lint and check compatibility against the committed baseline before updating it. | Breaking changes require coordination and a migration plan; update the schema and compatibility artifact together only after validation.                                                    |
+| TC4 | **Use the repository's .NET platform setup.** The documented toolchain targets .NET 11 and C# 15, with .NET Aspire supporting the cloud-native service model.       | Use the repository SDK, language settings, and established service setup rather than introducing an incompatible runtime or language baseline.                                              |
+| TC5 | **Allow independent service evolution only where contracts permit it.**                                                                                             | A service can be tested and released independently when its compatible contracts allow it; incompatible changes require coordinated consumer migration.                                     |
+
+## 2.2 Organizational Constraints
+
+| ID  | Constraint                                                 | Rationale and architectural consequence                                                                                                                                                          |
+| --- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| OC1 | **Keep responsibility aligned with capability ownership.** | Catalog and service documentation identify owners and responsibilities. New capabilities and cross-context flows need a clear accountable owner before boundaries or data ownership are changed. |
+| OC2 | **Maintain architecture documentation with the system.**   | Changes to behavior should update the relevant documentation. Architecture fitness checks and automated tests help detect drift between documented boundaries, contracts, and implementation.    |
+
+The repository does not establish additional organization-wide constraints such as mandated vendors, team structure, procurement rules, or regulatory requirements. Those must be added when confirmed by stakeholders.
+
+## 2.3 Conventions
+
+| ID  | Convention                                                    | Application                                                                                                                                                                                         |
+| --- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | **Follow repository coding and dependency practices.**        | Apply `.editorconfig`; propagate `CancellationToken` through asynchronous operations; keep package versions centralized in `Directory.Packages.props`; and test business logic.                     |
+| C2  | **Keep integration-event identity and routing stable.**       | Declare events in `BookWorm.Contracts`, use the `[Action][Entity]IntegrationEvent` naming pattern, and preserve the `IntegrationMessageOwner` and `MessageIdentity` metadata used by the event bus. |
+| C3  | **Validate Protocol Buffer changes in the prescribed order.** | Run schema linting and compatibility checks before rebuilding the committed baseline; coordinate any breaking change with affected consumers.                                                       |
+| C4  | **Use architecture checks as part of change validation.**     | Keep catalog and arc42 descriptions aligned with implementation, and use relevant tests and fitness checks to make boundary or contract drift visible.                                              |
+
+## Implications and open constraints
+
+- Shared platform infrastructure supports cross-cutting needs; it does not take ownership of business behavior or data from a bounded context.
+- Cross-boundary events are architectural interfaces with explicit ownership and semantics, not incidental implementation details.
+- These constraints do not define a complete deployment, security, regulatory, or operational baseline. The repository does not currently establish system-wide numerical targets for availability, latency, throughput, recovery, or data retention; those remain to be agreed and documented.

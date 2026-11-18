@@ -1,0 +1,54 @@
+---
+id: basket-database
+name: Basket Database
+version: 1.0.0
+summary: Authoritative Redis store for customer-scoped shopping baskets and their items.
+owners:
+  - contributor-team
+container_type: database
+badges:
+  - content: Database
+    backgroundColor: blue
+    textColor: blue
+technology: redis
+authoritative: true
+access_mode: readWrite
+classification: internal
+retention: transient
+styles:
+  icon: /icons/database/redis.svg
+---
+
+<NodeGraph />
+
+## Overview
+
+Basket Database is the authoritative persistence store for customers' active
+[[entity|basket]]s. [[service|basket-api]] uses customer-scoped keys to read,
+create, replace, and delete basket state throughout the pre-order journey.
+
+## What does it store?
+
+- **[[entity|basket]]s** — the current basket for an authenticated customer.
+- **[[entity|basket-item]]s** — [[entity|book]] identifiers and positive requested quantities.
+- **Basket lifecycle state** — the data needed to clear a basket after checkout
+  and prevent the same basket from being reused.
+
+Product names, prices, and other metadata from [[domain|catalog]] are not owned
+by this store. They are resolved through the Catalog contract when the basket
+is presented.
+
+## Access patterns
+
+- [[service|basket-api]] is the only documented reader and writer.
+- Reads and writes are scoped to the authenticated customer's identifier.
+- Basket replacement writes the complete item set rather than merging arbitrary
+  state.
+- Deleting a basket is an explicit checkout cleanup operation. Its success or
+  failure is reported through the basket integration events.
+
+## Operational guidance
+
+Treat this store as transient customer-session data rather than the system of
+record for accepted purchases. [[domain|ordering]] owns the resulting order after
+checkout, so downstream workflows must not read order state from this store.

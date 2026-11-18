@@ -1,0 +1,87 @@
+---
+id: adr-004-use-domain-apis-as-mcp-backends
+name: "ADR-004: Use domain APIs as MCP data sources"
+version: 1.0.0
+summary: MCP data access goes through Catalog and Rating service APIs instead of reading their databases directly.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: mcp-tools
+  - type: service
+    id: mcp-server
+  - type: system
+    id: product-catalog-system
+  - type: service
+    id: catalog-api
+  - type: system
+    id: rating-system
+  - type: service
+    id: rating-api
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+Catalog owns book metadata and Reviews owns individual feedback. Direct MCP
+database access would bypass those systems' service contracts and couple the
+shared integration to their storage schemas. The adapter needs to combine
+data from multiple domains without becoming responsible for domain-specific
+query behavior, authorization, or persistence.
+
+## Decision
+
+MCP Server retrieves Catalog data through Catalog API and review data through
+Rating API. It does not access the Catalog or Rating databases directly.
+Domain APIs remain responsible for their own data access and behavior. MCP
+serializes the results for its tools and resources and reports upstream
+failures explicitly rather than treating an unavailable API as an empty
+successful lookup.
+
+The MCP service does not maintain its own application data store or cache
+these responses. Domain services remain the source systems, and MCP requests
+depend on their availability and authorization behavior.
+
+## Consequences
+
+- MCP data access follows the service contracts of the owning domains.
+- Upstream API availability, authorization, and response semantics affect MCP
+  requests.
+- Changes to domain APIs may require corresponding MCP adapter updates.
+- Catalog and Reviews can evolve their storage implementations without
+  exposing those details through MCP.
+- API failures remain visible to MCP clients and can prevent a lookup or
+  resource read from completing; the adapter must not present a failure as
+  valid empty data.
+- Multiple upstream service calls may have different latency and freshness;
+  MCP does not create an atomic cross-domain snapshot.
+- The MCP server's infrastructure and policies must allow it to discover and
+  authenticate to the required upstream APIs.
+
+## Alternatives considered
+
+### Query Catalog and Rating databases directly
+
+This could avoid API hops, but would couple MCP to private schemas and database
+credentials and bypass the service boundaries maintained by the owning
+domains.
+
+### Copy domain data into an MCP-owned store
+
+This could reduce upstream request latency, but would create a second
+replicated data set and require synchronization, freshness, and repair
+policies. The MCP service remains a live adapter rather than an additional
+system of record.
+
+### Implement domain rules in MCP handlers
+
+Duplicating domain behavior in the adapter would risk diverging from the
+Catalog and Rating APIs. The adapter maps protocol requests to existing
+service operations and leaves domain decisions with their owners.

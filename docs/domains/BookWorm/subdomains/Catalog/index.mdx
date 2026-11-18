@@ -1,0 +1,186 @@
+---
+id: catalog
+name: Catalog
+summary: |
+  Core BookWorm subdomain that makes books discoverable, purchasable, and
+  consistently described across the customer journey
+version: 1.0.0
+owners:
+  - business-strategy
+systems:
+  - id: product-catalog-system
+    version: 1.0.0
+entities:
+  - id: book
+    version: 1.0.0
+  - id: author
+    version: 1.0.0
+  - id: category
+    version: 1.0.0
+  - id: publisher
+    version: 1.0.0
+  - id: book-author
+    version: 1.0.0
+badges:
+  - content: Core Domain
+    backgroundColor: blue
+    textColor: blue
+    icon: RectangleGroupIcon
+  - content: Business Critical
+    backgroundColor: red
+    textColor: red
+    icon: ShieldCheckIcon
+---
+
+## Business purpose
+
+Catalog is the authoritative business capability for the [[entity|book]]s BookWorm
+offers. It turns [[entity|publisher]] and [[entity|author]] information into a trusted, searchable
+product proposition that can be used by [[domain|shopping]], [[domain|reviews]],
+and other customer-facing experiences.
+
+The subdomain is strategically classified as a **Core Domain** because the
+quality of its product information directly affects discovery, conversion, and
+the consistency of every downstream purchase decision.
+
+### Business outcomes
+
+- Customers can discover [[entity|book]]s using meaningful
+  [[entity|category]], [[entity|author]], and [[entity|publisher]] metadata.
+- Customers see a consistent price and availability proposition before
+  checkout.
+- [[domain|shopping]] can use Catalog information without owning or changing Catalog
+  business rules.
+- [[domain|reviews]] can associate [[entity|feedback]] with a stable
+  [[entity|book]] identity without taking
+  ownership of book metadata.
+- Business and engineering teams have one explicit contract for managing
+  catalog information.
+
+## Domain scope and language
+
+Catalog owns the product representation of a book and its descriptive
+relationships:
+
+- [[entity|book]] is the aggregate root and stable product identity.
+- [[entity|author]], [[entity|publisher]], and [[entity|category]] provide
+  discoverability and classification metadata.
+- [[entity|book-author]] models the many-to-many relationship between books and
+  authors.
+- [[domain|reviews]] contributes rating information as a customer-feedback
+  projection; Catalog does not own individual reviews.
+
+Important distinctions:
+
+- **Availability** describes whether a Catalog book can currently be offered.
+  It is not a stock reservation owned by Shopping or a fulfilment promise
+  owned by Ordering.
+- **Price** is part of the Catalog product proposition. The checkout process
+  must still establish its own purchase-time validity before accepting an
+  order.
+- **Book identity** is shared through a stable identifier and published
+  contracts, not by sharing the Catalog entity or database.
+
+## Capability map
+
+| Capability           | Responsibility                                                      | Strategic importance |
+| -------------------- | ------------------------------------------------------------------- | -------------------- |
+| Book management      | Create, update, retire, and retrieve book listings                  | Core                 |
+| Classification       | Maintain categories, authors, and publishers                        | Core                 |
+| Product proposition  | Expose price, availability, and rating summary for discovery        | Core                 |
+| Contract publication | Provide stable API and integration semantics to downstream contexts | Enabling             |
+
+## Value Chain
+
+A Wardley map of the Catalog domain. Product search is where we differentiate,
+so it sits closest to the shopper and furthest from commodity. The data stores
+and compute underneath are bought, not built.
+
+<MermaidFileLoader file="mermaids/catalog-wardley-map.mmd" />
+
+## Solution-architecture view
+
+<LikeC4View viewId="catalogContext" project="catalog" />
+
+### Context boundaries
+
+| Relationship                   | Direction | Integration intent                                                    |
+| ------------------------------ | --------- | --------------------------------------------------------------------- |
+| Customer → Catalog             | Inbound   | Browse and inspect the product proposition                            |
+| Catalog → Shopping             | Upstream  | Shopping consumes book, price, and availability information           |
+| Catalog → Reviews              | Upstream  | Reviews uses Book identity and publishes feedback-derived context     |
+| Catalog → [[domain\|ordering]] | Reference | Ordering may retain a purchase snapshot; it does not own Catalog data |
+
+The shared BookWorm context map remains the source for the wider relationship
+landscape. This page narrows that landscape to the Catalog boundary and its
+responsibilities.
+
+## Contract and interaction surface
+
+At the architecture level, consumers should depend on published identifiers
+and representations rather than Catalog persistence:
+
+1. A catalog business user maintains product information through the Catalog
+   API.
+2. Catalog validates and stores the aggregate and its relationships.
+3. Customer-facing contexts read a published product representation.
+4. Shopping validates the purchase-time proposition before accepting checkout.
+5. Downstream contexts preserve their own models and do not mutate Catalog
+   state directly.
+
+## Business invariants
+
+- Every active book has a stable identity.
+- A book references valid category and publisher identities.
+- A discount price cannot be negative or greater than the original price.
+- An unavailable book must not be presented as available for a new purchase.
+- Catalog updates must not silently rewrite an accepted Order.
+- Reviews and Orders may retain historical snapshots, but Catalog remains the
+  owner of the current product description.
+
+## Architecture principles
+
+- **Bounded ownership:** Catalog owns book metadata and product presentation;
+  [[domain|shopping]] owns [[entity|basket]] and checkout decisions;
+  [[domain|ordering]] owns order lifecycle.
+- **Published language:** Downstream contexts consume explicit product
+  contracts rather than importing Catalog entities.
+- **Read consistency over coupling:** Product discovery may use a projection,
+  while purchase acceptance must verify the current purchase proposition.
+- **Evolution by contract:** API and message changes should be versioned and
+  remain backward compatible where downstream consumers require it.
+- **Traceable decisions:** Business-critical changes to price, availability, or
+  product identity should be auditable.
+
+## Quality attributes and operational concerns
+
+| Concern       | High-level expectation                                                          |
+| ------------- | ------------------------------------------------------------------------------- |
+| Availability  | Product discovery should remain available independently of Reviews and Ordering |
+| Consistency   | The purchase path must not accept stale price or availability data              |
+| Performance   | Browsing and product lookup should support low-latency reads                    |
+| Evolvability  | Consumers should be insulated from internal persistence changes                 |
+| Observability | Catalog changes and rejected updates should be traceable by product identity    |
+| Security      | Catalog administration is restricted to authorized business users               |
+
+## Architectural decisions to confirm
+
+These are intentionally left as solution-architecture checkpoints rather than
+invented decisions:
+
+- Whether downstream product data is delivered synchronously, by events, or by
+  both patterns.
+- Whether availability is mastered in Catalog or integrated from an inventory
+  capability.
+- Whether rating summary is refreshed synchronously or through a Reviews
+  projection.
+- The retention and audit policy for historical price and availability
+  snapshots.
+
+## Architecture Graph
+
+Where Catalog sits in the wider architecture — its systems and messages, and the neighbouring domains it talks to.
+
+<ArchitectureGraph />
+
+The diagram below shows the domain's systems, how they relate, and the people who interact with them.

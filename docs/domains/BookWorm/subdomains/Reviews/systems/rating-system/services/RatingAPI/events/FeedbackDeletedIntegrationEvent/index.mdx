@@ -1,0 +1,32 @@
+---
+id: FeedbackDeletedIntegrationEvent
+name: Feedback deleted
+version: 1.0.0
+summary: |
+  Indicates that a customer feedback rating was deleted for a book. Rating API
+  publishes this event so Catalog can remove it from its denormalized summary.
+owners:
+  - contributor-team
+schemaPath: schema.json
+badges:
+  - content: Reviews
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Overview
+
+[[service|rating-api]] publishes this event after an existing
+[[entity|feedback]] record is deleted. The event contains the identifiers and
+rating value that [[service|catalog-api]] needs to subtract from its
+denormalized [[entity|book]] rating summary.
+
+<NodeGraph />
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]
+
+## Schema
+
+<SchemaViewer file="schema.json" title="Feedback deleted schema" maxHeight="500" />

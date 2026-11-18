@@ -1,0 +1,102 @@
+---
+id: identity-provider
+name: Identity Provider
+version: 1.0.0
+summary: |
+  External identity infrastructure that authenticates BookWorm users and
+  provides OAuth-compatible identity verification for protected APIs.
+scope: external
+owners:
+  - contributor-team
+services:
+  - id: oauthapi
+    version: 1.0.0
+flows:
+  - id: product-ingestion
+    version: 1.0.0
+  - id: user-checkout
+    version: 1.0.0
+actors:
+  - id: customer
+    name: Customer
+    label: signs in and presents an access token to BookWorm
+    direction: inbound
+  - id: administrator
+    name: Administrator
+    label: signs in to access protected administrative operations
+    direction: inbound
+  - id: business-user
+    name: Business User
+    label: signs in to access protected business operations
+    direction: inbound
+badges:
+  - content: External
+    backgroundColor: purple
+    textColor: purple
+    icon: GlobeAltIcon
+---
+
+## Context Diagram
+
+The Identity Provider is an external security boundary. [[domain|BookWorm]] applications
+delegate authentication to the provider and validate the resulting identity
+before allowing access to protected operations.
+
+<ContextDiagram />
+
+## Overview
+
+The Identity Provider authenticates users and issues the identity information
+used by BookWorm APIs to establish an authenticated caller. Its integration
+surface is represented by [[service|oauthapi]], the OAuth API exposed by the
+provider.
+
+BookWorm remains responsible for authorization decisions inside each
+application boundary. The Identity Provider does not own
+[[domain|catalog]], [[domain|reviews]], [[domain|shopping]], or
+[[domain|ordering]] business data, and a valid identity does not by itself
+grant access to every operation.
+
+## Services
+
+The system's integration surface is provided by [[service|oauthapi]], which
+handles OAuth-based authentication and identity verification.
+
+## Responsibilities
+
+| Capability            | Responsibility                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| User authentication   | Verify the user's identity through the configured identity provider.                                |
+| Token issuance        | Provide OAuth-compatible access credentials for authenticated clients.                              |
+| Identity verification | Supply claims that BookWorm services can validate before processing protected requests.             |
+| Account boundary      | Maintain provider-side identity records and authentication policy rather than domain business data. |
+
+## Integration boundary
+
+1. A customer or administrator authenticates with the Identity Provider.
+2. The provider returns an access token for the client and requested
+   audience.
+3. The client presents the token when calling a protected BookWorm API.
+4. The receiving service validates the token and applies its own policy,
+   resource ownership, and administrative checks.
+
+Authentication is therefore a prerequisite for protected operations, not a
+replacement for service-level authorization. Public or anonymous operations
+may still be exposed by individual services where their contracts allow it.
+
+## Security and operational considerations
+
+- Treat access tokens, refresh credentials, and provider configuration as
+  secrets; they must not be stored in source control or written to logs.
+- Validate issuer, audience, signature or introspection result, expiry, and
+  required claims before accepting a token.
+- Keep authorization policies in the consuming service so business permissions
+  remain close to the operation they protect.
+- Handle provider outages explicitly: protected requests should fail closed
+  rather than being treated as anonymous or authenticated by a fallback.
+- Monitor authentication failures, token-validation failures, and provider
+  availability without recording token contents or unnecessary personal data.
+
+## Architecture
+
+<NodeGraph />

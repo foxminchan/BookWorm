@@ -1,0 +1,91 @@
+---
+summary: Consume Finance's failed basket-cleanup outcome and soft-delete the affected Order.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Receive failed cleanup
+
+Finance publishes this command when basket cleanup fails.
+[[service|order-api]] consumes it through
+[[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]].
+
+- `id` identifies this integration message; `creationDate` is its UTC timestamp.
+- `orderId` identifies the Order requiring recovery.
+- `basketId` identifies the basket whose cleanup failed.
+- `email` is required but may contain null.
+- `totalMoney` preserves the purchase amount.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp DeleteBasketFailedCommand.cs
+[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "delete-basket-failed")]
+public sealed record DeleteBasketFailedCommand(
+    Guid BasketId,
+    string? Email,
+    Guid OrderId,
+    decimal TotalMoney
+) : IntegrationEvent;
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Payload
+
+<CodeGroup dropdown>
+
+```json failed-cleanup-payload.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000005",
+	"creationDate": "2026-11-01T14:01:00Z",
+	"basketId": "11111111-1111-1111-1111-111111111111",
+	"email": null,
+	"orderId": "55555555-5555-5555-5555-555555555555",
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Apply the recovery path
+
+The example shows the camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope. Order API soft-deletes the matching Order if
+it still exists. A missing Order is a no-op; soft deletion does not change
+the Order's business status to Cancelled.
+
+This command is distinct from Basket's
+[[event|BasketDeletedFailedIntegrationEvent]].
+
+<CodeGroup dropdown>
+
+```csharp DeleteBasketFailedCommandHandler.cs
+[WolverineHandler]
+public async Task Handle(DeleteBasketFailedCommand message, CancellationToken cancellationToken)
+{
+    var order = await repository.GetByIdAsync(message.OrderId, cancellationToken);
+
+    if (order is null)
+    {
+        return;
+    }
+
+    order.Delete();
+
+    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+}
+```
+
+</CodeGroup>

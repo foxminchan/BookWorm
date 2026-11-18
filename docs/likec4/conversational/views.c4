@@ -1,0 +1,8 @@
+views {
+  view conversationalContext of conversational {
+    title 'Conversational domain context'
+    include *
+    include customer, catalog, rating, presidio, idp.oauthApi
+    autoLayout LeftRight
+  }
+}

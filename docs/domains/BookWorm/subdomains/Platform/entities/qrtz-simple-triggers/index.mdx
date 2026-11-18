@@ -1,0 +1,44 @@
+---
+id: qrtz-simple-triggers
+name: Quartz Simple Triggers
+version: 1.0.0
+identifier: trigger_name
+aggregateRoot: false
+summary: Repeat-based schedule details for Quartz simple triggers.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: trigger_name
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_name
+    relationType: belongsTo
+  - name: trigger_group
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_group
+    relationType: belongsTo
+  - name: repeat_count
+    type: bigint
+    required: true
+  - name: repeat_interval
+    type: bigint
+    required: true
+  - name: times_triggered
+    type: bigint
+    required: true
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name`, `trigger_name`, and `trigger_group`.
+- This record extends [[entity|qrtz-triggers]] through the same composite key.

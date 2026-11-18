@@ -1,0 +1,110 @@
+---
+id: order-lifecycle
+name: Order Lifecycle
+version: 1.0.0
+summary: |
+  State machine showing Order creation and the permitted transitions from
+  New to the terminal Completed or Cancelled states.
+owners:
+  - business-strategy
+---
+
+## Order state machine
+
+This diagram describes the business status owned by the
+[[domain|ordering]] Order aggregate. It does not model Finance workflow
+progress, basket cleanup, email delivery, payment settlement, or shipping.
+
+An Order starts in New after checkout creates the purchase record. Only
+Ordering can move that record to Completed or Cancelled.
+
+<MermaidFileLoader file="mermaids/order-lifecycle.mmd" />
+
+The initial marker represents Order creation. The final markers mean no
+further business-status transitions are supported; they do not mean the
+Order is deleted or that all downstream processing has finished.
+
+## State meanings
+
+- **New:** The Order has been created with a Buyer and its purchase-time
+  items. This state does not confirm basket deletion or payment settlement.
+- **Completed:** Ordering has accepted an explicit completion operation.
+  Completion is terminal in the aggregate, but it does not prove external
+  shipping execution or email delivery.
+- **Cancelled:** Ordering has accepted an explicit cancellation operation.
+  Cancellation is terminal in the aggregate; it is not the same as a
+  cancelled Finance saga or a soft-deleted Order.
+
+## Transition rules
+
+### Creation
+
+The authenticated checkout operation creates the Order from the buyer's
+current basket and the prices resolved from Catalog. The constructor sets
+the status to New and registers `OrderPlacedEvent`, which is mapped to
+[[event|UserCheckedOutIntegrationEvent]] for Finance.
+
+### Completion
+
+The completion endpoint, `PATCH /orders/{orderId}/complete`, invokes
+`MarkAsCompleted()` after loading an accessible Order. The aggregate requires
+New, changes the status to Completed, and registers `OrderCompletedEvent`.
+That event is mapped to [[event|OrderStatusChangedToCompleteIntegrationEvent]].
+
+### Cancellation
+
+The cancellation endpoint, `PATCH /orders/{orderId}/cancel`, invokes
+`MarkAsCanceled()` after loading an accessible Order. The aggregate requires
+New, changes the status to Cancelled, and registers `OrderCancelledEvent`.
+That event is mapped to [[event|OrderStatusChangedToCancelIntegrationEvent]].
+
+Both endpoints require authentication, an idempotency key, and the per-user
+rate limit. The aggregate rejects completion or cancellation when the status
+is no longer New. Neither terminal state can be reopened, and a completed
+Order cannot be cancelled through this state machine.
+
+## Finance coordination is a separate lifecycle
+
+Order status is distinct from the Finance saga's Placed,
+BasketDeletionFailed, Completed, and Cancelled states:
+
+- Checkout starts the Finance saga, which issues [[command|PlaceOrderCommand]] for
+  basket cleanup and schedules a timeout.
+- [[event|BasketDeletedCompleteIntegrationEvent]] causes Finance to send
+  [[command|DeleteBasketCompleteCommand]]. Ordering logs that command without
+  completing the Order.
+- [[event|BasketDeletedFailedIntegrationEvent]] causes Finance to finalize its saga
+  as BasketDeletionFailed and send [[command|DeleteBasketFailedCommand]] to Ordering.
+- Finance retries placement on timeout until its configured retry limit.
+  At that limit it finalizes its saga as Cancelled and can issue a
+  cancellation email command, but does not cancel the Order.
+- When Finance receives an actual Ordering completion or cancellation event,
+  it finalizes its saga and can issue the corresponding notification command.
+  These notification commands require a nonblank name and email.
+
+An email reporting cancellation is therefore not sufficient evidence that
+the Order aggregate is Cancelled. Order status must be read from Ordering.
+
+## Soft deletion is not a status
+
+On [[command|DeleteBasketFailedCommand]], Ordering looks up the Order and, if found,
+sets `IsDeleted` to true and saves it. This operation preserves the stored
+business status and does not register an Order cancellation event. If the
+Order is absent, the handler returns without changing anything.
+
+Soft deletion is a separate flag rather than a fourth business status, so it
+is intentionally not drawn as a transition to Cancelled or to a final marker.
+
+## Reading and troubleshooting the lifecycle
+
+- Correlate Ordering and Finance activity by Order ID, but inspect their states
+  independently.
+- Do not infer completion from successful basket cleanup.
+- Check the soft-delete flag separately when investigating cleanup failure.
+- Distinguish an exhausted Finance timeout from an explicit Ordering
+  cancellation.
+- Do not treat notification submission or delivery as confirmation of an
+  Order transition.
+
+See [[domain|ordering]] for the domain boundary and
+[[diagram|checkout-interaction]] for the wider checkout interaction.

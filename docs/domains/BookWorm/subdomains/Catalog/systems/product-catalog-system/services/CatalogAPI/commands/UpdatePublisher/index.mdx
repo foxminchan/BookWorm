@@ -1,0 +1,39 @@
+---
+id: UpdatePublisher
+name: Update publisher
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Updates an existing publisher in the Catalog.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: PUT
+  path: /api/v1/publishers
+  statusCodes: ["204", "400", "404"]
+sidebar:
+  badge: "PUT"
+---
+
+## Overview
+
+Updates the [[entity|publisher]] identified by `id`. The operation is idempotent when the same name is submitted.
+
+<NodeGraph />
+
+## Contract
+
+The request is JSON and requires both `id` and a non-empty `name`.
+
+The successful response is `204 No Content` with an empty body.
+
+## Operational notes
+
+`400` indicates validation failure. `404` indicates that no publisher exists with the supplied UUID.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

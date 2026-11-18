@@ -1,0 +1,61 @@
+---
+id: adr-001-redis-authoritative-basket-store
+name: "ADR-001: Use Redis as the authoritative basket store"
+version: 1.0.0
+summary: Redis is the authoritative store for active customer baskets, while accepted orders and Catalog data remain owned by their respective systems.
+status: accepted
+date: 2026-10-21
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: cart-system
+  - type: service
+    id: basket-api
+  - type: container
+    id: basket-database
+  - type: entity
+    id: basket
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+The [[system|cart-system]] needs low-latency reads and writes for the mutable
+[[entity|basket]]
+that exists before checkout. Basket state must be isolated from the durable
+Order lifecycle and must not become a second source of truth for Catalog data.
+
+The [[service|basket-api]] reads and writes the basket under a key derived from
+the customer identity. The basket contains only the customer's current
+selection and quantities; it is not the checkout-time purchase snapshot or a
+record of payment and fulfilment. Keeping this boundary explicit lets each
+owning system preserve its own lifecycle and data model.
+
+## Decision
+
+[[container|basket-database]], implemented with Redis, is the authoritative
+store for active customer [[entity|basket]]s. [[service|basket-api]] is the documented
+reader and writer, using customer-scoped keys. The store is transient and is
+not used to reconstruct accepted orders. [[domain|ordering]] owns the
+accepted Order, while [[domain|catalog]] owns [[entity|book]] metadata and
+prices. Other systems must use the Basket API's contracts rather than reading
+or writing Redis directly.
+
+## Consequences
+
+- Basket operations remain suitable for a low-latency storefront path.
+- Redis availability is a hard dependency for basket reads and writes.
+- Basket data can be discarded after checkout without losing the accepted
+  Order or its purchase snapshot.
+- Redis loss can discard active shopping intent; recovery procedures must not
+  present basket restoration as Order recovery.
+- The `transient` classification does not itself define an expiry or eviction
+  policy. Deployment settings and recovery expectations must be aligned with
+  the product's basket-retention requirements.
+- Other systems must use published contracts rather than reading Redis directly.

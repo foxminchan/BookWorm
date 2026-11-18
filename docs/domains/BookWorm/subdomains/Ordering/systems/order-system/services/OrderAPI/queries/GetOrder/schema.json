@@ -1,0 +1,46 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "OrderDetailDto",
+	"description": "Order detail response documented by the Ordering API OpenAPI contract.",
+	"type": "object",
+	"required": ["id", "date", "total", "status", "items"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid"
+		},
+		"date": {
+			"type": "string",
+			"format": "date-time"
+		},
+		"total": {
+			"type": "number"
+		},
+		"status": {
+			"type": "string",
+			"enum": ["New", "Cancelled", "Completed"]
+		},
+		"items": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "quantity", "price"],
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"quantity": {
+						"type": "integer"
+					},
+					"price": {
+						"type": "number"
+					},
+					"name": {
+						"type": ["string", "null"]
+					}
+				}
+			}
+		}
+	}
+}

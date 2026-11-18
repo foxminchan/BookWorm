@@ -1,0 +1,57 @@
+---
+id: adr-bw-014-composable-ai-governance
+name: "ADR-BW-014: Compose shared governance on each enabled AI path"
+version: 1.0.0
+summary: Reuse privacy, guardrail, and policy mechanisms across Chat and Rating while verifying registration and permissions on each model and tool path.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+  - type: system
+    id: chat-system
+  - type: system
+    id: rating-system
+related:
+  - id: adr-002-fail-closed-pii-middleware
+  - id: adr-005-govern-agent-tools-per-agent
+  - id: adr-004-read-only-governed-feedback-summarization
+  - id: adr-001-use-presidio-analyze-for-pii-detection
+  - id: adr-002-anonymize-detected-pii
+---
+
+## Context
+
+Chat and Rating process untrusted user content and call model or tool dependencies. Independent control implementations would drift, but a shared library alone does not protect every execution path.
+
+## Decision
+
+Reuse the existing governance kernel, Presidio-backed PII handling, and chat-client guardrails on the documented Chat and Rating paths. Keep trusted instructions distinct from untrusted content, and review effective policy and tool registration when adding a path.
+
+This records composition and coverage verification across AI capabilities. Local ADRs remain authoritative for fail-closed behavior, per-agent permissions, summarization tools, and Presidio operations.
+
+## Decision drivers
+
+- Reuse of security and privacy mechanisms without assuming universal coverage.
+- Least necessary model data and tool access.
+- Observable rejection and dependency-failure behavior.
+
+## Alternatives considered
+
+| Alternative                                     | Assessment                                                  |
+| ----------------------------------------------- | ----------------------------------------------------------- |
+| Trust prompts alone                             | Avoids middleware but provides no enforceable tool policy.  |
+| Duplicate controls per agent                    | Permits local tailoring while increasing divergence.        |
+| Assume shared registration protects all AI code | Simplifies review but leaves unregistered paths unexamined. |
+
+## Consequences
+
+- Enabled paths can share policy and privacy mechanisms while retaining local permissions.
+- Control composition adds dependencies and policy-deployment obligations.
+- Pattern detection and anonymization remain defense-in-depth, not guarantees that every attack or sensitive value is detected.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] and the related system ADRs. No new model provider or universal AI control coverage is asserted.

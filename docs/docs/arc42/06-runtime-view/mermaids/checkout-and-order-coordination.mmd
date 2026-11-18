@@ -1,0 +1,60 @@
+---
+title: Checkout and order coordination
+---
+sequenceDiagram
+	actor Customer
+	participant Storefront
+	participant Ordering as Order API
+	participant Basket as Basket API
+	participant Catalog as Catalog API
+	participant OrderDB as Order database
+	participant Finance as Finance DTS orchestrator
+	participant Kafka
+	participant Notification
+
+	Customer ->> Storefront: Submit checkout
+	Storefront ->> Ordering: Create Order
+	Ordering ->> Basket: Read persisted basket
+	Basket -->> Ordering: Basket quantities
+	Ordering ->> Catalog: Resolve current book facts and prices
+	Catalog -->> Ordering: Product details and prices
+	Ordering ->> OrderDB: Save New Order and item-price snapshot
+
+	par Customer response
+		Ordering -->> Storefront: 201 Created with Order ID
+		Storefront -->> Customer: Show checkout confirmation
+	and Asynchronous coordination
+		Ordering -->> Finance: UserCheckedOutIntegrationEvent (KafkaTrigger)
+		Finance ->> Finance: Start OrderOrchestrator in Durable Task Scheduler
+		Finance ->> Kafka: Publish PlaceOrderCommand (activity)
+
+		par Basket cleanup
+			Kafka ->> Basket: PlaceOrderCommand
+			Basket ->> Basket: Delete submitted basket
+
+			alt Deletion succeeds
+				Basket -->> Finance: BasketDeletedCompleteIntegrationEvent
+				Finance ->> Kafka: DeleteBasketCompleteCommand
+				Kafka ->> Ordering: Report cleanup success
+			else Deletion fails
+				Basket -->> Finance: BasketDeletedFailedIntegrationEvent
+				Finance ->> Kafka: DeleteBasketFailedCommand
+				Kafka ->> Ordering: Report cleanup failure
+				Ordering ->> OrderDB: Soft-delete Order if present
+				Note over Ordering: No status transition or cancellation event
+			end
+		and Notification consumer
+			Kafka ->> Notification: PlaceOrderCommand
+			Notification ->> Notification: Process placement email request
+		and Timeout policy
+			loop Timeout without an outcome at most two reissues after the initial command
+				Finance ->> Finance: Wait 30 minutes via DTS timer and retry if active
+				Finance ->> Kafka: Reissue PlaceOrderCommand
+			end
+
+			opt Retry limit exhausted
+				Finance ->> Finance: Cancel and finalize orchestration
+				Note over Finance,Ordering: Orchestration cancellation does not cancel the Order
+			end
+		end
+	end

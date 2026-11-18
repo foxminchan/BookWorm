@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CompleteOrderCommand",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id", "creationDate", "orderId", "totalMoney"],
+	"properties": {
+		"id": { "type": "string", "format": "uuid" },
+		"creationDate": { "type": "string", "format": "date-time" },
+		"orderId": { "type": "string", "format": "uuid" },
+		"fullName": { "type": ["string", "null"] },
+		"email": { "type": ["string", "null"] },
+		"totalMoney": { "type": "number" }
+	}
+}

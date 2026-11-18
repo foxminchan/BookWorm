@@ -1,0 +1,84 @@
+---
+id: adr-001-mcp-read-only-domain-adapter
+name: "ADR-001: Expose domain data through a read-only MCP adapter"
+version: 1.0.0
+summary: The MCP Server exposes read-only capabilities while Catalog and Reviews remain authoritative for their data.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: mcp-tools
+  - type: service
+    id: mcp-server
+  - type: system
+    id: product-catalog-system
+  - type: system
+    id: rating-system
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+AI clients need access to current Catalog and Reviews information and reusable
+analysis prompts. Giving those clients direct access to domain databases or
+write operations would couple model interactions to persistence and weaken
+the ownership boundaries of Catalog and Reviews. A shared integration surface
+also needs to make it clear which capabilities retrieve information and which
+systems remain responsible for the underlying data.
+
+## Decision
+
+The MCP Tools system provides a shared adapter exposing read-only
+capabilities for AI clients. It does not expose domain write operations or
+become the system of record for Catalog or Reviews data. Its tools retrieve
+information, its resources expose URI-addressed domain data, and its prompts
+provide reusable task instructions; none of those primitives changes domain
+records.
+
+MCP clients select only the capabilities they need, subject to server-side
+authentication, authorization, and governance. Catalog and Rating remain
+responsible for their respective API behavior and data ownership.
+
+## Consequences
+
+- AI clients can reuse a stable read-only integration boundary.
+- Catalog and Reviews remain authoritative for their own data.
+- Write workflows and business-state changes must continue to use the owning
+  domains' supported operations.
+- The MCP adapter's tool, resource, and prompt definitions become public
+  integration contracts for its clients and must be versioned and changed
+  deliberately.
+- MCP results reflect the source APIs at lookup time; the adapter does not
+  provide a durable cache or guarantee that separately retrieved facts form
+  one cross-domain snapshot.
+- Read-only scope limits the impact of an agent invocation, but does not
+  replace authentication, authorization, or validation of client behavior.
+
+## Alternatives considered
+
+### Give AI clients direct database access
+
+This would bypass the owning APIs and couple clients to database schemas,
+credentials, and storage choices. It would also make it harder for domain
+owners to preserve their service contracts and access rules.
+
+### Expose domain write operations through MCP
+
+This could make conversational workflows appear transactional, but would
+expand the consequences of model-selected calls and blur ownership of
+business decisions. The current adapter remains read-only; any future
+mutation capability requires a separate explicit authorization and domain
+workflow decision.
+
+### Let each AI client integrate independently with every domain
+
+This would duplicate connection, discovery, and contract-mapping logic across
+clients. The shared adapter provides one reusable boundary while keeping
+source data and rules in the domains that own them.

@@ -1,0 +1,71 @@
+---
+id: qrtz-job-status
+name: Quartz Job Status
+version: 1.0.0
+identifier: job_name
+aggregateRoot: false
+summary: Optional per-job execution counters and latest result information.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: job_group
+    type: text
+    required: true
+    references: qrtz-job-details
+    referencesIdentifier: job_group
+    relationType: belongsTo
+  - name: job_name
+    type: text
+    required: true
+    references: qrtz-job-details
+    referencesIdentifier: job_name
+    relationType: belongsTo
+  - name: first_fired_time
+    type: bigint
+    required: true
+  - name: last_fired_time
+    type: bigint
+    required: true
+  - name: last_result
+    type: integer
+    required: true
+  - name: last_run_time
+    type: bigint
+    required: true
+  - name: last_instance_name
+    type: text
+    required: true
+  - name: last_entry_id
+    type: text
+    required: false
+  - name: last_summary
+    type: text
+    required: false
+  - name: last_success_time
+    type: bigint
+    required: false
+  - name: last_failure_time
+    type: bigint
+    required: false
+  - name: last_failure_message
+    type: text
+    required: false
+  - name: consecutive_failures
+    type: integer
+    required: true
+  - name: run_count
+    type: bigint
+    required: true
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name`, `job_group`, and `job_name`.
+- Job status belongs to [[entity|qrtz-job-details]].

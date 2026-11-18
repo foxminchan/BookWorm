@@ -1,0 +1,106 @@
+---
+summary: List feedback for a book with paging and ordering.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. List feedback for a book
+
+Pass the required `BookId` and optional paging and ordering parameters. The
+query returns `200 OK` with a JSON array of feedback records.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request GET \
+  "$BASE_URL/api/v1/feedbacks?BookId=11111111-1111-1111-1111-111111111111&PageIndex=1&PageSize=20&OrderBy=Rating&IsDescending=true" \
+  --header "Accept: application/json"
+```
+
+</CodeGroup>
+
+Example response:
+
+<CodeGroup dropdown>
+
+```json
+[
+	{
+		"id": "22222222-2222-2222-2222-222222222222",
+		"firstName": "Avery",
+		"lastName": "Nguyen",
+		"comment": "A thoughtful and engaging read.",
+		"rating": 5,
+		"bookId": "11111111-1111-1111-1111-111111111111"
+	}
+]
+```
+
+</CodeGroup>
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```ts list-feedbacks.ts
+type FeedbackDto = {
+	id: string;
+	firstName: string | null;
+	lastName: string | null;
+	comment: string | null;
+	rating: number | string;
+	bookId: string;
+};
+
+const params = new URLSearchParams({
+	BookId: "11111111-1111-1111-1111-111111111111",
+	PageIndex: "1",
+	PageSize: "20",
+	OrderBy: "Rating",
+	IsDescending: "true",
+});
+
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const response = await fetch(`${baseUrl}/api/v1/feedbacks?${params}`);
+
+if (response.status === 400) {
+	throw new Error("ListFeedbacks validation failed");
+}
+if (!response.ok) {
+	throw new Error(`ListFeedbacks failed with ${response.status}`);
+}
+
+const feedbacks = (await response.json()) as FeedbackDto[];
+console.log(`Received ${feedbacks.length} feedback record(s)`);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle invalid query parameters
+
+Malformed UUIDs, invalid paging values, or unsupported parameter values return
+`400 Bad Request` with `application/problem+json`.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"BookId": ["The value is not a valid UUID."]
+	}
+}
+```
+
+</CodeGroup>

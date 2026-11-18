@@ -1,0 +1,51 @@
+---
+id: adr-bw-018-single-source-decision-documentation
+name: "ADR-BW-018: Maintain one authoritative resource per architecture decision"
+version: 1.0.0
+summary: Store whole-system ADRs at the catalog root, preserve existing system ADRs, and make arc42 section 9 a reference register.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-016-layered-architecture-verification
+  - id: adr-bw-017-compatible-contract-evolution
+---
+
+## Context
+
+Architectural direction already appears in arc42, while local ADRs capture detailed system choices. Repeating complete decisions in section 9 would create competing versions of rationale and status.
+
+## Decision
+
+Use first-class EventCatalog ADR resources as the authoritative records. Place whole-system decisions in the root `adrs/` collection and retain system-specific decisions in their existing collections. Make [[doc|arc42/09-architecture-decisions]] an aggregate register of resource references.
+
+Use unique stable IDs, `appliesTo` for affected resources, and documented ADR relationships for related, amended, or superseded decisions. An ADR's root location does not automatically associate it with every resource.
+
+## Decision drivers
+
+- Traceability of significant choices, alternatives, and consequences.
+- No duplicate rationale or conflicting lifecycle metadata.
+- Clear separation between whole-system principles and local implementation decisions.
+
+## Alternatives considered
+
+| Alternative                            | Assessment                                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Embed every ADR in section 9           | Is easy to read sequentially but duplicates independently maintained records.                |
+| Move all local ADRs to the root        | Creates one physical collection while unnecessarily disturbing existing ownership and paths. |
+| Document only decisions inside systems | Preserves local detail but leaves whole-system choices without a central register.           |
+
+## Consequences
+
+- Readers navigate from arc42 to the authoritative decision and its affected resources.
+- The register needs membership maintenance, but does not copy changing status or rationale.
+- Replacements and revisions require explicit lifecycle links or version archives.
+- Reconstructed records remain proposed until approval is confirmed.
+
+## Evidence
+
+See [arc42 section 9](https://docs.arc42.org/section-9/) and [EventCatalog ADR creation](https://www.eventcatalog.dev/docs/development/guides/resources/adrs/creating-adrs). The [docToolchain](https://examples.arc42.org/systems/doctoolchain-v4/09-architecture-decisions/) and [FotoMaX](https://examples.arc42.org/systems/fotomax/09-architecture-decisions/) examples inform the register and alternatives structure.

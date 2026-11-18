@@ -1,0 +1,36 @@
+---
+id: bookworm.{env}.finance.delete-basket-complete
+name: Successful Basket Cleanup Command Channel
+version: 1.0.0
+summary: |
+  Kafka topic carrying Finance's successful basket-cleanup outcome consumed
+  by Order API.
+owners:
+  - business-strategy
+address: bookworm.{env}.finance.delete-basket-complete
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    description: BookWorm deployment environment.
+protocols:
+  - kafka
+---
+
+## Overview
+
+Finance publishes [[command|DeleteBasketCompleteCommand]] after successful
+basket cleanup. [[service|order-api]] logs the outcome without changing the
+Order's business status. This is separate from Basket's own deletion event.
+
+The camelCase JSON payload contains `id`, `creationDate`, `orderId`, and
+`totalMoney` inside the BookWorm CloudEvents-compatible envelope.
+
+<ChannelInformation />
+
+## Architecture
+
+<NodeGraph />

@@ -1,0 +1,36 @@
+---
+id: qrtz-scheduler-state
+name: Quartz Scheduler State
+version: 1.0.0
+identifier: instance_name
+aggregateRoot: false
+summary: Quartz scheduler instance check-ins, intervals, and version information.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: instance_name
+    type: text
+    required: true
+  - name: last_checkin_time
+    type: bigint
+    required: true
+  - name: checkin_interval
+    type: bigint
+    required: true
+  - name: quartz_version
+    type: varchar(20)
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name` and `instance_name`.
+- Scheduler instances coordinate the Quartz [[entity|qrtz-job-details]] and [[entity|qrtz-triggers]] tables within the
+  same `sched_name`.

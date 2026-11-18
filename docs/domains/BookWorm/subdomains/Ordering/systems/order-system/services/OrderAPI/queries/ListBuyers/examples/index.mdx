@@ -1,0 +1,65 @@
+---
+summary: List Buyer profiles using page index and page size.
+---
+
+## 1. List Buyer profiles
+
+Use `PageIndex` and `PageSize` to select the page to return.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request GET \
+  "$BASE_URL/api/v1/buyers?PageIndex=1&PageSize=20" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "Accept: application/json"
+```
+
+</CodeGroup>
+
+The same query from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts list-buyers.ts
+type BuyerDto = {
+	id: string;
+	name: string | null;
+	address: string | null;
+};
+
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const params = new URLSearchParams({ PageIndex: "1", PageSize: "20" });
+const response = await fetch(`${baseUrl}/api/v1/buyers?${params.toString()}`, {
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		Accept: "application/json",
+	},
+});
+
+if (!response.ok) {
+	throw new Error(`ListBuyers failed with ${response.status}`);
+}
+
+const buyers = (await response.json()) as BuyerDto[];
+console.log(`Received ${buyers.length} buyer(s)`);
+```
+
+</CodeGroup>
+
+`200 OK` returns an array of Buyer profiles:
+
+<CodeGroup dropdown>
+
+```json
+[
+	{
+		"id": "66666666-6666-6666-6666-666666666666",
+		"name": "Avery Nguyen",
+		"address": "10 Example Street, Ben Thanh, Ho Chi Minh City"
+	}
+]
+```
+
+</CodeGroup>

@@ -1,0 +1,25 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "FeedbackCreatedIntegrationEvent",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["bookId", "rating", "feedbackId"],
+	"properties": {
+		"bookId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the book whose rating summary changes."
+		},
+		"rating": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 5,
+			"description": "Rating value added to the book."
+		},
+		"feedbackId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the feedback record."
+		}
+	}
+}

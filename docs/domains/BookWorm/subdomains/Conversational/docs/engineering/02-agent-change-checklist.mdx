@@ -1,0 +1,49 @@
+---
+title: Agent and workflow change checklist
+summary: Review checklist for changes to Conversational agents, routing, and the customer interaction flow.
+version: 1.0.0
+type: engineering
+order: 2
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Before changing behavior
+
+- [ ] Identify whether the change affects input validation, Router decisions,
+      specialist behavior, delegated research, or final response formatting.
+- [ ] Keep Catalog, Shopping, Ordering, and Reviews as owners of their business
+      data and operations.
+- [ ] Confirm the intended boundary for unsupported languages, out-of-scope
+      requests, and questions that need live account-specific information.
+- [ ] For book answers, define how the response handles missing or incomplete
+      supporting information without inventing facts.
+
+## Update the catalog
+
+- [ ] Update the affected agent resource, such as [[agent|router-agent]],
+      [[agent|book-agent]], or [[agent|qa-agent]].
+- [ ] Update the [[flow|agent-orchestration]] when the request path, branch,
+      handoff, or terminal outcome changes.
+- [ ] Keep the [[system|chat-system]] and [[service|chat-api]] descriptions
+      consistent with externally visible behavior.
+- [ ] Review related domain guidance and runbooks for steps that are no longer
+      valid.
+
+## Verify the behavior
+
+- [ ] Test accepted and rejected input paths.
+- [ ] Test each supported Router destination and its boundary outcomes.
+- [ ] Test mixed requests where customer-support questions also need book
+      information.
+- [ ] For delegated research, verify both branches and the synthesized result.
+- [ ] Verify that the final response is useful when one or more details are
+      unavailable.
+- [ ] Confirm session behavior is not described as durable unless persistence
+      has been implemented.
+
+<Footer />

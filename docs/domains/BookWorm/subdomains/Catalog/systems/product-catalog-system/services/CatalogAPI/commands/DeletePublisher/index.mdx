@@ -1,0 +1,39 @@
+---
+id: DeletePublisher
+name: Delete publisher
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Deletes an existing publisher from the Catalog.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: DELETE
+  path: /api/v1/publishers/{id}
+  statusCodes: ["204", "404"]
+sidebar:
+  badge: "DELETE"
+---
+
+## Overview
+
+Deletes the [[entity|publisher]] identified by the UUID path parameter. This is a permanent catalog mutation.
+
+<NodeGraph />
+
+## Contract
+
+Provide the resource UUID in the `{id}` path parameter. The operation has no request body.
+
+The successful response is `204 No Content` with an empty body.
+
+## Operational notes
+
+`404` indicates that no publisher exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

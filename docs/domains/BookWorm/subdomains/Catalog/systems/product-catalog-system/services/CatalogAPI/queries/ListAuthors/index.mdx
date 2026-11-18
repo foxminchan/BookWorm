@@ -1,0 +1,39 @@
+---
+id: ListAuthors
+name: List authors
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns all authors known to the Catalog.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/authors
+  statusCodes: ["200"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Returns every catalog [[entity|author]] without pagination or request parameters.
+
+<NodeGraph />
+
+## Contract
+
+This query does not require a request body or query parameters.
+
+The response is a JSON array of objects containing `id` and nullable `name`.
+
+## Operational notes
+
+The API returns `200` with an empty array when no resources are available.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

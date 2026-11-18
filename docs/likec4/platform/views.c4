@@ -1,0 +1,8 @@
+views {
+  view platformContext of platform {
+    title 'Platform bounded context'
+    include *
+    include administrator, finance, catalog, smtpProvider
+    autoLayout LeftRight
+  }
+}

@@ -1,0 +1,113 @@
+---
+id: adr-002-hybrid-vector-search-qdrant
+name: "ADR-002: Use Qdrant hybrid vector and keyword search for product discovery"
+version: 1.0.0
+summary: Text search finds candidate book IDs in Qdrant using embeddings plus keyword matching, then loads canonical records from PostgreSQL.
+status: accepted
+date: 2026-10-20
+owners:
+  - platform-team
+decisionMakers:
+  - platform-team
+appliesTo:
+  - type: system
+    id: product-catalog-system
+  - type: service
+    id: catalog-api
+  - type: container
+    id: catalog-vector
+related:
+  - id: adr-001-postgresql-system-of-record
+  - id: adr-003-database-queue-for-vector-indexing
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+Customers search for [[entity|book]]s by meaning (themes, descriptions) as
+well as exact words (titles, [[entity|author]]s). Plain SQL text matching
+alone does not provide the semantic matching or the combined keyword and
+semantic relevance needed for product discovery. At the same time, search
+must respect the current database values for filters and returned product
+details; a search index that owns a full copy of each book would become a
+second, potentially stale catalog.
+
+## Decision
+
+[[container|catalog-vector]] (Qdrant) holds one record per active
+[[entity|book]], keyed by book UUID, containing text built from title,
+description, [[entity|author]]s, [[entity|category]], and
+[[entity|publisher]], plus a 1,536-dimension embedding with cosine similarity.
+For a search term, [[service|catalog-api]] generates a query embedding, runs
+hybrid vector and keyword search, then fetches the matching books from
+[[container|catalog-database]] where filters, sorting, and paging are applied.
+
+The vector record identifies candidate book IDs; it is not the response
+record. PostgreSQL supplies the current book data and applies the requested
+filters, ordering, and paging. Prices, images, and rating summaries are not
+indexed. Only active books are represented in the index.
+
+## Decision drivers
+
+This design exists because product discovery is not a simple SQL lookup.
+Customers search by concept, keyword, author, category, and broad semantic
+similarity, while Catalog must still return the canonical product record from
+the database.
+
+The search plane therefore separates candidate generation from canonical data
+retrieval. That keeps relevance-oriented indexing independent of the product
+data contract, and makes stale search content distinguishable from current
+product truth.
+
+## Alternatives considered
+
+### SQL-only search
+
+A relational full-text index would be simpler to operate and keep close to
+canonical data, but it does poorly on semantic intent and ranking quality.
+Catalog's customer-facing discovery experience needs to find relevant books
+even when the query does not repeat the exact words used in their descriptions.
+
+### Vector-only search
+
+A pure embedding approach is powerful for semantic matching but is weaker for
+exact title and author terms. Combining vector similarity with keyword
+matching supports both semantic recall and exact-term relevance, while keeping
+structured filters and canonical values in PostgreSQL.
+
+### Index the full book object in Qdrant
+
+This would avoid a second lookup, but it would duplicate canonical state and
+make stale or partial search results harder to distinguish from the
+authoritative book record. Keeping the projection limited to searchable
+content and candidate IDs avoids turning Qdrant into an independent product
+catalog.
+
+## Consistency and operating constraints
+
+- The index is updated asynchronously through the database-backed queue in
+  [[adr|adr-003-database-queue-for-vector-indexing]]. A committed book change
+  can therefore take time to affect text-search candidates.
+- A text search depends on query embedding generation and Qdrant. Browse and
+  filtered-list paths that do not request text search remain database-backed.
+- Index content is derived from the title, description, authors, category, and
+  publisher. Changing which fields contribute to search requires coordinated
+  changes to text construction and queue triggers, followed by reindexing.
+- The embedding dimension and similarity configuration form part of the index
+  contract. Changing the embedding model requires rebuilding the index so
+  stored book vectors and query vectors remain compatible.
+
+## Consequences
+
+- Customers can discover books using both semantic intent and exact keywords.
+- PostgreSQL remains the authority for product fields and applies structured
+  filters, sorting, and paging to current records.
+- Search results can lag behind catalog changes; queue health and Qdrant
+  availability become operational concerns.
+- Text search adds embedding and vector-store dependencies and can return
+  incomplete candidate sets while indexing is delayed.
+- Changing searchable fields or the embedding model requires reindexing the
+  affected catalog; a rebuild consumes ingestion and embedding capacity.

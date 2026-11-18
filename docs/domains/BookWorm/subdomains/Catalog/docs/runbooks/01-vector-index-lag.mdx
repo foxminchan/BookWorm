@@ -1,0 +1,92 @@
+---
+title: Vector index lag
+summary: Diagnose and recover when new or edited books do not appear in text search.
+version: 1.0.0
+type: runbooks
+order: 1
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- New or edited [[entity|book]]s are missing or outdated in text search, but present in
+  filtered listing and [[query|GetBook]].
+- `pending_vector_updates` is growing or its oldest row is getting older.
+
+## Impact
+
+Degraded discovery only. The database remains authoritative; purchasing is not
+affected.
+
+## Diagnose
+
+1. Measure the queue in [[container|catalog-database]]:
+
+   <CodeGroup dropdown>
+
+   ```sql
+   SELECT count(*) AS pending, min(updated_at) AS oldest
+   FROM pending_vector_updates;
+   ```
+
+   </CodeGroup>
+
+2. Check the Scheduler job that calls `POST /api/vectors/batch` on
+   [[service|catalog-ingestion]]: did it run, and what status did it get?
+   - `401` / `403`: the token is missing or its `azp` claim is not the
+     Scheduler. Check Entra ID client configuration.
+   - `5xx` or timeout: inspect Ingestion logs for embedding service or Qdrant
+     exceptions.
+3. If the job runs and returns `204` but the queue does not shrink, another
+   worker may be holding the PostgreSQL advisory lock (the invocation does no
+   work in that case). Look for a stuck session holding the lock.
+4. Check [[container|catalog-vector]] (Qdrant) health and the embedding service.
+
+## Recover
+
+- Fix the failing dependency; pending work is durable and un-acknowledged items
+  are retried automatically on the next invocation.
+- Each invocation processes up to 200 items. For a large backlog, trigger the
+  Scheduler job repeatedly until the queue drains.
+- If the lock is held by a dead session, terminate that database session, then
+  re-trigger the job.
+
+## Full index rebuild
+
+The vector index is rebuildable. After a Qdrant data loss or collection
+change, re-enqueue every book and let ingestion drain the queue:
+
+<CodeGroup dropdown>
+
+```sql
+INSERT INTO pending_vector_updates (book_id)
+SELECT id FROM books
+ON CONFLICT (book_id) DO UPDATE
+SET revision = gen_random_uuid(), updated_at = clock_timestamp();
+```
+
+</CodeGroup>
+
+Run this only as an approved operational action and confirm the conflict
+target against the current schema in [[container|catalog-database]].
+
+## Verify
+
+- Queue count trends to zero and the oldest row age resets.
+- A recently edited book is found by text search.
+
+## Escalation
+
+- **Contact point:** [[team\|contributor-team]] for Catalog Ingestion and
+  application issues; [[team\|platform-team]] for Qdrant, Scheduler, Entra ID,
+  and infrastructure issues.
+- Use the responsible team's established support or on-call channel for
+  urgent incidents. The catalog does not currently document a specific
+  channel, email address, or on-call rotation.
+
+<Footer />

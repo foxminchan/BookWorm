@@ -1,0 +1,83 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element system
+  element container
+  element component
+  element database {
+    style {
+      shape storage
+    }
+  }
+}
+
+model {
+  customer = actor 'Customer' {
+    description 'Browses the BookWorm product catalog.'
+  }
+
+  idp = system 'Identity Provider' {
+    description 'External identity infrastructure for authenticating BookWorm users.'
+
+    oauthApi = container 'OAuth API' {
+      technology 'OAuth 2.0'
+      description 'Issues and verifies access tokens used by protected BookWorm APIs.'
+    }
+  }
+
+  catalogBusinessUser = actor 'Catalog business user' {
+    description 'Maintains books and catalog reference data.'
+  }
+
+  catalog = system 'Catalog bounded context' {
+    description 'Core BookWorm capability for book discovery and product information.'
+
+    api = container 'Catalog API' {
+      technology 'HTTP API'
+      description 'Manages catalog data and serves product discovery queries.'
+    }
+
+    domain = container 'Catalog domain model' {
+      technology 'Application domain'
+      description 'Owns Book, Author, Publisher, Category, price, and availability rules.'
+    }
+
+    contract = container 'Published catalog contract' {
+      technology 'Versioned API and integration contract'
+      description 'Publishes stable book identity and product representations to downstream contexts.'
+    }
+
+    persistence = database 'Catalog persistence' {
+      technology 'Catalog data store'
+      description 'Stores the current Catalog aggregate state and relationships.'
+    }
+
+    api -> domain 'invokes'
+    domain -> persistence 'reads and writes'
+    domain -> contract 'publishes'
+  }
+
+  shopping = system 'Shopping context' {
+    description 'Owns baskets and checkout decisions.'
+  }
+
+  reviews = system 'Reviews context' {
+    description 'Owns customer feedback and rating submissions.'
+  }
+
+  ordering = system 'Ordering context' {
+    description 'Owns accepted order lifecycle and fulfilment state.'
+  }
+
+  customer -> catalog.api 'browses products'
+  catalog.api -> idp.oauthApi 'introspects access tokens' {
+    technology 'Entra ID token introspection'
+  }
+  catalogBusinessUser -> catalog.api 'maintains catalog data'
+  catalog.contract -> shopping 'provides book, price, and availability'
+  catalog.contract -> reviews 'provides Book identity and rating context'
+  catalog.contract -> ordering 'provides product reference for purchase snapshots'
+}

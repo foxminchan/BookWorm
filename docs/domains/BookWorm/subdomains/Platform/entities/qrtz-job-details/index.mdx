@@ -1,0 +1,50 @@
+---
+id: qrtz-job-details
+name: Quartz Job Details
+version: 1.0.0
+identifier: job_name
+aggregateRoot: false
+summary: Quartz durable job definitions and execution policies.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: job_name
+    type: text
+    required: true
+  - name: job_group
+    type: text
+    required: true
+  - name: description
+    type: text
+    required: false
+  - name: job_class_name
+    type: text
+    required: true
+  - name: is_durable
+    type: boolean
+    required: true
+  - name: is_nonconcurrent
+    type: boolean
+    required: true
+  - name: is_update_data
+    type: boolean
+    required: true
+  - name: requests_recovery
+    type: boolean
+    required: true
+  - name: job_data
+    type: bytea
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name`, `job_name`, and `job_group`.
+- A job definition is referenced by [[entity|qrtz-triggers]].

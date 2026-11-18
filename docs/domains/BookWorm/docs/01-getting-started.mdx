@@ -1,0 +1,100 @@
+---
+title: "Start here: BookWorm project guide"
+summary: A newcomer's guide to BookWorm's business scope, subdomain topology, team ownership, and where to go next.
+version: 1.0.0
+type: guides
+order: 1
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Welcome to BookWorm
+
+BookWorm is an online bookstore. This domain covers the customer experience
+around discovering books, managing a basket, checking out, tracking orders,
+leaving feedback, and getting conversational assistance.
+
+This page is an entry point to [[domain|BookWorm]]. Use the domain and system
+pages linked below as the source of truth for detailed boundaries, contracts,
+and implementation behavior.
+
+## Documentation map
+
+Use the catalog in this order when learning the system:
+
+1. Start with [[domain|BookWorm]] for the strategic direction and context map.
+2. Read the subdomain pages to understand the business responsibilities and ownership boundaries.
+3. Review the concrete system pages for service and container boundaries.
+4. Follow the guide and runbook pages when handling operational issues or repeated change patterns.
+5. Check message definitions, commands, and flows before changing a contract or behavior.
+
+This sequence helps new contributors understand not only what the system does,
+but also why it is organized this way and which team owns each decision.
+
+## Subdomains and ownership
+
+The owner shown here is the team listed in that subdomain's EventCatalog
+`owners` metadata. It describes domain-level accountability, not necessarily
+the team implementing every system within the subdomain.
+
+| Subdomain                  | Responsibility                                            | Domain owner                |
+| -------------------------- | --------------------------------------------------------- | --------------------------- |
+| [[domain\|catalog]]        | Book information, pricing, availability, and search       | [[team\|business-strategy]] |
+| [[domain\|shopping]]       | Customer basket and pre-order checkout                    | [[team\|business-strategy]] |
+| [[domain\|ordering]]       | Accepted orders and their business lifecycle              | [[team\|business-strategy]] |
+| [[domain\|reviews]]        | Customer feedback and ratings                             | [[team\|business-strategy]] |
+| [[domain\|conversational]] | Customer-facing AI assistance and book discovery          | [[team\|contributor-team]]  |
+| [[domain\|platform]]       | Scheduled work and shared email notification capabilities | [[team\|platform-team]]     |
+
+### Team responsibilities
+
+| Team                        | How it contributes                                                                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [[team\|business-strategy]] | Owns the root BookWorm domain and the Catalog, Shopping, Ordering, and Reviews subdomains in the current catalog.                                      |
+| [[team\|contributor-team]]  | Develops and maintains the platform; it is the recorded owner of Conversational and implements systems and services across multiple subdomains.        |
+| [[team\|platform-team]]     | Maintains shared infrastructure and is the recorded owner of the Platform subdomain. It also co-owns the Product Catalog System with Contributor Team. |
+
+For exact system and service ownership, check the `owners` field on the
+resource itself. For example, the [[system\|product-catalog-system]] is owned
+by both Platform Team and Contributor Team even though the Catalog subdomain
+is owned by Business Strategy.
+
+## Ownership boundaries to keep in mind
+
+- **Catalog** owns book details, prices, and availability. Other contexts
+  consume those concepts through their own contracts and models.
+- **Shopping** owns the mutable basket before checkout. Basket cleanup is not
+  proof that an order was completed.
+- **Ordering** owns the accepted Order and its business status. Finance
+  workflow progress and notification delivery do not change that status.
+- **Reviews** owns customer feedback. A rating summary projected into Catalog
+  does not transfer ownership of the original feedback.
+- **Conversational** can answer and research, but Catalog remains the source
+  for book facts; conversational guidance does not read or change live order
+  or basket state.
+- **Platform** schedules work and delivers notifications. It does not own the
+  business data or state of the domains it supports.
+
+When changing data or behavior, make the change in its owning context and
+communicate across boundaries through documented APIs, events, commands, or
+queries. Avoid direct access to another context's database.
+
+## Where to go next
+
+1. Read [[domain|BookWorm]] for strategic classification,
+   business invariants, and the full context map.
+2. Open the relevant subdomain page above and review its scope and systems.
+3. Before changing a service or contract, read that resource's engineering
+   docs, architecture decisions, and messages.
+4. For common tasks and operational issues, use the subdomain's guides and
+   runbooks.
+
+Before submitting a change, confirm that it belongs to the right owner, keeps
+the context boundary intact, and updates the relevant contract and
+documentation alongside the implementation.
+
+<Footer />

@@ -1,0 +1,64 @@
+---
+title: Conversational book discovery
+---
+sequenceDiagram
+	actor Customer
+	participant Client as AG-UI client
+	participant Chat as Chat API
+	participant Validation as Input validation
+	participant Router as Router Agent
+	participant Book as Book Agent
+	participant CatalogResearcher as Book Catalog Researcher
+	participant RecommendationResearcher as Book Recommendation Researcher
+	participant MCP as MCP tools
+	participant Catalog as Catalog API
+	participant QA as QA Agent
+
+	Customer ->> Client: Ask a book-discovery question
+	Client ->> Chat: Submit request to /ag-ui
+	Chat ->> Validation: Start chat workflow
+
+	alt Input rejected
+		Validation -->> Chat: Rejection response
+		Chat -->> Client: Format and return response
+		Client -->> Customer: Show rejection
+	else Input accepted
+		Validation ->> Router: Route customer request
+
+		alt Book discovery
+			Router ->> Book: Hand off book request
+
+			alt Straightforward request
+				Book ->> MCP: Request scoped Catalog information
+				MCP ->> Catalog: Read book facts
+				Catalog -->> MCP: Book information
+				MCP -->> Book: Tool result
+			else Complex independent research
+				par Book facts
+					Book ->> CatalogResearcher: Delegate book-fact research
+					CatalogResearcher ->> MCP: Request Catalog information
+					MCP ->> Catalog: Read book facts
+					Catalog -->> MCP: Book information
+					MCP -->> CatalogResearcher: Tool result
+					CatalogResearcher -->> Book: Research findings
+				and Recommendations
+					Book ->> RecommendationResearcher: Delegate recommendation research
+					RecommendationResearcher ->> MCP: Request Catalog information
+					MCP ->> Catalog: Read book facts
+					Catalog -->> MCP: Book information
+					MCP -->> RecommendationResearcher: Tool result
+					RecommendationResearcher -->> Book: Recommendation findings
+				end
+				Book ->> Book: Synthesize research results
+			end
+			Book -->> Router: Book response
+		else Store or account question
+			Router ->> QA: Hand off support request
+			QA -->> Router: Support response
+		else Unsupported request
+			Router -->> Chat: Boundary response
+		end
+		Router -->> Chat: Final assistant response
+		Chat -->> Client: Format and return response
+		Client -->> Customer: Show answer
+	end

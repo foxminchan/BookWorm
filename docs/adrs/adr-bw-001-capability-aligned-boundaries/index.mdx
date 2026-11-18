@@ -1,0 +1,50 @@
+---
+id: adr-bw-001-capability-aligned-boundaries
+name: "ADR-BW-001: Decompose BookWorm by business capability"
+version: 1.0.0
+summary: Align independently deployable building blocks with bounded contexts rather than a shared business layer.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-006-service-owned-business-state
+  - id: adr-bw-017-compatible-contract-evolution
+---
+
+## Context
+
+Catalog, Shopping, Ordering, Reviews, Conversational, and Platform change for different business reasons. A common business model or technical-layer decomposition would make changes cross ownership boundaries and obscure accountability.
+
+## Decision
+
+Retain the capability-aligned bounded-context decomposition. Each context owns its model and behavior; independently deployable services expose explicit contracts to other contexts. Shared infrastructure supplies technical mechanisms, not a common business layer.
+
+This records the whole-system decomposition, not the internal structure or workflow choice of any one system.
+
+## Decision drivers
+
+- Modifiability: keep a business-rule change with its owner.
+- Deployability: isolate compatible changes without requiring a platform-wide release.
+- Correctness: make responsibility for an accepted business outcome unambiguous.
+
+## Alternatives considered
+
+| Alternative                       | Assessment                                                                                           |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Single deployable monolith        | Simpler runtime coordination, but conflicts with the documented independent-service direction.       |
+| Modular monolith                  | Preserves logical modules with less distribution cost, but changes the established deployment model. |
+| Services split by technical layer | Separates technology while spreading one business change across multiple services.                   |
+
+## Consequences
+
+- Ownership and impact analysis follow business capabilities.
+- Cross-context work requires contracts, failure handling, and operational correlation.
+- Distribution increases deployment and diagnostic complexity; independence is conditional on compatible interfaces.
+
+## Evidence
+
+The [[doc|arc42/04-solution-strategy]] and [[doc|arc42/05-building-block-view]] establish the decomposition. This proposed record reconstructs its rationale; the recording date is not an original approval date.

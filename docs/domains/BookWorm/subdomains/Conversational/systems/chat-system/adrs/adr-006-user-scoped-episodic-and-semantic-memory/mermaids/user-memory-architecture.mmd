@@ -1,0 +1,21 @@
+---
+title: User memory architecture
+---
+flowchart LR
+	User["Customer with verified identity"] --> Entry["Chat access: AG-UI or A2A"]
+	Entry --> BA["BookAgent"]
+
+	BA --> FM["Existing session memory (not a durable profile)"]
+	BA --> UMP["Memory context provider (new)"]
+
+	UMP --> PS["Reading preference store"]
+	UMP --> ES["Past interaction store"]
+	PS --> PG[("PostgreSQL: preferences")]
+	ES --> QD[("Qdrant: interaction summaries")]
+
+	UMP -- "after answer" --> CH["In-process work queue"]
+	CH --> PR["Presidio: remove identifying text"]
+	PR --> LLM["Chat model: propose memories"]
+	LLM --> V["Validate privacy and stated evidence"]
+	V --> ES
+	V --> PS

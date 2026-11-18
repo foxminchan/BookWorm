@@ -1,0 +1,18 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CreateBuyerCommand",
+	"description": "Address fields required to create a Buyer profile.",
+	"type": "object",
+	"required": ["street", "city", "province"],
+	"properties": {
+		"street": {
+			"type": "string"
+		},
+		"city": {
+			"type": "string"
+		},
+		"province": {
+			"type": "string"
+		}
+	}
+}

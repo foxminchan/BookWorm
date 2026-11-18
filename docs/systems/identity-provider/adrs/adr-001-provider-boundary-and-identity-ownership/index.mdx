@@ -1,0 +1,64 @@
+---
+id: adr-001-provider-boundary-and-identity-ownership
+name: "ADR-001: Keep authentication and identity ownership at the provider boundary"
+version: 1.0.0
+summary: The external identity provider authenticates users, issues access tokens, and owns provider-side identity records rather than BookWorm business data.
+status: accepted
+date: 2026-11-02
+owners:
+  - contributor-team
+badges:
+  - content: Ownership
+    backgroundColor: purple
+    textColor: purple
+appliesTo:
+  - type: system
+    id: identity-provider
+  - type: service
+    id: oauthapi
+---
+
+## Context
+
+BookWorm applications need a consistent way to authenticate customers,
+administrators, and business users without coupling business services to
+provider-managed credentials or identity records. The provider is an external
+system, while BookWorm services own their domain data and operations. Allowing
+the provider to own business records or application permissions would blur
+that boundary and couple domain behavior to an external identity policy.
+
+## Decision
+
+The [[system|identity-provider]] owns user authentication, provider-side identity
+records, authentication policy, and issuance of OAuth-compatible access
+credentials for the requesting client and audience. BookWorm applications
+delegate sign-in to the provider and consume the resulting identity evidence
+when a client calls a protected API.
+
+The provider is not the system of record for [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], or
+[[domain|reviews]] data. Its credentials and identity claims establish who is calling;
+they do not transfer ownership of BookWorm data or decide what business action
+the caller may perform.
+
+## Alternatives considered
+
+- **Store and verify application credentials in each BookWorm service.** This
+  would duplicate credential handling and authentication policy across
+  services, increasing the number of systems that must protect credentials
+  and implement sign-in consistently.
+- **Make the provider the owner of BookWorm business accounts and permissions.**
+  This would couple domain data and application-specific policy to an external
+  identity boundary. The provider remains authoritative only for its own
+  identity records and authentication policy.
+
+## Consequences
+
+BookWorm can delegate authentication without transferring domain ownership to
+the provider, and application services can evolve their business models
+independently of provider-side account storage. Clients and APIs depend on the
+provider's availability and token contract, so the integration boundary must
+be explicit and its failures observable. Each consuming API remains
+responsible for validating identity evidence before processing a protected
+request. Provider-side account changes do not by themselves define the
+lifecycle or ownership of BookWorm business records; applications must keep
+those concerns within their own domains.

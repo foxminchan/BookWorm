@@ -1,0 +1,26 @@
+---
+id: qrtz-locks
+name: Quartz Locks
+version: 1.0.0
+identifier: lock_name
+aggregateRoot: false
+summary: Named locks used to coordinate Quartz persistent-store operations.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: lock_name
+    type: text
+    required: true
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name` and `lock_name`.
+- Locks coordinate access to the Quartz persistent store.

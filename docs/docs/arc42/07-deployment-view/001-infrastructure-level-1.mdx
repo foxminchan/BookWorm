@@ -1,0 +1,54 @@
+---
+title: Infrastructure Level 1
+summary: Logical deployment overview and software-to-infrastructure mapping for BookWorm.
+owners:
+  - contributor-team
+badges:
+  - content: Deployment View
+    backgroundColor: blue
+    textColor: blue
+---
+
+## 7.1 Infrastructure Level 1
+
+### System distribution
+
+<LikeC4View viewId="bookwormDeployment" project="deployment" />
+
+This C4-style deployment view shows the topology the Aspire AppHost publishes to Azure. Every service, the YARP gateway, both Next.js clients, Qdrant, and the two Presidio containers run as container apps in one Azure Container Apps environment. PostgreSQL (one flexible server holding `catalogdb`, `orderingdb`, and `schedulerdb`), Azure Cosmos DB (`ratingdb` with the `feedbacks` container), Azure Durable Task Scheduler (`financeTaskHub`), Azure Managed Redis, an Azure Storage account (including Catalog and Chat session blob containers and Azure Functions host storage), and Microsoft Foundry (ModelRouter, Microsoft Decision 1, and Cohere Embed v4) are Azure-managed services. Microsoft Entra ID (with Entra Agent Identities), the Kafka broker, and the SMTP provider are configured via AppHost extensions and parameters.
+
+Browsers reach the services only through the gateway, which routes `chatting`, `rating`, `ordering`, `basket`, and `catalog`. The Scheduler publishes `ProcessVectorBatchIntegrationEvent` over Kafka to trigger the Catalog ingestion Azure Function. The diagram does not imply every service uses every dependency, and it does not show replica counts, regions, or networking. When run locally, the AppHost substitutes containers/emulators for managed services (for example Kafka, Azure Cosmos DB emulator, Durable Task Scheduler emulator, MailPit, and Azurite) and runs the clients through Turborepo.
+
+### Motivation
+
+BookWorm is decomposed around business capabilities with independent service boundaries. The deployment view makes the corresponding operational boundaries visible: service-owned data should remain with its owner, while cross-capability work uses explicit service contracts and integration events. This supports independent evolution and makes the runtime dependencies that operators need to understand explicit.
+
+The AppHost establishes the hosting platform (Azure Container Apps) and the managed services in use, but not why they were chosen, nor the region, network design, or high-availability topology. Those decisions should be recorded here when confirmed rather than inferred.
+
+### Quality and performance characteristics
+
+- **Ownership and change isolation:** services are independently deployable container apps; failure isolation also depends on shared resources such as the single PostgreSQL server and Redis instance.
+- **Asynchronous work:** integration events, durable queues, and scheduled bounded batches are used for work that does not need to complete within the initiating request. See [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] and [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]].
+- **State ownership:** Basket, Orders, feedback, and email delivery state are owned by their respective capabilities; derived search and rating data are projections rather than replacements for their source data.
+- **No stated service-level targets:** availability, latency, throughput, recovery-time, recovery-point, and capacity targets are not established by the available sources. This view makes no numerical performance or availability claim.
+
+### Mapping of building blocks to infrastructure
+
+| Software building block                                                   | Infrastructure element                                                              | Deployment fact (from the AppHost)                                                                                                                         | Not established                                                 |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Storefront and Back office clients                                        | Container apps in the Azure Container Apps environment                              | Next.js (Bun) containers behind the gateway; Microsoft Entra ID handles sign-in                                                                            | CDN, ingress, custom domains, and TLS termination               |
+| API gateway                                                               | Container app                                                                       | YARP routes `chatting`, `rating`, `ordering`, `basket`, and `catalog`                                                                                      | Replica count and network exposure                              |
+| [[system\|product-catalog-system]] / [[service\|catalog-ingestion]]       | Container apps, `catalogdb`, Qdrant container app, Azure Storage, Microsoft Foundry | PostgreSQL holds the durable ingestion queue; ingestion is a Kafka-triggered Azure Functions app using the storage account; Qdrant holds the derived index | Qdrant persistence, backup, and rebuild strategy                |
+| [[system\|cart-system]] / [[service\|basket-api]]                         | Container app and Azure Managed Redis                                               | Redis holds Basket state; Ordering, Catalog, and Rating also use the same Redis resource                                                                   | Persistence mode, failover, and per-service isolation           |
+| [[system\|order-system]] / [[system\|finance-system]]                     | Container apps, `orderingdb`, Durable Task Scheduler, Kafka                         | `orderingdb` is on the shared PostgreSQL flexible server; Finance runs on Azure Functions + Durable Task Scheduler (`financeTaskHub`) with Kafka triggers  | Broker provider and topology                                    |
+| [[system\|rating-system]], [[system\|chat-system]], [[system\|mcp-tools]] | Container apps, Cosmos DB (`ratingdb`), Blob Storage, Presidio, Microsoft Foundry   | Rating persists feedback in Azure Cosmos DB (`/bookId`); Chat persists sessions in Blob Storage; both use Presidio, MCP tools, and Entra Agent Identities  | Model quotas, regions, and network boundary                     |
+| [[system\|scheduler-system]] / [[service\|sheduler-dashboard]]            | Container app and `schedulerdb`                                                     | Quartz state is in PostgreSQL; the Scheduler publishes `ProcessVectorBatchIntegrationEvent` to Kafka                                                       | Clustering and failover                                         |
+| [[system\|notification-system]] / [[service\|notification-api]]           | Container app, Kafka, SMTP provider                                                 | Stateless MailKit SMTP sender with resilience pipeline; MailPit locally and configured email provider elsewhere                                            | Provider choice and delivery guarantees                         |
+| Shared integration events                                                 | Kafka (external)                                                                    | The AppHost receives the broker as a connection string when published                                                                                      | Broker provider, cluster size, retention, and disaster recovery |
+| Identity                                                                  | Microsoft Entra ID                                                                  | Microsoft Entra ID with App Roles, scopes, and Bicep-provisioned Entra Agent Identities (`chatAgentId`, `ratingAgentId`) for OBO flows                     | Tenant configuration                                            |
+
+### Environments
+
+The AppHost distinguishes local run mode from publish mode. Locally it runs Kafka, Entra ID, MailPit, Redis, PostgreSQL, and Azure Storage as containers; published, those become Azure-managed services (Redis, PostgreSQL, Storage) or externally supplied ones (Kafka, Entra ID, SMTP). Managed PostgreSQL and Redis sizing varies by hosting environment (Development, Staging, Production). Do not assume local, test, and production use identical infrastructure. For each confirmed environment, document its deployment units, external services, data isolation, access boundaries, and differences from the other environments.
+
+See [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] for the known lower-level mapping and the infrastructure details that remain open.

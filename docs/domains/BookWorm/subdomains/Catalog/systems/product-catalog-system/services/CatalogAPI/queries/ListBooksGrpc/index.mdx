@@ -1,0 +1,62 @@
+---
+id: ListBooksGrpc
+name: List books over gRPC
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Searches and lists Catalog books with full metadata through the book.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `ListBooks` RPC returns matching [[entity|book]] records with their
+descriptions, images, pricing, availability status, [[entity|category]],
+[[entity|publisher]], [[entity|author]]s, and rating summary. It is an
+anonymous read operation exposed for internal service-to-service clients.
+
+[[service|mcp-server]] produces this query in its `BookService.ListBooksAsync`
+client to power the `search_catalog` MCP tool; [[service|catalog-api]] consumes
+it by dispatching `ListBooksQuery`.
+
+<NodeGraph />
+
+## Contract
+
+Send a `ListBooksRequest` with an optional `search` string (empty or whitespace
+returns the default list without a search filter). The response is
+`ListBooksResponse`, containing a repeated collection of `BookItem` values.
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="ListBooks gRPC schema" />
+
+## Examples
+
+<CodeGroup dropdown>
+
+```csharp title="ListBooks gRPC example"
+using Grpc.Net.Client;
+using BookWorm.Catalog.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.ListBooksAsync(new ListBooksRequest
+{
+    Search = "microservices"
+});
+
+foreach (var book in response.Books)
+{
+    Console.WriteLine($"{book.Name} ({book.AverageRating}/5)");
+}
+```
+
+</CodeGroup>

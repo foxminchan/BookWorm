@@ -1,0 +1,83 @@
+---
+id: adr-003-separate-interactive-and-agent-protocols
+name: "ADR-003: Separate interactive chat from agent-to-agent protocols"
+version: 1.0.0
+summary: Chat exposes AG-UI for the composed customer workflow and A2A endpoints for agents that explicitly register an A2A server.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: chat-system
+  - type: service
+    id: chat-api
+  - type: agent
+    id: router-agent
+  - type: agent
+    id: qa-agent
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+The customer-facing interactive workflow and agent-to-agent communication
+have different consumers and interaction models. The interactive workflow
+validates a customer request, coordinates local specialist handoffs, and
+formats a final answer. A2A clients discover and invoke individual agents
+through protocol-specific surfaces. Treating these as one undifferentiated
+endpoint would couple the user experience to the agent protocol surface and
+confuse workflow invocation with direct agent invocation.
+
+## Decision
+
+Chat exposes the composed interactive workflow through AG-UI at `/ag-ui` and
+agent discovery separately at `/agents`. Per-agent A2A endpoints are mapped
+only for agents that register an A2A server. The host maps the documented
+JSON-RPC, HTTP JSON, and gRPC A2A surfaces; the per-agent HTTP A2A endpoints
+require authorization. Discovery identifies registered agents but does not
+grant permission to invoke them.
+
+An AG-UI request runs the composed local workflow; a direct A2A call targets
+an individual registered agent and does not implicitly execute the Router,
+specialist handoffs, or final response formatter. Exposing one protocol does
+not imply that every local or remote agent participates in every protocol.
+
+## Consequences
+
+- Interactive clients use the workflow endpoint while agent clients use the
+  protocol surface supported by the target agent.
+- Discovery, A2A server registration, and the set of agents actually hosted
+  by the service must remain aligned.
+- Clients invoking an individual agent cannot assume the composed workflow's
+  validation, routing, or response-formatting behavior will run for them.
+- A2A endpoints require the configured authorization behavior; discovery
+  alone does not grant access to invoke an agent.
+- Supporting multiple protocol bindings increases endpoint and client
+  compatibility work; protocol-specific behavior must be documented and
+  tested separately from the interactive workflow.
+
+## Alternatives considered
+
+### Expose only the composed interactive workflow
+
+This would keep the public surface smaller, but would not provide direct
+agent-to-agent interoperability for consumers that need to discover and call
+an individual agent.
+
+### Use A2A as the customer chat endpoint
+
+This would conflate invocation of a single agent with the coordinated
+customer workflow. It would also leave the local validation, specialist
+handoffs, and response formatting outside the endpoint's implied contract.
+
+### Expose one protocol for every agent
+
+This would simplify client assumptions but would advertise capabilities that
+may not be registered or intended for direct invocation. Protocol exposure
+remains explicit per agent.

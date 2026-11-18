@@ -1,0 +1,105 @@
+---
+id: adr-004-read-only-governed-feedback-summarization
+name: "ADR-004: Keep AI feedback summarization read-only and governed"
+version: 1.0.0
+summary: Rating generates feedback insights at read time with allow-listed read tools, PII redaction, and rate limits, without persisting or changing feedback or Catalog projections.
+status: accepted
+date: 2026-10-25
+owners:
+  - business-strategy
+  - contributor-team
+decisionMakers:
+  - business-strategy
+  - contributor-team
+appliesTo:
+  - type: system
+    id: rating-system
+  - type: service
+    id: rating-api
+  - type: agent
+    id: rating-agent
+  - type: query
+    id: SummarizeFeedback
+  - type: container
+    id: rating-database
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+---
+
+## Context
+
+Customers benefit from a concise interpretation of a [[entity|book]]'s
+[[entity|feedback]], but a
+generated classification is derived insight rather than an authoritative
+business record. Giving the summarization workflow write access would let an
+untrusted tool path alter feedback or the Catalog rating projection.
+Summarization also combines private customer comments with current Catalog
+context, so reads need explicit governance, bounded usage, and privacy
+processing rather than unrestricted access to the model.
+
+## Decision
+
+[[agent|rating-agent]] generates summaries only at query time. It uses
+allow-listed, read-only tools to retrieve Catalog context and raw feedback.
+The agent governance policy defaults to deny, blocks write and destructive SQL
+operations, rate-limits review reads, and applies PII redaction before model
+input and output. Generated classifications are returned to the caller and
+are not persisted.
+
+The authenticated summarize query may serve a cached result; on a cache miss,
+Rating loads the feedback and computes the review count and arithmetic mean
+in application code. The workflow partitions review inputs, summarizes
+bounded batches in parallel, consolidates and assesses the evidence, and
+applies application-owned classification rules. Model output provides
+explanatory text and assessment, not authority to change the stored rating
+data.
+
+The summary cache is non-authoritative and can be stale until expiration:
+normal summaries use a six-hour lifetime, while no-feedback results use one
+minute. The query remains read-only even when a cached result is returned.
+
+## Consequences
+
+- Generated summaries cannot overwrite feedback or the Catalog projection.
+- The result reflects current source data but may be unavailable when required
+  read dependencies are unavailable.
+- Tool access, PII handling, and rate limits require continued governance and
+  operational monitoring.
+- Consumers must treat the classification as an explanatory response, not as
+  a replacement for stored ratings or review content.
+- Summary freshness is not guaranteed to match every feedback change because
+  cached results can remain available until their time-to-live expires.
+- Summary generation depends on Rating Database, Catalog context, MCP prompt
+  access, and model execution on a cache miss; unavailable dependencies can
+  make a generated result unavailable.
+- The application computes numeric metrics and classification rules, while
+  the model summarizes and assesses review text. Consumers should preserve
+  this distinction when interpreting the explanation and confidence.
+- Read-only access reduces mutation risk but does not remove privacy concerns
+  from reading or processing reviewer comments. PII filtering and tool
+  governance remain required.
+- A cache hit can avoid model execution but may return an older review
+  snapshot; the cache is disposable and does not become an alternate source
+  of feedback truth.
+
+## Alternatives considered
+
+### Persist generated classifications as authoritative rating data
+
+This would turn a model-derived explanation into business state and require
+separate update, invalidation, and audit rules. The query returns the insight
+without changing feedback or the Catalog projection.
+
+### Give the summarizer write access
+
+Write capabilities are unnecessary for an explanatory query and could allow
+model-driven changes to Reviews or Catalog data. The agent remains
+read-only and default-deny.
+
+### Summarize on every request without caching
+
+This would repeatedly load reviews and invoke the model for unchanged input.
+The summary cache reduces repeated work at the cost of a bounded freshness
+window; it remains a disposable optimization.

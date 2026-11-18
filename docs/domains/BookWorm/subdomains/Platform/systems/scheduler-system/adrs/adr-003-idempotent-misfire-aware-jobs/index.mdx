@@ -1,0 +1,103 @@
+---
+id: adr-003-idempotent-misfire-aware-jobs
+name: "ADR-003: Make scheduled jobs misfire-aware and safe to repeat"
+version: 1.0.0
+summary: Scheduled jobs use explicit misfire handling, bounded execution, and target-side idempotency so restarts, timeouts, and retries do not silently lose or duplicate business work.
+status: accepted
+date: 2026-10-27
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: scheduler-system
+  - type: service
+    id: sheduler-dashboard
+  - type: container
+    id: sheduler-database
+badges:
+  - content: Reliability
+    backgroundColor: green
+    textColor: green
+---
+
+## Context
+
+A process restart, database interruption, timeout, or downstream failure can
+leave the [[system|scheduler-system]] uncertain whether a target operation completed. Silently
+discarding a missed trigger loses work, while replaying every missed interval
+or retrying indefinitely can overload a target and create duplicate effects.
+Each job therefore needs a policy matched to its target contract: a recurring
+maintenance trigger may run once after a misfire, whereas replaying every
+missed interval could create unnecessary load without recovering a distinct
+business event.
+
+## Decision
+
+Every durable job must define an explicit misfire policy and retain observable
+firing and execution history. Jobs use the configured recovery behavior,
+including `FireOnceNow` where appropriate, rather than silently skipping
+eligible work or replaying an unbounded backlog.
+
+Jobs that invoke external services or publish integration work must be safe to
+run more than once. The Scheduler prevents overlapping executions where the
+job requires it, while the receiving system provides idempotency, durable
+queues, or equivalent duplicate protection. Retries remain bounded and
+observable, and a successful Scheduler invocation is never treated as proof of
+downstream business completion.
+
+The current recurring jobs use `FireOnceNow` for misfires and disallow
+concurrent executions. The Catalog batch is also protected by its own
+database advisory lock and revision-aware queue acknowledgement. Notification
+maintenance handles at most 100 records per request, but that batch limit is
+not a per-email lifetime retry limit; unsent records remain eligible on later
+hourly runs.
+
+## Consequences
+
+- Missed schedules and recovery attempts remain visible to operators.
+- A restart can make eligible work runnable without replaying every missed
+  interval.
+- Target systems must design contracts and state transitions for repeated
+  invocation.
+- Operators need both Scheduler execution history and downstream business
+  metrics to distinguish a retry from duplicate business work.
+- Job-specific retry and misfire policies must be documented and tested.
+- `FireOnceNow` makes one execution eligible after a misfire; it does not
+  replay each missed interval or guarantee immediate downstream completion.
+- Non-overlapping Scheduler executions prevent two firings of the same job
+  from running concurrently in that scheduler configuration, but do not
+  replace target-side locks, idempotency, or duplicate-safe processing.
+- A bounded target batch limits work per invocation, not backlog size or
+  lifetime retries. Monitoring must distinguish invocation frequency from
+  target queue age, backlog, and per-item outcomes.
+- Retry limits and idempotency belong to the relevant job and target contract;
+  they cannot be inferred from the fact that Quartz persists execution
+  history.
+
+## Alternatives considered
+
+### Replay every missed interval
+
+This could preserve the nominal number of executions but may create a burst
+of redundant work after downtime. The current jobs use one immediate eligible
+execution after a misfire rather than replaying an unbounded interval backlog.
+
+### Skip all misfired executions
+
+This would avoid catch-up load but silently lose scheduled opportunities for
+durable maintenance. A visible one-time recovery execution is preferred for
+these jobs.
+
+### Rely only on Scheduler-level non-concurrency
+
+Scheduler non-concurrency does not cover manual calls, other consumers, or
+target-side retries. Target systems must still make work durable and handle
+duplicate invocations safely.
+
+### Treat every bounded batch as a bounded retry policy
+
+A 100-record batch limits one Notification invocation, but leaves unsent rows
+eligible in later runs. Batch size is not a per-record attempt count or
+terminal-failure rule.

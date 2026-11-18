@@ -1,0 +1,68 @@
+---
+summary: Retrieve the current Buyer's profile or, as an administrator, a selected Buyer.
+---
+
+## 1. Retrieve a Buyer profile
+
+The OpenAPI contract requires an `Id` query parameter. Non-administrators are
+resolved to the Buyer associated with their authenticated identity.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request GET \
+  "$BASE_URL/api/v1/buyers/me?Id=66666666-6666-6666-6666-666666666666" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "Accept: application/json"
+```
+
+</CodeGroup>
+
+The same query from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts get-buyer.ts
+type BuyerDto = {
+	id: string;
+	name: string | null;
+	address: string | null;
+};
+
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const buyerId = "66666666-6666-6666-6666-666666666666";
+const params = new URLSearchParams({ Id: buyerId });
+const response = await fetch(`${baseUrl}/api/v1/buyers/me?${params.toString()}`, {
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		Accept: "application/json",
+	},
+});
+
+if (response.status === 404) {
+	throw new Error("Buyer profile was not found");
+}
+if (!response.ok) {
+	throw new Error(`GetBuyer failed with ${response.status}`);
+}
+
+const buyer = (await response.json()) as BuyerDto;
+console.log(buyer.name);
+```
+
+</CodeGroup>
+
+`200 OK` returns the Buyer profile:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"id": "66666666-6666-6666-6666-666666666666",
+	"name": "Avery Nguyen",
+	"address": "10 Example Street, Ben Thanh, Ho Chi Minh City"
+}
+```
+
+</CodeGroup>

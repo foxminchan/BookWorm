@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CreatePublisher",
+	"description": "Payload for CreatePublisher.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["name"],
+	"properties": {
+		"name": {
+			"type": "string",
+			"minLength": 1,
+			"description": "Display name of the catalog resource."
+		}
+	}
+}

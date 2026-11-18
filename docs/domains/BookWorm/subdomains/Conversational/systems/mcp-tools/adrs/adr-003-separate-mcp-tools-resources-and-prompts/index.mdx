@@ -1,0 +1,85 @@
+---
+id: adr-003-separate-mcp-tools-resources-and-prompts
+name: "ADR-003: Use MCP primitives according to interaction intent"
+version: 1.0.0
+summary: MCP tools handle explicit lookups, resources provide stable data URIs, and prompts package reusable task instructions.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: mcp-tools
+  - type: service
+    id: mcp-server
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+AI clients need both on-demand access to domain data and reusable context for
+their tasks. Treating every capability as a tool invocation would mix
+operations, ambient data, and task instructions into one contract. Different
+consumer intents also need different interaction shapes: a parameterized
+lookup, a stable URI-addressed data item, or reusable task guidance.
+
+## Decision
+
+MCP Server uses:
+
+- **Tools** for explicit, parameterized read requests such as `get_book` and
+  `get_book_reviews`.
+- **Resources** for stable URI-addressed JSON context such as
+  `bookworm://catalog/books/{id}` and
+  `bookworm://ratings/{bookId}/reviews`.
+- **Prompts** for reusable task instructions such as `recommend_books`,
+  `summarize_rating`, and `analyze_book_quality`.
+
+These primitives remain distinct from domain events and commands.
+
+Tools, resources, and prompts are separate MCP surfaces even when they refer
+to the same business subject. For example, a client can invoke `get_book` for
+an explicit lookup or read `bookworm://catalog/books/{id}` as a resource;
+prompts such as `recommend_books` provide instructions but do not perform
+either operation.
+
+## Consequences
+
+- Clients can choose between invoking a lookup, reading a resource, and
+  requesting a task template.
+- Resource URIs and prompt names are compatibility surfaces and should be
+  changed deliberately.
+- MCP prompts guide model tasks but do not perform operations or replace
+  application-level validation and governance.
+- Tool schemas, resource URIs, and prompt names and arguments have distinct
+  compatibility expectations; changes should be reviewed against the clients
+  that consume each primitive.
+- Resources and tool results expose data from the owning APIs and do not make
+  the MCP server authoritative or provide a cross-domain transaction.
+- Prompts can structure a task but cannot enforce its final classification or
+  replace application-side policy checks.
+
+## Alternatives considered
+
+### Represent every capability as a tool
+
+This would give clients one interaction mechanism, but would turn stable
+context reads and reusable instructions into artificial invocations and
+conflate data retrieval with task guidance.
+
+### Represent all domain data as resources
+
+Resources work well for URI-addressed context, but do not replace
+parameterized operations such as searching with user-supplied criteria.
+Explicit lookups remain tools where invocation parameters matter.
+
+### Embed task instructions in every client
+
+This would duplicate reusable guidance and make updates dependent on each
+client release. MCP prompts let clients retrieve shared task templates while
+leaving execution and validation to the consuming application.

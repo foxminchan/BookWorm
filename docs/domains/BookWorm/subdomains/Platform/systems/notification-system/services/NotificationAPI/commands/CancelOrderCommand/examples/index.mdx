@@ -1,0 +1,70 @@
+---
+summary: Show how Finance publishes the cancellation command from its saga.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a canceled-order notification
+
+Finance's saga consumes the Order cancellation status event, marks its own saga
+as cancelled, and completes. It emits this command only when both the customer's
+name and email are nonblank. This requests an email; it does not cancel the
+Order or change its business status.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp OrderSaga.cs
+MarkCompleted();
+
+var messages = new OutgoingMessages();
+
+if (CanSendNotification)
+{
+    messages.Add(new CancelOrderCommand(OrderId, FullName!, Email!, EffectiveTotalMoney));
+}
+
+return messages;
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Command payload
+
+This is the camelCase message data inside BookWorm's CloudEvents-compatible
+envelope; the transport envelope is omitted. The command carries the Order ID,
+customer details, and accepted total used to render the canceled-order email.
+
+<CodeGroup dropdown>
+
+```json canceled-order-command.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000002",
+	"creationDate": "2026-11-01T14:01:00Z",
+	"orderId": "019a1c00-0000-7000-8000-000000000020",
+	"fullName": "Example Customer",
+	"email": "customer@example.com",
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Notification handling
+
+Notification maps the command to the canceled status for the email template;
+the Order's status is owned by Ordering. A blank email skips email work. For a
+nonblank email, Notification renders the message, persists an outbox record,
+and submits it through SMTP. Successful SMTP submission is not confirmation of
+delivery, and the command has no notification-result event.

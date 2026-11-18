@@ -1,0 +1,70 @@
+---
+id: bookworm.{env}.rating.feedback-create
+name: Feedback Created Channel
+version: 1.0.0
+summary: |
+  Kafka channel used by Rating to publish feedback-created events for Catalog
+  to consume and apply to a book's rating summary.
+owners:
+  - contributor-team
+address: bookworm.{env}.rating.feedback-create
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: Environment to use.
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel carries [[service|rating-api]]'s
+[[event|FeedbackCreatedIntegrationEvent]]
+to Catalog. The event is the integration boundary between the
+[[domain|reviews]] context, where [[entity|feedback]] is owned, and the
+[[domain|catalog]] rating summary projection for a [[entity|book]]. Catalog
+does not read or mutate the [[container|rating-database]] directly.
+
+<ChannelInformation />
+
+## Message contract
+
+| Field        | Type    | Required | Description                               |
+| ------------ | ------- | -------- | ----------------------------------------- |
+| `bookId`     | UUID    | Yes      | Book whose rating summary must be updated |
+| `rating`     | Integer | Yes      | Rating value to add                       |
+| `feedbackId` | UUID    | Yes      | Identifier of the created feedback        |
+
+The payload schema is defined by
+[[event|FeedbackCreatedIntegrationEvent]]. Messages are serialized as
+camelCase JSON inside the BookWorm CloudEvents-compatible Kafka envelope.
+
+## Producers and consumers
+
+- **Producer:** [[service|rating-api]], after a feedback record is created.
+- **Consumer:** [[service|catalog-api]], which looks up the book and adds the
+  rating to its denormalized summary.
+- **Failure path:** If the book does not exist, Catalog publishes
+  [[event|BookUpdatedRatingFailedIntegrationEvent]] on the corresponding
+  Catalog channel.
+
+## Delivery and operations
+
+- The topic is created as `bookworm.<environment>.rating.feedback-create`;
+  `{env}` is replaced with `development`, `staging`, or `production`.
+- Delivery is at least once. Consumers must tolerate duplicate deliveries.
+- Kafka message keys use the Wolverine partition key/group ID when available.
+- Trace context is propagated through the `traceparent` Kafka header.
+
+## Architecture diagram
+
+<NodeGraph />

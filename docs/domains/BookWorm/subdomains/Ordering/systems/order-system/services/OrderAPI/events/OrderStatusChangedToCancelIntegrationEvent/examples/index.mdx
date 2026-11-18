@@ -1,0 +1,107 @@
+---
+summary: Report an Order transition from New to Cancelled with nullable customer details.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish Order cancellation
+
+[[service|order-api]] publishes this event after an Order transitions from
+New to Cancelled, through
+[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]].
+
+- `id` identifies this integration event; `creationDate` is its UTC timestamp.
+- `orderId` identifies the cancelled Order.
+- `basketId` currently contains the Order's Buyer ID, supplied by EventMapper.
+- `fullName` and `email` are included as null when unavailable, not omitted.
+- `totalMoney` preserves the accepted purchase amount.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp OrderStatusChangedToCancelIntegrationEvent.cs
+[IntegrationMessageOwner(
+    ServiceName = Services.Ordering,
+    TopicName = "order-status-change-to-cancel"
+)]
+[MessageIdentity("BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent")]
+public sealed record OrderStatusChangedToCancelIntegrationEvent(
+    Guid OrderId,
+    Guid BasketId,
+    string? FullName,
+    string? Email,
+    decimal TotalMoney
+) : IntegrationEvent;
+```
+
+```csharp EventMapper.cs
+OrderCancelledEvent orderCancelledEvent =>
+    new OrderStatusChangedToCancelIntegrationEvent(
+        (Guid)orderCancelledEvent.Order.Id,
+        (Guid)orderCancelledEvent.Order.BuyerId,
+        fullName,
+        email,
+        orderCancelledEvent.Order.TotalPrice
+    )
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Payload
+
+<CodeGroup dropdown>
+
+```json cancelled-order-payload.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000003",
+	"creationDate": "2026-11-01T14:05:00Z",
+	"orderId": "55555555-5555-5555-5555-555555555555",
+	"basketId": "11111111-1111-1111-1111-111111111111",
+	"fullName": null,
+	"email": null,
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Distinguish cancellation from recovery
+
+The example shows the camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope. This event reports a business-status
+transition, not a soft deletion or a request to cancel. Finance's
+[[command|CancelOrderCommand]] and basket-cleanup failure recovery are separate
+messages and behaviors.
+
+Finance's saga copies the event details, sets its state to Cancelled, and
+finalizes. Notification requires both email and full name to be nonblank,
+so the null values above produce no cancellation notification command.
+This excerpt shows the outgoing-message selection after the state update:
+
+<CodeGroup dropdown>
+
+```csharp OrderSaga.cs
+MarkCompleted();
+
+var messages = new OutgoingMessages();
+
+if (CanSendNotification)
+{
+    messages.Add(new CancelOrderCommand(OrderId, FullName!, Email!, EffectiveTotalMoney));
+}
+
+return messages;
+```
+
+</CodeGroup>

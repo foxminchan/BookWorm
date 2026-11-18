@@ -1,0 +1,81 @@
+---
+title: Basket API engineering reference
+summary: Implementation guidance for the Basket API contract, validation, persistence, and Catalog enrichment.
+version: 1.0.0
+type: engineering
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Boundary
+
+[[service|basket-api]] is an internal HTTP and gRPC service in
+[[system|cart-system]]. It owns active customer-scoped [[entity|basket]] state and
+exposes the `/api/v1/baskets` contract. It does not own Catalog metadata,
+Orders, payment state, or fulfilment.
+
+## HTTP contract
+
+All operations require authorization and derive the customer identity from the
+authenticated request:
+
+| Method   | Path              | Responsibility                       | Success          |
+| -------- | ----------------- | ------------------------------------ | ---------------- |
+| `POST`   | `/api/v1/baskets` | Create a basket from initial items   | `201 Created`    |
+| `GET`    | `/api/v1/baskets` | Read and enrich the current basket   | `200 OK`         |
+| `PUT`    | `/api/v1/baskets` | Replace the complete item collection | `204 No Content` |
+| `DELETE` | `/api/v1/baskets` | Delete the current basket            | `204 No Content` |
+
+Validation failures use the documented problem-details responses. A missing
+basket is not silently converted into an empty successful response.
+
+## Domain invariants
+
+- A create request contains at least one item.
+- Every item has a Catalog [[entity|book]] ID.
+- Every quantity is greater than zero.
+- An update replaces the complete item collection; it does not merge arbitrary
+  state.
+- The persistence key is customer-scoped (`basket:{customerId}`).
+- Basket state remains transient pre-order state.
+
+## Persistence and enrichment
+
+[[container|basket-database]] is authoritative for active basket contents.
+Keep Catalog fields out of the stored basket. On `GET`, resolve distinct book
+IDs through the documented gRPC query and enrich the response with the current
+name, regular price, and sale price when available.
+
+If Catalog has no matching record, preserve the stored [[entity|basket-item]] and omit
+unavailable presentation details. Do not invent product data or mutate the
+basket as a side effect of a read.
+
+## Integration events
+
+After checkout cleanup, publish one explicit outcome:
+
+- [[event|BasketDeletedCompleteIntegrationEvent]] only after deletion succeeds.
+- [[event|BasketDeletedFailedIntegrationEvent]] when deletion fails.
+
+Use the corresponding channels and preserve the order and basket identifiers
+needed for correlation. Consumers must be idempotent and must not infer
+payment or Order completion from either event.
+
+## Change checklist
+
+Before changing the contract:
+
+1. Update the relevant command, query, or event schema.
+2. Update the OpenAPI, AsyncAPI, or gRPC specification in the service folder.
+3. Check validation and problem-details behavior.
+4. Check authentication and customer scoping.
+5. Check Catalog enrichment behavior for missing products and duplicate IDs.
+6. Check both cleanup outcome paths and their channel routing.
+7. Update the related ADR or resource documentation when the boundary or
+   consistency behavior changes.
+
+<Footer />

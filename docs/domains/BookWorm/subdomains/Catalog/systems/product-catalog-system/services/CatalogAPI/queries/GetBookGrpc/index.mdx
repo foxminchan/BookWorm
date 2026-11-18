@@ -1,0 +1,61 @@
+---
+id: GetBookGrpc
+name: Get book over gRPC
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns one Catalog book by identifier through the book.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `GetBook` RPC returns the current [[entity|book]] identity, pricing, and availability
+status for a requested book identifier. It is an anonymous read operation
+exposed for internal service-to-service clients that need the compact gRPC
+representation.
+
+[[service|basket-api]] and [[service|order-api]] both implement this outgoing
+query in their registered `BookService.GetBookByIdAsync` clients, making them
+its producers; [[service|catalog-api]] consumes it. No current feature calls
+these single-book helpers: basket enrichment, checkout, and Order detail
+enrichment use [[query|GetBooksGrpc]] instead.
+
+<NodeGraph />
+
+## Contract
+
+Send a `GetBookRequest` containing the book UUID in `book_id`. The response is
+`GetBookResponse`, with prices represented by `DecimalValue` and availability
+represented by `BookStatus`.
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="GetBook gRPC schema" />
+
+## Examples
+
+<CodeGroup dropdown>
+
+```csharp title="GetBook gRPC example"
+using Grpc.Net.Client;
+using BookWorm.Catalog.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.GetBookAsync(new GetBookRequest
+{
+    BookId = "0192f4d8-5f3c-7a11-b5dd-2c9e4a6f8b20"
+});
+
+Console.WriteLine($"{response.Name}: {response.Status}");
+```
+
+</CodeGroup>

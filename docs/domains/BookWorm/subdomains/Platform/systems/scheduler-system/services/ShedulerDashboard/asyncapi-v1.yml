@@ -1,0 +1,65 @@
+asyncapi: 3.1.0
+info:
+  title: Scheduler integration events
+  version: 1.0.0
+  description: |
+    Kafka integration contract for the BookWorm Scheduler host. A durable Quartz
+    job publishes a vector-batch trigger event to Catalog Ingestion every five
+    minutes in UTC (cron 0 0/5 * * * ?, misfire policy FireOnceNow). The job
+    disallows concurrent executions and reports publication failures to Quartz
+    as JobExecutionException.
+
+    Payload schemas describe the camelCase JSON data inside BookWorm's
+    CloudEvents-compatible envelope, not the complete transport envelope.
+    HeartbeatJob writes logs only and does not publish a Kafka integration event.
+defaultContentType: application/cloudevents+json
+channels:
+  processVectorBatch:
+    address: scheduler.process-vector-batch
+    description: Scheduler triggers Catalog Ingestion to process a bounded batch of pending vector updates.
+    messages:
+      processVectorBatch:
+        $ref: "#/components/messages/ProcessVectorBatchIntegrationEvent"
+operations:
+  sendProcessVectorBatch:
+    action: send
+    channel:
+      $ref: "#/channels/processVectorBatch"
+    summary: Publish a five-minute catalog vector batch trigger
+    description: |
+      ProcessVectorBatchJob publishes this event through Wolverine. Catalog
+      Ingestion consumes it via a Kafka-triggered Azure Function, acquires a
+      PostgreSQL advisory lock, and processes up to 200 pending updates.
+    messages:
+      - $ref: "#/channels/processVectorBatch/messages/processVectorBatch"
+components:
+  messages:
+    ProcessVectorBatchIntegrationEvent:
+      name: ProcessVectorBatchIntegrationEvent
+      title: Process catalog vector batch
+      summary: Triggers Catalog Ingestion to process pending book embedding updates.
+      description: "Wolverine message identity: BookWorm.Contracts.ProcessVectorBatchIntegrationEvent."
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/IntegrationEventPayload"
+      examples:
+        - name: processVectorBatchTrigger
+          payload:
+            id: "019a1c00-0000-7000-8000-000000000001"
+            creationDate: "2026-11-17T00:05:00Z"
+  schemas:
+    IntegrationEventPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the integration event.
+        creationDate:
+          type: string
+          format: date-time
+          description: UTC timestamp when the event was created.

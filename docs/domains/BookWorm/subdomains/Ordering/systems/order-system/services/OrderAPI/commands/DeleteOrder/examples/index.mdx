@@ -1,0 +1,42 @@
+---
+summary: Soft-delete an Order as an administrator.
+---
+
+## 1. Delete an Order
+
+The endpoint requires administrator authorization and has no request body.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request DELETE "$BASE_URL/api/v1/orders/44444444-4444-4444-4444-444444444444" \
+  --header "Authorization: Bearer <admin-access-token>"
+```
+
+</CodeGroup>
+
+The same request from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts delete-order.ts
+const baseUrl = "https://api.example.com";
+const adminToken = "<admin-access-token>";
+const orderId = "44444444-4444-4444-4444-444444444444";
+const response = await fetch(`${baseUrl}/api/v1/orders/${orderId}`, {
+	method: "DELETE",
+	headers: { Authorization: `Bearer ${adminToken}` },
+});
+
+if (response.status === 404) {
+	throw new Error("Order was not found");
+}
+if (!response.ok) {
+	throw new Error(`DeleteOrder failed with ${response.status}`);
+}
+```
+
+</CodeGroup>
+
+`204 No Content` confirms the Order was soft-deleted. There is no response
+body.

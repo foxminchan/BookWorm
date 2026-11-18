@@ -11,11 +11,7 @@ updates:
   package-ecosystem: nuget
   schedule:
     interval: weekly
-- directory: /docs/eventcatalog
-  package-ecosystem: bun
-  schedule:
-    interval: weekly
-- directory: /docs/docusaurus
+- directory: /docs
   package-ecosystem: bun
   schedule:
     interval: weekly

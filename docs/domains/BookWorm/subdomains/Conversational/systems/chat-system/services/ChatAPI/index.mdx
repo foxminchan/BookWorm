@@ -1,0 +1,113 @@
+---
+id: chat-api
+name: Chat API
+version: 1.0.0
+summary: |
+  Internal API host for BookWorm's interactive chat workflow, agent discovery,
+  and authorized agent-to-agent protocols.
+owners:
+  - contributor-team
+readsFrom:
+  - id: chat-session-blob
+    version: 1.0.0
+writesTo:
+  - id: chat-session-blob
+    version: 1.0.0
+styles:
+  icon: /icons/languages/dotnet.svg
+repository:
+  language: C#
+  url: https://github.com/foxminchan/BookWorm
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: HTTP API
+    backgroundColor: teal
+    textColor: teal
+---
+
+## Overview
+
+Chat API is the HTTP and gRPC application surface of
+[[system|chat-system]]. It hosts the composed conversational workflow and
+exposes discovery and agent-to-agent protocol endpoints. The API coordinates
+[[agent|router-agent]], [[agent|book-agent]], and [[agent|qa-agent]]; it does
+not own Catalog, Basket, Order, or Feedback data.
+
+The interactive workflow validates a customer request, hands accepted input
+to the appropriate specialist, and formats the result. The Router Agent
+routes book-related requests to Book Agent and store-policy or service
+questions to QA Agent. The Book Agent can delegate complex Catalog research
+to [[agent|book-catalog-researcher]] and
+[[agent|book-recommendation-researcher]].
+
+## HTTP and agent protocols
+
+| Endpoint or surface | Purpose                                                               | Notes                                                                              |
+| ------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `/ag-ui`            | Interactive access to the composed Chat workflow.                     | Mapped as the AG-UI server endpoint.                                               |
+| `/agents`           | Discover registered agents.                                           | Agent discovery endpoint.                                                          |
+| `/a2a/{agentName}`  | Per-agent A2A JSON-RPC and HTTP JSON endpoints.                       | Mapped for agents with an A2A server; both HTTP mappings require authorization.    |
+| gRPC A2A            | Agent-to-agent communication over gRPC.                               | Mapped by the Chat host.                                                           |
+| Versioned Chat API  | Other application endpoints registered under the `chats` route group. | API version set is `v1`; concrete operations are supplied by registered endpoints. |
+
+OpenAPI metadata is configured for the Chat API, and the host maps the
+versioned endpoint set under the `chats` route group. The interactive AG-UI
+endpoint is separate from the per-agent A2A endpoints.
+
+## Request processing
+
+1. The host applies CORS, rate limiting, Entra ID token introspection, global
+   exception handling, and status-code handling.
+2. The workflow's `InputValidationExecutor` rejects empty or suspicious input,
+   consults the configured injection detector, and truncates overly long
+   messages.
+3. Accepted input is handled by the agent handoff workflow. Invalid input
+   bypasses the agent calls.
+4. `ResponseFormatterExecutor` selects the last assistant response, removes
+   detected system-prompt fragments, and normalizes its formatting.
+
+The composed workflow persists conversation session state in Azure Blob
+Storage (`chatSessionContainer`) for Microsoft Foundry memory integration, and
+enforces strict DDD domain invariants through the `Conversation` aggregate,
+`ChatTurn`, `PromptValidationService`, and `ResponseFormattingService`. It uses
+Microsoft Foundry model deployments including `ModelRouter`, `MicrosoftDecision1`,
+and Cohere `EmbedV40`.
+
+## Downstream integrations
+
+Book Agent and its two researchers connect to [[service|mcp-server]] through
+the MCP client over Streamable HTTP at `/mcp`, using service discovery and
+token exchange. They load only `search_catalog`, `get_book`,
+`list_categories`, and `list_authors`. Router and QA have no MCP tools.
+
+All five agents use privacy middleware backed by
+[[service|PresidioAPI]] in [[system|data-privacy]]. It calls
+[[command|AnalyzeText]] for non-empty text and [[command|AnonymizeText]] when
+PII is detected, filtering both input and output. Failures propagate rather
+than bypassing the middleware.
+
+The host registers an agent-discovery client pointed at the Rating system,
+and Chat can call a Rating-hosted agent through A2A. The A2A client supports
+gRPC, JSON-RPC, and HTTP JSON, preferring gRPC first. This remote agent call is
+separate from the Chat workflow's local handoffs among its Router, Book, and
+QA agents.
+
+## Access and boundaries
+
+The Chat service configures authenticated user and administrator policies
+requiring the applicable `chatting_read` and `chatting_write` scopes.
+Per-agent A2A JSON-RPC and HTTP JSON endpoints explicitly require
+authorization. The host uses Microsoft Entra ID authentication with Entra Agent
+Identities (`chatAgentId`, `ratingAgentId`) for On-Behalf-Of (OBO) token
+exchange, claims-based agent isolation, and per-user rate limiting.
+
+Chat API coordinates assistance; it does not place Orders, mutate Baskets,
+persist Reviews feedback, or publish business integration events. Store
+policy answers are based on supplied context, not live account or order
+lookups.
+
+## Architecture
+
+<NodeGraph />

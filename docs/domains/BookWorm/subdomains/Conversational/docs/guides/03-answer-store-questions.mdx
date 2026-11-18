@@ -1,0 +1,36 @@
+---
+title: Answer store and customer-support questions
+summary: How the QA Agent responds to store questions using supplied policy context and clear limits.
+version: 1.0.0
+type: guides
+order: 3
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Use the available policy context
+
+The [[agent\|qa-agent]] handles questions about store services, policies,
+accounts, orders, billing, delivery, returns, and refunds using supplied
+store-policy information. Explain the relevant information clearly and state
+when the supplied context does not answer the question.
+
+## Respect the account-data boundary
+
+The QA Agent does not perform live account, Basket, or Order lookups and does
+not modify customer records. Do not present general policy context as a
+confirmation of an individual customer's transaction or account state. When
+an answer requires unavailable details, explain the limitation and direct the
+customer to support.
+
+## Requests that also involve books
+
+If a customer-support request also needs book information, QA can hand that
+part to [[agent\|book-agent]]. Keep the response clear about which part is
+general store guidance and which part is book-specific.
+
+<Footer />

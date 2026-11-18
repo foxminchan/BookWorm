@@ -1,0 +1,25 @@
+---
+title: Deployment View
+summary: Logical deployment view of BookWorm services, their stateful infrastructure, and external dependencies.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This chapter maps the independently deployable services of [[domain|BookWorm]] and their important stateful or external dependencies to a logical execution environment. It follows arc42's deployment view: infrastructure nodes, their connections, and the software building blocks deployed to them.
+
+The available architecture sources establish a service-oriented application using .NET Aspire, and the AppHost establishes how it is published: container apps in Azure Container Apps, Azure-managed PostgreSQL, Redis, Storage, and Microsoft Foundry, plus externally supplied Kafka, Microsoft Entra ID (replacing Entra ID after the planned migration), and SMTP. They do **not** establish regions, network topology, replica counts, or per-environment topologies beyond the sizing the AppHost applies. The diagrams therefore show the published component placement, not a complete production runbook.
+
+## Chapter contents
+
+- [[doc|arc42/07-deployment-view/001-infrastructure-level-1]] gives the logical deployment overview, its motivation, and the mapping of software building blocks to infrastructure.
+- [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] zooms into service, persistence, messaging, and external-system boundaries and records deployment details that still need confirmation.
+
+## Deployment scope
+
+The view covers the customer-facing client, the BookWorm application boundary, service-owned persistence and integration infrastructure, and the external systems those services depend on. It complements the [[doc|arc42/03-context-and-scope/003-technical-context]], which describes technical neighbors, and the [[doc|arc42/05-building-block-view]], which describes static responsibilities.
+
+The deployment view is intentionally not a substitute for the runtime scenarios in [[doc|arc42/06-runtime-view]]. Those scenarios explain message ordering, retries, and business outcomes; this chapter focuses on where the software and its supporting infrastructure execute.

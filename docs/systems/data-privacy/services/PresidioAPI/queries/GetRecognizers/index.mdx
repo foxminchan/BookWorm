@@ -1,0 +1,48 @@
+---
+id: GetRecognizers
+name: Get recognizers
+version: 1.0.0
+badges:
+  - content: Privacy
+    backgroundColor: red
+    textColor: red
+summary: Returns the names of PII recognizers available for the requested language.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /recognizers
+  statusCodes: ["200"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+The `GetRecognizers` query lists the recognizers available from [[service|PresidioAPI]] Analyzer. Use the optional `language` query parameter to select a language using its two-character ISO 639-1 code.
+
+<NodeGraph />
+
+## Query parameters and response
+
+`language` is optional. A `200 OK` response returns an array of recognizer names.
+
+### Query using cURL
+
+<CodeGroup dropdown>
+
+```sh GetRecognizers.sh
+curl --get --data-urlencode "language=en" "$ANALYZER_URL/recognizers"
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="GetRecognizers response JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

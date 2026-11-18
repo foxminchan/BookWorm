@@ -1,0 +1,34 @@
+---
+title: AI Governance
+summary: Input screening, privacy middleware, policy enforcement, and tool boundaries for BookWorm's AI workflows.
+owners:
+  - contributor-team
+badges:
+  - content: Cross-cutting Concept
+    backgroundColor: purple
+    textColor: purple
+---
+
+Conversational and rating-agent capabilities cross service and trust boundaries: they process user-provided text, call model providers, and may invoke tools. BookWorm composes controls around these paths so that prompt handling, data minimization, and tool authorization are considered together.
+
+## Chat workflow
+
+The Chat workflow validates input before routing it to specialized agents. It trims empty input, rejects suspicious prompt-injection patterns, consults the configured governance injection detector, and limits accepted content to a bounded length. Rejected requests do not proceed to the agent handoff. The workflow then routes accepted requests and formats the selected agent's response.
+
+Chat agent clients use Presidio-backed PII anonymization and a guardrail middleware that marks user and tool content as untrusted and filters selected injection or prompt-leakage patterns. Agents are wrapped with the shared governance kernel, function-call middleware applies governance policies to tool invocations.
+
+## Policy configuration and scope
+
+The shared governance kernel loads policy files from configuration, uses a deny-overrides conflict strategy, and can enable rings, prompt-injection detection, and a circuit breaker. The default policy describes deny-by-default tool access with explicit allow, deny, and rate-limit rules. Chat and Rating provide additional service-specific policy files, their actual permitted operations are defined by those policy rules and agent tool registration.
+
+Rating registers the same governance, PII, and chat-client guardrail building blocks for its summarization agent. These protections are evidenced in Chat and Rating, do not assume they automatically apply to other AI-enabled code or to every model integration.
+
+Policy configuration and the regular expressions are defense-in-depth, not a guarantee that all malicious or sensitive content will be identified. Review policies and tool permissions when adding an agent or capability, and review the default policy before production use.
+
+## Change checklist
+
+1. Give each agent only the tools and data it needs, and define the permitted operations in its policy.
+2. Keep untrusted user and tool output separate from trusted instructions.
+3. Apply input and output PII handling where model requests cross a privacy boundary.
+4. Test allow, deny, rate-limit, injection, and failure cases for each registered tool.
+5. Recheck policy file deployment paths and startup validation when changing policy configuration.

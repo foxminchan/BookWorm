@@ -1,0 +1,92 @@
+---
+id: adr-002-scheduler-invocation-boundary
+name: "ADR-002: Keep business ownership outside the Scheduler"
+version: 1.0.0
+summary: The Scheduler System coordinates when work is attempted, while Catalog and Notification systems own validation, processing, business data, and final outcomes.
+status: accepted
+date: 2026-10-27
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: scheduler-system
+  - type: system
+    id: product-catalog-system
+  - type: system
+    id: notification-system
+  - type: service
+    id: sheduler-dashboard
+  - type: event
+    id: ProcessVectorBatchIntegrationEvent
+badges:
+  - content: Ownership
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Context
+
+The Scheduler invokes recurring Catalog and Notification work, but it does not
+own the business meaning of vector indexing, email delivery, or cleanup. If
+scheduled jobs read or write downstream tables directly, Quartz becomes
+coupled to domain schemas and a successful firing can be mistaken for a
+successful business operation. The same separation is needed for security:
+each target must authenticate and validate the Scheduler's request, and
+should retain control over its own data, concurrency, retries, and outcome
+reporting.
+
+## Decision
+
+The [[system|scheduler-system]] is an invocation and coordination boundary. Jobs publish
+versioned integration contracts such as
+[[event|ProcessVectorBatchIntegrationEvent]] over Kafka. The receiving system owns request validation, domain-level concurrency,
+durable work state, retries, and the final business outcome.
+
+The Scheduler must not read or write Catalog, Notification, or other domain
+tables directly. A successful Quartz execution means that the Scheduler
+completed its invocation path; it does not confirm that downstream processing
+completed successfully. For example, the vector job invokes the authenticated
+Catalog Ingestion endpoint, while email maintenance jobs publish requests for
+Notification to select and process its own outbox records. The target's
+response or message handling remains the boundary for its work.
+
+## Consequences
+
+- Downstream systems can evolve their storage and business rules without
+  coupling them to Quartz tables.
+- Scheduler operations must be correlated with target-system queues, outboxes,
+  and processing metrics to determine business outcomes.
+- Each receiving contract must define authentication, validation, and
+  idempotency behavior.
+- The architecture tolerates eventual consistency between a Scheduler firing
+  and the target system's completed work.
+- Scheduler history and health checks must be paired with target-side queue,
+  outbox, or processing metrics to determine whether the requested work
+  actually completed.
+- Authentication failures, target-service outages, and message-publication
+  failures remain observable as invocation failures, but do not grant
+  Scheduler ownership of target-side recovery or data repair.
+- Job payloads should carry only the invocation data the target contract
+  needs; target systems determine eligible records and bounded work.
+
+## Alternatives considered
+
+### Query or mutate downstream databases from Quartz jobs
+
+This could avoid target API or message hops, but would couple scheduler
+deployment to domain schemas and bypass each target's validation,
+authorization, and processing rules.
+
+### Treat a successful firing as a successful business operation
+
+For HTTP invocation this may only mean the endpoint returned; for Kafka it
+may only mean publication succeeded. The target may still reject, defer, or
+fail the work, so business success must be measured by the owning system.
+
+### Make Scheduler own target retries and result state
+
+This would duplicate target-specific work queues and recovery semantics in
+Quartz. Scheduler is responsible for timing and invocation; the receiving
+system remains responsible for durable work and its final outcome.

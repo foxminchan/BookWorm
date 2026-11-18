@@ -1,0 +1,76 @@
+---
+summary: Show how Finance starts checkout coordination and publishes the shared order-placement command.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Start order coordination
+
+Finance consumes [[event|UserCheckedOutIntegrationEvent]] after Ordering places
+an Order. Its saga stores the checkout details and publishes
+[[command|PlaceOrderCommand]] to Basket and Notification. Notification uses the
+shared command to send a new-order email; Basket uses it for cleanup. A Finance
+timeout can reissue the command, so repeated delivery can create additional
+email outbox records.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp OrderSaga.cs
+var messages = new OutgoingMessages
+{
+    new PlaceOrderCommand(
+        saga.BasketId,
+        saga.FullName,
+        saga.Email,
+        saga.OrderId,
+        saga.EffectiveTotalMoney
+    ),
+    new PlaceOrderTimeout(@event.OrderId, settings.MaxRetryTimeout),
+};
+
+return (saga, messages);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Command payload
+
+This is the camelCase message data inside BookWorm's CloudEvents-compatible
+envelope; the transport envelope is omitted. `basketId` currently contains the
+Order's Buyer ID. Notification does not use this field.
+
+<CodeGroup dropdown>
+
+```json new-order-command.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000001",
+	"creationDate": "2026-11-01T14:00:00Z",
+	"basketId": "11111111-1111-1111-1111-111111111111",
+	"orderId": "44444444-4444-4444-4444-444444444444",
+	"fullName": "Example Customer",
+	"email": "customer@example.com",
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Notification handling
+
+Notification maps the command to the new-order status for the email template;
+it does not create or place the Order. A blank email skips email work. For a
+nonblank email, Notification renders the message, persists an outbox record,
+and submits it through SMTP. Successful SMTP submission is not confirmation of
+delivery, and the command has no notification-result event.

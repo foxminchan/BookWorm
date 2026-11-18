@@ -1,0 +1,35 @@
+---
+id: BasketDeletedCompleteIntegrationEvent
+name: Basket deletion completed
+version: 1.0.0
+summary: |
+  Indicates that Basket successfully deleted the submitted basket during
+  checkout cleanup.
+owners:
+  - contributor-team
+schemaPath: schema.json
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Overview
+
+[[service|basket-api]] publishes this event after the submitted
+[[entity|basket]] is
+deleted successfully. Downstream consumers can use it to continue checkout
+coordination, but it does not indicate payment settlement or order completion.
+
+<NodeGraph />
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.basket.delete-complete]]
+
+## Schema
+
+The event is carried in a CloudEvents envelope. The schema below describes the
+JSON data payload.
+
+<SchemaViewer file="schema.json" title="Basket deletion completed schema" maxHeight="500" />

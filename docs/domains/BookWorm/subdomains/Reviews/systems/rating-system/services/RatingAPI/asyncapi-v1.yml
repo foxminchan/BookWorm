@@ -1,0 +1,144 @@
+---
+asyncapi: 3.1.0
+info:
+  title: Rating API integration events
+  version: 1.0.0
+  description: |
+    AsyncAPI contract for the Rating service's Kafka integration events.
+    Rating publishes feedback lifecycle events for Catalog and consumes
+    compensation events when Catalog cannot apply a rating update.
+defaultContentType: application/cloudevents+json
+channels:
+  feedbackCreated:
+    address: bookworm.{env}.rating.feedback-create
+    description: Rating service publishes this event when feedback is created.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      feedbackCreated:
+        $ref: "#/components/messages/FeedbackCreatedIntegrationEvent"
+  feedbackDeleted:
+    address: bookworm.{env}.rating.feedback-delete
+    description: Rating service publishes this event when feedback is deleted.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      feedbackDeleted:
+        $ref: "#/components/messages/FeedbackDeletedIntegrationEvent"
+  bookUpdatedRatingFailed:
+    address: bookworm.{env}.catalog.book-update-rating-failed
+    description: Catalog publishes this event when a feedback-created event cannot update a book.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      bookUpdatedRatingFailed:
+        $ref: "#/components/messages/BookUpdatedRatingFailedIntegrationEvent"
+operations:
+  sendFeedbackCreated:
+    action: send
+    channel:
+      $ref: "#/channels/feedbackCreated"
+    summary: Publish feedback-created events
+    messages:
+      - $ref: "#/channels/feedbackCreated/messages/feedbackCreated"
+  sendFeedbackDeleted:
+    action: send
+    channel:
+      $ref: "#/channels/feedbackDeleted"
+    summary: Publish feedback-deleted events
+    messages:
+      - $ref: "#/channels/feedbackDeleted/messages/feedbackDeleted"
+  receiveBookUpdatedRatingFailed:
+    action: receive
+    channel:
+      $ref: "#/channels/bookUpdatedRatingFailed"
+    summary: Consume failed rating update notifications
+    messages:
+      - $ref: "#/channels/bookUpdatedRatingFailed/messages/bookUpdatedRatingFailed"
+components:
+  parameters:
+    env:
+      description: BookWorm deployment environment.
+      enum:
+        - development
+        - staging
+        - production
+      default: development
+  messages:
+    FeedbackCreatedIntegrationEvent:
+      name: FeedbackCreatedIntegrationEvent
+      title: Feedback created
+      summary: A new rating was created for a book.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/FeedbackCreatedPayload"
+    FeedbackDeletedIntegrationEvent:
+      name: FeedbackDeletedIntegrationEvent
+      title: Feedback deleted
+      summary: An existing rating was deleted from a book.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/FeedbackDeletedPayload"
+    BookUpdatedRatingFailedIntegrationEvent:
+      name: BookUpdatedRatingFailedIntegrationEvent
+      title: Book rating update failed
+      summary: Catalog could not update a book rating for the feedback event.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/BookUpdatedRatingFailedPayload"
+  schemas:
+    FeedbackCreatedPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - bookId
+        - rating
+        - feedbackId
+      properties:
+        bookId:
+          type: string
+          format: uuid
+          description: Identifier of the book whose rating summary changes.
+        rating:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: Rating value added to the book.
+        feedbackId:
+          type: string
+          format: uuid
+          description: Identifier of the feedback record.
+    FeedbackDeletedPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - bookId
+        - rating
+        - feedbackId
+      properties:
+        bookId:
+          type: string
+          format: uuid
+          description: Identifier of the book whose rating summary changes.
+        rating:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: Rating value removed from the book.
+        feedbackId:
+          type: string
+          format: uuid
+          description: Identifier of the deleted feedback record.
+    BookUpdatedRatingFailedPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - feedbackId
+      properties:
+        feedbackId:
+          type: string
+          format: uuid
+          description: Identifier of the feedback that could not be applied.

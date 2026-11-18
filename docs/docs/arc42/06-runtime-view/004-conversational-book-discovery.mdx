@@ -1,0 +1,32 @@
+---
+title: Conversational Book Discovery
+summary: Runtime routing and optional parallel research for a customer book-discovery request.
+owners:
+  - contributor-team
+badges:
+  - content: Runtime Scenario
+    backgroundColor: purple
+    textColor: purple
+---
+
+## 6.4 Conversational book discovery
+
+Conversational handles discovery requests through a composed chat workflow. The workflow validates the incoming message, routes it to a specialist, and can delegate complex research to independent agents. Catalog remains the source of book facts; agent responses do not mutate Catalog or create commerce transactions.
+
+<MermaidFileLoader file="mermaids/conversational-book-discovery.mmd" />
+
+### Interaction
+
+1. A customer submits a request to the Chat API's AG-UI endpoint.
+2. Input validation rejects empty or detected prompt-injection input. Accepted input is passed to the handoff workflow.
+3. Router Agent selects a specialist: book requests go to Book Agent; store or account questions go to QA Agent. Unsupported requests receive a boundary response.
+4. Book Agent handles a straightforward request directly. For a complex discovery request, it can delegate independent book-fact and recommendation research to specialist agents in parallel, then synthesize their results.
+5. Catalog information is accessed through the scoped MCP tools. The workflow formats and returns the final assistant response.
+
+### Boundaries
+
+- The response depends on the information available to the agents and Catalog tools; it is not a reservation, price guarantee, or Order.
+- The Chat workflow and its agents do not place Orders, mutate Baskets, or publish commerce lifecycle events.
+- A request rejected during validation returns a rejection response rather than entering specialist routing.
+
+See the [[flow|agent-orchestration]], [[service|chat-api]], and [[system|mcp-tools]] documentation for workflow and tool contracts.

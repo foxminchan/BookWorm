@@ -1,0 +1,113 @@
+---
+id: adr-004-fusioncache-redis-for-catalog-reads
+name: "ADR-004: Use FusionCache with Redis for selected catalog reads"
+version: 1.0.0
+summary: Hot book lookups and the dashboard summary are cached through a FusionCache L1 in-process plus Redis distributed layer, treated as disposable.
+status: accepted
+date: 2026-10-20
+owners:
+  - platform-team
+decisionMakers:
+  - platform-team
+appliesTo:
+  - type: system
+    id: product-catalog-system
+  - type: service
+    id: catalog-api
+  - type: container
+    id: catalog-cache
+related:
+  - id: adr-001-postgresql-system-of-record
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+[[entity|book]] detail lookups and the admin dashboard summary are read far
+more often than they change, and repeating them against PostgreSQL adds
+avoidable load and latency. Moving those reads to a cache can improve response
+times, but introduces a second copy of data that may be stale or unavailable.
+The design must therefore limit caching to selected read paths and preserve
+the database as the source of truth.
+
+## Decision
+
+[[service|catalog-api]] registers FusionCache with an in-process L1 cache
+backed by a Redis distributed cache ([[container|catalog-cache]]). Values are
+JSON serialized with a default expiration from `Caching:Expiration`;
+individual entries may override it. The selected entries are:
+
+| Data                          | Key                    | Source           | Expiration           |
+| ----------------------------- | ---------------------- | ---------------- | -------------------- |
+| [[entity\|book]] lookup by ID | `book:{id}`            | Catalog Database | `Caching:Expiration` |
+| Dashboard summary             | `catalog:dashboard:v1` | Catalog Database | 15 seconds           |
+
+Book changes invalidate their `book:{id}` entry so the next lookup reloads
+from PostgreSQL. The dashboard summary refreshes when its entry expires. Only
+selected reads are cached; Redis and the local L1 are never authorities for
+catalog data.
+
+## Decision drivers
+
+The Catalog API serves repeated read patterns at high volume, especially for
+book detail pages and administrative summaries. The system needs to keep
+these paths fast without making read consistency or data freshness a hidden
+dependency on cache correctness.
+
+The in-process layer provides locality for repeated reads handled by an API
+instance, while Redis provides a distributed cache shared across instances.
+Keeping the cache selective and bounded by expiration and invalidation
+preserves PostgreSQL as the only source of truth.
+
+## Alternatives considered
+
+### No cache
+
+This is simple and correct, but it increases database pressure and response
+latency under load. Repeated book lookups and summary reads are common enough
+that avoiding the cache would forgo a useful read optimization.
+
+### Cache everything aggressively
+
+This would reduce database traffic but increase the risk and impact of stale
+responses, especially for mutable book metadata, prices, or dashboard
+aggregates. Selective caching with explicit expiration and invalidation is
+preferred over treating every query as cacheable.
+
+### Use Redis without a local L1 cache
+
+This would reduce the number of cache layers, but each cache read would
+require a remote round trip and would miss the locality of in-process reads.
+The two-layer design trades some operational complexity for lower latency on
+hot reads.
+
+## Consistency and operating constraints
+
+- Cache entries are disposable copies populated from the database-backed query
+  path. A cache miss or cache loss must not change catalog ownership.
+- Book changes invalidate the matching book key; the dashboard uses a short
+  fixed expiration. Updates to cache key shapes should use a new key version
+  (for example, `catalog:dashboard:v2`) to avoid interpreting old serialized
+  values as the new shape.
+- Cached reads can be briefly stale until invalidation or expiration takes
+  effect. Purchase-time price and availability decisions must use current
+  authoritative data rather than relying on a cached value.
+- FusionCache metrics and traces, Redis connectivity, and Redis latency are
+  needed to distinguish database load from cache-related read behavior.
+
+## Consequences
+
+- Hot book lookups and dashboard reads can reduce database load and response
+  latency.
+- Cached values can be briefly stale until entries expire or are invalidated;
+  cache freshness is not a substitute for canonical data access.
+- Cache loss or a miss requires reads to be served through the
+  database-backed path and affects performance rather than data ownership.
+- The local and distributed layers introduce cache invalidation, expiration,
+  serialization, and observability concerns that must be maintained as read
+  contracts evolve.
+- Redis connectivity and latency become operational concerns; monitor
+  FusionCache metrics and traces alongside the database.

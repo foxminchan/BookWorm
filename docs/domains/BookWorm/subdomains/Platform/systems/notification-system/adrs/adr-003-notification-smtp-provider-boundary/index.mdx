@@ -1,0 +1,107 @@
+---
+id: adr-003-notification-smtp-provider-boundary
+name: "ADR-003: Keep email delivery behind a MailKit SMTP provider boundary"
+version: 1.0.0
+summary: Notification submits MIME messages through MailKit over SMTP, using MailPit in development and a configured provider elsewhere without relying on SendGrid's HTTP API.
+status: accepted
+date: 2026-11-01
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: notification-system
+  - type: service
+    id: notification-api
+  - type: system
+    id: sendgrid
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+Notification needs an email submission mechanism that supports local
+development without coupling order handlers to a particular provider's HTTP
+contract. Provider submission can time out or fail independently of the
+application's persisted email state.
+
+## Decision
+
+Keep order rendering and durable work in [[system|notification-system]].
+`ISender` resolves to the email outbox wrapper, while `IEmailSender` performs
+MailKit SMTP submission of the resulting MIME message.
+
+Use MailPit in development and the configured email provider outside
+development. [[system|sendgrid]] can supply that external SMTP endpoint; the
+current implementation does not invoke its HTTP Mail Send API or the
+cataloged SendGrid API service.
+
+The SMTP sender uses a resilience pipeline with a circuit breaker, exponential
+retry backoff with jitter, and a 30-second timeout around submission attempts.
+Connection and optional authentication occur before that pipeline; disconnect
+occurs afterward. These operations can fail independently of `SendAsync`.
+Failures are logged and propagated, not converted into successful sent state.
+
+The sender does not persist a provider response or final delivery status.
+Finance owns order meaning; Notification owns rendering, email state, and
+submission policy; the provider owns its delivery network.
+
+The resilience policy bounds retries within a sender operation only. It does
+not cap how many later maintenance batches can select an unsent outbox record.
+A failure during connection, authentication, disconnect, or sent-state
+persistence can leave an ambiguous or unsent record for a later attempt.
+Provider acceptance remains a submission outcome, not a delivery receipt.
+
+## Consequences
+
+- Provider configuration can change without changing Finance's order-command
+  contracts, but SMTP capabilities and authentication still require validation.
+- Local email testing can use MailPit without submitting to a production provider.
+- Resilience bounds retries within a submission operation, not the total
+  lifetime attempts for an unsent outbox record.
+- Retry and circuit-breaker predicates currently handle exceptions broadly;
+  the implementation does not classify permanent failures into persisted
+  terminal states.
+- SMTP acceptance is not proof of recipient delivery. An ambiguous submission
+  or disconnect failure can cause a later retry to submit the message again.
+- The SMTP dependency is operationally separate from the durable email
+  outbox: outbox persistence can succeed while the provider is unavailable,
+  and a later submission can still be duplicated after an ambiguous result.
+- Connection and optional authentication happen outside the submission
+  resilience pipeline, so its retry and timeout behavior should not be
+  interpreted as covering the complete SMTP connection lifecycle.
+- Provider changes require validating endpoint, authentication, TLS behavior,
+  and delivery configuration even though the Finance message contract remains
+  unchanged.
+
+## Alternatives considered
+
+### Call the provider's HTTP Mail Send API
+
+This would couple the sender to a provider-specific HTTP contract. The current
+implementation uses MailKit over SMTP and does not invoke the cataloged
+SendGrid HTTP API service.
+
+### Hard-code a production provider into order handlers
+
+This would couple Finance's business workflow to provider configuration and
+delivery behavior. The SMTP abstraction keeps rendering and provider
+submission within Notification.
+
+### Mark an email sent when the provider accepts the connection
+
+A connection does not establish that the message was submitted. The outbox
+marks the sender successful only after the send operation returns; even that
+does not prove final delivery to the recipient.
+
+### Relationship to existing provider documentation
+
+The older [[adr|adr-001-provider-boundary-and-ownership]]
+describes a SendGrid API integration and provider-response recording. This
+record preserves the external-provider boundary but documents the current
+MailKit SMTP path and the absence of persisted provider responses. The older
+record is unchanged.

@@ -1,0 +1,44 @@
+---
+id: OrderStatusChangedToCancelIntegrationEvent
+name: Order cancelled
+version: 1.0.0
+summary: |
+  Reports that an Order transitioned from New to Cancelled.
+owners:
+  - business-strategy
+schemaPath: schema.json
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Overview
+
+[[service|order-api]] publishes this event after an [[entity|order]]
+transitions from New to Cancelled. It reports a business-status change to
+Finance, not a soft deletion or a request to cancel an Order.
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]]
+
+## Payload
+
+The payload contains `id`, `creationDate`, `orderId`, `basketId`, nullable
+`fullName` and `email`, and `totalMoney`. All fields are required by the
+AsyncAPI schema, including the nullable fields.
+
+The current EventMapper supplies the Order's Buyer ID as `basketId`.
+Consumers must not assume this field is independently resolved basket data.
+
+## Schema
+
+The schema describes camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope, not the complete transport envelope.
+
+<SchemaViewer file="schema.json" title="Order cancellation event payload" maxHeight="500" />
+
+## Architecture
+
+<NodeGraph />

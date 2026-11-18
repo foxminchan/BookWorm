@@ -135,7 +135,7 @@ run = [
 
 [tasks.format]
 description = "Format all code and documentation"
-depends = ["format:cs", "format:fe", "format:eventcatalog", "format:docusaurus"]
+depends = ["format:cs", "format:fe", "format:docs"]
 
 [tasks."format:cs"]
 description = "Format C# code"
@@ -146,14 +146,9 @@ description = "Format frontend code"
 dir = "src/Clients"
 run = "bun run format"
 
-[tasks."format:eventcatalog"]
-description = "Format EventCatalog"
-dir = "docs/eventcatalog"
-run = "bun run format"
-
-[tasks."format:docusaurus"]
-description = "Format Docusaurus"
-dir = "docs/docusaurus"
+[tasks."format:docs"]
+description = "Format documentation"
+dir = "docs"
 run = "bun run format"
 
 # ==============================================================================
@@ -162,19 +157,14 @@ run = "bun run format"
 
 [tasks.update]
 description = "Update all Bun packages"
-depends = ["update:fe", "update:eventcatalog", "update:docusaurus"]
+depends = ["update:fe", "update:docs"]
 
 [tasks."update:fe"]
 description = "Update frontend Bun packages"
 dir = "src/Clients"
 run = "bun update --recursive"
 
-[tasks."update:eventcatalog"]
-description = "Update EventCatalog Bun packages"
-dir = "docs/eventcatalog"
-run = "bun update"
-
-[tasks."update:docusaurus"]
-description = "Update Docusaurus Bun packages"
-dir = "docs/docusaurus"
+[tasks."update:docs"]
+description = "Update documentation Bun packages"
+dir = "docs"
 run = "bun update"

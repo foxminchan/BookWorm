@@ -1,0 +1,87 @@
+---
+title: Notification delivery backlog
+summary: Diagnose and safely recover when unsent email records accumulate or stop progressing.
+version: 1.0.0
+type: runbooks
+order: 1
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- The count or age of unsent records in [[container|notification-database]]
+  continues to increase.
+- The `ResendErrorEmailJob` fires, but unsent records do not decrease.
+- SMTP submission failures or notification-consumer errors appear in sanitized
+  application telemetry.
+
+## Impact
+
+Email notifications may be delayed or submitted more than once. The outbox
+does not determine whether an order or other business operation completed;
+check that state in its owning domain.
+
+## Diagnose
+
+1. Check outbox counts and age without selecting recipient or message content:
+
+   <CodeGroup dropdown>
+
+   ```sql
+   SELECT
+       is_sent,
+       COUNT(*) AS record_count,
+       MIN(created_at) AS oldest_created_at
+   FROM outboxes
+   GROUP BY is_sent;
+   ```
+
+   </CodeGroup>
+
+2. In [[service|sheduler-dashboard]], inspect the `ResendErrorEmailJob`
+   trigger, UTC schedule, firing history, and completion status. A successful
+   Scheduler execution confirms that the request was published; it does not
+   confirm that Notification delivered email.
+3. Check Kafka and Notification consumer health, including the configured
+   dead-letter path `bookworm.{env}.notification.dead-letter-queue`. Use the
+   environment's approved broker and telemetry tools; do not copy message
+   payloads into routine incident notes.
+4. Check SMTP provider connectivity, authentication configuration, and
+   rate-limit or rejection errors. Do not print or paste credentials.
+5. Confirm that the original Finance command supplied a nonblank email address.
+   Notification intentionally skips blank addresses.
+
+## Recover
+
+- Restore the failing database, Kafka, Notification consumer, or SMTP
+  dependency. Unsent records remain eligible for a later resend request.
+- Allow the next scheduled resend, or use the approved operational procedure
+  for an explicitly authorized invocation. Each request processes at most 100
+  unsent records, so a larger backlog may take multiple runs.
+- Do not delete or mark records sent to clear the backlog. Do not replay
+  requests without checking for an earlier submission: SMTP outcomes can be
+  ambiguous, and resend can create additional outbox records.
+- Do not run cleanup as a backlog remedy. Cleanup selects sent records only.
+
+## Verify
+
+- Unsent record count and oldest-record age trend down across resend runs.
+- SMTP submission failures stop or return to an understood, bounded level.
+- Confirm outcomes in Notification state and the owning domain; Scheduler
+  completion alone is not delivery confirmation.
+
+## Escalation
+
+- Contact [[team|contributor-team]] for Notification consumer and delivery
+  behavior.
+- Contact [[team|platform-team]] for Scheduler, database, broker, provider
+  connectivity, or infrastructure issues.
+- Use the established support or on-call channel for urgent incidents; no
+  specific channel or rotation is documented here.
+
+<Footer />

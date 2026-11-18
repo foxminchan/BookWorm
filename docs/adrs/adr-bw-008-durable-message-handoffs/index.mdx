@@ -1,0 +1,52 @@
+---
+id: adr-bw-008-durable-message-handoffs
+name: "ADR-BW-008: Persist configured broker handoffs with local inboxes and outboxes"
+version: 1.0.0
+summary: Use the shared event framework's per-service durable message storage without claiming exactly-once business effects.
+status: proposed
+date: 2026-11-07
+owners:
+  - platform-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-005-kafka-integration-backbone
+  - id: adr-bw-012-operation-aware-resilience
+  - id: adr-002-finance-postgresql-message-persistence
+---
+
+## Context
+
+A process can fail between business processing and downstream delivery. Purely in-memory work would not provide a recoverable handoff when the service restarts.
+
+## Decision
+
+Reuse the shared Wolverine framework's per-service PostgreSQL durable inbox and outbox policies on the configured broker path. Verify actual host registration, persistence, and transaction integration rather than assuming that a referenced library guarantees atomic business-and-message commits.
+
+This decision concerns framework-level message durability. Finance saga persistence and Notification's application email outbox retain their separate local records.
+
+## Decision drivers
+
+- Recoverability of message work across interruptions.
+- Consistent messaging infrastructure across enabled hosts.
+- Explicit separation of transport durability from business completion.
+
+## Alternatives considered
+
+| Alternative                                     | Assessment                                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------ |
+| In-memory dispatch only                         | Has low setup cost but loses pending work on process failure.                        |
+| Publish directly without a durable handoff      | Is simple but leaves a failure window that needs explicit treatment.                 |
+| Distributed transaction across all participants | Attempts global atomicity while tightly coupling services and external dependencies. |
+
+## Consequences
+
+- Durable message work can survive process interruptions where configured.
+- Persistence adds schema, storage, cleanup, and monitoring responsibilities.
+- Repeated processing remains possible; consumers must check owned state and side-effect semantics.
+- A broker acknowledgement does not prove workflow completion or external delivery.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]]. [[adr|adr-002-finance-postgresql-message-persistence]] retains Finance-specific persistence detail.

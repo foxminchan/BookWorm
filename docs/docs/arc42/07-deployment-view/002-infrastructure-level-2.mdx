@@ -1,0 +1,68 @@
+---
+title: Infrastructure Level 2
+summary: Known service-level deployment responsibilities and infrastructure details to confirm.
+owners:
+  - contributor-team
+badges:
+  - content: Deployment View
+    backgroundColor: blue
+    textColor: blue
+---
+
+## 7.2 Infrastructure Level 2
+
+This level refines the Azure Container Apps topology from [[doc|arc42/07-deployment-view/001-infrastructure-level-1]]. It records infrastructure responsibilities as defined by the Aspire AppHost and the details that remain open.
+
+### 7.2.1 Service execution environment
+
+All services run as container apps in a single Azure Container Apps environment (`aca`, Consumption workload profile). Catalog ingestion is an Azure Functions project; the Scheduler runs only on explicit start. The AppHost does not define regions, ingress policy, replica counts, or the deployment pipeline.
+
+| Service boundary                                                | Deployment responsibility and dependencies                                                                                        |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| [[system\|product-catalog-system]] / [[service\|catalog-api]]   | Owns book and product information. Uses `catalogdb`, Redis, Qdrant, a blob container, and Foundry chat and embedding deployments. |
+| [[service\|catalog-ingestion]]                                  | Azure Functions app that maintains the derived Qdrant index from `catalogdb`; the Scheduler invokes bounded batches.              |
+| [[system\|cart-system]] / [[service\|basket-api]]               | Owns Basket state in Redis and consumes Catalog; participates in checkout cleanup over Kafka.                                     |
+| [[system\|order-system]] / [[service\|order-api]]               | Owns accepted Orders in `orderingdb`; uses Redis, Kafka, Catalog, and Basket.                                                     |
+| [[system\|finance-system]] / [[service\|order-orchestration]]   | Coordinates checkout through a saga persisted in `financedb` and Kafka.                                                           |
+| [[system\|rating-system]] / [[service\|rating-api]]             | Owns feedback in `ratingdb`; uses Redis, Kafka, Chat, MCP tools, Presidio, and Foundry.                                           |
+| [[system\|chat-system]] / [[service\|chat-api]]                 | Customer-facing assistance; uses Foundry, MCP tools, and Presidio.                                                                |
+| [[system\|mcp-tools]]                                           | Shared MCP server that calls Catalog and Rating.                                                                                  |
+| [[system\|scheduler-system]] / [[service\|sheduler-dashboard]]  | Uses Quartz with `schedulerdb`; invokes Catalog ingestion and publishes maintenance requests to Kafka.                            |
+| [[system\|notification-system]] / [[service\|notification-api]] | Owns the email outbox in `notificationdb`; consumes Kafka commands and submits email over SMTP.                                   |
+| API gateway                                                     | YARP proxy that routes `chatting`, `rating`, `ordering`, `basket`, and `catalog` for the Storefront and Back office clients.      |
+
+The service responsibilities and their interactions are described further in the [[doc|arc42/05-building-block-view/002-level-2]] and [[doc|arc42/06-runtime-view]] chapters.
+
+### 7.2.2 Stateful and integration infrastructure
+
+| Infrastructure element           | Owner or consumer                                                   | Deployment fact                                                                                                                                                                                                            | Details to confirm                                                                      |
+| -------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Azure Managed Redis              | Basket, Catalog, Ordering, Rating                                   | Basket state and caching; access-key authentication; Premium in Production, Standard otherwise, Basic in Development                                                                                                       | Persistence mode, failover, and per-service isolation                                   |
+| Azure PostgreSQL flexible server | Catalog, Ordering, Finance, Rating, Notification, Scheduler         | One server with six databases (`catalogdb`, `orderingdb`, `financedb`, `ratingdb`, `notificationdb`, `schedulerdb`); password authentication; pgbouncer enabled outside Development; zone-redundant HA outside Development | Per-database access isolation, restore exercises, and capacity                          |
+| Qdrant                           | Catalog, Catalog ingestion                                          | Container app holding the derived vector index; ingestion upserts or removes vectors                                                                                                                                       | Persistence, collection configuration, and rebuild strategy                             |
+| Azure Storage account            | Catalog, Catalog ingestion                                          | Catalog blob container and Azure Functions host storage, with role assignments for the ingestion identity                                                                                                                  | Retention, redundancy, and access policy                                                |
+| Microsoft Foundry                | Catalog, Chat, Rating, Catalog ingestion                            | `chat` (model router) and `embedding` (Cohere Embed v4) deployments, accessed with Cognitive Services User role assignments                                                                                                | Quotas, region, and data-processing boundary                                            |
+| Presidio analyzer and anonymizer | Chat, Rating                                                        | Two container apps for PII detection and redaction                                                                                                                                                                         | Scaling and network exposure                                                            |
+| Kafka                            | Catalog, Basket, Ordering, Finance, Rating, Scheduler, Notification | Carries asynchronous commands and integration events; provided as a connection string when published                                                                                                                       | Broker provider, authentication, topic ownership, partitioning, retention, and recovery |
+
+The table distinguishes what the AppHost provisions from the operational configuration still needed to run it. For example, provisioning a PostgreSQL flexible server does not establish backup restoration procedures or per-service access boundaries.
+
+### 7.2.3 External infrastructure
+
+- **Identity provider:** the diagram shows Microsoft Entra ID as the target identity provider. The AppHost still registers a hosted Entra ID instance today (URL and realm are parameters when published; a local container is used when running locally), pending the planned migration. Tenant configuration and network path are not defined here.
+- **Email delivery:** Notification submits email via SMTP. The endpoint, credentials, and sender are AppHost parameters, with a SendGrid endpoint offered as the default; SMTP acceptance does not prove recipient delivery.
+- **AI-related dependencies:** Microsoft Foundry hosts the model deployments, and Presidio runs as container apps beside the services.
+- **Customer client:** the Storefront and Back office run as container apps behind the gateway; CDN, DNS, TLS termination, and ingress policy are not documented.
+
+### Operational details to complete
+
+The following facts are needed before this view can serve as a production operations runbook:
+
+1. Supported environments beyond the Development, Staging, and Production sizing the AppHost applies.
+2. Regions, zones, replica counts, and scaling rules for each container app.
+3. Network zones, ingress and egress, DNS, TLS termination, service-to-service connectivity, and external allowlists.
+4. Stateful-service deployment, persistence, backup, restore, retention, and disaster-recovery procedures.
+5. Secret and identity management, deployment authorization, release/rollback procedure, and observability endpoints.
+6. Availability, capacity, scaling, latency, and recovery targets, with the corresponding operational checks.
+
+Until these details are confirmed in the service and operations documentation, this chapter describes component placement and ownership rather than a complete production topology.
