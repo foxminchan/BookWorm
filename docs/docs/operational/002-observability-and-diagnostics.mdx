@@ -1,0 +1,59 @@
+---
+title: Observability, Aspire Dashboard & Log Analytics
+summary: How to access the managed Aspire Dashboard, query Azure Log Analytics, and trace message flows across BookWorm services.
+owners:
+  - platform-team
+badges:
+  - content: Observability
+    backgroundColor: teal
+    textColor: teal
+---
+
+BookWorm's Azure platform combines the managed **Aspire Dashboard** (`aspire-dashboard` dotNetComponent), **Azure Log Analytics** (90-day retention), and **Application Insights** (linked via `Foundry-project`) to provide unified logs, metrics, and distributed traces.
+
+## Tracing Message Flows Visually
+
+When diagnosing cross-service latency or dropped integration events, start by inspecting the **messages** lens in the architecture graph to identify upstream producers and downstream consumers:
+
+<ArchitectureGraph lens="messages" lensPicker={true} maxHeight="32" />
+
+## Accessing the Managed Aspire Dashboard
+
+The `aca` module deploys `aspire-dashboard` as a `Microsoft.App/managedEnvironments/dotNetComponents` resource inside `cae-<token>`.
+
+1. Open the Azure Portal and navigate to your **Container Apps Environment** (`cae-<token>`).
+2. Under **Settings** or **Monitoring**, open the **Aspire Dashboard** component.
+3. Use the dashboard's **Structured Logs**, **Traces**, and **Metrics** views to inspect OpenTelemetry spans across `gateway`, .NET APIs, Azure Functions (`catalog-ingestion`, `finance`), and Next.js clients.
+
+## Querying Container Logs in Log Analytics
+
+All container app stdout/stderr and ACA platform system logs stream to `law-<token>` (`PerGB2018`, 90-day retention).
+
+### Recent Container Errors Across All Apps
+
+```kusto
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(1h)
+| where Log_s has_any ("Error", "Exception", "Unhandled", "Failed")
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, Log_s
+| order by TimeGenerated desc
+| take 100
+```
+
+### ACA System & Revision Scaling Events
+
+```kusto
+ContainerAppSystemLogs_CL
+| where TimeGenerated > ago(2h)
+| where Reason_s in ("ContainerTerminated", "ImagePullFailed", "UnhealthyProbe", "ReplicaScaledUp")
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, Reason_s, Log_s
+| order by TimeGenerated desc
+```
+
+## AI & Token Telemetry in Application Insights
+
+`Foundry-project` provisions an Application Insights workspace (`Foundry_project_APPLICATION_INSIGHTS_CONNECTION_STRING`) used by [[service|catalog-api]], [[service|catalog-ingestion]], [[service|chat-api]], and [[service|rating-api]]. Use Application Insights **Transaction Search** and **Failures** to inspect:
+
+- Microsoft Foundry model latency and HTTP `429` throttling responses (`model-router`, `Microsoft-Decision-1`, `embed-v-4-0`).
+- Presidio PII redaction round-trip timings between [[service|chat-api]] / [[service|rating-api]] and [[service|PresidioAPI]].
+- Entra Agent Identity ([[agent|book-agent]], [[agent|rating-agent]]) on-behalf-of token exchange failures.

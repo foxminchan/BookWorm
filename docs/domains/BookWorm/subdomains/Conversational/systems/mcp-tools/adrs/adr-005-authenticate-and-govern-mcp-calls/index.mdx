@@ -24,7 +24,7 @@ badges:
 
 ## Context
 
-The shared MCP endpoint exposes Catalog and Reviews data to multiple AI
+The shared MCP endpoint exposes [[domain|catalog]] and [[domain|reviews]] data to multiple AI
 clients. A network-accessible endpoint needs caller authentication and an
 explicit policy boundary so a client cannot invoke capabilities simply
 because they are present on the server. Client-side tool selection alone is
@@ -33,15 +33,15 @@ or call a capability directly after discovery.
 
 ## Decision
 
-The `/mcp` endpoint requires authorization. The default policy requires an
-authenticated caller with the `mcptools_read` scope, and Entra ID token
+The `/mcp` endpoint on [[service|mcp-server]] requires authorization. The default policy requires an
+authenticated caller with the `mcptools_read` scope, and [[system|identity-provider]] token
 introspection and MCP authorization filters are enabled. MCP governance is
 configured with a default-deny policy and allow rules for approved tool
 categories; dangerous tool patterns are denied. These checks are enforced at
 the MCP server boundary for requests and tool invocations.
 
 Clients receive only the tools they configure, in addition to the server-side
-authorization and governance checks. Chat and Rating use service-to-service
+authorization and governance checks. [[service|chat-api]] and [[service|rating-api]] use service-to-service
 token exchange when connecting. Discovery indicates available MCP
 capabilities; it does not grant permission to invoke them.
 

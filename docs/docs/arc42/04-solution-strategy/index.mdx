@@ -23,7 +23,7 @@ BookWorm is organized as independently deployable services aligned with business
 
 ## Fundamental decisions
 
-- **Decompose by business capability.** Catalog, Shopping, Ordering, Reviews, Conversational, and Platform have distinct responsibilities. This makes ownership and change impact easier to identify than a shared business layer would.
+- **Decompose by business capability.** [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]] have distinct responsibilities. This makes ownership and change impact easier to identify than a shared business layer would.
 - **Make cross-capability dependencies explicit.** Use documented service interfaces and integration events with clear ownership. Protocol Buffers are used for defined service interfaces; do not assume that every interaction uses that protocol or that an unspecified broker or transport is in place.
 - **Adopt the repository's .NET foundation.** The documented platform targets .NET 11 and C# 15, with .NET Aspire supporting the cloud-native service model. Use this established setup rather than introducing an incompatible runtime. Production topology and external providers are not specified here.
 - **Validate boundaries and contracts as they evolve.** Combine business and integration tests, schema linting and compatibility checks for defined Protocol Buffer contracts, and architecture fitness checks. Keep documentation aligned with the implementation so drift is visible.

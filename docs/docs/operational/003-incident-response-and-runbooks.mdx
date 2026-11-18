@@ -1,0 +1,83 @@
+---
+title: Day-2 Operations & Incident Runbooks
+summary: Actionable troubleshooting runbooks for Container Apps, passwordless Entra RBAC, Durable Task orchestration, Kafka ingestion, and AI pipelines.
+owners:
+  - platform-team
+badges:
+  - content: Runbook
+    backgroundColor: red
+    textColor: red
+---
+
+Use these runbooks when triaging production incidents across BookWorm's Azure Container Apps and managed dependencies.
+
+## 1. Container App Startup or Image Pull Failures
+
+**Symptoms:** Revision stuck in `Activating` or `Failed`; `ImagePullFailed` or `ContainerTerminated` in `ContainerAppSystemLogs_CL`.
+
+**Diagnosis & Resolution:**
+
+1. Verify `aca_mi` (`mi-<token>`) still holds `AcrPull` (`7f951dda-4ed3-4680-a7ca-43fe172d538d`) on `acr<token>`.
+2. Confirm the target image tag exists in ACR:
+   ```bash
+   az acr repository show-tags --name "<ACR_NAME>" --repository "<SERVICE_NAME>" --orderby time_desc
+   ```
+3. Inspect container console logs for missing startup environment variables (external Kafka, Qdrant, or SMTP parameters).
+4. Because all apps use `activeRevisionsMode: 'Single'`, pushing a fixed image or correcting a secret immediately replaces the active revision.
+
+---
+
+## 2. Passwordless Auth & RBAC Failures (401 / 403)
+
+**Symptoms:** `Login failed for token-identified principal` (PostgreSQL), `NOAUTH` / `NOPERM` (Redis), `403 Forbidden` (Cosmos DB / Storage / Foundry).
+
+**Diagnosis & Resolution:**
+
+1. **PostgreSQL:** Confirm the service's user-assigned managed identity is registered under `flexibleServers/administrators` in `postgres`.
+2. **Redis:** Verify an `accessPolicyAssignments` entry (`accessPolicyName: 'default'`) exists for the service's `principalId` on `redis/default`. Note that access keys are disabled by design.
+3. **Cosmos DB ([[service|rating-api]]):** Verify `rating-identity` holds the custom Cosmos DB Data Role assignment (`rating-roles-cosmos`).
+4. **Storage (`catalog-ingestion`, `finance`):** Azure Functions hosts require **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`), whereas APIs only require **Storage Blob Data Contributor** (`ba92f5b4-2d11-453d-a403-e96b0029c9fe`).
+5. Allow up to 5–10 minutes for newly created Entra RBAC assignments to propagate, then restart the affected Container App revision.
+
+---
+
+## 3. Order Orchestration Stalls (`finance` / Durable Task Scheduler)
+
+**Symptoms:** Checkout sagas stall after order creation; [[service|order-orchestration]] logs connection errors to `finance-taskhub`.
+
+<NodeGraph id="order-orchestration" version="1.0.0" type="service" maxHeight="26" />
+
+**Diagnosis & Resolution:**
+
+1. Verify `durable_task_scheduler_connectionString` (`Authentication=DefaultAzure`) and `finance-taskhub` exist on the `Microsoft.DurableTask/schedulers` resource.
+2. Check that `finance-identity` has Storage Blob Data Owner on `storage` for the Azure Functions host.
+3. Confirm Kafka connectivity between [[service|order-api]], [[service|order-orchestration]], and [[service|notification-api]].
+4. If IP allowlisting was tightened on Durable Task Scheduler, verify the ACA environment's outbound static IPs are included in `ipAllowlist`.
+
+---
+
+## 4. Vector Search & Catalog Ingestion Lag
+
+**Symptoms:** Newly added or updated books do not appear in semantic search; [[service|catalog-ingestion]] fails during batch processing.
+
+<NodeGraph id="catalog-ingestion" version="1.0.0" type="service" maxHeight="26" />
+
+**Diagnosis & Resolution:**
+
+1. Check [[service|sheduler-dashboard]] Quartz job history in [[container|sheduler-database]] to confirm [[event|ProcessVectorBatchIntegrationEvent]] is being published to [[channel|scheduler.process-vector-batch]].
+2. Inspect [[service|catalog-ingestion]] logs for:
+   - **Microsoft Foundry `embed-v-4-0` throttling (HTTP 429):** Check deployment capacity (`capacity: 1` by default) and retry behavior.
+   - **Qdrant Cloud connectivity:** Verify the external [[container|catalog-vector]] connection parameter and API key.
+   - **PostgreSQL / Storage access:** Verify `catalog-ingestion-identity` RBAC on `postgres` and `storage`.
+
+---
+
+## 5. AI Chat & PII Redaction Degradation
+
+**Symptoms:** [[service|chat-api]] or [[service|rating-api]] returns 502/503 or slow responses.
+
+**Diagnosis & Resolution:**
+
+1. Check `presidio-analyzer` and `presidio-anonymizer` ([[service|PresidioAPI]]) container health on internal port `3000`.
+2. Check Microsoft Foundry deployments (`chat` / `model-router`, `decision` / `Microsoft-Decision-1`) for quota exhaustion in Azure AI Foundry.
+3. Verify `entra-agent-identities` Federated Identity Credentials (`bookworm-chat-agent-fic` and rating agent FIC) if on-behalf-of (OBO) token exchange fails when invoking [[service|mcp-server]].

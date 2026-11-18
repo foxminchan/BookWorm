@@ -36,7 +36,7 @@ confuse workflow invocation with direct agent invocation.
 
 ## Decision
 
-Chat exposes the composed interactive workflow through AG-UI at `/ag-ui` and
+[[service|chat-api]] (within [[system|chat-system]]) exposes the composed interactive workflow through AG-UI at `/ag-ui` and
 agent discovery separately at `/agents`. Per-agent A2A endpoints are mapped
 only for agents that register an A2A server. The host maps the documented
 JSON-RPC, HTTP JSON, and gRPC A2A surfaces; the per-agent HTTP A2A endpoints
@@ -44,7 +44,7 @@ require authorization. Discovery identifies registered agents but does not
 grant permission to invoke them.
 
 An AG-UI request runs the composed local workflow; a direct A2A call targets
-an individual registered agent and does not implicitly execute the Router,
+an individual registered agent and does not implicitly execute the [[agent|router-agent]],
 specialist handoffs, or final response formatter. Exposing one protocol does
 not imply that every local or remote agent participates in every protocol.
 

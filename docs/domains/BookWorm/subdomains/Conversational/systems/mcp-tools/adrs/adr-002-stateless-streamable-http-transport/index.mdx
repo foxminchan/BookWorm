@@ -26,7 +26,7 @@ badges:
 
 ## Context
 
-The MCP Server is shared by independent AI clients, including Chat and Rating.
+The [[service|mcp-server]] is shared by independent AI clients, including [[service|chat-api]] and [[service|rating-api]].
 The transport should provide a common network interface without making the
 server the owner of conversational or workflow session state. Consumers have
 their own lifetimes and workflows, so a connection-level server session
@@ -34,7 +34,7 @@ should not be required for them to retrieve a tool, resource, or prompt.
 
 ## Decision
 
-MCP Server uses Streamable HTTP transport configured for stateless sessions
+[[service|mcp-server]] uses Streamable HTTP transport configured for stateless sessions
 at `/mcp`. Clients discover the service endpoint and connect through the
 shared MCP client integration. Any longer-lived conversational state belongs
 to the consuming application, not to an MCP transport session. Requests still

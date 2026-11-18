@@ -29,8 +29,8 @@ badges:
 ## Context
 
 BookWorm needs a conversational entry point that can handle book discovery and
-store-support questions without making the AI workflow the owner of Catalog,
-Reviews, Basket, or Order data. Routing every customer question through one
+store-support questions without making the AI workflow the owner of [[domain|catalog]],
+[[domain|reviews]], [[entity|basket]], or [[entity|order]] data. Routing every customer question through one
 general-purpose agent would also blur specialist responsibilities and make
 tool access harder to constrain. The request path needs explicit boundaries
 between deterministic validation and formatting, specialist selection, and
@@ -38,17 +38,17 @@ the business systems that own the facts being discussed.
 
 ## Decision
 
-The Chat System composes input validation, local handoffs between the Router,
-Book, and QA agents, and response formatting in the interactive AG-UI
+The [[system|chat-system]] composes input validation, local handoffs between the [[agent|router-agent]],
+[[agent|book-agent]], and [[agent|qa-agent]], and response formatting in the interactive AG-UI
 workflow. Validation rejects empty or suspicious input and bounds long
 messages before an agent handoff. Router selects Book Agent for book requests
 and QA Agent for store-policy and service questions. For complex book
 requests, Book Agent may delegate independent research to its specialist
-researchers.
+researchers ([[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]).
 
-The workflow provides assistance, not business transactions. Catalog remains
-the source of book facts, Reviews owns individual feedback, and Shopping and
-Ordering own their respective business state. Chat agents use the approved
+The workflow provides assistance, not business transactions. [[domain|catalog]] remains
+the source of book facts, [[domain|reviews]] owns individual feedback, and [[domain|shopping]] and
+[[domain|ordering]] own their respective business state. Chat agents use the approved
 read capabilities available to them and do not mutate those records or make
 the conversation a system of record.
 

@@ -9,20 +9,20 @@ badges:
     textColor: blue
 ---
 
-BookWorm provides an online bookstore experience. This business context treats the complete platform as a black box and focuses on the information and outcomes exchanged with its environment. The interactions below summarize the documented scope; they do not define detailed provider contracts.
+[[domain|BookWorm]] provides an online bookstore experience. This business context treats the complete platform as a black box and focuses on the information and outcomes exchanged with its environment. The interactions below summarize the documented scope; they do not define detailed provider contracts.
 
 <MermaidFileLoader file="mermaids/bookworm-business-context.mmd" />
 
 ## Business data exchanges
 
-| Communication partner     | Information sent to BookWorm                                                | Information or outcome from BookWorm                                                               |
-| ------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Customers and other users | Search and browse requests, purchase intent, reviews, and support questions | Product information, commerce and order outcomes, customer guidance, and feedback journey outcomes |
-| Identity provider         | Identity or token verification result                                       | Authentication or verification request                                                             |
-| Payment provider          | Not specified in repository-level sources                                   | Payment settlement interaction                                                                     |
-| Fulfillment provider      | Not specified in repository-level sources                                   | Fulfillment handoff                                                                                |
-| Email delivery provider   | Not specified in repository-level sources                                   | Notification for delivery                                                                          |
-| AI model hosting          | Not specified in repository-level sources                                   | Model request from conversational assistance                                                       |
+| Communication partner                             | Information sent to BookWorm                                                | Information or outcome from BookWorm                                                               |
+| ------------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Customers and other users                         | Search and browse requests, purchase intent, reviews, and support questions | Product information, commerce and order outcomes, customer guidance, and feedback journey outcomes |
+| Identity provider ([[system\|identity-provider]]) | Identity or token verification result                                       | Authentication or verification request                                                             |
+| Payment provider                                  | Not specified in repository-level sources                                   | Payment settlement interaction                                                                     |
+| Fulfillment provider                              | Not specified in repository-level sources                                   | Fulfillment handoff                                                                                |
+| Email delivery provider ([[system\|sendgrid]])    | Not specified in repository-level sources                                   | Notification for delivery                                                                          |
+| AI model hosting                                  | Not specified in repository-level sources                                   | Model request from conversational assistance                                                       |
 
 The identity, payment, fulfillment, email, and model-hosting rows describe neighboring-system roles already identified for the platform. Provider-specific formats, error cases, and whether a result is returned synchronously or asynchronously are not specified here.
 
@@ -39,10 +39,10 @@ The identity, payment, fulfillment, email, and model-hosting rows describe neigh
 The documented commerce journey can be summarized as a sequence of business decisions and commitments:
 
 1. A customer discovers or searches for a book.
-2. The catalog provides product information for the customer's decision.
-3. Shopping captures purchase intent and prepares checkout.
-4. Ordering accepts the purchase and manages its lifecycle.
-5. Shared platform capabilities support notifications and operational follow-up.
-6. Reviews and conversational assistance support customer feedback and future discovery.
+2. [[domain|catalog]] provides product information for the customer's decision.
+3. [[domain|shopping]] captures purchase intent and prepares checkout.
+4. [[domain|ordering]] accepts the purchase and manages its lifecycle.
+5. Shared [[domain|platform]] capabilities support notifications and operational follow-up.
+6. [[domain|reviews]] and [[domain|conversational]] assistance support customer feedback and future discovery.
 
 This view makes BookWorm more than a sales channel: it combines product information, purchasing, order state, customer feedback, assistance, and operational support. The repository does not establish a complete inventory of third-party actors; owners should confirm providers and exchanges before treating this summary as an interface specification.

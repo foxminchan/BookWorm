@@ -58,16 +58,16 @@ assistance <--> model : Model requests and responses\n(channel unspecified)
 
 ## Technical neighbors and mechanisms
 
-| Neighbor or mechanism                    | Relationship and known interaction                                                       | Details not established here                                            |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| User-facing clients                      | Initiate customer journeys and consume platform capabilities                             | Complete client inventory, protocols, and endpoint definitions          |
-| Independently deployable services        | Implement platform capabilities and interact through owned contracts                     | Complete service topology and all pairwise interactions                 |
-| Integration messaging                    | Carries integration events between capabilities                                          | Broker, transport, event schemas, routing, and delivery guarantees      |
-| Protocol Buffer interfaces               | Used for defined service communication contracts                                         | Which interfaces use them and their endpoint or transport configuration |
-| Identity provider                        | Supports authentication and token verification                                           | Provider, protocol, and deployment arrangement                          |
-| Payment provider                         | Supports payment settlement                                                              | Provider, protocol, and transaction details                             |
-| Fulfillment, email, and AI model hosting | External capabilities used for fulfillment, notifications, and conversational assistance | Provider inventory, protocols, and operational guarantees               |
-| Shared platform infrastructure           | Supplies cross-cutting capabilities; .NET Aspire is part of the documented platform      | Full component inventory and production deployment topology             |
+| Neighbor or mechanism                                           | Relationship and known interaction                                                       | Details not established here                                            |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| User-facing clients                                             | Initiate customer journeys and consume platform capabilities                             | Complete client inventory, protocols, and endpoint definitions          |
+| Independently deployable services                               | Implement platform capabilities and interact through owned contracts                     | Complete service topology and all pairwise interactions                 |
+| Integration messaging                                           | Carries integration events between capabilities                                          | Broker, transport, event schemas, routing, and delivery guarantees      |
+| Protocol Buffer interfaces                                      | Used for defined service communication contracts                                         | Which interfaces use them and their endpoint or transport configuration |
+| Identity provider ([[system\|identity-provider]])               | Supports authentication and token verification                                           | Provider, protocol, and deployment arrangement                          |
+| Payment provider                                                | Supports payment settlement                                                              | Provider, protocol, and transaction details                             |
+| Fulfillment, email ([[system\|sendgrid]]), and AI model hosting | External capabilities used for fulfillment, notifications, and conversational assistance | Provider inventory, protocols, and operational guarantees               |
+| Shared platform infrastructure                                  | Supplies cross-cutting capabilities; .NET Aspire is part of the documented platform      | Full component inventory and production deployment topology             |
 
 ## Business interface to technical channel
 

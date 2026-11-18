@@ -11,16 +11,16 @@ badges:
 
 ## 6.2 Catalog search-index maintenance
 
-Catalog book data is authoritative; its vector search index is derived and updated asynchronously. A Catalog write does not wait for embedding generation or Qdrant. Database triggers durably queue affected books, and Scheduler invokes a bounded ingestion batch every five minutes.
+[[domain|catalog]] book data is authoritative; its vector search index ([[container|catalog-vector]]) is derived and updated asynchronously. A Catalog write does not wait for embedding generation or Qdrant. Database triggers durably queue affected books, and [[service|sheduler-dashboard]] invokes a bounded ingestion batch every five minutes.
 
 <MermaidFileLoader file="mermaids/catalog-search-index-maintenance.mmd" />
 
 ### Batch interaction
 
-1. Catalog API commits a product change. Database triggers atomically add or replace the affected book's pending vector revision.
-2. The Scheduler's `ProcessVectorBatchJob` obtains a client-credentials access token through the configured Entra ID token exchange and calls the Catalog Ingestion endpoint with the bearer token.
-3. Catalog Ingestion verifies that the token identifies Scheduler, acquires a PostgreSQL advisory lock, and reads up to 200 pending records.
-4. For each record, the worker builds searchable content, generates an embedding for an active book, and upserts it to Qdrant. Missing or soft-deleted books have their vector record removed.
+1. [[service|catalog-api]] commits a product change to [[container|catalog-database]]. Database triggers atomically add or replace the affected book's pending vector revision.
+2. The Scheduler's `ProcessVectorBatchJob` obtains a client-credentials access token through the configured [[system|identity-provider]] token exchange and calls the [[service|catalog-ingestion]] endpoint with the bearer token.
+3. [[service|catalog-ingestion]] verifies that the token identifies Scheduler, acquires a PostgreSQL advisory lock, and reads up to 200 pending records.
+4. For each record, the worker builds searchable content, generates an embedding for an active book, and upserts it to [[container|catalog-vector]]. Missing or soft-deleted books have their vector record removed.
 5. A queue item is acknowledged only if its revision is still the one processed. A newer concurrent change remains pending for a later batch.
 
 ### Failure and recovery

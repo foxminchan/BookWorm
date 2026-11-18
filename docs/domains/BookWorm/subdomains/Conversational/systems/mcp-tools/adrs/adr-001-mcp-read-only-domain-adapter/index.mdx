@@ -26,7 +26,7 @@ badges:
 
 ## Context
 
-AI clients need access to current Catalog and Reviews information and reusable
+AI clients need access to current [[domain|catalog]] and [[domain|reviews]] information and reusable
 analysis prompts. Giving those clients direct access to domain databases or
 write operations would couple model interactions to persistence and weaken
 the ownership boundaries of Catalog and Reviews. A shared integration surface
@@ -35,7 +35,7 @@ systems remain responsible for the underlying data.
 
 ## Decision
 
-The MCP Tools system provides a shared adapter exposing read-only
+The [[system|mcp-tools]] system ([[service|mcp-server]]) provides a shared adapter exposing read-only
 capabilities for AI clients. It does not expose domain write operations or
 become the system of record for Catalog or Reviews data. Its tools retrieve
 information, its resources expose URI-addressed domain data, and its prompts
@@ -43,7 +43,7 @@ provide reusable task instructions; none of those primitives changes domain
 records.
 
 MCP clients select only the capabilities they need, subject to server-side
-authentication, authorization, and governance. Catalog and Rating remain
+authentication, authorization, and governance. [[service|catalog-api]] and [[service|rating-api]] remain
 responsible for their respective API behavior and data ownership.
 
 ## Consequences

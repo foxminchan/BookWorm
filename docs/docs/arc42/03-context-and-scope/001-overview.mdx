@@ -9,7 +9,7 @@ badges:
     textColor: blue
 ---
 
-The system under consideration is the complete BookWorm platform. This section intentionally stays at the platform boundary: it describes users, neighboring capabilities, and technical interaction styles without assigning detailed responsibilities to a particular domain or service.
+The system under consideration is the complete [[domain|BookWorm]] platform. This section intentionally stays at the platform boundary: it describes users, neighboring capabilities, and technical interaction styles without assigning detailed responsibilities to a particular domain or service.
 
 ## System boundary
 
@@ -19,17 +19,17 @@ The system in scope is the BookWorm commerce platform as a whole, not an individ
 
 ## In-scope behavior
 
-| Capability                   | Included behavior                                                         |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| Catalog and shopping         | Product discovery, search, browsing, basket creation, and checkout intent |
-| Ordering                     | Acceptance of purchases and management of order state                     |
-| Reviews                      | Customer review and rating journeys                                       |
-| Conversational assistance    | AI-assisted product discovery and customer support                        |
-| Shared platform capabilities | Notifications, scheduling, and operational support                        |
+| Capability                                   | Included behavior                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [[domain\|catalog]] and [[domain\|shopping]] | Product discovery, search, browsing, [[entity\|basket]] creation, and checkout intent |
+| [[domain\|ordering]]                         | Acceptance of purchases and management of [[entity\|order]] state                     |
+| [[domain\|reviews]]                          | Customer review and rating journeys                                                   |
+| [[domain\|conversational]]                   | AI-assisted product discovery and customer support                                    |
+| Shared [[domain\|platform]] capabilities     | Notifications, scheduling, and operational support                                    |
 
 ## Outside the boundary
 
-Identity, payment processing, fulfillment, email delivery, and AI model hosting are neighboring systems, not BookWorm-owned business capabilities. The platform may depend on them, but their internal behavior and operation are outside this system boundary.
+Identity ([[system|identity-provider]]), payment processing, fulfillment, email delivery ([[system|sendgrid]]), and AI model hosting are neighboring systems, not BookWorm-owned business capabilities. The platform may depend on them, but their internal behavior and operation are outside this system boundary.
 
 ## Context assumptions and open points
 

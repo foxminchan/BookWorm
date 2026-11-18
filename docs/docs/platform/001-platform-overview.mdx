@@ -1,0 +1,64 @@
+---
+title: Azure Platform & Topology Overview
+summary: Reference architecture for BookWorm's subscription-scoped Azure Bicep deployment, shared platform services, and network ingress boundaries.
+owners:
+  - platform-team
+badges:
+  - content: Platform Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+BookWorm's Azure infrastructure is synthesized by .NET Aspire from `BookWorm.AppHost` as a subscription-scoped deployment. It provisions a dedicated resource group containing an Azure Container Apps (ACA) environment, managed data and AI services, passwordless Microsoft Entra ID authentication, and per-service user-assigned managed identities.
+
+## Interactive Platform Topology
+
+Use the interactive graph below to explore how BookWorm's domains, systems, and services connect across the platform. Switch lenses using the picker to inspect **services**, **systems**, **domains**, or **messages**.
+
+<ArchitectureGraph lens="services" lensPicker={true} maxHeight="35" />
+
+## Deployment Scope & Naming Convention
+
+The root deployment targets `targetScope = 'subscription'` and provisions a dedicated resource group (`resourceGroupName`) in the specified `location`.
+
+| Parameter              | Purpose                                                       | Default / Notes                              |
+| :--------------------- | :------------------------------------------------------------ | :------------------------------------------- |
+| `resourceGroupName`    | Target Azure resource group created at subscription scope     | Required                                     |
+| `location`             | Azure region for all regional resources                       | Required                                     |
+| `principalId`          | Object ID of the deploying user or CI/CD service principal    | Required (used for ACR/Foundry project RBAC) |
+| `tenantResourceSuffix` | Optional suffix appended to Entra ID app display/unique names | `''` (empty string)                          |
+
+Most Azure resources derive a deterministic suffix using `uniqueString(resourceGroup().id)` (`resourceToken`) so deployments are idempotent within a resource group.
+
+## Shared Platform Layer
+
+The `aca-acr` and `aca` Bicep modules establish the shared compute, registry, and observability backbone:
+
+| Module    | Azure Resource                             | Configuration                                                      |
+| :-------- | :----------------------------------------- | :----------------------------------------------------------------- |
+| `aca-acr` | Azure Container Registry (`acr<token>`)    | Standard SKU container image registry                              |
+| `aca`     | Managed Identity (`mi-<token>`)            | Assigned `AcrPull` (`7f951dda-4ed3-4680-a7ca-43fe172d538d`) on ACR |
+| `aca`     | Log Analytics Workspace (`law-<token>`)    | `PerGB2018` SKU with **90-day** log retention                      |
+| `aca`     | Container Apps Environment (`cae-<token>`) | `Consumption` workload profile wired to Log Analytics              |
+| `aca`     | Aspire Dashboard (`aspire-dashboard`)      | Managed `dotNetComponents` (`AspireDashboard`) in ACA              |
+
+## Network & Ingress Boundary
+
+Only the YARP API Gateway (`gateway`) is exposed to external traffic. All other 14 container apps—including the Next.js frontends (`storefront`, `backoffice`), microservices, Azure Functions workers, and PII sidecars—use **internal-only** ACA ingress (`external: false`).
+
+- **External entry point:** `https://gateway.<AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN>` on port `5000`.
+- **Internal service-to-service URLs:** `https://<app>.internal.<AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN>`.
+- **Gateway routing:** YARP terminates external HTTP traffic and routes paths (`/chatting`, `/rating`, `/ordering`, `/basket`, `/catalog`, `/backoffice`, `/`) to internal container apps with `X-Forwarded-*` headers.
+
+## Domain Map
+
+For a high-level view of the [[domain|BookWorm]] domain and its subsystems, inspect the domain node graph below:
+
+<NodeGraph id="BookWorm" version="1.0.0" type="domain" mode="simple" maxHeight="30" />
+
+## Related Documentation
+
+- [[doc|platform/002-compute-and-container-apps]] — Inventory of all 15 Container Apps, ports, and scaling settings.
+- [[doc|platform/003-data-ai-and-messaging-resources]] — Specifications for PostgreSQL, Redis, Cosmos DB, Storage, Durable Task Scheduler, and Microsoft Foundry.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Entra ID app registration, Agent Identities, and Managed Identity RBAC matrix.
+- [[doc|arc42/07-deployment-view/001-infrastructure-level-1]] — High-level arc42 deployment view.

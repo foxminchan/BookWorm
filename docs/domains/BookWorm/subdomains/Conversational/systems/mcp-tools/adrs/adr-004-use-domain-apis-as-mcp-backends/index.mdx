@@ -30,7 +30,7 @@ badges:
 
 ## Context
 
-Catalog owns book metadata and Reviews owns individual feedback. Direct MCP
+[[domain|catalog]] owns book metadata and [[domain|reviews]] owns individual feedback. Direct MCP
 database access would bypass those systems' service contracts and couple the
 shared integration to their storage schemas. The adapter needs to combine
 data from multiple domains without becoming responsible for domain-specific
@@ -38,8 +38,8 @@ query behavior, authorization, or persistence.
 
 ## Decision
 
-MCP Server retrieves Catalog data through Catalog API and review data through
-Rating API. It does not access the Catalog or Rating databases directly.
+[[service|mcp-server]] retrieves Catalog data through [[service|catalog-api]] and review data through
+[[service|rating-api]]. It does not access [[container|catalog-database]] or [[container|rating-database]] directly.
 Domain APIs remain responsible for their own data access and behavior. MCP
 serializes the results for its tools and resources and reports upstream
 failures explicitly rather than treating an unavailable API as an empty

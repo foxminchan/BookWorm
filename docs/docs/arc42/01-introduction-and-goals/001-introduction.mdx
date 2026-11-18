@@ -22,20 +22,20 @@ The primary business goal is to provide a dependable online bookstore experience
 - handing an accepted purchase to the capability that owns the order lifecycle;
 - supporting customer feedback and book-related assistance without transferring ownership of product or order data.
 
-These drivers require the platform to preserve the meaning and ownership of data as it moves between independently responsible capabilities. For example, Catalog remains authoritative for book facts, while Ordering owns an order after checkout acceptance.
+These drivers require the platform to preserve the meaning and ownership of data as it moves between independently responsible capabilities. For example, [[domain|catalog]] remains authoritative for book facts, while [[domain|ordering]] owns an [[entity|order]] after checkout acceptance.
 
 ## System scope
 
-The system under consideration includes these BookWorm capabilities:
+The system under consideration includes these [[domain|BookWorm]] capabilities:
 
-- **Catalog** owns book information, pricing, and availability.
-- **Shopping** owns the basket and checkout experience.
-- **Ordering** owns an order's lifecycle after acceptance.
-- **Reviews** owns customer feedback associated with books.
-- **Conversational** provides book discovery and store-assistance experiences.
-- **Platform** supplies shared capabilities such as scheduled processing and email notification delivery.
+- **[[domain|catalog]]** owns book information, pricing, and availability.
+- **[[domain|shopping]]** owns the [[entity|basket]] and checkout experience.
+- **[[domain|ordering]]** owns an [[entity|order]]'s lifecycle after acceptance.
+- **[[domain|reviews]]** owns customer [[entity|feedback]] associated with books.
+- **[[domain|conversational]]** provides book discovery and store-assistance experiences.
+- **[[domain|platform]]** supplies shared capabilities such as scheduled processing and email notification delivery.
 
-The platform integrates with systems and providers for identity, payment settlement, shipping execution, email delivery, and AI model hosting. Those neighbors and their interfaces matter to BookWorm, but their internal business logic and operations are outside this system's scope. Their relationships to BookWorm are described in [[doc|arc42/03-context-and-scope]] and in the relevant system documentation.
+The platform integrates with systems and providers for identity ([[system|identity-provider]]), payment settlement, shipping execution, email delivery ([[system|sendgrid]]), and AI model hosting. Those neighbors and their interfaces matter to BookWorm, but their internal business logic and operations are outside this system's scope. Their relationships to BookWorm are described in [[doc|arc42/03-context-and-scope]] and in the relevant system documentation.
 
 The following use case diagram summarizes BookWorm's principal customer-facing goals and external system interactions. It is a high-level view, not a workflow or interface specification:
 
