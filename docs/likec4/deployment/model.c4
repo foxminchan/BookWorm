@@ -43,21 +43,21 @@ model {
 
     storefront = container 'Storefront' {
       technology 'Next.js (Bun)'
-      description 'Customer-facing web client.'
+      description 'Customer-facing web client (internal ingress behind API gateway).'
       style {
         icon tech:nextjs-icon
       }
     }
     backoffice = container 'Back office' {
       technology 'Next.js (Bun)'
-      description 'Administrative web client.'
+      description 'Administrative web client (internal ingress behind API gateway).'
       style {
         icon tech:nextjs-icon
       }
     }
     gateway = container 'API gateway' {
       technology 'YARP'
-      description 'Routes client traffic to chatting, rating, ordering, basket, and catalog.'
+      description 'Sole external ingress; routes /, /backoffice, /entra, /chatting, /rating, /ordering, /basket, and /catalog.'
       style {
         icon bootstrap:signpost-split
       }
@@ -156,48 +156,48 @@ model {
 
     redis = database 'Redis' {
       technology 'Azure Managed Redis'
-      description 'Basket persistence and cache for Catalog, Ordering, and Rating.'
+      description 'Balanced_B5 (HA, Entra ID auth, access keys disabled); Basket state and cache for Catalog, Ordering, and Rating.'
       style {
         icon azure:azure-managed-redis
       }
     }
     catalogDb = database 'catalogdb' {
-      technology 'PostgreSQL'
+      technology 'PostgreSQL 16'
       description 'Includes the durable catalog-ingestion queue.'
       style {
         icon tech:postgresql
       }
     }
     orderingDb = database 'orderingdb' {
-      technology 'PostgreSQL'
+      technology 'PostgreSQL 16'
       style {
         icon tech:postgresql
       }
     }
     ratingDb = database 'ratingdb' {
       technology 'Azure Cosmos DB'
-      description 'Feedbacks container partitioned by /bookId.'
+      description 'Serverless account (local auth disabled); feedbacks container partitioned by /bookId.'
       style {
         icon azure:azure-cosmos-db
       }
     }
     durableTaskScheduler = database 'Durable Task Scheduler' {
       technology 'Azure Durable Task Scheduler'
-      description 'Finance task hub for OrderOrchestrator state and timers.'
+      description 'Consumption SKU task hub (finance-taskhub) for OrderOrchestrator state and timers.'
       style {
         icon azure:function-apps
       }
     }
     schedulerDb = database 'schedulerdb' {
-      technology 'PostgreSQL'
+      technology 'PostgreSQL 16'
       description 'Quartz schedules and execution state.'
       style {
         icon tech:postgresql
       }
     }
     blobStorage = database 'Azure Storage' {
-      technology 'Blob and queue storage'
-      description 'Catalog and Chat session blob containers plus Azure Functions host storage.'
+      technology 'Standard_GZRS (shared key disabled)'
+      description 'catalog-blob and chatting-blob containers plus Azure Functions host storage.'
       style {
         icon azure:storage-accounts
       }
@@ -206,13 +206,13 @@ model {
 
   kafka = broker 'Kafka broker' {
     technology 'Kafka'
-    description 'Carries asynchronous commands and integration events; supplied to the AppHost as a connection string when published.'
+    description 'Carries asynchronous commands and integration events; supplied via broker connection string parameter.'
     style {
       icon tech:kafka-icon
     }
   }
   identity = system 'Microsoft Entra ID' {
-    description 'Identity provider that issues and verifies OAuth access tokens and Entra Agent Identities (OBO).'
+    description 'Issues OAuth tokens and Entra Agent Identities (OBO); app registration, roles, scopes, and agent blueprints are provisioned via Microsoft Graph.'
     style {
       icon azure:entra-verified-id
     }
@@ -224,14 +224,16 @@ model {
     }
   }
   foundry = system 'Microsoft Foundry' {
-    description 'Hosts the chat (model router), decision (Microsoft Decision 1), and embedding (Cohere Embed v4) model deployments.'
+    description 'AIServices S0 with Foundry-project + Application Insights; hosts chat (model-router), decision (Microsoft-Decision-1), and embedding (embed-v-4-0).'
     style {
       icon azure:ai-studio
     }
   }
 
-  customer -> bookworm.storefront 'uses'
-  staff -> bookworm.backoffice 'uses'
+  customer -> bookworm.gateway 'accesses Storefront'
+  staff -> bookworm.gateway 'accesses Back office'
+  bookworm.gateway -> bookworm.storefront 'routes /'
+  bookworm.gateway -> bookworm.backoffice 'routes /backoffice'
   bookworm.storefront -> bookworm.gateway 'calls APIs'
   bookworm.backoffice -> bookworm.gateway 'calls APIs'
   bookworm.storefront -> identity 'authenticates users'
@@ -300,7 +302,7 @@ deployment {
       icon azure:resource-groups
     }
 
-    cloudPlatform aca 'Azure Container Apps environment' {
+    cloudPlatform aca 'Azure Container Apps environment (Consumption, min 1 replica)' {
       style {
         icon azure:container-apps-environments
       }
@@ -330,7 +332,7 @@ deployment {
       }
     }
 
-    managedService postgres 'Azure Database for PostgreSQL flexible server' {
+    managedService postgres 'Azure Database for PostgreSQL flexible server (Standard_D4ds_v5, ZoneRedundant HA)' {
       style {
         icon azure:azure-database-postgre-sql-server
       }
