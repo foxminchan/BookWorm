@@ -3,7 +3,7 @@ using BookWorm.Chassis.CQRS;
 namespace BookWorm.Catalog.Features.Books.Create;
 
 [Transactional]
-public sealed class CreateBookCommand : ICommand<BookId>, IBookCommand
+public sealed class CreateBookCommand : ICommand<BookId>, IBookInput
 {
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;

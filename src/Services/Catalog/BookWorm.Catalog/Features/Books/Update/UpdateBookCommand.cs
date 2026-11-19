@@ -4,7 +4,7 @@ using BookWorm.Chassis.Utilities.Guards;
 namespace BookWorm.Catalog.Features.Books.Update;
 
 [Transactional]
-public sealed class UpdateBookCommand : ICommand, IHasExpectedVersion, IBookCommand
+public sealed class UpdateBookCommand : ICommand, IHasExpectedVersion, IBookInput
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;

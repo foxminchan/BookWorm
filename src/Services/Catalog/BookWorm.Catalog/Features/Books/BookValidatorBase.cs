@@ -1,6 +1,6 @@
 namespace BookWorm.Catalog.Features.Books;
 
-internal interface IBookCommand
+internal interface IBookInput
 {
     string Name { get; }
     string Description { get; }
@@ -13,7 +13,7 @@ internal interface IBookCommand
 }
 
 internal abstract class BookValidatorBase<TCommand> : AbstractValidator<TCommand>
-    where TCommand : IBookCommand
+    where TCommand : IBookInput
 {
     protected BookValidatorBase()
     {
