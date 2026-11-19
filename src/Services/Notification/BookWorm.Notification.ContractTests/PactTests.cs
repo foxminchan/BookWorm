@@ -1,4 +1,4 @@
-using BookWorm.Testing;
+using BookWorm.Testing.Pact;
 
 namespace BookWorm.Notification.ContractTests;
 

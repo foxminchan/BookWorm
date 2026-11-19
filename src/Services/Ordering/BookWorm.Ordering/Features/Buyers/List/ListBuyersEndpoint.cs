@@ -7,10 +7,8 @@ internal sealed class ListBuyersEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                "/buyers",
-                async ([AsParameters] ListBuyersQuery query, ISender sender) =>
-                    await HandleAsync(query, sender)
+        app.MapGet("/buyers", async ([AsParameters] ListBuyersQuery query, ISender sender) =>
+                await HandleAsync(query, sender)
             )
             .ProducesGet<PagedResult<BuyerDto>>()
             .WithPaginationHeaders()

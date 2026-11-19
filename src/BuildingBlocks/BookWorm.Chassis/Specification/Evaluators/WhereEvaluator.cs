@@ -11,9 +11,8 @@ internal sealed class WhereEvaluator : IEvaluator
     {
         return specification.WhereExpressions is null
             ? query
-            : specification.WhereExpressions.Aggregate(
-                query,
-                (current, info) => current.Where(info.Filter)
+            : specification.WhereExpressions.Aggregate(query, (current, info) =>
+                current.Where(info.Filter)
             );
     }
 }

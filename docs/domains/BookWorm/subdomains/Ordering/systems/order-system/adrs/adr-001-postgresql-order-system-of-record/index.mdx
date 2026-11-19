@@ -1,0 +1,86 @@
+---
+id: adr-001-postgresql-order-system-of-record
+name: "ADR-001: Use PostgreSQL as the Order system of record"
+version: 1.0.0
+summary: PostgreSQL is the authoritative store for Buyer profiles and accepted Orders; Redis and read projections do not own this business data.
+status: accepted
+date: 2026-11-03
+owners:
+  - business-strategy
+appliesTo:
+  - type: system
+    id: order-system
+  - type: service
+    id: order-api
+  - type: container
+    id: order-database
+  - type: container
+    id: order-cache
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+The Order System uses PostgreSQL for Buyer profiles, accepted Orders, Order
+Items, and Order event streams. It also uses Redis for locks, idempotency
+markers, and cached responses, so the boundary between authoritative business
+data and transient coordination data must remain explicit. Order history and
+current lifecycle state must also be distinguishable from read-optimized
+projections that can be rebuilt or lag behind the persisted aggregate.
+
+## Decision
+
+[[container|order-database]] is the system of record for Buyer profiles and
+accepted Order data, including purchase-time Order Items and persisted Order
+events. EF Core persists the domain records, Marten stores Order event streams
+and maintains read projections, and Wolverine persists message envelopes
+against the Ordering database. The EF Core Order aggregate remains
+authoritative for current Order status; derived projections do not replace it.
+
+[[container|order-cache]] is non-authoritative. Redis supports coordination
+such as Buyer-scoped Order creation locks and idempotency markers, as well as
+cached responses, but must not be treated as the source of truth for an Order
+or Buyer. Loss of cache data must not remove persisted business records.
+
+## Consequences
+
+- Order and Buyer reads rely on PostgreSQL for authoritative state.
+- Redis loss can affect coordination, duplicate-request detection, or cached
+  responses, but does not remove persisted Orders or Buyer profiles.
+- Cached responses and read projections must not replace the persisted Order
+  aggregate as the source for business status.
+- PostgreSQL availability, schema compatibility, and the Ordering persistence
+  configuration are required to create and read authoritative Buyer and Order
+  data.
+- Marten projections are read models. Their freshness and rebuild behavior
+  must not be confused with the status or purchase snapshot stored by the
+  Order aggregate.
+- Redis is more than a disposable read cache in Ordering: its availability
+  can affect lock acquisition and request deduplication even though it does
+  not own Order data.
+- Redis idempotency markers are not an atomic exactly-once guarantee. A
+  marker may outlive a failed request, and Redis loss can remove duplicate
+  detection during the configured expiration period.
+
+## Alternatives considered
+
+### Treat Redis as the Order system of record
+
+This would put accepted purchase data in transient coordination storage and
+make Order ownership dependent on cache persistence and availability. Redis
+remains an optimization and coordination dependency, not an authority.
+
+### Use read projections as the authoritative status source
+
+Projections are derived from persisted records and may be updated
+asynchronously. The persisted Order aggregate remains the source for current
+business status.
+
+### Share another system's database
+
+This would couple Order persistence to another domain's storage schema and
+blur ownership of Buyer and Order records. Ordering maintains its own
+PostgreSQL boundary.

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
 
 namespace BookWorm.Ordering.Features.Buyers.Get;
@@ -17,7 +17,7 @@ internal sealed class GetBuyerHandler(IBuyerRepository repository, ClaimsPrincip
     {
         var buyerId = claimsPrincipal.HasRole(Authorization.Roles.Admin)
             ? request.Id
-            : (Guid)claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+            : (Guid)claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
         var result = await repository.GetByIdAsync(buyerId, cancellationToken);
 

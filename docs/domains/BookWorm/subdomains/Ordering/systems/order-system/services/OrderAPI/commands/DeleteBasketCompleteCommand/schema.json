@@ -1,0 +1,29 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "DeleteBasketCompleteCommand",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id", "creationDate", "orderId", "totalMoney"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Unique identifier assigned to the integration message."
+		},
+		"creationDate": {
+			"type": "string",
+			"format": "date-time",
+			"description": "UTC timestamp when the integration message was created."
+		},
+		"orderId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the Order whose basket cleanup completed."
+		},
+		"totalMoney": {
+			"type": "number",
+			"format": "double",
+			"description": "Total purchase amount associated with the Order."
+		}
+	}
+}

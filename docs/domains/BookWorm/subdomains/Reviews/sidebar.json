@@ -1,0 +1,31 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Related domains",
+			"icon": "Network",
+			"pages": ["[[domain|catalog]]", "[[domain|shopping]]"]
+		},
+		{
+			"title": "Guides",
+			"icon": "BookOpen",
+			"pages": ["[[doc|guides/feedback-lifecycle]]"]
+		},
+		{
+			"title": "Engineering",
+			"icon": "Wrench",
+			"pages": ["[[doc|engineering/feedback-contracts-and-integration]]"]
+		},
+		"$architecture",
+		"$systems",
+		"$agents",
+		"$entities",
+		{
+			"title": "Runbooks",
+			"icon": "Siren",
+			"pages": ["[[doc|runbooks/catalog-rating-projection-failure]]"]
+		},
+		"$decision-records",
+		"$owners"
+	]
+}

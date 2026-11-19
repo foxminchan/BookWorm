@@ -1,0 +1,83 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element domain
+  element system
+  element container
+}
+
+model {
+  customer = actor 'Customer' {
+    description 'Submits bookstore and book-discovery requests.'
+  }
+
+  idp = system 'Identity Provider' {
+    description 'External identity infrastructure for protected BookWorm APIs.'
+
+    oauthApi = container 'OAuth API' {
+      technology 'OAuth 2.0'
+      description 'Authenticates and validates tokens for protected service requests.'
+    }
+  }
+
+  presidio = system 'Data Privacy (Presidio)' {
+    description 'External system for detecting and anonymizing personally identifiable information.'
+  }
+
+  catalog = system 'Product Catalog System' {
+    description 'BookWorm system that owns book, category, and author data.'
+  }
+
+  rating = system 'Rating System' {
+    description 'BookWorm system that owns customer feedback and hosts Rating agents.'
+  }
+
+  conversational = domain 'Conversational bounded context' {
+    description 'Routes customer requests through privacy-filtered agents for book discovery and store assistance.'
+
+    chat = system 'Chat System' {
+      description 'Hosts the customer-facing workflow and specialist AI agents.'
+    }
+
+    mcp = system 'MCP Tools' {
+      description 'Shared read-only MCP server for Catalog and Rating data and reusable prompts.'
+    }
+
+    chat -> mcp 'retrieves Catalog data through MCP' {
+      technology 'MCP over Streamable HTTP'
+    }
+
+    mcp -> catalog 'reads book, category, and author data' {
+      technology 'Catalog API'
+    }
+
+    chat -> presidio 'analyzes and anonymizes agent input and output' {
+      technology 'HTTP'
+    }
+
+    chat -> rating 'discovers and calls Rating agents' {
+      technology 'A2A'
+    }
+
+    mcp -> rating 'reads book feedback through the Rating API' {
+      technology 'HTTP API'
+    }
+
+    rating -> mcp 'retrieves book data and reusable analysis prompts' {
+      technology 'MCP over Streamable HTTP'
+    }
+
+    chat -> idp.oauthApi 'validates tokens for protected agent-to-agent endpoints' {
+      technology 'OAuth 2.0 token introspection'
+    }
+
+    mcp -> idp.oauthApi 'authenticates and authorizes MCP requests' {
+      technology 'OAuth 2.0 token introspection'
+    }
+  }
+
+  customer -> conversational.chat 'submits requests through AG-UI'
+}

@@ -20,60 +20,66 @@ public static class CorsExtensions
             {
                 services.AddCors(options =>
                 {
-                    options.AddPolicy(
-                        CorsConstants.AllowAllCorsPolicy,
-                        policyBuilder =>
-                        {
-                            policyBuilder
-                                .SetIsOriginAllowed(origin =>
-                                    new Uri(origin).Host == Network.Localhost
-                                )
-                                .AllowAnyHeader()
-                                .AllowAnyMethod()
-                                .AllowCredentials();
-                        }
-                    );
+                    options.AddPolicy(CorsConstants.AllowAllCorsPolicy, policyBuilder =>
+                    {
+                        policyBuilder
+                            .SetIsOriginAllowed(IsLocalhostOrigin)
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    });
                 });
             }
             else
             {
                 builder.Configure<CorsSettings>(CorsSettings.ConfigurationSection);
 
-                var corsSettings =
-                    builder
-                        .Configuration.GetRequiredSection(CorsSettings.ConfigurationSection)
-                        .Get<CorsSettings>()
+                var corsSettings = builder
+                    .Configuration.GetRequiredSection(CorsSettings.ConfigurationSection)
+                    .Get<CorsSettings>()
                     ?? throw new InvalidOperationException(
                         $"Failed to bind CORS settings from configuration section: {CorsSettings.ConfigurationSection}"
                     );
 
                 services.AddCors(options =>
                 {
-                    options.AddPolicy(
-                        CorsConstants.AllowSpecificCorsPolicy,
-                        policyBuilder =>
+                    options.AddPolicy(CorsConstants.AllowSpecificCorsPolicy, policyBuilder =>
+                    {
+                        policyBuilder
+                            .WithOrigins([.. corsSettings.Origins])
+                            .WithHeaders([.. corsSettings.Headers])
+                            .WithMethods([.. corsSettings.Methods]);
+
+                        if (corsSettings.MaxAge is not null)
                         {
-                            policyBuilder
-                                .WithOrigins([.. corsSettings.Origins])
-                                .WithHeaders([.. corsSettings.Headers])
-                                .WithMethods([.. corsSettings.Methods]);
-
-                            if (corsSettings.MaxAge is not null)
-                            {
-                                policyBuilder.SetPreflightMaxAge(
-                                    TimeSpan.FromSeconds(corsSettings.MaxAge.Value)
-                                );
-                            }
-
-                            if (corsSettings.AllowCredentials)
-                            {
-                                policyBuilder.AllowCredentials();
-                            }
+                            policyBuilder.SetPreflightMaxAge(
+                                TimeSpan.FromSeconds(corsSettings.MaxAge.Value)
+                            );
                         }
-                    );
+
+                        if (corsSettings.AllowCredentials)
+                        {
+                            policyBuilder.AllowCredentials();
+                        }
+                    });
                 });
             }
         }
+    }
+
+    /// <summary>
+    ///     Determines whether the origin is a loopback host, including Aspire friendly
+    ///     <c>*.dev.localhost</c> hosts (RFC 6761 reserves every <c>*.localhost</c> name for loopback).
+    /// </summary>
+    private static bool IsLocalhostOrigin(string origin)
+    {
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        return uri.Host.Equals(Network.Localhost, StringComparison.OrdinalIgnoreCase)
+            || uri.Host.EndsWith($".{Network.Localhost}", StringComparison.OrdinalIgnoreCase);
     }
 
     extension(WebApplication app)

@@ -1,0 +1,247 @@
+asyncapi: 3.1.0
+info:
+  title: Notification service integration messages
+  version: 1.0.0
+  description: |
+    Kafka consumer contract for the BookWorm Notification host. Finance publishes
+    order-placement, cancellation, and completion commands. Notification does
+    not publish application-level acknowledgment, delivery, or failure events.
+
+    Payload schemas describe camelCase JSON data inside BookWorm's
+    CloudEvents-compatible envelope, not the complete transport envelope.
+    Message identities are the BookWorm.Contracts types shown below.
+    Topic names come from IntegrationMessageOwner and KafkaTopicRouter.
+
+    Order handlers skip null, empty, or whitespace-only email addresses. Otherwise
+    they render Orders/OrderEmail via MjmlTemplateRenderer and submit through
+    MailKit over SMTP with a configured resilience pipeline. Development uses
+    MailPit; other environments use the configured email provider. SMTP
+    acceptance is not confirmation of final recipient delivery.
+
+    A missing broker connection disables event-bus registration. Exhausted
+    listener retries use the native dead-letter topic
+    bookworm.{env}.notification.dead-letter-queue. Repeated commands, including
+    Finance's placement retries, can produce duplicate emails.
+defaultContentType: application/cloudevents+json
+channels:
+  placeOrder:
+    address: bookworm.{env}.finance.place-order
+    description: Finance requests order placement; Notification consumes the same command to send a new-order email.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      placeOrder:
+        $ref: "#/components/messages/PlaceOrderCommand"
+  cancelOrder:
+    address: bookworm.{env}.finance.cancel-order
+    description: Finance publishes order cancellation work; Notification consumes it to send a canceled-order email.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      cancelOrder:
+        $ref: "#/components/messages/CancelOrderCommand"
+  completeOrder:
+    address: bookworm.{env}.finance.complete-order
+    description: Finance publishes order completion work; Notification consumes it to send a completed-order email.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      completeOrder:
+        $ref: "#/components/messages/CompleteOrderCommand"
+operations:
+  receivePlaceOrder:
+    action: receive
+    channel:
+      $ref: "#/channels/placeOrder"
+    summary: Send a new-order notification
+    description: |
+      PlaceOrderCommandHandler maps the command to Status.New and renders the
+      order email. BasketId is part of the shared command but is not used by
+      Notification. A null fullName becomes Customer. Rendering, persistence,
+      and sender failures propagate; a blank email skips all email work.
+    messages:
+      - $ref: "#/channels/placeOrder/messages/placeOrder"
+  receiveCancelOrder:
+    action: receive
+    channel:
+      $ref: "#/channels/cancelOrder"
+    summary: Send a canceled-order notification
+    description: |
+      CancelOrderCommandHandler maps the command to Status.Canceled and renders
+      the order email. A null fullName becomes Customer. Rendering, persistence,
+      and sender failures propagate; a blank email skips all email work.
+    messages:
+      - $ref: "#/channels/cancelOrder/messages/cancelOrder"
+  receiveCompleteOrder:
+    action: receive
+    channel:
+      $ref: "#/channels/completeOrder"
+    summary: Send a completed-order notification
+    description: |
+      CompleteOrderCommandHandler maps the command to Status.Completed and renders
+      the order email. A null fullName becomes Customer. Rendering, persistence,
+      and sender failures propagate; a blank email skips all email work.
+    messages:
+      - $ref: "#/channels/completeOrder/messages/completeOrder"
+components:
+  parameters:
+    env:
+      description: BookWorm deployment environment transformed to kebab case by KafkaTopicRouter.
+      enum:
+        - development
+        - staging
+        - production
+      default: development
+  messages:
+    PlaceOrderCommand:
+      name: PlaceOrderCommand
+      title: Place order
+      summary: Shared Finance command consumed by Notification for a new-order email.
+      description: "Wolverine message identity: BookWorm.Contracts.PlaceOrderCommand."
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/KafkaHeaders"
+      payload:
+        $ref: "#/components/schemas/PlaceOrderPayload"
+      examples:
+        - name: newOrder
+          payload:
+            id: "019a1c00-0000-7000-8000-000000000001"
+            creationDate: "2026-11-01T14:00:00Z"
+            basketId: "019a1c00-0000-7000-8000-000000000010"
+            orderId: "019a1c00-0000-7000-8000-000000000020"
+            fullName: Example Customer
+            email: customer@example.com
+            totalMoney: 49.95
+    CancelOrderCommand:
+      name: CancelOrderCommand
+      title: Cancel order
+      summary: Shared Finance command consumed by Notification for a canceled-order email.
+      description: "Wolverine message identity: BookWorm.Contracts.CancelOrderCommand."
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/KafkaHeaders"
+      payload:
+        $ref: "#/components/schemas/OrderStatusPayload"
+      examples:
+        - name: canceledOrder
+          payload:
+            id: "019a1c00-0000-7000-8000-000000000002"
+            creationDate: "2026-11-01T14:01:00Z"
+            orderId: "019a1c00-0000-7000-8000-000000000020"
+            fullName: null
+            email: customer@example.com
+            totalMoney: 49.95
+    CompleteOrderCommand:
+      name: CompleteOrderCommand
+      title: Complete order
+      summary: Shared Finance command consumed by Notification for a completed-order email.
+      description: "Wolverine message identity: BookWorm.Contracts.CompleteOrderCommand."
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/KafkaHeaders"
+      payload:
+        $ref: "#/components/schemas/OrderStatusPayload"
+      examples:
+        - name: completedOrder
+          payload:
+            id: "019a1c00-0000-7000-8000-000000000003"
+            creationDate: "2026-11-01T14:02:00Z"
+            orderId: "019a1c00-0000-7000-8000-000000000020"
+            fullName: Example Customer
+            email: customer@example.com
+            totalMoney: 49.95
+        - name: skippedRecipient
+          summary: A null email is accepted by the contract but skips notification work.
+          payload:
+            id: "019a1c00-0000-7000-8000-000000000004"
+            creationDate: "2026-11-01T14:02:00Z"
+            orderId: "019a1c00-0000-7000-8000-000000000020"
+            fullName: null
+            email: null
+            totalMoney: 49.95
+  schemas:
+    PlaceOrderPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - basketId
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        basketId:
+          type: string
+          format: uuid
+          description: Basket identifier in the shared command; unused by Notification.
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        fullName:
+          $ref: "#/components/schemas/FullName"
+        email:
+          $ref: "#/components/schemas/Email"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    OrderStatusPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          $ref: "#/components/schemas/EventId"
+        creationDate:
+          $ref: "#/components/schemas/CreationDate"
+        orderId:
+          $ref: "#/components/schemas/OrderId"
+        fullName:
+          $ref: "#/components/schemas/FullName"
+        email:
+          $ref: "#/components/schemas/Email"
+        totalMoney:
+          $ref: "#/components/schemas/TotalMoney"
+    EventId:
+      type: string
+      format: uuid
+      description: UUID v7 generated when the integration event is constructed.
+    CreationDate:
+      type: string
+      format: date-time
+      description: UTC timestamp when the integration event is constructed.
+    OrderId:
+      type: string
+      format: uuid
+      description: Order identifier used by Finance for Kafka message partitioning.
+    FullName:
+      type:
+        - string
+        - "null"
+      description: Recipient display name; null maps to Customer.
+    Email:
+      type:
+        - string
+        - "null"
+      description: |
+        Recipient address. Null, empty, and whitespace-only values skip email
+        work. The command handler does not validate email syntax; mailbox
+        construction or SMTP submission can fail for invalid nonblank values.
+    TotalMoney:
+      type: number
+      description: C# decimal order amount rendered in the email; the contract specifies no currency or nonnegative constraint.
+    KafkaHeaders:
+      type: object
+      properties:
+        traceparent:
+          type: string
+          description: Optional trace context propagated by CloudEventsOnlyKafkaMapper.

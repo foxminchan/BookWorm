@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Authors.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
@@ -13,7 +13,7 @@ public sealed class DeleteAuthorValidatorTests
     public DeleteAuthorValidatorTests()
     {
         _repositoryMock = new();
-        var authorValidator = new AuthorValidator(_repositoryMock.Object);
+        AuthorValidator authorValidator = [with(_repositoryMock.Object)];
         _validator = [with(authorValidator)];
     }
 

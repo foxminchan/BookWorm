@@ -1,0 +1,48 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Engineering",
+			"icon": "Code2",
+			"pages": [
+				"[[doc|engineering/conversation-architecture]]",
+				"[[doc|engineering/agent-change-checklist]]"
+			]
+		},
+		{
+			"title": "Guides",
+			"icon": "BookOpen",
+			"pages": [
+				"[[doc|guides/route-customer-requests]]",
+				"[[doc|guides/handle-book-discovery]]",
+				"[[doc|guides/answer-store-questions]]",
+				"[[doc|guides/handle-book-feedback]]"
+			]
+		},
+		{
+			"title": "Runbooks",
+			"icon": "Siren",
+			"pages": [
+				"[[doc|runbooks/chat-request-not-returning-response]]",
+				"[[doc|runbooks/unexpected-routing-or-rejection]]",
+				"[[doc|runbooks/incomplete-book-research]]"
+			]
+		},
+		"$architecture",
+		"$diagrams",
+		"$systems",
+		"$subdomains",
+		"$services",
+		"$agents",
+		"$flows",
+		"$entities",
+		"$domain-events",
+		"$external-events",
+		"$resource-groups",
+		"$external-integrations",
+		"$data-products",
+		"$api-and-contracts",
+		"$decision-records",
+		"$owners"
+	]
+}

@@ -1,0 +1,33 @@
+---
+title: Catalog Search Index Maintenance
+summary: Runtime path from Catalog writes through durable queued vector work to the derived search index.
+owners:
+  - contributor-team
+badges:
+  - content: Runtime Scenario
+    backgroundColor: purple
+    textColor: purple
+---
+
+## 6.2 Catalog search-index maintenance
+
+[[domain|catalog]] book data is authoritative; its vector search index ([[container|catalog-vector]]) is derived and updated asynchronously. A Catalog write does not wait for embedding generation or Qdrant. Database triggers durably queue affected books, and [[service|sheduler-dashboard]] invokes a bounded ingestion batch every five minutes.
+
+<MermaidFileLoader file="mermaids/catalog-search-index-maintenance.mmd" />
+
+### Batch interaction
+
+1. [[service|catalog-api]] commits a product change to [[container|catalog-database]]. Database triggers atomically add or replace the affected book's pending vector revision.
+2. The Scheduler's `ProcessVectorBatchJob` obtains a client-credentials access token through the configured [[system|identity-provider]] token exchange and calls the [[service|catalog-ingestion]] endpoint with the bearer token.
+3. [[service|catalog-ingestion]] verifies that the token identifies Scheduler, acquires a PostgreSQL advisory lock, and reads up to 200 pending records.
+4. For each record, the worker builds searchable content, generates an embedding for an active book, and upserts it to [[container|catalog-vector]]. Missing or soft-deleted books have their vector record removed.
+5. A queue item is acknowledged only if its revision is still the one processed. A newer concurrent change remains pending for a later batch.
+
+### Failure and recovery
+
+- A rejected credential prevents processing; the endpoint returns `401` or `403`, and the Scheduler invocation is reported as failed.
+- A busy lock or empty queue produces no batch work. The advisory lock prevents overlapping ingestion workers.
+- If embedding generation or a Qdrant operation fails, the affected queue item is not acknowledged, so durable work remains available to a later invocation.
+- A completed Scheduler invocation alone does not establish that the index is current. Check pending-update age and count alongside vector-index health.
+
+See the [[flow|product-ingestion]], [[service|catalog-ingestion]], and [[system|product-catalog-system]] for the processing contract and operational ownership.

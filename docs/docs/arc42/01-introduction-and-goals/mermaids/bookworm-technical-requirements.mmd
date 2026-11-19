@@ -1,0 +1,56 @@
+---
+title: BookWorm technical requirements
+---
+requirementDiagram
+
+	functionalRequirement BW_R2_checkoutUsesCurrentData {
+	id: 2
+	text: "Checkout uses persisted basket contents and current Catalog information."
+	risk: high
+	verifymethod: test
+}
+
+	functionalRequirement BW_R3_orderingOwnsLifecycle {
+	id: 3
+	text: "Ordering owns the lifecycle and fulfillment state of an accepted order."
+	risk: high
+	verifymethod: test
+}
+
+	designConstraint BW_R7_boundedContextOwnership {
+	id: 7
+	text: "Each bounded context owns its business behavior and data."
+	risk: medium
+	verifymethod: inspection
+}
+
+	interfaceRequirement BW_R8_explicitIntegrationContracts {
+	id: 8
+	text: "Cross-context communication uses documented owned contracts."
+	risk: high
+	verifymethod: inspection
+}
+
+	element shoppingCapability {
+	type: BookWorm Shopping capability
+}
+
+	element catalogCapability {
+	type: BookWorm Catalog capability
+}
+
+	element orderingCapability {
+	type: BookWorm Ordering capability
+}
+
+	element serviceContracts {
+	type: Owned service and integration contracts
+}
+
+	shoppingCapability - satisfies -> BW_R2_checkoutUsesCurrentData
+	catalogCapability - satisfies -> BW_R2_checkoutUsesCurrentData
+	orderingCapability - satisfies -> BW_R3_orderingOwnsLifecycle
+	shoppingCapability - satisfies -> BW_R7_boundedContextOwnership
+	catalogCapability - satisfies -> BW_R7_boundedContextOwnership
+	orderingCapability - satisfies -> BW_R7_boundedContextOwnership
+	serviceContracts - satisfies -> BW_R8_explicitIntegrationContracts

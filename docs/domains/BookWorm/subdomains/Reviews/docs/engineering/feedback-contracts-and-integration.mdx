@@ -1,0 +1,98 @@
+---
+title: Feedback contracts and integration
+summary: Engineering guidance for the Reviews API, feedback invariants, event publication, and Catalog projection boundaries.
+version: 1.0.0
+type: engineering
+order: 1
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Ownership boundary
+
+[[service|rating-api]] owns the [[entity|feedback]] lifecycle and persists
+individual records in [[container|rating-database]]. Catalog owns
+[[entity|book]]s and its derived
+rating summary. Do not introduce a shared database read, a Catalog write from
+Reviews, or a second persisted copy of individual feedback.
+
+## API contract
+
+The versioned contract is exposed at `/api/v1/feedbacks`:
+
+| Method   | Path                               | Responsibility                          | Success                         |
+| -------- | ---------------------------------- | --------------------------------------- | ------------------------------- |
+| `POST`   | `/api/v1/feedbacks`                | [[command\|CreateFeedback]] for a Book  | `200 OK` with the feedback ID   |
+| `GET`    | `/api/v1/feedbacks`                | [[query\|ListFeedbacks]] by Book ID     | `200 OK` with a paged result    |
+| `DELETE` | `/api/v1/feedbacks/{id}`           | [[command\|DeleteFeedback]]             | `204 No Content`                |
+| `GET`    | `/api/v1/feedbacks/{id}/summarize` | [[query\|SummarizeFeedback]] by Book ID | `200 OK` with `SummarizeResult` |
+
+Use the service's problem-details behavior for validation and not-found
+failures. A missing feedback must not be converted into a successful delete.
+
+## Domain invariants
+
+- Book ID, reviewer first name, and reviewer last name are non-empty.
+- Rating is an inclusive integer from 0 through 5.
+- At most one feedback record exists for a Book ID and reviewer-name
+  combination.
+- Feedback creation and deletion publish integration changes only after the
+  lifecycle operation commits.
+- The Catalog rating projection is derived and eventually consistent; it is
+  never the source of truth for individual feedback.
+
+Validate these rules at the request boundary and in the domain model so
+non-HTTP callers cannot bypass them.
+
+## Integration event rules
+
+Publish:
+
+- [[event|FeedbackCreatedIntegrationEvent]] to
+  [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] after a successful
+  create.
+- [[event|FeedbackDeletedIntegrationEvent]] to
+  [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]] after a successful
+  delete.
+
+Include the `feedbackId`, `bookId`, and `rating` needed by Catalog to apply a
+projection delta. Preserve Kafka trace and correlation context. The channels
+are at-least-once, so Catalog consumers and the Reviews compensation handler
+must be safe under duplicate delivery and retries.
+
+When Catalog cannot apply a create because the Book is absent, it publishes
+[[event|BookUpdatedRatingFailedIntegrationEvent]] to
+[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]. The
+compensation handler must locate the exact feedback ID and treat an already
+deleted record as a no-op.
+
+## Summarization safety
+
+The [[agent|rating-agent]] is a read-only collaborator. It may call `get_book`
+for current Catalog context and `GetCustomerReviews` for raw feedback, subject
+to authentication, rate limiting, and agent governance. It must not mutate
+feedback, Catalog projections, or the rating database.
+
+Keep the summarize response explicitly derived: classification, metrics,
+justification, and confidence must not be presented as a persisted rating or
+as a replacement for customer feedback.
+
+## Change checklist
+
+Before changing the API or event contract:
+
+1. Update request/response validation and problem-details behavior.
+2. Update the service's contract/schema documentation.
+3. Verify uniqueness, rating bounds, and transaction boundaries.
+4. Verify that create and delete events are emitted only after commit.
+5. Verify payload fields and channel routing for both normal paths.
+6. Test duplicate event delivery and the missing-Book compensation path.
+7. Confirm that summarize tooling remains read-only and rate-limited.
+8. Update the relevant ADR when ownership, persistence, or integration
+   semantics change.
+
+<Footer />

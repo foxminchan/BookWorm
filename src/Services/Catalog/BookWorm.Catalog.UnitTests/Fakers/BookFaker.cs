@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+﻿using System.Globalization;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Constants.Other;
 
 namespace BookWorm.Catalog.UnitTests.Fakers;
@@ -24,8 +25,10 @@ public sealed class BookFaker : Faker<Book>
                     f.Commerce.ProductName(),
                     f.Lorem.Paragraph(),
                     f.Random.Bool(0.8f) ? f.Image.PicsumUrl() : null,
-                    decimal.Parse(f.Commerce.Price(100)),
-                    f.Random.Bool(0.3f) ? decimal.Parse(f.Commerce.Price(1, 80)) : null,
+                    decimal.Parse(f.Commerce.Price(100), CultureInfo.InvariantCulture),
+                    f.Random.Bool(0.3f)
+                        ? decimal.Parse(f.Commerce.Price(1, 80), CultureInfo.InvariantCulture)
+                        : null,
                     f.PickRandom(categories).Id,
                     f.PickRandom(publishers).Id,
                     [.. f.Random.ArrayElements([.. authors.Select(a => a.Id)], f.Random.Int(1, 3))]

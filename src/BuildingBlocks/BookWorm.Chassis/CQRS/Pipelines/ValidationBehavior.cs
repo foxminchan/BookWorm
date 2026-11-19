@@ -1,7 +1,6 @@
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using FluentValidation;
-using FluentValidation.Results;
 using Mediator;
 using Microsoft.Extensions.Logging;
 
@@ -40,11 +39,7 @@ internal sealed class ValidationBehavior<TMessage, TResponse>(
             validators.Select(v => v.ValidateAsync(context, cancellationToken))
         );
 
-        var errors = validationResult
-            .Where(result => !result.IsValid)
-            .SelectMany(result => result.Errors)
-            .Select(failure => new ValidationFailure(failure.PropertyName, failure.ErrorMessage))
-            .ToList();
+        var errors = validationResult.SelectMany(result => result.Errors).ToList();
 
         if (errors.Count != 0)
         {
@@ -52,11 +47,8 @@ internal sealed class ValidationBehavior<TMessage, TResponse>(
         }
 
         var messageType = message.GetType().Name;
-        var validatorNames = validators.Aggregate(
-            string.Empty,
-            (c, x) => $"{x.GetType().Name}, {c}"
-        );
-        var activityName = $"{messageType}-{validatorNames.Trim().TrimEnd(',')}";
+        var validatorNames = string.Join(", ", validators.Select(v => v.GetType().Name));
+        var activityName = $"{messageType}-{validatorNames}";
 
         await activityScope.Run(
             activityName,

@@ -1,0 +1,90 @@
+---
+summary: Consume Finance's successful basket-cleanup outcome without changing Order status.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Receive successful cleanup
+
+Finance publishes this command after successful basket cleanup.
+[[service|order-api]] consumes it through
+[[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]].
+
+- `id` identifies this integration message; `creationDate` is its UTC timestamp.
+- `orderId` identifies the Order associated with the cleanup.
+- `totalMoney` carries the purchase amount.
+- No basket identifier or customer details are supplied by this command.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp DeleteBasketCompleteCommand.cs
+[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "delete-basket-complete")]
+public sealed record DeleteBasketCompleteCommand(Guid OrderId, decimal TotalMoney)
+    : IntegrationEvent;
+```
+
+```csharp OrderSaga.cs
+public DeleteBasketCompleteCommand Handle(BasketDeletedCompleteIntegrationEvent @event)
+{
+    BasketId = @event.BasketId;
+    OrderId = @event.OrderId;
+    TotalMoney = @event.TotalMoney;
+
+    return new(OrderId, EffectiveTotalMoney);
+}
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Payload
+
+<CodeGroup dropdown>
+
+```json successful-cleanup-payload.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000004",
+	"creationDate": "2026-11-01T14:01:00Z",
+	"orderId": "44444444-4444-4444-4444-444444444444",
+	"totalMoney": 49.95
+}
+```
+
+</CodeGroup>
+
+## Handle the outcome
+
+The example shows the camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope. Order API logs successful cleanup without
+changing the Order's business status. The command does not complete the Order
+and is distinct from Basket's
+[[event|BasketDeletedCompleteIntegrationEvent]].
+
+<CodeGroup dropdown>
+
+```csharp DeleteBasketCompleteCommandHandler.cs
+[WolverineHandler]
+public Task Handle(DeleteBasketCompleteCommand message, CancellationToken cancellationToken)
+{
+    logger.LogInformation(
+        "Basket deletion completed for Order {OrderId}, Amount: {TotalMoney}",
+        message.OrderId,
+        message.TotalMoney
+    );
+
+    return Task.CompletedTask;
+}
+```
+
+</CodeGroup>

@@ -1,13 +1,17 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BookWorm.Constants.Other;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Enrichment;
 using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.Chassis.Logging;
 
-internal sealed class ApplicationEnricher(IHttpContextAccessor httpContextAccessor) : ILogEnricher
+internal sealed class ApplicationEnricher(
+    IHttpContextAccessor httpContextAccessor,
+    IRedactorProvider? redactorProvider = null
+) : ILogEnricher
 {
     public void Enrich(IEnrichmentTagCollector collector)
     {
@@ -17,10 +21,14 @@ internal sealed class ApplicationEnricher(IHttpContextAccessor httpContextAccess
 
         if (httpContext is not null)
         {
-            collector.Add(
-                LoggingConstant.UserId,
-                httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty
-            );
+            var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(userId) && redactorProvider is not null)
+            {
+                userId = redactorProvider.GetRedactor(DataTaxonomy.PIIData).Redact(userId);
+            }
+
+            collector.Add(LoggingConstant.UserId, userId);
         }
     }
 }

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Format>xml</Format>
+  <DeterministicReport>true</DeterministicReport>
+  <IncludeTestAssembly>false</IncludeTestAssembly>
+  <SkipAutoProps>true</SkipAutoProps>
+  <CodeCoverage>
+    <ModulePaths>
+      <Include>
+        <ModulePath>.*BookWorm\..*\.dll$</ModulePath>
+      </Include>
+      <Exclude>
+        <ModulePath>.*Tests\.dll$</ModulePath>
+        <ModulePath>.*BookWorm\.Testing\.dll$</ModulePath>
+        <ModulePath>.*BookWorm\.AppHost\.dll$</ModulePath>
+        <ModulePath>.*BookWorm\.ServiceDefaults\.dll$</ModulePath>
+        <ModulePath>.*BookWorm\.Chassis\.dll$</ModulePath>
+        <ModulePath>.*BookWorm\.Constants\.dll$</ModulePath>
+        <ModulePath>.*BookWorm\.SharedKernel\.dll$</ModulePath>
+        <ModulePath>.*BookWorm\.Hosting\..*\.dll$</ModulePath>
+      </Exclude>
+    </ModulePaths>
+
+    <Attributes>
+      <Exclude>
+        <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+        <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+        <Attribute>^System\.Runtime\.CompilerServices\.CompilerGeneratedAttribute$</Attribute>
+        <Attribute>^System\.Diagnostics\.DebuggerNonUserCodeAttribute$</Attribute>
+        <Attribute>^System\.Diagnostics\.DebuggerHiddenAttribute$</Attribute>
+        <Attribute>^System\.ObsoleteAttribute$</Attribute>
+      </Exclude>
+    </Attributes>
+
+    <Functions>
+      <Exclude>
+        <!-- gRPC/Protobuf generated types -->
+        <Function>.*\.Grpc\.Services\..*GrpcService\..*</Function>
+        <Function>.*\.Grpc\.Services\..*Reflection\..*</Function>
+        <Function>.*\.Grpc\.Services\..*Request\..*</Function>
+        <Function>.*\.Grpc\.Services\..*Response\..*</Function>
+        <Function>.*\.Grpc\.Services\.DecimalValue\..*</Function>
+        <Function>.*\.Grpc\.Services\.Item\..*</Function>
+
+        <!-- Serialization contexts -->
+        <Function>.*SerializationContext\..*</Function>
+
+        <!-- Mediator generated -->
+        <Function>Mediator\..*</Function>
+
+        <!-- Option validation generated -->
+        <Function>__OptionValidation.*</Function>
+        <Function>__OptionValidationGeneratedAttributes\..*</Function>
+        <Function>__OptionValidationStaticInstances\..*</Function>
+
+        <!-- OpenAPI generated -->
+        <Function>.*OpenApiXmlCommentSupport.*</Function>
+        <Function>.*InterceptsLocationAttribute.*</Function>
+
+        <!-- Regex generated (System.Text.RegularExpressions.Generated) -->
+        <Function>.*__RegexGenerator_g.*</Function>
+        <Function>System\.Text\.RegularExpressions\.Generated\..*</Function>
+        <Function>.*__InvalidFileNameChars_.*</Function>
+        <Function>.*__Utilities.*</Function>
+
+        <!-- LoggerMessage generated (source generators) -->
+        <Function>.*ApiTrace\.Log.*</Function>
+        <Function>.*Trace\.Log.*</Function>
+
+        <!-- Infrastructure & Extensions (aligned with SonarQube.Analysis.xml) -->
+        <Function>.*\.Infrastructure\..*</Function>
+        <Function>BookWorm\..*\.Infrastructure\..*</Function>
+        <Function>.*\.Extensions\..*</Function>
+        <Function>BookWorm\..*\.Extensions\..*</Function>
+      </Exclude>
+    </Functions>
+
+    <Sources>
+      <Exclude>
+        <!-- Build output & source-generated code (cross-platform path separators) -->
+        <Source>.*[\\/]obj[\\/].*</Source>
+        <Source>.*[\\/]Generated[\\/].*</Source>
+        <Source>.*\.g\.cs$</Source>
+        <Source>.*\.generated\.cs$</Source>
+        <Source>.*_g\.cs$</Source>
+
+        <!-- Startup, BuildingBlocks, Integrations, Aspire (aligned with SonarQube.Analysis.xml) -->
+        <Source>.*[\\/]Program\.cs$</Source>
+        <Source>.*[\\/]src[\\/]BuildingBlocks[\\/].*</Source>
+        <Source>.*[\\/]src[\\/]Integrations[\\/].*</Source>
+        <Source>.*[\\/]src[\\/]Aspire[\\/].*</Source>
+
+        <!-- Infrastructure, Extensions, Agents, Orchestration, Saga (aligned with SonarQube.Analysis.xml) -->
+        <Source>.*[\\/]Services[\\/][^\\/]+[\\/][^\\/]+[\\/]Infrastructure[\\/].*</Source>
+        <Source>.*[\\/]Extensions[\\/].*</Source>
+        <Source>.*Extensions\.cs$</Source>
+        <Source>.*[\\/]Agents[\\/].*</Source>
+        <Source>.*[\\/]Orchestration[\\/]EndpointMapping\.cs$</Source>
+        <Source>.*[\\/]Orchestration[\\/]WorkflowRegistration\.cs$</Source>
+        <Source>.*[\\/]Saga[\\/]Activities[\\/].*</Source>
+
+        <!-- Exceptions, Contracts, DTOs (aligned with SonarQube.Analysis.xml) -->
+        <Source>.*Exception\.cs$</Source>
+        <Source>.*[\\/]Contracts[\\/].*\.cs$</Source>
+        <Source>.*Dto\.cs$</Source>
+      </Exclude>
+    </Sources>
+
+    <UseVerifiableInstrumentation>False</UseVerifiableInstrumentation>
+    <EnableStaticNativeInstrumentation>False</EnableStaticNativeInstrumentation>
+    <EnableDynamicNativeInstrumentation>False</EnableDynamicNativeInstrumentation>
+  </CodeCoverage>
+</Configuration>

@@ -1,30 +1,42 @@
-﻿using BookWorm.Contracts;
-using Wolverine;
+using BookWorm.Chassis.EventBus.Idempotency;
+using BookWorm.Contracts;
 using Wolverine.Attributes;
 
 namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
 internal sealed class FeedbackCreatedIntegrationEventHandler(
     IBookRepository repository,
-    IMessageBus bus
+    IIntegrationEventIdempotencyGuard? idempotencyGuard = null
 )
 {
     [WolverineHandler]
-    public async Task Handle(
+    public async Task<BookUpdatedRatingFailedIntegrationEvent?> Handle(
         FeedbackCreatedIntegrationEvent @event,
         CancellationToken cancellationToken
     )
     {
+        if (
+            idempotencyGuard is not null
+            && !await idempotencyGuard.TryAcquireAsync(
+                @event.Id,
+                nameof(FeedbackCreatedIntegrationEventHandler),
+                cancellationToken: cancellationToken
+            )
+        )
+        {
+            return null;
+        }
+
         var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
 
         if (book is null)
         {
-            await bus.PublishAsync(new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId));
             await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-            return;
+            return new(@event.FeedbackId);
         }
 
         book.AddRating(@event.Rating);
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+        return null;
     }
 }

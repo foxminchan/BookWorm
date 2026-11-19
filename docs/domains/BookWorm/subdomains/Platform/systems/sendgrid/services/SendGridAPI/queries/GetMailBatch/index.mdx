@@ -1,0 +1,70 @@
+---
+id: GetMailBatch
+name: Get mail batch
+version: 1.0.0
+badges:
+  - content: Email Delivery
+    backgroundColor: teal
+    textColor: teal
+summary: |
+  Validates a SendGrid mail batch identifier and returns the identifier when it
+  exists.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /v3/mail/batch/{batch_id}
+  statusCodes: ["200", "400", "401", "403", "405", "500"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+The `GetMailBatch` query validates a mail batch identifier created by
+[[command|CreateMailBatch]]. A successful response confirms that [[system|sendgrid]]
+recognizes the identifier; it does not confirm that the batch has been
+associated with a send or that any message has been delivered.
+
+## Request
+
+Provide the batch identifier as the `batch_id` path parameter in an
+authenticated request:
+
+<CodeGroup dropdown>
+
+```sh
+curl -X GET \
+  "https://api.sendgrid.com/v3/mail/batch/{batch_id}" \
+  -H "Authorization: Bearer $SENDGRID_API_KEY"
+```
+
+</CodeGroup>
+
+## Response
+
+<CodeGroup dropdown>
+
+```json
+{
+	"batch_id": "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw"
+}
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+
+## Response and failures
+
+- `200 OK` returns the valid batch identifier.
+- `400 Bad Request` indicates an invalid batch identifier.
+- `401 Unauthorized` indicates missing or invalid authentication.
+- `403 Forbidden` indicates that the caller is not allowed to inspect the batch.
+- `405 Method Not Allowed` indicates an unsupported HTTP method.
+- `500 Internal Server Error` indicates a provider-side failure.
+
+<NodeGraph />

@@ -1,14 +1,12 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Create;
+namespace BookWorm.Catalog.Features.Categories.Create;
 
 internal sealed class CreateCategoryEndpoint
     : IEndpoint<Ok<CategoryId>, CreateCategoryCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                "/categories",
-                async (CreateCategoryCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPost("/categories", async (CreateCategoryCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPostWithoutLocation<CategoryId>()
             .WithTags(nameof(Category))
@@ -16,7 +14,7 @@ internal sealed class CreateCategoryEndpoint
             .WithSummary("Create Category")
             .WithDescription("Create a new category in the catalog system")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

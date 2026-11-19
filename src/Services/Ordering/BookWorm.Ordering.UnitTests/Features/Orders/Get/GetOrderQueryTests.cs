@@ -1,4 +1,3 @@
-﻿using System.Reflection;
 using System.Security.Claims;
 using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Chassis.Exceptions;
@@ -9,7 +8,6 @@ using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Features.Orders.Get;
 using BookWorm.Ordering.Grpc.Services.Book;
 using BookWorm.Ordering.UnitTests.Fakers;
-using BookWorm.SharedKernel.SeedWork;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.Get;
 
@@ -32,21 +30,12 @@ public sealed class GetOrderQueryTests
         _id = OrderId.From(Guid.CreateVersion7());
         _buyerId = Guid.CreateVersion7();
 
-        // Create a sample order using the faker
-        var orderFaker = new OrderFaker();
-        _order = orderFaker.Generate()[0];
-
-        // Replace it with our specific IDs for testing
-        typeof(Entity<OrderId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(_order, _id);
-        _order
-            .GetType()
-            .GetProperty(nameof(Order.BuyerId))
-            ?.SetValue(_order, BuyerId.From(_buyerId));
+        // Create a sample order using the faker and apply our specific IDs for testing
+        var templateOrder = new OrderFaker().Generate()[0];
+        _order = new(BuyerId.From(_buyerId), templateOrder.Note, [.. templateOrder.OrderItems])
+        {
+            Id = _id,
+        };
 
         _handler = new(
             _orderRepositoryMock.Object,

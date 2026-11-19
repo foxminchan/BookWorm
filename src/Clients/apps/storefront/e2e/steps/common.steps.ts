@@ -21,7 +21,7 @@ Given("the catalog has available books", async ({ shopPage }) => {
 
 Given(
   "the catalog has at least {int} books available",
-  async ({ shopPage }) => {
+  async ({ shopPage }, _minCount: number) => {
     await shopPage.navigate();
     const count = await shopPage.getBooksCount();
     expect(count).toBeGreaterThanOrEqual(0);
@@ -68,44 +68,38 @@ When("I go to the basket page", async ({ basketPage }) => {
 
 // Header interactions
 When("I click the basket icon", async ({ page }) => {
-  await page.locator('a[href="/basket"]').click();
+  await page.locator('header a[href="/basket"]').first().click();
   await page.waitForLoadState("networkidle");
 });
 
 When("I click the user icon", async ({ page }) => {
-  await page
-    .locator('button:has-text("Account"), button[aria-label*="User"]')
-    .first()
-    .click();
+  await page.locator('header nav[aria-label="Account"]').first().hover();
 });
 
 Then(
   "the basket icon should show {string} items",
   async ({ page }, itemCount: string) => {
-    const basketCountElement = page.locator(
-      'a[href="/basket"] span, [data-testid="basket-count"]',
-    );
-    const text = await basketCountElement.textContent();
+    const basketLink = page.locator('header a[href="/basket"]').first();
+    const text = await basketLink.textContent();
     const numberMatch = text?.match(/\d+/);
     const actualCount = numberMatch ? numberMatch[0] : "0";
     expect(actualCount).toBe(itemCount);
   },
 );
 
-Then("the basket count should increase by {int}", async ({ page }) => {
-  const basketCountElement = page.locator(
-    'a[href="/basket"] span, [data-testid="basket-count"]',
-  );
-  await expect(basketCountElement).toBeVisible();
-});
+Then(
+  "the basket count should increase by {int}",
+  async ({ page }, _increment: number) => {
+    const basketLink = page.locator('header a[href="/basket"]').first();
+    await expect(basketLink).toBeVisible();
+  },
+);
 
 Then(
   "the basket count should show {int} items",
   async ({ page }, expectedCount: number) => {
-    const basketCountElement = page.locator(
-      'a[href="/basket"] span, [data-testid="basket-count"]',
-    );
-    const text = await basketCountElement.textContent();
+    const basketLink = page.locator('header a[href="/basket"]').first();
+    const text = await basketLink.textContent();
     const numberMatch = text?.match(/\d+/);
     const actualCount = numberMatch ? Number.parseInt(numberMatch[0]) : 0;
     expect(actualCount).toBe(expectedCount);

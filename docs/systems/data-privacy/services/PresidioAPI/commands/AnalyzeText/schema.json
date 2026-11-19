@@ -1,0 +1,42 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "AnalyzeText",
+	"description": "Request to detect PII in one or more text strings.",
+	"type": "object",
+	"required": ["text", "language"],
+	"properties": {
+		"text": {
+			"description": "Text to analyze, as a single string or a batch of strings.",
+			"oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+		},
+		"language": {
+			"type": "string",
+			"description": "Two-character ISO 639-1 language code.",
+			"examples": ["en"]
+		},
+		"correlation_id": { "type": "string" },
+		"score_threshold": {
+			"type": "number",
+			"description": "Minimum detection confidence score."
+		},
+		"entities": {
+			"type": "array",
+			"items": { "type": "string" },
+			"description": "PII entity types to analyze."
+		},
+		"return_decision_process": {
+			"type": "boolean",
+			"description": "Whether to include analysis explanations in the response."
+		},
+		"ad_hoc_recognizers": {
+			"type": "array",
+			"items": { "type": "object" },
+			"description": "Request-specific recognizers."
+		},
+		"context": {
+			"type": "array",
+			"items": { "type": "string" },
+			"description": "Context words that can improve recognition confidence."
+		}
+	}
+}

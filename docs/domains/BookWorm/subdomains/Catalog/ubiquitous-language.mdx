@@ -1,0 +1,46 @@
+---
+dictionary:
+  - id: Book
+    name: Book
+    summary: A listed title available for discovery.
+    description: |
+      A Book has a name, description, image, price, availability status,
+      category, publisher, and author associations.
+    icon: BookOpen
+  - id: Author
+    name: Author
+    summary: A named contributor associated with one or more Books.
+    description: An Author can be associated with multiple Catalog Books.
+    icon: UserPen
+  - id: Publisher
+    name: Publisher
+    summary: The publishing organization associated with a Book.
+    description: A Publisher is Catalog metadata for a Book.
+    icon: Building2
+  - id: Category
+    name: Category
+    summary: A classification used to group Books.
+    description: Categories support browsing and book discovery.
+    icon: Tags
+  - id: Price
+    name: Price
+    summary: A Book's original price and optional discount price.
+    description: |
+      A discount price cannot be negative or exceed the original price. It is
+      not a separate product.
+    icon: BadgeDollarSign
+  - id: Availability
+    name: Availability
+    summary: Whether a Book is in stock or out of stock.
+    description: |
+      Availability describes the Catalog listing. It is not a reservation held
+      by a Basket.
+    icon: PackageCheck
+  - id: Rating Summary
+    name: Rating Summary
+    summary: The average rating and review count shown for a Book.
+    description: |
+      The rating summary is an aggregate projection of Reviews feedback, not an
+      individual Feedback submission.
+    icon: Star
+---

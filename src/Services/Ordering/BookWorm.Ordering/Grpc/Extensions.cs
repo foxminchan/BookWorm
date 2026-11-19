@@ -39,7 +39,7 @@ internal static class Extensions
                     HealthStatus.Degraded,
                     BookService.DashboardClientName
                 )
-                .AddAuthTokenExchange(Constants.Aspire.Services.Catalog);
+                .AddUserTokenExchange(Constants.Aspire.Services.Catalog);
 
             services.AddScoped<IBookService, BookService>();
 
@@ -52,7 +52,7 @@ internal static class Extensions
                         .Build(),
                     HealthStatus.Degraded
                 )
-                .AddAuthTokenExchange(Constants.Aspire.Services.Basket);
+                .AddUserTokenExchange(Constants.Aspire.Services.Basket);
 
             services.AddScoped<IBasketService, BasketService>();
         }

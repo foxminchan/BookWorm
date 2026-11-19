@@ -1,0 +1,48 @@
+---
+id: bookworm.{env}.finance.cancel-order
+name: Order Cancellation Command Channel
+version: 1.0.0
+summary: |
+  Kafka topic carrying Finance's shared order-cancellation command, consumed
+  by Notification to submit a canceled-order email.
+owners:
+  - contributor-team
+address: bookworm.{env}.finance.cancel-order
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    description: BookWorm deployment environment.
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+Finance's order saga publishes [[command|CancelOrderCommand]] for cancellation
+work. [[service|notification-api]] consumes the shared command to render and
+submit a canceled-order email. The topic belongs to Finance, not Notification,
+and an email outcome is not confirmation of order-state processing.
+
+<ChannelInformation />
+
+## Contract and delivery
+
+The camelCase payload contains `id`, `creationDate`, `orderId`, `totalMoney`,
+and nullable `fullName` and `email` inside the BookWorm CloudEvents-compatible
+envelope. The Wolverine identity is `BookWorm.Contracts.CancelOrderCommand`.
+Finance uses `OrderId` as the partition key; different topics do not provide a
+single ordered stream of order lifecycle changes.
+
+Notification skips blank email addresses. Otherwise it persists an email outbox
+record before SMTP submission and marks it sent after success. Rendering,
+persistence, and sender failures propagate. At-least-once transport and repeated
+commands can produce duplicate emails; no delivery result event is published.
+
+## Architecture
+
+<NodeGraph />

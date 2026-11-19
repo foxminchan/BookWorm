@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookWorm.Chassis.Mapper;
 
@@ -17,12 +17,8 @@ public static class Extensions
         public void AddMapper(Type type)
         {
             services.Scan(scan =>
-                scan.FromAssemblies(type.Assembly)
-                    .AddClasses(
-                        classes =>
-                            classes.AssignableTo(typeof(IMapper<,>)).Where(t => !t.IsAbstract),
-                        false
-                    )
+                scan.FromAssembliesOf(type)
+                    .AddClasses(classes => classes.AssignableTo(typeof(IMapper<,>)), false)
                     .AsImplementedInterfaces()
                     .WithScopedLifetime()
             );

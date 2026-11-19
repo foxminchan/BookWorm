@@ -1,0 +1,46 @@
+---
+id: DeleteBasketCompleteCommand
+name: Basket deletion completed
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: |
+  Reports Finance's successful basket-cleanup outcome to Order API without
+  changing the Order's business status.
+owners:
+  - business-strategy
+schemaPath: schema.json
+---
+
+## Overview
+
+Finance publishes this command after successful basket cleanup.
+[[service|order-api]] logs the outcome without changing the
+[[entity|order]]'s business status. Finance saga progress and Order status
+are separate lifecycles.
+
+This command is distinct from
+[[event|BasketDeletedCompleteIntegrationEvent]], which Basket publishes as
+its own deletion result.
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
+
+## Schema
+
+The payload contains `id`, `creationDate`, `orderId`, and `totalMoney`.
+The schema describes camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope, not the complete transport envelope.
+
+<SchemaViewer
+	file="schema.json"
+	title="Successful basket cleanup command payload"
+	maxHeight="500"
+/>
+
+## Architecture
+
+<NodeGraph />

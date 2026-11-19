@@ -1,0 +1,50 @@
+---
+id: adr-bw-011-shared-validation-and-error-contracts
+name: "ADR-BW-011: Reuse request validation and structured HTTP errors"
+version: 1.0.0
+summary: Validate applicable requests before handlers and expose predictable HTTP problem responses without leaking internal exception details.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-009-local-cqrs-building-blocks
+  - id: adr-bw-013-opentelemetry-observability
+---
+
+## Context
+
+Invalid requests and unexpected failures occur across APIs. Ad hoc validation and error formats force consumers to interpret inconsistent responses and risk exposing implementation details.
+
+## Decision
+
+Reuse the FluentValidation CQRS behavior for applicable requests and the shared ASP.NET Core exception handlers where registered. Preserve field-grouped validation problems, documented argument and conflict mappings, and generic unexpected-error responses with a trace identifier. Log internal exception detail rather than returning it to clients.
+
+Each host must register validators and exception handling explicitly; service-specific domain errors still require deliberate mapping.
+
+## Decision drivers
+
+- Correctness before business-handler execution.
+- Predictable consumer error handling.
+- Diagnostic traceability without internal-detail disclosure.
+
+## Alternatives considered
+
+| Alternative                                  | Assessment                                                                         |
+| -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Validate independently inside every endpoint | Allows local flexibility but duplicates checks and response mapping.               |
+| Return raw exception text                    | Helps immediate debugging but leaks implementation and potentially sensitive data. |
+| Convert all errors to success responses      | Simplifies response shape while hiding failure from consumers and operators.       |
+
+## Consequences
+
+- Registered request paths expose consistent error semantics.
+- Validators and mappings must evolve with the owning contract.
+- Shared helpers do not prove universal registration or identical mapping for every domain exception.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] and [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]].

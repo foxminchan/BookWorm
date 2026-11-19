@@ -1,0 +1,44 @@
+---
+id: DeleteBasketFailedCommand
+name: Basket deletion failed
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: |
+  Reports Finance's failed basket-cleanup outcome so Order API can
+  soft-delete the affected Order.
+owners:
+  - business-strategy
+schemaPath: schema.json
+---
+
+## Overview
+
+Finance publishes this command when basket cleanup fails.
+[[service|order-api]] soft-deletes the matching [[entity|order]], if it
+still exists, without changing its business status. This recovery does not
+represent an Order transition to Cancelled.
+
+This command is distinct from [[event|BasketDeletedFailedIntegrationEvent]],
+which Basket publishes as its own deletion failure result.
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]]
+
+## Schema
+
+The payload contains `id`, `creationDate`, `basketId`, nullable `email`,
+`orderId`, and `totalMoney`. All fields, including `email`, are required
+by the AsyncAPI schema.
+
+The schema describes camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope, not the complete transport envelope.
+
+<SchemaViewer file="schema.json" title="Failed basket cleanup command payload" maxHeight="500" />
+
+## Architecture
+
+<NodeGraph />

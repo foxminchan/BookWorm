@@ -1,0 +1,57 @@
+---
+title: Rating summary mismatch
+summary: Investigate when a book's average rating or review count disagrees with Reviews.
+version: 1.0.0
+type: runbooks
+order: 4
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Background
+
+Catalog stores only a derived `average_rating` and `total_reviews` per [[entity|book]].
+[[service|catalog-api]] updates them when [[domain|reviews]] publishes
+feedback-created
+and feedback-deleted integration messages. Reviews owns the individual
+[[entity|feedback]].
+
+## Symptoms
+
+- Rating or review count differs from what Reviews reports.
+- A rating-update-failed integration event was published.
+
+## Diagnose
+
+1. If a rating-update-failed event exists, the feedback referred to a book that
+   is missing in Catalog (never created, or deleted). Confirm the book ID.
+2. Otherwise check Catalog API handler logs and the message broker for failed,
+   dead-lettered, or delayed feedback messages.
+3. Check whether the cached book (`book:{id}`) is stale; see the
+   [[doc|runbooks/stale-cache-or-redis-outage]].
+
+## Recover
+
+- Fix the cause (missing book, broker or handler failure) and replay the
+  failed messages. Reviews remains the source of truth for feedback.
+- Do not edit rating fields manually except as an approved correction derived
+  from Reviews data.
+
+## Verify
+
+Rating and count match the Reviews data for the book.
+
+## Contact
+
+- **Contact point:** [[team\|contributor-team]] for Catalog message handling
+  and rating projection issues. For feedback delivery or source-data issues,
+  coordinate with the Reviews domain owner; no Reviews team contact is listed
+  in the catalog yet.
+- For urgent incidents, use the responsible team's established support or
+  on-call channel. A specific channel or rotation is not documented here.
+
+<Footer />

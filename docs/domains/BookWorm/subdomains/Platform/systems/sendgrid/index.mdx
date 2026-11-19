@@ -1,0 +1,83 @@
+---
+id: sendgrid
+name: SendGrid
+version: 1.0.0
+summary: |
+  SendGrid is the external email delivery platform used by BookWorm to submit
+  notification messages and receive provider delivery outcomes.
+scope: external
+owners:
+  - contributor-team
+services:
+  - id: sendgrid-api
+    version: 1.0.0
+flows:
+  - id: user-checkout
+    version: 1.0.0
+badges:
+  - content: External
+    backgroundColor: purple
+    textColor: purple
+    icon: GlobeAltIcon
+---
+
+## Context Diagram
+
+The SendGrid system's context diagram shows its interactions with human actors and other system components.
+
+<ContextDiagram />
+
+## Overview
+
+SendGrid is BookWorm's external provider boundary for email delivery. The
+Notification System prepares and submits messages through the
+[[service|sendgrid-api]] service; SendGrid then applies provider-side
+validation, routing, rate limits, and delivery processing.
+
+SendGrid does not own BookWorm notification state or business outcomes. The
+[[system|notification-system]] remains responsible for the
+[[entity|outbox]] record, retry policy,
+and the distinction between a pending, failed, and successfully submitted
+email.
+
+## Integration boundary
+
+| Concern             | SendGrid responsibility                                      | BookWorm responsibility                                |
+| ------------------- | ------------------------------------------------------------ | ------------------------------------------------------ |
+| Message submission  | Accept email requests through the SendGrid API               | Build the request from an outbox item                  |
+| Provider validation | Validate provider-specific request details                   | Validate required application fields before submission |
+| Delivery processing | Route and process the message with downstream mail providers | Track the provider response against the outbox item    |
+| Failures and limits | Return errors for invalid requests, outages, or rate limits  | Preserve pending work and decide when to retry         |
+| Business meaning    | Deliver the supplied message                                 | Own the business event and notification content        |
+
+The provider response is an integration outcome, not proof that the underlying
+business operation completed. Consumers should use BookWorm's notification
+state and business-domain events for that distinction.
+
+## Reliability and failure handling
+
+- Pending outbox records must remain durable when SendGrid is unavailable.
+- Transient provider failures should leave work eligible for a controlled retry.
+- Rate-limit responses should be observable and handled without an unbounded
+  retry loop.
+- Invalid or rejected requests should be recorded with enough diagnostic
+  context for operators while avoiding sensitive message content in logs.
+- A successful provider response should update delivery state exactly once from
+  the perspective of the Notification System.
+
+## Security and data handling
+
+Access to SendGrid is an outbound, authenticated integration from BookWorm.
+Credentials should be supplied through the runtime secret configuration and
+must not be stored in catalog documentation, source control, or operational
+logs. Email addresses and message bodies should be treated as sensitive
+notification data and exposed only to the components that require them for
+delivery and support.
+
+## Architecture decisions
+
+<ADRTable />
+
+## Architecture
+
+<NodeGraph />

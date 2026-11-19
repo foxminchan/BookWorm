@@ -1,4 +1,4 @@
-﻿using Aspire.Hosting.Dotnet;
+using Aspire.Hosting.Dotnet;
 
 namespace BookWorm.AppHost.Extensions.Network;
 
@@ -14,7 +14,8 @@ internal static class EmailExtensions
             {
                 var mailpit = applicationBuilder
                     .AddMailPit(Components.MailPit, smtpPort: 587)
-                    .WithIconName("Mail");
+                    .WithIconName("Mail")
+                    .InGroup(ResourceGroups.Tooling, ResourceDisplayOrder.Tooling);
 
                 builder.WithReference(mailpit).WaitFor(mailpit);
                 mailpit.WithParentRelationship(builder);
@@ -76,8 +77,10 @@ internal static class EmailExtensions
                         }
                     );
 
+                // Optional: when unset, the Notification service falls back to its default sender name.
                 var senderName = applicationBuilder
                     .AddParameter("email-sender-name", true)
+                    .AsOptional()
                     .WithDescription(ParameterDescriptions.Email.SenderName, true)
                     .WithCustomInput(_ =>
                         new()

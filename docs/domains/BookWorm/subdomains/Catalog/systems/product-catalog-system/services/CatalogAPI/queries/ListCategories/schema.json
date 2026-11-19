@@ -1,0 +1,22 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "ListCategoriesResponse",
+	"description": "Collection of categories returned by the Catalog API.",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"additionalProperties": false,
+		"required": ["id", "name"],
+		"properties": {
+			"id": {
+				"type": "string",
+				"format": "uuid",
+				"description": "A UUID identifying the resource."
+			},
+			"name": {
+				"type": ["string", "null"],
+				"description": "Categorie display name."
+			}
+		}
+	}
+}

@@ -6,13 +6,13 @@ import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
+import { getQueryClient } from "@workspace/api-hooks/query-client";
+import { initMocks } from "@workspace/mocks/init";
 import { Toaster } from "@workspace/ui/components/sonner";
 import { useAccessToken } from "@workspace/ui/hooks/useAccessToken";
 
 import { env } from "@/env.mjs";
 import { authClient, useSession } from "@/lib/auth-client";
-import { initMocks } from "@/lib/msw";
-import { getQueryClient } from "@/lib/query-client";
 
 export function Providers({
   children,

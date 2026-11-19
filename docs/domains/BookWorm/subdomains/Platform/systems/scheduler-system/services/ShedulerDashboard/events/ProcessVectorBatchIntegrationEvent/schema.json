@@ -1,0 +1,20 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent",
+	"title": "ProcessVectorBatchIntegrationEvent",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id", "creationDate"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Unique identifier of the integration event."
+		},
+		"creationDate": {
+			"type": "string",
+			"format": "date-time",
+			"description": "UTC timestamp when the event was created."
+		}
+	}
+}

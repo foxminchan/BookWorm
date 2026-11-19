@@ -1,0 +1,52 @@
+---
+title: Missing or broken book images
+summary: Resolve book images that fail to load or whose blob is missing.
+version: 1.0.0
+type: runbooks
+order: 3
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- Image URL returns `403`/`404`.
+- The [[entity|book]] record has an image URN but the image does not render.
+
+## Diagnose
+
+1. **Expired URL (most common):** SAS URLs are read-only and time-limited
+   (`SasExpiryHours`). Re-fetch the book to get a fresh URL; never store the
+   URL.
+2. **Wrong account or container:** URNs are `urn:{account}:{container}:{blobName}`
+   and the API validates account and container before reading. A restored or
+   migrated record pointing to a different account or container will fail.
+3. **Missing blob:** confirm the blob exists in the configured container in
+   [[container|catalog-blob]].
+
+## Recover
+
+- Restore the blob to the same container and blob name, keeping the URN
+  unchanged.
+- If the blob is unrecoverable, update the book with a new image through
+  [[service|catalog-api]] so a new URN is generated, or remove the image.
+- Do not hand-edit `books.image` unless it is an approved operational
+  correction.
+
+## Verify
+
+[[query|GetBook]] returns a working time-limited URL for the book.
+
+## Contact
+
+- **Contact point:** [[team\|platform-team]] for Blob Storage or infrastructure
+  incidents; [[team\|contributor-team]] for Catalog API, URN, or image-handling
+  issues.
+- For urgent incidents, use the responsible team's established support or
+  on-call channel. A specific channel or rotation is not documented here.
+
+<Footer />

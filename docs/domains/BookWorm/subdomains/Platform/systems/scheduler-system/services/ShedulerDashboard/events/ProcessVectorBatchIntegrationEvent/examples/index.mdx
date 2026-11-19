@@ -1,0 +1,79 @@
+---
+title: ProcessVectorBatchIntegrationEvent Examples
+summary: Publish the five-minute vector batch trigger from Scheduler and process pending catalog embeddings in Catalog Ingestion.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a vector batch trigger
+
+[[service|sheduler-dashboard]]'s `ProcessVectorBatchJob` publishes this event
+every five minutes in UTC (`0 0/5 * * * ?`, `FireOnceNow` misfire policy) to
+[[channel|scheduler.process-vector-batch]]. Because
+`IntegrationMessageOwnerAttribute` sets `AppendPrefix = false`, the Kafka
+topic is addressed directly as `scheduler.process-vector-batch` across
+environments.
+
+- `id` uniquely identifies this integration event (`UUID`).
+- `creationDate` records the UTC timestamp when the event was created.
+- Batch size and selection order are intentionally omitted; they remain owned
+  by [[service|catalog-ingestion]].
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```json process-vector-batch.json
+{
+	"id": "019a1c00-0000-7000-8000-000000000001",
+	"creationDate": "2026-11-17T00:05:00Z"
+}
+```
+
+```csharp ProcessVectorBatchIntegrationEvent.cs
+[IntegrationMessageOwner(
+    ServiceName = Services.Scheduler,
+    TopicName = "scheduler.process-vector-batch",
+    AppendPrefix = false
+)]
+[MessageIdentity("BookWorm.Contracts.ProcessVectorBatchIntegrationEvent")]
+public sealed record ProcessVectorBatchIntegrationEvent : IntegrationEvent;
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Transport envelope and delivery
+
+The JSON example above represents the camelCase data payload inside BookWorm's
+CloudEvents-compatible Kafka envelope (`application/cloudevents+json`), with
+distributed trace context propagated via the `traceparent` Kafka header.
+
+- `ProcessVectorBatchJob` disallows concurrent Quartz executions and reports
+  publication failures as `JobExecutionException`.
+- Delivery on [[channel|scheduler.process-vector-batch]] is `at-least-once`.
+
+## Consume in Catalog Ingestion
+
+[[service|catalog-ingestion]] subscribes to
+[[channel|scheduler.process-vector-batch]] via the `ProcessVectorBatch` Azure
+Functions Kafka trigger (`ConsumerGroup = catalog-ingestion`). On each trigger:
+
+1. Acquire PostgreSQL advisory lock `740031001` in [[container|catalog-database]]
+   so only one batch processor runs at a time (if the lock is busy, the
+   invocation exits without work).
+2. Read up to `200` pending updates ordered by `updated_at` and `book_id`.
+3. Generate embeddings for active books and upsert them into the
+   `data-bookworm-snippets` collection in [[container|catalog-vector]], or delete
+   records for missing/soft-deleted books.
+4. Acknowledge each pending row only if its `revision` still matches the read
+   snapshot, leaving newer concurrent updates queued for the next batch.

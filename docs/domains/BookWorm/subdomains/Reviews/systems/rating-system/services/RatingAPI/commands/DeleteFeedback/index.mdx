@@ -1,0 +1,41 @@
+---
+id: DeleteFeedback
+name: Delete feedback
+version: 1.0.0
+badges:
+  - content: Reviews
+    backgroundColor: purple
+    textColor: purple
+summary: Deletes an existing feedback record by its UUID.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: DELETE
+  path: /api/v1/feedbacks/{id}
+  statusCodes: ["204", "404"]
+sidebar:
+  badge: "DELETE"
+---
+
+## Overview
+
+Deletes a [[entity|feedback]] record when it exists. This administrator-only operation
+publishes a [[event|FeedbackDeletedIntegrationEvent]] after the record is removed.
+
+<NodeGraph />
+
+## Request and response
+
+Provide the feedback UUID in the `id` path parameter. The successful `204`
+response has no body. A missing feedback record returns `404` with
+`application/problem+json` and `ProblemDetails`.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="DeleteFeedback request contract"
+	maxHeight="500"
+	search="true"
+/>

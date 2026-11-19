@@ -1,0 +1,45 @@
+---
+id: ListFeedbacks
+name: List feedbacks
+version: 1.0.0
+badges:
+  - content: Reviews
+    backgroundColor: purple
+    textColor: purple
+summary: Returns feedback for a book with pagination, sorting, and validation responses.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/feedbacks
+  statusCodes: ["200", "400"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Returns [[entity|feedback]] records for one Catalog [[entity|book]]. The query supports paging and
+ordering so callers can retrieve a stable subset of reviews.
+
+<NodeGraph />
+
+## Query parameters and response
+
+`BookId` is required and identifies the book whose feedback is returned.
+`PageIndex` defaults to `1`, `PageSize` defaults to `20`, `OrderBy` defaults to
+`Rating`, and `IsDescending` defaults to `false`.
+
+The `200 OK` response is a JSON array of `FeedbackDto` objects. A `400 Bad
+Request` response uses `application/problem+json` and
+`HttpValidationProblemDetails`.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="FeedbackDto array JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

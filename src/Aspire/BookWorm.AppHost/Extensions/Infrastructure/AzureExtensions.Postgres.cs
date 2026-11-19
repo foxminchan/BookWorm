@@ -43,8 +43,8 @@ internal static partial class AzureExtensions
                         new PostgreSqlFlexibleServerConfiguration("pgbouncer")
                         {
                             Parent = resource,
-                            Name = "pgbouncer",
-                            Value = "on",
+                            Name = "pgbouncer.enabled",
+                            Value = "true",
                         }
                     );
                 }
@@ -72,6 +72,7 @@ internal static partial class AzureExtensions
 
             if (!isDevelopment)
             {
+                resource.AvailabilityZone = "1";
                 resource.HighAvailability.StandbyAvailabilityZone = "2";
             }
 

@@ -1,0 +1,98 @@
+---
+id: sendgrid-api
+name: SendGrid API
+version: 1.0.0
+summary: |
+  External provider API used by BookWorm to submit email messages and receive
+  provider responses for notification delivery.
+externalSystem: true
+badges:
+  - content: External
+    backgroundColor: purple
+    textColor: purple
+  - content: HTTP API
+    backgroundColor: teal
+    textColor: teal
+styles:
+  icon: /icons/third-party/sendgrid.svg
+owners:
+  - contributor-team
+receives:
+  - id: CreateMailBatch
+    version: 1.0.0
+    group: Mail API Operations
+  - id: GetMailBatch
+    version: 1.0.0
+    group: Mail API Operations
+  - id: SendMail
+    version: 1.0.0
+    group: Mail API Operations
+specifications:
+  - type: openapi
+    path: https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml
+    name: OpenAPI V3
+---
+
+## Overview
+
+The SendGrid API is the integration service for [[system|sendgrid]], the
+external email delivery system used by BookWorm. The [[system|notification-system]]
+prepares a provider request from a durable [[entity|outbox]] item and calls this API
+without transferring ownership of notification state to SendGrid.
+
+The API is a delivery boundary, not a BookWorm business API. Its response tells
+BookWorm how the provider accepted or rejected a request; it does not determine
+whether the business operation that caused the notification succeeded.
+
+### Notification connection
+
+The catalog connects [[service|notification-api]] to this service through
+[[command|SendMail]]. This edge represents logical mail submission. Notification
+currently uses MailKit over SMTP, not the HTTP Mail Send API documented below;
+SendGrid is the recipient provider when configured, while development uses MailPit.
+
+## Request lifecycle
+
+1. The Notification System selects an eligible outbox item.
+2. It maps the recipient, sender, subject, and message content to the SendGrid
+   Mail Send request.
+3. SendGrid validates the request and returns an acceptance or error response.
+4. The Notification System records the provider outcome against the outbox
+   item and applies the configured retry policy.
+
+The caller should use a bounded retry strategy for transient failures and rate
+limits. Invalid requests should be diagnosed and corrected rather than retried
+indefinitely.
+
+## API responsibilities
+
+| Area                | Responsibility                                               |
+| ------------------- | ------------------------------------------------------------ |
+| Mail submission     | Accept email requests from the Notification System           |
+| Provider validation | Validate sender, recipient, content, and request structure   |
+| Delivery processing | Route accepted messages through SendGrid's delivery network  |
+| Error reporting     | Return actionable status and error information to the caller |
+| Provider limits     | Enforce authentication, quotas, and rate limits              |
+
+BookWorm remains responsible for durable outbox state, idempotency decisions,
+retry scheduling, and operational correlation between a provider response and
+the originating notification.
+
+## Contract and integration notes
+
+The provider contract is documented by the OpenAPI specification linked in this
+service's metadata. Consumers should treat the specification as the source of
+truth for request and response shapes, required headers, authentication, and
+provider error formats.
+
+The integration should:
+
+- Keep SendGrid credentials in runtime secret configuration.
+- Avoid logging API keys, full message bodies, or unnecessary personal data.
+- Capture provider status and correlation identifiers needed for support.
+- Preserve the outbox item when the provider is unavailable.
+- Avoid treating an accepted API request as a domain-level completion event.
+
+## Architecture
+
+<NodeGraph />

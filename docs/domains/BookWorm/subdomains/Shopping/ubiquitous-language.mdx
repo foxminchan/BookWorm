@@ -1,0 +1,36 @@
+---
+dictionary:
+  - id: Basket
+    name: Basket
+    summary: A customer's current collection of items before purchase.
+    description: |
+      The Basket is mutable shopping intent. It is not an Order, an inventory
+      reservation, or a copy of the Catalog.
+    icon: ShoppingBasket
+  - id: Basket Item
+    name: Basket Item
+    summary: A book identifier and positive quantity in a Basket.
+    description: A Basket item does not contain the Catalog Book or an Order price.
+    icon: Package
+  - id: Customer Identifier
+    name: Customer Identifier
+    summary: The identifier used to address a customer's Basket.
+    description: |
+      A Customer identifier is not automatically the Buyer identifier used by
+      Ordering.
+    icon: Fingerprint
+  - id: Checkout
+    name: Checkout
+    summary: The action that starts order placement for a Basket.
+    description: |
+      Checkout begins coordination across Shopping, Ordering, and the order
+      workflow. It is not synonymous with completing or cancelling an Order.
+    icon: CreditCard
+  - id: Checked-out Event
+    name: Checked-out Event
+    summary: An integration message that coordinates checkout.
+    description: |
+      The event carries order and basket identifiers, buyer contact details,
+      and total money to the cross-context order workflow.
+    icon: Send
+---

@@ -252,8 +252,10 @@
   }
 }
 
-[data-copilotkit-message] {
-  animation: slide-up 0.3s ease-out;
+@media (prefers-reduced-motion: no-preference) {
+  [data-copilotkit-message] {
+    animation: slide-up 0.3s ease-out;
+  }
 }
 
 /* Dark Mode Adjustments */
@@ -271,7 +273,9 @@
 @media (max-width: 768px) {
   [data-copilotkit-sidebar] {
     width: 100vw;
+    width: 100dvw;
     height: 100vh;
+    height: 100dvh;
     border-radius: 0;
   }
 

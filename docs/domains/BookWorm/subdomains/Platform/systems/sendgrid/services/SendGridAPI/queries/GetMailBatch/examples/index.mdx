@@ -1,0 +1,76 @@
+---
+summary: Validate a SendGrid mail batch identifier before using it in a notification workflow.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. Retrieve a mail batch
+
+Provide the identifier returned by [[command|CreateMailBatch]]. A `200 OK` response
+confirms SendGrid recognizes the batch identifier; it does not show whether any
+message has been submitted or delivered.
+
+### Example response
+
+<CodeGroup dropdown>
+
+```json
+{
+	"batch_id": "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw"
+}
+```
+
+</CodeGroup>
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp get-mail-batch.cs
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+
+var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
+    ?? throw new InvalidOperationException("SENDGRID_API_KEY is required.");
+var batchId = "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw";
+
+using var client = new HttpClient
+{
+	BaseAddress = new Uri("https://api.sendgrid.com")
+};
+client.DefaultRequestHeaders.Authorization =
+	new AuthenticationHeaderValue("Bearer", apiKey);
+
+using var response = await client.GetAsync($"/v3/mail/batch/{batchId}");
+if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+{
+	throw new InvalidOperationException("The mail batch identifier is invalid.");
+}
+response.EnsureSuccessStatusCode();
+
+var result = await response.Content.ReadFromJsonAsync<GetMailBatchResponse>()
+    ?? throw new InvalidOperationException("SendGrid returned an empty response.");
+
+Console.WriteLine(result.BatchId);
+
+internal sealed record GetMailBatchResponse(
+	[property: JsonPropertyName("batch_id")] string BatchId);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle an unknown mail batch
+
+Treat a missing batch as a workflow state error rather than an empty success.
+Do not assume it can be used by a later [[command|SendMail]] submission.

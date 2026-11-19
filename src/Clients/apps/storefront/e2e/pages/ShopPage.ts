@@ -1,5 +1,6 @@
 import { Locator, Page, expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { BasePage } from "./BasePage";
 
 /**
@@ -15,85 +16,61 @@ export class ShopPage extends BasePage {
 
   // Locators
   get bookGrid(): Locator {
-    return this.page.locator('[data-testid="book-grid"], .book-grid, main');
+    return this.page.locator('ul[aria-label="Book catalog"], main');
   }
 
   get bookCards(): Locator {
-    return this.page.locator('[data-testid="book-card"], article, .book-card');
+    return this.page.locator('ul[aria-label="Book catalog"] article');
+  }
+
+  get searchButton(): Locator {
+    return this.page.locator('header button[aria-label="Search books"]');
   }
 
   get searchInput(): Locator {
-    return this.page.locator(
-      'input[type="search"], input[placeholder*="Search"]',
-    );
+    return this.page.locator("#header-search-input, #mobile-search-input");
   }
 
   get sortDropdown(): Locator {
-    return this.page.locator(
-      'select[name="sort"], [data-testid="sort-select"]',
-    );
+    return this.page.locator('button[aria-label="Sort options"]');
   }
 
   get filterSection(): Locator {
-    return this.page.locator('[data-testid="filters"], aside, .filters');
+    return this.page.locator('aside[aria-label="Filters"]');
   }
 
   get categoryFilters(): Locator {
-    return this.filterSection.locator(
-      'input[type="checkbox"][name="category"], [data-testid*="category"]',
-    );
-  }
-
-  get publisherFilters(): Locator {
-    return this.filterSection.locator(
-      'input[type="checkbox"][name="publisher"], [data-testid*="publisher"]',
-    );
-  }
-
-  get authorFilters(): Locator {
-    return this.filterSection.locator(
-      'input[type="checkbox"][name="author"], [data-testid*="author"]',
-    );
+    return this.filterSection.locator('button[role="checkbox"]');
   }
 
   get priceRangeSlider(): Locator {
-    return this.page.locator(
-      'input[type="range"][name*="price"], [data-testid="price-slider"]',
-    );
+    return this.filterSection.locator('[role="slider"]');
   }
 
   get clearFiltersButton(): Locator {
     return this.page.locator(
-      'button[aria-label="Clear all filters"], button:has-text("Clear Filters"), button:has-text("Reset")',
+      'button[aria-label="Clear all filters"], button:has-text("Clear Filters")',
     );
   }
 
   get pagination(): Locator {
-    return this.page.locator(
-      '[data-testid="pagination"], nav[aria-label="Pagination"]',
-    );
+    return this.page.locator('nav[aria-label="Pagination navigation"]');
   }
 
   get nextPageButton(): Locator {
-    return this.pagination.locator(
-      'button:has-text("Next"), a:has-text("Next")',
-    );
+    return this.pagination.locator('button[aria-label="Go to next page"]');
   }
 
   get previousPageButton(): Locator {
-    return this.pagination.locator(
-      'button:has-text("Previous"), a:has-text("Previous")',
-    );
+    return this.pagination.locator('button[aria-label="Go to previous page"]');
   }
 
   get emptyState(): Locator {
-    return this.page.locator(
-      '[data-testid="empty-state"], :has-text("No books found")',
-    );
+    return this.page.locator('h2:has-text("No Books Found")');
   }
 
   get loadingSkeleton(): Locator {
-    return this.page.locator('[data-testid="loading-skeleton"], .skeleton');
+    return this.page.locator('output[aria-label="Loading books"]');
   }
 
   // Actions
@@ -102,29 +79,33 @@ export class ShopPage extends BasePage {
   }
 
   async search(query: string): Promise<void> {
-    await this.searchInput.fill(query);
-    await this.searchInput.press("Enter");
+    if (!(await this.searchInput.first().isVisible())) {
+      await this.searchButton.click();
+    }
+    await this.searchInput.first().fill(query);
+    await this.searchInput.first().press("Enter");
     await this.waitForPageLoad();
   }
 
   async sortBy(option: string): Promise<void> {
-    await this.sortDropdown.selectOption({ label: option });
+    await this.sortDropdown.click();
+    await this.page.locator(`[role="option"]:has-text("${option}")`).click();
     await this.waitForPageLoad();
   }
 
   async selectCategoryFilter(categoryName: string): Promise<void> {
-    const filter = this.page
-      .locator(`label:has-text("${categoryName}") input[type="checkbox"]`)
+    const checkbox = this.filterSection
+      .getByRole("checkbox", { name: categoryName })
       .first();
-    await filter.check();
+    await checkbox.click();
     await this.waitForPageLoad();
   }
 
   async selectPublisherFilter(publisherName: string): Promise<void> {
-    const filter = this.page
-      .locator(`label:has-text("${publisherName}") input[type="checkbox"]`)
+    const checkbox = this.filterSection
+      .getByRole("checkbox", { name: publisherName })
       .first();
-    await filter.check();
+    await checkbox.click();
     await this.waitForPageLoad();
   }
 
@@ -138,18 +119,31 @@ export class ShopPage extends BasePage {
       );
     }
 
-    const minSlider = sliders[0];
-    const maxSlider = sliders[1];
+    const minSlider = sliders[0]!;
+    const maxSlider = sliders[1]!;
 
-    if (!minSlider || !maxSlider) {
-      throw new Error(
-        `Price range sliders not accessible despite length check. ` +
-          `Found ${sliders.length} sliders.`,
-      );
-    }
+    const currentMin = Number.parseInt(
+      (await minSlider.getAttribute("aria-valuenow")) ?? "0",
+      10,
+    );
+    const minSteps = min - currentMin;
+    await minSlider.focus();
+    const minKey = minSteps >= 0 ? "ArrowRight" : "ArrowLeft";
+    await forEachSequentially(Array.from({ length: Math.abs(minSteps) }), () =>
+      this.page.keyboard.press(minKey),
+    );
 
-    await minSlider.fill(min.toString());
-    await maxSlider.fill(max.toString());
+    const currentMax = Number.parseInt(
+      (await maxSlider.getAttribute("aria-valuenow")) ?? "100",
+      10,
+    );
+    const maxSteps = max - currentMax;
+    await maxSlider.focus();
+    const maxKey = maxSteps >= 0 ? "ArrowRight" : "ArrowLeft";
+    await forEachSequentially(Array.from({ length: Math.abs(maxSteps) }), () =>
+      this.page.keyboard.press(maxKey),
+    );
+
     await this.waitForPageLoad();
   }
 
@@ -167,19 +161,13 @@ export class ShopPage extends BasePage {
       await this.waitForPageLoad();
     } else {
       throw new Error(
-        `Book card at index ${index} not found. Total cards: ${cards.length}. ` +
-          `Suggestions: Verify that books are loaded before attempting to click. ` +
-          `Try using clickBookByTitle() instead for more reliable selection.`,
+        `Book card at index ${index} not found. Total cards: ${cards.length}.`,
       );
     }
   }
 
   async clickBookByTitle(title: string): Promise<void> {
-    const book = this.page
-      .locator(
-        `[data-testid="book-card"]:has-text("${title}"), article:has-text("${title}")`,
-      )
-      .first();
+    const book = this.bookCards.filter({ hasText: title }).first();
     await book.click();
     await this.waitForPageLoad();
   }
@@ -195,10 +183,10 @@ export class ShopPage extends BasePage {
   }
 
   async goToPage(pageNumber: number): Promise<void> {
-    const pageLink = this.pagination.locator(
-      `a:has-text("${pageNumber}"), button:has-text("${pageNumber}")`,
+    const pageButton = this.pagination.locator(
+      `button[aria-label*="page ${pageNumber} of"]`,
     );
-    await pageLink.click();
+    await pageButton.click();
     await this.waitForPageLoad();
   }
 
@@ -207,18 +195,17 @@ export class ShopPage extends BasePage {
   }
 
   async getBookTitles(): Promise<string[]> {
-    const titles = await this.bookCards
-      .locator('h2, h3, [data-testid="book-title"]')
-      .allTextContents();
+    const titles = await this.bookCards.locator("h3").allTextContents();
     return titles.map((title) => title.trim());
   }
 
   async getBookPrices(): Promise<number[]> {
-    const priceElements = await this.bookCards
-      .locator('[data-testid="book-price"], .price')
-      .allTextContents();
-    return priceElements.map((price) => {
-      const cleaned = price.replaceAll(/[$,]/g, "");
+    const cards = await this.bookCards.all();
+    const priceTexts = await Promise.all(
+      cards.map((card) => card.locator("span.font-bold").first().textContent()),
+    );
+    return priceTexts.map((priceText) => {
+      const cleaned = priceText?.replaceAll(/[$,]/g, "") || "0";
       return Number.parseFloat(cleaned);
     });
   }

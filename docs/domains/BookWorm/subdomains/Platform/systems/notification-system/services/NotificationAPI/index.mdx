@@ -1,0 +1,104 @@
+---
+id: notification-api
+name: Notification API
+version: 1.0.0
+summary: |
+  Notification host that consumes order commands from Kafka, renders MJML email
+  templates, and submits mail over SMTP via MailKit.
+owners:
+  - contributor-team
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: Event-driven
+    backgroundColor: orange
+    textColor: orange
+styles:
+  icon: /icons/languages/dotnet.svg
+sends:
+  - id: SendMail
+    version: 1.0.0
+receives:
+  - id: PlaceOrderCommand
+    version: 1.0.0
+    group: Order Email Requests
+    from:
+      - id: bookworm.{env}.finance.place-order
+        version: 1.0.0
+  - id: CancelOrderCommand
+    version: 1.0.0
+    group: Order Email Requests
+    from:
+      - id: bookworm.{env}.finance.cancel-order
+        version: 1.0.0
+  - id: CompleteOrderCommand
+    version: 1.0.0
+    group: Order Email Requests
+    from:
+      - id: bookworm.{env}.finance.complete-order
+        version: 1.0.0
+specifications:
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Notification API documents the messaging host inside
+[[system|notification-system]]. Despite its name, the current application maps
+only service-default HTTP endpoints (such as health checks), not email
+submission or status-query APIs. Its business input is Kafka messages handled
+by Wolverine.
+
+## Consumed messages
+
+| Message                           | Producer                    | Notification action                                             |
+| --------------------------------- | --------------------------- | --------------------------------------------------------------- |
+| [[command\|PlaceOrderCommand]]    | Finance order orchestration | Render a new-order email; the shared `basketId` is unused here. |
+| [[command\|CancelOrderCommand]]   | Finance order orchestration | Render a canceled-order email.                                  |
+| [[command\|CompleteOrderCommand]] | Finance order orchestration | Render a completed-order email.                                 |
+
+The attached AsyncAPI specification defines all three receive operations, topic
+addresses, message identities, payload schemas, and examples. Payloads are
+camelCase JSON inside the CloudEvents-compatible envelope. Optional trace
+context travels in `traceparent`. Finance partitions order commands by `OrderId`;
+this does not guarantee ordering across different topics or exactly-once emails.
+Notification publishes no application-level result event.
+
+## Email rendering and SMTP delivery
+
+Order handlers skip null, empty, or whitespace-only email addresses. For other
+values they map the order status, use `Customer` when the name is null, and
+render `Orders/OrderEmail` via `MjmlTemplateRenderer`. Notification submits the
+rendered message directly over SMTP using MailKit with a configured resilience
+pipeline (`AddMailResiliencePipeline`). Development uses MailPit; other
+environments use the configured email provider. SMTP acceptance does not prove
+delivery to the recipient.
+
+The catalog models outbound provider submission as
+[[service|notification-api]] sending [[command|SendMail]] to
+[[service|sendgrid-api]]. This is a logical mail-submission relationship, not
+an HTTP call or a Kafka publication. The runtime still uses MailKit over SMTP,
+with MailPit in development and SendGrid when configured as the provider.
+
+## Failure semantics
+
+- Rendering and sender failures propagate from order handlers. There is no
+  command-level email syntax validation.
+- A missing broker connection disables event-bus registration. Exhausted
+  Wolverine listener retries go to the native
+  `bookworm.{env}.notification.dead-letter-queue` topic.
+- Repeated commands and Finance's placement retries can produce additional
+  emails. Notification is stateless and does not maintain a PostgreSQL outbox.
+
+Use sanitized traces and structured logs to diagnose processing; do not log
+recipient details or rendered content unnecessarily.
+
+## Architecture
+
+<NodeGraph />

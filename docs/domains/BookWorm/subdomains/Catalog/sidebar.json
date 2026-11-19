@@ -1,0 +1,46 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Guides",
+			"icon": "BookOpen",
+			"pages": ["[[doc|guides/managing-catalog-data]]", "[[doc|guides/search-and-discovery]]"]
+		},
+		{
+			"title": "Engineering",
+			"icon": "Wrench",
+			"pages": [
+				"[[doc|engineering/consistency-and-data-ownership]]",
+				"[[doc|engineering/change-checklist]]"
+			]
+		},
+		"$architecture",
+		"$systems",
+		"$flows",
+		"$entities",
+		{
+			"title": "Runbooks",
+			"icon": "Siren",
+			"pages": [
+				"[[doc|runbooks/vector-index-lag]]",
+				"[[doc|runbooks/stale-cache-or-redis-outage]]",
+				"[[doc|runbooks/broken-book-images]]",
+				"[[doc|runbooks/rating-summary-mismatch]]"
+			]
+		},
+		{
+			"title": "Decisions",
+			"icon": "ClipboardList",
+			"collapsed": true,
+			"pages": [
+				"[[adr|adr-001-postgresql-system-of-record]]",
+				"[[adr|adr-002-hybrid-vector-search-qdrant]]",
+				"[[adr|adr-003-database-queue-for-vector-indexing]]",
+				"[[adr|adr-004-fusioncache-redis-for-catalog-reads]]",
+				"[[adr|adr-005-blob-storage-for-book-images]]",
+				"[[adr|adr-006-reviews-rating-projection-on-book]]"
+			]
+		},
+		"$owners"
+	]
+}

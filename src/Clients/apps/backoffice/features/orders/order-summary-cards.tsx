@@ -1,3 +1,4 @@
+import type { OrderStatus } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 import {
   Card,
@@ -6,8 +7,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/utils/format";
-
-import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
+import { getOrderStatusStyle } from "@workspace/utils/order";
 
 type OrderSummaryCardsProps = Readonly<{
   status: OrderStatus;

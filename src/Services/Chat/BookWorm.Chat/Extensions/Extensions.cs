@@ -1,16 +1,13 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
-using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.Rating;
 using BookWorm.Chat.Agents.Routing;
-using BookWorm.Chat.Configurations;
 using BookWorm.Chat.Orchestration;
-using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Chat.Extensions;
 
@@ -24,42 +21,34 @@ internal static class Extensions
 
             builder.AddDefaultCors();
 
-            builder.AddAppSettings<ChatAppSettings>();
-
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
-                .AddPolicy(
-                    Authorization.Policies.Admin,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.Admin)
-                            .RequireScope(
-                                $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                $"{Services.Chatting}_{Authorization.Actions.Write}"
-                            );
-                    }
-                )
-                .AddPolicy(
-                    Authorization.Policies.User,
-                    policy =>
-                    {
-                        policy
-                            .RequireAuthenticatedUser()
-                            .RequireRole(Authorization.Roles.User)
-                            .RequireScope(
-                                $"{Services.Chatting}_{Authorization.Actions.Read}",
-                                $"{Services.Chatting}_{Authorization.Actions.Write}"
-                            );
-                    }
-                )
+                .AddPolicy(Authorization.Policies.Admin, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Admin)
+                        .RequireScope(
+                            $"{Services.Chatting}_{Authorization.Actions.Read}",
+                            $"{Services.Chatting}_{Authorization.Actions.Write}"
+                        );
+                })
+                .AddPolicy(Authorization.Policies.Customer, policy =>
+                {
+                    policy
+                        .RequireAuthenticatedUser()
+                        .RequireRole(Authorization.Roles.Customer)
+                        .RequireScope(
+                            $"{Services.Chatting}_{Authorization.Actions.Read}",
+                            $"{Services.Chatting}_{Authorization.Actions.Write}"
+                        );
+                })
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireRole(Authorization.Roles.User)
+                        .RequireRole(Authorization.Roles.Customer)
                         .RequireScope(
                             $"{Services.Chatting}_{Authorization.Actions.Read}",
                             $"{Services.Chatting}_{Authorization.Actions.Write}"
@@ -83,9 +72,6 @@ internal static class Extensions
 
             services.AddVersioning();
             services.AddEndpoints(typeof(IChatApiMarker));
-            services.AddDefaultOpenApi(options =>
-                options.ApplyOpenApiInfoDefinitions<ChatAppSettings>()
-            );
 
             // Configure ClaimsPrincipal
             services.AddTransient(s =>
@@ -116,8 +102,6 @@ internal static class Extensions
 
             // Compose the multi-agent workflow
             builder.AddChatWorkflow();
-
-            services.AddKeycloakTokenIntrospection();
         }
     }
 }

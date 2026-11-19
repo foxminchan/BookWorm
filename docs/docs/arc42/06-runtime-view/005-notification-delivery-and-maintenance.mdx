@@ -1,0 +1,32 @@
+---
+title: Notification Delivery and Maintenance
+summary: Runtime email outbox lifecycle and scheduled retry and cleanup requests.
+owners:
+  - contributor-team
+badges:
+  - content: Runtime Scenario
+    backgroundColor: purple
+    textColor: purple
+---
+
+## 6.5 Notification delivery and maintenance
+
+Business services publish notification intent; [[system|notification-system]] ([[service|notification-api]]) owns email rendering, the durable outbox, SMTP submission (via [[system|sendgrid]]), and delivery-attempt state. [[service|sheduler-dashboard]] triggers bounded maintenance work but does not own email or order state.
+
+<MermaidFileLoader file="mermaids/notification-delivery-and-maintenance.mmd" />
+
+### Email and maintenance lifecycle
+
+1. [[service|order-orchestration]] publishes an order-related email command. If the recipient address is blank, [[service|notification-api]] skips the email work.
+2. Otherwise, Notification renders the email and persists an unsent record in its database before submitting it over SMTP.
+3. Successful SMTP submission marks the outbox record sent. A submission or state-save failure can leave an unsent record or an uncertain outcome.
+4. Every hour, [[service|sheduler-dashboard]] publishes resend and cleanup requests. Notification selects up to 100 unsent records for resend or up to 100 sent records for cleanup. These requests do not return a downstream result event.
+
+### Operational semantics
+
+- SMTP acceptance is not proof of delivery to the recipient.
+- Resend can create a new outbox record per attempt; repeated commands or ambiguous SMTP outcomes can result in duplicate submissions.
+- Cleanup selects sent records only and has no retention cutoff. It is not a way to address an unsent delivery backlog.
+- A successful scheduler invocation means the request was published, not that Notification completed the work. Check Notification's outbox and SMTP health.
+
+See the [[flow|notification-delivery]], [[service|sheduler-dashboard]], and [[system|notification-system]] for the scheduling and delivery contracts.

@@ -1,0 +1,32 @@
+---
+id: FeedbackCreatedIntegrationEvent
+name: Feedback created
+version: 1.0.0
+summary: |
+  Indicates that a customer feedback rating was created for a book. Rating API
+  publishes this event so Catalog can update its denormalized rating summary.
+owners:
+  - contributor-team
+schemaPath: schema.json
+badges:
+  - content: Reviews
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Overview
+
+[[service|rating-api]] publishes this event after a new [[entity|feedback]]
+record is committed. The event contains the identifiers and rating value that
+[[service|catalog-api]] needs to update its denormalized [[entity|book]]
+rating summary.
+
+<NodeGraph />
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.rating.feedback-create]]
+
+## Schema
+
+<SchemaViewer file="schema.json" title="Feedback created schema" maxHeight="500" />

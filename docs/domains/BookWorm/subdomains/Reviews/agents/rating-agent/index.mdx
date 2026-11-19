@@ -1,0 +1,71 @@
+---
+id: rating-agent
+name: Rating Agent
+version: 1.0.0
+summary: Analyzes a book's feedback and classifies product quality as Best Seller, Good, Bad, or No Data, with metrics, justification, and confidence.
+owners:
+  - business-strategy
+  - contributor-team
+repository:
+  language: C#
+  url: https://github.com/foxminchan/BookWorm
+tools:
+  - name: GetCustomerReviews
+    type: function
+    icon: /icons/languages/dotnet.svg
+    description: In-process ReviewTool function that returns all raw reviews for a book (review ID, rating, comment) as JSON. Read-only; rate limited to 30/minute by governance policy.
+  - name: get_book
+    type: mcp
+    icon: /icons/languages/dotnet.svg
+    description: Tool exposed by the BookWorm McpTools server that returns Catalog book metadata (title, authors, category, price, AverageRating, TotalReviews). Refreshed per call and always invoked before GetCustomerReviews.
+sends:
+  - id: AnalyzeText
+    version: 1.0.0
+  - id: AnonymizeText
+    version: 1.0.0
+readsFrom:
+  - id: rating-database
+    version: 1.0.0
+badges:
+  - content: AI Agent
+    backgroundColor: purple
+    textColor: purple
+model:
+  provider: Microsoft
+  name: model-router
+  version: "2025-11-18"
+---
+
+The Rating Agent is the sole Rating-domain agent resource. Hosted inside the Rating service, it turns raw [[entity|feedback]] into a derived, read-time insight and never changes stored feedback or Catalog's rating projection (see [[domain|reviews]]).
+
+The `RatingSummarizer` workflow is orchestration for the feedback-summary endpoint, not a separate Rating-domain agent. It validates input, routes work to the shared Chat service's specialist agents and this Rating Agent, then formats the response.
+
+## Tools
+
+<AgentTools />
+
+## Behavior
+
+- The agent instructions request `get_book` first, followed by `GetCustomerReviews`.
+- Classification rules:
+  - **Best Seller**: average ≥ 4.5 with 50+ reviews, or ≥ 4.0 with 200+ reviews
+  - **Good**: average ≥ 3.5 with 10+ reviews
+  - **Bad**: average < 3.5 or negative feedback patterns
+  - **No Data**: no ratings
+- Output: classification, metrics (average, count, distribution), brief justification, confidence level.
+- Runtime settings: temperature 0.4, max 1,500 output tokens, multiple tool calls allowed.
+
+## Guardrails and governance
+
+- Agent Governance policy `rating-agent.yaml` uses `default_action: deny`: only allow-listed read tools run, write tools and destructive SQL (`DROP`, `DELETE`, `UPDATE`, ...) are blocked, and `get_reviews` is limited to 30/minute.
+- PII middleware and guardrail middleware wrap the chat client.
+- The Presidio PII middleware calls [[service|PresidioAPI]] in the external
+  [[system|data-privacy]] system through [[command|AnalyzeText]] to detect PII,
+  then [[command|AnonymizeText]] with the detected entities to redact sensitive
+  text before it reaches the model or the output; stored feedback is unchanged.
+  These are HTTP calls made by middleware, not model-selected tools or Kafka messages.
+- Context compaction pipeline: tool-result compaction (20+ messages), summarization (3,000 tokens), sliding window (12 turns), truncation (24,000 tokens).
+
+## Architecture
+
+<NodeGraph />

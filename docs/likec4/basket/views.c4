@@ -1,0 +1,8 @@
+views {
+  view basketContext of basket {
+    title 'Basket / Cart System context'
+    include *
+    include customer, catalog.contract, ordering, finance, idp.oauthApi
+    autoLayout LeftRight
+  }
+}

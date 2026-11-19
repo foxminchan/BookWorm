@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Specification.Expressions;
+using BookWorm.Chassis.Specification.Expressions;
 
 namespace BookWorm.Chassis.Specification.Evaluators;
 
@@ -16,47 +16,58 @@ internal sealed class OrderEvaluator : IEvaluator
             return query;
         }
 
-        if (
-            specification.OrderExpressions.Count(x =>
-                x.OrderType is OrderType.OrderBy or OrderType.OrderByDescending
-            ) > 1
-        )
-        {
-            throw new InvalidOperationException(
-                "Only one OrderBy or OrderByDescending is allowed."
-            );
-        }
+        IOrderedQueryable<T>? orderedQuery = null;
+        var hasPrimaryOrder = false;
 
-        var orderedQuery = specification.OrderExpressions.Aggregate<
-            OrderExpression<T>?,
-            IOrderedQueryable<T>?
-        >(
-            null,
-            (queryable, orderExpression) =>
-                orderExpression?.OrderType switch
+        foreach (var orderExpression in specification.OrderExpressions)
+        {
+            if (IsPrimaryOrder(orderExpression.OrderType))
+            {
+                if (hasPrimaryOrder)
                 {
-                    OrderType.OrderBy => queryable is null
-                        ? query.OrderBy(orderExpression.KeySelector)
-                        : queryable.ThenBy(orderExpression.KeySelector),
-                    OrderType.OrderByDescending => queryable is null
-                        ? query.OrderByDescending(orderExpression.KeySelector)
-                        : queryable.ThenByDescending(orderExpression.KeySelector),
-                    OrderType.ThenBy => queryable?.ThenBy(orderExpression.KeySelector),
-                    OrderType.ThenByDescending => queryable?.ThenByDescending(
-                        orderExpression.KeySelector
-                    ),
-                    _ => throw new ArgumentOutOfRangeException(
-                        nameof(OrderType),
-                        "Invalid order type."
-                    ),
+                    throw new InvalidOperationException(
+                        "Only one OrderBy or OrderByDescending is allowed."
+                    );
                 }
-        );
 
-        if (orderedQuery is not null)
-        {
-            query = orderedQuery;
+                hasPrimaryOrder = true;
+            }
+
+            orderedQuery = ApplyOrder(query, orderedQuery, orderExpression);
         }
 
-        return query;
+        return orderedQuery ?? query;
+    }
+
+    private static bool IsPrimaryOrder(OrderType orderType)
+    {
+        return orderType is OrderType.OrderBy or OrderType.OrderByDescending;
+    }
+
+    private static IOrderedQueryable<T>? ApplyOrder<T>(
+        IQueryable<T> query,
+        IOrderedQueryable<T>? orderedQuery,
+        OrderExpression<T> orderExpression
+    )
+        where T : class
+    {
+        return orderExpression.OrderType switch
+        {
+            OrderType.OrderBy => orderedQuery is null
+                ? query.OrderBy(orderExpression.KeySelector)
+                : orderedQuery.ThenBy(orderExpression.KeySelector),
+            OrderType.OrderByDescending => orderedQuery is null
+                ? query.OrderByDescending(orderExpression.KeySelector)
+                : orderedQuery.ThenByDescending(orderExpression.KeySelector),
+            OrderType.ThenBy => orderedQuery?.ThenBy(orderExpression.KeySelector),
+            OrderType.ThenByDescending => orderedQuery?.ThenByDescending(
+                orderExpression.KeySelector
+            ),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(orderExpression),
+                orderExpression.OrderType,
+                "Invalid order type."
+            ),
+        };
     }
 }

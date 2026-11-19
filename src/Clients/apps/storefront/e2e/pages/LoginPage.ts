@@ -15,7 +15,7 @@ export class LoginPage extends BasePage {
 
   // Locators
   get redirectingMessage(): Locator {
-    return this.page.locator('h1:has-text("Redirecting to login")');
+    return this.page.locator('h1:has-text("Redirecting to login...")');
   }
 
   get loadingSpinner(): Locator {
@@ -23,7 +23,9 @@ export class LoginPage extends BasePage {
   }
 
   get redirectDescription(): Locator {
-    return this.page.locator('p:has-text("redirect you to the login page")');
+    return this.page.locator(
+      'p:has-text("Please wait while we redirect you to the login page.")',
+    );
   }
 
   // Actions
@@ -31,9 +33,11 @@ export class LoginPage extends BasePage {
     await this.goto(this.path);
   }
 
-  async waitForKeycloakRedirect(): Promise<void> {
-    // Wait for redirect to Keycloak OAuth provider
-    await this.page.waitForURL(/keycloak|auth/, { timeout: 10000 });
+  async waitForEntraRedirect(): Promise<void> {
+    // Wait for redirect to Microsoft Entra ID OAuth provider
+    await this.page.waitForURL(/login\.microsoftonline\.com|auth/, {
+      timeout: 10000,
+    });
   }
 
   // Assertions

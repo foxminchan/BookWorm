@@ -1,0 +1,50 @@
+---
+id: adr-bw-016-layered-architecture-verification
+name: "ADR-BW-016: Verify behavior, contracts, and boundaries in separate layers"
+version: 1.0.0
+summary: Combine focused business tests, consumer/provider contracts, architecture checks, schema validation, and high-value user journeys.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-017-compatible-contract-evolution
+  - id: adr-bw-018-single-source-decision-documentation
+---
+
+## Context
+
+A passing unit test does not demonstrate consumer compatibility, while a passing customer journey does not prove structural boundaries or every failure case. Independent services need evidence at more than one level.
+
+## Decision
+
+Retain layered verification: TUnit business tests with the established mocking and assertion tools, consumer-driven asynchronous contracts and provider verification, ArchUnitNET.TUnit structural checks, Protocol Buffer lint and breaking-change checks, and high-value client end-to-end tests.
+
+Generate consumer contract artifacts before provider verification. Select checks that exercise the changed boundary and its failure semantics rather than treating one test layer as a universal substitute.
+
+## Decision drivers
+
+- Business correctness under successful and failed execution.
+- Compatibility between independently maintained producers and consumers.
+- Detection of structural and documentation drift.
+
+## Alternatives considered
+
+| Alternative           | Assessment                                                                |
+| --------------------- | ------------------------------------------------------------------------- |
+| Unit tests only       | Are fast but cannot establish cross-service compatibility.                |
+| End-to-end tests only | Exercise journeys but are less focused and do not prove structural rules. |
+| Manual review only    | Allows contextual judgment but lacks repeatable regression evidence.      |
+
+## Consequences
+
+- Different architectural risks receive appropriate evidence.
+- Multiple suites, artifacts, and baselines require maintenance.
+- Listed coverage areas are verification obligations, not a claim that every case is currently tested.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] and [[doc|development/005-testing]].

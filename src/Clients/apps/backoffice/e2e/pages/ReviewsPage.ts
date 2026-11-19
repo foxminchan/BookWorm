@@ -4,15 +4,19 @@ import { BasePage } from "./BasePage";
 
 /**
  * Reviews Management Page Object
+ * Handles /backoffice/reviews
  */
 export class ReviewsPage extends BasePage {
-  // Selectors
-  private readonly pageHeading = 'h1:has-text("Reviews")';
+  private readonly pageHeading = 'h1:has-text("Reviews Management")';
+  private readonly bookSelectTrigger = "#book-select";
   private readonly reviewsTable = "table";
   private readonly tableRows = "table tbody tr";
-  private readonly searchInput = 'input[placeholder*="Search"]';
-  private readonly approveButtons = 'button:has-text("Approve")';
-  private readonly rejectButtons = 'button:has-text("Reject")';
+  private readonly deleteButtons = 'button[aria-label^="Delete review "]';
+  private readonly confirmDialog = '[role="alertdialog"]';
+  private readonly confirmDeleteButton =
+    '[role="alertdialog"] button:has-text("Delete")';
+  private readonly cancelDialogButton =
+    '[role="alertdialog"] button:has-text("Cancel")';
 
   constructor(page: Page) {
     super(page);
@@ -22,7 +26,7 @@ export class ReviewsPage extends BasePage {
    * Navigate to reviews page
    */
   async navigate(): Promise<void> {
-    await this.goto("/rating/reviews");
+    await this.goto("/reviews");
   }
 
   /**
@@ -30,15 +34,14 @@ export class ReviewsPage extends BasePage {
    */
   async assertIsReviewsPage(): Promise<void> {
     await this.assertVisible(this.pageHeading);
-    await this.assertVisible(this.reviewsTable);
   }
 
   /**
-   * Search reviews
+   * Select the first available book in BookSelector
    */
-  async searchReviews(query: string): Promise<void> {
-    await this.fill(this.searchInput, query);
-    await this.pressKey("Enter");
+  async selectFirstBook(): Promise<void> {
+    await this.click(this.bookSelectTrigger);
+    await this.page.locator('[role="option"]').first().click();
     await this.waitForPageLoad();
   }
 
@@ -46,22 +49,39 @@ export class ReviewsPage extends BasePage {
    * Get reviews count
    */
   async getReviewsCount(): Promise<number> {
+    const tableVisible = await this.isVisible(this.reviewsTable);
+    if (!tableVisible) {
+      return 0;
+    }
+    const emptyCell = this.page.locator(
+      'table tbody td:has-text("No data found")',
+    );
+    if (await emptyCell.isVisible()) {
+      return 0;
+    }
     return await this.page.locator(this.tableRows).count();
   }
 
   /**
-   * Approve first review
+   * Delete first review in table
    */
-  async approveFirstReview(): Promise<void> {
-    await this.page.locator(this.approveButtons).first().click();
+  async deleteFirstReview(): Promise<void> {
+    await this.page.locator(this.deleteButtons).first().click();
+    await this.waitForElement(this.confirmDialog);
+  }
+
+  /**
+   * Confirm review deletion
+   */
+  async confirmDelete(): Promise<void> {
+    await this.click(this.confirmDeleteButton);
     await this.waitForPageLoad();
   }
 
   /**
-   * Reject first review
+   * Cancel review deletion
    */
-  async rejectFirstReview(): Promise<void> {
-    await this.page.locator(this.rejectButtons).first().click();
-    await this.waitForPageLoad();
+  async cancelDelete(): Promise<void> {
+    await this.click(this.cancelDialogButton);
   }
 }

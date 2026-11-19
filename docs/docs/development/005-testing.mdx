@@ -1,0 +1,50 @@
+---
+title: Testing Execution
+summary: BookWorm testing principles, frameworks, and commands for backend and contract tests.
+owners:
+  - contributor-team
+badges:
+  - content: Onboarding
+    backgroundColor: teal
+    textColor: teal
+---
+
+# Testing changes
+
+Write tests that verify behavior, isolate the code under test, and remain deterministic. Cover happy paths, edge cases, validation failures, and exception handling.
+
+## Test practices
+
+- Test business logic and domain behavior; aim for at least 80% coverage in domain logic.
+- Name tests descriptively, using the `GivenCondition_WhenAction_ThenExpectedResult` pattern. For example: `GivenValidBook_WhenAddingToLibrary_ThenSuccessReturned`.
+- Group tests by feature or domain entity, with separate fixtures for distinct scenarios.
+- Mock external dependencies such as repositories, services, and infrastructure components.
+- Avoid testing implementation details. Keep tests fast, independent, repeatable, and free of shared state.
+- Follow TUnit conventions and use appropriate test attributes for categorization.
+
+## Frameworks and tools
+
+- **Test framework:** TUnit (not xUnit, NUnit, or MSTest)
+- **Mocking:** Moq
+- **Assertions:** Shouldly
+- **Consumer-driven contracts:** Pact.NET asynchronous-message consumer contracts and provider verification
+- **Architecture tests:** ArchUnitNET.TUnit in `tests/BookWorm.ArchTests/`
+- **Coverage:** Microsoft.Testing.Extensions.CodeCoverage
+
+For backend test authoring, use the [TUnit skill](https://github.com/foxminchan/BookWorm/tree/main/.agents/skills/tunit).
+
+## Run tests
+
+The repository defines common tasks in [`mise.toml`](https://github.com/foxminchan/BookWorm/blob/main/mise.toml). From the repository root:
+
+```bash
+mise run test:unit
+mise run test:contracts
+mise run test
+```
+
+`mise run test:unit` runs the service unit tests and architecture tests. `mise run test:contracts` generates consumer pacts before verifying providers. `mise run test` builds the solution, then runs both suites. For a focused change, run the relevant test project directly; consult the corresponding task in `mise.toml` for the current project paths and filters.
+
+## Contract tests
+
+The contract task runs consumer tests first to generate pact files under `tests/pacts/`, then runs provider verification against those files. Preserve this order when running contract tests manually because both stages share the generated artifacts.

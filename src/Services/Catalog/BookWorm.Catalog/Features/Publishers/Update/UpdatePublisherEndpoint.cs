@@ -1,14 +1,12 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.Update;
+namespace BookWorm.Catalog.Features.Publishers.Update;
 
 internal sealed class UpdatePublisherEndpoint
     : IEndpoint<NoContent, UpdatePublisherCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
-                "/publishers",
-                async (UpdatePublisherCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPut("/publishers", async (UpdatePublisherCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPut()
             .WithTags(nameof(Publisher))
@@ -16,7 +14,7 @@ internal sealed class UpdatePublisherEndpoint
             .WithSummary("Update Publisher")
             .WithDescription("Updates publisher if it exists")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

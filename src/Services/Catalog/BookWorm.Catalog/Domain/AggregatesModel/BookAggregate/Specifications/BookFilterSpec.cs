@@ -8,12 +8,12 @@ internal sealed class BookFilterSpec : Specification<Book>
     {
         Query.AsNoTracking();
 
-        if (categoryIds is not null && categoryIds.Length > 0)
+        if (categoryIds is { Length: > 0 })
         {
             Query.Where(book => categoryIds.AsEnumerable().Contains((Guid)book.Category!.Id));
         }
 
-        if (publisherIds is not null && publisherIds.Length > 0)
+        if (publisherIds is { Length: > 0 })
         {
             Query.Where(book => publisherIds.AsEnumerable().Contains((Guid)book.Publisher!.Id));
         }
@@ -29,7 +29,7 @@ internal sealed class BookFilterSpec : Specification<Book>
     )
         : this(categoryIds, publisherIds)
     {
-        if (ids is not null && ids.Length > 0)
+        if (ids is { Length: > 0 })
         {
             Query.Where(book => ids.AsEnumerable().Contains((Guid)book.Id));
         }
@@ -44,7 +44,7 @@ internal sealed class BookFilterSpec : Specification<Book>
             Query.Where(book => book.Price!.OriginalPrice <= maxPrice);
         }
 
-        if (authorIds is not null && authorIds.Length > 0)
+        if (authorIds is { Length: > 0 })
         {
             Query.Where(book =>
                 book.BookAuthors.Any(author =>

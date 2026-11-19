@@ -1,0 +1,30 @@
+---
+title: Rating summarizer workflow
+---
+flowchart TD
+	PartitionExecutor["PartitionExecutor (Start)"];
+	MapExecutor_0["MapExecutor-0"];
+	MapExecutor_1["MapExecutor-1"];
+	MapExecutor_2["MapExecutor-2"];
+	MapExecutor_3["MapExecutor-3"];
+	MapResultsJoinExecutor["MapResultsJoinExecutor"];
+	ReduceExecutor["ReduceExecutor"];
+	QualityAssessExecutor["QualityAssessExecutor"];
+	RefineReductionExecutor["RefineReductionExecutor"];
+	ClassifyExecutor["ClassifyExecutor"];
+
+	fan_in_MapResultsJoinExecutor_A93A9FAE((fan-in))
+	MapExecutor_0 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
+	MapExecutor_1 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
+	MapExecutor_2 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
+	MapExecutor_3 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
+	fan_in_MapResultsJoinExecutor_A93A9FAE --> MapResultsJoinExecutor;
+	PartitionExecutor --> MapExecutor_0;
+	PartitionExecutor --> MapExecutor_1;
+	PartitionExecutor --> MapExecutor_2;
+	PartitionExecutor --> MapExecutor_3;
+	MapResultsJoinExecutor --> ReduceExecutor;
+	ReduceExecutor --> QualityAssessExecutor;
+	QualityAssessExecutor -->|"Confidence below minimum and iteration below limit"| RefineReductionExecutor;
+	QualityAssessExecutor -->|"Confidence sufficient or iteration limit reached"| ClassifyExecutor;
+	RefineReductionExecutor -->|"Original partial summaries + assessment feedback; iteration + 1"| ReduceExecutor;

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Security.TokenExchange;
+using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,7 +72,7 @@ public static class McpClientExtensions
             var transportName = $"{serviceName}-Transport";
 
             services.AddHttpContextAccessor();
-            services.AddHttpClient(transportName).AddAuthTokenExchange(serviceName);
+            services.AddHttpClient(transportName).AddAgentTokenExchange(serviceName);
 
             services.AddSingleton(sp =>
             {

@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Microsoft.Identity.Web;
 
 namespace BookWorm.Ordering.Features.Dashboard;
 
@@ -18,7 +19,6 @@ internal sealed class StreamDashboardEndpoint
             .WithDescription(
                 "Send cached dashboard snapshots every 15 seconds; reconnect to resynchronize"
             )
-            .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
             .MapToApiVersion(ApiVersions.V1)
             .RequireAuthorization(Authorization.Policies.Admin)
             .RequireAuthorization(policy =>

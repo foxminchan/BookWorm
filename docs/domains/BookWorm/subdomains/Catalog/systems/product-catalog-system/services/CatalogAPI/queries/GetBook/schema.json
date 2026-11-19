@@ -1,0 +1,106 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "GetBookResponse",
+	"description": "Book representation returned by the Catalog API.",
+	"type": "object",
+	"allOf": [
+		{
+			"type": "object",
+			"additionalProperties": false,
+			"required": [
+				"id",
+				"name",
+				"description",
+				"imageUrl",
+				"price",
+				"priceSale",
+				"status",
+				"category",
+				"publisher",
+				"authors",
+				"averageRating",
+				"totalReviews"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"format": "uuid",
+					"description": "A UUID identifying the resource."
+				},
+				"name": {
+					"type": ["string", "null"]
+				},
+				"description": {
+					"type": ["string", "null"]
+				},
+				"imageUrl": {
+					"type": ["string", "null"],
+					"format": "uri"
+				},
+				"price": {
+					"type": "number"
+				},
+				"priceSale": {
+					"type": ["number", "null"]
+				},
+				"status": {
+					"type": "string",
+					"enum": ["InStock", "OutOfStock"]
+				},
+				"category": {
+					"type": ["object", "null"],
+					"properties": {
+						"id": {
+							"type": "string",
+							"format": "uuid",
+							"description": "A UUID identifying the resource."
+						},
+						"name": {
+							"type": ["string", "null"]
+						}
+					},
+					"required": ["id", "name"]
+				},
+				"publisher": {
+					"type": ["object", "null"],
+					"properties": {
+						"id": {
+							"type": "string",
+							"format": "uuid",
+							"description": "A UUID identifying the resource."
+						},
+						"name": {
+							"type": ["string", "null"]
+						}
+					},
+					"required": ["id", "name"]
+				},
+				"authors": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string",
+								"format": "uuid",
+								"description": "A UUID identifying the resource."
+							},
+							"name": {
+								"type": ["string", "null"]
+							}
+						},
+						"required": ["id", "name"]
+					}
+				},
+				"averageRating": {
+					"type": "number",
+					"minimum": 0
+				},
+				"totalReviews": {
+					"type": "integer",
+					"minimum": 0
+				}
+			}
+		}
+	]
+}

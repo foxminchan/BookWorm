@@ -1,0 +1,31 @@
+---
+title: Feedback and Rating Projection
+summary: Runtime propagation of customer feedback to Catalog's derived rating summary, including invalid-reference compensation.
+owners:
+  - contributor-team
+badges:
+  - content: Runtime Scenario
+    backgroundColor: purple
+    textColor: purple
+---
+
+## 6.3 Feedback and Catalog rating projection
+
+[[domain|reviews]] owns individual customer [[entity|feedback]], while [[domain|catalog]] owns the average rating and review count projected onto a [[entity|book]]. The two services exchange integration events; Catalog does not read the [[container|rating-database]].
+
+<MermaidFileLoader file="mermaids/feedback-and-rating-projection.mmd" />
+
+### Interaction and consistency
+
+1. The customer submits feedback for a book.
+2. [[service|rating-api]] validates the feedback and persists it in the [[container|rating-database]].
+3. After the write, Reviews publishes [[event|FeedbackCreatedIntegrationEvent]].
+4. [[service|catalog-api]] consumes the event and updates its book-level rating projection. The original feedback remains owned by Reviews.
+
+### Invalid book reference
+
+If Catalog cannot apply the event because the referenced book does not exist, it publishes [[event|BookUpdatedRatingFailedIntegrationEvent]]. [[service|rating-api]] consumes the compensation event and deletes the invalid feedback record. This explicit compensation avoids leaving orphaned feedback or silently ignoring projection failure.
+
+The projection is derived data, not a second feedback store. Monitor event processing and projection consistency separately from the feedback write itself.
+
+See the [[flow|feedback-publication]], [[service|rating-api]], and [[system|product-catalog-system]] for the detailed event contracts and ownership boundaries.

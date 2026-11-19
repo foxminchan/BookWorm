@@ -1,0 +1,64 @@
+---
+title: Managing catalog data
+summary: How catalog business users and integrators create and maintain books, authors, categories, and publishers.
+version: 1.0.0
+type: guides
+order: 1
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Audience
+
+Catalog business users, support engineers, and teams integrating with
+[[service|catalog-api]].
+
+## Order of operations
+
+Books reference categories and publishers and are linked to authors, so create
+reference data first:
+
+1. Create the [[entity|publisher]] and [[entity|category]] records.
+2. Create the [[entity|author]] records.
+3. Create the [[entity|book]] referencing those identities, optionally with an
+   image (multipart form data).
+4. Confirm the book with [[query|GetBook]], then allow time for search indexing
+   (see [[doc|guides/search-and-discovery]]).
+
+## Rules to respect
+
+- A discount price on a [[entity|book]] cannot be negative or greater than the
+  original price.
+- [[entity|category]] and [[entity|publisher]] names are unique.
+- Deleting a [[entity|category]] or [[entity|publisher]] keeps its books; the
+  reference is cleared.
+- An [[entity|author]] cannot be deleted while [[entity|book]] records still
+  reference it.
+- Deleting a [[entity|book]] is a soft delete; it is removed from search.
+- Rating fields (`average_rating`, `total_reviews`) are not editable. They are
+  derived from [[domain|reviews]] [[entity|feedback]].
+
+## Images
+
+Upload the image with the [[entity|book]] create or update request. The
+database stores only a URN; image URLs returned by the API are time-limited
+and must not be saved as identifiers. See [[container|catalog-blob]].
+
+## What happens after a change
+
+- The cached [[entity|book]] is invalidated, so the next read shows the change.
+- Affected [[entity|book]] records are queued for re-indexing. Search may lag
+  until [[service|catalog-ingestion]] processes the queue.
+- Downstream contexts such as [[domain|shopping]] must re-validate price and
+  availability at checkout; a [[domain|catalog]] change never rewrites an
+  accepted [[domain|ordering]] order.
+
+## Related
+
+- [[service|catalog-api]] OpenAPI contract
+
+<Footer />

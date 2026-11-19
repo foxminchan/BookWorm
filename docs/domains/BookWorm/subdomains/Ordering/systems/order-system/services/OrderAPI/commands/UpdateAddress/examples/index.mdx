@@ -1,0 +1,98 @@
+---
+summary: Update the address on the authenticated Buyer's profile.
+---
+
+## 1. Update a Buyer address
+
+Send the new address as JSON. The service identifies the Buyer from the
+authenticated request.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request PATCH "$BASE_URL/api/v1/buyers/address" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "street": "20 New Street",
+    "city": "Ben Thanh",
+    "province": "Ho Chi Minh City"
+  }'
+```
+
+</CodeGroup>
+
+The same request from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts update-buyer-address.ts
+type BuyerDto = {
+	id: string;
+	name: string | null;
+	address: string | null;
+};
+
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const response = await fetch(`${baseUrl}/api/v1/buyers/address`, {
+	method: "PATCH",
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		"Content-Type": "application/json",
+	},
+	body: JSON.stringify({
+		street: "20 New Street",
+		city: "Ben Thanh",
+		province: "Ho Chi Minh City",
+	}),
+});
+
+if (response.status === 400) {
+	throw new Error("UpdateAddress validation failed");
+}
+if (response.status === 404) {
+	throw new Error("Buyer profile was not found");
+}
+if (!response.ok) {
+	throw new Error(`UpdateAddress failed with ${response.status}`);
+}
+
+const buyer = (await response.json()) as BuyerDto;
+console.log(buyer.address);
+```
+
+</CodeGroup>
+
+`200 OK` returns the updated Buyer profile:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"id": "66666666-6666-6666-6666-666666666666",
+	"name": "Avery Nguyen",
+	"address": "20 New Street, Ben Thanh, Ho Chi Minh City"
+}
+```
+
+</CodeGroup>
+
+## 2. Handle invalid address fields
+
+Invalid address data returns `400 Bad Request` with validation problem
+details.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"City": ["The City field is required."]
+	}
+}
+```
+
+</CodeGroup>

@@ -1,12 +1,13 @@
+using Microsoft.Identity.Web;
+
 namespace BookWorm.Ordering.Features.Dashboard;
 
 internal sealed class GetDashboardEndpoint : IEndpoint<Ok<DashboardDto>, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                "/dashboard",
-                async (ISender sender, CancellationToken ct) => await HandleAsync(sender, ct)
+        app.MapGet("/dashboard", async (ISender sender, CancellationToken ct) =>
+                await HandleAsync(sender, ct)
             )
             .ProducesGet<DashboardDto>(true)
             .WithTags("Dashboard")

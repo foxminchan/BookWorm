@@ -1,0 +1,78 @@
+---
+title: Platform integration boundaries
+summary: Contracts and ownership rules for scheduled work and email notifications across Platform systems.
+version: 1.0.0
+type: engineering
+order: 1
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## System boundaries
+
+Platform provides shared scheduling and notification capabilities. A scheduled
+invocation or email delivery attempt does not transfer ownership of the
+underlying domain operation.
+
+| Interaction               | Contract                                                                             | Owning system                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Scheduler to Catalog      | Authenticated `POST /api/vectors/batch` using [[command\|ProcessCatalogVectorBatch]] | [[system\|product-catalog-system]] owns the queue and index updates      |
+| Scheduler to Notification | Kafka maintenance requests on the scheduler cleanup and resend channels              | [[system\|notification-system]] owns outbox selection and processing     |
+| Finance to Notification   | Order commands on the Finance command channels                                       | Finance owns order state; Notification owns email state                  |
+| Notification to provider  | MailKit submission over SMTP                                                         | Notification owns the outbox; the configured provider owns its transport |
+
+Scheduler owns job definitions, timing, misfire handling, and execution history.
+It must not read or write Catalog or Notification databases directly. The
+receiving system validates and processes the request using its own storage and
+concurrency controls.
+
+## Notification lifecycle
+
+1. Notification consumes an order command and skips it when the email address
+   is blank.
+2. For a nonblank address, Notification renders the email and persists an
+   unsent [[entity|outbox]] record before attempting SMTP submission.
+3. After successful submission, Notification marks the record sent. This means
+   the sender completed successfully; it does not confirm delivery to the
+   recipient.
+4. Scheduler publishes hourly resend and cleanup requests. Notification
+   selects at most 100 records per request.
+
+The resend request selects all unsent records, not only records with a stored
+failure classification. The current outbox has no persisted attempt limit or
+terminal-failure state. A resend uses the shared sender wrapper, which creates
+a new outbox record for each attempt; failures can leave multiple unsent
+records, and ambiguous SMTP outcomes can result in duplicate submissions.
+
+Cleanup selects sent records only and has no age threshold or audit hold. Do
+not treat the outbox as a permanent delivery archive.
+
+## Provider boundary
+
+The current Notification implementation uses MailKit over SMTP, with MailPit
+for development and a configured provider outside development. The documented
+[[system|sendgrid]] boundary is not called through SendGrid's HTTP Mail Send
+API by the current implementation. Keep provider-specific behavior behind the
+SMTP configuration and do not infer successful final delivery from SMTP
+acceptance.
+
+## Rules for changes
+
+- Keep business state in its owning domain; Notification state is not a
+  substitute for order state.
+- Keep Scheduler limited to authenticated invocation and message publication.
+- Make target operations safe to retry and preserve durable work on failure.
+- Correlate Scheduler execution history with target-system queues or outbox
+  state before declaring work complete.
+- Keep SMTP and database credentials in runtime secret configuration.
+- Treat recipient addresses and rendered content as confidential; prefer
+  identifiers, counts, timestamps, and sanitized error categories in logs.
+
+See [[system|scheduler-system]], [[system|notification-system]], and
+[[container|notification-database]] for implementation and storage details.
+
+<Footer />

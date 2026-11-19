@@ -1,0 +1,42 @@
+---
+id: CreateBuyer
+name: Create Buyer
+version: 1.0.0
+badges:
+  - content: Customer Management
+    backgroundColor: orange
+    textColor: orange
+summary: Creates a Buyer profile for the authenticated customer from the supplied address.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /api/v1/buyers
+  statusCodes: ["201", "400"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+Creates a [[entity|buyer]] profile associated with the authenticated
+customer's identity. The request supplies the Buyer's address; the service
+derives the Buyer ID and name from the authenticated identity.
+
+<NodeGraph />
+
+## Contract
+
+Send an `application/json` body containing the required `street`, `city`, and
+`province` fields. `201 Created` returns the Buyer ID as a JSON UUID.
+`400 Bad Request` returns validation problem details.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="CreateBuyerCommand JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

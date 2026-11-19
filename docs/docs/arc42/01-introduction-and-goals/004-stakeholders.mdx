@@ -1,0 +1,27 @@
+---
+title: Stakeholders
+summary: Roles affected by BookWorm's architecture, what they expect from it, and how this documentation supports them.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+The roles below are affected by BookWorm's architecture or need to use, assess, or make decisions based on it. The repository does not identify individual contacts, so the table records stakeholder roles rather than names.
+
+| Stakeholder role                        | Expectations and concerns                                                                                              | What they need from the architecture                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Customers and other platform users      | Discover books, make informed purchases, and receive understandable outcomes from checkout and supporting experiences. | A coherent journey with trustworthy product information and clear ownership of purchase outcomes.    |
+| Product and business stakeholders       | Understand which capabilities support business goals and where a change belongs.                                       | A concise view of system purpose, essential capabilities, limitations, and quality priorities.       |
+| Domain and service teams                | Build and change capabilities without silently taking over another context's data or behavior.                         | Clear ownership boundaries, integration contracts, and change-impact information.                    |
+| Platform and infrastructure teams       | Provide shared technical capabilities without becoming owners of business rules (see [[team\|platform-team]]).         | The responsibilities, constraints, and expected interactions of cross-cutting services.              |
+| Operations and support teams            | Diagnose failed or delayed processing and determine which team or capability is responsible.                           | A useful system boundary, explicit operational responsibilities, and observable processing outcomes. |
+| Architecture and engineering leadership | Evaluate whether the decomposition and trade-offs remain coherent as BookWorm evolves.                                 | The drivers, constraints, prioritized quality scenarios, and rationale for architectural direction.  |
+
+## How stakeholder concerns shape this chapter
+
+The [[doc|arc42/01-introduction-and-goals/002-requirements-overview]] and [[doc|arc42/01-introduction-and-goals/003-quality-goals]] pages give product and engineering stakeholders a shared basis for prioritization and review. The [[doc|arc42/01-introduction-and-goals/001-introduction]] and [[doc|arc42/03-context-and-scope]] chapters clarify what is inside [[domain|BookWorm]] and what belongs to its neighbors. The [[doc|arc42/02-architecture-constraints]] and [[doc|arc42/04-solution-strategy]] chapters make ownership, contract, and compatibility decisions visible to teams that build or operate the platform.
+
+These roles are a working stakeholder overview, not a record of named approvers or a substitute for project governance. Product and architecture owners should add named contacts, decision rights, and review responsibilities when those are established.

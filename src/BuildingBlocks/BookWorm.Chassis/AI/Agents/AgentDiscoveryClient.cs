@@ -1,12 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.AI.Agents;
 
-internal abstract class AgentDiscoveryClient(
+internal sealed class AgentDiscoveryClient(
     HttpClient httpClient,
     ILogger<AgentDiscoveryClient> logger
 )
@@ -15,20 +14,11 @@ internal abstract class AgentDiscoveryClient(
         CancellationToken cancellationToken = default
     )
     {
-        var response = await httpClient.GetAsync(
-            new Uri("/agents", UriKind.Relative),
+        var agents = await httpClient.GetFromJsonAsync(
+            "/agents",
+            AgentDiscoveryCardSerializationContext.Default.ListAgentDiscoveryCard,
             cancellationToken
-        );
-
-        response.EnsureSuccessStatusCode();
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var agents =
-            await JsonSerializer.DeserializeAsync<List<AgentDiscoveryCard>>(
-                stream,
-                AgentDiscoveryCardSerializationContext.Default.Options,
-                cancellationToken
-            ) ?? [];
+        ) ?? [];
 
         logger.LogInformation("Retrieved {AgentCount} agents from the API", agents.Count);
 

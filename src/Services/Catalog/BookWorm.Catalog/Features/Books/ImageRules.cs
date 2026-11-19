@@ -9,14 +9,15 @@ internal static class ImageRules
     private static readonly FrozenDictionary<string, FrozenSet<string>> _allowedTypes =
         new Dictionary<string, FrozenSet<string>>
         {
-            [MediaTypeNames.Image.Jpeg] = new[] { ".jpg", ".jpeg" }.ToFrozenSet(
-                StringComparer.OrdinalIgnoreCase
+            [MediaTypeNames.Image.Jpeg] = FrozenSet.Create(
+                StringComparer.OrdinalIgnoreCase,
+                ".jpg",
+                ".jpeg"
             ),
-            [MediaTypeNames.Image.Png] = new[] { ".png" }.ToFrozenSet(
-                StringComparer.OrdinalIgnoreCase
-            ),
-            [MediaTypeNames.Image.Webp] = new[] { ".webp" }.ToFrozenSet(
-                StringComparer.OrdinalIgnoreCase
+            [MediaTypeNames.Image.Png] = FrozenSet.Create(StringComparer.OrdinalIgnoreCase, ".png"),
+            [MediaTypeNames.Image.Webp] = FrozenSet.Create(
+                StringComparer.OrdinalIgnoreCase,
+                ".webp"
             ),
         }.ToFrozenDictionary();
 

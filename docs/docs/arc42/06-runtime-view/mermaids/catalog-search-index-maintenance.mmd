@@ -1,0 +1,49 @@
+---
+title: Catalog search index maintenance
+---
+sequenceDiagram
+	participant Admin as Catalog administrator
+	participant Catalog as Catalog API
+	participant DB as Catalog database
+	participant Scheduler
+	participant Kafka
+	participant Ingestion as Catalog Ingestion
+	participant Embeddings as Embedding service
+	participant Qdrant as Vector index
+
+	Admin ->> Catalog: Create, update, or delete book
+	Catalog ->> DB: Commit catalog change
+	DB ->> DB: Trigger queues affected book revision
+	Note over DB: Durable work, coalesced by book ID
+
+	loop Every five minutes
+		Scheduler ->> Kafka: Publish ProcessVectorBatchIntegrationEvent
+		Kafka ->> Ingestion: KafkaTrigger (scheduler.process-vector-batch)
+		Ingestion ->> DB: Acquire advisory lock and read up to 200 updates
+
+		alt Lock busy or queue empty
+			Note over Ingestion,DB: No batch work processed
+		else Batch available
+			loop Each queued book revision
+				Ingestion ->> DB: Read current book content
+
+				alt Active book
+					Ingestion ->> Embeddings: Generate searchable vector
+					Embeddings -->> Ingestion: Embedding
+					Ingestion ->> Qdrant: Upsert searchable record
+				else Missing or soft-deleted book
+					Ingestion ->> Qdrant: Remove vector record
+				end
+
+				alt Vector operation succeeds
+					Ingestion ->> DB: Acknowledge only if revision still matches
+					Note over Ingestion,DB: A newer revision stays queued
+				else Processing fails
+					Ingestion ->> DB: Leave affected work unacknowledged
+					Ingestion ->> DB: Release advisory lock
+					Note over Ingestion,DB: Batch aborted, work remains queued for retry
+				end
+			end
+			Ingestion ->> DB: Release advisory lock
+		end
+	end

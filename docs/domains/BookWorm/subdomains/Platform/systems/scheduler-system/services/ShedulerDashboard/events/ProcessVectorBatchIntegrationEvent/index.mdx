@@ -1,0 +1,38 @@
+---
+id: ProcessVectorBatchIntegrationEvent
+name: Process Vector Batch
+version: 1.0.0
+summary: |
+  Integration event published by Scheduler every five minutes to trigger
+  Catalog Ingestion vector batch processing over Kafka.
+owners:
+  - contributor-team
+badges:
+  - content: Integration Event
+    backgroundColor: orange
+    textColor: orange
+    icon: BoltIcon
+schemaPath: schema.json
+---
+
+## Overview
+
+`ProcessVectorBatchIntegrationEvent` is published by
+[[service|sheduler-dashboard]]'s `ProcessVectorBatchJob` to notify
+[[service|catalog-ingestion]] that pending book embedding updates should be
+processed.
+
+It inherits only `id` and `creationDate` from `IntegrationEvent`; batch size
+and selection order remain owned by [[service|catalog-ingestion]].
+
+## Schema
+
+<Schema file="schema.json" />
+
+## Examples
+
+<SchemaViewer file="schema.json" />
+
+## Architecture
+
+<NodeGraph />

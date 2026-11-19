@@ -1,0 +1,26 @@
+## List anonymizers with `HttpClient`
+
+The Anonymizer returns the names of its built-in operators.
+
+<CodeGroup dropdown>
+
+```csharp GetAnonymizers.cs
+using System.Net.Http.Json;
+
+var anonymizerUrl = Environment.GetEnvironmentVariable("ANONYMIZER_URL")
+    ?? throw new InvalidOperationException("Set ANONYMIZER_URL to the Presidio Anonymizer base URL.");
+
+using var httpClient = new HttpClient { BaseAddress = new Uri(anonymizerUrl) };
+using var response = await httpClient.GetAsync("/anonymizers");
+response.EnsureSuccessStatusCode();
+
+var anonymizers = await response.Content.ReadFromJsonAsync<string[]>()
+    ?? throw new InvalidOperationException("Presidio returned an empty anonymizers response.");
+
+foreach (var anonymizer in anonymizers)
+{
+    Console.WriteLine(anonymizer);
+}
+```
+
+</CodeGroup>

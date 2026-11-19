@@ -18,8 +18,7 @@ internal sealed class EventDispatcher(IMessageBus bus, IEventMapper eventMapper)
     {
         ArgumentNullException.ThrowIfNull(@event);
 
-        var integrationEvent =
-            eventMapper.MapToIntegrationEvent(@event)
+        var integrationEvent = eventMapper.MapToIntegrationEvent(@event)
             ?? throw new InvalidOperationException(
                 $"No integration event mapping found for '{@event.GetType().Name}'."
             );

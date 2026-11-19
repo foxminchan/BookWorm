@@ -12,6 +12,7 @@ on:
       - .github/workflows/backend-ci.yml
       - .github/workflows/backend-shared.yml
       - .config/dotnet-tools.json
+      - aspire.config.json
       - BookWorm.slnx
       - Directory.Build.props
       - Directory.Packages.props

@@ -1,0 +1,39 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "BasketDeletedFailedIntegrationEvent",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id", "creationDate", "orderId", "basketId", "totalMoney"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Unique identifier assigned by the integration-event building block."
+		},
+		"creationDate": {
+			"type": "string",
+			"format": "date-time",
+			"description": "UTC timestamp when the integration event was created."
+		},
+		"orderId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the order whose submitted basket could not be deleted."
+		},
+		"basketId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the basket that could not be deleted."
+		},
+		"email": {
+			"type": ["string", "null"],
+			"format": "email",
+			"description": "Customer email used by downstream recovery or notification workflows."
+		},
+		"totalMoney": {
+			"type": "number",
+			"format": "double",
+			"description": "Total purchase amount associated with the order."
+		}
+	}
+}

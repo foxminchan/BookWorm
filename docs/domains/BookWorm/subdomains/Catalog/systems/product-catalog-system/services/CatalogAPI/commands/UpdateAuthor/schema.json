@@ -1,0 +1,20 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "UpdateAuthor",
+	"description": "Payload for updating a author.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id", "name"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the author to update."
+		},
+		"name": {
+			"type": "string",
+			"minLength": 1,
+			"description": "New display name for the author."
+		}
+	}
+}

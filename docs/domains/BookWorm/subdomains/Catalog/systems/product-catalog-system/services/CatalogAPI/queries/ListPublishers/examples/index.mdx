@@ -1,0 +1,68 @@
+---
+summary: List catalog publishers and distinguish an empty collection from a missing resource.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. List publishers
+
+The query returns `200` with an array of publisher summaries. Each item contains its UUID and display name.
+
+### Response details
+
+- An empty collection is represented by `200` and `[]`.
+- The endpoint does not require a resource UUID.
+- Use the returned identifiers when creating or updating books.
+
+### Example response
+
+<CodeGroup dropdown>
+
+```ts
+const publishers: PublisherSummary[] = [
+	{
+		id: "5e4a1c9b-3f72-4b8d-a605-7c2e9f1d8430",
+		name: "Example Publisher",
+	},
+];
+```
+
+</CodeGroup>
+
+### Using this example
+
+Render the returned summaries as selectable publisher options; an empty array is a valid catalog state.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```ts list-publishers.ts
+type PublisherSummary = { id: string; name: string };
+
+const response = await fetch("https://api.example.com/api/v1/publishers");
+if (!response.ok) {
+	throw new Error(`ListPublishers failed with ${response.status}`);
+}
+
+const publishers = (await response.json()) as PublisherSummary[];
+for (const publisher of publishers) {
+	console.log(`${publisher.id}: ${publisher.name}`);
+}
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle an empty catalog
+
+An empty collection is represented by `200` and `[]`, not by `404`.

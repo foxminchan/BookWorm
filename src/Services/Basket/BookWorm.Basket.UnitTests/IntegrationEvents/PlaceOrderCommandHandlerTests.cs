@@ -1,23 +1,21 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
 using BookWorm.Contracts;
-using Wolverine;
 
 namespace BookWorm.Basket.UnitTests.IntegrationEvents;
 
 public sealed class PlaceOrderCommandHandlerTests
 {
-    private readonly Mock<IMessageBus> _busMock = new();
     private readonly PlaceOrderCommandHandler _handler;
     private readonly Mock<IBasketRepository> _repositoryMock = new();
 
     public PlaceOrderCommandHandlerTests()
     {
-        _handler = new(_repositoryMock.Object, _busMock.Object);
+        _handler = new(_repositoryMock.Object);
     }
 
     [Test]
-    public async Task GivenBasketDeletedSuccessfully_WhenConsuming_ThenShouldPublishCompleteEvent()
+    public async Task GivenBasketDeletedSuccessfully_WhenConsuming_ThenShouldReturnCompleteEvent()
     {
         // Arrange
         var basketId = Guid.CreateVersion7();
@@ -35,31 +33,17 @@ public sealed class PlaceOrderCommandHandlerTests
         _repositoryMock.Setup(x => x.DeleteBasketAsync(basketId.ToString())).ReturnsAsync(true);
 
         // Act
-        await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _busMock.Verify(
-            x =>
-                x.PublishAsync(
-                    It.Is<BasketDeletedCompleteIntegrationEvent>(e =>
-                        e.OrderId == orderId && e.BasketId == basketId && e.TotalMoney == totalMoney
-                    ),
-                    It.IsAny<DeliveryOptions>()
-                ),
-            Times.Once
-        );
-        _busMock.Verify(
-            x =>
-                x.PublishAsync(
-                    It.IsAny<BasketDeletedFailedIntegrationEvent>(),
-                    It.IsAny<DeliveryOptions>()
-                ),
-            Times.Never
-        );
+        var publishedEvent = result.ShouldBeOfType<BasketDeletedCompleteIntegrationEvent>();
+        publishedEvent.OrderId.ShouldBe(orderId);
+        publishedEvent.BasketId.ShouldBe(basketId);
+        publishedEvent.TotalMoney.ShouldBe(totalMoney);
     }
 
     [Test]
-    public async Task GivenBasketDeleteFailed_WhenConsuming_ThenShouldPublishFailedEvent()
+    public async Task GivenBasketDeleteFailed_WhenConsuming_ThenShouldReturnFailedEvent()
     {
         // Arrange
         var basketId = Guid.CreateVersion7();
@@ -72,29 +56,13 @@ public sealed class PlaceOrderCommandHandlerTests
         _repositoryMock.Setup(x => x.DeleteBasketAsync(basketId.ToString())).ReturnsAsync(false);
 
         // Act
-        await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _busMock.Verify(
-            x =>
-                x.PublishAsync(
-                    It.Is<BasketDeletedFailedIntegrationEvent>(e =>
-                        e.OrderId == orderId
-                        && e.BasketId == basketId
-                        && e.Email == email
-                        && e.TotalMoney == totalMoney
-                    ),
-                    It.IsAny<DeliveryOptions>()
-                ),
-            Times.Once
-        );
-        _busMock.Verify(
-            x =>
-                x.PublishAsync(
-                    It.IsAny<BasketDeletedCompleteIntegrationEvent>(),
-                    It.IsAny<DeliveryOptions>()
-                ),
-            Times.Never
-        );
+        var publishedEvent = result.ShouldBeOfType<BasketDeletedFailedIntegrationEvent>();
+        publishedEvent.OrderId.ShouldBe(orderId);
+        publishedEvent.BasketId.ShouldBe(basketId);
+        publishedEvent.Email.ShouldBe(email);
+        publishedEvent.TotalMoney.ShouldBe(totalMoney);
     }
 }

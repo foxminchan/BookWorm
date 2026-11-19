@@ -1,0 +1,81 @@
+---
+summary: Publish and consume the successful basket deletion outcome.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish successful cleanup
+
+Basket publishes this event after the checkout workflow deletes the submitted
+basket. Wolverine uses the integration-message metadata to route it to
+[[channel|bookworm.&#123;env&#125;.basket.delete-complete]].
+
+- `orderId` correlates cleanup with the accepted order.
+- `basketId` identifies the deleted customer basket.
+- `totalMoney` carries the purchase total used by downstream coordination.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp BasketDeletedCompleteIntegrationEvent.cs
+[IntegrationMessageOwner(ServiceName = Services.Basket, TopicName = "delete-complete")]
+[MessageIdentity("BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent")]
+public sealed record BasketDeletedCompleteIntegrationEvent(
+    Guid OrderId,
+    Guid BasketId,
+    decimal TotalMoney
+) : IntegrationEvent;
+```
+
+```csharp PlaceOrderCommandHandler.cs
+if (basketDeleted)
+{
+    await bus.PublishAsync(
+        new BasketDeletedCompleteIntegrationEvent(
+            command.OrderId,
+            command.BasketId,
+            command.TotalMoney
+        )
+    );
+}
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Consume the cleanup outcome
+
+Ordering receives the successful outcome and records the coordination result
+for the order workflow. Consumers should make this handling idempotent because
+the Kafka channel provides at-least-once delivery.
+
+<CodeGroup dropdown>
+
+```csharp DeleteBasketCompleteCommandHandler.cs
+[WolverineHandler]
+public Task Handle(
+    DeleteBasketCompleteCommand message,
+    CancellationToken cancellationToken
+)
+{
+    logger.LogInformation(
+        "Basket deletion completed for Order {OrderId}, Amount: {TotalMoney}",
+        message.OrderId,
+        message.TotalMoney
+    );
+
+    return Task.CompletedTask;
+}
+```
+
+</CodeGroup>

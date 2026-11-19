@@ -1,0 +1,37 @@
+---
+id: bookworm.{env}.ordering.user-checked-out
+name: User Checkout Event Channel
+version: 1.0.0
+summary: |
+  Kafka topic carrying checkout details published by Order API after an Order
+  is placed, for Finance coordination.
+owners:
+  - business-strategy
+address: bookworm.{env}.ordering.user-checked-out
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    description: BookWorm deployment environment.
+protocols:
+  - kafka
+---
+
+## Overview
+
+[[service|order-api]] publishes [[event|UserCheckedOutIntegrationEvent]] after
+placing an Order. Finance uses the checkout details to coordinate subsequent
+work; publication does not indicate payment settlement or Order completion.
+
+The camelCase JSON payload is carried inside the BookWorm CloudEvents-compatible
+envelope. Its `basketId` currently contains the Order's Buyer ID, as documented
+in the Order API AsyncAPI contract.
+
+<ChannelInformation />
+
+## Architecture
+
+<NodeGraph />

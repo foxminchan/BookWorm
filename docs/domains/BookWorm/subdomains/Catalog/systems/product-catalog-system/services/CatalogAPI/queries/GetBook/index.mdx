@@ -1,0 +1,39 @@
+---
+id: GetBook
+name: Get book
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns one book and its catalog relationships by identifier.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/books/{id}
+  statusCodes: ["200", "404"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Returns the [[entity|book]] identity, description, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary for one UUID.
+
+<NodeGraph />
+
+## Contract
+
+Provide the book UUID as the required `id` path parameter. The query has no request body.
+
+The response is a `BookDto` JSON object. Related category and publisher values may be `null`; authors is an array.
+
+## Operational notes
+
+`404` indicates that no book exists with the supplied UUID.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

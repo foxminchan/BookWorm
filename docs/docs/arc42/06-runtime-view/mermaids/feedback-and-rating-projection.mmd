@@ -1,0 +1,27 @@
+---
+title: Feedback and rating projection
+---
+sequenceDiagram
+	actor Customer
+	participant Rating as Rating API
+	participant RatingDB as Rating database
+	participant Events as Integration messaging
+	participant Catalog as Catalog API
+	participant CatalogDB as Catalog database
+
+	Customer ->> Rating: Submit feedback for a book
+	Rating ->> Rating: Validate rating and feedback
+	Rating ->> RatingDB: Persist feedback
+	Rating ->> Events: Publish FeedbackCreatedIntegrationEvent
+	Events ->> Catalog: Deliver feedback-created event
+
+	alt Book exists
+		Catalog ->> CatalogDB: Update book rating summary
+		CatalogDB -->> Catalog: Projection updated
+		Note over RatingDB,CatalogDB: Reviews owns feedback, Catalog owns the derived summary
+	else Book reference is invalid
+		Catalog ->> Events: Publish BookUpdatedRatingFailedIntegrationEvent
+		Events ->> Rating: Deliver projection-failure event
+		Rating ->> RatingDB: Delete invalid feedback record
+		Note over Rating,Catalog: Compensation preserves the ownership boundary
+	end

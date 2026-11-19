@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   getOrderStatusColor,
   getOrderStatusColorBordered,
-  getReviewSortParams,
-  getShopSortParams,
-} from "@/lib/pattern";
+} from "@workspace/utils/order";
+
+import { getReviewSortParams, getShopSortParams } from "@/lib/pattern";
 
 describe("pattern utils", () => {
   describe("getShopSortParams", () => {

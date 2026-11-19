@@ -1,20 +1,11 @@
-using BookWorm.Finance.Extensions;
+using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
+var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Services.AddOpenTelemetry().UseFunctionsWorkerDefaults();
 
 builder.AddApplicationServices();
 
-var app = builder.Build();
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
-}
-
-app.MapDefaultEndpoints();
-
-app.Run();
+await builder.Build().RunAsync();

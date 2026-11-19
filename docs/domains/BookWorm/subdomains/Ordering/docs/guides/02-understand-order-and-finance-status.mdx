@@ -1,0 +1,53 @@
+---
+title: Understand Order and Finance status
+summary: Distinguish the Order's business status from Finance's checkout saga, basket cleanup, and notification outcomes.
+version: 1.0.0
+type: guides
+order: 2
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Two independent states
+
+Ordering is authoritative for the business status of an [[entity\|order]]:
+
+| Order status  | Meaning                                                                                  |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| **New**       | Checkout created the Order. This does not confirm basket deletion or payment settlement. |
+| **Completed** | Ordering accepted an explicit completion operation.                                      |
+| **Cancelled** | Ordering accepted an explicit cancellation operation.                                    |
+
+Finance tracks a separate saga for each checkout. Its state describes
+coordination progress, including basket cleanup and notification requests; it
+does not own or update the Order aggregate's status.
+
+## Interpret common outcomes
+
+- **Basket deletion succeeded:** Finance reports success to Ordering. The
+  Order remains New until Ordering accepts an explicit completion or
+  cancellation.
+- **Basket deletion failed:** Finance reports the failure to Ordering.
+  Ordering soft-deletes the matching Order if it still exists; this is not an
+  Order status transition.
+- **Finance retries are exhausted:** Finance cancels its saga and may request
+  a cancellation notification. It does not call Ordering to cancel the Order.
+- **Order status event received:** Finance updates its saga based on the
+  explicit completion or cancellation event from Ordering and may ask
+  Notification to send an email.
+- **Email requested or delivered:** This is not evidence that the Order
+  status changed. Read the Order from Ordering to confirm its current status.
+
+For the authoritative status, use `GET /api/v1/orders/{id}` or an appropriately
+scoped `GET /api/v1/orders` query. Investigate Finance's saga independently
+when the issue concerns retries, basket cleanup, or notification requests.
+
+See [[diagram\|order-lifecycle]],
+[[adr\|adr-003-separate-order-status-from-finance-saga]], and
+[[service\|order-orchestration]].
+
+<Footer />

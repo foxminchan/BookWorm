@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using BookWorm.Chassis.AI.Ingestion;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.VectorData;
 using Npgsql;
 
@@ -157,6 +156,8 @@ internal sealed class VectorBatchProcessor(
     }
 }
 
+[ExcludeFromCodeCoverage]
 internal sealed record VectorUpdateBatch(IReadOnlyList<PendingVectorUpdate> Updates);
 
+[ExcludeFromCodeCoverage]
 internal sealed record PendingVectorUpdate(Guid BookId, Guid Revision, string? Content);

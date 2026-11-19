@@ -1,0 +1,39 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "DeleteBasketFailedCommand",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id", "creationDate", "basketId", "email", "orderId", "totalMoney"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Unique identifier assigned to the integration message."
+		},
+		"creationDate": {
+			"type": "string",
+			"format": "date-time",
+			"description": "UTC timestamp when the integration message was created."
+		},
+		"basketId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the basket whose cleanup failed."
+		},
+		"email": {
+			"type": ["string", "null"],
+			"format": "email",
+			"description": "Customer email, when available."
+		},
+		"orderId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the affected Order."
+		},
+		"totalMoney": {
+			"type": "number",
+			"format": "double",
+			"description": "Total purchase amount associated with the Order."
+		}
+	}
+}

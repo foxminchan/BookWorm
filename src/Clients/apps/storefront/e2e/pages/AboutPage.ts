@@ -15,53 +15,31 @@ export class AboutPage extends BasePage {
 
   // Locators
   get heroSection(): Locator {
-    return this.page.locator('[data-testid="hero-section"], section').first();
+    return this.page.locator("main section").first();
   }
 
   get missionSection(): Locator {
-    return this.page.locator(
-      '[data-testid="mission-section"], section:has-text("Mission")',
-    );
+    return this.page.locator('main section:has-text("Mission")').first();
   }
 
   get valuesSection(): Locator {
-    return this.page.locator(
-      '[data-testid="values-section"], section:has-text("Values")',
-    );
+    return this.page.locator('main section:has-text("Values")').first();
   }
 
   get timelineSection(): Locator {
-    return this.page.locator(
-      '[data-testid="timeline-section"], section:has-text("Timeline"), section:has-text("Journey")',
-    );
+    return this.page
+      .locator(
+        'main section:has-text("Timeline"), main section:has-text("Journey")',
+      )
+      .first();
   }
 
   get contactSection(): Locator {
-    return this.page.locator(
-      '[data-testid="contact-section"], section:has-text("Contact")',
-    );
+    return this.page.locator('main section:has-text("Get In Touch")').first();
   }
 
-  get contactForm(): Locator {
-    return this.page.locator('form, [data-testid="contact-form"]');
-  }
-
-  get nameInput(): Locator {
-    return this.page.locator('input[name="name"], input[id*="name"]');
-  }
-
-  get emailInput(): Locator {
-    return this.page.locator('input[name="email"], input[type="email"]');
-  }
-
-  get messageInput(): Locator {
-    return this.page.locator(
-      'textarea[name="message"], textarea[id*="message"]',
-    );
-  }
-
-  get submitButton(): Locator {
-    return this.page.locator('button[type="submit"], button:has-text("Send")');
+  get contactMailtoLink(): Locator {
+    return this.page.locator('a[href="mailto:support@bookworm.com"]');
   }
 
   // Actions
@@ -80,20 +58,6 @@ export class AboutPage extends BasePage {
     };
 
     await sectionMap[section].scrollIntoViewIfNeeded();
-  }
-
-  async fillContactForm(
-    name: string,
-    email: string,
-    message: string,
-  ): Promise<void> {
-    await this.nameInput.fill(name);
-    await this.emailInput.fill(email);
-    await this.messageInput.fill(message);
-  }
-
-  async submitContactForm(): Promise<void> {
-    await this.submitButton.click();
   }
 
   // Assertions

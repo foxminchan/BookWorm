@@ -1,0 +1,396 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element system
+  element container
+  element database {
+    style {
+      shape storage
+    }
+  }
+
+  element broker {
+    style {
+      shape queue
+    }
+  }
+
+  deploymentNode environment
+  deploymentNode cloudPlatform
+  deploymentNode containerPlatform
+  deploymentNode workloadGroup
+  deploymentNode managedService
+  deploymentNode externalSystems
+}
+
+model {
+  customer = actor 'Customer' {
+    style {
+      icon bootstrap:person-circle
+    }
+  }
+  staff = actor 'Back-office user' {
+    style {
+      icon bootstrap:person-badge
+    }
+  }
+
+  bookworm = system 'BookWorm' {
+    description 'Service-oriented application orchestrated by the Aspire AppHost.'
+
+    storefront = container 'Storefront' {
+      technology 'Next.js (Bun)'
+      description 'Customer-facing web client (internal ingress behind API gateway).'
+      style {
+        icon tech:nextjs-icon
+      }
+    }
+    backoffice = container 'Back office' {
+      technology 'Next.js (Bun)'
+      description 'Administrative web client (internal ingress behind API gateway).'
+      style {
+        icon tech:nextjs-icon
+      }
+    }
+    gateway = container 'API gateway' {
+      technology 'YARP'
+      description 'Sole external ingress; routes /, /backoffice, /entra, /chatting, /rating, /ordering, /basket, and /catalog.'
+      style {
+        icon bootstrap:signpost-split
+      }
+    }
+
+    catalog = container 'Catalog' {
+      technology '.NET'
+      description 'Owns book and product information and maintains the derived search index.'
+      style {
+        icon tech:dotnet
+      }
+    }
+    catalogIngestion = container 'Catalog ingestion' {
+      technology 'Azure Functions'
+      description 'Applies queued catalog changes to the vector index in bounded batches.'
+      style {
+        icon azure:function-apps
+      }
+    }
+    shopping = container 'Basket' {
+      technology '.NET'
+      description 'Owns customer basket state.'
+      style {
+        icon tech:dotnet
+      }
+    }
+    ordering = container 'Ordering' {
+      technology '.NET'
+      description 'Owns accepted Orders and their lifecycle.'
+      style {
+        icon tech:dotnet
+      }
+    }
+    finance = container 'Finance' {
+      technology 'Azure Functions, Durable Task Scheduler'
+      description 'Coordinates checkout outcomes through Durable Task Scheduler orchestrations.'
+      style {
+        icon azure:function-apps
+      }
+    }
+    rating = container 'Rating' {
+      technology '.NET'
+      description 'Owns customer feedback and rating integration.'
+      style {
+        icon tech:dotnet
+      }
+    }
+    chat = container 'Chat' {
+      technology '.NET'
+      description 'Provides customer-facing discovery and assistance.'
+      style {
+        icon bootstrap:robot
+      }
+    }
+    mcp = container 'MCP tools' {
+      technology '.NET, MCP'
+      description 'Shared MCP server exposing catalog and rating tools to agents.'
+      style {
+        icon bootstrap:plug
+      }
+    }
+    scheduler = container 'Scheduler' {
+      technology 'Quartz'
+      style {
+        icon bootstrap:clock
+      }
+    }
+    notification = container 'Notification' {
+      technology 'Wolverine, MailKit'
+      description 'Consumes notification commands and submits email.'
+      style {
+        icon bootstrap:envelope
+      }
+    }
+    presidioAnalyzer = container 'Presidio analyzer' {
+      technology 'Container'
+      description 'Detects personally identifiable information.'
+      style {
+        icon bootstrap:shield-lock
+      }
+    }
+    presidioAnonymizer = container 'Presidio anonymizer' {
+      technology 'Container'
+      description 'Redacts personally identifiable information.'
+      style {
+        icon bootstrap:shield-lock
+      }
+    }
+    qdrant = database 'Vector search index' {
+      technology 'Qdrant Cloud'
+      description 'Cloud-hosted derived index maintained from Catalog data.'
+      style {
+        icon tech:qdrant-icon
+      }
+    }
+
+    redis = database 'Redis' {
+      technology 'Azure Managed Redis'
+      description 'Balanced_B5 (HA, Entra ID auth, access keys disabled); Basket state and cache for Catalog, Ordering, and Rating.'
+      style {
+        icon azure:azure-managed-redis
+      }
+    }
+    catalogDb = database 'catalogdb' {
+      technology 'PostgreSQL 16'
+      description 'Includes the durable catalog-ingestion queue.'
+      style {
+        icon tech:postgresql
+      }
+    }
+    orderingDb = database 'orderingdb' {
+      technology 'PostgreSQL 16'
+      style {
+        icon tech:postgresql
+      }
+    }
+    ratingDb = database 'ratingdb' {
+      technology 'Azure Cosmos DB'
+      description 'Serverless account (local auth disabled); feedbacks container partitioned by /bookId.'
+      style {
+        icon azure:azure-cosmos-db
+      }
+    }
+    durableTaskScheduler = database 'Durable Task Scheduler' {
+      technology 'Azure Durable Task Scheduler'
+      description 'Consumption SKU task hub (finance-taskhub) for OrderOrchestrator state and timers.'
+      style {
+        icon azure:function-apps
+      }
+    }
+    schedulerDb = database 'schedulerdb' {
+      technology 'PostgreSQL 16'
+      description 'Quartz schedules and execution state.'
+      style {
+        icon tech:postgresql
+      }
+    }
+    blobStorage = database 'Azure Storage' {
+      technology 'Standard_GZRS (shared key disabled)'
+      description 'catalog-blob and chatting-blob containers plus Azure Functions host storage.'
+      style {
+        icon azure:storage-accounts
+      }
+    }
+  }
+
+  kafka = broker 'Kafka broker' {
+    technology 'Kafka'
+    description 'Carries asynchronous commands and integration events; supplied via broker connection string parameter.'
+    style {
+      icon tech:kafka-icon
+    }
+  }
+  identity = system 'Microsoft Entra ID' {
+    description 'Issues OAuth tokens and Entra Agent Identities (OBO); app registration, roles, scopes, and agent blueprints are provisioned via Microsoft Graph.'
+    style {
+      icon azure:entra-verified-id
+    }
+  }
+  smtp = system 'SMTP provider' {
+    description 'Configured through AppHost parameters; the endpoint defaults to SendGrid.'
+    style {
+      icon tech:sendgrid-icon
+    }
+  }
+  foundry = system 'Microsoft Foundry' {
+    description 'AIServices S0 with Foundry-project + Application Insights; hosts chat (model-router), decision (Microsoft-Decision-1), and embedding (embed-v-4-0).'
+    style {
+      icon azure:ai-studio
+    }
+  }
+
+  customer -> bookworm.gateway 'accesses Storefront'
+  staff -> bookworm.gateway 'accesses Back office'
+  bookworm.gateway -> bookworm.storefront 'routes /'
+  bookworm.gateway -> bookworm.backoffice 'routes /backoffice'
+  bookworm.storefront -> bookworm.gateway 'calls APIs'
+  bookworm.backoffice -> bookworm.gateway 'calls APIs'
+  bookworm.storefront -> identity 'authenticates users'
+  bookworm.backoffice -> identity 'authenticates users'
+
+  bookworm.gateway -> bookworm.chat 'routes /chatting'
+  bookworm.gateway -> bookworm.rating 'routes /rating'
+  bookworm.gateway -> bookworm.ordering 'routes /ordering'
+  bookworm.gateway -> bookworm.shopping 'routes /basket'
+  bookworm.gateway -> bookworm.catalog 'routes /catalog'
+
+  bookworm.catalog -> bookworm.catalogDb 'reads and writes'
+  bookworm.catalog -> bookworm.redis 'caches'
+  bookworm.catalog -> bookworm.qdrant 'searches'
+  bookworm.catalog -> bookworm.blobStorage 'stores book images'
+  bookworm.catalog -> foundry 'requests chat and embedding models'
+  bookworm.shopping -> bookworm.redis 'reads and writes'
+  bookworm.shopping -> bookworm.catalog 'looks up books'
+  bookworm.ordering -> bookworm.orderingDb 'reads and writes'
+  bookworm.ordering -> bookworm.redis 'caches'
+  bookworm.ordering -> bookworm.catalog 'looks up books'
+  bookworm.ordering -> bookworm.shopping 'reads basket'
+  bookworm.finance -> bookworm.durableTaskScheduler 'persists orchestration state'
+  bookworm.rating -> bookworm.ratingDb 'reads and writes'
+  bookworm.rating -> bookworm.redis 'caches'
+  bookworm.rating -> bookworm.chat 'requests assistance'
+  bookworm.rating -> bookworm.mcp 'calls MCP tools'
+  bookworm.rating -> bookworm.presidioAnalyzer 'detects PII'
+  bookworm.rating -> bookworm.presidioAnonymizer 'redacts PII'
+  bookworm.rating -> foundry 'requests chat and embedding models'
+  bookworm.chat -> bookworm.mcp 'calls MCP tools'
+  bookworm.chat -> bookworm.blobStorage 'persists chat sessions'
+  bookworm.chat -> bookworm.presidioAnalyzer 'detects PII'
+  bookworm.chat -> bookworm.presidioAnonymizer 'redacts PII'
+  bookworm.chat -> foundry 'requests chat, decision, and embedding models'
+  bookworm.mcp -> bookworm.catalog 'reads catalog data'
+  bookworm.mcp -> bookworm.rating 'reads rating data'
+  bookworm.scheduler -> bookworm.schedulerDb 'persists schedules'
+  bookworm.catalogIngestion -> bookworm.catalogDb 'reads pending changes'
+  bookworm.catalogIngestion -> bookworm.qdrant 'maintains derived index'
+  bookworm.catalogIngestion -> bookworm.blobStorage 'uses host storage'
+  bookworm.catalogIngestion -> foundry 'requests embeddings'
+
+  bookworm.catalog -> kafka 'publishes and consumes integration events'
+  bookworm.shopping -> kafka 'consumes commands and publishes outcomes'
+  bookworm.ordering -> kafka 'publishes Order events and consumes outcomes'
+  bookworm.finance -> kafka 'consumes triggers and publishes commands'
+  bookworm.rating -> kafka 'publishes feedback events'
+  bookworm.scheduler -> kafka 'publishes ProcessVectorBatchIntegrationEvent'
+  bookworm.catalogIngestion -> kafka 'consumes ProcessVectorBatchIntegrationEvent'
+  bookworm.notification -> kafka 'consumes notification commands'
+
+  bookworm.catalog -> identity 'verifies caller identity'
+  bookworm.shopping -> identity 'verifies caller identity'
+  bookworm.ordering -> identity 'verifies caller identity'
+  bookworm.rating -> identity 'verifies caller identity'
+  bookworm.chat -> identity 'verifies caller identity'
+  bookworm.mcp -> identity 'verifies caller identity'
+  bookworm.scheduler -> identity 'verifies caller identity'
+  bookworm.notification -> smtp 'submits email over SMTP'
+}
+
+deployment {
+  environment azure 'Azure (published by the Aspire AppHost)' {
+    style {
+      icon azure:resource-groups
+    }
+
+    cloudPlatform aca 'Azure Container Apps environment (Consumption, min 1 replica)' {
+      style {
+        icon azure:container-apps-environments
+      }
+
+      workloadGroup edge 'Client and gateway container apps' {
+        instanceOf bookworm.storefront
+        instanceOf bookworm.backoffice
+        instanceOf bookworm.gateway
+      }
+
+      workloadGroup services 'Service container apps' {
+        instanceOf bookworm.catalog
+        instanceOf bookworm.catalogIngestion
+        instanceOf bookworm.shopping
+        instanceOf bookworm.ordering
+        instanceOf bookworm.finance
+        instanceOf bookworm.rating
+        instanceOf bookworm.chat
+        instanceOf bookworm.mcp
+        instanceOf bookworm.scheduler
+        instanceOf bookworm.notification
+      }
+
+      workloadGroup supporting 'Supporting container apps' {
+        instanceOf bookworm.presidioAnalyzer
+        instanceOf bookworm.presidioAnonymizer
+      }
+    }
+
+    managedService postgres 'Azure Database for PostgreSQL flexible server (Standard_D4ds_v5, ZoneRedundant HA)' {
+      style {
+        icon azure:azure-database-postgre-sql-server
+      }
+
+      instanceOf bookworm.catalogDb
+      instanceOf bookworm.orderingDb
+      instanceOf bookworm.schedulerDb
+    }
+
+    managedService cosmos 'Azure Cosmos DB' {
+      style {
+        icon azure:azure-cosmos-db
+      }
+
+      instanceOf bookworm.ratingDb
+    }
+
+    managedService dts 'Azure Durable Task Scheduler' {
+      style {
+        icon azure:function-apps
+      }
+
+      instanceOf bookworm.durableTaskScheduler
+    }
+
+    managedService managedRedis 'Azure Managed Redis' {
+      style {
+        icon azure:azure-managed-redis
+      }
+
+      instanceOf bookworm.redis
+    }
+
+    managedService storageAccount 'Azure Storage account' {
+      style {
+        icon azure:storage-accounts
+      }
+
+      instanceOf bookworm.blobStorage
+    }
+
+    managedService foundryService 'Microsoft Foundry' {
+      style {
+        icon azure:ai-studio
+      }
+
+      instanceOf foundry
+    }
+  }
+
+  externalSystems external 'Provided outside the AppHost' {
+    style {
+      icon bootstrap:globe
+    }
+
+    instanceOf kafka
+    instanceOf bookworm.qdrant
+    instanceOf identity
+    instanceOf smtp
+  }
+}

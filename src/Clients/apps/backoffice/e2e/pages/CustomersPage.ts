@@ -4,14 +4,18 @@ import { BasePage } from "./BasePage";
 
 /**
  * Customers Management Page Object
+ * Handles /backoffice/customers
  */
 export class CustomersPage extends BasePage {
-  // Selectors
-  private readonly pageHeading = 'h1:has-text("Customers")';
+  private readonly pageHeading = 'h1:has-text("Customers Management")';
   private readonly customersTable = "table";
   private readonly tableRows = "table tbody tr";
-  private readonly searchInput = 'input[placeholder*="Search"]';
-  private readonly viewButtons = 'button:has-text("View")';
+  private readonly deleteButtons = 'button[aria-label^="Delete "]';
+  private readonly confirmDialog = '[role="alertdialog"]';
+  private readonly confirmDeleteButton =
+    '[role="alertdialog"] button:has-text("Delete")';
+  private readonly cancelDialogButton =
+    '[role="alertdialog"] button:has-text("Cancel")';
 
   constructor(page: Page) {
     super(page);
@@ -21,7 +25,7 @@ export class CustomersPage extends BasePage {
    * Navigate to customers page
    */
   async navigate(): Promise<void> {
-    await this.goto("/ordering/customers");
+    await this.goto("/customers");
   }
 
   /**
@@ -33,26 +37,38 @@ export class CustomersPage extends BasePage {
   }
 
   /**
-   * Search customers
-   */
-  async searchCustomers(query: string): Promise<void> {
-    await this.fill(this.searchInput, query);
-    await this.pressKey("Enter");
-    await this.waitForPageLoad();
-  }
-
-  /**
    * Get customers count
    */
   async getCustomersCount(): Promise<number> {
+    const emptyCell = this.page.locator(
+      'table tbody td:has-text("No data found")',
+    );
+    if (await emptyCell.isVisible()) {
+      return 0;
+    }
     return await this.page.locator(this.tableRows).count();
   }
 
   /**
-   * View first customer details
+   * Click delete button on the first customer
    */
-  async viewFirstCustomer(): Promise<void> {
-    await this.page.locator(this.viewButtons).first().click();
+  async deleteFirstCustomer(): Promise<void> {
+    await this.page.locator(this.deleteButtons).first().click();
+    await this.waitForElement(this.confirmDialog);
+  }
+
+  /**
+   * Confirm customer deletion
+   */
+  async confirmDelete(): Promise<void> {
+    await this.click(this.confirmDeleteButton);
     await this.waitForPageLoad();
+  }
+
+  /**
+   * Cancel customer deletion
+   */
+  async cancelDelete(): Promise<void> {
+    await this.click(this.cancelDialogButton);
   }
 }

@@ -1,0 +1,91 @@
+---
+summary: Publish a feedback-deleted event and remove the rating in Catalog.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a deleted feedback rating
+
+Rating API maps the committed feedback-deleted domain event to the integration
+contract and publishes it to
+[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]].
+
+- `bookId` identifies the Catalog book to update.
+- `rating` is removed from the book's denormalized rating summary.
+- `feedbackId` identifies the deleted feedback record.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp FeedbackDeletedIntegrationEvent.cs
+[IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-delete")]
+[MessageIdentity("BookWorm.Contracts.FeedbackDeletedIntegrationEvent")]
+public sealed record FeedbackDeletedIntegrationEvent(
+    Guid BookId,
+    int Rating,
+    Guid FeedbackId
+) : IntegrationEvent;
+```
+
+```csharp EventMapper.cs
+FeedbackDeletedEvent feedbackDeletedEvent => new FeedbackDeletedIntegrationEvent(
+    feedbackDeletedEvent.BookId,
+    feedbackDeletedEvent.Rating,
+    feedbackDeletedEvent.FeedbackId
+)
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Payload
+
+<CodeGroup dropdown>
+
+```json
+{
+	"bookId": "11111111-1111-1111-1111-111111111111",
+	"rating": 5,
+	"feedbackId": "22222222-2222-2222-2222-222222222222"
+}
+```
+
+</CodeGroup>
+
+## Consume the rating update
+
+Catalog removes the rating when the book exists. A missing book is a no-op
+because there is no local projection to correct.
+
+<CodeGroup dropdown>
+
+```csharp FeedbackDeletedIntegrationEventHandler.cs
+[WolverineHandler]
+public async Task Handle(
+    FeedbackDeletedIntegrationEvent @event,
+    CancellationToken cancellationToken
+)
+{
+    var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
+
+    if (book is null)
+    {
+        return;
+    }
+
+    book.RemoveRating(@event.Rating);
+    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+}
+```
+
+</CodeGroup>

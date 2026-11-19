@@ -1,0 +1,51 @@
+---
+id: adr-bw-010-cross-boundary-correlation
+name: "ADR-BW-010: Preserve message identity and cross-boundary correlation"
+version: 1.0.0
+summary: Carry stable integration identity and request context for routing and diagnosis without using correlation fields as authorization credentials.
+status: proposed
+date: 2026-11-07
+owners:
+  - platform-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-005-kafka-integration-backbone
+  - id: adr-bw-013-opentelemetry-observability
+  - id: adr-003-finance-kafka-order-correlation
+---
+
+## Context
+
+A request can initiate work in multiple services. Without stable message identity and correlation, operators cannot reliably connect downstream execution to the initiating request, and routing changes can disrupt consumers.
+
+## Decision
+
+Preserve the documented integration-event namespace, naming pattern, message identity, and owner routing metadata. Reuse the shared envelope policy's CloudEvents-compatible mapping and propagation of request and user identifiers where available.
+
+Correlation is diagnostic context, not an authorization token, immutable audit trail, or deduplication guarantee. Finance's order correlation rules remain in its local ADR.
+
+## Decision drivers
+
+- Interoperability through stable routing and identity.
+- Cross-service diagnosis without serializing business payloads into logs.
+- Clear separation of identity context from access control.
+
+## Alternatives considered
+
+| Alternative                                  | Assessment                                                              |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| Independently generated context at every hop | Is locally simple but disconnects the end-to-end execution trail.       |
+| Infer origin from payload or timestamps      | Avoids metadata but is ambiguous and encourages sensitive-data logging. |
+| Treat user identifiers as credentials        | Removes authorization work by incorrectly trusting unverified context.  |
+
+## Consequences
+
+- Related execution can be traced where producers and consumers preserve context.
+- Missing originating metadata leaves gaps that must be diagnosed explicitly.
+- Namespace and identity changes are contract changes, not harmless refactoring.
+
+## Evidence
+
+See [[doc|development/004-engineering-standards]], [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], and [[doc|arc42/08-crosscutting-concepts/004-observability]].

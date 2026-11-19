@@ -1,9 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace BookWorm.SharedKernel.SeedWork;
 
-public abstract class HasDomainEvents : IHasDomainEvents
+public closed class HasDomainEvents : IHasDomainEvents
 {
     private readonly List<DomainEvent> _domainEvents = [];
 

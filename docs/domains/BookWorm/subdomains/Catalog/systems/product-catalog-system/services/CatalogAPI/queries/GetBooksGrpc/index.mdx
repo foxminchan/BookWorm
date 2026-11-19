@@ -1,0 +1,64 @@
+---
+id: GetBooksGrpc
+name: Get books over gRPC
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns multiple Catalog books by identifier through the book.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `GetBooks` RPC returns the current compact [[entity|book]] representations for a
+requested set of book identifiers. It is a read-only lookup used by internal
+clients that need multiple Catalog records in one call.
+
+[[service|basket-api]] produces this query to enrich basket items.
+[[service|order-api]] also produces it during checkout and Order detail
+enrichment, caching book batches. [[service|catalog-api]] consumes the query
+over a synchronous service-to-service gRPC call, not an integration-event
+channel.
+
+<NodeGraph />
+
+## Contract
+
+Send a `GetBooksRequest` containing one or more UUIDs in `book_ids`. The
+response is `GetBooksResponse`, containing a repeated collection of
+`GetBookResponse` values.
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="GetBooks gRPC schema" />
+
+## Examples
+
+<CodeGroup dropdown>
+
+```csharp title="GetBooks gRPC example"
+using Grpc.Net.Client;
+using BookWorm.Catalog.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var request = new GetBooksRequest();
+request.BookIds.Add("0192f4d8-5f3c-7a11-b5dd-2c9e4a6f8b20");
+request.BookIds.Add("0192f4d8-5f3c-7a11-b5dd-2c9e4a6f8b21");
+
+var response = await client.GetBooksAsync(request);
+
+foreach (var book in response.Books)
+{
+  Console.WriteLine($"{book.Name}: {book.Status}");
+}
+```
+
+</CodeGroup>

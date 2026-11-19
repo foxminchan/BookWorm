@@ -1,0 +1,70 @@
+---
+title: Order creation conflict or failure
+summary: Safely investigate failed or repeated Order creation requests and Redis coordination issues.
+version: 1.0.0
+type: runbooks
+order: 2
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- `POST /api/v1/orders` returns `409 Conflict` for an `x-request-id`.
+- The caller timed out or received an error and does not know whether an Order
+  was persisted.
+- Order creation fails while another request for the same Buyer may be
+  running.
+- Redis availability affects request markers or lock acquisition.
+
+## Diagnose
+
+1. Record the authenticated Buyer, request timestamp, environment, and
+   `x-request-id`. Do not share Buyer address or other unnecessary personal
+   data in an incident report.
+2. Check for an existing Order using the customer's authorized Order history
+   or Order lookup before attempting another create request.
+3. Interpret a conflict carefully. Ordering stores an idempotency marker
+   before the endpoint handler runs, and an existing marker causes a
+   conflict. The marker lasts one hour and records a request; it is not a
+   cached response or proof that Order creation succeeded.
+4. If Order creation fails while another create is active for the Buyer,
+   check [[container\|order-cache]] and [[service\|order-api]] logs for
+   Buyer-scoped distributed lock acquisition or release failures. The lock
+   covers the Order write, not the earlier Basket and Catalog reads.
+5. If Redis is unavailable, consider both coordination and response caching:
+   Redis supports idempotency markers and creation locks as well as cached
+   responses. [[container\|order-database]] remains the source of truth for
+   persisted Orders.
+
+## Recover safely
+
+- If the Order exists, use its ID and do not submit another create request.
+- If the marker exists but no Order is visible, retain the original
+  `x-request-id` and wait for the request to be investigated or the marker to
+  expire. The marker's existence alone does not establish whether the write
+  completed.
+- Do not immediately retry with a new request ID: that can bypass the existing
+  marker and create a duplicate Order if the first write succeeded.
+- Do not flush Redis or delete marker keys broadly. Doing so can interfere
+  with concurrent Order creation and remove duplicate-request detection.
+- If the outcome remains ambiguous, escalate with the Buyer scope,
+  `x-request-id`, timestamp, and observed API response. Avoid sharing the
+  marker payload or personal data unless required by the incident process.
+
+## Escalation
+
+- Contact [[team\|business-strategy]] for Order API and Order persistence
+  issues.
+- Contact [[team\|platform-team]] for Redis availability or infrastructure
+  issues.
+
+See [[container\|order-cache]],
+[[adr\|adr-001-postgresql-order-system-of-record]], and
+[[service\|order-api]].
+
+<Footer />

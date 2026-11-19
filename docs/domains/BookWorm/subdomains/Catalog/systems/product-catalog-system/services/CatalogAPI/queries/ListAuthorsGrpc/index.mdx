@@ -1,0 +1,57 @@
+---
+id: ListAuthorsGrpc
+name: List authors over gRPC
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns all Catalog authors through the book.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `ListAuthors` RPC returns all available [[entity|author]] records in the
+Catalog. It is an anonymous read operation exposed for internal
+service-to-service clients.
+
+[[service|mcp-server]] produces this query in its
+`BookService.ListAuthorsAsync` client to power the `list_authors` MCP tool;
+[[service|catalog-api]] consumes it by dispatching `ListAuthorsQuery`.
+
+<NodeGraph />
+
+## Contract
+
+Send an empty `ListAuthorsRequest`. The response is `ListAuthorsResponse`,
+containing a repeated collection of `AuthorItem` values (`id` and `name`).
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="ListAuthors gRPC schema" />
+
+## Examples
+
+<CodeGroup dropdown>
+
+```csharp title="ListAuthors gRPC example"
+using Grpc.Net.Client;
+using BookWorm.Catalog.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.ListAuthorsAsync(new ListAuthorsRequest());
+
+foreach (var author in response.Authors)
+{
+    Console.WriteLine($"{author.Id}: {author.Name}");
+}
+```
+
+</CodeGroup>

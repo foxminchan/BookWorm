@@ -1,4 +1,4 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
@@ -16,12 +16,12 @@ internal sealed class QueryPerformanceInterceptor(ILogger<QueryPerformanceInterc
         InterceptionResult<DbDataReader> result
     )
     {
-        var stopwatch = Stopwatch.StartNew();
+        var start = Stopwatch.GetTimestamp();
 
         var interceptionResult = base.ReaderExecuting(command, eventData, result);
 
-        stopwatch.Stop();
-        if (stopwatch.ElapsedMilliseconds <= QueryThreshold)
+        var elapsedMilliseconds = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+        if (elapsedMilliseconds <= QueryThreshold)
         {
             return interceptionResult;
         }
@@ -35,7 +35,7 @@ internal sealed class QueryPerformanceInterceptor(ILogger<QueryPerformanceInterc
         logger.LogWarning(
             "Slow query detected: {CommandText} | Elapsed time: {ElapsedMilliseconds} ms",
             commandText,
-            stopwatch.ElapsedMilliseconds
+            elapsedMilliseconds
         );
 
         return interceptionResult;

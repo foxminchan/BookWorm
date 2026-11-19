@@ -1,0 +1,66 @@
+---
+dictionary:
+  - id: Book
+    name: Book
+    summary: A title represented in the bookstore catalog.
+    description: |
+      A Book has descriptive, pricing, availability, and classification data.
+      Catalog owns the Book, while other contexts refer to it by identifier.
+    icon: BookOpen
+  - id: Basket
+    name: Basket
+    summary: A customer's changeable collection of books before purchase.
+    description: |
+      A Basket contains book identifiers and quantities. It is mutable shopping
+      intent and is not an Order or an inventory reservation.
+    icon: ShoppingBasket
+  - id: Buyer
+    name: Buyer
+    summary: The person associated with an Order in Ordering.
+    description: |
+      A Buyer has a name and delivery address. A Buyer is not automatically the
+      same identifier used to address a customer's Basket.
+    icon: User
+  - id: Order
+    name: Order
+    summary: The durable purchase record managed by Ordering.
+    description: |
+      An Order contains Order items and has a lifecycle status. It is distinct
+      from the mutable Basket that precedes it.
+    icon: ClipboardList
+  - id: Order Item
+    name: Order Item
+    summary: One book, quantity, and price recorded on an Order.
+    description: |
+      An Order item records the book identifier, quantity, and price used for
+      that purchase line. It is not a live copy of the current Catalog price.
+    icon: ListOrdered
+  - id: Feedback
+    name: Feedback
+    summary: A customer's rating and optional comment about a Book.
+    description: |
+      Reviews owns individual Feedback submissions. Catalog maintains an
+      aggregate rating summary rather than the individual Feedback records.
+    icon: MessageSquare
+  - id: Checkout
+    name: Checkout
+    summary: The cross-context process that starts order placement.
+    description: |
+      Checkout coordinates the transition from a checked-out Basket into the
+      order workflow. It is a process, not another name for an Order.
+    icon: CreditCard
+  - id: Chat Request
+    name: Chat Request
+    summary: A customer question handled by Conversational agents.
+    description: |
+      Conversational agents route or answer a request. The request may discuss
+      a Book or Order, but those records remain owned by their contexts.
+    icon: MessageCircle
+  - id: Email Outbox Item
+    name: Email Outbox Item
+    summary: A stored customer email awaiting delivery or already sent.
+    description: |
+      Platform stores recipient, subject, body, and delivery state so email
+      delivery can be retried and tracked.
+    icon: Mail
+---

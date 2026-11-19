@@ -1,0 +1,42 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CustomerBasketDto",
+	"type": "object",
+	"required": ["id", "items"],
+	"properties": {
+		"id": {
+			"type": ["string", "null"]
+		},
+		"items": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "quantity"],
+				"properties": {
+					"id": {
+						"type": ["string", "null"]
+					},
+					"quantity": {
+						"type": ["integer", "string"],
+						"format": "int32",
+						"pattern": "^-?(?:0|[1-9]\\d*)$"
+					},
+					"name": {
+						"type": ["string", "null"]
+					},
+					"price": {
+						"type": ["number", "string"],
+						"format": "double",
+						"pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+						"default": 0
+					},
+					"priceSale": {
+						"type": ["number", "string", "null"],
+						"format": "double",
+						"pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+					}
+				}
+			}
+		}
+	}
+}

@@ -53,7 +53,6 @@ env:
   JAVA_VERSION: "25"
   GLOBAL_JSON_PATH: global.json
   BUN_VERSION_FILE: .bun-version
-  HANG_TIMEOUT: 7m
   SESSION_TIMEOUT: 15m
 
 jobs:
@@ -106,7 +105,7 @@ jobs:
           fetch-depth: 0
 
       - name: ☕ Set up JDK
-        uses: actions/setup-java@v6.1.0
+        uses: actions/setup-java@v6.2.0
         with:
           distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
@@ -146,21 +145,85 @@ jobs:
           /s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml
 
       - name: 🔨 Build
-        run: >
-          dotnet build
-          --configuration Release
-          --no-incremental
-          -p:SkipK6Build=true -p:SkipKeycloakifyBuild=true
+        run: dotnet build --configuration Release --no-incremental
 
       - name: 🧪 Test
         env:
-          TEST_HANG_TIMEOUT: ${{ env.HANG_TIMEOUT }}
           TEST_SESSION_TIMEOUT: ${{ env.SESSION_TIMEOUT }}
           NO_BUILD: "true"
         run: bash .github/actions/test/scripts/run-tests.sh
+
+      - name: ⬆️ Upload Allure Results (Backend Unit)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-be-unit
+          path: allure-results/unit/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: ⬆️ Upload Allure Results (Backend Contract)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-be-contract
+          path: allure-results/contract/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: ⬆️ Upload TUnit HTML Reports (Backend)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: tunit-report-backend
+          path: test-results/**/*.html
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: 🔍 Sonarqube End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
           .sonar/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+      - name: 🎨 Setup Frontend (for Allure CLI)
+        if: ${{ !cancelled() }}
+        uses: $/.github/actions/frontend-setup
+        with:
+          bun-version-file: ${{ env.BUN_VERSION_FILE }}
+
+      - name: 📊 Generate Allure Report (Backend)
+        if: ${{ !cancelled() }}
+        working-directory: src/Clients
+        run: |
+          shopt -s nullglob
+          result_dirs=(../../allure-results/unit ../../allure-results/contract)
+          existing_dirs=()
+          for dir in "${result_dirs[@]}"; do
+            if [ -d "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
+              existing_dirs+=("$dir")
+            fi
+          done
+          if [ ${#existing_dirs[@]} -gt 0 ]; then
+            ./node_modules/.bin/allure generate "${existing_dirs[@]}" --config ./allurerc.mjs --output ../../allure-report-backend
+          else
+            echo "No Backend Allure results found to generate report."
+          fi
+
+      - name: ⬆️ Upload Allure Report (Backend)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-report-backend
+          path: allure-report-backend/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: 📊 Post Allure Summary (Backend)
+        if: |
+          ${{ !cancelled() && hashFiles('allure-report-backend/index.html') != '' }}
+        uses: allure-framework/allure-action@v0.12.0
+        with:
+          report-directory: allure-report-backend
+          remote-href: https://foxminchan.github.io/BookWorm/reports
+          github-token: ${{ github.token }}

@@ -1,0 +1,166 @@
+---
+title: Architecture Decisions
+summary: Whole-system decision register for BookWorm, linking root ADR resources and existing system-specific decisions without duplicating their rationale.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This chapter is the **aggregate decision register for the complete BookWorm system**. It links to first-class EventCatalog ADR resources; it does not embed copies of their Context, Decision, or Consequences sections.
+
+The [[doc|arc42/04-solution-strategy]] summarizes the architectural direction. This register makes the significant choices behind that direction traceable, including alternatives, quality drivers, and negative consequences. Implementation mechanisms remain in the [[doc|arc42/08-crosscutting-concepts]] and the relevant catalog resources.
+
+## 9.1 Scope and record conventions
+
+- **Whole-system decisions** live in the catalog-root `adrs/` collection. They apply to [[domain|BookWorm]], which represents the complete platform, and to particular systems where their scope is narrower.
+- **System-specific decisions** stay in their existing system-owned ADR collections. The register below references all 54 existing records; none is copied, moved, renumbered, or replaced.
+- The `adr-bw-001` through `adr-bw-018` identifiers distinguish the 18 whole-system records from existing locally numbered ADRs. The sequence groups architectural concerns; it is not a claim about historical decision order.
+- Each ADR contains Context, Decision, Decision drivers, Alternatives considered, Consequences, and Evidence sections. Evidence points to the catalog's existing architecture documentation; alternatives and rationale are reconstructed for review, not presented as minutes of a historical evaluation.
+- The new records are **proposed** because approval and original decision dates are not established by the available sources. Their date, **2026-11-07**, is the recording date. This status applies to the ADR draft, not a claim that the described mechanisms are absent from the current system. Decision makers should be added when confirmed.
+
+## 9.2 Whole-system decision register
+
+All entries below are proposed records, version 1.0.0. Open the linked resource for its authoritative status and rationale.
+
+| Record                                                    | Architectural choice                                                          | Principal quality driver / trade-off                                |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [[adr\|adr-bw-001-capability-aligned-boundaries]]         | Decompose by bounded context and business capability                          | Modifiability and ownership, at the cost of distributed integration |
+| [[adr\|adr-bw-002-dotnet-platform-foundation]]            | Retain the established .NET and C# foundation                                 | Ecosystem consistency, with coordinated toolchain upgrades          |
+| [[adr\|adr-bw-003-aspire-shared-service-defaults]]        | Reuse Aspire orchestration and technical service defaults                     | Consistent hosting mechanisms, with shared-library change impact    |
+| [[adr\|adr-bw-004-explicit-http-and-grpc-contracts]]      | Use owned HTTP and defined gRPC request-response contracts                    | Interoperability, with runtime dependency and schema management     |
+| [[adr\|adr-bw-005-kafka-integration-backbone]]            | Use Kafka through the shared event framework where configured                 | Asynchronous decoupling, with broker and configuration obligations  |
+| [[adr\|adr-bw-006-service-owned-business-state]]          | Keep business state and persistence access with their capability              | Correctness and isolation, with cross-boundary composition          |
+| [[adr\|adr-bw-007-derived-eventually-consistent-views]]   | Distinguish authoritative state from derived views                            | Read independence, with explicitly stale projections                |
+| [[adr\|adr-bw-008-durable-message-handoffs]]              | Persist configured broker handoffs through local inboxes and outboxes         | Recoverable message work, without exactly-once business effects     |
+| [[adr\|adr-bw-009-local-cqrs-building-blocks]]            | Apply CQRS and Mediator inside service boundaries                             | Testable handler pipelines, with additional structural conventions  |
+| [[adr\|adr-bw-010-cross-boundary-correlation]]            | Carry stable message identity and request correlation                         | Diagnosis across services, without treating context as credentials  |
+| [[adr\|adr-bw-011-shared-validation-and-error-contracts]] | Reuse request validation and structured HTTP error handling                   | Predictable errors, with per-host registration requirements         |
+| [[adr\|adr-bw-012-operation-aware-resilience]]            | Select retry and failure handling by operation semantics                      | Recoverability, with duplicate-effect and retry-budget risks        |
+| [[adr\|adr-bw-013-opentelemetry-observability]]           | Use structured logs, OpenTelemetry, and verified health endpoints             | Operability, with sampling, export, and data-handling costs         |
+| [[adr\|adr-bw-014-composable-ai-governance]]              | Compose shared controls on each enabled AI path                               | Governed model and tool use, with path-specific coverage limits     |
+| [[adr\|adr-bw-015-explicit-environment-configuration]]    | Separate logical architecture from environment-specific deployment choices    | Deployment clarity, without unsupported production guarantees       |
+| [[adr\|adr-bw-016-layered-architecture-verification]]     | Verify business behavior, contracts, boundaries, and user journeys separately | Change safety, with multiple verification layers to maintain        |
+| [[adr\|adr-bw-017-compatible-contract-evolution]]         | Evolve contracts with consumer-impact review and compatibility evidence       | Independent release, with coordinated breaking-change migration     |
+| [[adr\|adr-bw-018-single-source-decision-documentation]]  | Maintain one authoritative ADR resource per decision                          | Traceability without redundant architecture text                    |
+
+## 9.3 Existing system-specific decision register
+
+These records remain authoritative for the detailed choices within each system. A whole-system ADR may relate to them, but does not restate or override their implementation decisions. Status and date remain on the linked ADR resources rather than being copied into this index.
+
+### Catalog
+
+[[system|product-catalog-system]]:
+
+- [[adr|adr-001-postgresql-system-of-record]]
+- [[adr|adr-002-hybrid-vector-search-qdrant]]
+- [[adr|adr-003-database-queue-for-vector-indexing]]
+- [[adr|adr-004-fusioncache-redis-for-catalog-reads]]
+- [[adr|adr-005-blob-storage-for-book-images]]
+- [[adr|adr-006-reviews-rating-projection-on-book]]
+
+### Shopping
+
+[[system|cart-system]]:
+
+- [[adr|adr-001-redis-authoritative-basket-store]]
+- [[adr|adr-002-customer-scoped-basket-ownership]]
+- [[adr|adr-003-replace-basket-items-as-a-set]]
+- [[adr|adr-004-catalog-enrichment-at-read-time]]
+- [[adr|adr-005-explicit-checkout-cleanup-outcomes]]
+
+### Ordering
+
+[[system|order-system]]:
+
+- [[adr|adr-001-postgresql-order-system-of-record]]
+- [[adr|adr-002-preserve-checkout-purchase-snapshot]]
+- [[adr|adr-003-separate-order-status-from-finance-saga]]
+- [[adr|adr-004-stripe-hosted-checkout-pci-dss]]
+
+[[system|finance-system]]:
+
+- [[adr|adr-001-finance-persisted-order-saga]]
+- [[adr|adr-002-finance-postgresql-message-persistence]]
+- [[adr|adr-003-finance-kafka-order-correlation]]
+- [[adr|adr-004-finance-bounded-scheduled-retries]]
+- [[adr|adr-005-finance-separate-workflow-and-order-status]]
+- [[adr|adr-006-finance-delegate-notification-delivery]]
+
+### Reviews
+
+[[system|rating-system]]:
+
+- [[adr|adr-001-postgresql-feedback-system-of-record]]
+- [[adr|adr-002-publish-feedback-events-for-catalog-projection]]
+- [[adr|adr-003-compensate-invalid-feedback-after-catalog-rejection]]
+- [[adr|adr-004-read-only-governed-feedback-summarization]]
+
+### Conversational
+
+[[system|chat-system]]:
+
+- [[adr|adr-001-chat-agent-orchestration-boundary]]
+- [[adr|adr-002-fail-closed-pii-middleware]]
+- [[adr|adr-003-separate-interactive-and-agent-protocols]]
+- [[adr|adr-004-in-memory-chat-sessions]]
+- [[adr|adr-005-govern-agent-tools-per-agent]]
+- [[adr|adr-006-user-scoped-episodic-and-semantic-memory]]
+
+[[system|mcp-tools]]:
+
+- [[adr|adr-001-mcp-read-only-domain-adapter]]
+- [[adr|adr-002-stateless-streamable-http-transport]]
+- [[adr|adr-003-separate-mcp-tools-resources-and-prompts]]
+- [[adr|adr-004-use-domain-apis-as-mcp-backends]]
+- [[adr|adr-005-authenticate-and-govern-mcp-calls]]
+
+### Platform
+
+[[system|notification-system]]:
+
+- [[adr|adr-001-notification-kafka-command-intake]]
+- [[adr|adr-002-notification-postgresql-email-outbox]]
+- [[adr|adr-003-notification-smtp-provider-boundary]]
+- [[adr|adr-004-notification-scheduled-maintenance-boundary]]
+- [[adr|adr-005-notification-confidential-data-boundary]]
+
+[[system|scheduler-system]]:
+
+- [[adr|adr-001-postgresql-quartz-persistence]]
+- [[adr|adr-002-scheduler-invocation-boundary]]
+- [[adr|adr-003-idempotent-misfire-aware-jobs]]
+- [[adr|adr-004-protect-scheduler-secrets-and-telemetry]]
+
+[[system|sendgrid]]:
+
+- [[adr|adr-001-provider-boundary-and-ownership]]
+- [[adr|adr-002-durable-outbox-and-bounded-retries]]
+- [[adr|adr-003-secret-and-sensitive-data-boundary]]
+
+### Shared external boundaries
+
+[[system|identity-provider]]:
+
+- [[adr|adr-001-provider-boundary-and-identity-ownership]]
+- [[adr|adr-002-service-owned-authorization]]
+- [[adr|adr-003-fail-closed-token-validation]]
+- [[adr|adr-004-protect-credentials-and-auth-telemetry]]
+
+[[system|data-privacy]]:
+
+- [[adr|adr-001-use-presidio-analyze-for-pii-detection]]
+- [[adr|adr-002-anonymize-detected-pii]]
+
+## 9.4 Decision maintenance
+
+1. Check this register and the affected system's ADRs before creating a decision. Extend the explanation in its authoritative record rather than creating another record with the same scope and choice.
+2. Record the forces, selection criteria, alternatives, and positive and negative consequences. Relate them to [[doc|arc42/01-introduction-and-goals/003-quality-goals]] without inventing numerical targets.
+3. Use `appliesTo` for affected catalog resources and `related` for complementary decisions. Root location does not automatically associate an ADR with every service.
+4. Confirm decision makers and acceptance explicitly. Use the supported statuses `proposed`, `accepted`, `rejected`, `deprecated`, and `superseded`.
+5. Use `amends` for a partial change or a new ADR with `supersedes` for a replacement; update the corresponding reverse relationship. These 18 records do not supersede existing system ADRs.
+6. Keep stable IDs and archive earlier versions when revising the same record. Update this register when its scope or membership changes, not to duplicate changing status or rationale.
+
+Production topology, concrete service-level objectives, retention, and recovery targets remain open in [[doc|arc42/07-deployment-view]] and the quality goals. The register is not evidence that those unresolved choices have been approved.

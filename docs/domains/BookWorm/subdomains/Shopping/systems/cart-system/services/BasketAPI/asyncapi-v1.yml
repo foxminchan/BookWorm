@@ -1,0 +1,134 @@
+asyncapi: 3.1.0
+info:
+  title: Basket API integration events
+  version: 1.0.0
+  description: |
+    AsyncAPI contract for the Basket service's checkout cleanup events.
+    Basket publishes a success or failure outcome after attempting to delete
+    the submitted basket.
+defaultContentType: application/cloudevents+json
+channels:
+  basketDeleteComplete:
+    address: bookworm.{env}.basket.delete-complete
+    description: Basket publishes this event when checkout cleanup deletes the basket successfully.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      basketDeleteComplete:
+        $ref: "#/components/messages/BasketDeletedCompleteIntegrationEvent"
+  basketDeleteFailed:
+    address: bookworm.{env}.basket.delete-failed
+    description: Basket publishes this event when checkout cleanup cannot delete the basket.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      basketDeleteFailed:
+        $ref: "#/components/messages/BasketDeletedFailedIntegrationEvent"
+operations:
+  sendBasketDeleteComplete:
+    action: send
+    channel:
+      $ref: "#/channels/basketDeleteComplete"
+    summary: Publish successful basket deletion
+    messages:
+      - $ref: "#/channels/basketDeleteComplete/messages/basketDeleteComplete"
+  sendBasketDeleteFailed:
+    action: send
+    channel:
+      $ref: "#/channels/basketDeleteFailed"
+    summary: Publish failed basket deletion
+    messages:
+      - $ref: "#/channels/basketDeleteFailed/messages/basketDeleteFailed"
+components:
+  parameters:
+    env:
+      description: BookWorm deployment environment.
+      enum:
+        - development
+        - staging
+        - production
+      default: development
+  messages:
+    BasketDeletedCompleteIntegrationEvent:
+      name: BasketDeletedCompleteIntegrationEvent
+      title: Basket deletion completed
+      summary: The submitted basket was deleted successfully after checkout.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/BasketDeletedCompletePayload"
+    BasketDeletedFailedIntegrationEvent:
+      name: BasketDeletedFailedIntegrationEvent
+      title: Basket deletion failed
+      summary: The submitted basket could not be deleted after checkout.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/BasketDeletedFailedPayload"
+  schemas:
+    BasketDeletedCompletePayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - basketId
+        - totalMoney
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier assigned by the integration-event building block.
+        creationDate:
+          type: string
+          format: date-time
+          description: UTC timestamp when the integration event was created.
+        orderId:
+          type: string
+          format: uuid
+          description: Identifier of the order whose submitted basket was deleted.
+        basketId:
+          type: string
+          format: uuid
+          description: Identifier of the basket deleted during checkout cleanup.
+        totalMoney:
+          type: number
+          format: double
+          description: Total purchase amount associated with the order.
+    BasketDeletedFailedPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - basketId
+        - totalMoney
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier assigned by the integration-event building block.
+        creationDate:
+          type: string
+          format: date-time
+          description: UTC timestamp when the integration event was created.
+        orderId:
+          type: string
+          format: uuid
+          description: Identifier of the order whose submitted basket could not be deleted.
+        basketId:
+          type: string
+          format: uuid
+          description: Identifier of the basket that could not be deleted.
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+          description: Customer email used by downstream recovery or notification workflows.
+        totalMoney:
+          type: number
+          format: double
+          description: Total purchase amount associated with the order.

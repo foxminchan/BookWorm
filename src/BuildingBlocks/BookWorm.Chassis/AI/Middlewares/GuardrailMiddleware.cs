@@ -17,14 +17,14 @@ internal static partial class GuardrailMiddleware
             + @"|(?:\[/?INST\]|<<SYS>>|<\|(?:im_start|im_end)\|>)"
             + @"|reveal\s+(?:your|the|system)\s+(?:prompt|instructions?)"
             + @"|repeat\s+(?:everything|all(?:\s+text)?)\s+(?:above|before)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
+        RegexOptions.IgnoreCase
     )]
     private static partial Regex InjectionPatternRegex();
 
     [GeneratedRegex(
         @"(?:system|developer)\s+(?:prompt|instructions?)\s*[:=]\s*\S"
             + @"|(?:\[/?INST\]|<<SYS>>|<\|im_start\|>\s*system)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
+        RegexOptions.IgnoreCase
     )]
     private static partial Regex PromptLeakagePatternRegex();
 
@@ -121,11 +121,13 @@ internal static partial class GuardrailMiddleware
         );
 
         return $"""
-            <untrusted-content encoding=\"json\">\n{serialized}\n</untrusted-content>
+            <untrusted-content encoding="json">
+            {serialized}
+            </untrusted-content>
             """;
     }
 
-    private static TextContent CreateTextContent(TextContent original, string text)
+    internal static TextContent CreateTextContent(TextContent original, string text)
     {
         return new(text)
         {

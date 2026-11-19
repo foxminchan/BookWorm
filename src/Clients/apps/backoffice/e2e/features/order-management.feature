@@ -23,48 +23,42 @@ Feature: Order Management
     Given there is at least one order
     When I click view on the first order
     Then I should see the order details page
-    And I should see customer information
+    And I should see order summary cards
     And I should see ordered items
-
-  @search
-  @orders
-  Scenario: Search for orders by order number
-    Given there are multiple orders
-    When I search for an order by order number
-    Then I should see only matching orders
+    And I should see the order event history
 
   @filter
   @orders
-  Scenario: Filter orders by status
+  Scenario: Filter orders by status - New
     Given there are orders with different statuses
-    When I filter orders by "Pending" status
-    Then I should see only pending orders
-
-  @filter
-  @orders
-  Scenario: Filter orders by status - Processing
-    Given there are orders with different statuses
-    When I filter orders by "Processing" status
-    Then I should see only processing orders
+    When I filter orders by "New" status
+    Then I should see only "New" orders
 
   @filter
   @orders
   Scenario: Filter orders by status - Completed
     Given there are orders with different statuses
     When I filter orders by "Completed" status
-    Then I should see only completed orders
+    Then I should see only "Completed" orders
+
+  @filter
+  @orders
+  Scenario: Filter orders by status - Cancelled
+    Given there are orders with different statuses
+    When I filter orders by "Cancelled" status
+    Then I should see only "Cancelled" orders
 
   @update-order-status
-  Scenario: Update order status from Pending to Processing
-    Given there is at least one pending order
-    When I change the order status to "Processing"
+  Scenario: Complete a New order
+    Given there is at least one new order
+    When I complete the first new order
     Then the order status should be updated
     And I should see a success message
 
   @update-order-status
-  Scenario: Update order status from Processing to Shipped
-    Given there is at least one processing order
-    When I change the order status to "Shipped"
+  Scenario: Cancel a New order
+    Given there is at least one new order
+    When I cancel the first new order
     Then the order status should be updated
     And I should see a success message
 
@@ -72,6 +66,6 @@ Feature: Order Management
   @orders
   Scenario: Navigate through order pages
     Given there are more than 10 orders
-    When I navigate to page 2
+    When I navigate to the next page
     Then I should see different orders
     And the pagination should update

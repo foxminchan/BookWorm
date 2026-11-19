@@ -1,0 +1,115 @@
+---
+summary: Generate a feedback summary, handle a book with no feedback, and recognize not-found responses.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. Summarize feedback
+
+Provide the Catalog book identifier in the `id` path parameter. A successful
+request returns `200 OK` with a generated summary.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request GET \
+  "$BASE_URL/api/v1/feedbacks/11111111-1111-1111-1111-111111111111/summarize" \
+  --header "Accept: application/json"
+```
+
+</CodeGroup>
+
+Example response:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"summary": "Readers consistently praise the book's engaging story and clear writing.",
+	"classification": "Good",
+	"averageRating": 4.6,
+	"reviewCount": 10,
+	"evidence": "Readers repeatedly praise the engaging story and clear writing.",
+	"confidence": "High"
+}
+```
+
+</CodeGroup>
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```ts summarize-feedback.ts
+type SummarizeResult = {
+	summary: string;
+	classification?: "NoData" | "Bad" | "Good" | "TopRated";
+	averageRating?: number | null;
+	reviewCount?: number;
+	evidence?: string;
+	confidence?: string;
+};
+
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const bookId = "11111111-1111-1111-1111-111111111111";
+const response = await fetch(`${baseUrl}/api/v1/feedbacks/${bookId}/summarize`, {
+	headers: { Accept: "application/json" },
+});
+
+if (response.status === 404) {
+	throw new Error("Book or feedback summary was not found");
+}
+if (!response.ok) {
+	throw new Error(`SummarizeFeedback failed with ${response.status}`);
+}
+
+const result = (await response.json()) as SummarizeResult;
+console.log(result.summary);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle a book with no feedback
+
+A book with no feedback returns `200 OK` without invoking the model workflow.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"summary": "No feedback found for this book.",
+	"classification": "NoData",
+	"averageRating": null,
+	"reviewCount": 0,
+	"evidence": "",
+	"confidence": ""
+}
+```
+
+</CodeGroup>
+
+## 3. Handle a not-found response
+
+The endpoint also declares `404 Not Found` with problem details. Do not
+interpret a not-found response as a successful no-feedback result.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "Not Found",
+	"status": 404
+}
+```
+
+</CodeGroup>

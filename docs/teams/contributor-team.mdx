@@ -1,0 +1,52 @@
+---
+id: contributor-team
+name: Contributor Team
+summary: |
+  Delivers and maintains BookWorm's product and domain capabilities across the catalog, shopping, and conversational experiences while keeping the architecture coherent and testable.
+members:
+  - nhanxnguyen
+---
+
+## Overview
+
+The **Contributor Team** is the delivery-oriented engineering group for BookWorm. It translates product intent and domain ownership into implementation work across the catalog, shopping, ordering, review, and conversational experiences while keeping the system understandable and maintainable.
+
+This team contributes to the architecture by maintaining the service and contract layer described in the catalog, not by bypassing domain boundaries or sharing mutable state across subdomains.
+
+## What this team contributes
+
+- Implementation of domain features and service changes
+- Keeping domain models, APIs, and flows aligned with Business Strategy intent
+- Maintenance of the codebase and service contracts used across BookWorm
+- Documentation updates that keep architecture knowledge current
+
+## Core responsibilities
+
+- Collaborate with domain owners to implement new features and enhancements.
+- Maintain and improve the service implementations across the platform.
+- Review changes for correctness, contract consistency, and boundary integrity.
+- Keep architecture documentation, ADRs, and operational notes aligned with the code.
+- Help teams understand where changes belong before they are made.
+
+## Delivery expectations
+
+The Contributor Team is expected to:
+
+- respect domain ownership when deciding where a business rule lives
+- keep contracts explicit across [[domain|catalog]], [[domain|shopping]], and [[domain|ordering]]
+- prefer documented APIs, commands, and events over hidden database coupling
+- validate behavior with tests and architecture checks, especially around ownership and message contracts
+
+## Working model
+
+The team is not a free-form implementation layer for every change. Instead, it partners with the owning domain and platform stakeholders to make sure work is scoped correctly and validated in the right place.
+
+For example:
+
+- Catalog changes remain grounded in Catalog responsibilities and product metadata ownership
+- Shopping and Ordering changes should not silently mutate domain state outside their bounded context
+- Conversational work should remain assistant-oriented and avoid claiming authoritative business state when the source system is elsewhere
+
+## Quality bar
+
+The team aims for clear intent, explicit ownership, and maintainable architecture. Contributions should be easy to reason about, easy to operate, and easy to explain to adjacent teams. That includes validating contracts, documenting assumptions, and keeping the public architecture catalog aligned with reality.

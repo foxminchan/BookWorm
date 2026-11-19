@@ -1,6 +1,6 @@
 # Agent Instructions
 
-BookWorm is a .NET 10 microservices application built around Aspire, DDD, and event-driven integration patterns. The codebase emphasizes Vertical Slice Architecture, CQRS, and clean service boundaries.
+BookWorm is a .NET 11 microservices application built around Aspire, DDD, and event-driven integration patterns. The codebase emphasizes Vertical Slice Architecture, CQRS, and clean service boundaries.
 
 ## Working style
 
@@ -20,14 +20,14 @@ BookWorm is a .NET 10 microservices application built around Aspire, DDD, and ev
 
 ## Project shape
 
-- .NET 10 / C# 14 microservices with Aspire orchestration.
+- .NET 11 / C# 15 microservices with Aspire orchestration.
 - AppHost: [src/Aspire/BookWorm.AppHost/AppHost.cs](src/Aspire/BookWorm.AppHost/AppHost.cs)
 - Shared libraries: [src/BuildingBlocks](src/BuildingBlocks)
 - Frontend: [src/Clients](src/Clients) (Bun + Turbo + Next.js 16 / React 19)
 - Services: [src/Services](src/Services)
 - Integrations: [src/Integrations](src/Integrations)
 - Tests: [tests](tests)
-- Documentation: [README.md](README.md), [docs/docusaurus](docs/docusaurus), [docs/eventcatalog](docs/eventcatalog)
+- Documentation: [README.md](README.md), [docs](https://foxminchan.github.io/BookWorm/llms.txt)
 
 ## Common pitfalls
 
@@ -51,7 +51,7 @@ BookWorm is a .NET 10 microservices application built around Aspire, DDD, and ev
 ## Common patterns to preserve
 
 - Event-driven services use WolverineFx + Kafka with outbox/inbox patterns.
-- Auth is handled via Keycloak; apply authorization at endpoint boundaries.
+- Auth is handled via Microsoft Entra ID; apply authorization at endpoint boundaries.
 - Caching uses FusionCache; service boundaries should remain consistent with the existing architecture.
 - API versioning is explicit; follow the existing `ApiVersions.V1` patterns.
 
@@ -59,8 +59,7 @@ BookWorm is a .NET 10 microservices application built around Aspire, DDD, and ev
 
 - [README.md](README.md)
 - [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)
-- [docs/docusaurus](docs/docusaurus)
-- [docs/eventcatalog](docs/eventcatalog)
+- [docs](https://foxminchan.github.io/BookWorm/llms.txt)
 - [.agents/skills](.agents/skills)
 
 ## Official docs to prefer
@@ -68,3 +67,4 @@ BookWorm is a .NET 10 microservices application built around Aspire, DDD, and ev
 - https://aspire.dev
 - https://learn.microsoft.com/dotnet/aspire
 - https://nuget.org
+- https://www.eventcatalog.dev/llms.txt

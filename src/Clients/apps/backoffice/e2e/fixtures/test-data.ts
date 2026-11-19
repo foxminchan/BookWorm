@@ -1,38 +1,29 @@
 import { faker } from "@faker-js/faker";
 
+export const BASE_PATH = "/backoffice";
+
 /**
  * Test data generators for backoffice e2e tests
  */
-
 export const testData = {
   /**
-   * Generate test admin credentials
+   * Generate test admin user data for mocked session
    */
   admin: {
+    id: "admin-test-id",
+    name: "Admin User",
     email: process.env.TEST_ADMIN_EMAIL || "admin@bookworm.test",
-    password: process.env.TEST_ADMIN_PASSWORD || "Test@1234",
   },
 
   /**
    * Generate test book data
    */
   book: {
-    title: () => faker.lorem.words(3),
-    author: () => faker.person.fullName(),
-    isbn: () => faker.string.numeric(13),
+    name: () => faker.lorem.words(3),
     price: () => Number.parseFloat(faker.commerce.price({ min: 10, max: 100 })),
+    priceSale: () =>
+      Number.parseFloat(faker.commerce.price({ min: 5, max: 50 })),
     description: () => faker.lorem.paragraph(),
-    category: () =>
-      faker.helpers.arrayElement([
-        "Fiction",
-        "Non-Fiction",
-        "Science",
-        "History",
-        "Biography",
-      ]),
-    publisher: () => faker.company.name(),
-    publicationYear: () => faker.date.past({ years: 10 }).getFullYear(),
-    stock: () => faker.number.int({ min: 0, max: 100 }),
   },
 
   /**
@@ -40,12 +31,7 @@ export const testData = {
    */
   customer: {
     name: () => faker.person.fullName(),
-    email: () => faker.internet.email(),
-    phone: () => faker.phone.number(),
     address: () => faker.location.streetAddress(),
-    city: () => faker.location.city(),
-    state: () => faker.location.state(),
-    zipCode: () => faker.location.zipCode(),
   },
 
   /**
@@ -53,15 +39,7 @@ export const testData = {
    */
   order: {
     orderId: () => faker.string.uuid(),
-    orderNumber: () => faker.string.numeric(8),
-    status: () =>
-      faker.helpers.arrayElement([
-        "Pending",
-        "Processing",
-        "Shipped",
-        "Delivered",
-        "Cancelled",
-      ]),
+    status: () => faker.helpers.arrayElement(["New", "Completed", "Cancelled"]),
     total: () => Number.parseFloat(faker.commerce.price({ min: 20, max: 500 })),
     date: () => faker.date.recent({ days: 30 }),
   },
@@ -78,28 +56,17 @@ export const testData = {
 };
 
 /**
- * Commonly used test credentials
- */
-export const credentials = {
-  validAdmin: {
-    email: "admin@bookworm.test",
-    password: "Test@1234",
-  },
-  invalidAdmin: {
-    email: "invalid@bookworm.test",
-    password: "WrongPassword",
-  },
-};
-
-/**
- * Test URLs
+ * Test URLs (prefixed with Next.js basePath "/backoffice")
  */
 export const urls = {
-  home: "/",
-  login: "/api/auth/signin",
-  dashboard: "/",
-  books: "/catalog/books",
-  customers: "/ordering/customers",
-  orders: "/ordering/orders",
-  reviews: "/rating/reviews",
+  home: BASE_PATH,
+  dashboard: BASE_PATH,
+  books: `${BASE_PATH}/books`,
+  newBook: `${BASE_PATH}/books/new`,
+  authors: `${BASE_PATH}/authors`,
+  categories: `${BASE_PATH}/categories`,
+  publishers: `${BASE_PATH}/publishers`,
+  customers: `${BASE_PATH}/customers`,
+  orders: `${BASE_PATH}/orders`,
+  reviews: `${BASE_PATH}/reviews`,
 };

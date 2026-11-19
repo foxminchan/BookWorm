@@ -7,13 +7,18 @@ public sealed class Author() : Entity<AuthorId>, IAggregateRoot
     public Author(string name)
         : this()
     {
-        Name = !string.IsNullOrWhiteSpace(name)
-            ? name
-            : throw new CatalogDomainException("Author name must be provided.");
+        Name = name;
     }
 
     [DisallowNull]
-    public string? Name { get; private set; }
+    public string? Name
+    {
+        get;
+        private set =>
+            field = !string.IsNullOrWhiteSpace(value)
+                ? value
+                : throw new CatalogDomainException("Author name must be provided.");
+    }
 
     public IReadOnlyCollection<BookAuthor> BookAuthors => _bookAuthors.AsReadOnly();
 
@@ -25,9 +30,7 @@ public sealed class Author() : Entity<AuthorId>, IAggregateRoot
     /// <exception cref="CatalogDomainException">Thrown when the provided name is null or whitespace.</exception>
     public Author UpdateName(string name)
     {
-        Name = !string.IsNullOrWhiteSpace(name)
-            ? name
-            : throw new CatalogDomainException("Author name must be provided.");
+        Name = name;
         return this;
     }
 }

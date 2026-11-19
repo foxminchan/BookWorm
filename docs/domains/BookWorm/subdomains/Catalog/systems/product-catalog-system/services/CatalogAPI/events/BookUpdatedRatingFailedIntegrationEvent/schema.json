@@ -1,0 +1,14 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "BookUpdatedRatingFailedIntegrationEvent",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["feedbackId"],
+	"properties": {
+		"feedbackId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the feedback that could not be applied."
+		}
+	}
+}

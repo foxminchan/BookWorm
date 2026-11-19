@@ -1,0 +1,15 @@
+views {
+  view catalogContext of catalog {
+    title 'Catalog bounded context'
+    include *
+    include customer, catalogBusinessUser, shopping, reviews, ordering, idp.oauthApi
+    autoLayout LeftRight
+  }
+
+  view catalogLandscape {
+    title 'Catalog context landscape'
+    include customer, catalogBusinessUser, idp.oauthApi
+    include catalog, shopping, reviews, ordering
+    autoLayout LeftRight
+  }
+}

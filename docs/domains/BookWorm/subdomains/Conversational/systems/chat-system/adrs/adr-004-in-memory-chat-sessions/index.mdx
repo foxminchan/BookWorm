@@ -1,0 +1,79 @@
+---
+id: adr-004-in-memory-chat-sessions
+name: "ADR-004: Keep Chat workflow sessions in memory"
+version: 1.0.0
+summary: The Chat workflow uses an in-memory session store and does not treat conversation history as durable business data.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: chat-system
+  - type: service
+    id: chat-api
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+The conversational workflow needs session state to coordinate an interaction.
+Persisting conversation history would introduce data-retention, privacy,
+availability, and lifecycle requirements beyond the current workflow. The
+service needs to distinguish temporary workflow state from both durable
+business records and any future user-scoped memory feature.
+
+## Decision
+
+The composed Chat workflow uses an in-memory session store for its interaction
+state. Conversation history is transient workflow state; it is not an
+authoritative or durable business record and is not promised to be recoverable
+across service restarts or instances.
+
+This decision applies to workflow sessions. It does not prevent a separately
+designed memory capability from storing approved user-scoped facts under its
+own identity, privacy, retention, inspection, and deletion rules. The
+user-scoped episodic and semantic memory described in
+[[adr|adr-006-user-scoped-episodic-and-semantic-memory]] remains a proposal and
+does not change the current session-store behavior.
+
+## Consequences
+
+- The service does not provide durable conversation-history recovery or
+  cross-instance session continuity.
+- Session continuity depends on the lifetime and behavior of the in-memory
+  store and the running service instance; deployment and scaling behavior
+  must not assume a shared durable session database.
+- The service avoids introducing a persistent transcript store and its
+  associated retention and deletion obligations for the current workflow.
+- A requirement for durable history, cross-instance continuity, or retention
+  controls requires a separate storage, identity, privacy, and lifecycle
+  decision; it must not be implemented by silently changing this session
+  store.
+
+## Alternatives considered
+
+### Persist full conversation history
+
+This would support recovery and continuity, but would make the service
+responsible for retaining and deleting conversational content and handling
+its privacy and access requirements. Durable history is outside the current
+workflow's needs.
+
+### Use a shared distributed session store
+
+This could allow session state to survive instance changes, but would add a
+shared persistence dependency and its operational and lifecycle requirements.
+The current workflow does not require that guarantee.
+
+### Treat session state as long-term user memory
+
+Session state is scoped to the interaction and does not define verified
+customer ownership, explicit memory controls, or retention semantics.
+Cross-session personalization needs a separate design rather than a change in
+meaning for the session store.

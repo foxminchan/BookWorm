@@ -1,0 +1,20 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Integrate with this service",
+			"icon": "Plug",
+			"pages": ["[[spec|openapi-v1.yaml]]", "[[spec|asyncapi-v1.yml]]"]
+		},
+		{
+			"title": "Related domains",
+			"icon": "Network",
+			"pages": ["[[domain|catalog]]", "[[domain|shopping]]"]
+		},
+		"$outbound-messages",
+		"$inbound-messages",
+		"$architecture",
+		"$state-and-persistence",
+		"$owners"
+	]
+}

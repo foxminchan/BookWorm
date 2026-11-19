@@ -7,8 +7,8 @@ export const authClient: ReturnType<typeof CreateAuthClient> = createAuthClient(
   {
     baseURL:
       globalThis.window === undefined
-        ? "http://localhost:3001"
-        : globalThis.location.origin,
+        ? "http://localhost:3001/backoffice"
+        : `${globalThis.location.origin}/backoffice`,
   },
 );
 

@@ -1,0 +1,74 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "AnonymizeText",
+	"description": "Request to transform text using previously detected PII entities.",
+	"type": "object",
+	"required": ["text", "analyzer_results"],
+	"properties": {
+		"text": {
+			"type": "string",
+			"description": "Text to anonymize."
+		},
+		"anonymizers": {
+			"type": "object",
+			"description": "Optional operators keyed by DEFAULT or a PII entity type.",
+			"additionalProperties": {
+				"oneOf": [
+					{
+						"type": "object",
+						"required": ["type", "new_value"],
+						"properties": {
+							"type": { "const": "replace" },
+							"new_value": { "type": "string" }
+						}
+					},
+					{
+						"type": "object",
+						"required": ["type"],
+						"properties": { "type": { "const": "redact" } }
+					},
+					{
+						"type": "object",
+						"required": ["type", "masking_char", "chars_to_mask"],
+						"properties": {
+							"type": { "const": "mask" },
+							"masking_char": { "type": "string" },
+							"chars_to_mask": { "type": "integer" },
+							"from_end": { "type": "boolean" }
+						}
+					},
+					{
+						"type": "object",
+						"required": ["type"],
+						"properties": {
+							"type": { "const": "hash" },
+							"hash_type": { "type": "string", "enum": ["sha256", "sha512"] }
+						}
+					},
+					{
+						"type": "object",
+						"required": ["type", "key"],
+						"properties": {
+							"type": { "const": "encrypt" },
+							"key": { "type": "string" }
+						}
+					}
+				]
+			}
+		},
+		"analyzer_results": {
+			"type": "array",
+			"description": "PII detections returned by the Analyzer.",
+			"items": {
+				"type": "object",
+				"required": ["start", "end", "score", "entity_type"],
+				"properties": {
+					"start": { "type": "integer" },
+					"end": { "type": "integer" },
+					"score": { "type": "number" },
+					"entity_type": { "type": "string" }
+				}
+			}
+		}
+	}
+}

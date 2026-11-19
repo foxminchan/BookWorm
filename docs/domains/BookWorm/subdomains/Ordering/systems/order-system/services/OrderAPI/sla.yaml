@@ -1,0 +1,65 @@
+kind: CarrierServiceLevelAgreement
+version: 2026.1
+status: draft
+domain: ordering
+purpose: >-
+  Provide delivery estimates for order planning. The carrier owns shipment
+  execution; delivery does not itself change the BookWorm Order status.
+effectiveDate: Upon signature by both parties
+
+carriers:
+  - id: bookworm-primary-carrier
+    name: BookWorm Primary Parcel Carrier
+    regions:
+      - BookWorm-supported domestic delivery destinations
+    serviceLevels:
+      - code: STANDARD
+        deliveryDays: "3-5"
+        deliveryDayType: business-days
+        deliveryPeriodStarts: carrier-acceptance
+        cutOffTime: "16:00"
+        cutOffTimeZone: destination-local-time
+        maxParcelWeightKg: 30
+        targetStatus: proposed
+      - code: EXPRESS
+        deliveryDays: "1-2"
+        deliveryDayType: business-days
+        deliveryPeriodStarts: carrier-acceptance
+        cutOffTime: "14:00"
+        cutOffTimeZone: destination-local-time
+        maxParcelWeightKg: 20
+        targetStatus: proposed
+      - code: NEXT_DAY
+        deliveryDays: "1"
+        deliveryDayType: business-days
+        deliveryPeriodStarts: carrier-acceptance
+        cutOffTime: "12:00"
+        cutOffTimeZone: destination-local-time
+        maxParcelWeightKg: 10
+        targetStatus: proposed
+    collection:
+      window: "17:00-19:00"
+      timeZone: BookWorm warehouse local time
+      days: [MON, TUE, WED, THU, FRI]
+      targetStatus: proposed
+    penalties:
+      lateDeliveryCreditPercent: 15
+      lostParcelReimbursement: full-value
+      status: proposed
+      terms: >-
+        Define the credit basis, claim window, evidence requirements, exclusions,
+        and reimbursement cap in the signed carrier contract.
+
+support:
+  escalationEmail: engineering@bookworm.com
+  responseTimeHours: 4
+  responseTimeBasis: business-hours
+  targetStatus: proposed
+
+assumptions:
+  - Delivery estimates are measured from carrier acceptance, not Order creation.
+  - The carrier name is a BookWorm placeholder, not a confirmed provider.
+  - The existing BookWorm engineering contact is used as a provisional escalation email; confirm the operational owner before signing.
+  - The delivery area means the domestic destinations enabled at checkout; confirm the actual country and coverage with the carrier.
+  - Confirm local business-day calendars, warehouse time zone, parcel dimensions, and holiday handling with the carrier.
+  - The escalation contact, service targets, and remedies are proposed terms and are not binding until agreed in the signed contract.

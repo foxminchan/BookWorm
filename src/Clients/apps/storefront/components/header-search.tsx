@@ -134,7 +134,7 @@ export function MobileSearch() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(handleSearch)}
-        className="hover:bg-secondary relative flex w-full items-center rounded-full p-2 transition-colors"
+        className="hover:bg-secondary focus-within:ring-ring relative flex w-full items-center rounded-full p-2 transition-colors focus-within:ring-2 focus-within:ring-offset-2"
         role="search"
         aria-label="Search books"
       >

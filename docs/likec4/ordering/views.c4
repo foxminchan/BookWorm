@@ -1,0 +1,8 @@
+views {
+  view orderingContext of ordering {
+    title 'Ordering bounded context'
+    include *
+    include customer, administrator, idp, shopping, catalog, platform.notification
+    autoLayout LeftRight
+  }
+}

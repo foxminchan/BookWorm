@@ -1,0 +1,56 @@
+---
+id: adr-bw-007-derived-eventually-consistent-views
+name: "ADR-BW-007: Distinguish authoritative state from derived views"
+version: 1.0.0
+summary: Treat search and rating projections as derived information with explicit consistency limits rather than alternative sources of truth.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+  - type: system
+    id: product-catalog-system
+  - type: system
+    id: rating-system
+related:
+  - id: adr-bw-006-service-owned-business-state
+  - id: adr-002-hybrid-vector-search-qdrant
+  - id: adr-006-reviews-rating-projection-on-book
+  - id: adr-002-publish-feedback-events-for-catalog-projection
+---
+
+## Context
+
+Discovery and summary reads benefit from specialized views, while product facts and individual feedback remain owned elsewhere. Consumers could mistake a delayed view for authoritative business state.
+
+## Decision
+
+Model derived search and rating views separately from their authoritative sources. Use the owner for decisions requiring current business facts and acknowledge that asynchronous projections can lag.
+
+Projection engines, indexing handoffs, and feedback event handling remain in their existing local ADRs. This record captures only the cross-system consistency principle.
+
+## Decision drivers
+
+- Read independence without transferring source-data ownership.
+- Correctness when stale discovery data is used in a purchase flow.
+- Honest freshness and failure semantics.
+
+## Alternatives considered
+
+| Alternative                                    | Assessment                                                                 |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| Use a projection as the source of truth        | Simplifies reads but confuses derived data with authoritative state.       |
+| Synchronize all views inside each source write | Reduces lag while coupling source availability to projection dependencies. |
+| Query all source data for every discovery read | Avoids a separate projection but sacrifices the specialized read model.    |
+
+## Consequences
+
+- Read models can evolve independently of authoritative persistence.
+- Users may observe stale search or rating information during pending work or failures.
+- Projection health and freshness need operational visibility; no numerical freshness target is established here.
+
+## Evidence
+
+See [[doc|arc42/05-building-block-view]] and [[doc|arc42/07-deployment-view/001-infrastructure-level-1]]. The related local ADRs supply the concrete projection mechanisms.

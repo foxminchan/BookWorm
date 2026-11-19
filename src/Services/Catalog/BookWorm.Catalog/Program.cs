@@ -1,6 +1,5 @@
 using BookWorm.Catalog.Extensions;
 using BookWorm.Catalog.Grpc.Services;
-using BookWorm.Chassis.Security.Keycloak;
 using BookWorm.ServiceDefaults.Cors;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,8 +22,6 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseDefaultCors();
-
-app.UseKeycloakTokenIntrospection();
 
 app.UseRateLimiter();
 

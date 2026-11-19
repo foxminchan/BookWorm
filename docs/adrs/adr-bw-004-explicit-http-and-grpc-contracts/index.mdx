@@ -1,0 +1,49 @@
+---
+id: adr-bw-004-explicit-http-and-grpc-contracts
+name: "ADR-BW-004: Integrate request-response operations through owned HTTP and gRPC contracts"
+version: 1.0.0
+summary: Use service-owned HTTP APIs and defined Protocol Buffer interfaces rather than internal handlers or database access.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-005-kafka-integration-backbone
+  - id: adr-bw-017-compatible-contract-evolution
+  - id: adr-004-use-domain-apis-as-mcp-backends
+---
+
+## Context
+
+Checkout, basket presentation, and domain adapters need current information from another capability. Direct access to its persistence or handler classes couples the consumer to implementation details.
+
+## Decision
+
+Use the owning service's published request-response contract. Retain HTTP APIs with OpenAPI descriptions where provided and the defined Basket and Catalog gRPC interfaces with Protocol Buffer schemas. Select the existing contract appropriate to the interaction; do not make gRPC universal or convert asynchronous workflows into synchronous call chains.
+
+## Decision drivers
+
+- Interoperability and explicit ownership.
+- Typed, reviewable interface shapes.
+- Separation of public semantics from internal persistence.
+
+## Alternatives considered
+
+| Alternative                | Assessment                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| Direct database reads      | Avoids a network API but bypasses ownership and leaks schema details.                     |
+| HTTP-only standardization  | Simplifies protocol variety but replaces established gRPC consumers.                      |
+| gRPC for every interaction | Provides consistent typed calls but does not fit every external or asynchronous boundary. |
+
+## Consequences
+
+- Consumers depend on an explicit contract rather than another service's internals.
+- Synchronous calls create runtime availability and latency dependencies.
+- HTTP and Protocol Buffer contracts require separate validation and consumer migration practices.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] and [[doc|arc42/05-building-block-view]]. The MCP backend detail remains in [[adr|adr-004-use-domain-apis-as-mcp-backends]].

@@ -1,0 +1,68 @@
+---
+id: adr-003-fail-closed-token-validation
+name: "ADR-003: Validate tokens and fail closed for protected requests"
+version: 1.0.0
+summary: Protected APIs accept a token only after validating its issuer, audience, integrity, expiry, and required claims, and reject requests when validation is unavailable.
+status: accepted
+date: 2026-11-02
+owners:
+  - contributor-team
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+appliesTo:
+  - type: system
+    id: identity-provider
+  - type: service
+    id: oauthapi
+---
+
+## Context
+
+BookWorm APIs rely on provider-issued tokens to establish the identity of
+callers. A token can only be trusted when it is intended for the receiving
+API, comes from the expected issuer, is valid and unexpired, and contains the
+claims required by that API. Incomplete validation or a permissive fallback
+during provider or validation outages could allow untrusted or
+unauthenticated requests to reach protected operations.
+
+## Decision
+
+Consuming services validate the token issuer, audience, signature or
+introspection result, expiry, and required claims before accepting it as
+identity evidence. Validation is performed at the receiving service boundary
+before protected operation logic runs. If token validation or a required
+provider dependency is unavailable, protected requests fail closed; services
+must not skip validation, silently downgrade the caller, or substitute a
+success-shaped fallback.
+
+This decision applies to protected operations. A service may expose public or
+anonymous operations only where its own contract explicitly allows them; that
+does not make validation failures on protected operations permissive.
+
+## Alternatives considered
+
+- **Accept a token after only partial validation.** Omitting issuer,
+  audience, integrity, expiry, or required-claim checks can accept credentials
+  that are invalid for the receiving API or no longer trustworthy.
+- **Continue protected processing when validation is unavailable.** A
+  permissive fallback would make an infrastructure failure indistinguishable
+  from successful authentication and could bypass the API's trust boundary.
+- **Treat every endpoint as requiring authentication.** This would unnecessarily
+  remove explicitly public operations; authentication requirements remain
+  defined by each service's contract.
+
+## Consequences
+
+Invalid, expired, wrong-audience, or otherwise unverifiable tokens cannot
+silently bypass protected API boundaries. Provider or validation outages
+reduce availability for protected operations, which is an intentional
+security-versus-availability tradeoff. Services should make authentication
+and validation failures observable and monitor provider availability, while
+ensuring that error reporting does not expose token contents. Failure responses
+should distinguish rejected credentials from validation-dependency failures
+for operational diagnosis without weakening the access decision. Public
+operations remain available only according to their explicit service
+contracts; they are not a fallback for failed authentication on protected
+operations.

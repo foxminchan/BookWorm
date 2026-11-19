@@ -1,0 +1,22 @@
+---
+title: Building Block View
+summary: Static decomposition of BookWorm into owned business capabilities, services, and shared foundations.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This chapter describes the static structure of the complete BookWorm platform as a hierarchy of building blocks. The view begins with the platform as a white box, then refines selected capabilities and one complex coordination service.
+
+The content is based on the architecture catalog and the adjacent `BookWorm` source checkout. Source paths are relative to that repository's `src/` directory. This is a structural view, not a deployment diagram or a sequence of runtime interactions.
+
+## Chapter contents
+
+- [[doc|arc42/05-building-block-view/001-whitebox-overall-system]] describes the Level-1 decomposition of the complete BookWorm platform, its rationale, responsibilities, and interfaces.
+- [[doc|arc42/05-building-block-view/002-level-2]] refines the principal services and data stores inside the Catalog, Shopping, Ordering, Reviews, Conversational, and Platform capabilities.
+- [[doc|arc42/05-building-block-view/003-level-3]] zooms into Finance orchestration, whose persisted saga coordinates checkout outcomes across service boundaries.
+
+The neighboring systems and technical mechanisms at BookWorm's boundary are described in [[doc|arc42/03-context-and-scope/003-technical-context]]. Capability-level design strategies are in [[doc|arc42/04-solution-strategy]].

@@ -1,3 +1,4 @@
+using BookWorm.Constants.Aspire;
 using BookWorm.McpTools.Options;
 
 namespace BookWorm.McpTools.UnitTests.Options;
@@ -5,6 +6,13 @@ namespace BookWorm.McpTools.UnitTests.Options;
 public sealed class ServerInfoOptionsTests
 {
     private readonly ServerInfoOptions _validator = new() { Version = "1.0.0" };
+
+    [Test]
+    public void GivenName_WhenAccessed_ThenShouldReturnMcpToolsServiceName()
+    {
+        // Act & Assert
+        ServerInfoOptions.Name.ShouldBe(Services.McpTools);
+    }
 
     [Test]
     [Arguments("1")]

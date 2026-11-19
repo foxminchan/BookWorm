@@ -1,0 +1,13 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CreateOrderRequest",
+	"description": "Required request header for creating an Order. The operation has no request body.",
+	"type": "object",
+	"required": ["x-request-id"],
+	"properties": {
+		"x-request-id": {
+			"type": "string",
+			"description": "Idempotency key for the Order creation request."
+		}
+	}
+}

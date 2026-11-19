@@ -1,4 +1,3 @@
-﻿using BookWorm.SharedKernel.Helpers;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using static BookWorm.Constants.Core.Http;
@@ -33,6 +32,11 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
             throw new ValidationException([error]);
         }
 
+        if (context.HttpContext.Response.StatusCode == StatusCodes.Status400BadRequest)
+        {
+            return await next(context);
+        }
+
         var idempotencyKey = $"{requestMethod}:{requestPath}:{requestId}";
         var cancellationToken = context.HttpContext.RequestAborted;
 
@@ -47,7 +51,7 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
         {
             Id = idempotencyKey,
             Name = $"{requestMethod}:{requestPath}",
-            Time = DateTimeHelper.UtcNow(),
+            Time = DateTime.UtcNow,
         };
 
         await requestManager.CreateAsync(clientRequest, cancellationToken);

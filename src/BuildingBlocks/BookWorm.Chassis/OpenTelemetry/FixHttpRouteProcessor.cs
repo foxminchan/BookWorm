@@ -38,6 +38,7 @@ internal sealed partial class FixHttpRouteProcessor : BaseProcessor<Activity>
         }
 
         var existingRoute = activity.GetTagItem(HttpRouteTag)?.ToString();
+        string targetRoute;
 
         if (!string.IsNullOrWhiteSpace(existingRoute))
         {
@@ -52,20 +53,17 @@ internal sealed partial class FixHttpRouteProcessor : BaseProcessor<Activity>
                 return;
             }
 
-            var resolvedRoute = ApiVersionTokenRegex()
+            targetRoute = ApiVersionTokenRegex()
                 .Replace(existingRoute, versionMatch.Groups["version"].Value);
-            var resolvedDisplayName = $"{method} {resolvedRoute}";
-
-            activity.DisplayName = resolvedDisplayName;
-            activity.SetTag(HttpRouteTag, resolvedRoute);
-            activity.SetTag(NameTag, resolvedDisplayName);
-            activity.SetTag(RequestNameTag, resolvedDisplayName);
-            return;
+        }
+        else
+        {
+            targetRoute = path;
         }
 
-        var displayName = $"{method} {path}";
+        var displayName = $"{method} {targetRoute}";
         activity.DisplayName = displayName;
-        activity.SetTag(HttpRouteTag, path);
+        activity.SetTag(HttpRouteTag, targetRoute);
         activity.SetTag(NameTag, displayName);
         activity.SetTag(RequestNameTag, displayName);
     }

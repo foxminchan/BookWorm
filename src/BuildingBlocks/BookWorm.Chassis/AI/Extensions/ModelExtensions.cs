@@ -1,7 +1,6 @@
-﻿using BookWorm.Chassis.AI.Middlewares;
+using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -16,9 +15,8 @@ public static class ModelExtensions
         ///     connection strings in the application configuration.
         /// </summary>
         /// <remarks>
-        ///     Conditionally adds an Azure AI Inference chat client with function invocation support if
-        ///     <c>Components.OpenAI.Chat</c> connection string is present, and an embedding
-        ///     generator if <c>Components.OpenAI.Embedding</c> connection string is present.
+        ///     Conditionally adds an Azure AI Project OpenAI client with chat and embedding support
+        ///     if the <c>Components.Foundry.Project</c> connection string is present.
         /// </remarks>
         /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
         /// <example>
@@ -26,31 +24,60 @@ public static class ModelExtensions
         ///         builder.AddAIServices();
         ///     </code>
         /// </example>
-        public IHostApplicationBuilder AddAIServices()
+        public IHostApplicationBuilder AddAIProject()
         {
-            if (
-                !string.IsNullOrWhiteSpace(
-                    builder.Configuration.GetConnectionString(Components.Foundry.Chat)
-                )
-            )
-            {
-                builder
-                    .AddAzureChatCompletionsClient(Components.Foundry.Chat)
-                    .AddChatClient()
-                    .UseFunctionInvocation()
-                    .UseModelLogging();
-            }
+            builder.AddAzureAIProjectClient(Components.Foundry.Project);
 
-            if (
-                !string.IsNullOrWhiteSpace(
-                    builder.Configuration.GetConnectionString(Components.Foundry.Embedding)
-                )
-            )
-            {
-                builder
-                    .AddAzureEmbeddingsClient(Components.Foundry.Embedding)
-                    .AddEmbeddingGenerator();
-            }
+            return builder;
+        }
+
+        /// <summary>
+        ///     Configures AI models for the application, including chat and embedding services.
+        /// </summary>
+        /// <remarks>
+        ///     Adds an Azure AI Project OpenAI client with chat and embedding support.
+        ///     Configures the chat client to use function invocation and model logging.
+        /// </remarks>
+        /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
+        /// <example>
+        ///     <code>
+        ///         builder.WithLlmModels();
+        ///     </code>
+        /// </example>
+        public IHostApplicationBuilder WithLlmModels()
+        {
+            var clientBuilder = builder.AddAzureProjectOpenAIClient(Components.Foundry.Project);
+
+            clientBuilder
+                .AddChatClient(Components.Foundry.Chat)
+                .UseFunctionInvocation()
+                .UseModelLogging();
+
+            clientBuilder.AddEmbeddingGenerator(Components.Foundry.Embedding);
+
+            return builder;
+        }
+
+        /// <summary>
+        ///     Configures decision models for the application.
+        /// </summary>
+        /// <remarks>
+        ///     This method is a placeholder for future decision model configuration.
+        /// </remarks>
+        /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
+        /// <example>
+        ///     <code>
+        ///         builder.WithDecisionModels();
+        ///     </code>
+        /// </example>
+        public IHostApplicationBuilder WithDecisionModels()
+        {
+            var clientBuilder = builder.AddAzureProjectOpenAIClient(Components.Foundry.Project);
+
+            clientBuilder
+                .AddChatClient(Components.Foundry.Decision)
+                .UseFunctionInvocation()
+                .UseModelLogging();
 
             return builder;
         }

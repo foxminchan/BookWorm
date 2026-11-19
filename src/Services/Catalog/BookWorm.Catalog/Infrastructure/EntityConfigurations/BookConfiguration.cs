@@ -17,14 +17,11 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.Property(x => x.Image).HasMaxLength(DataSchemaLength.ExtraLarge);
 
-        builder.OwnsOne(
-            p => p.Price,
-            e =>
-            {
-                e.Property(p => p.DiscountPrice).HasPrecision(18, 2);
-                e.Property(p => p.OriginalPrice).HasPrecision(18, 2).IsRequired();
-            }
-        );
+        builder.ComplexProperty(p => p.Price, e => e.IsRequired());
+
+        builder.Property(p => p.Price!.DiscountPrice).HasPrecision(18, 2);
+
+        builder.Property(p => p.Price!.OriginalPrice).HasPrecision(18, 2).IsRequired();
 
         builder.Property(p => p.AverageRating).HasDefaultValue(0.0);
 

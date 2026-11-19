@@ -1,0 +1,40 @@
+---
+dictionary:
+  - id: Outbox Item
+    name: Outbox Item
+    summary: A stored email record pending delivery or already sent.
+    description: |
+      An Outbox item stores the recipient, subject, body, creation time, and
+      delivery state for reliable email processing.
+    icon: Mailbox
+  - id: Unsent Email
+    name: Unsent Email
+    summary: An Outbox item that has not yet been delivered.
+    description: An Unsent email can be selected for delivery or retry.
+    icon: Mail
+  - id: Sent Email
+    name: Sent Email
+    summary: An Outbox item marked as successfully sent.
+    description: A Sent email records the time at which delivery was marked complete.
+    icon: MailCheck
+  - id: Resend Job
+    name: Resend Job
+    summary: Scheduled work that requests another email processing attempt.
+    description: The Resend job publishes work for error emails to be retried.
+    icon: RotateCcw
+  - id: Cleanup Job
+    name: Cleanup Job
+    summary: Scheduled work that requests cleanup of sent email records.
+    description: The Cleanup job removes or archives email records according to operational policy.
+    icon: Trash2
+  - id: Vector Batch Job
+    name: Vector Batch Job
+    summary: Scheduled work that asks Catalog ingestion to process vector data.
+    description: The Vector batch job supports Catalog ingestion and does not own book information.
+    icon: Database
+  - id: Heartbeat Job
+    name: Heartbeat Job
+    summary: A scheduled liveness or health task.
+    description: The Heartbeat job supports operational monitoring of the platform.
+    icon: HeartPulse
+---

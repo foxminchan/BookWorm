@@ -1,10 +1,10 @@
-﻿using ArchUnitNET.Domain;
+using ArchUnitNET.Domain;
 using ArchUnitNET.Fluent;
 using ArchUnitNET.Loader;
 
 namespace BookWorm.ArchTests.Abstractions;
 
-public abstract class ArchUnitBaseTest : BaseTest
+public closed class ArchUnitBaseTest : BaseTest
 {
     protected static readonly Architecture Architecture = new ArchLoader()
         .LoadAssemblies(
@@ -16,6 +16,7 @@ public abstract class ArchUnitBaseTest : BaseTest
             OrderingAssembly,
             RatingAssembly,
             SchedulerAssembly,
+            McpToolsAssembly,
             ChassisAssembly,
             ConstantsAssembly,
             SharedKernelAssembly
@@ -86,6 +87,14 @@ public abstract class ArchUnitBaseTest : BaseTest
         .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
         .As(nameof(Scheduler));
 
+    protected static readonly IObjectProvider<IType> McpToolsServiceTypes = ArchRuleDefinition
+        .Types()
+        .That()
+        .ResideInAssembly(McpToolsAssembly)
+        .And()
+        .DoNotResideInNamespaceMatching("Microsoft.CodeCoverage.*")
+        .As(nameof(McpTools));
+
     protected static readonly IObjectProvider<IType> ChassisServiceTypes = ArchRuleDefinition
         .Types()
         .That()
@@ -122,6 +131,7 @@ public abstract class ArchUnitBaseTest : BaseTest
             nameof(Ordering) => OrderingServiceTypes,
             nameof(Rating) => RatingServiceTypes,
             nameof(Scheduler) => SchedulerServiceTypes,
+            nameof(McpTools) => McpToolsServiceTypes,
             nameof(Chassis) => ChassisServiceTypes,
             nameof(Constants) => ConstantsServiceTypes,
             nameof(SharedKernel) => SharedKernelServiceTypes,

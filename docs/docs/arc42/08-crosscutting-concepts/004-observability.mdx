@@ -1,0 +1,37 @@
+---
+title: Observability
+summary: Shared structured logging, OpenTelemetry signals, and health checks support diagnosis across BookWorm services.
+owners:
+  - contributor-team
+badges:
+  - content: Cross-cutting Concept
+    backgroundColor: purple
+    textColor: purple
+---
+
+BookWorm service hosts use shared Aspire service defaults to produce operational signals consistently. These signals help identify where work is executing and which capability owns a failure, they do not replace business-state queries or establish a service-level objective.
+
+## Logs, traces, and metrics
+
+The shared service defaults configure structured logging, log enrichment, and OpenTelemetry. Instrumentation covers ASP.NET Core requests, outgoing HTTP clients, runtime metrics, and gRPC/HTTP client traces. Distributed traces use W3C activity identifiers, and health-check requests are excluded from request tracing to reduce noise.
+
+Sampling is environment-sensitive: development traces are sampled fully, while other environments use a configurable probabilistic sampler. OpenTelemetry data is sent through OTLP when an exporter endpoint is configured, the repository does not prescribe a universal production backend or dashboard.
+
+When the shared Wolverine event framework is enabled, it adds Wolverine and Kafka trace sources and logs message starts at Debug level. Envelope correlation carries request and user identifiers where available, connecting asynchronous work to its origin without making the message payload part of the trace.
+
+The CQRS logging behavior records message and response type names, elapsed time, and property names without logging the values of request or response objects. Hosts that handle classified data should also enable the applicable redaction configuration, see [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]].
+
+## Health and diagnosis
+
+Shared defaults register a liveness health check. The default readiness and liveness HTTP endpoints are mapped only in development in the shared service-defaults extension, production probes must be verified against the deployed host configuration rather than assumed from the local setup.
+
+Unhandled HTTP exceptions are logged with a trace identifier, and the generic error response returns that identifier so an operator can correlate a client report with telemetry. For asynchronous processing, correlate the request or message identifier and then inspect the owning service's state, a trace shows execution, not whether the business operation is complete.
+
+## Operational discipline
+
+- Add useful structured context at service boundaries, but avoid logging secrets, access tokens, or raw user content.
+- Preserve request and message correlation across service calls.
+- Use health status to determine process readiness and liveness, not business completion.
+- Agree latency, availability, alert thresholds, retention, and recovery objectives with stakeholders before treating them as system guarantees.
+
+The shared observability approach is recorded in [[adr|adr-bw-013-opentelemetry-observability]]. See [[doc|arc42/01-introduction-and-goals/003-quality-goals]] for the current operability scenario and its unresolved measurable targets.

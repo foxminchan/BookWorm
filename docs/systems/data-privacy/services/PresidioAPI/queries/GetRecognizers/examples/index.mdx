@@ -1,0 +1,26 @@
+## List recognizers with `HttpClient`
+
+The optional `language` parameter uses a two-character ISO 639-1 code.
+
+<CodeGroup dropdown>
+
+```csharp GetRecognizers.cs
+using System.Net.Http.Json;
+
+var analyzerUrl = Environment.GetEnvironmentVariable("ANALYZER_URL")
+    ?? throw new InvalidOperationException("Set ANALYZER_URL to the Presidio Analyzer base URL.");
+
+using var httpClient = new HttpClient { BaseAddress = new Uri(analyzerUrl) };
+using var response = await httpClient.GetAsync("/recognizers?language=en");
+response.EnsureSuccessStatusCode();
+
+var recognizers = await response.Content.ReadFromJsonAsync<string[]>()
+    ?? throw new InvalidOperationException("Presidio returned an empty recognizer response.");
+
+foreach (var recognizer in recognizers)
+{
+    Console.WriteLine(recognizer);
+}
+```
+
+</CodeGroup>

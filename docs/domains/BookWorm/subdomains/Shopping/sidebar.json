@@ -1,0 +1,37 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Guides",
+			"icon": "BookOpen",
+			"pages": ["[[doc|guides/checkout-lifecycle]]"]
+		},
+		"$diagrams",
+		{
+			"title": "Engineering",
+			"icon": "Wrench",
+			"pages": ["[[doc|engineering/basket-api-contracts]]"]
+		},
+		"$architecture",
+		"$systems",
+		"$entities",
+		{
+			"title": "Runbooks",
+			"icon": "Siren",
+			"pages": ["[[doc|runbooks/basket-cleanup-failure]]"]
+		},
+		{
+			"title": "Decisions",
+			"icon": "ClipboardList",
+			"collapsed": true,
+			"pages": [
+				"[[adr|adr-001-redis-authoritative-basket-store]]",
+				"[[adr|adr-002-customer-scoped-basket-ownership]]",
+				"[[adr|adr-003-replace-basket-items-as-a-set]]",
+				"[[adr|adr-004-catalog-enrichment-at-read-time]]",
+				"[[adr|adr-005-explicit-checkout-cleanup-outcomes]]"
+			]
+		},
+		"$owners"
+	]
+}

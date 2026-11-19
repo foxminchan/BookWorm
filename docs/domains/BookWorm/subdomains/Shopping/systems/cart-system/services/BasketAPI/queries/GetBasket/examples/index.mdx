@@ -1,0 +1,87 @@
+## 1. Retrieve the basket
+
+Retrieve the basket with no query parameters. The response includes the basket
+ID and item quantities; `name`, `price`, and `priceSale` may be `null` where
+allowed by the response contract.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request GET "$BASE_URL/api/v1/baskets" \
+  --header "Accept: application/json"
+```
+
+</CodeGroup>
+
+The same query from TypeScript parses the documented response shape:
+
+<CodeGroup dropdown>
+
+```ts get-basket.ts
+type BasketItem = {
+	id: string | null;
+	quantity: number | string;
+	name?: string | null;
+	price?: number | string;
+	priceSale?: number | string | null;
+};
+
+type CustomerBasketDto = {
+	id: string | null;
+	items: BasketItem[];
+};
+
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const response = await fetch(`${baseUrl}/api/v1/baskets`, {
+	headers: { Accept: "application/json" },
+});
+
+if (response.status === 404) {
+	throw new Error("Basket was not found");
+}
+if (!response.ok) {
+	throw new Error(`GetBasket failed with ${response.status}`);
+}
+
+const basket = (await response.json()) as CustomerBasketDto;
+console.log(`${basket.items.length} item(s) in basket ${basket.id}`);
+```
+
+</CodeGroup>
+
+The `200 OK` response is `application/json`:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"id": "customer-123",
+	"items": [
+		{
+			"id": "book-9780141182803",
+			"quantity": 2,
+			"name": "The Great Gatsby",
+			"price": 12.99,
+			"priceSale": null
+		}
+	]
+}
+```
+
+</CodeGroup>
+
+## 2. Handle a missing basket
+
+When no basket is available, the query returns `404 Not Found` with
+`application/problem+json`.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "Not Found",
+	"status": 404
+}
+```
+
+</CodeGroup>

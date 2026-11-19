@@ -1,0 +1,67 @@
+{
+	"name": "@bookworm/docs",
+	"version": "1.0.0",
+	"author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/foxminchan/BookWorm.git",
+		"directory": "docs"
+	},
+	"browserslist": {
+		"production": [
+			">0.5%",
+			"not dead",
+			"not op_mini all"
+		],
+		"development": [
+			"last 3 chrome version",
+			"last 3 firefox version",
+			"last 5 safari version"
+		]
+	},
+	"bugs": {
+		"url": "https://github.com/foxminchan/BookWorm/issues"
+	},
+	"description": "Living event-driven architecture catalog with service contracts and documentation",
+	"engines": {
+		"node": ">=24.0.0"
+	},
+	"homepage": "https://bookwormdev.netlify.app/",
+	"licenses": [
+		{
+			"type": "MIT",
+			"url": "https://opensource.org/licenses/MIT"
+		}
+	],
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "eventcatalog dev",
+		"editor": "bunx @eventcatalog/editor@latest",
+		"build": "eventcatalog build",
+		"start": "eventcatalog start",
+		"preview": "eventcatalog preview",
+		"generate": "eventcatalog generate",
+		"federate": "eventcatalog federate",
+		"export": "eventcatalog export",
+		"fitness": "eventcatalog fitness check",
+		"lint": "eventcatalog-linter",
+		"format": "prettier --write .",
+		"check": "eventcatalog-linter && prettier --check ."
+	},
+	"dependencies": {
+		"@eventcatalog/core": "^5.14.1",
+		"@likec4/icons": "1.46.4",
+		"likec4": "1.55.1",
+		"semver": "7.8.6",
+		"to": "^0.2.9",
+		"update": "^0.7.4"
+	},
+	"devDependencies": {
+		"@eventcatalog/fitness": "0.1.1",
+		"@eventcatalog/linter": "1.3.1",
+		"@types/semver": "7.8.0",
+		"mermaid-formatter": "^0.3.0",
+		"prettier": "^3.10.1"
+	}
+}

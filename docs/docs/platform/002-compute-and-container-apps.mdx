@@ -1,0 +1,53 @@
+---
+title: Container Apps & Compute Inventory
+summary: Reference inventory of all 15 Azure Container Apps, ingress ports, revision modes, and platform-owned runtime services.
+owners:
+  - platform-team
+badges:
+  - content: Compute Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+All BookWorm workloads run as **15 Azure Container Apps** inside the shared `cae-<token>` Consumption environment. Every container app is configured with `activeRevisionsMode: 'Single'` and `minReplicas: 1`.
+
+## Container Apps Inventory
+
+| Bicep Module          | Catalog Service / System         | Workload Type                      | Ingress      | Target Port                  | Managed Identity             |
+| :-------------------- | :------------------------------- | :--------------------------------- | :----------- | :--------------------------- | :--------------------------- |
+| `gateway`             | YARP API Gateway                 | Reverse proxy (`yarp:2.3-preview`) | **External** | `5000`                       | —                            |
+| `storefront`          | Storefront Web Client            | Next.js 16 (Bun)                   | Internal     | `3000`                       | `storefront-identity`        |
+| `backoffice`          | Back Office Web Client           | Next.js 16 (Bun)                   | Internal     | `3000`                       | `backoffice-identity`        |
+| `catalog`             | [[service\|catalog-api]]         | .NET 11 Minimal API                | Internal     | `catalog_containerport`      | `catalog-identity`           |
+| `catalog-ingestion`   | [[service\|catalog-ingestion]]   | Azure Functions Worker             | Internal     | `8080`                       | `catalog-ingestion-identity` |
+| `basket`              | [[service\|basket-api]]          | .NET 11 Minimal API + gRPC         | Internal     | `basket_containerport`       | `basket-identity`            |
+| `ordering`            | [[service\|order-api]]           | .NET 11 Minimal API                | Internal     | `ordering_containerport`     | `ordering-identity`          |
+| `finance`             | [[service\|order-orchestration]] | Azure Functions + Durable Task     | Internal     | `8080`                       | `finance-identity`           |
+| `chatting`            | [[service\|chat-api]]            | .NET 11 AI Service                 | Internal     | `chatting_containerport`     | `chatting-identity`          |
+| `rating`              | [[service\|rating-api]]          | .NET 11 AI Service                 | Internal     | `rating_containerport`       | `rating-identity`            |
+| `scheduler`           | [[service\|sheduler-dashboard]]  | Quartz.NET Job Scheduler           | Internal     | `scheduler_containerport`    | `scheduler-identity`         |
+| `notification`        | [[service\|notification-api]]    | Stateless Kafka + MailKit Worker   | Internal     | `notification_containerport` | —                            |
+| `mcptools`            | [[service\|mcp-server]]          | Model Context Protocol Server      | Internal     | `mcptools_containerport`     | `mcptools-identity`          |
+| `presidio-analyzer`   | [[service\|PresidioAPI]]         | Microsoft Presidio PII Analyzer    | Internal     | `3000`                       | —                            |
+| `presidio-anonymizer` | [[service\|PresidioAPI]]         | Microsoft Presidio PII Anonymizer  | Internal     | `3000`                       | —                            |
+
+## Platform Subdomain Graph
+
+The [[domain|platform]] subdomain groups cross-cutting operational capabilities including scheduled processing and durable email notification delivery.
+
+<NodeGraph id="platform" version="1.0.0" type="domain" maxHeight="30" />
+
+## Stateful Function Workers & Orchestration
+
+Two compute workloads run on Azure Functions containers (port `8080`) with `Storage Blob Data Owner` access for Azure Functions host state:
+
+1. **[[service|order-orchestration]] (`finance`):** Coordinates order checkout sagas via Azure Durable Task Scheduler (`finance-taskhub`) and Kafka integration events.
+2. **[[service|catalog-ingestion]] (`catalog-ingestion`):** Processes vector embedding batches triggered by [[event|ProcessVectorBatchIntegrationEvent]] from [[service|sheduler-dashboard]], reading from [[container|catalog-database]] and writing embeddings to [[container|catalog-vector]] (Qdrant Cloud).
+
+The graph below highlights the 2-hop neighborhood around [[service|order-orchestration]]:
+
+<ArchitectureGraph id="order-orchestration" type="service" depth="2" maxHeight="28" />
+
+## PII Redaction Sidecars
+
+[[service|chat-api]] and [[service|rating-api]] route user-generated prompts and feedback through `presidio-analyzer` and `presidio-anonymizer` ([[service|PresidioAPI]]) on internal port `3000` before persisting or forwarding content to Microsoft Foundry models. Neither Presidio container requires a managed identity or external database.

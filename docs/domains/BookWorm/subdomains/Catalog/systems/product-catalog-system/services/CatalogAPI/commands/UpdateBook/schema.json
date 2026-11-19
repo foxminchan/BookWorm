@@ -1,0 +1,56 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "UpdateBook",
+	"description": "Multipart payload for updating a book listing.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Book UUID to update."
+		},
+		"name": {
+			"type": "string",
+			"minLength": 1
+		},
+		"description": {
+			"type": "string"
+		},
+		"image": {
+			"type": ["string", "null"],
+			"contentEncoding": "base64"
+		},
+		"price": {
+			"type": "number",
+			"minimum": 0
+		},
+		"priceSale": {
+			"type": ["number", "null"],
+			"minimum": 0
+		},
+		"categoryId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "A UUID identifying the resource."
+		},
+		"publisherId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "A UUID identifying the resource."
+		},
+		"authorIds": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"format": "uuid",
+				"description": "A UUID identifying the resource."
+			}
+		},
+		"isRemoveImage": {
+			"type": "boolean",
+			"description": "Remove the existing cover when true."
+		}
+	}
+}

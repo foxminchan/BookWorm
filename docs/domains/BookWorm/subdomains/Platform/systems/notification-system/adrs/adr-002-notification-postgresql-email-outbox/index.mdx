@@ -1,0 +1,114 @@
+---
+id: adr-002-notification-postgresql-email-outbox
+name: "ADR-002: Persist email work in a PostgreSQL outbox before SMTP submission"
+version: 1.0.0
+summary: Notification owns durable email records in PostgreSQL and marks them sent after the sender succeeds, without claiming atomic or exactly-once provider delivery.
+status: superseded
+date: 2026-11-01
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: notification-system
+  - type: service
+    id: notification-api
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+SMTP can fail after email content has been rendered. Sending without a durable
+record would leave Notification with no persisted work to inspect or retry.
+The external provider cannot be the system of record for BookWorm's
+notification-processing state.
+
+## Decision
+
+Use [[container|notification-database]] as the authoritative PostgreSQL store
+for application email [[entity|outbox]] records. `EmailOutboxService` saves
+recipient details, subject, and rendered body before calling `IEmailSender`.
+After the sender returns successfully, it marks the record sent, sets the
+submission timestamp, and saves again.
+
+The email table records identity, sequence ordering, creation time, and sent
+state. It is separate from Wolverine's durable incoming and outgoing message
+envelopes, even though both use the Notification database.
+
+Treat `is_sent` as successful completion of the sender, not a provider receipt,
+final recipient delivery, or a business-operation outcome. SMTP submission and
+database state changes are separate operations; this design does not make
+them atomic.
+
+The current resend handler resolves the same `ISender` outbox wrapper.
+Consequently, resending an existing record inserts a new record before
+submission, then marks the original sent on success. A failed resend can leave
+both records unsent. This ADR records that implementation behavior rather than
+asserting one row per logical notification.
+
+## Failure windows and retry semantics
+
+Persisting before SMTP protects the request from being lost when the process
+fails before submission, but the provider call and the sent-state update are
+not one transaction. If SMTP accepts a message and the response is lost, or
+the subsequent database save fails, the record can remain eligible for
+resend even though the provider may already have the message.
+
+Resend operates on persisted rows, but uses the same sender wrapper that
+creates a new row for a send. Consequently, row counts are not counts of
+distinct logical notifications, and neither an unsent record nor an `is_sent`
+flag proves final recipient delivery. The current model does not persist
+attempt history or distinguish transient from permanent submission failures.
+
+## Consequences
+
+- Persisted unsent work remains available for inspection and scheduled retries.
+- Provider acceptance followed by a lost response, disconnect failure, or failed
+  state save can leave an already-submitted email eligible for another attempt.
+- Repeated commands and resend-created records can cause duplicate delivery;
+  backlog counts represent rows, not necessarily distinct logical emails.
+- PostgreSQL availability, migrations, and recovery are part of the delivery
+  workflow's operational requirements.
+- The table has no persisted attempt counter, next-attempt time, terminal-failure
+  category, full provider response, or business-message uniqueness constraint.
+- Email content is present in the database before submission, so database
+  access and retention controls apply even while delivery is pending.
+- A successful SMTP submission followed by failure to persist the sent state
+  can cause duplicate submissions during maintenance; operators must consider
+  ambiguous outcomes before manually retrying an item.
+- Resend can grow the number of rows by creating a new outbox entry per
+  attempt. Backlog monitoring should include both row age and delivery
+  outcomes rather than interpreting raw row counts as logical message counts.
+
+## Alternatives considered
+
+### Send through SMTP without persisting first
+
+This would avoid storing rendered content, but a process failure before or
+during submission could leave no durable record to inspect or retry.
+
+### Persist and update one row for every retry
+
+Updating an existing row could avoid additional records, but it would require
+changing the current sender-wrapper behavior and deciding how to retain retry
+history. This ADR documents the current new-row resend behavior rather than
+claiming that it maintains one row per notification.
+
+### Treat the database and SMTP submission as one atomic transaction
+
+The external SMTP provider does not participate in the PostgreSQL
+transaction. The current design cannot guarantee exactly-once delivery across
+the database and provider boundary.
+
+### Relationship to existing provider documentation
+
+The older [[adr|adr-002-durable-outbox-and-bounded-retries]]
+describes bounded lifetime retries, terminal failures, provider-outcome
+recording, and an exactly-once local transition. Those expectations are not
+fully implemented by the current email outbox. That record remains unchanged;
+this accepted record describes the current Notification persistence model,
+not fulfillment of those stronger guarantees.

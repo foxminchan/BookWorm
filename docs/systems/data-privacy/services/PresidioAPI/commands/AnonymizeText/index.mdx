@@ -1,0 +1,40 @@
+---
+id: AnonymizeText
+name: Anonymize text
+version: 1.0.0
+badges:
+  - content: Privacy
+    backgroundColor: red
+    textColor: red
+summary: Replaces or transforms detected PII in text using the supplied analysis results and configured anonymization operators.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /anonymize
+  statusCodes: ["200", "400", "422"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+The `AnonymizeText` command on [[service|PresidioAPI]] transforms text using PII detections supplied in `analyzer_results` (for example from [[command|AnalyzeText]]). Operators can be configured per entity type or through the `DEFAULT` key.
+
+Analyzer and Anonymizer may be deployed at separate endpoints. Use the configured Anonymizer address rather than assuming a shared service URL.
+
+<NodeGraph />
+
+## Request and response
+
+Send `application/json` with the original `text` and an `analyzer_results` array. The optional `anonymizers` map selects operators such as replace, redact, mask, hash, and encrypt. A `200 OK` response returns the transformed text and the applied operations. `400` and `422` responses report invalid requests or input.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="AnonymizeText request JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

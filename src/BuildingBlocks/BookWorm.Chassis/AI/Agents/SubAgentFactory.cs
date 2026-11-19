@@ -28,13 +28,12 @@ public static class SubAgentFactory
             throw new ArgumentException("At least one subagent must be provided.", nameof(agents));
         }
 
-        var toolNames = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> toolNames = [with(StringComparer.Ordinal)];
         var tools = new AITool[agents.Length];
 
         for (var index = 0; index < agents.Length; index++)
         {
-            var agent =
-                agents[index]
+            var agent = agents[index]
                 ?? throw new ArgumentException(
                     "Subagents cannot contain null entries.",
                     nameof(agents)
@@ -82,8 +81,13 @@ public static class SubAgentFactory
 
     private static string SanitizeName(string name)
     {
-        return string.Concat(
-            name.Select(character => char.IsAsciiLetterOrDigit(character) ? character : '_')
-        );
+        return string.Create(name.Length, name, static (span, source) =>
+        {
+            for (var i = 0; i < source.Length; i++)
+            {
+                var character = source[i];
+                span[i] = char.IsAsciiLetterOrDigit(character) ? character : '_';
+            }
+        });
     }
 }

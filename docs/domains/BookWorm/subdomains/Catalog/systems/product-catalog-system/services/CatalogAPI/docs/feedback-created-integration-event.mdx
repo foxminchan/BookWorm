@@ -1,0 +1,90 @@
+---
+title: Apply feedback-created integration event
+summary: Catalog handler for the shared feedback-created integration event.
+version: 1.0.0
+type: contracts
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a new feedback rating
+
+Rating maps its `FeedbackCreatedEvent` domain event to the shared integration
+contract. Wolverine uses the chassis metadata to publish it to
+[[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
+
+- `bookId` identifies the Catalog book to update.
+- `rating` is added to the book's denormalized rating summary.
+- `feedbackId` identifies the feedback record for failure compensation.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp FeedbackCreatedIntegrationEvent.cs
+[IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-create")]
+[MessageIdentity("BookWorm.Contracts.FeedbackCreatedIntegrationEvent")]
+public sealed record FeedbackCreatedIntegrationEvent(
+    Guid BookId,
+    int Rating,
+    Guid FeedbackId
+) : IntegrationEvent;
+```
+
+```csharp EventMapper.cs
+FeedbackCreatedEvent feedbackCreatedEvent => new FeedbackCreatedIntegrationEvent(
+    feedbackCreatedEvent.BookId,
+    feedbackCreatedEvent.Rating,
+    feedbackCreatedEvent.FeedbackId
+)
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Apply the rating in Catalog
+
+Catalog reads the book and adds the rating. When the book does not exist, it
+publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] using the feedback ID.
+
+<CodeGroup dropdown>
+
+```csharp FeedbackCreatedIntegrationEventHandler.cs
+[WolverineHandler]
+public async Task Handle(
+    FeedbackCreatedIntegrationEvent @event,
+    CancellationToken cancellationToken
+)
+{
+    var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
+
+    if (book is null)
+    {
+        await bus.PublishAsync(new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId));
+        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+        return;
+    }
+
+    book.AddRating(@event.Rating);
+    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+}
+```
+
+</CodeGroup>
+
+<Footer />

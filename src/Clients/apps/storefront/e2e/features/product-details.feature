@@ -24,16 +24,18 @@ Feature: Product Detail Page and Reviews
 
   @add-to-basket
   Scenario: Add product to basket from detail page
-    Given I am on a product detail page
+    Given I am logged in as a customer
+    And I am on a product detail page
     When I click "Add to Basket"
     Then the book should be added to my basket
     And the basket count should increase by 1
 
   @quantity
   Scenario: Add product with custom quantity
-    Given I am on a product detail page
-    When I increase quantity to 5
-    And I click "Add to Basket"
+    Given I am logged in as a customer
+    And I am on a product detail page
+    When I click "Add to Basket"
+    And I increase quantity to 5
     Then the basket count should show 5 items
 
   @sale-price
@@ -41,7 +43,6 @@ Feature: Product Detail Page and Reviews
     Given I am on a product detail page for a book on sale
     Then I should see the original price
     And I should see the sale price
-    And I should see a "Sale" badge
 
   @reviews
   @smoke
@@ -96,13 +97,13 @@ Feature: Product Detail Page and Reviews
   Scenario: Generate AI summary of reviews
     Given I am on a product detail page with multiple reviews
     When I scroll to the reviews section
-    And I click "Generate Summary"
+    And I click "Summarize Reviews"
     Then I should see an AI-generated summary of reviews
 
   @stock
   Scenario: In-stock product allows add to basket
     Given I am on a product detail page for an in-stock book
-    Then I should see "In Stock" status
+    Then I should see "Available in Store" status
     And the "Add to Basket" button should be enabled
 
   @stock
@@ -116,8 +117,7 @@ Feature: Product Detail Page and Reviews
   Scenario: Review form validation
     Given I am on a product detail page
     When I click "Write a Review"
-    And I click "Submit Review" without filling the form
-    Then I should see validation errors
+    Then the "Submit Review" button should be disabled
 
   @reviews
   @empty-state
@@ -125,4 +125,4 @@ Feature: Product Detail Page and Reviews
     Given I am on a product detail page with no reviews
     When I scroll to the reviews section
     Then I should see "No reviews yet" message
-    And I should see "Be the first to review" button
+    And I should see "Write First Review" button

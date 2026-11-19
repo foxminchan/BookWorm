@@ -1,0 +1,148 @@
+---
+id: order-orchestration
+name: Order Orchestration
+version: 1.0.0
+summary: |
+  Message-driven Finance Azure Functions service that coordinates checkout
+  basket cleanup and order notifications using Azure Durable Task Scheduler
+  (DTS) and Kafka triggers.
+owners:
+  - contributor-team
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: Event-driven
+    backgroundColor: orange
+    textColor: orange
+receives:
+  - id: UserCheckedOutIntegrationEvent
+    version: 1.0.0
+    from:
+      - id: bookworm.{env}.ordering.user-checked-out
+        version: 1.0.0
+  - id: OrderStatusChangedToCompleteIntegrationEvent
+    version: 1.0.0
+    group: Order Status Changes
+    from:
+      - id: bookworm.{env}.ordering.order-status-change-to-complete
+        version: 1.0.0
+  - id: OrderStatusChangedToCancelIntegrationEvent
+    version: 1.0.0
+    group: Order Status Changes
+    from:
+      - id: bookworm.{env}.ordering.order-status-change-to-cancel
+        version: 1.0.0
+  - id: BasketDeletedCompleteIntegrationEvent
+    version: 1.0.0
+    group: Basket Cleanup Outcomes
+    from:
+      - id: bookworm.{env}.basket.delete-complete
+        version: 1.0.0
+  - id: BasketDeletedFailedIntegrationEvent
+    version: 1.0.0
+    group: Basket Cleanup Outcomes
+    from:
+      - id: bookworm.{env}.basket.delete-failed
+        version: 1.0.0
+sends:
+  - id: PlaceOrderCommand
+    version: 1.0.0
+    group: Basket Coordination
+    to:
+      - id: bookworm.{env}.finance.place-order
+        version: 1.0.0
+  - id: DeleteBasketCompleteCommand
+    version: 1.0.0
+    group: Basket Coordination
+    to:
+      - id: bookworm.{env}.finance.delete-basket-complete
+        version: 1.0.0
+  - id: DeleteBasketFailedCommand
+    version: 1.0.0
+    group: Basket Coordination
+    to:
+      - id: bookworm.{env}.finance.delete-basket-failed
+        version: 1.0.0
+  - id: CompleteOrderCommand
+    version: 1.0.0
+    group: Order Notifications
+    to:
+      - id: bookworm.{env}.finance.complete-order
+        version: 1.0.0
+  - id: CancelOrderCommand
+    version: 1.0.0
+    group: Order Notifications
+    to:
+      - id: bookworm.{env}.finance.cancel-order
+        version: 1.0.0
+styles:
+  icon: /icons/compute/function.svg
+specifications:
+  - type: asyncapi
+    path: asyncapi-v1.yml
+    name: AsyncAPI V1
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Order Orchestration is the Finance System's Azure Functions isolated worker
+service powered by **Azure Durable Task Scheduler (DTS)**. It consumes checkout,
+Order lifecycle, and basket-cleanup messages via Kafka triggers
+(`UserCheckedOutTrigger`, `BasketDeletedCompleteTrigger`,
+`BasketDeletedFailedTrigger`, `OrderCompletedTrigger`, and
+`OrderCancelledTrigger`), coordinates one durable `OrderOrchestrator` instance
+per Order in the Finance Task Hub, and publishes commands for Basket, Ordering,
+and Notification via durable activity functions.
+
+Despite the Finance name, this service does not authorize or settle payments.
+Ordering owns the Order aggregate and business status; this service owns only
+the durable orchestration state.
+
+## Responsibilities
+
+| Responsibility                 | Behavior                                                                                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Start checkout coordination    | On [[event\|UserCheckedOutIntegrationEvent]], save the saga and publish a basket-cleanup command plus a scheduled timeout.                           |
+| Retry missing cleanup outcomes | Reissue the basket command when a timeout arrives, subject to the configured attempt limit and delay.                                                |
+| Report basket outcomes         | Forward successful or failed cleanup to Ordering without treating it as an Order status transition.                                                  |
+| Notify on Order status changes | Publish completion or cancellation commands when Ordering reports the corresponding explicit status event.                                           |
+| Handle retry exhaustion        | Mark the Finance saga cancelled and request a cancellation email when the recipient details are available; do not call Ordering to cancel the Order. |
+
+## Message handling
+
+| Input                                                   | Processing                                                                                                                                          |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [[event\|UserCheckedOutIntegrationEvent]]               | Creates a saga in **Placed** state, correlated by Order ID; publishes [[command\|PlaceOrderCommand]] and schedules a timeout.                       |
+| [[event\|BasketDeletedCompleteIntegrationEvent]]        | Sends [[command\|DeleteBasketCompleteCommand]] to Ordering. The saga stays open for an explicit Order status event.                                 |
+| [[event\|BasketDeletedFailedIntegrationEvent]]          | Marks the saga **BasketDeletionFailed**, completes it, and sends [[command\|DeleteBasketFailedCommand]] to Ordering.                                |
+| [[event\|OrderStatusChangedToCompleteIntegrationEvent]] | Marks the saga **Completed**, completes it, and sends [[command\|CompleteOrderCommand]] if name and email are present.                              |
+| [[event\|OrderStatusChangedToCancelIntegrationEvent]]   | Marks the saga **Cancelled**, completes it, and sends [[command\|CancelOrderCommand]] if name and email are present.                                |
+| Scheduled timeout                                       | Retries [[command\|PlaceOrderCommand]] until the configured limit; after exhaustion, cancels the saga and may send [[command\|CancelOrderCommand]]. |
+
+[[command|PlaceOrderCommand]] is a shared Finance channel consumed by Basket for
+deletion and Notification for the placement email. Retrying it can therefore
+repeat both consumers' work; the service does not provide exactly-once email
+delivery.
+
+## Reliability and consistency
+
+- Orchestration instance IDs use Order ID (`@event.OrderId.ToString()`) so
+  duplicate checkout events are ignored and external events correlate to the
+  active `OrderOrchestrator` instance.
+- The current `OrderStateMachineSettings` configuration sets a maximum attempt
+  value of 3 and a timeout delay of 30 minutes (`MaxRetryTimeout`).
+- Durable orchestration state and timers are managed by Azure Durable Task
+  Scheduler (DTS) in `financeTaskHub`, replacing the previous PostgreSQL and
+  Wolverine saga store.
+- Successful basket deletion is not Order completion. Cleanup failure and
+  timeout exhaustion are not equivalent to Ordering cancelling an Order.
+- Notification commands request email work; they do not confirm SMTP
+  submission or final delivery.
+
+## Architecture
+
+<NodeGraph />
