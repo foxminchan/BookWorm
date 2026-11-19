@@ -153,9 +153,46 @@ describe("ChatBotContent", () => {
     fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(lastBtn);
 
+    // Tab when not on lastElement should not wrap focus
+    firstBtn.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: false });
+    expect(document.activeElement).toBe(firstBtn);
+
+    // Shift+Tab when not on firstElement should not wrap focus
+    lastBtn.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastBtn);
+
     // Non-Tab key should not change focus
     fireEvent.keyDown(document, { key: "Escape" });
     expect(document.activeElement).toBe(lastBtn);
+  });
+
+  it("ignores Tab keydown when no dialog role element is present", () => {
+    const ref = createRef<ChatBotRef>();
+    renderWithProviders(<ChatBotContent ref={ref} />);
+
+    act(() => {
+      ref.current?.openChat();
+    });
+
+    // Trigger error fallback so CopilotSidebar ([role="dialog"]) is unmounted
+    act(() => {
+      globalThis.dispatchEvent(
+        new ErrorEvent("error", {
+          message: "agent error",
+          error: new Error("agent error"),
+          cancelable: true,
+        }),
+      );
+    });
+
+    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+
+    const retryBtn = screen.getByRole("button", { name: "Retry" });
+    retryBtn.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: false });
+    expect(document.activeElement).toBe(retryBtn);
   });
 
   it("renders offline indicator with and without queued messages", () => {

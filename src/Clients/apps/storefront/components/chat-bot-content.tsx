@@ -57,10 +57,7 @@ type ChatUIState = {
 
 type ChatUIAction =
   | { type: "OPEN" }
-  | { type: "CLOSE" }
-  | { type: "SET_OPEN"; open: boolean }
   | { type: "SET_ERROR"; error: Error }
-  | { type: "CLEAR_ERROR" }
   | { type: "RESET" }
   | { type: "SET_RATE_LIMIT_WARNING"; warning: string }
   | { type: "CLEAR_RATE_LIMIT_WARNING" };
@@ -72,17 +69,10 @@ function chatUIReducer(state: ChatUIState, action: ChatUIAction): ChatUIState {
       isOpen: true,
       hasError: false,
     }))
-    .with({ type: "CLOSE" }, () => ({ ...state, isOpen: false }))
-    .with({ type: "SET_OPEN" }, ({ open }) => ({ ...state, isOpen: open }))
     .with({ type: "SET_ERROR" }, ({ error }) => ({
       ...state,
       hasError: true,
       error,
-    }))
-    .with({ type: "CLEAR_ERROR" }, () => ({
-      ...state,
-      hasError: false,
-      error: undefined,
     }))
     .with({ type: "RESET" }, () => ({
       ...state,

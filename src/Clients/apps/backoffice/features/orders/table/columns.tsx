@@ -3,8 +3,7 @@
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
-import type { Order } from "@workspace/types/ordering/orders";
-import type { OrderStatus } from "@workspace/types/ordering/orders";
+import type { Order, OrderStatus } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 import { formatPrice } from "@workspace/utils/format";
 import { getOrderStatusStyle } from "@workspace/utils/order";
