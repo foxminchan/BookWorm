@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Features.Authors;
+using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Categories;
 using BookWorm.Catalog.Features.Publishers;
 
@@ -16,5 +16,6 @@ public sealed record BookDto(
     PublisherDto? Publisher,
     IReadOnlyList<AuthorDto> Authors,
     double AverageRating,
-    int TotalReviews
-);
+    int TotalReviews,
+    long Version = 0
+) : IHasVersion;

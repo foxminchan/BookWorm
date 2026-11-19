@@ -2,6 +2,7 @@ using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
 using BookWorm.Chassis.Endpoints;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace BookWorm.ArchTests.Features;
@@ -64,6 +65,22 @@ public sealed class EndpointConventionTests : ArchUnitBaseTest
             )
             .Because(
                 "Endpoints should not directly depend on repository implementations; they should delegate to handlers via Mediator."
+            )
+            .Check(Architecture);
+    }
+
+    [Test]
+    public void GivenEndpointFilters_WhenCheckingModifiers_ThenShouldBeInternalAndSealed()
+    {
+        Classes()
+            .That()
+            .ImplementInterface(typeof(IEndpointFilter))
+            .Should()
+            .BeInternal()
+            .AndShould()
+            .BeSealed()
+            .Because(
+                "Endpoint filters are cross-cutting pipeline components that should be internal and sealed."
             )
             .Check(Architecture);
     }

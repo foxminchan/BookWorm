@@ -5,27 +5,29 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
 
-internal sealed class TransactionBehavior<TMessage, TResponse>(
+internal sealed partial class TransactionBehavior<TMessage, TResponse>(
     DbContext dbContext,
     ILogger<TransactionBehavior<TMessage, TResponse>> logger
 ) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
+    private const string Behavior = nameof(TransactionBehavior<,>);
+    private static readonly string _messageName = typeof(TMessage).Name;
+
+    private static readonly TransactionalAttribute? _transactionalAttr =
+        typeof(TMessage).GetCustomAttribute<TransactionalAttribute>();
+
     public async ValueTask<TResponse> Handle(
         TMessage message,
         MessageHandlerDelegate<TMessage, TResponse> next,
         CancellationToken cancellationToken
     )
     {
-        if (
-            message.GetType().GetCustomAttribute<TransactionalAttribute>() is not { } attr
-            || dbContext.Database.CurrentTransaction is not null
-        )
+        if (_transactionalAttr is not { } attr || dbContext.Database.CurrentTransaction is not null)
         {
             return await next(message, cancellationToken);
         }
 
-        var messageName = message.GetType().Name;
         var strategy = dbContext.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(
@@ -36,15 +38,7 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
                     ct
                 );
 
-                if (logger.IsEnabled(LogLevel.Information))
-                {
-                    logger.LogInformation(
-                        "[{Behavior}] Begin transaction {TransactionId} for {Request}",
-                        nameof(TransactionBehavior<,>),
-                        transaction.TransactionId,
-                        messageName
-                    );
-                }
+                LogTransactionBegin(logger, Behavior, transaction.TransactionId, _messageName);
 
                 try
                 {
@@ -52,15 +46,12 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
 
                     await transaction.CommitAsync(ct);
 
-                    if (logger.IsEnabled(LogLevel.Information))
-                    {
-                        logger.LogInformation(
-                            "[{Behavior}] Committed transaction {TransactionId} for {Request}",
-                            nameof(TransactionBehavior<,>),
-                            transaction.TransactionId,
-                            messageName
-                        );
-                    }
+                    LogTransactionCommitted(
+                        logger,
+                        Behavior,
+                        transaction.TransactionId,
+                        _messageName
+                    );
 
                     return response;
                 }
@@ -73,4 +64,26 @@ internal sealed class TransactionBehavior<TMessage, TResponse>(
             cancellationToken
         );
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "[{Behavior}] Begin transaction {TransactionId} for {Request}"
+    )]
+    private static partial void LogTransactionBegin(
+        ILogger logger,
+        string behavior,
+        Guid transactionId,
+        string request
+    );
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "[{Behavior}] Committed transaction {TransactionId} for {Request}"
+    )]
+    private static partial void LogTransactionCommitted(
+        ILogger logger,
+        string behavior,
+        Guid transactionId,
+        string request
+    );
 }

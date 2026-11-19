@@ -1,3 +1,4 @@
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Contracts;
 using BookWorm.Notification.Infrastructure.Render;
 using BookWorm.Notification.Infrastructure.Senders;
@@ -65,6 +66,51 @@ public sealed class CompleteOrderCommandHandlerTests
         var command = new CompleteOrderCommand(Guid.CreateVersion7(), "Jane Smith", email, 150.00m);
 
         await _handler.Handle(command, CancellationToken.None);
+
+        _rendererMock.Verify(
+            x =>
+                x.RenderAsync(
+                    It.IsAny<object>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Never
+        );
+        _senderMock.Verify(
+            x => x.SendAsync(It.IsAny<MimeMessage>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
+
+    [Test]
+    public async Task GivenDuplicateCommand_WhenHandling_ThenShouldIgnoreWithoutSendingEmail()
+    {
+        var command = new CompleteOrderCommand(
+            Guid.CreateVersion7(),
+            "Jane Smith",
+            "jane@example.com",
+            150.00m
+        );
+
+        var guardMock = new Mock<IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    command.Id,
+                    nameof(CompleteOrderCommandHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(false);
+
+        var handler = new CompleteOrderCommandHandler(
+            _senderMock.Object,
+            _rendererMock.Object,
+            guardMock.Object
+        );
+
+        await handler.Handle(command, CancellationToken.None);
 
         _rendererMock.Verify(
             x =>

@@ -5,8 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.EF;
 
-internal sealed class QueryPerformanceInterceptor(ILogger<QueryPerformanceInterceptor> logger)
-    : DbCommandInterceptor
+internal sealed partial class QueryPerformanceInterceptor(
+    ILogger<QueryPerformanceInterceptor> logger
+) : DbCommandInterceptor
 {
     private const long QueryThreshold = 100;
 
@@ -32,12 +33,18 @@ internal sealed class QueryPerformanceInterceptor(ILogger<QueryPerformanceInterc
             commandText += " | Parameters: " + string.Join(", ", command.Parameters);
         }
 
-        logger.LogWarning(
-            "Slow query detected: {CommandText} | Elapsed time: {ElapsedMilliseconds} ms",
-            commandText,
-            elapsedMilliseconds
-        );
+        LogSlowQuery(logger, commandText, elapsedMilliseconds);
 
         return interceptionResult;
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Slow query detected: {CommandText} | Elapsed time: {ElapsedMilliseconds} ms"
+    )]
+    private static partial void LogSlowQuery(
+        ILogger logger,
+        string commandText,
+        double elapsedMilliseconds
+    );
 }

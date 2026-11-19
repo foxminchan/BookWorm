@@ -1,3 +1,4 @@
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
 using BookWorm.Rating.Domain.FeedbackAggregator;
@@ -52,6 +53,41 @@ public sealed class BookUpdatedRatingFailedIntegrationEventHandlerTests
 
         await _handler.Handle(@event, CancellationToken.None);
 
+        _repositoryMock.Verify(x => x.Delete(It.IsAny<Feedback>()), Times.Never);
+        _unitOfWorkMock.Verify(
+            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
+
+    [Test]
+    public async Task GivenDuplicateEvent_WhenHandling_ThenShouldIgnoreWithoutDeleting()
+    {
+        var @event = new BookUpdatedRatingFailedIntegrationEvent(Guid.CreateVersion7());
+
+        var guardMock = new Mock<IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    @event.Id,
+                    nameof(BookUpdatedRatingFailedIntegrationEventHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(false);
+
+        var handler = new BookUpdatedRatingFailedIntegrationEventHandler(
+            _repositoryMock.Object,
+            guardMock.Object
+        );
+
+        await handler.Handle(@event, CancellationToken.None);
+
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
         _repositoryMock.Verify(x => x.Delete(It.IsAny<Feedback>()), Times.Never);
         _unitOfWorkMock.Verify(
             x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),

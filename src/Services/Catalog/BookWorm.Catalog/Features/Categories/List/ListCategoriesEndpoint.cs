@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Categories.List;
+namespace BookWorm.Catalog.Features.Categories.List;
 
 internal sealed class ListCategoriesEndpoint : IEndpoint<Ok<IReadOnlyList<CategoryDto>>, ISender>
 {
@@ -10,7 +10,8 @@ internal sealed class ListCategoriesEndpoint : IEndpoint<Ok<IReadOnlyList<Catego
             .WithName(nameof(ListCategoriesEndpoint))
             .WithSummary("List Categories")
             .WithDescription("List all categories")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<IReadOnlyList<CategoryDto>>> HandleAsync(

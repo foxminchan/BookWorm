@@ -59,4 +59,34 @@ public sealed class ProcessVectorBatchFunctionTests
             function.ProcessVectorBatch("{}", cancellationToken)
         );
     }
+
+    [Test]
+    public async Task GivenCloudEventsEnvelope_WhenInvoked_ThenShouldDeserializeAndProcessVectorBatch()
+    {
+        var eventId = Guid.CreateVersion7();
+        var cloudEventJson = $$"""
+            {
+                "specversion": "1.0",
+                "type": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent",
+                "source": "urn:bookworm:book-worm-scheduler",
+                "id": "{{eventId}}",
+                "data": {
+                    "id": "{{eventId}}",
+                    "creationDate": "2026-11-20T00:00:00Z"
+                }
+            }
+            """;
+
+        var processor = new Mock<IVectorBatchProcessor>();
+        processor.Setup(x => x.ProcessAsync(CancellationToken.None)).ReturnsAsync(3);
+        var function = new ProcessVectorBatchFunction(
+            processor.Object,
+            Mock.Of<ILogger<ProcessVectorBatchFunction>>()
+        );
+
+        await function.ProcessVectorBatch(cloudEventJson, CancellationToken.None);
+
+        processor.Verify(x => x.ProcessAsync(CancellationToken.None), Times.Once);
+        processor.VerifyNoOtherCalls();
+    }
 }

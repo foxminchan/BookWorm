@@ -1,9 +1,13 @@
-﻿using BookWorm.Contracts;
+using BookWorm.Chassis.EventBus.Idempotency;
+using BookWorm.Contracts;
 using Wolverine.Attributes;
 
 namespace BookWorm.Rating.IntegrationEvents.EventHandlers;
 
-internal sealed class BookUpdatedRatingFailedIntegrationEventHandler(IFeedbackRepository repository)
+internal sealed class BookUpdatedRatingFailedIntegrationEventHandler(
+    IFeedbackRepository repository,
+    IIntegrationEventIdempotencyGuard? idempotencyGuard = null
+)
 {
     [WolverineHandler]
     public async Task Handle(
@@ -11,6 +15,18 @@ internal sealed class BookUpdatedRatingFailedIntegrationEventHandler(IFeedbackRe
         CancellationToken cancellationToken
     )
     {
+        if (
+            idempotencyGuard is not null
+            && !await idempotencyGuard.TryAcquireAsync(
+                @event.Id,
+                nameof(BookUpdatedRatingFailedIntegrationEventHandler),
+                cancellationToken: cancellationToken
+            )
+        )
+        {
+            return;
+        }
+
         var feedback = await repository.GetByIdAsync(@event.FeedbackId, cancellationToken);
 
         if (feedback is null)

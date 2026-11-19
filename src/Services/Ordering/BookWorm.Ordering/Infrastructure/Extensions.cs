@@ -1,4 +1,5 @@
-﻿using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.EventBus.Idempotency;
 
 namespace BookWorm.Ordering.Infrastructure;
 
@@ -39,6 +40,7 @@ internal static class Extensions
                 .WithAzureAuthentication();
 
             builder.AddCaching();
+            services.AddIntegrationEventIdempotency();
         }
     }
 

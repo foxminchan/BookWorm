@@ -1,8 +1,8 @@
+using BookWorm.Chassis.Caching;
 using BookWorm.Chassis.EventBus.Wolverine;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Chassis.Utilities.Converters;
 using BookWorm.Ordering.Configurations;
-using BookWorm.Ordering.Infrastructure.DistributedLock;
 using BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 using BookWorm.ServiceDefaults.Cors;
 

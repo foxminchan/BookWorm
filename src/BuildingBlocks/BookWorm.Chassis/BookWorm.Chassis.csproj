@@ -22,6 +22,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
     <PackageReference Include="ZiggyCreatures.FusionCache.OpenTelemetry" />
     <PackageReference Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis" />
     <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" />
     <PackageReference Include="CommunityToolkit.VectorData.Qdrant" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 using ArchUnitNET.TUnit;
 using BookWorm.ArchTests.Abstractions;
+using BookWorm.Chassis.CQRS;
 using Mediator;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -100,6 +101,42 @@ public sealed class HandlerConventionTests : ArchUnitBaseTest
                 },
                 "should not depend on other handlers",
                 "Handlers should not depend on other handlers to maintain independence and single responsibility."
+            )
+            .Check(Architecture);
+    }
+
+    [Test]
+    public void GivenPreAndPostProcessors_WhenCheckingModifiers_ThenShouldBeInternalAndSealed()
+    {
+        Classes()
+            .That()
+            .ResideInNamespaceMatching(FeatureNamespace)
+            .And()
+            .HaveNameEndingWith("PreProcessor")
+            .Or()
+            .ResideInNamespaceMatching(FeatureNamespace)
+            .And()
+            .HaveNameEndingWith("PostProcessor")
+            .Should()
+            .BeInternal()
+            .AndShould()
+            .BeSealed()
+            .Because(
+                "Message pre/post-processors should be internal and sealed within their vertical slice."
+            )
+            .Check(Architecture);
+    }
+
+    [Test]
+    public void GivenTransactionalCommands_WhenCheckingType_ThenShouldImplementICommand()
+    {
+        Classes()
+            .That()
+            .HaveAnyAttributes(typeof(TransactionalAttribute))
+            .Should()
+            .ImplementInterface(typeof(IBaseCommand))
+            .Because(
+                "The [Transactional] attribute should only be applied to CQRS commands, never queries."
             )
             .Check(Architecture);
     }

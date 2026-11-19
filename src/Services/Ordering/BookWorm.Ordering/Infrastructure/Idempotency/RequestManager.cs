@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using StackExchange.Redis;
 
 namespace BookWorm.Ordering.Infrastructure.Idempotency;
@@ -7,14 +7,13 @@ internal sealed class RequestManager(IConnectionMultiplexer redis) : IRequestMan
 {
     private const int DefaultExpirationTime = 3600;
 
-    private readonly SemaphoreSlim _connectionLock = new(1, 1);
-
     public async Task<bool> IsExistAsync(
         string idempotencyKey,
         CancellationToken cancellationToken = default
     )
     {
-        var database = await GetDatabaseAsync();
+        cancellationToken.ThrowIfCancellationRequested();
+        var database = redis.GetDatabase();
         return await database.KeyExistsAsync(idempotencyKey);
     }
 
@@ -23,7 +22,8 @@ internal sealed class RequestManager(IConnectionMultiplexer redis) : IRequestMan
         CancellationToken cancellationToken = default
     )
     {
-        var database = await GetDatabaseAsync();
+        cancellationToken.ThrowIfCancellationRequested();
+        var database = redis.GetDatabase();
 
         var json = JsonSerializer.Serialize(
             clientRequest,
@@ -37,17 +37,25 @@ internal sealed class RequestManager(IConnectionMultiplexer redis) : IRequestMan
         );
     }
 
-    private async Task<IDatabase> GetDatabaseAsync()
+    public async Task<bool> TryCreateAsync(
+        ClientRequest clientRequest,
+        CancellationToken cancellationToken = default
+    )
     {
-        await _connectionLock.WaitAsync();
-        try
-        {
-            return redis.GetDatabase();
-        }
-        finally
-        {
-            _connectionLock.Release();
-        }
+        cancellationToken.ThrowIfCancellationRequested();
+        var database = redis.GetDatabase();
+
+        var json = JsonSerializer.Serialize(
+            clientRequest,
+            IdempotencySerializationContext.Default.ClientRequest
+        );
+
+        return await database.StringSetAsync(
+            clientRequest.Id,
+            json,
+            TimeSpan.FromSeconds(DefaultExpirationTime),
+            When.NotExists
+        );
     }
 }
 

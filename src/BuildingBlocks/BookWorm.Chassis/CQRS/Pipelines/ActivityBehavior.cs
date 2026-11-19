@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.CQRS.Pipelines;
 
-internal sealed class ActivityBehavior<TMessage, TResponse>(
+internal sealed partial class ActivityBehavior<TMessage, TResponse>(
     IActivityScope activityScope,
     CommandHandlerMetrics commandMetrics,
     QueryHandlerMetrics queryMetrics,
@@ -17,59 +17,71 @@ internal sealed class ActivityBehavior<TMessage, TResponse>(
     where TMessage : IMessage
     where TResponse : notnull
 {
+    private const string Behavior = nameof(ActivityBehavior<,>);
+    private static readonly string _messageType = typeof(TMessage).Name;
+    private static readonly string _responseType = typeof(TResponse).Name;
+    private static readonly string _handlerName = $"{_messageType}Handler";
+    private static readonly string _activityName = $"{_handlerName}/{_messageType}";
+
+    private static readonly bool _ignoreOTel =
+        typeof(TMessage).GetCustomAttribute<IgnoreOTelOnHandlerAttribute>() is not null;
+
+    private static readonly bool _isCommand = _messageType.EndsWith(
+        nameof(Command),
+        StringComparison.OrdinalIgnoreCase
+    );
+
+    private static readonly string _tagName = _isCommand
+        ? TelemetryTags.Commands.Command
+        : TelemetryTags.Queries.Query;
+
     public async ValueTask<TResponse> Handle(
         TMessage message,
         MessageHandlerDelegate<TMessage, TResponse> next,
         CancellationToken cancellationToken
     )
     {
-        if (logger.IsEnabled(LogLevel.Information))
-        {
-            logger.LogInformation(
-                "[{Behavior}] handle request={RequestData} and response={ResponseData}",
-                nameof(ActivityBehavior<,>),
-                message.GetType().Name,
-                typeof(TResponse).Name
-            );
-        }
+        LogHandlingRequest(logger, Behavior, _messageType, _responseType);
 
-        var attr = message.GetType().GetCustomAttribute<IgnoreOTelOnHandlerAttribute>();
-
-        if (attr is not null)
+        if (_ignoreOTel)
         {
             return await next(message, cancellationToken);
         }
 
-        var messageType = message.GetType().Name;
-        var handlerName = $"{messageType}Handler";
-        var activityName = $"{handlerName}/{messageType}";
-
-        var isCommand = messageType.EndsWith(nameof(Command), StringComparison.OrdinalIgnoreCase);
-        var tagName = isCommand ? TelemetryTags.Commands.Command : TelemetryTags.Queries.Query;
-
-        var startingTimestamp = isCommand
-            ? commandMetrics.CommandHandlingStart(handlerName)
-            : queryMetrics.QueryHandlingStart(handlerName);
+        var startingTimestamp = _isCommand
+            ? commandMetrics.CommandHandlingStart(_handlerName)
+            : queryMetrics.QueryHandlingStart(_handlerName);
 
         try
         {
             return await activityScope.Run(
-                activityName,
+                _activityName,
                 async (_, ct) => await next(message, ct),
-                new() { Tags = { { tagName, messageType } } },
+                new() { Tags = { { _tagName, _messageType } } },
                 cancellationToken
             );
         }
         finally
         {
-            if (isCommand)
+            if (_isCommand)
             {
-                commandMetrics.CommandHandlingEnd(handlerName, startingTimestamp);
+                commandMetrics.CommandHandlingEnd(_handlerName, startingTimestamp);
             }
             else
             {
-                queryMetrics.QueryHandlingEnd(handlerName, startingTimestamp);
+                queryMetrics.QueryHandlingEnd(_handlerName, startingTimestamp);
             }
         }
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "[{Behavior}] handle request={RequestData} and response={ResponseData}"
+    )]
+    private static partial void LogHandlingRequest(
+        ILogger logger,
+        string behavior,
+        string requestData,
+        string responseData
+    );
 }

@@ -1,5 +1,6 @@
 using BookWorm.Chassis.Caching;
 using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chassis.Utilities.Configurations;
@@ -104,6 +105,7 @@ internal static class Extensions
                 .WithAzureAuthentication();
 
             builder.AddCaching();
+            services.AddIntegrationEventIdempotency();
 
             // Configure FluentValidation
             services.AddValidatorsFromAssemblyContaining<RatingApiMarker>(
