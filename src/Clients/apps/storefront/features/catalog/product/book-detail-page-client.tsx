@@ -6,7 +6,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArrowLeft } from "lucide-react";
-import { useDebounceCallback } from "usehooks-ts";
 
 import useBasket from "@workspace/api-hooks/basket/useBasket";
 import useCreateBasket from "@workspace/api-hooks/basket/useCreateBasket";
@@ -18,6 +17,7 @@ import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
 import useSummaryFeedback from "@workspace/api-hooks/rating/useSummaryFeedback";
 import type { CreateFeedbackRequest } from "@workspace/types/rating";
 import { Separator } from "@workspace/ui/components/separator";
+import { useDebounceCallback } from "@workspace/ui/hooks/useDebounceCallback";
 
 import { JsonLd } from "@/components/json-ld";
 import { ProductLoadingSkeleton } from "@/components/loading-skeleton";

@@ -26,7 +26,7 @@ vi.mock("@workspace/api-hooks/catalog/publishers/usePublishers", () => ({
 }));
 
 // Mock useDebounceCallback to fire immediately
-vi.mock("usehooks-ts", () => ({
+vi.mock("@workspace/ui/hooks/useDebounceCallback", () => ({
   useDebounceCallback: (fn: (...args: unknown[]) => void) => fn,
 }));
 

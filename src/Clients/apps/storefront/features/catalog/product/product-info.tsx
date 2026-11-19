@@ -1,9 +1,9 @@
 "use client";
 
-import cn from "classnames";
 import { Star } from "lucide-react";
 
 import { Separator } from "@workspace/ui/components/separator";
+import { cn } from "@workspace/ui/lib/utils";
 import { formatPrice } from "@workspace/utils/format";
 
 type ProductInfoProps = {

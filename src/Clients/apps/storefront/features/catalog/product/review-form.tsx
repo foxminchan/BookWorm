@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import cn from "classnames";
 import { Loader2, Send, Star } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,6 +16,7 @@ import {
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { cn } from "@workspace/ui/lib/utils";
 import { createFeedbackSchema } from "@workspace/validations/rating";
 
 const reviewFormSchema = createFeedbackSchema.omit({ bookId: true }).extend({

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useDebounceCallback } from "usehooks-ts";
 
 import type { ListBooksQuery } from "@workspace/types/catalog/books";
 import { Button } from "@workspace/ui/components/button";
@@ -18,6 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible";
+import { useDebounceCallback } from "@workspace/ui/hooks/useDebounceCallback";
 import { PRICE_RANGE } from "@workspace/utils/constants";
 
 import { AuthorsFilter } from "./filters/authors-filter";
