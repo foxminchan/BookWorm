@@ -13,12 +13,10 @@ import useDeleteOrder from "@workspace/api-hooks/ordering/orders/useDeleteOrder"
 import type { Order } from "@workspace/types/ordering/orders";
 import { Button } from "@workspace/ui/components/button";
 
+import type { OrderStatus } from "@workspace/types/ordering/orders";
+import { canCancelOrder, canCompleteOrder } from "@workspace/utils/order";
+
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import {
-  type OrderStatus,
-  canCancelOrder,
-  canCompleteOrder,
-} from "@/lib/pattern";
 
 type CellActionProps = Readonly<{
   order: Order;

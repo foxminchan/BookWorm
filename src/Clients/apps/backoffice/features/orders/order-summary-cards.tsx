@@ -7,7 +7,8 @@ import {
 } from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/utils/format";
 
-import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
+import type { OrderStatus } from "@workspace/types/ordering/orders";
+import { getOrderStatusStyle } from "@workspace/utils/order";
 
 type OrderSummaryCardsProps = Readonly<{
   status: OrderStatus;

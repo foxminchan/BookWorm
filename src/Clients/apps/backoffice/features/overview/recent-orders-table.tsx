@@ -30,7 +30,8 @@ import {
 
 import { RecentOrdersTableSkeleton } from "@/components/loading-skeleton";
 import { currencyFormatter } from "@/lib/constants";
-import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
+import type { OrderStatus } from "@workspace/types/ordering/orders";
+import { getOrderStatusStyle } from "@workspace/utils/order";
 import { backofficeTableFeatures } from "@/lib/table";
 
 type RecentOrdersTableProps = Readonly<{

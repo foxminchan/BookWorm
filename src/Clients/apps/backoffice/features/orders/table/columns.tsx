@@ -7,7 +7,8 @@ import type { Order } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 import { formatPrice } from "@workspace/utils/format";
 
-import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
+import type { OrderStatus } from "@workspace/types/ordering/orders";
+import { getOrderStatusStyle } from "@workspace/utils/order";
 import { backofficeTableFeatures } from "@/lib/table";
 
 import { CellAction } from "./cell-action";
