@@ -33,7 +33,7 @@ workflows:
     '.github/workflows/copilot-setup-steps.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-dotnet@v6.1.0'
-        - 'docker/setup-docker-action@v5.6.0'
+        - 'docker/setup-docker-action@v5.7.0'
         - 'jdx/mise-action@v5.2.7'
         - 'oven-sh/setup-bun@v2.2.0'
     '.github/workflows/docs.yml':
@@ -226,9 +226,9 @@ dependencies:
         commit: 'sha1-a92c7ae74cf1df8810783758581e485ac3aaa309'
         owner_id: 9713907
         repo_id: 239218448
-    'docker/setup-docker-action@v5.6.0':
-        ref: 'v5.6.0'
-        commit: 'sha1-7ec28a010822b4626af4874f9448a4b05ac6f3e5'
+    'docker/setup-docker-action@v5.7.0':
+        ref: 'v5.7.0'
+        commit: 'sha1-3f1ab1ab0e29231562e4db4ca600c1a49653bac6'
         owner_id: 5429470
         repo_id: 398780917
     'github/codeql-action@v4.39.3':

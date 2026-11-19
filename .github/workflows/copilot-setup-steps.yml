@@ -44,7 +44,7 @@ jobs:
         uses: jdx/mise-action@v5.2.7
 
       - name: 🐳 Setup Docker
-        uses: docker/setup-docker-action@v5.6.0
+        uses: docker/setup-docker-action@v5.7.0
 
       - name: 🛠️ Install Tools
         run: dotnet tool restore
