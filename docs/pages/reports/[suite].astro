@@ -55,8 +55,15 @@ const reportUrl = `${base}${suite.reportUrl}`;
 			></iframe>
 
 			<div
+				id="allure-loading"
+				class="flex h-full flex-col items-center justify-center p-8 text-center text-sm text-[rgb(var(--ec-page-text-muted))]"
+			>
+				Loading report...
+			</div>
+
+			<div
 				id="allure-fallback"
-				class="flex h-full flex-col items-center justify-center p-8 text-center"
+				class="hidden h-full flex-col items-center justify-center p-8 text-center"
 			>
 				<div
 					class="max-w-md rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6"
@@ -80,23 +87,50 @@ const reportUrl = `${base}${suite.reportUrl}`;
 	</div>
 
 	<script>
-		const frame = document.getElementById("allure-frame") as HTMLIFrameElement | null;
-		const fallback = document.getElementById("allure-fallback");
-		const url = frame?.dataset.reportUrl;
+		function showFallback(loading: HTMLElement | null, fallback: HTMLElement | null) {
+			loading?.classList.add("hidden");
+			if (fallback) {
+				fallback.classList.remove("hidden");
+				fallback.classList.add("flex");
+			}
+		}
 
-		if (frame && fallback && url) {
+		function loadAllureReport() {
+			const frame = document.getElementById("allure-frame") as HTMLIFrameElement | null;
+			const fallback = document.getElementById("allure-fallback");
+			const loading = document.getElementById("allure-loading");
+			const url = frame?.dataset.reportUrl;
+
+			if (!frame || !fallback || !url || frame.dataset.initialized === "true") return;
+			frame.dataset.initialized = "true";
+
 			fetch(url)
 				.then(async (res) => {
-					if (!res.ok) return;
+					if (!frame.isConnected) return;
+					if (!res.ok) {
+						showFallback(loading, fallback);
+						return;
+					}
 					const html = await res.text();
-					if (html.includes("404: Not found")) return;
+					if (!frame.isConnected) return;
+					if (html.includes("404: Not found")) {
+						showFallback(loading, fallback);
+						return;
+					}
 					frame.src = url;
 					frame.classList.remove("hidden");
+					loading?.classList.add("hidden");
 					fallback.classList.add("hidden");
 				})
 				.catch(() => {
-					// Keep fallback visible when report is unavailable
+					if (!frame.isConnected) return;
+					showFallback(loading, fallback);
 				});
+		}
+
+		document.addEventListener("astro:page-load", loadAllureReport);
+		if (document.readyState !== "loading") {
+			loadAllureReport();
 		}
 	</script>
 </Layout>

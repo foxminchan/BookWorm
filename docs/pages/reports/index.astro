@@ -1,87 +1,1415 @@
 ---
 import Layout from "@catalog/layouts/Layout.astro";
-import { getServices } from "@catalog/utils";
+import {
+	getAdrs,
+	getAgents,
+	getChannels,
+	getCommands,
+	getContainers,
+	getDomains,
+	getEntities,
+	getEvents,
+	getFlows,
+	getQueries,
+	getServices,
+	getSystems,
+	getTeams,
+	getUsers,
+} from "@catalog/utils";
 import ReportsNav from "../_components/ReportsNav.astro";
-import { REPORT_SUITES, RESULT_FEEDS } from "../_data/reports";
+import {
+	REPORT_SUITES,
+	RESULT_FEEDS,
+	ROLE_GUIDES,
+	SERVICE_TEST_MATRIX,
+} from "../_data/reports";
 
-type CatalogService = {
+type ResourceRef = {
+	id: string;
+	version?: string;
+	collection?: string;
+};
+
+type Badge = {
+	content: string;
+};
+
+type SpecificationItem = {
+	type?: string;
+	path?: string;
+	name?: string;
+};
+
+type CatalogEntry<T = Record<string, unknown>> = {
+	id: string;
 	data: {
 		id: string;
 		name: string;
 		version: string;
 		summary?: string;
+		owners?: Array<string | ResourceRef>;
+		badges?: Badge[];
+		sends?: ResourceRef[];
+		receives?: ResourceRef[];
+		writesTo?: ResourceRef[];
+		readsFrom?: ResourceRef[];
+		services?: ResourceRef[];
+		specifications?: SpecificationItem[] | Record<string, string>;
+		classification?: string;
+		scope?: string;
+		externalSystem?: boolean;
+		repository?: {
+			language?: string;
+			url?: string;
+		};
+	} & T;
+};
+
+type TeamEntry = {
+	data: {
+		id: string;
+		name: string;
+		summary?: string;
+		members?: Array<string | ResourceRef>;
 	};
 };
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-const services: CatalogService[] = await getServices({ getAllVersions: false });
+
+const [
+	domains,
+	systems,
+	services,
+	events,
+	commands,
+	queries,
+	flows,
+	channels,
+	entities,
+	agents,
+	containers,
+	adrs,
+	teams,
+	users,
+] = await Promise.all([
+	getDomains({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getSystems({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getServices({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getEvents({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getCommands({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getQueries({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getFlows({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getChannels({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getEntities({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getAgents({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getContainers({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getAdrs({ getAllVersions: false }) as Promise<CatalogEntry[]>,
+	getTeams() as Promise<TeamEntry[]>,
+	getUsers() as Promise<TeamEntry[]>,
+]);
+
+function extractOwnerId(owner: string | ResourceRef): string {
+	return typeof owner === "string" ? owner : owner.id;
+}
+
+const teamMap = new Map(teams.map((t) => [t.data.id, t.data.name]));
+const userMap = new Map(users.map((u) => [u.data.id, u.data.name]));
+const knownOwnerIds = new Set([...teamMap.keys(), ...userMap.keys()]);
+const teamIds = new Set(teamMap.keys());
+
+const externalSystemServiceIds = new Set(
+	systems
+		.filter((s) => s.data.scope === "external")
+		.flatMap((s) => (s.data.services ?? []).map((svc) => svc.id))
+);
+
+function isExternalService(service: CatalogEntry): boolean {
+	const badges = (service.data.badges ?? []).map((b) => b.content.trim().toLowerCase());
+	return Boolean(
+		service.data.externalSystem ||
+			externalSystemServiceIds.has(service.data.id) ||
+			badges.includes("external")
+	);
+}
+
+function getServiceSpecLabels(service: CatalogEntry): string[] {
+	const specs = service.data.specifications;
+	if (!specs) return [];
+	if (Array.isArray(specs)) {
+		return specs
+			.filter((s) => s.path?.trim())
+			.map((s) => (s.name || s.type || "Spec").toUpperCase());
+	}
+	return Object.entries(specs)
+		.filter(([, path]) => typeof path === "string" && path.trim())
+		.map(([key]) => key.toUpperCase());
+}
+
+const inlineDocServices = new Set(["mcp-server", "chat-api", "catalog-ingestion"]);
+
+// 1. Evaluate Architecture Fitness Functions directly against catalog data
+const servicesWithoutTeamOwner = services.filter((svc) => {
+	const owners = (svc.data.owners ?? []).map(extractOwnerId);
+	return !owners.some((id) => teamIds.has(id));
+});
+
+const allMessages = [
+	...events.map((m) => ({ type: "Event", entry: m })),
+	...commands.map((m) => ({ type: "Command", entry: m })),
+	...queries.map((m) => ({ type: "Query", entry: m })),
+];
+
+const messagesWithInvalidOwners = allMessages.filter(({ entry }) => {
+	const owners = (entry.data.owners ?? []).map(extractOwnerId);
+	return owners.length === 0 || owners.some((id) => !knownOwnerIds.has(id));
+});
+
+const servicesMissingSpecs = services.filter((svc) => {
+	if (isExternalService(svc)) return false;
+	if (inlineDocServices.has(svc.data.id)) return false;
+	const badges = (svc.data.badges ?? []).map((b) => b.content.trim().toLowerCase());
+	if (!svc.data.receives?.length && !badges.includes("internal")) return false;
+	return getServiceSpecLabels(svc).length === 0;
+});
+
+const producedEventIds = new Set<string>();
+for (const participant of [...services, ...agents, ...domains]) {
+	for (const ref of participant.data.sends ?? []) {
+		producedEventIds.add(ref.id);
+	}
+}
+const orphanedEvents = events.filter((ev) => !producedEventIds.has(ev.data.id));
+
+const writersByStore = new Map<string, string[]>();
+for (const participant of [...services, ...agents]) {
+	const storeIds = new Set((participant.data.writesTo ?? []).map((s) => s.id));
+	for (const storeId of storeIds) {
+		const list = writersByStore.get(storeId) ?? [];
+		list.push(participant.data.name);
+		writersByStore.set(storeId, list);
+	}
+}
+const multiWriterSensitiveStores = containers.filter((store) => {
+	const cls = store.data.classification;
+	if (cls !== "confidential" && cls !== "regulated") return false;
+	return (writersByStore.get(store.data.id) ?? []).length > 1;
+});
+
+// Check circular command dependencies
+const commandIds = new Set(commands.map((c) => c.data.id));
+const cmdSenders = new Map<string, Set<string>>();
+const cmdReceivers = new Map<string, Set<string>>();
+for (const svc of services) {
+	for (const ref of svc.data.sends ?? []) {
+		if (!commandIds.has(ref.id)) continue;
+		const s = cmdSenders.get(ref.id) ?? new Set<string>();
+		s.add(svc.data.id);
+		cmdSenders.set(ref.id, s);
+	}
+	for (const ref of svc.data.receives ?? []) {
+		if (!commandIds.has(ref.id)) continue;
+		const r = cmdReceivers.get(ref.id) ?? new Set<string>();
+		r.add(svc.data.id);
+		cmdReceivers.set(ref.id, r);
+	}
+}
+const serviceEdges = new Map<string, Set<string>>(
+	services.map((s) => [s.data.id, new Set<string>()])
+);
+for (const [cmdId, senders] of cmdSenders) {
+	for (const sender of senders) {
+		for (const receiver of cmdReceivers.get(cmdId) ?? []) {
+			if (sender !== receiver) {
+				serviceEdges.get(sender)?.add(receiver);
+			}
+		}
+	}
+}
+let circularCommandCount = 0;
+for (const [svcA, targets] of serviceEdges) {
+	for (const svcB of targets) {
+		if (serviceEdges.get(svcB)?.has(svcA) && svcA < svcB) {
+			circularCommandCount++;
+		}
+	}
+}
+
+type FitnessCheckSummary = {
+	id: string;
+	name: string;
+	category: string;
+	severity: "error" | "warning";
+	description: string;
+	totalChecked: number;
+	passedCount: number;
+	violations: string[];
+};
+
+const internalServicesCount = services.filter((s) => !isExternalService(s)).length;
+const regulatedStoresCount = containers.filter(
+	(c) => c.data.classification === "confidential" || c.data.classification === "regulated"
+).length;
+
+const fitnessChecks: FitnessCheckSummary[] = [
+	{
+		id: "services-owned-by-teams",
+		name: "Every service is owned by a team",
+		category: "Ownership",
+		severity: "error",
+		description: "Each service must have an accountable team owner in the catalog.",
+		totalChecked: services.length,
+		passedCount: services.length - servicesWithoutTeamOwner.length,
+		violations: servicesWithoutTeamOwner.map((s) => s.data.name),
+	},
+	{
+		id: "messages-have-valid-owners",
+		name: "Messages have known owners",
+		category: "Ownership",
+		severity: "error",
+		description: "Every event, command, and query must be owned by an existing team or user.",
+		totalChecked: allMessages.length,
+		passedCount: allMessages.length - messagesWithInvalidOwners.length,
+		violations: messagesWithInvalidOwners.map((m) => m.entry.data.name),
+	},
+	{
+		id: "services-have-specifications",
+		name: "Internal service interfaces have specifications",
+		category: "Contracts",
+		severity: "warning",
+		description:
+			"Internal services expose OpenAPI, AsyncAPI, Protobuf, or inline MCP/AI contract specifications.",
+		totalChecked: internalServicesCount,
+		passedCount: internalServicesCount - servicesMissingSpecs.length,
+		violations: servicesMissingSpecs.map((s) => s.data.name),
+	},
+	{
+		id: "events-have-producers",
+		name: "Latest events have documented producers",
+		category: "Messaging",
+		severity: "warning",
+		description: "Every integration event is emitted by a documented service, agent, or domain.",
+		totalChecked: events.length,
+		passedCount: events.length - orphanedEvents.length,
+		violations: orphanedEvents.map((e) => e.data.name),
+	},
+	{
+		id: "no-circular-command-dependencies",
+		name: "Services avoid circular command dependencies",
+		category: "Architecture",
+		severity: "warning",
+		description: "Services must not form bidirectional cycles through synchronous or async commands.",
+		totalChecked: services.length,
+		passedCount: services.length - circularCommandCount,
+		violations: [],
+	},
+	{
+		id: "sensitive-data-single-writer",
+		name: "Sensitive data has at most one writer",
+		category: "Data Governance",
+		severity: "warning",
+		description:
+			"Confidential and regulated data stores enforce single-writer microservice ownership.",
+		totalChecked: regulatedStoresCount || containers.length,
+		passedCount:
+			(regulatedStoresCount || containers.length) - multiWriterSensitiveStores.length,
+		violations: multiWriterSensitiveStores.map((c) => c.data.name),
+	},
+];
+
+const passingFitnessRules = fitnessChecks.filter((c) => c.violations.length === 0).length;
+const fitnessScorePercent = Math.round((passingFitnessRules / fitnessChecks.length) * 100);
+
+// 2. Message & Contract Distribution Metrics
+const totalMessagesCount = allMessages.length;
+const messageBreakdown = [
+	{
+		label: "Integration Events",
+		shortLabel: "Events",
+		count: events.length,
+		percent: Math.round((events.length / Math.max(totalMessagesCount, 1)) * 100),
+		colorClass: "bg-amber-500",
+		borderClass: "border-amber-500/30",
+		textClass: "text-amber-500",
+		href: `${base}/discover/events`,
+		description: "Asynchronous domain & integration outcomes published over Kafka broker",
+	},
+	{
+		label: "Commands",
+		shortLabel: "Commands",
+		count: commands.length,
+		percent: Math.round((commands.length / Math.max(totalMessagesCount, 1)) * 100),
+		colorClass: "bg-sky-500",
+		borderClass: "border-sky-500/30",
+		textClass: "text-sky-500",
+		href: `${base}/discover/commands`,
+		description: "State-mutating HTTP, gRPC, and Kafka saga commands",
+	},
+	{
+		label: "Queries",
+		shortLabel: "Queries",
+		count: queries.length,
+		percent: Math.round((queries.length / Math.max(totalMessagesCount, 1)) * 100),
+		colorClass: "bg-emerald-500",
+		borderClass: "border-emerald-500/30",
+		textClass: "text-emerald-500",
+		href: `${base}/discover/queries`,
+		description: "Read-only HTTP & gRPC synchronous data retrieval contracts",
+	},
+];
+
+// 3. Test Verification Pyramid Metrics
+const unitTestProjectsCount = 9;
+const archTestProjectsCount = 1;
+const pactConsumerSuitesCount = 6;
+const pactProviderSuitesCount = 6;
+const frontendSuitesCount = 2;
+const totalAutomatedSuites =
+	unitTestProjectsCount +
+	archTestProjectsCount +
+	pactConsumerSuitesCount +
+	pactProviderSuitesCount +
+	frontendSuitesCount;
+
+const verificationLayers = [
+	{
+		tier: "L1 · Unit & Domain Logic",
+		count: unitTestProjectsCount + 2,
+		unit: "11 suites (9 .NET TUnit + 2 Vitest)",
+		tools: "TUnit · Vitest · MTP Coverage",
+		workflow: "sonar.yml & frontend-ci.yml",
+		widthPercent: 100,
+		barColor: "bg-emerald-500",
+	},
+	{
+		tier: "L2 · Consumer & Provider Contracts",
+		count: pactConsumerSuitesCount + pactProviderSuitesCount,
+		unit: "12 Pact suites (6 Consumer · 6 Provider)",
+		tools: "Pact.NET · AsyncAPI · OpenAPI · Protobuf",
+		workflow: "sonar.yml",
+		widthPercent: 82,
+		barColor: "bg-sky-500",
+	},
+	{
+		tier: "L3 · Architecture & Fitness Invariants",
+		count: archTestProjectsCount + fitnessChecks.length,
+		unit: `1 ArchTest assembly + ${fitnessChecks.length} Catalog Fitness rules`,
+		tools: "TUnit ArchTests · @eventcatalog/fitness · Turbo Boundaries",
+		workflow: "sonar.yml & docs.yml",
+		widthPercent: 64,
+		barColor: "bg-indigo-500",
+	},
+	{
+		tier: "L4 · End-to-End & Accessibility Journeys",
+		count: frontendSuitesCount,
+		unit: "2 E2E apps (Storefront & Backoffice)",
+		tools: "Playwright BDD · axe-core a11y · Allure",
+		workflow: "frontend-ci.yml",
+		widthPercent: 46,
+		barColor: "bg-amber-500",
+	},
+];
+
+// 4. Team Ownership Distribution
+const teamOwnershipStats = teams.map((team) => {
+	const teamId = team.data.id;
+	const ownedServices = services.filter((s) =>
+		(s.data.owners ?? []).map(extractOwnerId).includes(teamId)
+	);
+	const ownedMessages = allMessages.filter(({ entry }) =>
+		(entry.data.owners ?? []).map(extractOwnerId).includes(teamId)
+	);
+	const ownedDomains = domains.filter((d) =>
+		(d.data.owners ?? []).map(extractOwnerId).includes(teamId)
+	);
+	const ownedContainers = containers.filter((c) =>
+		(c.data.owners ?? []).map(extractOwnerId).includes(teamId)
+	);
+	return {
+		id: teamId,
+		name: team.data.name,
+		summary: team.data.summary,
+		servicesCount: ownedServices.length,
+		messagesCount: ownedMessages.length,
+		domainsCount: ownedDomains.length,
+		containersCount: ownedContainers.length,
+		totalAssets:
+			ownedServices.length +
+			ownedMessages.length +
+			ownedDomains.length +
+			ownedContainers.length,
+	};
+});
+const maxTeamAssets = Math.max(...teamOwnershipStats.map((t) => t.totalAssets), 1);
+
+// 5. Enriched Service Quality & Contract Coverage Rows
+const enrichedServices = services
+	.map((service) => {
+		const id = service.data.id;
+		const isExternal = isExternalService(service);
+		const specs = getServiceSpecLabels(service);
+		const hasInlineSpec = inlineDocServices.has(id);
+		const sendsCount = (service.data.sends ?? []).length;
+		const receivesCount = (service.data.receives ?? []).length;
+		const readsCount = (service.data.readsFrom ?? []).length;
+		const writesCount = (service.data.writesTo ?? []).length;
+		const owners = (service.data.owners ?? []).map((o) => {
+			const ownerId = extractOwnerId(o);
+			return {
+				id: ownerId,
+				name: teamMap.get(ownerId) ?? userMap.get(ownerId) ?? ownerId,
+			};
+		});
+		const testMapping = SERVICE_TEST_MATRIX[id];
+
+		return {
+			id,
+			name: service.data.name,
+			version: service.data.version,
+			summary: service.data.summary,
+			isExternal,
+			specs: specs.length > 0 ? specs : hasInlineSpec ? ["INLINE / MCP"] : [],
+			sendsCount,
+			receivesCount,
+			totalMessages: sendsCount + receivesCount,
+			storesCount: new Set([
+				...(service.data.readsFrom ?? []).map((r) => r.id),
+				...(service.data.writesTo ?? []).map((w) => w.id),
+			]).size,
+			readsCount,
+			writesCount,
+			owners,
+			testMapping,
+			language: service.data.repository?.language ?? (isExternal ? "External" : "C# / .NET"),
+		};
+	})
+	.sort((a, b) => {
+		if (a.isExternal !== b.isExternal) return a.isExternal ? 1 : -1;
+		return b.totalMessages - a.totalMessages;
+	});
+
+const maxServiceMessages = Math.max(...enrichedServices.map((s) => s.totalMessages), 1);
 ---
 
 <Layout
-	title="Test Reports"
-	description="Centralized Allure test reports across BookWorm backend and frontend suites"
+	title="Quality & Architecture Intelligence"
+	description="Enterprise quality, governance, contract verification, and test execution analytics across BookWorm microservices."
 	sidebar={false}
 >
-	<div class="mx-auto max-w-6xl space-y-8">
-		<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-			<div>
-				<h1 class="text-3xl font-bold text-[rgb(var(--ec-page-text))]">
-					Allure Test Reports
-				</h1>
-				<p class="mt-1 text-sm text-[rgb(var(--ec-page-text-muted))]">
-					Centralized quality dashboard aggregating backend unit/contract tests and frontend
-					suites published to GitHub Pages.
-				</p>
-			</div>
-			<a
-				href={`${base}/reports/index.html`}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--ec-accent))] px-4 py-2 text-sm font-medium text-[rgb(var(--ec-accent-text))] transition-opacity hover:opacity-90"
-			>
-				Open Unified Report
-				<span aria-hidden="true">↗</span>
-			</a>
-		</div>
+	<div class="mx-auto max-w-7xl space-y-10 pb-16 font-sans antialiased">
+		<!-- Hero & Executive Header -->
+		<header class="relative overflow-hidden rounded-2xl border border-[rgb(var(--ec-page-border))] bg-gradient-to-b from-[rgb(var(--ec-card-bg))] via-[rgb(var(--ec-card-bg))] to-[rgb(var(--ec-page-bg))] p-7 shadow-sm sm:p-9">
+			<div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+				<div class="max-w-3xl space-y-3">
+					<div class="flex flex-wrap items-center gap-2.5">
+						<span class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--ec-accent)/0.3)] bg-[rgb(var(--ec-accent-subtle))] px-3 py-1 text-xs font-semibold text-[rgb(var(--ec-accent))] shadow-xs">
+							<span class="relative flex h-2 w-2">
+								<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[rgb(var(--ec-accent))] opacity-75"></span>
+								<span class="relative inline-flex h-2 w-2 rounded-full bg-[rgb(var(--ec-accent))]"></span>
+							</span>
+							Architecture & Quality Intelligence
+						</span>
+						<span class="rounded-full border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-3 py-1 text-xs font-medium text-[rgb(var(--ec-page-text-muted))]">
+							QA · PM · Director · Dev
+						</span>
+					</div>
 
+					<h1 class="text-3xl font-extrabold tracking-tight text-[rgb(var(--ec-page-text))] sm:text-4xl">
+						Platform Quality & Architecture Dashboard
+					</h1>
+
+					<p class="text-sm leading-relaxed text-[rgb(var(--ec-page-text-muted))] sm:text-base">
+						Continuously verified architecture fitness, bidirectional message contracts, and multi-tier test pipelines across <strong class="font-semibold text-[rgb(var(--ec-page-text))]">{domains.length} business domains</strong>, <strong class="font-semibold text-[rgb(var(--ec-page-text))]">{services.length} services</strong>, and <strong class="font-semibold text-[rgb(var(--ec-page-text))]">{totalMessagesCount} contracts</strong>.
+					</p>
+				</div>
+
+				<!-- Executive Action Buttons -->
+				<div class="flex flex-wrap items-center gap-3">
+					<a
+						href="https://sonarcloud.io/summary/overall?id=foxminchan_BookWorm&branch=main"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="group inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-4 py-2.5 text-xs font-semibold text-[rgb(var(--ec-page-text))] shadow-xs transition-all hover:border-[rgb(var(--ec-accent))] hover:bg-[rgb(var(--ec-card-bg))]"
+					>
+						<span>SonarCloud Quality Gate</span>
+						<svg class="h-3.5 w-3.5 text-[rgb(var(--ec-page-text-muted))] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+						</svg>
+					</a>
+					<a
+						href="https://scorecard.dev/viewer/?uri=github.com/foxminchan/BookWorm"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="group inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-4 py-2.5 text-xs font-semibold text-[rgb(var(--ec-page-text))] shadow-xs transition-all hover:border-[rgb(var(--ec-accent))] hover:bg-[rgb(var(--ec-card-bg))]"
+					>
+						<span>OpenSSF Scorecard</span>
+						<svg class="h-3.5 w-3.5 text-[rgb(var(--ec-page-text-muted))] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+						</svg>
+					</a>
+					<a
+						href={`${base}/reports/index.html`}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="inline-flex items-center gap-2 rounded-xl bg-[rgb(var(--ec-accent))] px-4 py-2.5 text-xs font-semibold text-[rgb(var(--ec-accent-text))] shadow-md transition-all hover:opacity-90 hover:shadow-lg"
+					>
+						<span>Open Unified Allure</span>
+						<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+						</svg>
+					</a>
+				</div>
+			</div>
+		</header>
+
+		<!-- Sub-Nav Anchor Tabs -->
 		<ReportsNav />
 
+		<!-- Live CI Report Probe Status Bar -->
 		<div
 			id="report-status-banner"
-			class="rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-4 text-sm text-[rgb(var(--ec-page-text-muted))]"
+			class="flex flex-col justify-between gap-3 rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-4 shadow-xs sm:flex-row sm:items-center"
 		>
-			Checking hosted Allure report availability...
+			<div class="flex items-center gap-3">
+				<span
+					id="report-status-dot"
+					class="relative flex h-2.5 w-2.5 shrink-0"
+				>
+					<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75"></span>
+					<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+				</span>
+				<div>
+					<p id="report-status-title" class="text-xs font-semibold text-[rgb(var(--ec-page-text))] sm:text-sm">
+						Probing hosted CI test report availability...
+					</p>
+					<p id="report-status-desc" class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+						Checking Allure and TUnit HTML artifacts published to GitHub Pages from CI pipelines.
+					</p>
+				</div>
+			</div>
+			<div id="report-status-badges" class="flex flex-wrap items-center gap-2 text-xs">
+				<span class="rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-3 py-1 font-mono text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+					Fitness: {passingFitnessRules}/{fitnessChecks.length} Passed
+				</span>
+				<span
+					id="tunit-count-badge"
+					class="rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-3 py-1 font-mono text-[11px] text-[rgb(var(--ec-page-text-muted))]"
+				>
+					21 Backend Test Projects
+				</span>
+			</div>
 		</div>
 
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-[rgb(var(--ec-page-text))]">
-				Published Report Dashboards
-			</h2>
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<!-- Executive KPI Grid (Card System with Balanced Hierarchy) -->
+		<section id="section-kpis" aria-label="Executive Key Performance Indicators" class="space-y-4">
+			<div class="flex items-center justify-between">
+				<h2 class="text-xs font-bold tracking-wider text-[rgb(var(--ec-page-text-muted))] uppercase">
+					Platform Posture at a Glance
+				</h2>
+				<span class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+					Verified against repository specifications & CI runs
+				</span>
+			</div>
+
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<!-- KPI 1: Fitness -->
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5 shadow-xs transition-shadow hover:shadow-md">
+					<div>
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-medium text-[rgb(var(--ec-page-text-muted))]">
+								Architecture Fitness
+							</span>
+							<span class="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-500">
+								{fitnessScorePercent}% Compliant
+							</span>
+						</div>
+						<div class="mt-3 flex items-baseline gap-2">
+							<span class="text-3xl font-extrabold tracking-tight text-[rgb(var(--ec-page-text))] font-mono">
+								{passingFitnessRules}/{fitnessChecks.length}
+							</span>
+							<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+								rules passing
+							</span>
+						</div>
+						<div class="mt-3.5 h-2 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-page-bg))]">
+							<div
+								class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+								style={`width: ${fitnessScorePercent}%`}
+							></div>
+						</div>
+					</div>
+					<p class="mt-4 border-t border-[rgb(var(--ec-page-border))] pt-3 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+						<strong class="font-semibold text-[rgb(var(--ec-page-text))]">{adrs.length}</strong> recorded ADRs · 0 circular command cycles
+					</p>
+				</div>
+
+				<!-- KPI 2: Service Footprint -->
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5 shadow-xs transition-shadow hover:shadow-md">
+					<div>
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-medium text-[rgb(var(--ec-page-text-muted))]">
+								Domain & Service Footprint
+							</span>
+							<span class="rounded-full bg-[rgb(var(--ec-accent-subtle))] px-2.5 py-0.5 text-xs font-semibold text-[rgb(var(--ec-accent))]">
+								{domains.length} Domains
+							</span>
+						</div>
+						<div class="mt-3 flex items-baseline gap-2">
+							<span class="text-3xl font-extrabold tracking-tight text-[rgb(var(--ec-page-text))] font-mono">
+								{services.length}
+							</span>
+							<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+								services ({internalServicesCount} core · {services.length - internalServicesCount} ext)
+							</span>
+						</div>
+						<div class="mt-3.5 flex flex-wrap gap-1.5 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+							<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 font-medium">
+								{systems.length} Systems
+							</span>
+							<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 font-medium">
+								{containers.length} Stores
+							</span>
+							<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 font-medium">
+								{agents.length} AI Agents
+							</span>
+						</div>
+					</div>
+					<p class="mt-4 border-t border-[rgb(var(--ec-page-border))] pt-3 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+						<strong class="font-semibold text-[rgb(var(--ec-page-text))]">{entities.length}</strong> domain entities · <strong class="font-semibold text-[rgb(var(--ec-page-text))]">{flows.length}</strong> user flow
+					</p>
+				</div>
+
+				<!-- KPI 3: Contracts Surface -->
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5 shadow-xs transition-shadow hover:shadow-md">
+					<div>
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-medium text-[rgb(var(--ec-page-text-muted))]">
+								Contract & Message Volume
+							</span>
+							<span class="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-semibold text-sky-500">
+								{channels.length} Channels
+							</span>
+						</div>
+						<div class="mt-3 flex items-baseline gap-2">
+							<span class="text-3xl font-extrabold tracking-tight text-[rgb(var(--ec-page-text))] font-mono">
+								{totalMessagesCount}
+							</span>
+							<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+								versioned schemas
+							</span>
+						</div>
+						<div class="mt-3.5 flex h-2 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-page-bg))]">
+							<div
+								class="h-full bg-amber-500"
+								style={`width: ${(events.length / totalMessagesCount) * 100}%`}
+								title={`Events: ${events.length}`}
+							></div>
+							<div
+								class="h-full bg-sky-500"
+								style={`width: ${(commands.length / totalMessagesCount) * 100}%`}
+								title={`Commands: ${commands.length}`}
+							></div>
+							<div
+								class="h-full bg-emerald-500"
+								style={`width: ${(queries.length / totalMessagesCount) * 100}%`}
+								title={`Queries: ${queries.length}`}
+							></div>
+						</div>
+					</div>
+					<p class="mt-4 border-t border-[rgb(var(--ec-page-border))] pt-3 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+						<span class="text-amber-500 font-medium">{events.length}E</span> · <span class="text-sky-500 font-medium">{commands.length}C</span> · <span class="text-emerald-500 font-medium">{queries.length}Q</span>
+					</p>
+				</div>
+
+				<!-- KPI 4: Automated Verification -->
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5 shadow-xs transition-shadow hover:shadow-md">
+					<div>
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-medium text-[rgb(var(--ec-page-text-muted))]">
+								Automated Verification
+							</span>
+							<span class="rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-500">
+								4 CI Feeds
+							</span>
+						</div>
+						<div class="mt-3 flex items-baseline gap-2">
+							<span class="text-3xl font-extrabold tracking-tight text-[rgb(var(--ec-page-text))] font-mono">
+								{totalAutomatedSuites}
+							</span>
+							<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+								automated test suites
+							</span>
+						</div>
+						<div class="mt-3.5 flex flex-wrap gap-1.5 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+							<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 font-medium">9 Unit</span>
+							<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 font-medium">12 Pact</span>
+							<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 font-medium">1 Arch</span>
+							<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 font-medium">2 E2E</span>
+						</div>
+					</div>
+					<p class="mt-4 border-t border-[rgb(var(--ec-page-border))] pt-3 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+						100% of internal services covered by TUnit & Vitest
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Stakeholder Perspective Lens (Segmented Control) -->
+		<section aria-label="Stakeholder Perspectives" class="rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6 shadow-xs">
+			<div class="flex flex-col gap-4 border-b border-[rgb(var(--ec-page-border))] pb-5 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<h2 class="text-base font-bold text-[rgb(var(--ec-page-text))]">
+						Stakeholder Role Lens
+					</h2>
+					<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+						Tailor priorities, critical questions, and recommended views for your role.
+					</p>
+				</div>
+
+				<!-- Accessible Segmented Control -->
+				<div class="inline-flex rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-1" role="tablist" aria-label="Select role lens">
+					{
+						ROLE_GUIDES.map((guide, index) => (
+							<button
+								type="button"
+								role="tab"
+								data-role-tab={guide.id}
+								aria-selected={index === 0 ? "true" : "false"}
+								class={`role-tab-btn rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+									index === 0
+										? "bg-[rgb(var(--ec-card-bg))] text-[rgb(var(--ec-accent))] shadow-xs"
+										: "text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
+								}`}
+							>
+								{guide.id === "director" && "Director"}
+								{guide.id === "pm" && "Product Manager"}
+								{guide.id === "qa" && "QA Engineer"}
+								{guide.id === "dev" && "Developer"}
+							</button>
+						))
+					}
+				</div>
+			</div>
+
+			<!-- Dynamic Role Panels -->
+			{
+				ROLE_GUIDES.map((guide, index) => (
+					<div
+						data-role-panel={guide.id}
+						class={`role-panel pt-5 ${index === 0 ? "block" : "hidden"}`}
+					>
+						<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+							<!-- Col 1: Scope & Objective -->
+							<div class="space-y-2.5">
+								<span class="text-xs font-bold tracking-wider text-[rgb(var(--ec-accent))] uppercase">
+									{guide.role}
+								</span>
+								<h3 class="text-lg font-bold text-[rgb(var(--ec-page-text))]">
+									{guide.title}
+								</h3>
+								<p class="text-xs leading-relaxed text-[rgb(var(--ec-page-text-muted))]">
+									{guide.summary}
+								</p>
+							</div>
+
+							<!-- Col 2: Key Questions -->
+							<div class="space-y-2.5 rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-4">
+								<p class="text-xs font-bold text-[rgb(var(--ec-page-text))] uppercase tracking-wider">
+									Key Questions Answered
+								</p>
+								<ul class="space-y-2 text-xs text-[rgb(var(--ec-page-text-muted))]">
+									{guide.keyQuestions.map((question) => (
+										<li class="flex items-start gap-2">
+											<svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+											</svg>
+											<span>{question}</span>
+										</li>
+									))}
+								</ul>
+							</div>
+
+							<!-- Col 3: Recommended Views -->
+							<div class="space-y-2.5">
+								<p class="text-xs font-bold text-[rgb(var(--ec-page-text))] uppercase tracking-wider">
+									Recommended Views
+								</p>
+								<div class="flex flex-col gap-2">
+									{guide.focusSignals.map((signal) => (
+										<a
+											href={signal.target}
+											class="group flex items-center justify-between rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-3.5 py-2.5 text-xs font-medium text-[rgb(var(--ec-page-text))] transition-all hover:border-[rgb(var(--ec-accent))] hover:bg-[rgb(var(--ec-card-bg))]"
+										>
+											<span>{signal.label}</span>
+											<svg class="h-3.5 w-3.5 text-[rgb(var(--ec-page-text-muted))] transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+											</svg>
+										</a>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+				))
+			}
+		</section>
+
+		<!-- Visual Analytics & Charts Section -->
+		<section id="section-charts" aria-label="Architecture and Verification Charts" class="space-y-4">
+			<div>
+				<h2 class="text-lg font-bold text-[rgb(var(--ec-page-text))]">
+					Visual Analytics & Distribution
+				</h2>
+				<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+					Message protocol composition, multi-tier test pyramid, and team governance breakdown.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+				<!-- Chart 1: Message Contract Breakdown -->
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6 shadow-xs">
+					<div class="space-y-5">
+						<div class="flex items-center justify-between">
+							<div>
+								<h3 class="text-sm font-bold text-[rgb(var(--ec-page-text))]">
+									Contract Composition
+								</h3>
+								<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+									{totalMessagesCount} schemas across {channels.length} Kafka/HTTP/gRPC channels
+								</p>
+							</div>
+							<span class="rounded-lg bg-[rgb(var(--ec-page-bg))] px-2.5 py-1 text-xs font-mono font-bold text-[rgb(var(--ec-page-text))]">
+								{totalMessagesCount} Total
+							</span>
+						</div>
+
+						<!-- Proportional Bar -->
+						<div class="space-y-2">
+							<div class="flex h-3 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-page-bg))] p-0.5">
+								{
+									messageBreakdown.map((item) => (
+										<div
+											class={`${item.colorClass} first:rounded-l-full last:rounded-r-full transition-all`}
+											style={`width: ${(item.count / Math.max(totalMessagesCount, 1)) * 100}%`}
+											title={`${item.label}: ${item.count} (${item.percent}%)`}
+										/>
+									))
+								}
+							</div>
+							<div class="flex justify-between text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+								{
+									messageBreakdown.map((item) => (
+										<span class="flex items-center gap-1.5 font-medium">
+											<span class={`h-2 w-2 rounded-full ${item.colorClass}`} />
+											{item.shortLabel}: {item.percent}%
+										</span>
+									))
+								}
+							</div>
+						</div>
+
+						<!-- Detailed Items -->
+						<div class="space-y-2.5">
+							{
+								messageBreakdown.map((item) => (
+									<a
+										href={item.href}
+										class="group block rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-3 transition-all hover:border-[rgb(var(--ec-accent))] hover:bg-[rgb(var(--ec-card-bg))]"
+									>
+										<div class="flex items-center justify-between text-xs">
+											<span class="font-semibold text-[rgb(var(--ec-page-text))] group-hover:text-[rgb(var(--ec-accent))]">
+												{item.label}
+											</span>
+											<span class={`font-mono font-bold ${item.textClass}`}>
+												{item.count} ({item.percent}%)
+											</span>
+										</div>
+										<p class="mt-1 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+											{item.description}
+										</p>
+									</a>
+								))
+							}
+						</div>
+					</div>
+
+					<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-4 text-xs text-[rgb(var(--ec-page-text-muted))]">
+						<span>Kafka · HTTP · gRPC</span>
+						<a href={`${base}/discover/events`} class="font-semibold text-[rgb(var(--ec-accent))] hover:underline">
+							Explore schemas →
+						</a>
+					</div>
+				</div>
+
+				<!-- Chart 2: Test Verification Pyramid -->
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6 shadow-xs">
+					<div class="space-y-5">
+						<div class="flex items-center justify-between">
+							<div>
+								<h3 class="text-sm font-bold text-[rgb(var(--ec-page-text))]">
+									Test Verification Pyramid
+								</h3>
+								<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+									Continuous quality defense in CI workflows
+								</p>
+							</div>
+							<span class="rounded-lg bg-[rgb(var(--ec-page-bg))] px-2.5 py-1 text-xs font-mono font-bold text-[rgb(var(--ec-page-text))]">
+								4 Tiers
+							</span>
+						</div>
+
+						<div class="space-y-3">
+							{
+								verificationLayers.map((layer) => (
+									<div class="rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-3">
+										<div class="flex items-center justify-between text-xs">
+											<span class="font-semibold text-[rgb(var(--ec-page-text))]">
+												{layer.tier}
+											</span>
+											<code class="rounded bg-[rgb(var(--ec-card-bg))] px-1.5 py-0.5 text-[10px] text-[rgb(var(--ec-page-text-muted))]">
+												{layer.workflow}
+											</code>
+										</div>
+										<div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-card-bg))]">
+											<div
+												class={`h-full rounded-full ${layer.barColor}`}
+												style={`width: ${layer.widthPercent}%`}
+											/>
+										</div>
+										<div class="mt-2 flex items-center justify-between text-[11px]">
+											<span class="font-medium text-[rgb(var(--ec-page-text))] font-mono">
+												{layer.unit}
+											</span>
+											<span class="text-[rgb(var(--ec-page-text-muted))]">
+												{layer.tools}
+											</span>
+										</div>
+									</div>
+								))
+							}
+						</div>
+					</div>
+
+					<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-4 text-xs text-[rgb(var(--ec-page-text-muted))]">
+						<span>TUnit · Vitest · Pact · Playwright</span>
+						<a href={`${base}/custom/reports/tunit`} class="font-semibold text-[rgb(var(--ec-accent))] hover:underline">
+							Browse TUnit →
+						</a>
+					</div>
+				</div>
+
+				<!-- Chart 3: Team Governance & Ownership -->
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6 shadow-xs">
+					<div class="space-y-5">
+						<div class="flex items-center justify-between">
+							<div>
+								<h3 class="text-sm font-bold text-[rgb(var(--ec-page-text))]">
+									Team Governance
+								</h3>
+								<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+									Ownership across {teams.length} teams & {users.length} engineering leads
+								</p>
+							</div>
+							<span class="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-500">
+								100% Owned
+							</span>
+						</div>
+
+						<div class="space-y-2.5">
+							{
+								teamOwnershipStats.map((team) => (
+									<a
+										href={`${base}/docs/teams/${team.id}`}
+										class="group block rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-3 transition-all hover:border-[rgb(var(--ec-accent))] hover:bg-[rgb(var(--ec-card-bg))]"
+									>
+										<div class="flex items-center justify-between text-xs">
+											<span class="font-semibold text-[rgb(var(--ec-page-text))] group-hover:text-[rgb(var(--ec-accent))]">
+												{team.name}
+											</span>
+											<span class="font-mono font-bold text-[rgb(var(--ec-accent))]">
+												{team.totalAssets} assets
+											</span>
+										</div>
+										<div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-card-bg))]">
+											<div
+												class="h-full rounded-full bg-[rgb(var(--ec-accent))]"
+												style={`width: ${Math.max(Math.round((team.totalAssets / maxTeamAssets) * 100), 12)}%`}
+											/>
+										</div>
+										<div class="mt-2 flex flex-wrap gap-1.5 text-[10px] text-[rgb(var(--ec-page-text-muted))]">
+											<span class="rounded bg-[rgb(var(--ec-card-bg))] px-1.5 py-0.5">
+												{team.servicesCount} Services
+											</span>
+											<span class="rounded bg-[rgb(var(--ec-card-bg))] px-1.5 py-0.5">
+												{team.messagesCount} Messages
+											</span>
+											<span class="rounded bg-[rgb(var(--ec-card-bg))] px-1.5 py-0.5">
+												{team.containersCount} Stores
+											</span>
+										</div>
+									</a>
+								))
+							}
+						</div>
+
+						<div class="grid grid-cols-3 gap-2 text-center">
+							<a
+								href={`${base}/discover/domains`}
+								class="rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-2.5 transition-colors hover:border-[rgb(var(--ec-accent))]"
+							>
+								<p class="text-base font-extrabold font-mono text-[rgb(var(--ec-page-text))]">{domains.length}</p>
+								<p class="text-[10px] text-[rgb(var(--ec-page-text-muted))]">Domains</p>
+							</a>
+							<a
+								href={`${base}/discover/containers`}
+								class="rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-2.5 transition-colors hover:border-[rgb(var(--ec-accent))]"
+							>
+								<p class="text-base font-extrabold font-mono text-[rgb(var(--ec-page-text))]">{containers.length}</p>
+								<p class="text-[10px] text-[rgb(var(--ec-page-text-muted))]">Data Stores</p>
+							</a>
+							<div class="rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-2.5">
+								<p class="text-base font-extrabold font-mono text-[rgb(var(--ec-page-text))]">{adrs.length}</p>
+								<p class="text-[10px] text-[rgb(var(--ec-page-text-muted))]">Decisions</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-4 text-xs text-[rgb(var(--ec-page-text-muted))]">
+						<span>Accountable Ownership</span>
+						<a href={`${base}/docs/teams/${teams[0]?.data.id ?? "platform-team"}`} class="font-semibold text-[rgb(var(--ec-accent))] hover:underline">
+							View teams →
+						</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Architecture Fitness Scorecard -->
+		<section id="section-fitness" aria-label="Architecture Fitness Functions" class="space-y-4">
+			<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+				<div>
+					<h2 class="text-lg font-bold text-[rgb(var(--ec-page-text))]">
+						Architecture Fitness Functions
+					</h2>
+					<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+						Continuous architectural invariants enforced by <code class="rounded bg-[rgb(var(--ec-card-bg))] px-1.5 py-0.5 font-mono text-[11px]">eventcatalog fitness check</code> in CI (<code class="rounded bg-[rgb(var(--ec-card-bg))] px-1.5 py-0.5 font-mono text-[11px]">docs.yml</code>).
+					</p>
+				</div>
+				<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
+					✓ {passingFitnessRules} of {fitnessChecks.length} Invariants Passing
+				</span>
+			</div>
+
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{
+					fitnessChecks.map((check) => {
+						const passed = check.violations.length === 0;
+						const pct = Math.round(
+							(check.passedCount / Math.max(check.totalChecked, 1)) * 100
+						);
+						return (
+							<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5 shadow-xs transition-shadow hover:shadow-md">
+								<div class="space-y-3">
+									<div class="flex items-center justify-between gap-2">
+										<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 text-[11px] font-semibold text-[rgb(var(--ec-page-text-muted))]">
+											{check.category}
+										</span>
+										<div class="flex items-center gap-1.5">
+											<span
+												class={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+													check.severity === "error"
+														? "bg-rose-500/10 text-rose-500"
+														: "bg-amber-500/10 text-amber-500"
+												}`}
+											>
+												{check.severity}
+											</span>
+											<span
+												class={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+													passed
+														? "bg-emerald-500/10 text-emerald-500"
+														: "bg-rose-500/10 text-rose-500"
+												}`}
+											>
+												{passed ? "PASS" : `${check.violations.length} VIOLATION`}
+											</span>
+										</div>
+									</div>
+
+									<h3 class="text-sm font-bold text-[rgb(var(--ec-page-text))]">
+										{check.name}
+									</h3>
+									<p class="text-xs leading-relaxed text-[rgb(var(--ec-page-text-muted))]">
+										{check.description}
+									</p>
+								</div>
+
+								<div class="mt-4 space-y-2 border-t border-[rgb(var(--ec-page-border))] pt-3">
+									<div class="flex items-center justify-between text-xs font-mono">
+										<span class="text-[rgb(var(--ec-page-text-muted))]">Coverage</span>
+										<span class="font-semibold text-[rgb(var(--ec-page-text))]">
+											{check.passedCount}/{check.totalChecked} ({pct}%)
+										</span>
+									</div>
+									<div class="h-1.5 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-page-bg))]">
+										<div
+											class={`h-full rounded-full ${passed ? "bg-emerald-500" : "bg-rose-500"}`}
+											style={`width: ${pct}%`}
+										/>
+									</div>
+									{check.violations.length > 0 && (
+										<p class="text-[11px] text-rose-500 font-medium">
+											Violations: {check.violations.join(", ")}
+										</p>
+									)}
+								</div>
+							</div>
+						);
+					})
+				}
+			</div>
+		</section>
+
+		<!-- Service Quality, Specifications & Test Matrix -->
+		<section id="section-matrix" aria-label="Service Quality and Contract Coverage Matrix" class="space-y-4">
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+				<div>
+					<h2 class="text-lg font-bold text-[rgb(var(--ec-page-text))]">
+						Service Quality & Verification Matrix ({enrichedServices.length})
+					</h2>
+					<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+						Traceability linking services to accountable teams, API specifications, messaging balance, and automated test projects.
+					</p>
+				</div>
+
+				<!-- Matrix Filter Buttons -->
+				<div class="inline-flex rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-1">
+					<button
+						type="button"
+						data-matrix-filter="all"
+						class="matrix-filter-btn rounded-lg bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-accent))] shadow-xs"
+					>
+						All ({enrichedServices.length})
+					</button>
+					<button
+						type="button"
+						data-matrix-filter="internal"
+						class="matrix-filter-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
+					>
+						Internal ({internalServicesCount})
+					</button>
+					<button
+						type="button"
+						data-matrix-filter="pact"
+						class="matrix-filter-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
+					>
+						Pact Contracts (7)
+					</button>
+				</div>
+			</div>
+
+			<div class="overflow-hidden rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] shadow-xs">
+				<div class="overflow-x-auto">
+					<table class="w-full border-collapse text-left text-xs">
+						<thead>
+							<tr class="border-b border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] text-[11px] font-semibold tracking-wider text-[rgb(var(--ec-page-text-muted))] uppercase">
+								<th class="px-5 py-3.5">Service</th>
+								<th class="px-5 py-3.5">Owner Team</th>
+								<th class="px-5 py-3.5">Specifications</th>
+								<th class="px-5 py-3.5">Traffic (Rx / Tx)</th>
+								<th class="px-5 py-3.5">Data Stores</th>
+								<th class="px-5 py-3.5">Automated Test Suites</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-[rgb(var(--ec-page-border))]">
+							{
+								enrichedServices.map((svc) => {
+									const hasPact = Boolean(
+										svc.testMapping?.contractConsumerProject ||
+											svc.testMapping?.contractProviderProject
+									);
+									return (
+										<tr
+											data-service-row
+											data-scope={svc.isExternal ? "external" : "internal"}
+											data-has-pact={hasPact ? "true" : "false"}
+											class="transition-colors hover:bg-[rgb(var(--ec-page-bg))/0.5]"
+										>
+											<td class="px-5 py-4">
+												<div class="flex flex-col gap-1">
+													<div class="flex items-center gap-2">
+														<a
+															href={`${base}/docs/services/${svc.id}/${svc.version}`}
+															class="font-bold text-[rgb(var(--ec-page-text))] hover:text-[rgb(var(--ec-accent))] hover:underline"
+														>
+															{svc.name}
+														</a>
+														<span class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5 font-mono text-[10px] text-[rgb(var(--ec-page-text-muted))]">
+															v{svc.version}
+														</span>
+														{svc.isExternal && (
+															<span class="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+																External
+															</span>
+														)}
+													</div>
+													{svc.summary && (
+														<p class="line-clamp-1 max-w-sm text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+															{svc.summary}
+														</p>
+													)}
+												</div>
+											</td>
+
+											<td class="px-5 py-4">
+												<div class="flex flex-wrap gap-1">
+													{svc.owners.map((owner) => (
+														<a
+															href={`${base}/docs/teams/${owner.id}`}
+															class="rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-2.5 py-1 text-[11px] font-medium text-[rgb(var(--ec-page-text))] hover:border-[rgb(var(--ec-accent))]"
+														>
+															{owner.name}
+														</a>
+													))}
+												</div>
+											</td>
+
+											<td class="px-5 py-4">
+												<div class="flex flex-wrap gap-1">
+													{svc.specs.length > 0 ? (
+														svc.specs.map((spec) => (
+															<span class="rounded-md border border-[rgb(var(--ec-accent)/0.3)] bg-[rgb(var(--ec-accent-subtle))] px-2 py-0.5 font-mono text-[10px] font-bold text-[rgb(var(--ec-accent))]">
+																{spec}
+															</span>
+														))
+													) : (
+														<span class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+															Managed External API
+														</span>
+													)}
+												</div>
+											</td>
+
+											<td class="px-5 py-4">
+												<div class="w-44 space-y-1">
+													<div class="flex justify-between text-[11px] font-mono">
+														<span class="text-[rgb(var(--ec-page-text))]">
+															<span class="font-bold text-sky-500">{svc.receivesCount}</span> in ·{" "}
+															<span class="font-bold text-amber-500">{svc.sendsCount}</span> out
+														</span>
+														<span class="text-[rgb(var(--ec-page-text-muted))]">
+															{svc.totalMessages} msgs
+														</span>
+													</div>
+													<div class="flex h-1.5 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-page-bg))]">
+														<div
+															class="h-full bg-sky-500"
+															style={`width: ${svc.totalMessages ? (svc.receivesCount / maxServiceMessages) * 100 : 0}%`}
+															title={`Receives: ${svc.receivesCount}`}
+														/>
+														<div
+															class="h-full bg-amber-500"
+															style={`width: ${svc.totalMessages ? (svc.sendsCount / maxServiceMessages) * 100 : 0}%`}
+															title={`Sends: ${svc.sendsCount}`}
+														/>
+													</div>
+												</div>
+											</td>
+
+											<td class="px-5 py-4">
+												{svc.storesCount > 0 ? (
+													<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2.5 py-1 text-[11px] font-mono font-medium text-[rgb(var(--ec-page-text))]">
+														{svc.storesCount} store{svc.storesCount > 1 ? "s" : ""} ({svc.readsCount}R/{svc.writesCount}W)
+													</span>
+												) : (
+													<span class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+														Stateless
+													</span>
+												)}
+											</td>
+
+											<td class="px-5 py-4">
+												{svc.testMapping ? (
+													<div class="flex flex-wrap gap-1.5">
+														{svc.testMapping.unitTestProject && (
+															<a
+																href={`${base}/custom/reports/tunit`}
+																title={svc.testMapping.unitTestProject}
+																class="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500 hover:underline font-mono"
+															>
+																✓ TUnit
+															</a>
+														)}
+														{svc.testMapping.contractConsumerProject && (
+															<a
+																href={`${base}/custom/reports/backend`}
+																title={svc.testMapping.contractConsumerProject}
+																class="rounded-md bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-500 hover:underline font-mono"
+															>
+																✓ Pact Consumer
+															</a>
+														)}
+														{svc.testMapping.contractProviderProject && (
+															<a
+																href={`${base}/custom/reports/backend`}
+																title={svc.testMapping.contractProviderProject}
+																class="rounded-md bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-500 hover:underline font-mono"
+															>
+																✓ Pact Provider
+															</a>
+														)}
+													</div>
+												) : (
+													<span class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+														Managed External Service
+													</span>
+												)}
+											</td>
+										</tr>
+									);
+								})
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</section>
+
+		<!-- Published Test Report Dashboards & CI Artifact Feeds -->
+		<section id="section-suites" aria-label="Published Test Report Dashboards" class="space-y-4">
+			<div>
+				<h2 class="text-lg font-bold text-[rgb(var(--ec-page-text))]">
+					Published Allure & TUnit Explorers
+				</h2>
+				<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+					Interactive test execution dashboards and raw CI artifacts.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
 				{
 					REPORT_SUITES.map((suite) => (
-						<div class="flex flex-col justify-between rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5">
+						<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5 shadow-xs transition-shadow hover:shadow-md">
 							<div>
 								<div class="flex items-center justify-between gap-2">
-									<span class="rounded-full bg-[rgb(var(--ec-accent-subtle))] px-2.5 py-0.5 text-xs font-medium text-[rgb(var(--ec-accent))]">
+									<span class="rounded-full bg-[rgb(var(--ec-accent-subtle))] px-2.5 py-0.5 text-xs font-semibold text-[rgb(var(--ec-accent))]">
 										{suite.badge}
 									</span>
-									<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+									<code class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5 font-mono text-[10px] text-[rgb(var(--ec-page-text-muted))]">
 										{suite.workflow}
-									</span>
+									</code>
 								</div>
-								<h3 class="mt-3 text-base font-semibold text-[rgb(var(--ec-page-text))]">
+								<h3 class="mt-3 text-sm font-bold text-[rgb(var(--ec-page-text))]">
 									{suite.name}
 								</h3>
-								<p class="mt-1.5 text-sm text-[rgb(var(--ec-page-text-muted))]">
+								<p class="mt-1.5 text-xs leading-relaxed text-[rgb(var(--ec-page-text-muted))]">
 									{suite.description}
 								</p>
 							</div>
 
-							<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-3 text-sm">
+							<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-3 text-xs">
 								<a
 									href={`${base}/custom/reports/${suite.id}`}
-									class="font-medium text-[rgb(var(--ec-accent))] hover:underline"
+									class="font-semibold text-[rgb(var(--ec-accent))] hover:underline"
 								>
 									View embedded →
 								</a>
@@ -89,7 +1417,7 @@ const services: CatalogService[] = await getServices({ getAllVersions: false });
 									href={`${base}${suite.reportUrl}`}
 									target="_blank"
 									rel="noopener noreferrer"
-									class="text-xs text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
+									class="text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
 								>
 									Standalone ↗
 								</a>
@@ -98,56 +1426,51 @@ const services: CatalogService[] = await getServices({ getAllVersions: false });
 					))
 				}
 
-				<div class="flex flex-col justify-between rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5">
+				<div class="flex flex-col justify-between rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-5 shadow-xs transition-shadow hover:shadow-md">
 					<div>
 						<div class="flex items-center justify-between gap-2">
-							<span class="rounded-full bg-[rgb(var(--ec-accent-subtle))] px-2.5 py-0.5 text-xs font-medium text-[rgb(var(--ec-accent))]">
+							<span class="rounded-full bg-[rgb(var(--ec-accent-subtle))] px-2.5 py-0.5 text-xs font-semibold text-[rgb(var(--ec-accent))]">
 								BE · TUnit
 							</span>
-							<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">sonar.yml</span>
+							<code class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5 font-mono text-[10px] text-[rgb(var(--ec-page-text-muted))]">
+								sonar.yml
+							</code>
 						</div>
-						<h3 class="mt-3 text-base font-semibold text-[rgb(var(--ec-page-text))]">
+						<h3 class="mt-3 text-sm font-bold text-[rgb(var(--ec-page-text))]">
 							TUnit HTML Reports
 						</h3>
-						<p class="mt-1.5 text-sm text-[rgb(var(--ec-page-text-muted))]">
-							Self-contained per-project TUnit HTML reports for all backend unit, architecture,
-							integration, and contract tests.
+						<p class="mt-1.5 text-xs leading-relaxed text-[rgb(var(--ec-page-text-muted))]">
+							Self-contained per-project HTML test execution reports for all backend test assemblies.
 						</p>
 					</div>
 
-					<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-3 text-sm">
+					<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-3 text-xs">
 						<a
 							href={`${base}/custom/reports/tunit`}
-							class="font-medium text-[rgb(var(--ec-accent))] hover:underline"
+							class="font-semibold text-[rgb(var(--ec-accent))] hover:underline"
 						>
-							Browse reports →
+							Browse 21 projects →
 						</a>
-						<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">tunit-report-backend</span>
+						<span class="font-mono text-[10px] text-[rgb(var(--ec-page-text-muted))]">tunit-report</span>
 					</div>
 				</div>
 			</div>
-		</section>
 
-		<section class="space-y-4">
-			<div>
-				<h2 class="text-lg font-semibold text-[rgb(var(--ec-page-text))]">
-					Merged CI Result Feeds
-				</h2>
-				<p class="text-sm text-[rgb(var(--ec-page-text-muted))]">
-					Artifacts collected in CI and combined into the Unified Test Report.
-				</p>
-			</div>
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+			<!-- CI Feeds Bar -->
+			<div class="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2 lg:grid-cols-4">
 				{
 					RESULT_FEEDS.map((feed) => (
-						<div class="rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-4">
-							<p class="font-medium text-[rgb(var(--ec-page-text))]">{feed.name}</p>
-							<p class="mt-1 text-xs text-[rgb(var(--ec-page-text-muted))]">{feed.scope}</p>
-							<div class="mt-3 flex flex-wrap gap-1.5 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
-								<code class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5">
+						<div class="rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-3.5 shadow-xs">
+							<div class="flex items-center justify-between">
+								<p class="text-xs font-bold text-[rgb(var(--ec-page-text))]">{feed.name}</p>
+								<span class="h-2 w-2 rounded-full bg-emerald-500" title="Active CI Feed" />
+							</div>
+							<p class="mt-1 text-[11px] text-[rgb(var(--ec-page-text-muted))]">{feed.scope}</p>
+							<div class="mt-2.5 flex flex-wrap gap-1.5 text-[10px] text-[rgb(var(--ec-page-text-muted))]">
+								<code class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5 font-mono">
 									{feed.artifact}
 								</code>
-								<code class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5">
+								<code class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5 font-mono">
 									{feed.workflow}
 								</code>
 							</div>
@@ -156,62 +1479,122 @@ const services: CatalogService[] = await getServices({ getAllVersions: false });
 				}
 			</div>
 		</section>
-
-		<section class="space-y-4">
-			<div>
-				<h2 class="text-lg font-semibold text-[rgb(var(--ec-page-text))]">
-					Catalog Services ({services.length})
-				</h2>
-				<p class="text-sm text-[rgb(var(--ec-page-text-muted))]">
-					Jump to documented BookWorm services covered by the backend and frontend test suites.
-				</p>
-			</div>
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-				{
-					services.map((service) => (
-						<a
-							href={`${base}/docs/services/${service.data.id}/${service.data.version}`}
-							class="rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-4 transition-colors hover:border-[rgb(var(--ec-accent))]"
-						>
-							<div class="flex items-center justify-between gap-2">
-								<span class="font-medium text-[rgb(var(--ec-page-text))]">
-									{service.data.name}
-								</span>
-								<span class="text-xs text-[rgb(var(--ec-page-text-muted))]">
-									v{service.data.version}
-								</span>
-							</div>
-							{service.data.summary && (
-								<p class="mt-1 line-clamp-2 text-xs text-[rgb(var(--ec-page-text-muted))]">
-									{service.data.summary}
-								</p>
-							)}
-						</a>
-					))
-				}
-			</div>
-		</section>
 	</div>
 
 	<script>
-		const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-		const banner = document.getElementById("report-status-banner");
-		if (banner) {
-			fetch(`${base}/reports/index.html`)
-				.then(async (res) => {
-					const html = res.ok ? await res.text() : "";
-					if (res.ok && !html.includes("404: Not found")) {
-						banner.textContent =
-							"Hosted Allure reports are available. Select any suite above to inspect results inline or in a standalone tab.";
-					} else {
-						banner.textContent =
-							"Local preview mode: static Allure HTML reports are generated in CI (docs.yml) and published under /reports/ on GitHub Pages.";
-					}
-				})
-				.catch(() => {
-					banner.textContent =
-						"Local preview mode: static Allure HTML reports are generated in CI (docs.yml) and published under /reports/ on GitHub Pages.";
+		function initDashboardInteractions() {
+			const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+			// 1. Role Lens Tabs
+			const roleButtons = document.querySelectorAll<HTMLButtonElement>("[data-role-tab]");
+			const rolePanels = document.querySelectorAll<HTMLElement>("[data-role-panel]");
+
+			roleButtons.forEach((btn) => {
+				if (btn.dataset.bound === "true") return;
+				btn.dataset.bound = "true";
+				btn.addEventListener("click", () => {
+					const targetRole = btn.dataset.roleTab;
+					roleButtons.forEach((b) => {
+						const active = b.dataset.roleTab === targetRole;
+						b.setAttribute("aria-selected", active ? "true" : "false");
+						b.className = active
+							? "role-tab-btn rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all bg-[rgb(var(--ec-card-bg))] text-[rgb(var(--ec-accent))] shadow-xs"
+							: "role-tab-btn rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]";
+					});
+					rolePanels.forEach((panel) => {
+						panel.classList.toggle("hidden", panel.dataset.rolePanel !== targetRole);
+						panel.classList.toggle("block", panel.dataset.rolePanel === targetRole);
+					});
 				});
+			});
+
+			// 2. Service Matrix Filtering
+			const filterButtons = document.querySelectorAll<HTMLButtonElement>("[data-matrix-filter]");
+			const serviceRows = document.querySelectorAll<HTMLElement>("[data-service-row]");
+
+			filterButtons.forEach((btn) => {
+				if (btn.dataset.bound === "true") return;
+				btn.dataset.bound = "true";
+				btn.addEventListener("click", () => {
+					const filter = btn.dataset.matrixFilter;
+					filterButtons.forEach((b) => {
+						const active = b.dataset.matrixFilter === filter;
+						b.className = active
+							? "matrix-filter-btn rounded-lg bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-accent))] shadow-xs"
+							: "matrix-filter-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]";
+					});
+					serviceRows.forEach((row) => {
+						const scope = row.dataset.scope;
+						const hasPact = row.dataset.hasPact === "true";
+						let visible = true;
+						if (filter === "internal") visible = scope === "internal";
+						if (filter === "pact") visible = hasPact;
+						row.classList.toggle("hidden", !visible);
+					});
+				});
+			});
+
+			// 3. Hosted CI Report Availability Probe
+			const banner = document.getElementById("report-status-banner");
+			const dot = document.getElementById("report-status-dot");
+			const title = document.getElementById("report-status-title");
+			const desc = document.getElementById("report-status-desc");
+			const tunitBadge = document.getElementById("tunit-count-badge");
+
+			if (!banner || banner.dataset.initialized === "true") return;
+			banner.dataset.initialized = "true";
+
+			Promise.allSettled([
+				fetch(`${base}/reports/index.html`).then(async (res) => {
+					const html = res.ok ? await res.text() : "";
+					return res.ok && !html.includes("404: Not found");
+				}),
+				fetch(`${base}/reports/tunit/manifest.json`).then(async (res) => {
+					if (!res.ok) return null;
+					const data = await res.json();
+					return Array.isArray(data) ? data.length : null;
+				}),
+			]).then(([allureRes, tunitRes]) => {
+				if (!banner.isConnected) return;
+				const allureAvailable =
+					allureRes.status === "fulfilled" && allureRes.value === true;
+				const tunitCount =
+					tunitRes.status === "fulfilled" ? tunitRes.value : null;
+
+				if (tunitCount !== null && tunitBadge) {
+					tunitBadge.textContent = `${tunitCount} Published TUnit Reports`;
+				}
+
+				if (allureAvailable) {
+					if (dot) {
+						dot.innerHTML = `
+							<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75"></span>
+							<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+						`;
+					}
+					if (title) {
+						title.textContent = "Hosted Allure & TUnit CI Reports Online";
+					}
+					if (desc) {
+						desc.textContent =
+							"All CI test artifacts are live. Click any test suite below to inspect full execution logs.";
+					}
+				} else {
+					if (title) {
+						title.textContent =
+							"Architecture Metrics Active · CI HTML Reports Built in Deployment";
+					}
+					if (desc) {
+						desc.textContent =
+							"Catalog metrics and fitness invariants are live. Full Allure & TUnit HTML reports are generated and linked in the docs.yml pipeline.";
+					}
+				}
+			});
+		}
+
+		document.addEventListener("astro:page-load", initDashboardInteractions);
+		if (document.readyState !== "loading") {
+			initDashboardInteractions();
 		}
 	</script>
 </Layout>

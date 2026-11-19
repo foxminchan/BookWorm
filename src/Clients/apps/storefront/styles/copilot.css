@@ -89,9 +89,6 @@
   padding: 0.75rem;
   font-size: 0.875rem;
   resize: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
 }
 
 [data-copilotkit-textarea]:focus {
@@ -111,19 +108,12 @@
   border-radius: calc(var(--copilot-radius) - 2px);
   padding: 0.5rem 1rem;
   font-weight: 500;
-  transition:
-    opacity 0.2s,
-    transform 0.1s;
   border: none;
   cursor: pointer;
 }
 
 [data-copilotkit-send-button]:hover:not(:disabled) {
   opacity: 0.9;
-}
-
-[data-copilotkit-send-button]:active:not(:disabled) {
-  transform: scale(0.98);
 }
 
 [data-copilotkit-send-button]:disabled {
@@ -153,15 +143,6 @@
   height: 8px;
   border-radius: 50%;
   background: var(--copilot-muted-foreground);
-  animation: typing-pulse 1.4s infinite;
-}
-
-.copilot-typing-indicator span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.copilot-typing-indicator span:nth-child(3) {
-  animation-delay: 0.4s;
 }
 
 @keyframes typing-pulse {
@@ -198,9 +179,6 @@
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
   margin: 0.25rem 0.25rem 0 0;
 }
 
@@ -253,6 +231,40 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  [data-copilotkit-textarea] {
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+
+  [data-copilotkit-send-button] {
+    transition:
+      opacity 0.2s,
+      transform 0.1s;
+  }
+
+  [data-copilotkit-send-button]:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .copilot-typing-indicator span {
+    animation: typing-pulse 1.4s infinite;
+  }
+
+  .copilot-typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .copilot-typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  [data-copilotkit-action-button] {
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+  }
+
   [data-copilotkit-message] {
     animation: slide-up 0.3s ease-out;
   }

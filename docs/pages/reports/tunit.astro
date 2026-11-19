@@ -60,8 +60,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 				></iframe>
 
 				<div
+					id="tunit-loading"
+					class="flex h-full flex-col items-center justify-center p-8 text-center text-sm text-[rgb(var(--ec-page-text-muted))]"
+				>
+					Loading TUnit reports...
+				</div>
+
+				<div
 					id="tunit-fallback"
-					class="flex h-full flex-col items-center justify-center p-8 text-center"
+					class="hidden h-full flex-col items-center justify-center p-8 text-center"
 				>
 					<div
 						class="max-w-md rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6"
@@ -94,67 +101,92 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 			path: string;
 		};
 
-		const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-		const withBase = (path: string) =>
-			path.startsWith("http") || (base && path.startsWith(base)) ? path : `${base}${path}`;
-
-		const sidebar = document.getElementById("tunit-sidebar");
-		const list = document.getElementById("tunit-project-list");
-		const frame = document.getElementById("tunit-frame") as HTMLIFrameElement | null;
-		const fallback = document.getElementById("tunit-fallback");
-		const standaloneLink = document.getElementById(
-			"tunit-standalone-link"
-		) as HTMLAnchorElement | null;
-
-		function selectReport(entry: TUnitEntry, buttons: HTMLButtonElement[]) {
-			const reportPath = withBase(entry.path);
-			if (frame) {
-				frame.src = reportPath;
-				frame.classList.remove("hidden");
-			}
+		function showTunitFallback(loading: HTMLElement | null, fallback: HTMLElement | null) {
+			loading?.classList.add("hidden");
 			if (fallback) {
-				fallback.classList.add("hidden");
-			}
-			if (standaloneLink) {
-				standaloneLink.href = reportPath;
-				standaloneLink.classList.remove("hidden");
-				standaloneLink.classList.add("inline-flex");
-			}
-			for (const btn of buttons) {
-				const active = btn.dataset.path === entry.path;
-				btn.className = active
-					? "w-full rounded-lg bg-[rgb(var(--ec-accent))] px-2.5 py-2 text-left text-xs font-medium text-[rgb(var(--ec-accent-text))]"
-					: "w-full rounded-lg px-2.5 py-2 text-left text-xs text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-accent-subtle))] hover:text-[rgb(var(--ec-page-text))]";
+				fallback.classList.remove("hidden");
+				fallback.classList.add("flex");
 			}
 		}
 
-		fetch(`${base}/reports/tunit/manifest.json`)
-			.then((res) => {
-				if (!res.ok) throw new Error("Manifest not found");
-				return res.json() as Promise<TUnitEntry[]>;
-			})
-			.then((entries) => {
-				if (!Array.isArray(entries) || entries.length === 0 || !list || !sidebar) return;
+		function initTunitReports() {
+			const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+			const withBase = (path: string) =>
+				path.startsWith("http") || (base && path.startsWith(base)) ? path : `${base}${path}`;
 
-				sidebar.classList.remove("hidden");
-				const buttons: HTMLButtonElement[] = [];
+			const sidebar = document.getElementById("tunit-sidebar");
+			const list = document.getElementById("tunit-project-list");
+			const frame = document.getElementById("tunit-frame") as HTMLIFrameElement | null;
+			const loading = document.getElementById("tunit-loading");
+			const fallback = document.getElementById("tunit-fallback");
+			const standaloneLink = document.getElementById(
+				"tunit-standalone-link"
+			) as HTMLAnchorElement | null;
 
-				for (const entry of entries) {
-					const li = document.createElement("li");
-					const btn = document.createElement("button");
-					btn.type = "button";
-					btn.dataset.path = entry.path;
-					btn.textContent = entry.name;
-					btn.addEventListener("click", () => selectReport(entry, buttons));
-					li.appendChild(btn);
-					list.appendChild(li);
-					buttons.push(btn);
+			if (!list || !sidebar || list.dataset.initialized === "true") return;
+			list.dataset.initialized = "true";
+
+			function selectReport(entry: TUnitEntry, buttons: HTMLButtonElement[]) {
+				const reportPath = withBase(entry.path);
+				if (frame) {
+					frame.src = reportPath;
+					frame.classList.remove("hidden");
 				}
+				loading?.classList.add("hidden");
+				if (fallback) {
+					fallback.classList.add("hidden");
+				}
+				if (standaloneLink) {
+					standaloneLink.href = reportPath;
+					standaloneLink.classList.remove("hidden");
+					standaloneLink.classList.add("inline-flex");
+				}
+				for (const btn of buttons) {
+					const active = btn.dataset.path === entry.path;
+					btn.className = active
+						? "w-full rounded-lg bg-[rgb(var(--ec-accent))] px-2.5 py-2 text-left text-xs font-medium text-[rgb(var(--ec-accent-text))]"
+						: "w-full rounded-lg px-2.5 py-2 text-left text-xs text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-accent-subtle))] hover:text-[rgb(var(--ec-page-text))]";
+				}
+			}
 
-				selectReport(entries[0], buttons);
-			})
-			.catch(() => {
-				// Keep fallback visible in local preview mode
-			});
+			fetch(`${base}/reports/tunit/manifest.json`)
+				.then((res) => {
+					if (!res.ok) throw new Error("Manifest not found");
+					return res.json() as Promise<TUnitEntry[]>;
+				})
+				.then((entries) => {
+					if (!list.isConnected) return;
+					if (!Array.isArray(entries) || entries.length === 0) {
+						showTunitFallback(loading, fallback);
+						return;
+					}
+
+					sidebar.classList.remove("hidden");
+					const buttons: HTMLButtonElement[] = [];
+
+					for (const entry of entries) {
+						const li = document.createElement("li");
+						const btn = document.createElement("button");
+						btn.type = "button";
+						btn.dataset.path = entry.path;
+						btn.textContent = entry.name;
+						btn.addEventListener("click", () => selectReport(entry, buttons));
+						li.appendChild(btn);
+						list.appendChild(li);
+						buttons.push(btn);
+					}
+
+					selectReport(entries[0], buttons);
+				})
+				.catch(() => {
+					if (!list.isConnected) return;
+					showTunitFallback(loading, fallback);
+				});
+		}
+
+		document.addEventListener("astro:page-load", initTunitReports);
+		if (document.readyState !== "loading") {
+			initTunitReports();
+		}
 	</script>
 </Layout>

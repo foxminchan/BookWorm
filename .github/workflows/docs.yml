@@ -176,6 +176,19 @@ jobs:
             echo "No Allure results found to merge."
           fi
 
+      - name: ⬇️ Download Allure Report (Backend)
+        if: github.event_name != 'pull_request'
+        uses: dawidd6/action-download-artifact@v28
+        with:
+          name: allure-report-backend
+          path: docs/dist/reports/backend
+          workflow: sonar.yml
+          workflow_search: true
+          branch: main
+          event: push
+          search_artifacts: true
+          if_no_artifact_found: warn
+
       - name: ⬇️ Download Allure Report (Backoffice)
         if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28
