@@ -7,12 +7,16 @@ on:
       - main
     paths:
       - .github/workflows/docs.yml
+      - .github/workflows/scripts/generate-tunit-manifest.sh
+      - .github/workflows/scripts/generate-unified-allure-report.sh
       - docs/**
   pull_request:
     branches:
       - main
     paths:
       - .github/workflows/docs.yml
+      - .github/workflows/scripts/generate-tunit-manifest.sh
+      - .github/workflows/scripts/generate-unified-allure-report.sh
       - docs/**
   workflow_run:
     workflows:
@@ -103,7 +107,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-be-unit
-          path: allure-results-all/be-unit
+          path: allure-results-all/be-unit/allure-results
           workflow: sonar.yml
           workflow_search: true
           branch: main
@@ -116,7 +120,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-be-contract
-          path: allure-results-all/be-contract
+          path: allure-results-all/be-contract/allure-results
           workflow: sonar.yml
           workflow_search: true
           branch: main
@@ -129,7 +133,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-fe-bo
-          path: allure-results-all/fe-bo
+          path: allure-results-all/fe-bo/allure-results
           workflow: frontend-ci.yml
           workflow_search: true
           branch: main
@@ -142,7 +146,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v28
         with:
           name: allure-results-fe-sf
-          path: allure-results-all/fe-sf
+          path: allure-results-all/fe-sf/allure-results
           workflow: frontend-ci.yml
           workflow_search: true
           branch: main
@@ -167,19 +171,7 @@ jobs:
       - name: 📊 Generate Unified Allure Report
         if: github.event_name != 'pull_request'
         working-directory: src/Clients
-        run: |
-          shopt -s nullglob
-          result_dirs=(../../allure-results-all/*)
-          if [ ${#result_dirs[@]} -gt 0 ]; then
-            mkdir -p .allure
-            curl -sfL "https://foxminchan.github.io/BookWorm/reports/history.jsonl" -o .allure/history.jsonl || rm -f .allure/history.jsonl
-            ./node_modules/.bin/allure generate "${result_dirs[@]}" --config ./allurerc.mjs --output ../../docs/dist/reports
-            if [ -f .allure/history.jsonl ]; then
-              cp .allure/history.jsonl ../../docs/dist/reports/history.jsonl
-            fi
-          else
-            echo "No Allure results found to merge."
-          fi
+        run: bash "$GITHUB_WORKSPACE/.github/workflows/scripts/generate-unified-allure-report.sh"
 
       - name: ⬇️ Download Allure Report (Backend)
         if: github.event_name != 'pull_request'
@@ -235,22 +227,7 @@ jobs:
 
       - name: 📝 Generate TUnit Reports Manifest
         if: github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          mkdir -p docs/dist/reports/tunit
-          shopt -s globstar nullglob
-          files=(docs/dist/reports/tunit/**/*.html)
-          {
-            echo "["
-            for i in "${!files[@]}"; do
-              rel="${files[$i]#docs/dist/reports/tunit/}"
-              name=$(basename "$rel" .html)
-              comma=","
-              if [ "$i" -eq $((${#files[@]} - 1)) ]; then comma=""; fi
-              printf '  {"name": "%s", "path": "/reports/tunit/%s"}%s\n' "$name" "$rel" "$comma"
-            done
-            echo "]"
-          } > docs/dist/reports/tunit/manifest.json
+        run: bash .github/workflows/scripts/generate-tunit-manifest.sh
 
       - name: ⬆️ Upload artifact
         if: github.event_name != 'pull_request'

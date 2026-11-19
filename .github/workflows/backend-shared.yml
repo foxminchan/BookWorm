@@ -127,7 +127,7 @@ jobs:
         uses: actions/upload-artifact@v7.0.2
         with:
           name: allure-results-be-unit
-          path: allure-results/unit/
+          path: allure-results/unit/allure-results/
           retention-days: 7
           if-no-files-found: ignore
 
@@ -136,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@v7.0.2
         with:
           name: allure-results-be-contract
-          path: allure-results/contract/
+          path: allure-results/contract/allure-results/
           retention-days: 7
           if-no-files-found: ignore
 

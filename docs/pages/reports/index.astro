@@ -65,6 +65,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 								<p class="mt-1.5 text-sm text-[rgb(var(--ec-page-text-muted))]">
 									{suite.description}
 								</p>
+								<div class="mt-3 flex flex-wrap gap-1.5">
+									{suite.environments.map((env) => (
+										<span class="rounded border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-2 py-0.5 text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+											{env}
+										</span>
+									))}
+								</div>
 							</div>
 
 							<div class="mt-5 flex items-center justify-between border-t border-[rgb(var(--ec-page-border))] pt-3 text-sm">

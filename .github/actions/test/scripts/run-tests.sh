@@ -54,7 +54,7 @@ mapfile -d '' unit_projects < <(
 )
 for project in "${unit_projects[@]}"; do
   project_name=$(basename "$project" .csproj)
-  run_test "$project" --allure-results-directory ./allure-results/unit --report-html-filename "./test-results/${project_name}.html"
+  run_test "$project" --allure-results-directory ./allure-results/unit/allure-results --report-html-filename "./test-results/${project_name}.html"
 done
 
 consumer_projects=(
@@ -67,7 +67,7 @@ consumer_projects=(
 )
 for project in "${consumer_projects[@]}"; do
   project_name=$(basename "$project" .csproj)
-  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactConsumer]' --allure-results-directory ./allure-results/contract --report-html-filename "./test-results/${project_name}.PactConsumer.html"
+  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactConsumer]' --allure-results-directory ./allure-results/contract/allure-results --report-html-filename "./test-results/${project_name}.PactConsumer.html"
 done
 
 provider_projects=(
@@ -80,5 +80,5 @@ provider_projects=(
 )
 for project in "${provider_projects[@]}"; do
   project_name=$(basename "$project" .csproj)
-  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactProvider]' --allure-results-directory ./allure-results/contract --report-html-filename "./test-results/${project_name}.PactProvider.html"
+  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactProvider]' --allure-results-directory ./allure-results/contract/allure-results --report-html-filename "./test-results/${project_name}.PactProvider.html"
 done

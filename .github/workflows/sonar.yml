@@ -158,7 +158,7 @@ jobs:
         uses: actions/upload-artifact@v7.0.2
         with:
           name: allure-results-be-unit
-          path: allure-results/unit/
+          path: allure-results/unit/allure-results/
           retention-days: 7
           if-no-files-found: ignore
 
@@ -167,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v7.0.2
         with:
           name: allure-results-be-contract
-          path: allure-results/contract/
+          path: allure-results/contract/allure-results/
           retention-days: 7
           if-no-files-found: ignore
 
@@ -197,26 +197,9 @@ jobs:
         working-directory: src/Clients
         env:
           ALLURE_REPORT_NAME: Backend Test Report
+          ALLURE_REPORT_SCOPE: backend
           ALLURE_HISTORY_PATH: ./.allure/history-backend.jsonl
-        run: |
-          shopt -s nullglob
-          result_dirs=(../../allure-results/unit ../../allure-results/contract)
-          existing_dirs=()
-          for dir in "${result_dirs[@]}"; do
-            if [ -d "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
-              existing_dirs+=("$dir")
-            fi
-          done
-          if [ ${#existing_dirs[@]} -gt 0 ]; then
-            mkdir -p .allure
-            curl -sfL "https://foxminchan.github.io/BookWorm/reports/backend/history.jsonl" -o .allure/history-backend.jsonl || rm -f .allure/history-backend.jsonl
-            ./node_modules/.bin/allure generate "${existing_dirs[@]}" --config ./allurerc.mjs --output ../../allure-report-backend
-            if [ -f .allure/history-backend.jsonl ]; then
-              cp .allure/history-backend.jsonl ../../allure-report-backend/history.jsonl
-            fi
-          else
-            echo "No Backend Allure results found to generate report."
-          fi
+        run: bash "$GITHUB_WORKSPACE/.github/workflows/scripts/generate-backend-allure-report.sh"
 
       - name: ⬆️ Upload Allure Report (Backend)
         if: ${{ !cancelled() }}
@@ -233,5 +216,5 @@ jobs:
         uses: allure-framework/allure-action@v0.12.0
         with:
           report-directory: allure-report-backend
-          remote-href: https://foxminchan.github.io/BookWorm/reports
+          remote-href: https://foxminchan.github.io/BookWorm/reports/backend
           github-token: ${{ github.token }}

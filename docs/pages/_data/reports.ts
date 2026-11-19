@@ -7,6 +7,7 @@ export type AllureReportSuite = {
 	reportUrl: string;
 	workflow: string;
 	artifact: string;
+	environments: string[];
 };
 
 export type AllureResultFeed = {
@@ -24,10 +25,17 @@ export const REPORT_SUITES: AllureReportSuite[] = [
 		category: "All Suites",
 		badge: "Unified",
 		description:
-			"Combined Allure report merging Backend Unit, Backend Contract, Backoffice, and Storefront test results.",
+			"Combined Allure report merging Backend Unit, Backend Architecture, Backend Contract, Backoffice, and Storefront test results.",
 		reportUrl: "/reports/index.html",
 		workflow: "docs.yml",
 		artifact: "Merged via allure generate",
+		environments: [
+			"Backend Unit",
+			"Backend Architecture",
+			"Backend Contract & Integration",
+			"Backoffice (FE)",
+			"Storefront (FE)",
+		],
 	},
 	{
 		id: "backend",
@@ -35,10 +43,15 @@ export const REPORT_SUITES: AllureReportSuite[] = [
 		category: "Backend",
 		badge: "BE",
 		description:
-			"Unit, architecture, integration, and contract test execution report for BookWorm .NET services.",
+			"Unit, architecture fitness, integration, and contract test execution report for BookWorm .NET services.",
 		reportUrl: "/reports/backend/index.html",
 		workflow: "sonar.yml",
 		artifact: "allure-report-backend",
+		environments: [
+			"Microservice Unit Tests",
+			"Architecture Fitness Tests",
+			"Contract & Integration Tests",
+		],
 	},
 	{
 		id: "backoffice",
@@ -46,10 +59,16 @@ export const REPORT_SUITES: AllureReportSuite[] = [
 		category: "Frontend",
 		badge: "FE",
 		description:
-			"Unit and E2E test execution report for the BookWorm Backoffice administrative portal.",
+			"Domain feature integration, UI component, hook/core utility, and E2E test execution report for the Backoffice administrative portal.",
 		reportUrl: "/reports/backoffice/index.html",
 		workflow: "frontend-ci.yml",
 		artifact: "allure-report-backoffice",
+		environments: [
+			"Domain Features",
+			"UI Components",
+			"Hooks & Core Utilities",
+			"E2E (Playwright BDD)",
+		],
 	},
 	{
 		id: "storefront",
@@ -57,10 +76,17 @@ export const REPORT_SUITES: AllureReportSuite[] = [
 		category: "Frontend",
 		badge: "FE",
 		description:
-			"Unit and E2E test execution report for the BookWorm customer-facing Storefront web app.",
+			"Domain feature integration, UI component, hook/atom, property-based fuzz, and E2E test execution report for the Storefront web app.",
 		reportUrl: "/reports/storefront/index.html",
 		workflow: "frontend-ci.yml",
 		artifact: "allure-report-storefront",
+		environments: [
+			"Domain Features",
+			"UI Components",
+			"Hooks, Atoms & Utilities",
+			"Property & Fuzz Tests",
+			"E2E (Playwright BDD)",
+		],
 	},
 ];
 

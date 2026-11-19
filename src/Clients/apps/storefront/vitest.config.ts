@@ -29,6 +29,13 @@ export default defineConfig({
             layer: "unit",
             epic: "Storefront",
             severity: "normal",
+            owner: "BookWorm Engineering",
+          },
+          environmentInfo: {
+            Application: "@bookworm/storefront",
+            Framework: "Next.js 16 / React 19",
+            Runner: "Vitest",
+            Environment: "Happy DOM",
           },
           links: {
             issue: {

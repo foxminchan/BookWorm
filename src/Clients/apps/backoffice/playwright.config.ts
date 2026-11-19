@@ -16,15 +16,34 @@ export default defineConfig({
   retries: isCI ? 2 : 0,
   workers: isCI ? 4 : undefined,
   reporter: [
+    isCI ? ["github"] : ["list"],
     [
       "allure-playwright",
       {
-        outputFolder: "allure-results",
+        resultsDir: "./allure-results",
+        detail: true,
         suiteTitle: true,
         globalLabels: {
           layer: "e2e",
           epic: "Backoffice",
           severity: "normal",
+          owner: "BookWorm Engineering",
+        },
+        environmentInfo: {
+          Application: "@bookworm/backoffice",
+          Framework: "Next.js 16 / React 19",
+          Runner: "Playwright BDD",
+          Browser: "Chromium",
+        },
+        links: {
+          issue: {
+            nameTemplate: "Issue #%s",
+            urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
+          },
+          tms: {
+            nameTemplate: "TMS #%s",
+            urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
+          },
         },
       },
     ],

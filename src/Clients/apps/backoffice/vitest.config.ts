@@ -30,6 +30,13 @@ export default defineConfig({
             layer: "unit",
             epic: "Backoffice",
             severity: "normal",
+            owner: "BookWorm Engineering",
+          },
+          environmentInfo: {
+            Application: "@bookworm/backoffice",
+            Framework: "Next.js 16 / React 19",
+            Runner: "Vitest",
+            Environment: "Happy DOM",
           },
           links: {
             issue: {
