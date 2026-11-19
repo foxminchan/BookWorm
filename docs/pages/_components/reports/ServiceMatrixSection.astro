@@ -1,0 +1,250 @@
+---
+import type { EnrichedService } from "../../_data/catalogMetrics";
+
+interface Props {
+	base: string;
+	enrichedServices: EnrichedService[];
+	internalServicesCount: number;
+	maxServiceMessages: number;
+}
+
+const { base, enrichedServices, internalServicesCount, maxServiceMessages } = Astro.props;
+---
+
+<section id="section-matrix" aria-label="Service Quality and Contract Coverage Matrix" class="space-y-4">
+	<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+		<div>
+			<h2 class="text-lg font-bold text-[rgb(var(--ec-page-text))]">
+				Service Quality & Verification Matrix ({enrichedServices.length})
+			</h2>
+			<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+				Traceability linking services to accountable teams, API specifications, messaging balance, and automated test projects.
+			</p>
+		</div>
+
+		<!-- Matrix Filter Buttons -->
+		<div class="inline-flex rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-1">
+			<button
+				type="button"
+				data-matrix-filter="all"
+				class="matrix-filter-btn rounded-lg bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-accent))] shadow-xs"
+			>
+				All ({enrichedServices.length})
+			</button>
+			<button
+				type="button"
+				data-matrix-filter="internal"
+				class="matrix-filter-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
+			>
+				Internal ({internalServicesCount})
+			</button>
+			<button
+				type="button"
+				data-matrix-filter="pact"
+				class="matrix-filter-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
+			>
+				Pact Contracts (7)
+			</button>
+		</div>
+	</div>
+
+	<div class="overflow-hidden rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] shadow-xs">
+		<div class="overflow-x-auto">
+			<table class="w-full border-collapse text-left text-xs">
+				<thead>
+					<tr class="border-b border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] text-[11px] font-semibold tracking-wider text-[rgb(var(--ec-page-text-muted))] uppercase">
+						<th class="px-5 py-3.5">Service</th>
+						<th class="px-5 py-3.5">Owner Team</th>
+						<th class="px-5 py-3.5">Specifications</th>
+						<th class="px-5 py-3.5">Traffic (Rx / Tx)</th>
+						<th class="px-5 py-3.5">Data Stores</th>
+						<th class="px-5 py-3.5">Automated Test Suites</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-[rgb(var(--ec-page-border))]">
+					{
+						enrichedServices.map((svc) => {
+							const hasPact = Boolean(
+								svc.testMapping?.contractConsumerProject ||
+									svc.testMapping?.contractProviderProject
+							);
+							return (
+								<tr
+									data-service-row
+									data-scope={svc.isExternal ? "external" : "internal"}
+									data-has-pact={hasPact ? "true" : "false"}
+									class="transition-colors hover:bg-[rgb(var(--ec-page-bg))/0.5]"
+								>
+									<td class="px-5 py-4">
+										<div class="flex flex-col gap-1">
+											<div class="flex items-center gap-2">
+												<a
+													href={`${base}/docs/services/${svc.id}/${svc.version}`}
+													class="font-bold text-[rgb(var(--ec-page-text))] hover:text-[rgb(var(--ec-accent))] hover:underline"
+												>
+													{svc.name}
+												</a>
+												<span class="rounded bg-[rgb(var(--ec-page-bg))] px-1.5 py-0.5 font-mono text-[10px] text-[rgb(var(--ec-page-text-muted))]">
+													v{svc.version}
+												</span>
+												{svc.isExternal && (
+													<span class="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+														External
+													</span>
+												)}
+											</div>
+											{svc.summary && (
+												<p class="line-clamp-1 max-w-sm text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+													{svc.summary}
+												</p>
+											)}
+										</div>
+									</td>
+
+									<td class="px-5 py-4">
+										<div class="flex flex-wrap gap-1">
+											{svc.owners.map((owner) => (
+												<a
+													href={`${base}/docs/teams/${owner.id}`}
+													class="rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-2.5 py-1 text-[11px] font-medium text-[rgb(var(--ec-page-text))] hover:border-[rgb(var(--ec-accent))]"
+												>
+													{owner.name}
+												</a>
+											))}
+										</div>
+									</td>
+
+									<td class="px-5 py-4">
+										<div class="flex flex-wrap gap-1">
+											{svc.specs.length > 0 ? (
+												svc.specs.map((spec) => (
+													<span class="rounded-md border border-[rgb(var(--ec-accent)/0.3)] bg-[rgb(var(--ec-accent-subtle))] px-2 py-0.5 font-mono text-[10px] font-bold text-[rgb(var(--ec-accent))]">
+														{spec}
+													</span>
+												))
+											) : (
+												<span class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+													Managed External API
+												</span>
+											)}
+										</div>
+									</td>
+
+									<td class="px-5 py-4">
+										<div class="w-44 space-y-1">
+											<div class="flex justify-between text-[11px] font-mono">
+												<span class="text-[rgb(var(--ec-page-text))]">
+													<span class="font-bold text-sky-500">{svc.receivesCount}</span> in ·{" "}
+													<span class="font-bold text-amber-500">{svc.sendsCount}</span> out
+												</span>
+												<span class="text-[rgb(var(--ec-page-text-muted))]">
+													{svc.totalMessages} msgs
+												</span>
+											</div>
+											<div class="flex h-1.5 w-full overflow-hidden rounded-full bg-[rgb(var(--ec-page-bg))]">
+												<div
+													class="h-full bg-sky-500"
+													style={`width: ${svc.totalMessages ? (svc.receivesCount / maxServiceMessages) * 100 : 0}%`}
+													title={`Receives: ${svc.receivesCount}`}
+												/>
+												<div
+													class="h-full bg-amber-500"
+													style={`width: ${svc.totalMessages ? (svc.sendsCount / maxServiceMessages) * 100 : 0}%`}
+													title={`Sends: ${svc.sendsCount}`}
+												/>
+											</div>
+										</div>
+									</td>
+
+									<td class="px-5 py-4">
+										{svc.storesCount > 0 ? (
+											<span class="rounded-md bg-[rgb(var(--ec-page-bg))] px-2.5 py-1 text-[11px] font-mono font-medium text-[rgb(var(--ec-page-text))]">
+												{svc.storesCount} store{svc.storesCount > 1 ? "s" : ""} ({svc.readsCount}R/{svc.writesCount}W)
+											</span>
+										) : (
+											<span class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+												Stateless
+											</span>
+										)}
+									</td>
+
+									<td class="px-5 py-4">
+										{svc.testMapping ? (
+											<div class="flex flex-wrap gap-1.5">
+												{svc.testMapping.unitTestProject && (
+													<a
+														href={`${base}/custom/reports/tunit`}
+														title={svc.testMapping.unitTestProject}
+														class="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500 hover:underline font-mono"
+													>
+														✓ TUnit
+													</a>
+												)}
+												{svc.testMapping.contractConsumerProject && (
+													<a
+														href={`${base}/custom/reports/backend`}
+														title={svc.testMapping.contractConsumerProject}
+														class="rounded-md bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-500 hover:underline font-mono"
+													>
+														✓ Pact Consumer
+													</a>
+												)}
+												{svc.testMapping.contractProviderProject && (
+													<a
+														href={`${base}/custom/reports/backend`}
+														title={svc.testMapping.contractProviderProject}
+														class="rounded-md bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-500 hover:underline font-mono"
+													>
+														✓ Pact Provider
+													</a>
+												)}
+											</div>
+										) : (
+											<span class="text-[11px] text-[rgb(var(--ec-page-text-muted))]">
+												Managed External Service
+											</span>
+										)}
+									</td>
+								</tr>
+							);
+						})
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>
+
+<script>
+	function initServiceMatrixFilters() {
+		const filterButtons = document.querySelectorAll<HTMLButtonElement>("[data-matrix-filter]");
+		const serviceRows = document.querySelectorAll<HTMLElement>("[data-service-row]");
+
+		filterButtons.forEach((btn) => {
+			if (btn.dataset.bound === "true") return;
+			btn.dataset.bound = "true";
+			btn.addEventListener("click", () => {
+				const filter = btn.dataset.matrixFilter;
+				filterButtons.forEach((b) => {
+					const active = b.dataset.matrixFilter === filter;
+					b.className = active
+						? "matrix-filter-btn rounded-lg bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-accent))] shadow-xs"
+						: "matrix-filter-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]";
+				});
+				serviceRows.forEach((row) => {
+					const scope = row.dataset.scope;
+					const hasPact = row.dataset.hasPact === "true";
+					let visible = true;
+					if (filter === "internal") visible = scope === "internal";
+					if (filter === "pact") visible = hasPact;
+					row.classList.toggle("hidden", !visible);
+				});
+			});
+		});
+	}
+
+	document.addEventListener("astro:page-load", initServiceMatrixFilters);
+	if (document.readyState !== "loading") {
+		initServiceMatrixFilters();
+	}
+</script>

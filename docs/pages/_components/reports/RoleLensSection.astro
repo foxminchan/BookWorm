@@ -1,0 +1,137 @@
+---
+import { ROLE_GUIDES } from "../../_data/reports";
+
+const roleLabels: Record<string, string> = {
+	director: "Director",
+	pm: "Product Manager",
+	qa: "QA Engineer",
+	dev: "Developer",
+};
+---
+
+<section aria-label="Stakeholder Perspectives" class="rounded-2xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6 shadow-xs">
+	<div class="flex flex-col gap-4 border-b border-[rgb(var(--ec-page-border))] pb-5 sm:flex-row sm:items-center sm:justify-between">
+		<div>
+			<h2 class="text-base font-bold text-[rgb(var(--ec-page-text))]">
+				Stakeholder Role Lens
+			</h2>
+			<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+				Tailor priorities, critical questions, and recommended views for your role.
+			</p>
+		</div>
+
+		<!-- Accessible Segmented Control -->
+		<div class="inline-flex rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-1" role="tablist" aria-label="Select role lens">
+			{
+				ROLE_GUIDES.map((guide, index) => (
+					<button
+						type="button"
+						role="tab"
+						data-role-tab={guide.id}
+						aria-selected={index === 0 ? "true" : "false"}
+						class={`role-tab-btn rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+							index === 0
+								? "bg-[rgb(var(--ec-card-bg))] text-[rgb(var(--ec-accent))] shadow-xs"
+								: "text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]"
+						}`}
+					>
+						{roleLabels[guide.id] ?? guide.role}
+					</button>
+				))
+			}
+		</div>
+	</div>
+
+	<!-- Dynamic Role Panels -->
+	{
+		ROLE_GUIDES.map((guide, index) => (
+			<div
+				data-role-panel={guide.id}
+				class={`role-panel pt-5 ${index === 0 ? "block" : "hidden"}`}
+			>
+				<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+					<!-- Col 1: Scope & Objective -->
+					<div class="space-y-2.5">
+						<span class="text-xs font-bold tracking-wider text-[rgb(var(--ec-accent))] uppercase">
+							{guide.role}
+						</span>
+						<h3 class="text-lg font-bold text-[rgb(var(--ec-page-text))]">
+							{guide.title}
+						</h3>
+						<p class="text-xs leading-relaxed text-[rgb(var(--ec-page-text-muted))]">
+							{guide.summary}
+						</p>
+					</div>
+
+					<!-- Col 2: Key Questions -->
+					<div class="space-y-2.5 rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] p-4">
+						<p class="text-xs font-bold text-[rgb(var(--ec-page-text))] uppercase tracking-wider">
+							Key Questions Answered
+						</p>
+						<ul class="space-y-2 text-xs text-[rgb(var(--ec-page-text-muted))]">
+							{guide.keyQuestions.map((question) => (
+								<li class="flex items-start gap-2">
+									<svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+									</svg>
+									<span>{question}</span>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					<!-- Col 3: Recommended Views -->
+					<div class="space-y-2.5">
+						<p class="text-xs font-bold text-[rgb(var(--ec-page-text))] uppercase tracking-wider">
+							Recommended Views
+						</p>
+						<div class="flex flex-col gap-2">
+							{guide.focusSignals.map((signal) => (
+								<a
+									href={signal.target}
+									class="group flex items-center justify-between rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-3.5 py-2.5 text-xs font-medium text-[rgb(var(--ec-page-text))] transition-all hover:border-[rgb(var(--ec-accent))] hover:bg-[rgb(var(--ec-card-bg))]"
+								>
+									<span>{signal.label}</span>
+									<svg class="h-3.5 w-3.5 text-[rgb(var(--ec-page-text-muted))] transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+									</svg>
+								</a>
+							))}
+						</div>
+					</div>
+				</div>
+			</div>
+		))
+	}
+</section>
+
+<script>
+	function initRoleLensTabs() {
+		const roleButtons = document.querySelectorAll<HTMLButtonElement>("[data-role-tab]");
+		const rolePanels = document.querySelectorAll<HTMLElement>("[data-role-panel]");
+
+		roleButtons.forEach((btn) => {
+			if (btn.dataset.bound === "true") return;
+			btn.dataset.bound = "true";
+			btn.addEventListener("click", () => {
+				const targetRole = btn.dataset.roleTab;
+				roleButtons.forEach((b) => {
+					const active = b.dataset.roleTab === targetRole;
+					b.setAttribute("aria-selected", active ? "true" : "false");
+					b.className = active
+						? "role-tab-btn rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all bg-[rgb(var(--ec-card-bg))] text-[rgb(var(--ec-accent))] shadow-xs"
+						: "role-tab-btn rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all text-[rgb(var(--ec-page-text-muted))] hover:text-[rgb(var(--ec-page-text))]";
+				});
+				rolePanels.forEach((panel) => {
+					panel.classList.toggle("hidden", panel.dataset.rolePanel !== targetRole);
+					panel.classList.toggle("block", panel.dataset.rolePanel === targetRole);
+				});
+			});
+		});
+	}
+
+	document.addEventListener("astro:page-load", initRoleLensTabs);
+	if (document.readyState !== "loading") {
+		initRoleLensTabs();
+	}
+</script>

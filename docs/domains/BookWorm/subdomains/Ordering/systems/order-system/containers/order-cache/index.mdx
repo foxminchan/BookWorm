@@ -83,14 +83,3 @@ can remove duplicate-request detection during that window.
   performance cache. Availability affects lock acquisition and idempotency
   operations; clearing entries can affect concurrent writes and retry
   detection without deleting persisted Orders.
-
-## Implementation references
-
-- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/DistributedLock/Extensions.cs`
-- `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Create/CreateOrderCommand.cs`
-- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Idempotency/RequestManager.cs`
-- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Filters/IdempotencyEndpointFilter.cs`
-- `src/Services/Ordering/BookWorm.Ordering/Grpc/Services/Book/BookService.cs`
-- `src/Services/Ordering/BookWorm.Ordering/Features/Dashboard/GetDashboardQuery.cs`
-- `src/BuildingBlocks/BookWorm.Chassis/Caching/Extensions.cs`
-- `src/Services/Ordering/BookWorm.Ordering/appsettings.json`

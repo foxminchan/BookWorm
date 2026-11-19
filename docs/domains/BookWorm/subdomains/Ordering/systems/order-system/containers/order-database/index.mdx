@@ -79,12 +79,3 @@ Finance owns its separate saga state, not the Ordering database.
 [[container|order-cache]] coordinates creation locks and stores transient
 request markers and cached responses; it does not own Buyer profiles or
 accepted Orders.
-
-## Implementation references
-
-- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/OrderingDbContext.cs`
-- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EntityConfigurations/`
-- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Extensions.cs`
-- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EventStore/`
-- `src/Services/Ordering/BookWorm.Ordering/Extensions/Extensions.cs`
-- `src/Aspire/BookWorm.AppHost/AppHost.cs`
