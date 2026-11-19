@@ -25,7 +25,8 @@ export abstract class BasePage {
     if (path === "/") {
       return BASE_PATH;
     }
-    return `${BASE_PATH}${path.startsWith("/") ? path : `/${path}`}`;
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${BASE_PATH}${normalizedPath}`;
   }
 
   /**

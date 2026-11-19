@@ -149,13 +149,10 @@ export class DashboardPage extends BasePage {
       "Registered Customers",
       "Books in Catalog",
     ];
-    let count = 0;
-    for (const title of kpiTitles) {
-      if (await this.page.getByText(title).isVisible()) {
-        count++;
-      }
-    }
-    return count;
+    const visibility = await Promise.all(
+      kpiTitles.map((title) => this.page.getByText(title).isVisible()),
+    );
+    return visibility.filter(Boolean).length;
   }
 
   /**

@@ -129,12 +129,9 @@ Then("I should complete the checkout successfully", async ({ page }) => {
   await expect(page).toHaveURL(/\/checkout\/confirmation/);
 });
 
-Then(
-  "all interactive elements should have been keyboard accessible",
-  async () => {
-    // Implicitly verified by completing the keyboard-only flow
-  },
-);
+Then("all interactive elements should have been keyboard accessible", () => {
+  // Implicitly verified by completing the keyboard-only flow
+});
 
 // Focus management in remove item dialog
 When("I press Tab until remove button is focused", async ({ page }) => {
@@ -197,7 +194,7 @@ Then("the search input should lose focus", async ({ page }) => {
 });
 
 // Inspection & ARIA
-When("I inspect the page elements", async () => {
+When("I inspect the page elements", () => {
   /* No-op */
 });
 
@@ -294,20 +291,17 @@ When("I run automated accessibility scan", async ({ page, scenarioData }) => {
   scenarioData.axeResults = results;
 });
 
-Then(
-  "there should be no color contrast violations",
-  async ({ scenarioData }) => {
-    const results = scenarioData.axeResults as Awaited<
-      ReturnType<AxeBuilder["analyze"]>
-    >;
-    const contrastViolations = results.violations.filter(
-      (v) => v.id === "color-contrast",
-    );
-    expect(contrastViolations).toEqual([]);
-  },
-);
+Then("there should be no color contrast violations", ({ scenarioData }) => {
+  const results = scenarioData.axeResults as Awaited<
+    ReturnType<AxeBuilder["analyze"]>
+  >;
+  const contrastViolations = results.violations.filter(
+    (v) => v.id === "color-contrast",
+  );
+  expect(contrastViolations).toEqual([]);
+});
 
-Then("WCAG AA standards should be met", async ({ scenarioData }) => {
+Then("WCAG AA standards should be met", ({ scenarioData }) => {
   const results = scenarioData.axeResults as Awaited<
     ReturnType<AxeBuilder["analyze"]>
   >;
@@ -321,7 +315,7 @@ Given("I am on the homepage on mobile viewport", async ({ page }) => {
   await page.waitForLoadState("networkidle");
 });
 
-When("I navigate using touch", async () => {
+When("I navigate using touch", () => {
   /* No-op */
 });
 

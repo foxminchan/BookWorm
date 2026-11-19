@@ -44,7 +44,7 @@ Given("I am on the about page", async ({ aboutPage }) => {
   await aboutPage.navigate();
 });
 
-Then("I should be on the about page", async ({ aboutPage }) => {
+Then("I should be on the about page", ({ aboutPage }) => {
   expect(aboutPage.isOnAboutPage()).toBe(true);
 });
 
@@ -98,7 +98,7 @@ Given("I am on the shipping page", async ({ shippingPage }) => {
   await shippingPage.navigate();
 });
 
-Then("I should be on the shipping page", async ({ shippingPage }) => {
+Then("I should be on the shipping page", ({ shippingPage }) => {
   expect(shippingPage.isOnShippingPage()).toBe(true);
 });
 
@@ -119,7 +119,7 @@ Given("I am on the returns page", async ({ returnsPage }) => {
   await returnsPage.navigate();
 });
 
-Then("I should be on the returns page", async ({ returnsPage }) => {
+Then("I should be on the returns page", ({ returnsPage }) => {
   expect(returnsPage.isOnReturnsPage()).toBe(true);
 });
 

@@ -1,5 +1,6 @@
 import { Locator, Page, expect } from "@playwright/test";
 
+import { forEachSequentially } from "../utils/forEachSequentially";
 import { BasePage } from "./BasePage";
 
 /**
@@ -128,9 +129,9 @@ export class ShopPage extends BasePage {
     const minSteps = min - currentMin;
     await minSlider.focus();
     const minKey = minSteps >= 0 ? "ArrowRight" : "ArrowLeft";
-    for (let i = 0; i < Math.abs(minSteps); i++) {
-      await this.page.keyboard.press(minKey);
-    }
+    await forEachSequentially(Array.from({ length: Math.abs(minSteps) }), () =>
+      this.page.keyboard.press(minKey),
+    );
 
     const currentMax = Number.parseInt(
       (await maxSlider.getAttribute("aria-valuenow")) ?? "100",
@@ -139,9 +140,9 @@ export class ShopPage extends BasePage {
     const maxSteps = max - currentMax;
     await maxSlider.focus();
     const maxKey = maxSteps >= 0 ? "ArrowRight" : "ArrowLeft";
-    for (let i = 0; i < Math.abs(maxSteps); i++) {
-      await this.page.keyboard.press(maxKey);
-    }
+    await forEachSequentially(Array.from({ length: Math.abs(maxSteps) }), () =>
+      this.page.keyboard.press(maxKey),
+    );
 
     await this.waitForPageLoad();
   }
@@ -200,16 +201,13 @@ export class ShopPage extends BasePage {
 
   async getBookPrices(): Promise<number[]> {
     const cards = await this.bookCards.all();
-    const prices: number[] = [];
-    for (const card of cards) {
-      const priceText = await card
-        .locator("span.font-bold")
-        .first()
-        .textContent();
+    const priceTexts = await Promise.all(
+      cards.map((card) => card.locator("span.font-bold").first().textContent()),
+    );
+    return priceTexts.map((priceText) => {
       const cleaned = priceText?.replaceAll(/[$,]/g, "") || "0";
-      prices.push(Number.parseFloat(cleaned));
-    }
-    return prices;
+      return Number.parseFloat(cleaned);
+    });
   }
 
   getCurrentPage(): number {

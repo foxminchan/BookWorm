@@ -122,10 +122,13 @@ When("I navigate to the dashboard", async ({ dashboardPage }) => {
 });
 
 When("I navigate to {string}", async ({ page }, path: string) => {
-  const resolved =
-    path === BASE_PATH || path.startsWith(`${BASE_PATH}/`)
-      ? path
-      : `${BASE_PATH}${path.startsWith("/") ? path : `/${path}`}`;
+  let resolved: string;
+  if (path === BASE_PATH || path.startsWith(`${BASE_PATH}/`)) {
+    resolved = path;
+  } else {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    resolved = `${BASE_PATH}${normalizedPath}`;
+  }
   await page.goto(resolved);
   await page.waitForLoadState("networkidle");
 });

@@ -27,11 +27,11 @@ Then(
 
 Then(
   "Microsoft Entra ID OAuth sign-in should be triggered",
-  async ({ scenarioData }) => {
+  ({ scenarioData }) => {
     expect(scenarioData.socialSignInRequested).toBeTruthy();
   },
 );
 
-Then("my session should be cleared", async ({ scenarioData }) => {
+Then("my session should be cleared", ({ scenarioData }) => {
   expect(scenarioData.isAuthenticated).toBeFalsy();
 });

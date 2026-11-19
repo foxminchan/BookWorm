@@ -116,7 +116,7 @@ export class ProductDetailPage extends BasePage {
   }
 
   get reviewsList(): Locator {
-    return this.page.locator("div.space-y-8.lg\\:col-span-2");
+    return this.page.locator(String.raw`div.space-y-8.lg\:col-span-2`);
   }
 
   get reviewItems(): Locator {
