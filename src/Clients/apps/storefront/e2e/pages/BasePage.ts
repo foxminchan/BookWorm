@@ -146,28 +146,34 @@ export class HeaderComponent {
     return this.page.locator('header a[href="/"]').first();
   }
 
+  get searchButton(): Locator {
+    return this.page.locator('header button[aria-label="Search books"]');
+  }
+
   get searchInput(): Locator {
-    return this.page.locator(
-      'input[type="search"], input[placeholder*="Search"]',
-    );
+    return this.page.locator("#header-search-input, #mobile-search-input");
   }
 
   get basketIcon(): Locator {
-    return this.page.locator('a[href="/basket"]');
+    return this.page.locator('header a[href="/basket"]').first();
   }
 
   get basketCount(): Locator {
-    return this.page.locator(
-      'a[href="/basket"] span, [data-testid="basket-count"]',
-    );
+    return this.basketIcon;
+  }
+
+  get accountNav(): Locator {
+    return this.page.locator('header nav[aria-label="Account"]').first();
   }
 
   get userIcon(): Locator {
     return this.page
-      .locator(
-        'button:has-text("Account"), button[aria-label*="User"], button[aria-label*="Account"]',
-      )
+      .locator('header button[aria-label="Account menu"]')
       .first();
+  }
+
+  get accountMenu(): Locator {
+    return this.page.locator('[role="menu"][aria-label="Account menu"]');
   }
 
   // Actions
@@ -176,8 +182,11 @@ export class HeaderComponent {
   }
 
   async search(query: string): Promise<void> {
-    await this.searchInput.fill(query);
-    await this.searchInput.press("Enter");
+    if (!(await this.searchInput.first().isVisible())) {
+      await this.searchButton.click();
+    }
+    await this.searchInput.first().fill(query);
+    await this.searchInput.first().press("Enter");
   }
 
   async goToBasket(): Promise<void> {
@@ -186,16 +195,22 @@ export class HeaderComponent {
 
   async getBasketCount(): Promise<string> {
     const text = await this.basketCount.textContent();
-    return text?.trim() || "0";
+    const match = text?.match(/\d+/);
+    return match ? match[0] : "0";
+  }
+
+  async openAccountMenu(): Promise<void> {
+    await this.accountNav.hover();
+    await this.accountMenu.waitFor({ state: "visible", timeout: 3000 });
   }
 
   async clickUserIcon(): Promise<void> {
-    await this.userIcon.click();
+    await this.openAccountMenu();
   }
 
   async isLoggedIn(): Promise<boolean> {
     try {
-      await this.userIcon.waitFor({ state: "visible", timeout: 3000 });
+      await this.basketIcon.waitFor({ state: "visible", timeout: 3000 });
       return true;
     } catch {
       return false;

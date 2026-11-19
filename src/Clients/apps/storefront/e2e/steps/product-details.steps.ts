@@ -46,21 +46,18 @@ Given("I am on a product detail page for a book on sale", async ({ page }) => {
   await page.waitForLoadState("networkidle");
 
   const saleBook = page
-    .locator(
-      '[data-testid="book-card"]:has([data-testid="sale-badge"]), .book-card:has(.sale)',
-    )
+    .locator('ul[aria-label="Book catalog"] article:has(span.line-through)')
     .first();
   if (await saleBook.isVisible()) {
     await saleBook.click();
   } else {
-    await page.locator('[data-testid="book-card"], article').first().click();
+    await page.locator('ul[aria-label="Book catalog"] article').first().click();
   }
   await page.waitForLoadState("networkidle");
 });
 
 Then("I should see the original price", async ({ productDetailPage }) => {
-  const price = await productDetailPage.getPrice();
-  expect(price).toBeTruthy();
+  await expect(productDetailPage.originalPrice).toBeVisible();
 });
 
 Then("I should see the sale price", async ({ productDetailPage }) => {
@@ -68,29 +65,28 @@ Then("I should see the sale price", async ({ productDetailPage }) => {
   expect(salePrice).toBeTruthy();
 });
 
-Then('I should see a "Sale" badge', async ({ productDetailPage }) => {
-  await expect(productDetailPage.saleBadge).toBeVisible();
-});
-
 // Add to basket
-Then("the book should be added to my basket", async ({ page }) => {
-  await page.waitForTimeout(1000);
+Then("the book should be added to my basket", async ({ productDetailPage }) => {
+  await expect(productDetailPage.quantityInput).toBeVisible();
 });
 
 // Reviews
-Given("I am on a product detail page with {int} reviews", async ({ page }) => {
-  await page.goto("/shop");
-  await page.waitForLoadState("networkidle");
-  await page.locator('[data-testid="book-card"], article').first().click();
-  await page.waitForLoadState("networkidle");
-});
+Given(
+  "I am on a product detail page with {int} reviews",
+  async ({ page }, _reviewCount: number) => {
+    await page.goto("/shop");
+    await page.waitForLoadState("networkidle");
+    await page.locator('ul[aria-label="Book catalog"] article').first().click();
+    await page.waitForLoadState("networkidle");
+  },
+);
 
 Given(
   "I am on a product detail page with multiple reviews",
   async ({ page }) => {
     await page.goto("/shop");
     await page.waitForLoadState("networkidle");
-    await page.locator('[data-testid="book-card"], article').first().click();
+    await page.locator('ul[aria-label="Book catalog"] article').first().click();
     await page.waitForLoadState("networkidle");
   },
 );
@@ -98,7 +94,7 @@ Given(
 Given("I am on a product detail page with no reviews", async ({ page }) => {
   await page.goto("/shop");
   await page.waitForLoadState("networkidle");
-  await page.locator('[data-testid="book-card"], article').first().click();
+  await page.locator('ul[aria-label="Book catalog"] article').first().click();
   await page.waitForLoadState("networkidle");
 });
 
@@ -110,11 +106,8 @@ Then("I should see the review form", async ({ productDetailPage }) => {
   await expect(productDetailPage.reviewForm).toBeVisible();
 });
 
-When("I select {int} stars", async ({ page }, stars: number) => {
-  const starButton = page
-    .locator(`button[aria-label*="${stars} star"]`)
-    .first();
-  await starButton.click();
+When("I select {int} stars", async ({ productDetailPage }, stars: number) => {
+  await productDetailPage.selectRating(stars);
 });
 
 When(
@@ -138,15 +131,12 @@ When(
   },
 );
 
-When('I click "Submit Review" without filling the form', async ({ page }) => {
-  const submitButton = page
-    .locator(
-      'button[type="submit"]:has-text("Submit"), button:has-text("Submit Review")',
-    )
-    .first();
-  await submitButton.click();
-  await page.waitForTimeout(500);
-});
+Then(
+  'the "Submit Review" button should be disabled',
+  async ({ productDetailPage }) => {
+    await expect(productDetailPage.submitReviewButton).toBeDisabled();
+  },
+);
 
 Then(
   "my review should appear in the reviews list",
@@ -171,10 +161,13 @@ When(
   },
 );
 
-Then("I should see the next {int} reviews", async ({ productDetailPage }) => {
-  const count = await productDetailPage.getReviewsCount();
-  expect(count).toBeGreaterThan(0);
-});
+Then(
+  "I should see the next {int} reviews",
+  async ({ productDetailPage }, _reviewCount: number) => {
+    const count = await productDetailPage.getReviewsCount();
+    expect(count).toBeGreaterThan(0);
+  },
+);
 
 // Review sorting
 When(
@@ -206,10 +199,12 @@ Then(
 );
 
 // AI Summary
-
-Then("I should see an AI-generated summary of reviews", async ({ page }) => {
-  await page.waitForTimeout(3000);
-});
+Then(
+  "I should see an AI-generated summary of reviews",
+  async ({ productDetailPage }) => {
+    await expect(productDetailPage.reviewSummaryCard).toBeVisible();
+  },
+);
 
 // Stock status
 Given(
@@ -217,7 +212,7 @@ Given(
   async ({ page }) => {
     await page.goto("/shop");
     await page.waitForLoadState("networkidle");
-    await page.locator('[data-testid="book-card"], article').first().click();
+    await page.locator('ul[aria-label="Book catalog"] article').first().click();
     await page.waitForLoadState("networkidle");
   },
 );
@@ -229,12 +224,15 @@ Given(
     await page.waitForLoadState("networkidle");
 
     const outOfStockBook = page
-      .locator('[data-testid="book-card"]:has-text("Out of Stock")')
+      .locator('ul[aria-label="Book catalog"] article:has-text("Out of Stock")')
       .first();
     if (await outOfStockBook.isVisible()) {
       await outOfStockBook.click();
     } else {
-      await page.locator('[data-testid="book-card"], article').first().click();
+      await page
+        .locator('ul[aria-label="Book catalog"] article')
+        .first()
+        .click();
     }
     await page.waitForLoadState("networkidle");
   },
@@ -260,6 +258,3 @@ Then(
     await expect(addButton).toBeDisabled();
   },
 );
-
-// Validation — "I should see validation errors" is in content-pages.steps.ts
-// "I should see {string} message" and "I should see {string}" are in common.steps.ts

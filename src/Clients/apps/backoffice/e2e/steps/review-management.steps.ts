@@ -10,103 +10,75 @@ When("the reviews page loads", async ({ page }) => {
   await page.waitForLoadState("networkidle");
 });
 
-Given("there are multiple reviews", async ({ reviewsPage }) => {
-  const count = await reviewsPage.getReviewsCount();
-  expect(count).toBeGreaterThan(1);
-});
-
-Given("there is at least one pending review", async ({ reviewsPage }) => {
-  const count = await reviewsPage.getReviewsCount();
-  expect(count).toBeGreaterThanOrEqual(1);
-});
-
-Given("there are reviews with different statuses", async ({ reviewsPage }) => {
-  const count = await reviewsPage.getReviewsCount();
-  expect(count).toBeGreaterThan(0);
-});
-
-Given("there are reviews with different ratings", async ({ reviewsPage }) => {
-  const count = await reviewsPage.getReviewsCount();
-  expect(count).toBeGreaterThan(0);
-});
+When(
+  "I select the first book in the review selector",
+  async ({ reviewsPage }) => {
+    await reviewsPage.selectFirstBook();
+  },
+);
 
 Given(
-  "there are more than {int} reviews",
+  "I have selected a book with at least one review",
+  async ({ reviewsPage }) => {
+    await reviewsPage.selectFirstBook();
+    const count = await reviewsPage.getReviewsCount();
+    expect(count).toBeGreaterThanOrEqual(1);
+  },
+);
+
+Given(
+  "I have selected a book with more than {int} reviews",
   async ({ reviewsPage }, reviewCount: number) => {
+    await reviewsPage.selectFirstBook();
     const count = await reviewsPage.getReviewsCount();
     expect(count).toBeGreaterThan(reviewCount);
   },
 );
 
 When(
-  "I search for reviews by book title",
-  async ({ reviewsPage, scenarioData }) => {
-    const searchQuery = (scenarioData.bookTitle as string) || "Test Book";
-    await reviewsPage.searchReviews(searchQuery);
+  "I click the delete button for the first review",
+  async ({ reviewsPage }) => {
+    await reviewsPage.deleteFirstReview();
   },
 );
 
-When("I click approve on the first review", async ({ reviewsPage }) => {
-  await reviewsPage.approveFirstReview();
+When("I confirm the review deletion", async ({ reviewsPage }) => {
+  await reviewsPage.confirmDelete();
 });
 
-When("I click reject on the first review", async ({ reviewsPage }) => {
-  await reviewsPage.rejectFirstReview();
+When("I cancel the review deletion", async ({ reviewsPage }) => {
+  await reviewsPage.cancelDelete();
 });
 
-When(
-  "I filter reviews by {string} status",
-  async ({ page }, status: string) => {
-    await page.selectOption('select[name="status"]', status);
-    await page.waitForLoadState("networkidle");
-  },
-);
-
-When(
-  "I filter reviews by {int}-star rating",
-  async ({ page }, rating: number) => {
-    await page.selectOption('select[name="rating"]', rating.toString());
-    await page.waitForLoadState("networkidle");
-  },
-);
+Then("I should see the book selector", async ({ page }) => {
+  await expect(page.locator("#book-select")).toBeVisible();
+});
 
 Then("I should see the reviews table", async ({ page }) => {
   await expect(page.locator("table")).toBeVisible();
 });
 
 Then(
-  "I should see review information including rating and status",
+  "I should see review Customer, Rating, and Comment columns",
   async ({ page }) => {
-    await expect(page.locator("table")).toBeVisible();
+    await expect(
+      page.locator("table thead th", { hasText: "Customer" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("table thead th", { hasText: "Rating" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("table thead th", { hasText: "Comment" }),
+    ).toBeVisible();
   },
 );
 
-Then("I should see only matching reviews", async ({ page }) => {
-  const rows = await page.locator("table tbody tr").count();
-  expect(rows).toBeGreaterThanOrEqual(0);
+Then("the review should remain in the list", async ({ reviewsPage }) => {
+  const count = await reviewsPage.getReviewsCount();
+  expect(count).toBeGreaterThan(0);
 });
 
-Then("the review should be approved", async ({ page }) => {
-  await page.waitForLoadState("networkidle");
-});
-
-Then("the review should be rejected", async ({ page }) => {
-  await page.waitForLoadState("networkidle");
-});
-
-Then("I should see only pending reviews", async ({ page }) => {
-  await page.waitForLoadState("networkidle");
-});
-
-Then(
-  "I should see only {int}-star reviews",
-  async ({ page }, _rating: number) => {
-    await page.waitForLoadState("networkidle");
-  },
-);
-
-Then("I should see different reviews", async ({ page }) => {
-  await page.waitForLoadState("networkidle");
-  const rows = await page.locator("table tbody tr").count();
-  expect(rows).toBeGreaterThan(0);
+Then("I should see different reviews", async ({ reviewsPage }) => {
+  const count = await reviewsPage.getReviewsCount();
+  expect(count).toBeGreaterThan(0);
 });

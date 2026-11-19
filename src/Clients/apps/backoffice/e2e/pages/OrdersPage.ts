@@ -4,16 +4,20 @@ import { BasePage } from "./BasePage";
 
 /**
  * Orders Management Page Object
+ * Handles /backoffice/orders and /backoffice/orders/[id]
  */
 export class OrdersPage extends BasePage {
-  // Selectors
-  private readonly pageHeading = 'h1:has-text("Orders")';
+  private readonly pageHeading = 'h1:has-text("Orders Management")';
   private readonly ordersTable = "table";
   private readonly tableRows = "table tbody tr";
-  private readonly searchInput = 'input[placeholder*="Search"]';
-  private readonly filterButton = 'button:has-text("Filter")';
-  private readonly statusFilter = 'select[name="status"]';
-  private readonly viewButtons = 'button:has-text("View")';
+  private readonly viewOrderLinks = 'a[aria-label^="View order details "]';
+  private readonly completeButtons = 'button[aria-label^="Complete order "]';
+  private readonly cancelOrderButtons = 'button[aria-label^="Cancel order "]';
+  private readonly confirmDialog = '[role="alertdialog"]';
+  private readonly confirmCompleteButton =
+    '[role="alertdialog"] button:has-text("Complete")';
+  private readonly confirmCancelButton =
+    '[role="alertdialog"] button:has-text("Cancel")';
 
   constructor(page: Page) {
     super(page);
@@ -23,7 +27,7 @@ export class OrdersPage extends BasePage {
    * Navigate to orders page
    */
   async navigate(): Promise<void> {
-    await this.goto("/ordering/orders");
+    await this.goto("/orders");
   }
 
   /**
@@ -35,19 +39,12 @@ export class OrdersPage extends BasePage {
   }
 
   /**
-   * Search orders
+   * Filter orders by status using StatusFilter buttons
    */
-  async searchOrders(query: string): Promise<void> {
-    await this.fill(this.searchInput, query);
-    await this.pressKey("Enter");
-    await this.waitForPageLoad();
-  }
-
-  /**
-   * Filter orders by status
-   */
-  async filterByStatus(status: string): Promise<void> {
-    await this.select(this.statusFilter, status);
+  async filterByStatus(
+    status: "All Orders" | "New" | "Completed" | "Cancelled",
+  ): Promise<void> {
+    await this.page.getByRole("button", { name: status, exact: true }).click();
     await this.waitForPageLoad();
   }
 
@@ -55,6 +52,12 @@ export class OrdersPage extends BasePage {
    * Get orders count
    */
   async getOrdersCount(): Promise<number> {
+    const emptyCell = this.page.locator(
+      'table tbody td:has-text("No data found")',
+    );
+    if (await emptyCell.isVisible()) {
+      return 0;
+    }
     return await this.page.locator(this.tableRows).count();
   }
 
@@ -62,7 +65,27 @@ export class OrdersPage extends BasePage {
    * View first order details
    */
   async viewFirstOrder(): Promise<void> {
-    await this.page.locator(this.viewButtons).first().click();
+    await this.page.locator(this.viewOrderLinks).first().click();
+    await this.waitForPageLoad();
+  }
+
+  /**
+   * Complete the first New order
+   */
+  async completeFirstOrder(): Promise<void> {
+    await this.page.locator(this.completeButtons).first().click();
+    await this.waitForElement(this.confirmDialog);
+    await this.click(this.confirmCompleteButton);
+    await this.waitForPageLoad();
+  }
+
+  /**
+   * Cancel the first New order
+   */
+  async cancelFirstOrder(): Promise<void> {
+    await this.page.locator(this.cancelOrderButtons).first().click();
+    await this.waitForElement(this.confirmDialog);
+    await this.click(this.confirmCancelButton);
     await this.waitForPageLoad();
   }
 }

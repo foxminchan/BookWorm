@@ -1,5 +1,7 @@
 import { Locator, Page, expect } from "@playwright/test";
 
+import { BASE_PATH } from "../fixtures/test-data";
+
 /**
  * Base Page Object with common functionality for backoffice pages
  */
@@ -11,10 +13,26 @@ export abstract class BasePage {
   }
 
   /**
+   * Prefix path with Next.js basePath ("/backoffice") if not already prefixed
+   */
+  protected resolvePath(path: string): string {
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
+    if (path === BASE_PATH || path.startsWith(`${BASE_PATH}/`)) {
+      return path;
+    }
+    if (path === "/") {
+      return BASE_PATH;
+    }
+    return `${BASE_PATH}${path.startsWith("/") ? path : `/${path}`}`;
+  }
+
+  /**
    * Navigate to specific URL
    */
   async goto(path: string): Promise<void> {
-    await this.page.goto(path);
+    await this.page.goto(this.resolvePath(path));
     await this.waitForPageLoad();
   }
 
@@ -47,9 +65,9 @@ export abstract class BasePage {
   }
 
   /**
-   * Check if URL matches exactly
+   * Check if URL matches pattern or string
    */
-  async assertUrlEquals(url: string): Promise<void> {
+  async assertUrlEquals(url: string | RegExp): Promise<void> {
     await expect(this.page).toHaveURL(url);
   }
 
@@ -98,13 +116,6 @@ export abstract class BasePage {
   }
 
   /**
-   * Select option from dropdown
-   */
-  async select(selector: string, value: string): Promise<void> {
-    await this.page.selectOption(selector, value);
-  }
-
-  /**
    * Check if element is visible
    */
   async isVisible(selector: string): Promise<boolean> {
@@ -116,23 +127,6 @@ export abstract class BasePage {
    */
   async getText(selector: string): Promise<string> {
     return (await this.page.textContent(selector)) || "";
-  }
-
-  /**
-   * Get text content by role
-   */
-  async getTextByRole(
-    role: "button" | "link" | "heading" | "textbox",
-    name: string,
-  ): Promise<string> {
-    return (await this.page.getByRole(role, { name }).textContent()) || "";
-  }
-
-  /**
-   * Check if element contains text
-   */
-  async assertContainsText(selector: string, text: string): Promise<void> {
-    await expect(this.page.locator(selector)).toContainText(text);
   }
 
   /**
@@ -164,34 +158,10 @@ export abstract class BasePage {
   }
 
   /**
-   * Scroll to element
-   */
-  async scrollTo(selector: string): Promise<void> {
-    await this.page.locator(selector).scrollIntoViewIfNeeded();
-  }
-
-  /**
    * Press keyboard key
    */
   async pressKey(key: string): Promise<void> {
     await this.page.keyboard.press(key);
-  }
-
-  /**
-   * Hover over element
-   */
-  async hover(selector: string): Promise<void> {
-    await this.page.hover(selector);
-  }
-
-  /**
-   * Get attribute value
-   */
-  async getAttribute(
-    selector: string,
-    attribute: string,
-  ): Promise<string | null> {
-    return await this.page.locator(selector).getAttribute(attribute);
   }
 
   /**
@@ -207,12 +177,5 @@ export abstract class BasePage {
   async reload(): Promise<void> {
     await this.page.reload();
     await this.waitForPageLoad();
-  }
-
-  /**
-   * Take screenshot
-   */
-  async screenshot(path?: string): Promise<Buffer> {
-    return await this.page.screenshot({ path, fullPage: true });
   }
 }

@@ -3,56 +3,51 @@
 @p0
 Feature: Admin Authentication
   As an admin user
-  I want to securely log in to the backoffice
-  So that I can manage the bookstore
+  I want to securely authenticate via Microsoft Entra ID
+  So that only authorized admins can manage the bookstore
 
   Background:
     Given the backoffice application is running
 
   @smoke
   @login
-  Scenario: Successful login redirects to dashboard
-    Given I am on the login page
-    When I enter valid admin credentials
-    And I click the login button
-    Then I should be redirected to the dashboard
+  Scenario: Authenticated admin sees the dashboard
+    Given I am logged in as an admin
+    When I navigate to the dashboard
+    Then I should be on the dashboard
     And I should see the navigation menu
-
-  @smoke
-  @login-redirect
-  Scenario: Login redirects to Microsoft Entra ID OAuth provider
-    Given I am on the homepage
-    When I navigate to the login page
-    Then I should be redirected to Microsoft Entra ID OAuth provider
-
-  @validation
-  @login-error
-  Scenario: Login with invalid credentials shows error
-    Given I am on the login page
-    When I enter invalid admin credentials
-    And I click the login button
-    Then I should see an authentication error message
-    And I should remain on the login page
+    And I should see "Admin Portal"
 
   @protected-route
-  Scenario: Accessing dashboard without authentication redirects to login
+  Scenario: Accessing dashboard without authentication triggers Entra ID OAuth
     Given I am not logged in
     When I navigate to the dashboard
-    Then I should be redirected to the login page
+    Then I should see the authentication required prompt
+    And Microsoft Entra ID OAuth sign-in should be triggered
 
   @protected-route
-  Scenario: Accessing books management requires authentication
+  Scenario: Accessing books management without authentication triggers Entra ID OAuth
     Given I am not logged in
-    When I navigate to "/catalog/books"
-    Then I should be redirected to the login page
+    When I navigate to "/books"
+    Then I should see the authentication required prompt
+    And Microsoft Entra ID OAuth sign-in should be triggered
 
   @logout
-  Scenario: Successful logout clears session
+  Scenario: Successful logout via user menu clears session
     Given I am logged in as an admin
+    And I am on the dashboard
     When I open the user menu
-    And I click logout
-    Then I should be redirected to the login page
-    And my session should be cleared
+    And I click log out in the user menu
+    Then my session should be cleared
+    And I should see the authentication required prompt
+
+  @logout
+  Scenario: Successful logout via sidebar button clears session
+    Given I am logged in as an admin
+    And I am on the dashboard
+    When I click the sidebar logout button
+    Then my session should be cleared
+    And I should see the authentication required prompt
 
   @session
   Scenario: Session persists across page navigation

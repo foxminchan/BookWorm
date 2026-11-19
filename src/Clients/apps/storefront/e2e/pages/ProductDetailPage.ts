@@ -14,153 +14,129 @@ export class ProductDetailPage extends BasePage {
 
   // Locators
   get bookTitle(): Locator {
-    return this.page.locator('h1, [data-testid="book-title"]');
+    return this.page.locator("main h1").first();
   }
 
   get bookImage(): Locator {
-    return this.page
-      .locator('img[alt*="book"], [data-testid="book-image"]')
-      .first();
+    return this.page.locator("main img").first();
   }
 
   get price(): Locator {
-    return this.page.locator('[data-testid="book-price"], .price').first();
+    return this.page.locator('[itemprop="price"]').first();
+  }
+
+  get originalPrice(): Locator {
+    return this.page.locator("main span.line-through").first();
   }
 
   get salePrice(): Locator {
-    return this.page.locator('[data-testid="sale-price"], .sale-price');
-  }
-
-  get saleBadge(): Locator {
-    return this.page.locator(
-      '[data-testid="sale-badge"], .sale-badge, :has-text("Sale")',
-    );
+    return this.page
+      .locator("main span.text-primary.text-3xl.font-bold")
+      .first();
   }
 
   get category(): Locator {
-    return this.page.locator(
-      '[data-testid="book-category"], :has-text("Category")',
-    );
+    return this.page.locator('[itemprop="bookEdition"]').first();
   }
 
   get publisher(): Locator {
-    return this.page.locator(
-      '[data-testid="book-publisher"], :has-text("Publisher")',
-    );
+    return this.page.locator('[itemprop="publisher"]').first();
   }
 
   get authors(): Locator {
-    return this.page.locator(
-      '[data-testid="book-authors"], :has-text("Author")',
-    );
+    return this.page.locator('[itemprop="author"]').first();
   }
 
   get rating(): Locator {
-    return this.page.locator(
-      '[data-testid="book-rating"], .rating, [aria-label*="rating"]',
-    );
+    return this.page.locator('[itemprop="aggregateRating"]').first();
   }
 
   get description(): Locator {
-    return this.page.locator(
-      '[data-testid="book-description"], .description, p',
-    );
+    return this.page.locator('[itemprop="description"]').first();
   }
 
   get stockStatus(): Locator {
-    return this.page.locator(
-      '[data-testid="stock-status"], :has-text("In Stock"), :has-text("Out of Stock")',
-    );
+    return this.page
+      .locator('p:has-text("Available in Store"), p:has-text("Out of Stock")')
+      .first();
   }
 
   get quantityInput(): Locator {
-    return this.page.locator(
-      'input[type="number"][name="quantity"], [data-testid="quantity-input"]',
-    );
+    return this.page.locator('input[aria-label="Book quantity"]');
   }
 
   get increaseQuantityButton(): Locator {
-    return this.page.locator(
-      'button[aria-label*="Increase"], button:has-text("+")',
-    );
+    return this.page.locator('button[aria-label="Increase quantity"]').first();
   }
 
   get decreaseQuantityButton(): Locator {
-    return this.page.locator(
-      'button[aria-label*="Decrease"], button:has-text("-")',
-    );
+    return this.page.locator('button[aria-label="Decrease quantity"]').first();
   }
 
   get addToBasketButton(): Locator {
-    return this.page.locator(
-      'button:has-text("Add to Basket"), button:has-text("Add to Cart")',
-    );
+    return this.page.locator('button:has-text("Add to Basket")');
   }
 
   get reviewsSection(): Locator {
-    return this.page.locator(
-      '[data-testid="reviews-section"], section:has-text("Reviews")',
-    );
+    return this.page
+      .locator('section:has(h2:has-text("Customer Feedback"))')
+      .first();
   }
 
   get writeReviewButton(): Locator {
     return this.page.locator(
-      'button[aria-label*="Write the first review"], button[aria-label*="Write a Review"], button:has-text("Write a Review"), button:has-text("Add Review")',
+      'button[aria-label="Write a review"], button[aria-label="Write the first review for this book"]',
     );
   }
 
   get reviewForm(): Locator {
-    return this.page.locator('[data-testid="review-form"], form');
+    return this.page.locator('form:has(button:has-text("Submit Review"))');
+  }
+
+  get reviewStarButtons(): Locator {
+    return this.reviewForm.locator("div.flex.gap-1 button");
   }
 
   get reviewFirstNameInput(): Locator {
-    return this.reviewForm.locator(
-      'input[name="firstName"], input[placeholder*="First"]',
-    );
+    return this.reviewForm.locator('input[name="firstName"]');
   }
 
   get reviewLastNameInput(): Locator {
-    return this.reviewForm.locator(
-      'input[name="lastName"], input[placeholder*="Last"]',
-    );
+    return this.reviewForm.locator('input[name="lastName"]');
   }
 
   get reviewCommentInput(): Locator {
-    return this.reviewForm.locator(
-      'textarea[name="comment"], textarea[placeholder*="comment"]',
-    );
+    return this.reviewForm.locator('textarea[name="comment"]');
   }
 
   get submitReviewButton(): Locator {
     return this.reviewForm.locator(
-      'button[type="submit"], button:has-text("Submit")',
+      'button[type="submit"]:has-text("Submit Review")',
     );
   }
 
   get reviewsList(): Locator {
-    return this.page.locator('[data-testid="reviews-list"], .reviews-list');
+    return this.page.locator("div.space-y-8.lg\\:col-span-2");
   }
 
   get reviewItems(): Locator {
-    return this.reviewsList.locator(
-      '[data-testid="review-item"], article, .review-item',
-    );
+    return this.reviewsList.locator("> div.group");
   }
 
   get reviewSortDropdown(): Locator {
-    return this.page.locator(
-      'select[name="reviewSort"], [data-testid="review-sort"]',
-    );
+    return this.page.locator('button[aria-label="Sort reviews by"]');
   }
 
   get generateSummaryButton(): Locator {
-    return this.page.locator(
-      'button:has-text("Generate Summary"), button:has-text("AI Summary")',
-    );
+    return this.page.locator('button[aria-label="Summarize reviews"]');
+  }
+
+  get reviewSummaryCard(): Locator {
+    return this.page.locator('aside:has(h3:has-text("AI Review Summary"))');
   }
 
   get reviewPagination(): Locator {
-    return this.reviewsSection.locator('[data-testid="pagination"], nav');
+    return this.page.locator('nav[aria-label="Pagination navigation"]');
   }
 
   // Actions
@@ -184,18 +160,24 @@ export class ProductDetailPage extends BasePage {
   }
 
   async getQuantity(): Promise<number> {
-    const value = await this.quantityInput.inputValue();
-    return Number.parseInt(value) || 1;
+    if (await this.quantityInput.isVisible()) {
+      const value = await this.quantityInput.inputValue();
+      return Number.parseInt(value, 10) || 1;
+    }
+    return 0;
   }
 
   async setQuantity(quantity: number): Promise<void> {
+    if ((await this.getQuantity()) === 0) {
+      await this.addToBasket();
+    }
     await this.quantityInput.fill(quantity.toString());
   }
 
   async increaseQuantity(times: number = 1): Promise<void> {
     await forEachSequentially(Array.from({ length: times }), async () => {
       await this.increaseQuantityButton.click();
-      await this.page.waitForTimeout(200); // Small delay between clicks
+      await this.page.waitForTimeout(200);
     });
   }
 
@@ -208,13 +190,12 @@ export class ProductDetailPage extends BasePage {
 
   async addToBasket(): Promise<void> {
     await this.addToBasketButton.click();
-    // Wait for potential success notification or basket update
     await this.page.waitForTimeout(1000);
   }
 
   async isInStock(): Promise<boolean> {
     const status = await this.stockStatus.textContent();
-    return status?.toLowerCase().includes("in stock") || false;
+    return status?.includes("Available in Store") || false;
   }
 
   async isAddToBasketEnabled(): Promise<boolean> {
@@ -226,8 +207,12 @@ export class ProductDetailPage extends BasePage {
   }
 
   async clickWriteReview(): Promise<void> {
-    await this.writeReviewButton.click();
+    await this.writeReviewButton.first().click();
     await expect(this.reviewForm).toBeVisible();
+  }
+
+  async selectRating(stars: number): Promise<void> {
+    await this.reviewStarButtons.nth(stars - 1).click();
   }
 
   async submitReview(
@@ -236,24 +221,17 @@ export class ProductDetailPage extends BasePage {
     comment: string,
     rating: number = 5,
   ): Promise<void> {
-    // Select star rating
-    const starButton = this.reviewForm.locator(
-      `button[aria-label*="${rating} star"]`,
-    );
-    await starButton.click();
-
-    // Fill form
+    await this.selectRating(rating);
     await this.reviewFirstNameInput.fill(firstName);
     await this.reviewLastNameInput.fill(lastName);
     await this.reviewCommentInput.fill(comment);
-
-    // Submit
     await this.submitReviewButton.click();
-    await this.page.waitForTimeout(2000); // Wait for submission
+    await this.page.waitForTimeout(2000);
   }
 
   async sortReviewsBy(option: string): Promise<void> {
-    await this.reviewSortDropdown.selectOption({ label: option });
+    await this.reviewSortDropdown.click();
+    await this.page.locator(`[role="menuitem"]:has-text("${option}")`).click();
     await this.waitForPageLoad();
   }
 
@@ -262,16 +240,16 @@ export class ProductDetailPage extends BasePage {
   }
 
   async goToReviewPage(pageNumber: number): Promise<void> {
-    const pageLink = this.reviewPagination.locator(
-      `a:has-text("${pageNumber}"), button:has-text("${pageNumber}")`,
+    const pageButton = this.reviewPagination.locator(
+      `button[aria-label*="page ${pageNumber} of"]`,
     );
-    await pageLink.click();
+    await pageButton.click();
     await this.waitForPageLoad();
   }
 
   async generateAISummary(): Promise<void> {
     await this.generateSummaryButton.click();
-    await this.page.waitForTimeout(2000); // Wait for AI generation
+    await this.page.waitForTimeout(2000);
   }
 
   // Assertions

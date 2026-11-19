@@ -15,7 +15,7 @@ export class LoginPage extends BasePage {
 
   // Locators
   get redirectingMessage(): Locator {
-    return this.page.locator('h1:has-text("Redirecting to login")');
+    return this.page.locator('h1:has-text("Redirecting to login...")');
   }
 
   get loadingSpinner(): Locator {
@@ -23,7 +23,9 @@ export class LoginPage extends BasePage {
   }
 
   get redirectDescription(): Locator {
-    return this.page.locator('p:has-text("redirect you to the login page")');
+    return this.page.locator(
+      'p:has-text("Please wait while we redirect you to the login page.")',
+    );
   }
 
   // Actions

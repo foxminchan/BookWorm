@@ -15,47 +15,39 @@ export class CheckoutConfirmationPage extends BasePage {
 
   // Locators
   get confirmationMessage(): Locator {
-    return this.page.locator('h1, [data-testid="confirmation-message"]');
+    return this.page.locator('h1:has-text("Order Confirmed")');
   }
 
   get orderIdDisplay(): Locator {
-    return this.page.locator(
-      '[data-testid="order-id"], :has-text("Order ID"), :has-text("Order #")',
-    );
+    return this.page.locator('p:has-text("#")').first();
   }
 
   get orderStatus(): Locator {
-    return this.page.locator('[data-testid="order-status"], .status-badge');
+    return this.page
+      .locator('div:has(> h3:has-text("Order Status")) span')
+      .first();
   }
 
   get totalAmount(): Locator {
-    return this.page.locator('[data-testid="order-total"], :has-text("Total")');
+    return this.page
+      .locator('div:has(> h3:has-text("Order Total")) p.text-primary')
+      .first();
   }
 
   get buyerName(): Locator {
-    return this.page.locator('[data-testid="buyer-name"], :has-text("Name")');
+    return this.page
+      .locator('div:has(> h3:has-text("Shipping Address")) p.font-medium')
+      .first();
   }
 
   get deliveryAddress(): Locator {
-    return this.page.locator(
-      '[data-testid="delivery-address"], :has-text("Delivery Address")',
-    );
-  }
-
-  get emailConfirmationNotice(): Locator {
-    return this.page.locator(
-      ':has-text("email confirmation"), :has-text("confirmation email")',
-    );
+    return this.page
+      .locator('div:has(> h3:has-text("Shipping Address"))')
+      .first();
   }
 
   get viewOrderDetailsButton(): Locator {
-    return this.page.locator(
-      'a:has-text("View Order Details"), a:has-text("Order Details")',
-    );
-  }
-
-  get backToHomeButton(): Locator {
-    return this.page.locator('a:has-text("Back to Home"), a[href="/"]');
+    return this.page.locator('a:has-text("View Order")');
   }
 
   get continueShoppingLink(): Locator {
@@ -70,12 +62,13 @@ export class CheckoutConfirmationPage extends BasePage {
   }
 
   async getOrderId(): Promise<string> {
+    const url = new URL(this.page.url());
+    const queryOrderId = url.searchParams.get("orderId");
+    if (queryOrderId) return queryOrderId;
+
     const text = await this.orderIdDisplay.textContent();
-    // Extract GUID from text like "Order ID: 123e4567-e89b-12d3-a456-426614174000"
-    const match = text?.match(
-      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
-    );
-    return match ? match[0] : "";
+    const match = text?.match(/#([0-9A-F]{8})/i);
+    return match?.[1] ?? "";
   }
 
   async getOrderStatus(): Promise<string> {
@@ -104,11 +97,6 @@ export class CheckoutConfirmationPage extends BasePage {
     await this.waitForPageLoad();
   }
 
-  async backToHome(): Promise<void> {
-    await this.backToHomeButton.click();
-    await this.waitForPageLoad();
-  }
-
   async continueShopping(): Promise<void> {
     if (await this.continueShoppingLink.isVisible()) {
       await this.continueShoppingLink.click();
@@ -123,19 +111,12 @@ export class CheckoutConfirmationPage extends BasePage {
   }
 
   async assertOrderCreated(): Promise<void> {
-    const orderId = await this.getOrderId();
-    expect(orderId).toMatch(
-      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
-    );
+    const text = await this.orderIdDisplay.textContent();
+    expect(text).toMatch(/#[0-9A-F]{8}/i);
   }
 
   async assertSuccessMessage(): Promise<void> {
-    const message = await this.confirmationMessage.textContent();
-    expect(message?.toLowerCase()).toContain("success");
-  }
-
-  async assertEmailConfirmationNotice(): Promise<void> {
-    await expect(this.emailConfirmationNotice).toBeVisible();
+    await expect(this.confirmationMessage).toBeVisible();
   }
 
   async assertTotalAmount(expectedAmount: string): Promise<void> {

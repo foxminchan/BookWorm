@@ -80,20 +80,19 @@ Then(
   "only {string} books should be displayed",
   async ({ page, shopPage }, filterValue: string) => {
     await shopPage.assertBooksDisplayed();
-    const url = page.url();
-    const filterSlug = filterValue
-      .toLowerCase()
-      .replaceAll(/\s+/g, "-")
-      .replaceAll("&", "");
-    expect(url.toLowerCase()).toContain(filterSlug);
+    expect(page.url()).toContain("category=");
+    const checkbox = shopPage.filterSection
+      .getByRole("checkbox", { name: filterValue })
+      .first();
+    await expect(checkbox).toBeChecked();
   },
 );
 
 Then(
   "the {string} filter should be checked",
-  async ({ page }, filterName: string) => {
-    const checkbox = page
-      .locator(`label:has-text("${filterName}") input[type="checkbox"]`)
+  async ({ shopPage }, filterName: string) => {
+    const checkbox = shopPage.filterSection
+      .getByRole("checkbox", { name: filterName })
       .first();
     await expect(checkbox).toBeChecked();
   },
@@ -101,9 +100,9 @@ Then(
 
 Then(
   "the {string} filter should be selected",
-  async ({ page }, filterName: string) => {
-    const checkbox = page
-      .locator(`label:has-text("${filterName}") input[type="checkbox"]`)
+  async ({ shopPage }, filterName: string) => {
+    const checkbox = shopPage.filterSection
+      .getByRole("checkbox", { name: filterName })
       .first();
     await expect(checkbox).toBeChecked();
   },
@@ -145,32 +144,42 @@ Then(
 // Pagination steps
 Given(
   "I am on the shop page with {int} books available",
-  async ({ shopPage }) => {
+  async ({ shopPage }, _bookCount: number) => {
     await shopPage.navigate();
   },
 );
 
 Then(
   "I should see {int} books on page {int}",
-  async ({ shopPage }, bookCount: number) => {
+  async ({ shopPage }, bookCount: number, _pageNumber: number) => {
     const actualCount = await shopPage.getBooksCount();
     expect(actualCount).toBeLessThanOrEqual(bookCount);
   },
 );
 
+When("I click the next page button", async ({ shopPage }) => {
+  await shopPage.goToNextPage();
+});
+
 When("I click page {int}", async ({ shopPage }, pageNumber: number) => {
   await shopPage.goToPage(pageNumber);
 });
 
-Then("I should see {int} more books", async ({ shopPage }) => {
-  const actualCount = await shopPage.getBooksCount();
-  expect(actualCount).toBeGreaterThan(0);
-});
+Then(
+  "I should see {int} more books",
+  async ({ shopPage }, _bookCount: number) => {
+    const actualCount = await shopPage.getBooksCount();
+    expect(actualCount).toBeGreaterThan(0);
+  },
+);
 
-Then("I should see the remaining {int} books", async ({ shopPage }) => {
-  const actualCount = await shopPage.getBooksCount();
-  expect(actualCount).toBeGreaterThan(0);
-});
+Then(
+  "I should see the remaining {int} books",
+  async ({ shopPage }, _bookCount: number) => {
+    const actualCount = await shopPage.getBooksCount();
+    expect(actualCount).toBeGreaterThan(0);
+  },
+);
 
 // Homepage category navigation
 When(
@@ -185,12 +194,9 @@ Then("I should be redirected to shop page", async ({ shopPage }) => {
 });
 
 // Categories page
-
 Then("I should see all available categories", async ({ page }) => {
   await page.waitForLoadState("networkidle");
-  const categories = page.locator(
-    '[data-testid="category-card"], article, .category',
-  );
+  const categories = page.locator('a[href*="/shop?category="]');
   const count = await categories.count();
   expect(count).toBeGreaterThan(0);
 });
@@ -198,21 +204,16 @@ Then("I should see all available categories", async ({ page }) => {
 Then(
   "I should see at least {int} categories",
   async ({ page }, minCount: number) => {
-    const categories = page.locator(
-      '[data-testid="category-card"], article, .category, a[href*="category="]',
-    );
+    const categories = page.locator('a[href*="category="]');
     const count = await categories.count();
     expect(count).toBeGreaterThanOrEqual(minCount);
   },
 );
 
 // Publishers page
-
 Then("I should see all available publishers", async ({ page }) => {
   await page.waitForLoadState("networkidle");
-  const publishers = page.locator(
-    '[data-testid="publisher-card"], article, .publisher',
-  );
+  const publishers = page.locator('a[href*="/shop?publisher="]');
   const count = await publishers.count();
   expect(count).toBeGreaterThan(0);
 });
@@ -220,25 +221,21 @@ Then("I should see all available publishers", async ({ page }) => {
 Then(
   "I should see at least {int} publishers",
   async ({ page }, minCount: number) => {
-    const publishers = page.locator(
-      '[data-testid="publisher-card"], article, .publisher, a[href*="publisher="]',
-    );
+    const publishers = page.locator('a[href*="publisher="]');
     const count = await publishers.count();
     expect(count).toBeGreaterThanOrEqual(minCount);
   },
 );
-
-// "I should see {string} message" is in common.steps.ts
-
-// "I should see {string} button" is in common.steps.ts
 
 // Only books from publisher
 Then(
   "only books from {string} should be displayed",
   async ({ page, shopPage }, publisherName: string) => {
     await shopPage.assertBooksDisplayed();
-    const url = page.url();
-    const publisherSlug = publisherName.toLowerCase().replaceAll(/\s+/g, "-");
-    expect(url.toLowerCase()).toContain(publisherSlug);
+    expect(page.url()).toContain("publisher=");
+    const checkbox = shopPage.filterSection
+      .getByRole("checkbox", { name: publisherName })
+      .first();
+    await expect(checkbox).toBeChecked();
   },
 );

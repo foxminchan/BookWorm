@@ -15,7 +15,7 @@ export class RegisterPage extends BasePage {
 
   // Locators
   get redirectingMessage(): Locator {
-    return this.page.locator('h1:has-text("Redirecting to registration")');
+    return this.page.locator('h1:has-text("Redirecting to registration...")');
   }
 
   get loadingSpinner(): Locator {
@@ -24,7 +24,7 @@ export class RegisterPage extends BasePage {
 
   get redirectDescription(): Locator {
     return this.page.locator(
-      'p:has-text("redirect you to the registration page")',
+      'p:has-text("Please wait while we redirect you to the registration page.")',
     );
   }
 

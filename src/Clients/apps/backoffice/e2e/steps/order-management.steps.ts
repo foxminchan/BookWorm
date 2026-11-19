@@ -15,24 +15,13 @@ Given("there is at least one order", async ({ ordersPage }) => {
   expect(count).toBeGreaterThanOrEqual(1);
 });
 
-Given("there are multiple orders", async ({ ordersPage }) => {
-  const count = await ordersPage.getOrdersCount();
-  expect(count).toBeGreaterThan(1);
-});
-
 Given("there are orders with different statuses", async ({ ordersPage }) => {
   const count = await ordersPage.getOrdersCount();
   expect(count).toBeGreaterThan(0);
 });
 
-Given("there is at least one pending order", async ({ ordersPage }) => {
-  await ordersPage.filterByStatus("Pending");
-  const count = await ordersPage.getOrdersCount();
-  expect(count).toBeGreaterThanOrEqual(1);
-});
-
-Given("there is at least one processing order", async ({ ordersPage }) => {
-  await ordersPage.filterByStatus("Processing");
+Given("there is at least one new order", async ({ ordersPage }) => {
+  await ordersPage.filterByStatus("New");
   const count = await ordersPage.getOrdersCount();
   expect(count).toBeGreaterThanOrEqual(1);
 });
@@ -50,28 +39,21 @@ When("I click view on the first order", async ({ ordersPage }) => {
 });
 
 When(
-  "I search for an order by order number",
-  async ({ ordersPage, scenarioData }) => {
-    const searchQuery = (scenarioData.orderNumber as string) || "12345678";
-    await ordersPage.searchOrders(searchQuery);
-  },
-);
-
-When(
   "I filter orders by {string} status",
   async ({ ordersPage }, status: string) => {
-    await ordersPage.filterByStatus(status);
+    await ordersPage.filterByStatus(
+      status as "All Orders" | "New" | "Completed" | "Cancelled",
+    );
   },
 );
 
-When(
-  "I change the order status to {string}",
-  async ({ page }, status: string) => {
-    await page.selectOption('select[name="status"]', status);
-    await page.getByRole("button", { name: "Update" }).click();
-    await page.waitForLoadState("networkidle");
-  },
-);
+When("I complete the first new order", async ({ ordersPage }) => {
+  await ordersPage.completeFirstOrder();
+});
+
+When("I cancel the first new order", async ({ ordersPage }) => {
+  await ordersPage.cancelFirstOrder();
+});
 
 Then("I should see the orders table", async ({ page }) => {
   await expect(page.locator("table")).toBeVisible();
@@ -80,34 +62,40 @@ Then("I should see the orders table", async ({ page }) => {
 Then(
   "I should see order information including status and total",
   async ({ page }) => {
-    await expect(page.locator("table")).toBeVisible();
+    await expect(
+      page.locator("table thead th", { hasText: "Order ID" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("table thead th", { hasText: "Total" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("table thead th", { hasText: "Status" }),
+    ).toBeVisible();
   },
 );
 
 Then("I should see the order details page", async ({ page }) => {
-  await expect(page).toHaveURL(/\/ordering\/orders\/.+/);
+  await expect(page).toHaveURL(/\/backoffice\/orders\/.+/);
+});
+
+Then("I should see order summary cards", async ({ page }) => {
+  await expect(page.getByText("Order Status")).toBeVisible();
+  await expect(page.getByText("Order Total")).toBeVisible();
+  await expect(page.getByText("Items", { exact: true })).toBeVisible();
 });
 
 Then("I should see ordered items", async ({ page }) => {
+  await expect(page.getByText("Order Items")).toBeVisible();
+});
+
+Then("I should see the order event history", async ({ page }) => {
+  await expect(page.getByText("Event Stream & Time-Travel")).toBeVisible();
+});
+
+Then("I should see only {string} orders", async ({ page }, status: string) => {
   await expect(
-    page.locator("text=/items|products|books/i").first(),
-  ).toBeVisible();
-});
-
-Then("I should see only matching orders", async ({ page }) => {
-  const rows = await page.locator("table tbody tr").count();
-  expect(rows).toBeGreaterThanOrEqual(0);
-});
-
-Then("I should see only pending orders", async ({ page }) => {
-  await page.waitForLoadState("networkidle");
-});
-
-Then("I should see only processing orders", async ({ page }) => {
-  await page.waitForLoadState("networkidle");
-});
-
-Then("I should see only completed orders", async ({ page }) => {
+    page.getByRole("button", { name: status, exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await page.waitForLoadState("networkidle");
 });
 
@@ -115,8 +103,7 @@ Then("the order status should be updated", async ({ page }) => {
   await page.waitForLoadState("networkidle");
 });
 
-Then("I should see different orders", async ({ page }) => {
-  await page.waitForLoadState("networkidle");
-  const rows = await page.locator("table tbody tr").count();
-  expect(rows).toBeGreaterThan(0);
+Then("I should see different orders", async ({ ordersPage }) => {
+  const count = await ordersPage.getOrdersCount();
+  expect(count).toBeGreaterThan(0);
 });

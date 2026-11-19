@@ -1,6 +1,6 @@
 import { test as base, createBdd } from "playwright-bdd";
 
-import { credentials, testData, urls } from "../fixtures/test-data";
+import { testData, urls } from "../fixtures/test-data";
 import {
   BooksPage,
   CustomersPage,
@@ -21,7 +21,6 @@ type BddFixtures = {
   customersPage: CustomersPage;
   reviewsPage: ReviewsPage;
   testData: typeof testData;
-  credentials: typeof credentials;
   urls: typeof urls;
   scenarioData: Record<string, unknown>;
 };
@@ -51,9 +50,6 @@ export const test = base.extend<BddFixtures>({
   },
   testData: async ({}, use) => {
     await use(testData);
-  },
-  credentials: async ({}, use) => {
-    await use(credentials);
   },
   urls: async ({}, use) => {
     await use(urls);

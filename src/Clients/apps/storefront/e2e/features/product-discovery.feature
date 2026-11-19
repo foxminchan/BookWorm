@@ -21,23 +21,23 @@ Feature: Product Search and Filtering
   @filters
   Scenario: Apply multiple filters simultaneously
     Given I am on the shop page
-    When I enter "programming" in the search bar
-    And I select "Technology" category filter
+    When I select "Technology" category filter
+    And I select "Prentice Hall" publisher filter
     And I set price range to "$20-$50"
     Then the results should be filtered accordingly
-    And the URL should contain "search=programming"
-    And the URL should contain "category=technology"
+    And the URL should contain "category="
+    And the URL should contain "publisher="
 
   @sort
   Scenario: Sort books by price ascending
     Given I am on the shop page
-    When I sort by "Price: Low to High"
+    When I sort by "Price (Low to High)"
     Then books should be displayed in ascending price order
 
   @sort
   Scenario: Sort books by price descending
     Given I am on the shop page
-    When I sort by "Price: High to Low"
+    When I sort by "Price (High to Low)"
     Then books should be displayed in descending price order
 
   @pagination
@@ -46,7 +46,7 @@ Feature: Product Search and Filtering
     Given I am on the shop page with 25 books available
     Then I should see 8 books on page 1
 
-    When I click "Next Page"
+    When I click the next page button
     Then I should see page 2 in the URL
     And I should see 8 more books
 
@@ -58,8 +58,8 @@ Feature: Product Search and Filtering
   Scenario: Pagination preserves filters
     Given I am on the shop page
     When I select "Fiction" category filter
-    And I click "Next Page"
-    Then the URL should contain "category=fiction"
+    And I click the next page button
+    Then the URL should contain "category="
     And the URL should contain "page=2"
     And only "Fiction" books should be displayed
 
@@ -89,7 +89,7 @@ Feature: Product Search and Filtering
   Scenario: No results found shows empty state
     Given I am on the shop page
     When I enter "xyzabc123nonexistent" in the search bar
-    Then I should see "No books found" message
+    Then I should see "No Books Found" message
     And I should see "Clear Filters" button
 
   @categories

@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect } from "@playwright/test";
 
 import { Given, Then, When } from "./fixtures";
@@ -33,71 +34,185 @@ When("I press {string} key", async ({ page }, key: string) => {
   await page.waitForTimeout(200);
 });
 
-// Focus management
-Then("I should see a visible focus indicator", async ({ page }) => {
-  const focused = page.locator(":focus");
-  await expect(focused).toBeVisible();
-});
-
-Then("focus should move to the next interactive element", async ({ page }) => {
-  const tag = await page.evaluate(() => document.activeElement?.tagName);
-  expect(tag).toMatch(/BUTTON|A|INPUT|SELECT|TEXTAREA/);
-});
-
+// Heading structure
 Then(
-  "focus should move to the previous interactive element",
+  String.raw`headings should follow logical order \(h1, h2, h3\)`,
   async ({ page }) => {
-    const tag = await page.evaluate(() => document.activeElement?.tagName);
-    expect(tag).toMatch(/BUTTON|A|INPUT|SELECT|TEXTAREA/);
-  },
-);
-
-Then("focus should be trapped within the modal", async ({ page }) => {
-  const dialog = page.locator('[role="dialog"]');
-  const isInside = await page
-    .locator(":focus")
-    .evaluate((el, d) => d?.contains(el), await dialog.elementHandle());
-  expect(isInside).toBeTruthy();
-});
-
-Then("the modal should close", async ({ page }) => {
-  await expect(page.locator('[role="dialog"]')).not.toBeVisible();
-});
-
-Then("focus should return to the trigger element", async ({ page }) => {
-  const tag = await page.evaluate(() => document.activeElement?.tagName);
-  expect(tag).toMatch(/BUTTON|A/);
-});
-
-// ARIA attributes
-Then(
-  "all interactive elements should have accessible names",
-  async ({ page }) => {
-    const buttons = page.locator("button");
-    const names = await buttons.evaluateAll((elements) =>
-      elements.slice(0, 10).map((el) => {
-        const aria =
-          el.getAttribute("aria-label") || el.getAttribute("aria-labelledby");
-        const text = el.textContent?.trim();
-        return aria || text;
-      }),
-    );
-    for (const name of names) {
-      expect(name).toBeTruthy();
+    const headings = await page.evaluate(() => {
+      const allHeadings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+      return Array.from(allHeadings).map((h) =>
+        Number.parseInt(h.tagName.charAt(1), 10),
+      );
+    });
+    expect(headings.length).toBeGreaterThan(0);
+    for (let i = 1; i < headings.length; i++) {
+      expect(headings[i]! - headings[i - 1]!).toBeLessThanOrEqual(1);
     }
   },
 );
 
-Then("all images should have alt attributes", async ({ page }) => {
-  const images = page.locator("img");
-  const imageAttributes = await images.evaluateAll((elements) =>
-    elements.slice(0, 10).map((image) => ({
-      alt: image.getAttribute("alt"),
-      role: image.getAttribute("role"),
+Then("there should be only one h1 per page", async ({ page }) => {
+  const h1Count = await page.locator("h1").count();
+  expect(h1Count).toBe(1);
+});
+
+Then("no heading levels should be skipped", async ({ page }) => {
+  const headings = await page.evaluate(() => {
+    const allHeadings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+    return Array.from(allHeadings).map((h) =>
+      Number.parseInt(h.tagName.charAt(1), 10),
+    );
+  });
+  for (let i = 1; i < headings.length; i++) {
+    expect(headings[i]! - headings[i - 1]!).toBeLessThanOrEqual(1);
+  }
+});
+
+// Skip link
+When("I press Tab key once", async ({ page }) => {
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(200);
+});
+
+Then('the "Skip to main content" link should be focused', async ({ page }) => {
+  const skipLink = page.locator(
+    'a:has-text("Skip to main content"), a[href="#main-content"], a[href="#main"]',
+  );
+  await expect(skipLink.first()).toBeFocused();
+});
+
+Then("it should be visible when focused", async ({ page }) => {
+  const focused = page.locator(":focus");
+  await expect(focused).toBeVisible();
+});
+
+Then("focus should move to main content area", async ({ page }) => {
+  const activeId = await page.evaluate(() => document.activeElement?.id);
+  expect(activeId).toMatch(/main|content/);
+});
+
+// Keyboard navigation flow
+When("I navigate to shop using keyboard", async ({ page }) => {
+  await page.goto("/shop");
+  await page.waitForLoadState("networkidle");
+});
+
+When("I select first book using keyboard", async ({ page }) => {
+  const firstBook = page.locator('ul[aria-label="Book catalog"] a').first();
+  await firstBook.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForLoadState("networkidle");
+});
+
+When("I add to basket using keyboard", async ({ page }) => {
+  const addBtn = page.locator('button:has-text("Add to Basket")');
+  await addBtn.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(500);
+});
+
+When("I navigate to basket using keyboard", async ({ page }) => {
+  const basketLink = page.locator('header a[href="/basket"]').first();
+  await basketLink.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForLoadState("networkidle");
+});
+
+When("I proceed to checkout using keyboard", async ({ page }) => {
+  const checkoutBtn = page.locator('button:has-text("Checkout")');
+  await checkoutBtn.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForLoadState("networkidle");
+});
+
+Then("I should complete the checkout successfully", async ({ page }) => {
+  await expect(page).toHaveURL(/\/checkout\/confirmation/);
+});
+
+Then(
+  "all interactive elements should have been keyboard accessible",
+  async () => {
+    // Implicitly verified by completing the keyboard-only flow
+  },
+);
+
+// Focus management in remove item dialog
+When("I press Tab until remove button is focused", async ({ page }) => {
+  const removeBtn = page
+    .locator('button[aria-label*="Remove"][aria-label*="from basket"]')
+    .first();
+  await removeBtn.focus();
+  await expect(removeBtn).toBeFocused();
+});
+
+When("I press Enter to open remove dialog", async ({ page }) => {
+  await page.keyboard.press("Enter");
+});
+
+Then("focus should move to the dialog", async ({ page }) => {
+  const dialog = page.locator('[role="alertdialog"], [role="dialog"]').first();
+  await expect(dialog).toBeVisible();
+  const focused = page.locator(":focus");
+  const isInside = await focused.evaluate(
+    (el, d) => d?.contains(el),
+    await dialog.elementHandle(),
+  );
+  expect(isInside).toBeTruthy();
+});
+
+Then(
+  'the dialog should have role="dialog" or role="alertdialog"',
+  async ({ page }) => {
+    const dialog = page
+      .locator('[role="dialog"], [role="alertdialog"]')
+      .first();
+    await expect(dialog).toBeVisible();
+  },
+);
+
+Then("the dialog should close", async ({ page }) => {
+  await expect(
+    page.locator('[role="alertdialog"], [role="dialog"]'),
+  ).not.toBeVisible();
+});
+
+Then("focus should return to the remove button", async ({ page }) => {
+  const activeTag = await page.evaluate(() => document.activeElement?.tagName);
+  expect(activeTag).toBe("BUTTON");
+});
+
+// Search functionality
+When("I click the search button", async ({ page }) => {
+  await page.locator('header button[aria-label="Search books"]').click();
+});
+
+Then("the search input should be automatically focused", async ({ page }) => {
+  const input = page.locator("#header-search-input");
+  await expect(input).toBeFocused();
+});
+
+Then("the search input should lose focus", async ({ page }) => {
+  const input = page.locator("#header-search-input");
+  await expect(input).not.toBeFocused();
+});
+
+// Inspection & ARIA
+When("I inspect the page elements", async () => {
+  /* No-op */
+});
+
+Then("all buttons should have accessible names", async ({ page }) => {
+  const buttons = page.locator("button:visible");
+  const accessibleNames = await buttons.evaluateAll((elements) =>
+    elements.slice(0, 10).map((button) => ({
+      text: button.textContent?.trim(),
+      label:
+        button.getAttribute("aria-label") ||
+        button.getAttribute("aria-labelledby"),
     })),
   );
-  for (const { alt, role } of imageAttributes) {
-    expect(alt !== null || role === "presentation").toBeTruthy();
+  for (const { text, label } of accessibleNames) {
+    expect(text || label).toBeTruthy();
   }
 });
 
@@ -129,356 +244,8 @@ Then("all form inputs should have associated labels", async ({ page }) => {
   }
 });
 
-Then("navigation landmarks should be present", async ({ page }) => {
-  const nav = page.locator("nav, [role='navigation']");
-  const count = await nav.count();
-  expect(count).toBeGreaterThan(0);
-});
-
-Then("the main content should have a main landmark", async ({ page }) => {
-  const main = page.locator("main, [role='main']");
-  await expect(main).toBeVisible();
-});
-
-// Heading structure
-Then("there should be exactly one h1 heading", async ({ page }) => {
-  const h1Count = await page.locator("h1").count();
-  expect(h1Count).toBe(1);
-});
-
-Then("there should be only one h1 per page", async ({ page }) => {
-  const h1Count = await page.locator("h1").count();
-  expect(h1Count).toBe(1);
-});
-
-Then(
-  String.raw`headings should follow logical order \(h1, h2, h3\)`,
-  async ({ page }) => {
-    const headings = await page.evaluate(() => {
-      const allHeadings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
-      return Array.from(allHeadings).map((h) =>
-        Number.parseInt(h.tagName.charAt(1)),
-      );
-    });
-    expect(headings.length).toBeGreaterThan(0);
-    for (let i = 1; i < headings.length; i++) {
-      expect(headings[i]! - headings[i - 1]!).toBeLessThanOrEqual(1);
-    }
-  },
-);
-
-// Skip links
-Given("I am at the top of the page", async ({ page }) => {
-  await page.evaluate(() => window.scrollTo(0, 0));
-});
-
-Then("I should see a skip link appear", async ({ page }) => {
-  await page.keyboard.press("Tab");
-  const skipLink = page.locator('a:has-text("Skip to"), a[href="#main"]');
-  const isVisible = (await skipLink.count()) > 0;
-  expect(isVisible).toBeTruthy();
-});
-
-Then("focus should move to the main content", async ({ page }) => {
-  const activeElement = await page.evaluate(
-    () => document.activeElement?.id || document.activeElement?.tagName,
-  );
-  expect(activeElement).toBeTruthy();
-});
-
-// Color contrast
-Then("all text should have sufficient color contrast", async ({ page }) => {
-  const bodyFontSize = await page.evaluate(() => {
-    const styles = globalThis.getComputedStyle(document.body);
-    return Number.parseFloat(styles.fontSize);
-  });
-  expect(bodyFontSize).toBeGreaterThanOrEqual(12);
-});
-
-// Screen reader announcements
-Given("a screen reader is simulated", () => {
-  expect(true).toBeTruthy();
-});
-
-Then(
-  "dynamically updated content should use aria-live regions",
-  async ({ page }) => {
-    const liveRegions = page.locator("[aria-live]");
-    const count = await liveRegions.count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  },
-);
-
-Then(
-  "error messages should be announced to screen readers",
-  async ({ page }) => {
-    const alerts = page.locator('[role="alert"], [aria-live="assertive"]');
-    const count = await alerts.count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  },
-);
-
-Then(
-  "success messages should be announced to screen readers",
-  async ({ page }) => {
-    const politeRegions = page.locator('[role="status"], [aria-live="polite"]');
-    const count = await politeRegions.count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  },
-);
-
-// Touch targets
-Then(
-  "all interactive elements should meet minimum touch target size",
-  async ({ page }) => {
-    const buttons = page.locator("button:visible, a:visible");
-    const targetSizes = await buttons.evaluateAll((elements) =>
-      elements.slice(0, 10).map((element) => {
-        const { width, height } = element.getBoundingClientRect();
-        return Math.max(width, height);
-      }),
-    );
-    for (const targetSize of targetSizes) {
-      expect(targetSize).toBeGreaterThanOrEqual(24);
-    }
-  },
-);
-
-// Page load announcements
-Then("the page title should be descriptive", async ({ page }) => {
-  const title = await page.title();
-  expect(title).toBeTruthy();
-  expect(title.length).toBeGreaterThan(3);
-});
-
-Then(
-  "the page should announce the new page to screen readers",
-  async ({ page }) => {
-    const title = await page.title();
-    expect(title).toBeTruthy();
-  },
-);
-
-// Reduced motion
-Given("I have reduced motion preferences enabled", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-});
-
-Then("animations should be reduced or disabled", async ({ page }) => {
-  const hasReducedMotion = await page.evaluate(
-    () => globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  expect(hasReducedMotion).toBeTruthy();
-});
-
-Then("transitions should be minimal", async ({ page }) => {
-  const hasReducedMotion = await page.evaluate(
-    () => globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  expect(hasReducedMotion).toBeTruthy();
-});
-
-// High contrast
-Given("I have high contrast mode enabled", async ({ page }) => {
-  await page.emulateMedia({ forcedColors: "active" });
-});
-
-Then("the page should still be usable", async ({ page }) => {
-  const main = page.locator("main, body");
-  await expect(main).toBeVisible();
-});
-
-Then("all content should remain visible", async ({ page }) => {
-  const main = page.locator("main, body");
-  await expect(main).toBeVisible();
-});
-
-// Text zoom
-Given("I have zoomed to 200%", async ({ page }) => {
-  await page.evaluate(() => {
-    (document.body.style as any).zoom = "2";
-  });
-});
-
-Then("no content should overflow horizontally", async ({ page }) => {
-  const hasOverflow = await page.evaluate(() => {
-    return (
-      document.documentElement.scrollWidth >
-      document.documentElement.clientWidth * 2.5
-    );
-  });
-  expect(hasOverflow).toBeFalsy();
-});
-
-Then("all text should remain readable", async ({ page }) => {
-  const main = page.locator("main, body");
-  await expect(main).toBeVisible();
-});
-
-// --- Missing Steps from accessibility.feature ---
-
-// Skip link
-When("I press Tab key once", async ({ page }) => {
-  await page.keyboard.press("Tab");
-  await page.waitForTimeout(200);
-});
-
-Then('the "Skip to main content" link should be focused', async ({ page }) => {
-  const skipLink = page.locator(
-    'a[href="#main-content"], a[href="#main"], .skip-link',
-  );
-  await expect(skipLink).toBeFocused();
-});
-
-Then("it should be visible when focused", async ({ page }) => {
-  const focused = page.locator(":focus");
-  await expect(focused).toBeVisible();
-});
-
-Then("focus should move to main content area", async ({ page }) => {
-  const activeId = await page.evaluate(() => document.activeElement?.id);
-  expect(activeId).toMatch(/main|content/);
-});
-
-// Keyboard navigation flow
-When("I navigate to shop using keyboard", async ({ page }) => {
-  await page.goto("/shop"); // Simplified for stability
-  await page.locator("body").focus();
-});
-
-When("I select first book using keyboard", async ({ page }) => {
-  const firstBook = page
-    .locator('article a, [data-testid="book-card"] a')
-    .first();
-  await firstBook.focus();
-  await page.keyboard.press("Enter");
-  await page.waitForLoadState("networkidle");
-});
-
-When("I add to basket using keyboard", async ({ page }) => {
-  const addBtn = page.locator('button:has-text("Add to Basket")');
-  await addBtn.focus();
-  await page.keyboard.press("Enter");
-  await page.waitForTimeout(500);
-});
-
-When("I navigate to basket using keyboard", async ({ page }) => {
-  const basketLink = page.locator('a[href="/basket"]');
-  await basketLink.focus();
-  await page.keyboard.press("Enter");
-  await page.waitForLoadState("networkidle");
-});
-
-When("I proceed to checkout using keyboard", async ({ page }) => {
-  const checkoutBtn = page.locator(
-    'a[href="/checkout"], button:has-text("Checkout")',
-  );
-  await checkoutBtn.focus();
-  await page.keyboard.press("Enter");
-  await page.waitForLoadState("networkidle");
-});
-
-Then("I should complete the checkout successfully", async ({ page }) => {
-  await expect(page).toHaveURL(/\/checkout/);
-});
-
-Then(
-  "all interactive elements should have been keyboard accessible",
-  async () => {
-    // Implicitly verified by the flow
-  },
-);
-
-// Focus management
-Given("I have 1 book in my basket", async ({ page }) => {
-  await page.goto("/shop");
-  await page.locator('button:has-text("Add to Basket")').first().click();
-});
-
-When("I press Tab until remove button is focused", async ({ page }) => {
-  const removeBtn = page
-    .locator('button[aria-label="Remove item"], button:has-text("Remove")')
-    .first();
-  await removeBtn.focus();
-});
-
-When("I press Enter to open remove dialog", async ({ page }) => {
-  await page.keyboard.press("Enter");
-});
-
-Then("focus should move to the dialog", async ({ page }) => {
-  const dialog = page.locator('[role="dialog"]');
-  await expect(dialog).toBeVisible();
-  const focused = page.locator(":focus");
-  const isInside = await focused.evaluate(
-    (el, d) => d?.contains(el),
-    await dialog.elementHandle(),
-  );
-  expect(isInside).toBeTruthy();
-});
-
-Then(
-  'the dialog should have role="dialog" or role="alertdialog"',
-  async ({ page }) => {
-    const dialog = page.locator('[role="dialog"], [role="alertdialog"]');
-    await expect(dialog).toBeVisible();
-  },
-);
-
-Then("focus should cycle within the dialog only", async ({ page }) => {
-  // Simplified check
-  const dialog = page.locator('[role="dialog"]');
-  await expect(dialog).toBeVisible();
-});
-
-Then("the dialog should close", async ({ page }) => {
-  await expect(page.locator('[role="dialog"]')).not.toBeVisible();
-});
-
-Then("focus should return to the remove button", async ({ page }) => {
-  // Optimization: Just check if body or a button is focused
-  const activeTag = await page.evaluate(() => document.activeElement?.tagName);
-  expect(activeTag).toBeTruthy();
-});
-
-// Search functionality
-When("I click the search button", async ({ page }) => {
-  await page
-    .locator('button[aria-label="Search"], [data-testid="search-trigger"]')
-    .click();
-});
-
-Then("the search input should be automatically focused", async ({ page }) => {
-  const input = page.locator('input[type="search"], input[name="search"]');
-  await expect(input).toBeFocused();
-});
-
-Then("the search input should lose focus", async ({ page }) => {
-  const input = page.locator('input[type="search"], input[name="search"]');
-  await expect(input).not.toBeFocused();
-});
-
-// Inspection
-When("I inspect the page elements", async () => {
-  /* No-op */
-});
-
-Then("all buttons should have accessible names", async ({ page }) => {
-  const buttons = page.locator("button");
-  const accessibleNames = await buttons.evaluateAll((elements) =>
-    elements.slice(0, 5).map((button) => ({
-      text: button.textContent,
-      label: button.getAttribute("aria-label"),
-    })),
-  );
-  for (const { text, label } of accessibleNames) {
-    expect(text || label).toBeTruthy();
-  }
-});
-
 Then("all images should have descriptive alt text", async ({ page }) => {
   const imgs = page.locator("img");
-  // Check a sample
   const count = await imgs.count();
   if (count > 0) {
     const alt = await imgs.first().getAttribute("alt");
@@ -486,87 +253,13 @@ Then("all images should have descriptive alt text", async ({ page }) => {
   }
 });
 
-Then(
-  'the basket icon should announce "Shopping basket, X items"',
-  async ({ page }) => {
-    const icon = page.locator('a[href="/basket"]');
-    const label = await icon.getAttribute("aria-label");
-    expect(label).toMatch(/basket|cart/i);
-  },
-);
-
-// Live regions
-When("I add item to basket", async ({ page }) => {
-  await page.locator('button:has-text("Add to Basket")').first().click();
-});
-
-Then("an aria-live region should announce the update", async ({ page }) => {
-  const live = page.locator('[aria-live="polite"], [role="status"]');
-  await expect(live).toBeVisible();
-});
-
-Then("the basket count should be updated", async ({ page }) => {
-  await expect(page.locator('[data-testid="basket-count"]')).toBeVisible();
-});
-
-// Filter changes
-
-When("I select a category filter", async ({ page }) => {
-  await page.locator('input[type="checkbox"]').first().click();
-});
-
-Then("the results count should be announced", async ({ page }) => {
-  const status = page.locator('[role="status"]');
-  await expect(status).toBeVisible();
-});
-
-Then("the aria-live region should update", async ({ page }) => {
-  const live = page.locator("[aria-live]");
-  await expect(live).toBeVisible();
-});
-
-// Form errors
-When("I submit the form without filling required fields", async ({ page }) => {
-  await page.locator('button[type="submit"]').click();
-});
-
-Then(
-  "each error should have aria-describedby linking to error message",
-  async ({ page }) => {
-    // Generic check
-    const invalid = page.locator('[aria-invalid="true"]').first();
-    if (await invalid.isVisible()) {
-      const describedBy = await invalid.getAttribute("aria-describedby");
-      expect(describedBy).toBeTruthy();
-    }
-  },
-);
-
-Then("the first error should be announced", async ({ page }) => {
-  // Check for alert role
-  await expect(page.locator('[role="alert"]')).toBeVisible();
-});
-
-Then("focus should move to first invalid field", async ({ page }) => {
-  const invalid = page.locator('[aria-invalid="true"]').first();
-  if (await invalid.isVisible()) {
-    await expect(invalid).toBeFocused();
-  }
+Then('the basket icon should announce "Shopping basket"', async ({ page }) => {
+  const icon = page.locator('header a[href="/basket"]').first();
+  const label = await icon.getAttribute("aria-label");
+  expect(label).toContain("Shopping basket");
 });
 
 // Loading states
-When("the books are loading", async () => {
-  /* no-op */
-});
-
-Then('loading skeletons should have role="status"', async ({ page }) => {
-  // Pass if no skeletons visible or if they have role status
-});
-
-Then('aria-label="Loading books" or similar', async () => {
-  /* no-op */
-});
-
 When("books finish loading", async ({ page }) => {
   await page.waitForLoadState("networkidle");
 });
@@ -576,9 +269,10 @@ Then("the content should have proper semantic structure", async ({ page }) => {
 });
 
 // Landmarks
-Then("the page should have:", async ({ page }, table) => {
+Then("the page should have:", async ({ page }, _table: unknown) => {
   await expect(page.locator("main")).toBeVisible();
-  await expect(page.locator("nav")).toBeVisible();
+  await expect(page.locator("nav").first()).toBeVisible();
+  await expect(page.locator("footer")).toBeVisible();
 });
 
 Then(
@@ -592,52 +286,54 @@ Then(
   },
 );
 
-// Color contrast
-When("I run automated accessibility scan", async () => {
-  /* Axe scan placeholder */
+// Axe-core automated scan
+When("I run automated accessibility scan", async ({ page, scenarioData }) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa"])
+    .analyze();
+  scenarioData.axeResults = results;
 });
 
-Then("there should be no color contrast violations", async () => {
-  /* assumed pass */
-});
+Then(
+  "there should be no color contrast violations",
+  async ({ scenarioData }) => {
+    const results = scenarioData.axeResults as Awaited<
+      ReturnType<AxeBuilder["analyze"]>
+    >;
+    const contrastViolations = results.violations.filter(
+      (v) => v.id === "color-contrast",
+    );
+    expect(contrastViolations).toEqual([]);
+  },
+);
 
-Then("WCAG AA standards should be met", async () => {
-  /* assumed pass */
+Then("WCAG AA standards should be met", async ({ scenarioData }) => {
+  const results = scenarioData.axeResults as Awaited<
+    ReturnType<AxeBuilder["analyze"]>
+  >;
+  expect(results.violations).toEqual([]);
 });
 
 // Mobile
 Given("I am on the homepage on mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/");
+  await page.waitForLoadState("networkidle");
 });
 
 When("I navigate using touch", async () => {
-  /* no-op */
+  /* No-op */
 });
 
 Then("the mobile bottom nav should have proper labels", async ({ page }) => {
-  const nav = page.locator("nav.mobile-nav");
-  if (await nav.isVisible()) {
-    await expect(nav).toBeVisible();
-  }
+  const nav = page.locator('nav[aria-label="Mobile main navigation"]');
+  await expect(nav).toBeVisible();
+  const links = nav.locator("a");
+  const count = await links.count();
+  expect(count).toBeGreaterThan(0);
 });
 
-Then("touch targets should be at least 44x44 pixels", async () => {
-  /* assumed pass */
-});
-
-Then("all interactive elements should be reachable", async () => {
-  /* assumed pass */
-});
-
-Then("no heading levels should be skipped", async ({ page }) => {
-  const headings = await page.evaluate(() => {
-    const allHeadings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
-    return Array.from(allHeadings).map((h) =>
-      Number.parseInt(h.tagName.charAt(1)),
-    );
-  });
-  for (let i = 1; i < headings.length; i++) {
-    expect(headings[i]! - headings[i - 1]!).toBeLessThanOrEqual(1);
-  }
+Then("all interactive elements should be reachable", async ({ page }) => {
+  const nav = page.locator('nav[aria-label="Mobile main navigation"]');
+  await expect(nav).toBeVisible();
 });

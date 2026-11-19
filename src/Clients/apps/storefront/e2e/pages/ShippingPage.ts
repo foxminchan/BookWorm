@@ -15,37 +15,31 @@ export class ShippingPage extends BasePage {
 
   // Locators
   get pageHeading(): Locator {
-    return this.page.locator('h1:has-text("Shipping")');
+    return this.page.locator('h1:has-text("Shipping")').first();
   }
 
   get shippingMethods(): Locator {
-    return this.page.locator(
-      '[data-testid="shipping-methods"], section:has-text("Methods")',
-    );
+    return this.page
+      .locator(
+        'main section:has-text("Shipping"), main section:has-text("Standard")',
+      )
+      .first();
   }
 
   get deliveryTimeframes(): Locator {
-    return this.page.locator(
-      '[data-testid="delivery-timeframes"], :has-text("Delivery Time")',
-    );
+    return this.page
+      .locator('main :has-text("business days"), main :has-text("Delivery")')
+      .first();
   }
 
   get shippingCosts(): Locator {
-    return this.page.locator(
-      '[data-testid="shipping-costs"], :has-text("Shipping Cost")',
-    );
+    return this.page
+      .locator('main :has-text("Free Shipping"), main :has-text("$")')
+      .first();
   }
 
   get internationalShipping(): Locator {
-    return this.page.locator(
-      '[data-testid="international-shipping"], :has-text("International")',
-    );
-  }
-
-  get breadcrumbs(): Locator {
-    return this.page.locator(
-      'nav[aria-label="Breadcrumb"], [data-testid="breadcrumbs"]',
-    );
+    return this.page.locator('main :has-text("International")').first();
   }
 
   // Actions

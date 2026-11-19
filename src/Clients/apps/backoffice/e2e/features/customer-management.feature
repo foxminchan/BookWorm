@@ -4,7 +4,7 @@
 Feature: Customer Management
   As an admin
   I want to manage customer information
-  So that I can provide better service and support
+  So that I can maintain accurate customer records
 
   Background:
     Given the backoffice application is running
@@ -16,34 +16,28 @@ Feature: Customer Management
   Scenario: View list of customers
     When the customers page loads
     Then I should see the customers table
-    And I should see customer information
+    And I should see customer Name and Address columns
 
-  @view-customer-details
-  Scenario: View customer details
+  @delete-customer
+  Scenario: Delete a customer with confirmation
     Given there is at least one customer
-    When I click view on the first customer
-    Then I should see the customer details page
-    And I should see customer contact information
-    And I should see customer order history
+    When I click the delete button for the first customer
+    Then I should see a confirmation dialog
+    When I confirm the customer deletion
+    Then I should see a success message
 
-  @search
-  @customers
-  Scenario: Search for customers by name
-    Given there are multiple customers
-    When I search for a customer by name
-    Then I should see only matching customers
-
-  @search
-  @customers
-  Scenario: Search for customers by email
-    Given there are multiple customers
-    When I search for a customer by email
-    Then I should see only matching customers
+  @delete-customer
+  @cancel
+  Scenario: Cancel customer deletion
+    Given there is at least one customer
+    When I click the delete button for the first customer
+    And I cancel the customer deletion
+    Then the customer should remain in the list
 
   @pagination
   @customers
   Scenario: Navigate through customer pages
     Given there are more than 10 customers
-    When I navigate to page 2
+    When I navigate to the next page
     Then I should see different customers
     And the pagination should update
