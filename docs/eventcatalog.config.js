@@ -11,7 +11,7 @@ export default {
 	editUrl: "https://github.com/foxminchan/BookWorm/edit/main/docs",
 	output: "static",
 	trailingSlash: false,
-	base: "/",
+	base: "/BookWorm",
 
 	linkValidation: {
 		onBrokenLinks: "error",
