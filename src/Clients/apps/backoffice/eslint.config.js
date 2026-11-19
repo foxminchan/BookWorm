@@ -7,35 +7,10 @@ export default [
   ...nextJsConfig,
   jsxA11y.flatConfigs.recommended,
   {
-    ignores: [
-      ".next/**",
-      ".features-gen/**",
-      "public/mockServiceWorker.js",
-      "coverage/**",
-      "**/coverage/**",
-      "coverage/lcov-report/**",
-    ],
-  },
-  {
     rules: {
       "react-hooks/incompatible-library": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/immutability": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "no-undef": "off",
-    },
-  },
-  {
-    files: ["**/__tests__/**/*.test.tsx", "**/__tests__/**/*.test.ts"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    },
-  },
-  {
-    files: ["e2e/**/*.ts", "e2e/**/*.js"],
-    rules: {
-      "react-hooks/rules-of-hooks": "off",
-      "no-empty-pattern": "off",
     },
   },
 ];
