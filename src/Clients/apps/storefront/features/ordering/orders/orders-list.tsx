@@ -5,7 +5,6 @@ import { ChevronRight } from "lucide-react";
 import type { Order } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 import { formatDate, formatPrice } from "@workspace/utils/format";
-
 import { getOrderStatusColorBordered } from "@workspace/utils/order";
 
 type OrdersListProps = {
