@@ -23,6 +23,10 @@ export default {
 		type: "resource",
 	},
 
+	lastUpdated: {
+		enabled: true,
+	},
+
 	navigation: {
 		pages: ["list:top-level-domains", "list:top-level-diagrams", "list:all"],
 		groups: [

@@ -1,10 +1,28 @@
 import { defineConfig } from "allure";
 import { qualityGateDefaultRules } from "allure/rules";
+import path from "node:path";
+
+const enricherPluginPath = path.resolve(
+  import.meta.dirname,
+  "../../allure-enricher.mjs",
+);
 
 export default defineConfig({
   name: "Storefront Unit Tests",
   output: "allure-report",
+  historyPath: "./.allure/history.jsonl",
+  historyLimit: 20,
+  defaultLabels: {
+    severity: "normal",
+    epic: "Storefront",
+  },
   plugins: {
+    enricher: {
+      import: enricherPluginPath,
+      options: {
+        defaultEpic: "Storefront",
+      },
+    },
     awesome: {
       options: {
         singleFile: true,

@@ -16,7 +16,18 @@ export default defineConfig({
   retries: isCI ? 2 : 0,
   workers: isCI ? 4 : undefined,
   reporter: [
-    ["allure-playwright", { outputFolder: "allure-results", suiteTitle: true }],
+    [
+      "allure-playwright",
+      {
+        outputFolder: "allure-results",
+        suiteTitle: true,
+        globalLabels: {
+          layer: "e2e",
+          epic: "Storefront",
+          severity: "normal",
+        },
+      },
+    ],
   ],
   use: {
     baseURL: process.env.BASE_URL || "http://localhost:3000",

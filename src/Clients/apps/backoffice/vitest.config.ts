@@ -26,6 +26,11 @@ export default defineConfig({
         "allure-vitest/reporter",
         {
           resultsDir: "./allure-results",
+          globalLabels: {
+            layer: "unit",
+            epic: "Backoffice",
+            severity: "normal",
+          },
           links: {
             issue: {
               nameTemplate: "Issue #%s",

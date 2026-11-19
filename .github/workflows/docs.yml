@@ -171,7 +171,12 @@ jobs:
           shopt -s nullglob
           result_dirs=(../../allure-results-all/*)
           if [ ${#result_dirs[@]} -gt 0 ]; then
+            mkdir -p .allure
+            curl -sfL "https://foxminchan.github.io/BookWorm/reports/history.jsonl" -o .allure/history.jsonl || rm -f .allure/history.jsonl
             ./node_modules/.bin/allure generate "${result_dirs[@]}" --config ./allurerc.mjs --output ../../docs/dist/reports
+            if [ -f .allure/history.jsonl ]; then
+              cp .allure/history.jsonl ../../docs/dist/reports/history.jsonl
+            fi
           else
             echo "No Allure results found to merge."
           fi

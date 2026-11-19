@@ -148,7 +148,12 @@
     },
     "allure:generate": {
       "dependsOn": ["test"],
-      "inputs": ["allure-results/**"],
+      "cache": false,
+      "inputs": [
+        "allure-results/**",
+        "allurerc.mjs",
+        "../../allure-enricher.mjs"
+      ],
       "outputs": ["allure-report/**"]
     },
     "allure:serve": {
