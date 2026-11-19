@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StackExchange.Redis;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Chassis.EventBus.Idempotency;
@@ -27,10 +28,13 @@ public interface IIntegrationEventIdempotencyGuard
     );
 }
 
-internal sealed class FusionCacheIdempotencyGuard(IFusionCache cache)
-    : IIntegrationEventIdempotencyGuard
+internal sealed class FusionCacheIdempotencyGuard(
+    IFusionCache cache,
+    IConnectionMultiplexer? redis = null
+) : IIntegrationEventIdempotencyGuard
 {
     private static readonly TimeSpan _defaultTtl = TimeSpan.FromHours(24);
+    private readonly SemaphoreSlim _inMemoryLock = new(1, 1);
 
     public async Task<bool> TryAcquireAsync(
         Guid eventId,
@@ -40,23 +44,55 @@ internal sealed class FusionCacheIdempotencyGuard(IFusionCache cache)
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(consumerName);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var key = $"idempotency:{consumerName}:{eventId:N}";
-        var existing = await cache.TryGetAsync<bool>(key, token: cancellationToken);
+        var effectiveTtl = ttl ?? _defaultTtl;
 
-        if (existing.HasValue)
+        if (redis is not null)
         {
-            return false;
+            var acquired = await redis
+                .GetDatabase()
+                .StringSetAsync(key, "1", effectiveTtl, When.NotExists);
+
+            if (!acquired)
+            {
+                return false;
+            }
+
+            await cache.SetAsync(
+                key,
+                true,
+                new FusionCacheEntryOptions(effectiveTtl) { SkipDistributedCacheWrite = true },
+                cancellationToken
+            );
+
+            return true;
         }
 
-        await cache.SetAsync(
-            key,
-            true,
-            new FusionCacheEntryOptions(ttl ?? _defaultTtl),
-            cancellationToken
-        );
+        await _inMemoryLock.WaitAsync(cancellationToken);
+        try
+        {
+            var existing = await cache.TryGetAsync<bool>(key, token: cancellationToken);
 
-        return true;
+            if (existing.HasValue)
+            {
+                return false;
+            }
+
+            await cache.SetAsync(
+                key,
+                true,
+                new FusionCacheEntryOptions(effectiveTtl),
+                cancellationToken
+            );
+
+            return true;
+        }
+        finally
+        {
+            _inMemoryLock.Release();
+        }
     }
 }
 

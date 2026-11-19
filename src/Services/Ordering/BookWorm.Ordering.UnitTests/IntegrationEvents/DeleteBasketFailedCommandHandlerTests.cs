@@ -1,3 +1,4 @@
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
 using BookWorm.Ordering.Domain.AggregatesModel.BuyerAggregate;
@@ -63,6 +64,45 @@ public sealed class DeleteBasketFailedCommandHandlerTests
 
         await _handler.Handle(command, CancellationToken.None);
 
+        _unitOfWorkMock.Verify(
+            x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
+
+    [Test]
+    public async Task GivenDuplicateCommand_WhenHandling_ThenShouldIgnoreWithoutMutatingOrder()
+    {
+        var command = new DeleteBasketFailedCommand(
+            Guid.CreateVersion7(),
+            "user@test.com",
+            Guid.CreateVersion7(),
+            50.00m
+        );
+
+        var guardMock = new Mock<IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    command.Id,
+                    nameof(DeleteBasketFailedCommandHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(false);
+
+        var handler = new DeleteBasketFailedCommandHandler(
+            _repositoryMock.Object,
+            guardMock.Object
+        );
+
+        await handler.Handle(command, CancellationToken.None);
+
+        _repositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
         _unitOfWorkMock.Verify(
             x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Never

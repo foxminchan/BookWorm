@@ -1,6 +1,7 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Features.Books;
 using BookWorm.Catalog.Features.Books.Get;
+using BookWorm.Chassis.Endpoints;
 using BookWorm.Chassis.Exceptions;
 using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -33,7 +34,8 @@ public sealed class GetBookEndpointTests
             null,
             [],
             4.5,
-            10
+            10,
+            42
         );
     }
 
@@ -54,6 +56,7 @@ public sealed class GetBookEndpointTests
         result.ShouldNotBeNull();
         result.ShouldBeOfType<Ok<BookDto>>();
         result.Value.ShouldBe(_bookDto);
+        result.Value.ShouldBeAssignableTo<IHasVersion>();
         result.Value?.Id.ShouldBe(_bookId);
         result.Value?.Name.ShouldBe(_bookDto.Name);
         result.Value?.Description.ShouldBe(_bookDto.Description);
@@ -66,6 +69,7 @@ public sealed class GetBookEndpointTests
         result.Value?.Authors.Count.ShouldBe(_bookDto.Authors.Count);
         result.Value?.AverageRating.ShouldBe(_bookDto.AverageRating);
         result.Value?.TotalReviews.ShouldBe(_bookDto.TotalReviews);
+        result.Value?.Version.ShouldBe(42);
 
         _senderMock.Verify(
             x => x.Send(It.Is<GetBookQuery>(q => q.Id == _bookId), It.IsAny<CancellationToken>()),

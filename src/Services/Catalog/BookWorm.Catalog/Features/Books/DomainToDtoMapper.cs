@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Features.Authors;
+using BookWorm.Catalog.Features.Authors;
 using BookWorm.Catalog.Features.Categories;
 using BookWorm.Catalog.Features.Publishers;
 
@@ -23,7 +23,8 @@ internal sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book
             book.Publisher?.ToPublisherDto(),
             [.. book.BookAuthors.Select(x => x.Author.ToAuthorDto())],
             book.AverageRating,
-            book.TotalReviews
+            book.TotalReviews,
+            book.RowVersion
         );
     }
 

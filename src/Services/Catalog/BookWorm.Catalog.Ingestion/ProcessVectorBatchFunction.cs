@@ -1,3 +1,5 @@
+using BookWorm.Chassis.EventBus.Kafka;
+using BookWorm.Contracts;
 using Microsoft.Azure.Functions.Worker;
 
 namespace BookWorm.Catalog.Ingestion;
@@ -16,14 +18,18 @@ public sealed partial class ProcessVectorBatchFunction(
         CancellationToken cancellationToken
     )
     {
-        LogReceivedEvent(logger, message.Length);
+        var @event = CloudEventsMessageParser.Deserialize<ProcessVectorBatchIntegrationEvent>(
+            message
+        );
+
+        LogReceivedEvent(logger, @event.Id, message.Length);
 
         await processor.ProcessAsync(cancellationToken);
     }
 
     [LoggerMessage(
         Level = LogLevel.Information,
-        Message = "Received vector batch trigger event ({Length} chars)"
+        Message = "Received vector batch trigger event {EventId} ({Length} chars)"
     )]
-    private static partial void LogReceivedEvent(ILogger logger, int length);
+    private static partial void LogReceivedEvent(ILogger logger, Guid eventId, int length);
 }

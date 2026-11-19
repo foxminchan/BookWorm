@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Rating.Features.Create;
+namespace BookWorm.Rating.Features.Create;
 
 internal sealed class CreateFeedbackEndpoint
     : IEndpoint<Ok<FeedbackId>, CreateFeedbackCommand, ISender>
@@ -13,7 +13,8 @@ internal sealed class CreateFeedbackEndpoint
             .WithName(nameof(CreateFeedbackEndpoint))
             .WithSummary("Create Feedback")
             .WithDescription("Create a new feedback")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<FeedbackId>> HandleAsync(

@@ -2,11 +2,15 @@ using BookWorm.Chassis.Utilities.Configurations;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using StackExchange.Redis;
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
+using ZiggyCreatures.Caching.Fusion.Locking.Distributed;
+using ZiggyCreatures.Caching.Fusion.Locking.Distributed.Redis;
 using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 
 namespace BookWorm.Chassis.Caching;
@@ -70,6 +74,26 @@ public static class CachingExtensions
                 .WithTracing(tracing => tracing.AddFusionCacheInstrumentation());
 
             configure?.Invoke(fusionBuilder);
+        }
+
+        /// <summary>
+        ///     Registers <see cref="IFusionCacheDistributedLocker" /> backed by Redis,
+        ///     reusing the <see cref="IConnectionMultiplexer" /> from dependency injection.
+        /// </summary>
+        public void AddDistributedLock()
+        {
+            builder.Services.AddSingleton<IFusionCacheDistributedLocker>(sp =>
+            {
+                var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+                var options = Options.Create(
+                    new RedisDistributedLockerOptions
+                    {
+                        ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer),
+                    }
+                );
+                var logger = sp.GetRequiredService<ILogger<RedisDistributedLocker>>();
+                return new RedisDistributedLocker(options, logger);
+            });
         }
     }
 }

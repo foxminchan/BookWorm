@@ -5,6 +5,9 @@ namespace BookWorm.Catalog.Features.Books.Create;
 [Transactional]
 public sealed class CreateBookCommand : ICommand<BookId>, IBookInput
 {
+    [JsonIgnore]
+    public string? ImageName { get; set; }
+
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public IFormFile? Image { get; init; }
@@ -13,9 +16,6 @@ public sealed class CreateBookCommand : ICommand<BookId>, IBookInput
     public Guid CategoryId { get; init; }
     public Guid PublisherId { get; init; }
     public Guid[] AuthorIds { get; init; } = [];
-
-    [JsonIgnore]
-    public string? ImageName { get; set; }
 }
 
 internal sealed class CreateBookHandler(IBookRepository repository)

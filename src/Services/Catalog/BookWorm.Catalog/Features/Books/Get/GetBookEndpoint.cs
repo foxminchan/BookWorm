@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Books.Get;
+namespace BookWorm.Catalog.Features.Books.Get;
 
 internal sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, BookId, ISender>
 {
@@ -12,11 +12,13 @@ internal sealed class GetBookEndpoint : IEndpoint<Ok<BookDto>, BookId, ISender>
                 ) => await HandleAsync(id, sender)
             )
             .ProducesGet<BookDto>(hasNotFound: true)
+            .WithETag()
             .WithTags(nameof(Book))
             .WithName(nameof(GetBookEndpoint))
             .WithSummary("Get Book")
             .WithDescription("Get a book by identifier")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<BookDto>> HandleAsync(

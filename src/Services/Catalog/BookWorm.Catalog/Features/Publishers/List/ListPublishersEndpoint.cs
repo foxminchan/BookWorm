@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.List;
+namespace BookWorm.Catalog.Features.Publishers.List;
 
 internal sealed class ListPublishersEndpoint : IEndpoint<Ok<IReadOnlyList<PublisherDto>>, ISender>
 {
@@ -10,7 +10,8 @@ internal sealed class ListPublishersEndpoint : IEndpoint<Ok<IReadOnlyList<Publis
             .WithName(nameof(ListPublishersEndpoint))
             .WithSummary("List Publishers")
             .WithDescription("Lists all publishers")
-            .MapToApiVersion(ApiVersions.V1);
+            .MapToApiVersion(ApiVersions.V1)
+            .RequirePerUserRateLimit();
     }
 
     public async Task<Ok<IReadOnlyList<PublisherDto>>> HandleAsync(

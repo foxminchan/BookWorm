@@ -1,11 +1,29 @@
-﻿namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+using BookWorm.Chassis.EventBus.Idempotency;
 
-internal sealed class CompleteOrderCommandHandler(ISender sender, IRenderer renderer)
+namespace BookWorm.Notification.IntegrationEvents.EventHandlers;
+
+internal sealed class CompleteOrderCommandHandler(
+    ISender sender,
+    IRenderer renderer,
+    IIntegrationEventIdempotencyGuard? idempotencyGuard = null
+)
 {
     [WolverineHandler]
-    public Task Handle(CompleteOrderCommand message, CancellationToken cancellationToken)
+    public async Task Handle(CompleteOrderCommand message, CancellationToken cancellationToken)
     {
-        return OrderNotificationHelper.SendAsync(
+        if (
+            idempotencyGuard is not null
+            && !await idempotencyGuard.TryAcquireAsync(
+                message.Id,
+                nameof(CompleteOrderCommandHandler),
+                cancellationToken: cancellationToken
+            )
+        )
+        {
+            return;
+        }
+
+        await OrderNotificationHelper.SendAsync(
             sender,
             renderer,
             message.ToOrder(),

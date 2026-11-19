@@ -40,13 +40,6 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
         var idempotencyKey = $"{requestMethod}:{requestPath}:{requestId}";
         var cancellationToken = context.HttpContext.RequestAborted;
 
-        if (await requestManager.IsExistAsync(idempotencyKey, cancellationToken))
-        {
-            return TypedResults.Conflict(
-                new ProblemDetails { Detail = "You have already requested this operation." }
-            );
-        }
-
         var clientRequest = new ClientRequest
         {
             Id = idempotencyKey,
@@ -54,7 +47,12 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
             Time = DateTime.UtcNow,
         };
 
-        await requestManager.CreateAsync(clientRequest, cancellationToken);
+        if (!await requestManager.TryCreateAsync(clientRequest, cancellationToken))
+        {
+            return TypedResults.Conflict(
+                new ProblemDetails { Detail = "You have already requested this operation." }
+            );
+        }
 
         return await next(context);
     }
