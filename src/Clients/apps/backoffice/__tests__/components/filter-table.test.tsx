@@ -233,4 +233,33 @@ describe("FilterTable", () => {
     const select = screen.getByRole("combobox");
     expect(select).toHaveAttribute("aria-labelledby", "rows-per-page-label");
   });
+
+  it("should handle page size change and column sorting", async () => {
+    const user = userEvent.setup();
+    const sortableColumns = [
+      {
+        accessorKey: "name",
+        header: ({ column }: { column: { toggleSorting: () => void } }) => (
+          <button type="button" onClick={() => column.toggleSorting()}>
+            Name
+          </button>
+        ),
+      },
+      {
+        accessorKey: "value",
+        header: "Value",
+      },
+    ];
+
+    render(<FilterTable {...defaultProps} columns={sortableColumns} />);
+
+    // Trigger sorting
+    await user.click(screen.getByRole("button", { name: "Name" }));
+    expect(mockOnSortingChange).toHaveBeenCalled();
+
+    // Trigger page size change
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "10" }));
+    expect(mockOnPaginationChange).toHaveBeenCalledWith(0, 10);
+  });
 });

@@ -99,10 +99,11 @@
         <Source>.*[\\/]Orchestration[\\/]WorkflowRegistration\.cs$</Source>
         <Source>.*[\\/]Saga[\\/]Activities[\\/].*</Source>
 
-        <!-- Exceptions, Contracts, DTOs (aligned with SonarQube.Analysis.xml) -->
+        <!-- Exceptions, Contracts, DTOs, Integration Events (aligned with SonarQube.Analysis.xml) -->
         <Source>.*Exception\.cs$</Source>
         <Source>.*[\\/]Contracts[\\/].*\.cs$</Source>
         <Source>.*Dto\.cs$</Source>
+        <Source>.*[\\/]IntegrationEvents[\\/]Events[\\/].*\.cs$</Source>
       </Exclude>
     </Sources>
 

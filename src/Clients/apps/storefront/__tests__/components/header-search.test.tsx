@@ -171,6 +171,23 @@ describe("HeaderSearch", () => {
     expect(close).toHaveBeenCalled();
     expect(input).toHaveValue("");
   });
+
+  it("closes on Escape key when open and ignores Escape when closed", async () => {
+    const { close } = setupDelayedToggle({ isOpen: true });
+    renderWithProviders(<HeaderSearch />);
+
+    const button = screen.getByRole("button", { name: /search books/i });
+    button.focus();
+    await user.keyboard("{Escape}");
+    expect(close).toHaveBeenCalledTimes(1);
+
+    const { close: closedClose } = setupDelayedToggle({ isOpen: false });
+    renderWithProviders(<HeaderSearch />);
+    const buttons = screen.getAllByRole("button", { name: /search books/i });
+    buttons[1]!.focus();
+    await user.keyboard("{Escape}");
+    expect(closedClose).not.toHaveBeenCalled();
+  });
 });
 
 describe("MobileSearch", () => {

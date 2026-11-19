@@ -176,4 +176,41 @@ describe("AuthorsFilter", () => {
 
     expect(onClear).toHaveBeenCalled();
   });
+
+  it("renders skeleton when loading and calls onToggle when author button is clicked", async () => {
+    mockUseAuthors.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    const { container, rerender } = render(
+      <AuthorsFilter
+        selectedAuthors={[]}
+        onToggle={vi.fn()}
+        onClear={vi.fn()}
+      />,
+    );
+    expect(
+      container.querySelectorAll('[data-slot="skeleton"]').length,
+    ).toBeGreaterThan(0);
+
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    mockUseAuthors.mockReturnValue({
+      data: mockAuthors,
+      isLoading: false,
+    });
+    rerender(
+      <AuthorsFilter
+        selectedAuthors={[]}
+        onToggle={onToggle}
+        onClear={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Add John Doe filter/i }),
+    );
+    expect(onToggle).toHaveBeenCalledWith("author-1");
+  });
 });

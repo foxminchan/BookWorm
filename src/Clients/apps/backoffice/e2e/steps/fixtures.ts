@@ -1,4 +1,5 @@
-import { test as base, createBdd } from "playwright-bdd";
+import { Page, test as base, expect } from "@playwright/test";
+import { createBdd } from "playwright-bdd";
 
 import { testData, urls } from "../fixtures/test-data";
 import {
@@ -60,3 +61,11 @@ export const test = base.extend<BddFixtures>({
 });
 
 export const { Given, When, Then } = createBdd(test);
+
+export async function expectTableColumns(page: Page, columns: string[]) {
+  for (const column of columns) {
+    await expect(
+      page.locator("table thead th", { hasText: column }),
+    ).toBeVisible();
+  }
+}

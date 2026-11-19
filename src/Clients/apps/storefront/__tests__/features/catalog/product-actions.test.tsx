@@ -7,17 +7,22 @@ import ProductActions from "@/features/catalog/product/product-actions";
 import { renderWithProviders } from "../../utils/test-utils";
 
 // Mock next/navigation
+const mockPush = vi.hoisted(() => vi.fn());
+const mockUseSession = vi.hoisted(() =>
+  vi.fn<() => { data: { user: { id: string; name: string } } | null }>(() => ({
+    data: { user: { id: "1", name: "Test User" } },
+  })),
+);
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockPush,
   }),
 }));
 
 // Mock auth-client
 vi.mock("@/lib/auth-client", () => ({
-  useSession: () => ({
-    data: { user: { id: "1", name: "Test User" } },
-  }),
+  useSession: mockUseSession,
 }));
 
 describe("ProductActions", () => {
@@ -133,5 +138,27 @@ describe("ProductActions", () => {
     const button = screen.getByRole("button", { name: /add to basket/i });
     expect(button).toBeDisabled();
     expect(screen.getByText(/add to basket/i)).toBeInTheDocument();
+  });
+
+  it("should show login dialog when unauthenticated user clicks add to basket, and handle cancel and login", async () => {
+    mockUseSession.mockReturnValueOnce({ data: null });
+    mockUseSession.mockReturnValueOnce({ data: null });
+    mockUseSession.mockReturnValue({ data: null });
+    const user = userEvent.setup();
+
+    renderWithProviders(<ProductActions {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: /add to basket/i }));
+    expect(screen.getByText("Login Required")).toBeInTheDocument();
+    expect(mockOnAddToBasket).not.toHaveBeenCalled();
+
+    // Click Cancel to close dialog
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(screen.queryByText("Login Required")).not.toBeInTheDocument();
+
+    // Open again and click Login
+    await user.click(screen.getByRole("button", { name: /add to basket/i }));
+    await user.click(screen.getByRole("button", { name: /^login$/i }));
+    expect(mockPush).toHaveBeenCalledWith("/login");
   });
 });

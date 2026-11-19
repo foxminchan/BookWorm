@@ -333,4 +333,12 @@ describe("ShopPageClient", () => {
     const grid = screen.getByTestId("book-grid");
     expect(grid).toHaveAttribute("data-count", "0");
   });
+
+  it("opens filters when open-filters is clicked", async () => {
+    renderWithProviders(<ShopPageClient />);
+
+    await user.click(screen.getByTestId("open-filters"));
+
+    expect(defaultFilterState.setIsFilterOpen).toHaveBeenCalledWith(true);
+  });
 });

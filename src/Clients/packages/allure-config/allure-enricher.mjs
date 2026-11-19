@@ -524,3 +524,81 @@ export default class AllureEnricherPlugin {
     }
   }
 }
+
+export const hasPathSegment = (labels, segment) =>
+  labels.some(({ name, value }) => {
+    if (!value || (name !== "parentSuite" && name !== "package")) {
+      return false;
+    }
+    const normalized = value.replaceAll("\\", "/").toLowerCase();
+    return (
+      normalized.includes(`/${segment}/`) ||
+      normalized.startsWith(`${segment}/`) ||
+      normalized.includes(`.${segment}.`)
+    );
+  });
+
+export const isE2ETest = (labels) =>
+  labels.some(
+    ({ name, value }) =>
+      (name === "framework" && value?.toLowerCase() === "playwright") ||
+      (name === "layer" && value?.toLowerCase() === "e2e") ||
+      (name === "parentSuite" &&
+        (value?.startsWith("e2e/") || value?.endsWith(".feature"))),
+  );
+
+export const createAppAllureConfig = ({
+  reportName,
+  enricherPluginPath,
+  enricherOptions,
+  variables,
+  environments,
+  qualityGateRules,
+}) => ({
+  name: reportName,
+  output: "allure-report",
+  historyPath: "./.allure/history.jsonl",
+  historyLimit: 20,
+  defaultLabels: {
+    severity: "normal",
+    owner: "BookWorm Engineering",
+  },
+  variables,
+  environments,
+  categories: defaultCategoriesConfig,
+  plugins: {
+    enricher: {
+      import: enricherPluginPath,
+      options: enricherOptions,
+    },
+    awesome: {
+      options: {
+        singleFile: true,
+        reportLanguage: "en",
+        reportName,
+        groupBy: ["parentSuite", "suite", "subSuite"],
+      },
+    },
+    log: {
+      options: {
+        groupBy: "none",
+        filter: ({ status }) => status === "failed" || status === "broken",
+      },
+    },
+    dashboard: {
+      options: {
+        reportName,
+        reportLanguage: "en",
+      },
+    },
+  },
+  qualityGate: {
+    rules: [
+      {
+        maxFailures: 0,
+        fastFail: true,
+      },
+    ],
+    use: [...qualityGateRules],
+  },
+});

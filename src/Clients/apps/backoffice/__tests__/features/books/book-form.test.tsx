@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -353,5 +353,138 @@ describe("BookForm", () => {
     await user.clear(salePriceInput);
 
     expect(salePriceInput).toHaveValue(null);
+  });
+
+  it("submits update form, handles image error and removal, and redirects", async () => {
+    const user = userEvent.setup();
+    const updateMutate = vi.fn((_vars, options) => {
+      options?.onSuccess?.();
+    });
+    mockUseUpdateBook.mockReturnValue({
+      mutate: updateMutate,
+      isPending: false,
+    });
+    const mockBook = createMockBook({
+      name: "Existing Book",
+      description: "Existing Description",
+      price: 25,
+      imageUrl: "https://example.com/cover.jpg",
+      category: mockCategories[0],
+      publisher: mockPublishers[0],
+      authors: [mockAuthors[0]!],
+    });
+    mockUseBook.mockReturnValue({
+      data: mockBook,
+      isLoading: false,
+    });
+
+    const { container } = render(<BookForm bookId={mockBook.id} />);
+
+    // Trigger image error fallback
+    const img = await screen.findByRole("img");
+    fireEvent.error(img);
+
+    // Trigger image removal
+    await user.click(
+      screen.getByRole("button", { name: /remove current book cover image/i }),
+    );
+
+    // Submit form
+    const form = container.querySelector("form")!;
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(updateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          request: expect.objectContaining({
+            id: mockBook.id,
+            isRemoveImage: true,
+          }),
+        }),
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      );
+      expect(mockPush).toHaveBeenCalledWith("/books");
+    });
+  });
+
+  it("submits create form and redirects to new book", async () => {
+    const user = userEvent.setup();
+    const createMutate = vi.fn((_vars, options) => {
+      options?.onSuccess?.({ id: "created-123" });
+    });
+    mockUseCreateBook.mockReturnValue({
+      mutate: createMutate,
+      isPending: false,
+    });
+
+    const { container } = render(<BookForm />);
+
+    await user.type(screen.getByLabelText(/Book Name/i), "New Book");
+    await user.type(screen.getByLabelText(/Description/i), "New Description");
+    const priceInputs = screen.getAllByPlaceholderText("0.00");
+    await user.type(priceInputs[0]!, "19.99");
+
+    // Select category, publisher, and author
+    await user.click(screen.getByLabelText(/Category/i));
+    await user.click(screen.getByRole("option", { name: "Fiction" }));
+
+    await user.click(screen.getByLabelText(/Publisher/i));
+    await user.click(
+      screen.getByRole("option", { name: mockPublishers[0]!.name! }),
+    );
+
+    await user.click(screen.getByLabelText(mockAuthors[0]!.name!));
+
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(createMutate).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith("/books?new=created-123");
+    });
+  });
+
+  it("handles undefined classification data, null book fields, pending state, and edge-case image inputs", () => {
+    mockUseAuthors.mockReturnValue({ data: undefined, isLoading: false });
+    mockUseCategories.mockReturnValue({ data: undefined, isLoading: false });
+    mockUsePublishers.mockReturnValue({ data: undefined, isLoading: false });
+    mockUseCreateBook.mockReturnValue({ mutate: vi.fn(), isPending: true });
+    mockUseBook.mockReturnValue({
+      data: {
+        id: "b-null",
+        name: null,
+        description: null,
+        price: 10,
+        priceSale: null,
+        category: null,
+        publisher: null,
+        authors: [],
+        imageUrl: null,
+      },
+      isLoading: false,
+    });
+
+    render(<BookForm bookId="b-null" />);
+    expect(screen.getByText(/Updating\.\.\./i)).toBeInTheDocument();
+
+    // Empty file change
+    const fileInput = screen.getByLabelText(/Upload book cover image/i);
+    fireEvent.change(fileInput, { target: { files: [] } });
+
+    // Non-string FileReader result
+    class MockFileReader {
+      result = new ArrayBuffer(8);
+      onloadend: (() => void) | null = null;
+      readAsDataURL() {
+        this.onloadend?.();
+      }
+    }
+    const fileReaderSpy = vi
+      .spyOn(globalThis, "FileReader")
+      .mockImplementation(MockFileReader as unknown as new () => FileReader);
+
+    const file = new File(["bytes"], "cover.png", { type: "image/png" });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    fileReaderSpy.mockRestore();
   });
 });

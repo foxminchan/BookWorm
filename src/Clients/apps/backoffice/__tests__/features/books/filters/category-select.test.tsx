@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
+
 import { createMockCategory } from "@/__tests__/factories";
 import { CategorySelect } from "@/features/books/filters/category-select";
 
@@ -107,7 +109,8 @@ describe("CategorySelect", () => {
 
     const select = screen.getByRole("combobox");
     await user.click(select);
+    await user.keyboard("{ArrowDown}{Enter}");
 
-    expect(onChange).toBeDefined();
+    expect(onChange).toHaveBeenCalledWith(expect.any(String));
   });
 });

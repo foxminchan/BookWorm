@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
+
 import { createMockPublisher } from "@/__tests__/factories";
 import { PublisherSelect } from "@/features/books/filters/publisher-select";
 
@@ -108,7 +110,8 @@ describe("PublisherSelect", () => {
 
     const select = screen.getByRole("combobox");
     await user.click(select);
+    await user.keyboard("{ArrowDown}{Enter}");
 
-    expect(onChange).toBeDefined();
+    expect(onChange).toHaveBeenCalledWith(expect.any(String));
   });
 });

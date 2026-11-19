@@ -149,4 +149,32 @@ describe("Customers CellAction", () => {
       expect(mutateFn).toHaveBeenCalled();
     });
   });
+
+  it("logs error and shows error toast when delete mutation fails", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const user = userEvent.setup();
+    const mutateFn = vi.fn((_id, { onError }) => {
+      onError?.(new Error("Delete failed"));
+    });
+    mockUseDeleteBuyer.mockReturnValue({
+      mutate: mutateFn,
+      isPending: false,
+    });
+
+    const { container } = renderWithProviders(
+      <CellAction customer={mockCustomer} />,
+    );
+
+    const deleteButton = getDeleteButton(container);
+    await user.click(deleteButton);
+
+    const confirmButton = screen.getByRole("button", { name: /delete/i });
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalled();
+    });
+
+    consoleSpy.mockRestore();
+  });
 });

@@ -1,5 +1,7 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
+import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
 
 import ProductImage from "@/features/catalog/product/product-image";
 
@@ -121,5 +123,16 @@ describe("ProductImage", () => {
 
     const element = screen.getByRole(selector === "img" ? "img" : "figure");
     expect(element).toHaveClass(...classNames);
+  });
+
+  it("should fall back to default image on error", () => {
+    renderWithProviders(
+      <ProductImage imageUrl="/broken.jpg" name="Test Book" />,
+    );
+
+    const image = screen.getByRole("img");
+    fireEvent.error(image);
+
+    expect(image).toHaveAttribute("src", DEFAULT_BOOK_IMAGE);
   });
 });

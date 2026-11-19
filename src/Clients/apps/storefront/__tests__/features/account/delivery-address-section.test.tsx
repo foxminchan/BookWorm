@@ -7,11 +7,15 @@ import DeliveryAddressSection from "@/features/account/delivery-address-section"
 import { renderWithProviders } from "../../utils/test-utils";
 
 // Mock the API hook
+const mockMutate = vi.fn();
+const mockUseUpdateBuyerAddress = vi.fn(() => ({
+  mutate: mockMutate,
+  mutateAsync: vi.fn().mockResolvedValue({}),
+  isPending: false,
+}));
+
 vi.mock("@workspace/api-hooks/ordering/buyers/useUpdateBuyerAddress", () => ({
-  default: () => ({
-    mutateAsync: vi.fn().mockResolvedValue({}),
-    isPending: false,
-  }),
+  default: () => mockUseUpdateBuyerAddress(),
 }));
 
 const mockBuyer = {
@@ -185,5 +189,68 @@ describe("DeliveryAddressSection", () => {
 
     const heading = screen.getByText("Delivery Address");
     expect(heading).toHaveClass("font-serif");
+  });
+
+  it("should save updated address and exit edit mode on success", async () => {
+    mockMutate.mockImplementation((_vars, options) => {
+      options?.onSuccess?.();
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<DeliveryAddressSection buyer={mockBuyer} />);
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /save address/i }));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        {
+          request: {
+            street: "123 Main St",
+            city: "New York",
+            province: "NY",
+          },
+        },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      );
+    });
+    expect(
+      screen.queryByRole("button", { name: /save address/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should handle null or partial address when editing and show saving state when pending", async () => {
+    mockUseUpdateBuyerAddress.mockReturnValue({
+      mutate: mockMutate,
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(
+      <DeliveryAddressSection buyer={{ ...mockBuyer, address: null }} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByPlaceholderText("Enter street address")).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    rerender(
+      <DeliveryAddressSection buyer={{ ...mockBuyer, address: "Only St" }} />,
+    );
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByPlaceholderText("Enter street address")).toHaveValue(
+      "Only St",
+    );
+
+    mockUseUpdateBuyerAddress.mockReturnValue({
+      mutate: mockMutate,
+      mutateAsync: vi.fn(),
+      isPending: true,
+    });
+    rerender(
+      <DeliveryAddressSection buyer={{ ...mockBuyer, address: "Only St" }} />,
+    );
+    expect(
+      screen.getByRole("button", { name: /saving\.\.\./i }),
+    ).toBeDisabled();
   });
 });

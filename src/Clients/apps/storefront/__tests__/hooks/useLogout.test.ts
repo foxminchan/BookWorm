@@ -91,4 +91,18 @@ describe("useLogout", () => {
       expect(mockPush).toHaveBeenCalledWith("/");
     });
   });
+
+  it("should log error and reset isLoggingOut when signOut fails", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("Sign out failed");
+    mockSignOut.mockRejectedValue(error);
+
+    const { result } = renderHook(() => useLogout());
+
+    await result.current.logout();
+
+    expect(consoleSpy).toHaveBeenCalledWith("Logout failed:", error);
+    expect(result.current.isLoggingOut).toBe(false);
+    consoleSpy.mockRestore();
+  });
 });

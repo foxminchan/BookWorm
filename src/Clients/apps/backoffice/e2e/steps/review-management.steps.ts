@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { Given, Then, When } from "./fixtures";
+import { Given, Then, When, expectTableColumns } from "./fixtures";
 
 /**
  * Review management step definitions
@@ -61,15 +61,7 @@ Then("I should see the reviews table", async ({ page }) => {
 Then(
   "I should see review Customer, Rating, and Comment columns",
   async ({ page }) => {
-    await expect(
-      page.locator("table thead th", { hasText: "Customer" }),
-    ).toBeVisible();
-    await expect(
-      page.locator("table thead th", { hasText: "Rating" }),
-    ).toBeVisible();
-    await expect(
-      page.locator("table thead th", { hasText: "Comment" }),
-    ).toBeVisible();
+    await expectTableColumns(page, ["Customer", "Rating", "Comment"]);
   },
 );
 

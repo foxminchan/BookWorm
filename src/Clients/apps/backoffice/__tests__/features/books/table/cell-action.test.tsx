@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockBook } from "@/__tests__/factories";
-import { CellAction } from "@/features/books/table/cell-action";
 
 const mockUseDeleteBook = vi.hoisted(() => vi.fn());
 
@@ -18,6 +17,9 @@ vi.mock("next/navigation", () => ({
     refresh: vi.fn(),
   }),
 }));
+
+vi.resetModules();
+const { CellAction } = await import("@/features/books/table/cell-action");
 
 describe("Books CellAction", () => {
   const mockBook = createMockBook({ status: "InStock" });
@@ -128,5 +130,57 @@ describe("Books CellAction", () => {
     await waitFor(() => {
       expect(screen.queryByText("Delete Book")).not.toBeInTheDocument();
     });
+  });
+
+  it("calls delete mutation and shows success toast on confirmation", async () => {
+    const user = userEvent.setup();
+    const mutateFn = vi.fn((_id, { onSuccess }) => {
+      onSuccess?.();
+    });
+    mockUseDeleteBook.mockReturnValue({
+      mutate: mutateFn,
+      isPending: false,
+    });
+
+    renderWithQueryClient(<CellAction book={mockBook} />);
+
+    await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
+    await screen.findByRole("alertdialog");
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    await waitFor(() => {
+      expect(mutateFn).toHaveBeenCalledWith(mockBook.id, expect.any(Object));
+    });
+  });
+
+  it("handles delete mutation error and shows spinner when pending", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const user = userEvent.setup();
+    const mutateFn = vi.fn((_id, { onError }) => {
+      onError?.(new Error("Delete failed"));
+    });
+    mockUseDeleteBook.mockReturnValue({
+      mutate: mutateFn,
+      isPending: false,
+    });
+
+    const { rerender } = renderWithQueryClient(<CellAction book={mockBook} />);
+
+    await user.click(screen.getByLabelText(`Delete ${mockBook.name}`));
+    await screen.findByRole("alertdialog");
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalled();
+    });
+
+    mockUseDeleteBook.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: true,
+    });
+    rerender(<CellAction book={mockBook} />);
+    expect(screen.getByLabelText(`Delete ${mockBook.name}`)).toBeDisabled();
+
+    consoleSpy.mockRestore();
   });
 });

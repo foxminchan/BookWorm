@@ -1,0 +1,32 @@
+{
+  "name": "@workspace/app-config",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Shared Next.js, Playwright, and Vitest configuration for BookWorm apps",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/app-config"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    "./next": "./next.mjs",
+    "./playwright": "./playwright.mjs",
+    "./vitest": "./vitest.mjs",
+    "./vitest-setup": "./vitest-setup.mjs"
+  }
+}

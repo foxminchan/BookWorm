@@ -56,4 +56,22 @@ describe("useBasketConfirmation", () => {
     expect(screen.getByText(/Quantity:/)).toBeInTheDocument();
     expect(screen.getByText(/Price:/)).toBeInTheDocument();
   });
+
+  it("cancels when dialog is dismissed via Escape key", async () => {
+    const { result } = renderHook(() => useBasketConfirmation());
+    let confirmationPromise!: Promise<boolean>;
+    await act(async () => {
+      confirmationPromise = result.current.requestConfirmation(
+        "book-4",
+        1,
+        "Escape Book",
+        20,
+      );
+    });
+
+    render(<result.current.ConfirmationDialog />);
+    await userEvent.keyboard("{Escape}");
+
+    await expect(confirmationPromise).resolves.toBe(false);
+  });
 });

@@ -1,47 +1,16 @@
-import { Locator, Page } from "@playwright/test";
-
-import { BasePage } from "./BasePage";
+import { AuthRedirectPage } from "./AuthRedirectPage";
 
 /**
  * Register Page Object Model
  * Represents the registration page at '/register'
  */
-export class RegisterPage extends BasePage {
+export class RegisterPage extends AuthRedirectPage {
   readonly path = "/register";
+  protected readonly headingText = "Redirecting to registration...";
+  protected readonly descriptionText =
+    "Please wait while we redirect you to the registration page.";
 
-  constructor(page: Page) {
-    super(page);
-  }
-
-  // Locators
-  get redirectingMessage(): Locator {
-    return this.page.locator('h1:has-text("Redirecting to registration...")');
-  }
-
-  get loadingSpinner(): Locator {
-    return this.page.locator('[class*="animate-spin"]');
-  }
-
-  get redirectDescription(): Locator {
-    return this.page.locator(
-      'p:has-text("Please wait while we redirect you to the registration page.")',
-    );
-  }
-
-  // Actions
-  async navigate(): Promise<void> {
-    await this.goto(this.path);
-  }
-
-  async waitForEntraRedirect(): Promise<void> {
-    // Wait for redirect to Microsoft Entra ID OAuth provider
-    await this.page.waitForURL(/login\.microsoftonline\.com|auth/, {
-      timeout: 10000,
-    });
-  }
-
-  // Assertions
   isOnRegisterPage(): boolean {
-    return this.page.url().includes("/register");
+    return this.page.url().includes(this.path);
   }
 }

@@ -215,4 +215,21 @@ describe("HeaderAccountMenu", () => {
     const registerLink = screen.getByRole("menuitem", { name: /register/i });
     expect(registerLink).toHaveAttribute("href", "/register");
   });
+
+  it("closes menu on Escape key when open and ignores Escape when closed", async () => {
+    const { close } = setupDelayedToggle({ isOpen: true });
+    renderWithProviders(<HeaderAccountMenu isAccountActive={false} />);
+
+    const button = screen.getByRole("button", { name: /account menu/i });
+    button.focus();
+    await user.keyboard("{Escape}");
+    expect(close).toHaveBeenCalledTimes(1);
+
+    const { close: closedClose } = setupDelayedToggle({ isOpen: false });
+    renderWithProviders(<HeaderAccountMenu isAccountActive={false} />);
+    const buttons = screen.getAllByRole("button", { name: /account menu/i });
+    buttons[1]!.focus();
+    await user.keyboard("{Escape}");
+    expect(closedClose).not.toHaveBeenCalled();
+  });
 });

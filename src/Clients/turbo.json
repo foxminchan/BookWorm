@@ -152,7 +152,7 @@
       "inputs": [
         "allure-results/**",
         "allurerc.mjs",
-        "../../allure-enricher.mjs"
+        "$TURBO_ROOT$/packages/allure-config/allure-enricher.mjs"
       ],
       "outputs": ["allure-report/**"]
     },

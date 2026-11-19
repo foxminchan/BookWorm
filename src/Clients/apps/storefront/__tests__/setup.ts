@@ -5,56 +5,24 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
+import {
+  createNextNavigationMock,
+  setupTestLifecycle,
+} from "@workspace/app-config/vitest-setup";
 import { server } from "@workspace/mocks/node";
 
-// Set a consistent seed for faker to ensure deterministic test data
-const fakerSeed = process.env.FAKER_SEED
-  ? Number.parseInt(process.env.FAKER_SEED, 10)
-  : 12345;
-faker.seed(fakerSeed);
-
-// Establish API mocking before all tests
-beforeAll(() => {
-  server.listen({ onUnhandledFrame: "error" });
+setupTestLifecycle({
+  faker,
+  server,
+  cleanup,
+  beforeAll,
+  afterEach,
+  afterAll,
+  onUnhandledFrame: "error",
+  httpsGatewayUrl: "https://localhost:5001",
 });
 
-// Reset any request handlers that we may add during the tests,
-// so they don't affect other tests
-afterEach(() => {
-  server.resetHandlers();
-  cleanup();
-});
-
-// Clean up after the tests are finished
-afterAll(() => {
-  server.close();
-});
-
-// Mock Next.js router
-vi.mock("next/navigation", () => ({
-  useRouter() {
-    return {
-      push: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-      back: vi.fn(),
-      pathname: "/",
-      query: {},
-      asPath: "/",
-    };
-  },
-  useSearchParams() {
-    return new URLSearchParams();
-  },
-  usePathname() {
-    return "/";
-  },
-  useParams() {
-    return {};
-  },
-  redirect: vi.fn(),
-  notFound: vi.fn(),
-}));
+vi.mock("next/navigation", () => createNextNavigationMock(vi));
 
 // Mock next/image to avoid URL parsing issues in node/happy-dom
 vi.mock("next/image", () => ({
@@ -71,7 +39,3 @@ vi.mock("next/image", () => ({
     });
   },
 }));
-
-// Mock env variables
-process.env.NEXT_PUBLIC_GATEWAY_HTTP = "http://localhost:5000";
-process.env.NEXT_PUBLIC_GATEWAY_HTTPS = "https://localhost:5001";

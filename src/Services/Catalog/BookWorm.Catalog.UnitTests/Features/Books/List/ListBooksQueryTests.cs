@@ -342,4 +342,37 @@ public sealed class ListBooksQueryTests
         result.PageSize.ShouldBe(query.PageSize);
         result.TotalItems.ShouldBe(totalItems);
     }
+
+    [Test]
+    public async Task GivenSearchTermWithNoMatches_WhenHandlingListBooksQuery_ThenShouldReturnEmptyPagedResult()
+    {
+        // Arrange
+        const string searchTerm = "nonexistent";
+        var query = new ListBooksQuery(Search: searchTerm);
+
+        _mockHybridSearch
+            .Setup(s =>
+                s.SearchAsync(
+                    searchTerm,
+                    new[] { nameof(Book), searchTerm },
+                    MaxResults,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync([]);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.ShouldBeEmpty();
+        result.PageIndex.ShouldBe(query.PageIndex);
+        result.PageSize.ShouldBe(query.PageSize);
+        result.TotalItems.ShouldBe(0);
+        _mockRepository.Verify(
+            r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
 }

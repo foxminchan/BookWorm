@@ -1,9 +1,9 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
 
 namespace BookWorm.Catalog.Features.Books.Create;
 
 [Transactional]
-public sealed class CreateBookCommand : ICommand<BookId>
+public sealed class CreateBookCommand : ICommand<BookId>, IBookCommand
 {
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;

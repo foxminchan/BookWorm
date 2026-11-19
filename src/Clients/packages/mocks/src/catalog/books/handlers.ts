@@ -22,6 +22,36 @@ import {
 import { CATALOG_API_BASE_URL } from "../constants";
 import { booksStore } from "./data";
 
+async function parseBookFormData(request: Request) {
+  const contentType = request.headers.get("Content-Type");
+  if (!contentType?.includes("multipart/form-data")) {
+    return {
+      error: createValidationErrorResponse({
+        ContentType: [
+          "Content-Type must be multipart/form-data for this endpoint.",
+        ],
+      }),
+    };
+  }
+
+  const formData = await request.formData();
+  return {
+    formData,
+    baseBody: {
+      name: formData.get("name") as string,
+      description: formData.get("description") as string,
+      price: Number.parseFloat(formData.get("price") as string),
+      priceSale: formData.get("priceSale")
+        ? Number.parseFloat(formData.get("priceSale") as string)
+        : null,
+      categoryId: formData.get("categoryId") as string,
+      publisherId: formData.get("publisherId") as string,
+      authorIds: formData.getAll("authorIds") as string[],
+      image: formData.get("image") as File | undefined,
+    },
+  };
+}
+
 export const booksHandlers = [
   http.all<never, ListBooksQuery, PagedResult<Book>>(
     `${CATALOG_API_BASE_URL}/api/v1/books`,
@@ -89,30 +119,12 @@ export const booksHandlers = [
   http.post<never, CreateBookRequest>(
     `${CATALOG_API_BASE_URL}/api/v1/books`,
     async ({ request }) => {
-      const contentType = request.headers.get("Content-Type");
-      if (!contentType?.includes("multipart/form-data")) {
-        return createValidationErrorResponse({
-          ContentType: [
-            "Content-Type must be multipart/form-data for this endpoint.",
-          ],
-        });
+      const parsed = await parseBookFormData(request);
+      if ("error" in parsed) {
+        return parsed.error;
       }
 
-      const formData = await request.formData();
-      const body: CreateBookRequest = {
-        name: formData.get("name") as string,
-        description: formData.get("description") as string,
-        price: Number.parseFloat(formData.get("price") as string),
-        priceSale: formData.get("priceSale")
-          ? Number.parseFloat(formData.get("priceSale") as string)
-          : null,
-        categoryId: formData.get("categoryId") as string,
-        publisherId: formData.get("publisherId") as string,
-        authorIds: formData.getAll("authorIds") as string[],
-        image: formData.get("image") as File | undefined,
-      };
-
-      const result = createBookSchema.safeParse(body);
+      const result = createBookSchema.safeParse(parsed.baseBody);
 
       if (!result.success) {
         return HttpResponse.json(formatValidationErrors(result.error), {
@@ -133,29 +145,15 @@ export const booksHandlers = [
   http.put<never, UpdateBookRequest>(
     `${CATALOG_API_BASE_URL}/api/v1/books`,
     async ({ request }) => {
-      const contentType = request.headers.get("Content-Type");
-      if (!contentType?.includes("multipart/form-data")) {
-        return createValidationErrorResponse({
-          ContentType: [
-            "Content-Type must be multipart/form-data for this endpoint.",
-          ],
-        });
+      const parsed = await parseBookFormData(request);
+      if ("error" in parsed) {
+        return parsed.error;
       }
 
-      const formData = await request.formData();
       const body: UpdateBookRequest = {
-        id: formData.get("id") as string,
-        name: formData.get("name") as string,
-        description: formData.get("description") as string,
-        price: Number.parseFloat(formData.get("price") as string),
-        priceSale: formData.get("priceSale")
-          ? Number.parseFloat(formData.get("priceSale") as string)
-          : null,
-        categoryId: formData.get("categoryId") as string,
-        publisherId: formData.get("publisherId") as string,
-        authorIds: formData.getAll("authorIds") as string[],
-        image: formData.get("image") as File | undefined,
-        isRemoveImage: formData.get("isRemoveImage") === "true",
+        ...parsed.baseBody,
+        id: parsed.formData.get("id") as string,
+        isRemoveImage: parsed.formData.get("isRemoveImage") === "true",
       };
 
       const result = updateBookSchema.safeParse(body);

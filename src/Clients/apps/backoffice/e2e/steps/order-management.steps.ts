@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { Given, Then, When } from "./fixtures";
+import { Given, Then, When, expectTableColumns } from "./fixtures";
 
 /**
  * Order management step definitions
@@ -62,15 +62,7 @@ Then("I should see the orders table", async ({ page }) => {
 Then(
   "I should see order information including status and total",
   async ({ page }) => {
-    await expect(
-      page.locator("table thead th", { hasText: "Order ID" }),
-    ).toBeVisible();
-    await expect(
-      page.locator("table thead th", { hasText: "Total" }),
-    ).toBeVisible();
-    await expect(
-      page.locator("table thead th", { hasText: "Status" }),
-    ).toBeVisible();
+    await expectTableColumns(page, ["Order ID", "Total", "Status"]);
   },
 );
 

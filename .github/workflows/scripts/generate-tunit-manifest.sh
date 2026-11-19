@@ -10,7 +10,7 @@ files=(docs/dist/reports/tunit/**/*.html)
     rel="${files[$i]#docs/dist/reports/tunit/}"
     name=$(basename "$rel" .html)
     comma=","
-    if [ "$i" -eq $((${#files[@]} - 1)) ]; then comma=""; fi
+    if [[ "$i" -eq $((${#files[@]} - 1)) ]]; then comma=""; fi
     printf '  {"name": "%s", "path": "/reports/tunit/%s"}%s\n' "$name" "$rel" "$comma"
   done
   echo "]"

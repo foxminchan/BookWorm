@@ -91,4 +91,26 @@ describe("useRateLimit", () => {
     }
     expect(result.current.isRateLimited).toBe(true);
   });
+
+  it("returns error message when request function throws Error or non-Error", async () => {
+    const { result } = renderHook(() =>
+      useRateLimit({ maxRequests: 5, windowMs: 1000, throttleMs: 0 }),
+    );
+
+    let errRes: RateLimitResult | undefined;
+    await act(async () => {
+      errRes = await result.current.attemptRequest(() =>
+        Promise.reject(new Error("boom")),
+      );
+    });
+    expect(errRes).toEqual({ success: false, error: "boom" });
+
+    let nonErrRes: RateLimitResult | undefined;
+    await act(async () => {
+      nonErrRes = await result.current.attemptRequest(() =>
+        Promise.reject("plain string"),
+      );
+    });
+    expect(nonErrRes).toEqual({ success: false, error: "Request failed" });
+  });
 });

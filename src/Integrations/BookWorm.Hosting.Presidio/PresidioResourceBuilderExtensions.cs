@@ -29,7 +29,7 @@ public static class PresidioAnalyzerResourceBuilderExtensions
                     PresidioAnalyzerContainerImageTags.Tag,
                     "SearchShield",
                     httpsPort,
-                    PresidioAnalyzerResource.HttpsEndpointName
+                    PresidioResource.HttpsEndpointName
                 );
         }
     }
@@ -61,7 +61,7 @@ public static class PresidioAnonymizerResourceBuilderExtensions
                     PresidioAnonymizerContainerImageTags.Tag,
                     "ShieldCheckmark",
                     httpsPort,
-                    PresidioAnonymizerResource.HttpsEndpointName
+                    PresidioResource.HttpsEndpointName
                 );
         }
     }

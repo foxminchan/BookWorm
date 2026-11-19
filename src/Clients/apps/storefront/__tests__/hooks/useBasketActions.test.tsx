@@ -225,4 +225,43 @@ describe("useBasketActions", () => {
 
     expect(getByRole("status").textContent).toContain("Basket Book");
   });
+
+  it("clears previous announcement timer on consecutive announcements and renders idle states", async () => {
+    mockRequestConfirmation.mockResolvedValue(true);
+    mockUpdate.mockResolvedValue({});
+    mockGet.mockResolvedValue({ items: [] });
+
+    renderHook(() => useBasketActions());
+
+    const addAction = registeredActions.find((a) => a.name === "addToBasket");
+    const viewAction = registeredActions.find((a) => a.name === "viewBasket");
+
+    // Trigger two consecutive announcements without bookTitle to cover clearTimeout & bookSuffix fallback
+    await act(async () => {
+      await addAction?.handler({ bookId: "b1", quantity: 1 });
+      await addAction?.handler({ bookId: "b2", quantity: 2 });
+    });
+
+    // Render idle states for both actions
+    const addIdle = addAction?.render({ status: "inProgress" } as any);
+    const viewIdle = viewAction?.render({ status: "inProgress" } as any);
+    expect(addIdle).toBeTruthy();
+    expect(viewIdle).toBeTruthy();
+
+    // Render viewBasket with 1 item to cover singular "item"
+    const singleView = viewAction?.render({
+      status: "complete",
+      result: JSON.stringify({
+        items: [{ id: "1", name: "Solo", price: 10, quantity: 1 }],
+        totalPrice: 10,
+        itemCount: 1,
+      }),
+    } as any);
+    const { getByText } = render(singleView ?? <div />);
+    expect(getByText(/Your Basket \(1 item\)/i)).toBeInTheDocument();
+
+    // Call viewBasket handler with empty items
+    const emptyResult = await viewAction?.handler({});
+    expect(JSON.parse(emptyResult).itemCount).toBe(0);
+  });
 });

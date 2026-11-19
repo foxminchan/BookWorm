@@ -1,159 +1,34 @@
 import react from "@vitejs/plugin-react";
-import crypto from "node:crypto";
-import os from "node:os";
-import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-// Set unique MSW cookie store path BEFORE any test file imports MSW.
-// This must live here (not in setup.ts) because JS import hoisting causes
-// MSW's CookieStore to initialise before module-level statements in setup
-// files run, leading to a shared SQLite file and "database is locked" errors
-// when Turbo executes both app test suites in parallel.
-process.env.MSW_COOKIE_STORE_PATH ??= path.resolve(
-  os.tmpdir(),
-  `msw-cookies-storefront-${process.pid}-${crypto.randomUUID()}.db`,
-);
+import { createVitestConfig } from "@workspace/app-config/vitest";
 
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    globals: true,
-    environment: "happy-dom",
-    reporters: [
-      "default",
-      [
-        "allure-vitest/reporter",
-        {
-          resultsDir: "./allure-results",
-          globalLabels: {
-            layer: "unit",
-            epic: "Storefront",
-            severity: "normal",
-            owner: "BookWorm Engineering",
-          },
-          environmentInfo: {
-            Application: "@bookworm/storefront",
-            Framework: "Next.js 16 / React 19",
-            Runner: "Vitest",
-            Environment: "Happy DOM",
-          },
-          links: {
-            issue: {
-              nameTemplate: "Issue #%s",
-              urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
-            },
-            tms: {
-              nameTemplate: "TMS #%s",
-              urlTemplate: "https://github.com/foxminchan/BookWorm/issues/%s",
-            },
-          },
-        },
-      ],
+export default defineConfig(
+  createVitestConfig({
+    appName: "storefront",
+    epic: "Storefront",
+    application: "@bookworm/storefront",
+    appDir: import.meta.dirname,
+    plugins: [react()],
+    extraCoverageExclude: [
+      "**/proxy.ts",
+      "lib/policy-content.ts",
+      "**/robots.ts",
+      "**/sitemap.ts",
+      "**/manifest.ts",
+      "**/opengraph-image.tsx",
+      "lib/seo.ts",
+      "components/providers.tsx",
+      "hooks/useUserContext.ts",
+      "components/back-to-top.tsx",
+      "components/footer-policies.tsx",
+      "components/header.tsx",
+      "components/footer.tsx",
+      "components/mobile-bottom-nav.tsx",
+      "components/chat-bot.tsx",
+      "components/policy-dialog.tsx",
+      "features/content/**",
+      "features/home/**",
     ],
-    setupFiles: ["allure-vitest/setup", "./__tests__/setup.ts"],
-    include: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "e2e"],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "json-summary", "html", "lcov"],
-      reportsDirectory: "./coverage",
-      exclude: [
-        "node_modules/",
-        ".next/",
-        "__tests__/",
-        "**/*.config.*",
-        "**/*.d.ts",
-        "**/types.ts",
-        "e2e/",
-        // Pages & App Directory (integration tested separately)
-        "app/**/*.tsx",
-        "app/**/*.ts",
-        "**/layout.tsx",
-        "**/not-found.tsx",
-        "**/page.tsx",
-        "**/loading.tsx",
-        "**/error.tsx",
-        "**/template.tsx",
-        // Infrastructure & Setup
-        "**/*.mjs",
-        "**/env.mjs",
-        "**/instrumentation.ts",
-        "**/instrumentation.node.ts",
-        "**/proxy.ts",
-        "**/middleware.ts",
-        // Constants
-        "lib/constants.ts",
-        "lib/policy-content.ts",
-        "lib/query-client.ts",
-        // SEO & Metadata
-        "**/robots.ts",
-        "**/sitemap.ts",
-        "**/manifest.ts",
-        "**/opengraph-image.tsx",
-        "lib/seo.ts",
-        // Auth & Providers (integration concerns)
-        "lib/auth.ts",
-        "lib/auth-client.ts",
-        "components/providers.tsx",
-        // MSW & Mocking
-        "lib/msw.ts",
-        "public/mockServiceWorker.js",
-        // Thin Wrappers (declarative, no logic)
-        "hooks/useUserContext.ts",
-        "components/back-to-top.tsx",
-        "components/footer-policies.tsx",
-        // Complex UI Components (e2e tested)
-        "components/header.tsx",
-        "components/footer.tsx",
-        "components/mobile-bottom-nav.tsx",
-        "components/chat-bot.tsx",
-        "components/policy-dialog.tsx",
-        // Loading Skeletons (visual only)
-        "components/loading-skeleton.tsx",
-        "**/loading-skeleton.tsx",
-        // Content Pages (static content)
-        "features/content/**",
-        "features/home/**",
-      ],
-    },
-    pool: "forks",
-    execArgv: [
-      "--localstorage-file",
-      path.resolve(os.tmpdir(), `vitest-${crypto.randomUUID()}.localstorage`),
-    ],
-    isolate: false,
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "./"),
-      "@workspace/ui": path.resolve(
-        import.meta.dirname,
-        "../../packages/ui/src",
-      ),
-      "@workspace/api-hooks": path.resolve(
-        import.meta.dirname,
-        "../../packages/api-hooks/src",
-      ),
-      "@workspace/types": path.resolve(
-        import.meta.dirname,
-        "../../packages/types/src",
-      ),
-      "@workspace/api-client": path.resolve(
-        import.meta.dirname,
-        "../../packages/api-client/src",
-      ),
-      "@workspace/validations": path.resolve(
-        import.meta.dirname,
-        "../../packages/validations/src",
-      ),
-      "@workspace/mocks": path.resolve(
-        import.meta.dirname,
-        "../../packages/mocks/src",
-      ),
-      "@workspace/utils": path.resolve(
-        import.meta.dirname,
-        "../../packages/utils/src",
-      ),
-    },
-  },
-});
+  }),
+);

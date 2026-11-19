@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ShopFilters from "@/features/catalog/shop/shop-filters";
@@ -82,5 +83,25 @@ describe("ShopFilters", () => {
 
     const aside = container.querySelector("aside");
     expect(aside).toBeInTheDocument();
+  });
+
+  it("should handle null item names, empty priceRange, and slider changes", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(
+      <ShopFilters
+        {...defaultProps}
+        priceRange={[]}
+        categories={[{ id: "cat-null", name: null }]}
+      />,
+    );
+
+    expect(screen.getAllByText("$0.00")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("$100.00+")[0]).toBeInTheDocument();
+
+    rerender(<ShopFilters {...defaultProps} priceRange={[10, 80]} />);
+    const sliders = screen.getAllByRole("slider");
+    sliders[0]!.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(mockSetPriceRange).toHaveBeenCalled();
   });
 });

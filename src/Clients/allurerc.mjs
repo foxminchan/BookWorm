@@ -1,8 +1,8 @@
 import { defineConfig } from "allure";
-import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
-import { defaultCategoriesConfig } from "./allure-enricher.mjs";
+import { defaultCategoriesConfig } from "@workspace/allure-config";
 
 const reportName =
   process.env.ALLURE_REPORT_NAME || "BookWorm Unified Test Report";
@@ -12,9 +12,8 @@ const reportScope =
 const isBackendScope = reportScope === "backend";
 const historyPath =
   process.env.ALLURE_HISTORY_PATH || "./.allure/history.jsonl";
-const enricherPluginPath = path.resolve(
-  import.meta.dirname,
-  "./allure-enricher.mjs",
+const enricherPluginPath = fileURLToPath(
+  import.meta.resolve("@workspace/allure-config"),
 );
 
 const isDotNetTest = (labels) =>

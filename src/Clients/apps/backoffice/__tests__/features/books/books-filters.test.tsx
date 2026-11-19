@@ -313,4 +313,29 @@ describe("BooksFilters", () => {
       ]?.[0];
     expect(lastCall?.authorId).toBeUndefined();
   });
+
+  it("deselects already-selected author and handles category and publisher changes", async () => {
+    const user = userEvent.setup();
+    render(<BooksFilters onFiltersChange={mockOnFiltersChange} />);
+
+    await user.click(screen.getByRole("button", { name: /expand.*filters/i }));
+
+    // Select then deselect author
+    await user.click(screen.getByTestId("toggle-author"));
+    await user.click(screen.getByTestId("toggle-author"));
+
+    // Select category and publisher
+    await user.click(screen.getByLabelText(/Category/));
+    await user.keyboard("{ArrowDown}{Enter}");
+    await user.click(screen.getByLabelText(/Publisher/));
+    await user.keyboard("{ArrowDown}{Enter}");
+
+    const lastCall =
+      mockOnFiltersChange.mock.calls[
+        mockOnFiltersChange.mock.calls.length - 1
+      ]?.[0];
+    expect(lastCall?.categoryId).toBeTruthy();
+    expect(lastCall?.publisherId).toBeTruthy();
+    expect(lastCall?.authorId).toBeUndefined();
+  });
 });

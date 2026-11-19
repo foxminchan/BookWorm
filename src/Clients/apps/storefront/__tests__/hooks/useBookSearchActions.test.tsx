@@ -98,4 +98,37 @@ describe("useBookSearchActions", () => {
     expect(getByText(/Result 1/)).toBeInTheDocument();
     expect(getByText(/Result 2/)).toBeInTheDocument();
   });
+
+  it("renders executing, single-result, and idle states", () => {
+    useBookSearchActions();
+
+    const action = registeredActions.find((a) => a.name === "searchBooks");
+
+    // Executing state
+    const execView = action?.render({ status: "executing" });
+    const { getByText, unmount } = render(execView ?? <div />);
+    expect(getByText(/Searching for books/i)).toBeInTheDocument();
+    unmount();
+
+    // Single result state
+    const singleView = action?.render({
+      status: "complete",
+      result: JSON.stringify({
+        results: [
+          { id: "1", name: "Solo Book", authors: [{ name: "A" }], price: 12 },
+        ],
+        total: 1,
+        query: "solo",
+      }),
+    });
+    const { getByText: getSingleText, unmount: unmountSingle } = render(
+      singleView ?? <div />,
+    );
+    expect(getSingleText(/Found 1 book$/i)).toBeInTheDocument();
+    unmountSingle();
+
+    // Idle state
+    const idleView = action?.render({ status: "inProgress" });
+    expect(idleView).toBeTruthy();
+  });
 });

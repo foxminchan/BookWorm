@@ -12,8 +12,24 @@ vi.mock("recharts", () => ({
     <div>{children}</div>
   ),
   PieChart: ({ children }: PropsWithChildren) => <div>{children}</div>,
-  Pie: ({ data }: { data: CategoryCount[] }) => (
-    <div data-testid="categories">{JSON.stringify(data)}</div>
+  Pie: ({
+    data,
+    label,
+    shape,
+  }: {
+    data: CategoryCount[];
+    label?: (entry: CategoryCount) => string;
+    shape?: (
+      props: Record<string, unknown>,
+      index?: string | number,
+    ) => React.ReactNode;
+  }) => (
+    <div data-testid="categories">
+      {JSON.stringify(data)}
+      {data[0] && label?.(data[0])}
+      {shape?.({}, 0)}
+      {shape?.({}, "not-a-number")}
+    </div>
   ),
   Sector: () => null,
   Tooltip: () => null,

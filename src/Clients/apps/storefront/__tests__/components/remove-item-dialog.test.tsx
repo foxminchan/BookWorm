@@ -76,4 +76,35 @@ describe("RemoveItemDialog", () => {
       screen.queryByRole("heading", { name: /remove from basket/i }),
     ).not.toBeInTheDocument();
   });
+
+  it("should display multiple items list when more than one item is provided", () => {
+    renderWithProviders(
+      <RemoveItemDialog
+        open={true}
+        onConfirm={mockOnConfirm}
+        onOpenChange={mockOnOpenChange}
+        items={[
+          { id: "1", name: "Book One" },
+          { id: "2", name: "Book Two" },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText(/Book One/)).toBeInTheDocument();
+    expect(screen.getByText(/Book Two/)).toBeInTheDocument();
+  });
+
+  it("should render default description when items prop is omitted", () => {
+    renderWithProviders(
+      <RemoveItemDialog
+        open={true}
+        onConfirm={mockOnConfirm}
+        onOpenChange={mockOnOpenChange}
+      />,
+    );
+
+    expect(
+      screen.getByText(/The following items have been set to zero quantity/i),
+    ).toBeInTheDocument();
+  });
 });

@@ -305,4 +305,149 @@ describe("useOfflineQueue", () => {
 
     removeEventListenerSpy.mockRestore();
   });
+
+  it("retries failed sync when retryCount is below MAX_RETRIES and clears timeout on unmount", async () => {
+    const stored = [
+      { id: "msg-1", content: "hi", timestamp: 1, retryCount: 0 },
+      { id: "msg-2", content: "there", timestamp: 2, retryCount: 0 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+
+    setNavigatorOnline(true);
+    const { result, unmount } = renderHook(() => useOfflineQueue());
+    await act(async () => {});
+
+    await act(async () => {
+      const pending = result.current.syncQueue();
+      globalThis.dispatchEvent(
+        new CustomEvent("copilot-message-sent", {
+          detail: { id: "other-id", success: true },
+        }),
+      );
+      globalThis.dispatchEvent(
+        new CustomEvent("copilot-message-sent", {
+          detail: { id: "msg-1", success: false },
+        }),
+      );
+      await pending;
+    });
+
+    expect(result.current.queue[0]!.retryCount).toBe(1);
+    expect(result.current.queue[1]!.retryCount).toBe(0);
+
+    // Advance timer to trigger scheduled retry
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    // Unmount while timeout/sync might be pending
+    unmount();
+  });
+
+  it("continues syncing next message when queue has multiple items", async () => {
+    const stored = [
+      { id: "msg-1", content: "first", timestamp: 1, retryCount: 0 },
+      { id: "msg-2", content: "second", timestamp: 2, retryCount: 0 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+
+    setNavigatorOnline(true);
+    const { result } = renderHook(() => useOfflineQueue());
+    await act(async () => {});
+
+    await act(async () => {
+      const pending = result.current.syncQueue();
+      globalThis.dispatchEvent(
+        new CustomEvent("copilot-message-sent", {
+          detail: { id: "msg-1", success: true },
+        }),
+      );
+      await pending;
+    });
+
+    expect(result.current.queueSize).toBe(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+  });
+
+  it("handles dispatchEvent errors during sync for both retryable and max-retried messages", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const stored = [
+      { id: "err-1", content: "retryable", timestamp: 1, retryCount: 0 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    setNavigatorOnline(true);
+
+    const { result } = renderHook(() => useOfflineQueue());
+    await act(async () => {});
+
+    const dispatchSpy = vi
+      .spyOn(globalThis, "dispatchEvent")
+      .mockImplementation(() => {
+        throw new Error("dispatch failed");
+      });
+
+    await act(async () => {
+      await result.current.syncQueue();
+    });
+    expect(result.current.queue[0]!.retryCount).toBe(1);
+
+    dispatchSpy.mockRestore();
+
+    // Now test max-retried message throwing during sync
+    localStorage.setItem(
+      "copilot-message-queue",
+      JSON.stringify([
+        { id: "err-2", content: "maxed", timestamp: 2, retryCount: 3 },
+      ]),
+    );
+    const { result: result2 } = renderHook(() => useOfflineQueue());
+    await act(async () => {});
+
+    const dispatchSpy2 = vi
+      .spyOn(globalThis, "dispatchEvent")
+      .mockImplementation(() => {
+        throw new Error("dispatch failed again");
+      });
+
+    await act(async () => {
+      await result2.current.syncQueue();
+    });
+    expect(result2.current.queueSize).toBe(0);
+
+    dispatchSpy2.mockRestore();
+    consoleSpy.mockRestore();
+  });
+
+  it("handles localStorage setItem errors gracefully", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const setItemSpy = vi
+      .spyOn(localStorage, "setItem")
+      .mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      });
+
+    renderHook(() => useOfflineQueue());
+
+    expect(consoleSpy).toHaveBeenCalledWith("Failed to save message queue");
+
+    setItemSpy.mockRestore();
+    consoleSpy.mockRestore();
+  });
+
+  it("handles falsy message entry in queue gracefully", async () => {
+    localStorage.setItem("copilot-message-queue", JSON.stringify([null]));
+    setNavigatorOnline(true);
+
+    const { result } = renderHook(() => useOfflineQueue());
+    await act(async () => {});
+
+    await act(async () => {
+      await result.current.syncQueue();
+    });
+
+    expect(result.current.isSyncing).toBe(false);
+  });
 });

@@ -84,15 +84,31 @@ vi.mock("@/components/loading-skeleton", () => ({
 vi.mock("@/components/remove-item-dialog", () => ({
   RemoveItemDialog: ({
     open,
+    onOpenChange,
     onConfirm,
   }: {
     open: boolean;
+    onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
   }) =>
     open ? (
       <div data-testid="remove-dialog">
         <button type="button" data-testid="confirm-remove" onClick={onConfirm}>
           Confirm
+        </button>
+        <button
+          type="button"
+          data-testid="cancel-remove"
+          onClick={() => onOpenChange(false)}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          data-testid="keep-open-remove"
+          onClick={() => onOpenChange(true)}
+        >
+          Keep
         </button>
       </div>
     ) : null,
@@ -168,13 +184,27 @@ vi.mock("@/features/catalog/product/reviews-container", () => ({
           Page 2
         </button>
         {reviewForm && (
-          <button
-            type="button"
-            data-testid="submit-review"
-            onClick={reviewForm.onSubmit as () => void}
-          >
-            Submit
-          </button>
+          <>
+            <button
+              type="button"
+              data-testid="submit-review"
+              onClick={reviewForm.onSubmit as () => void}
+            >
+              Submit
+            </button>
+            <button
+              type="button"
+              data-testid="update-review-field"
+              onClick={() =>
+                (reviewForm.onChange as (f: string, v: string) => void)?.(
+                  "comment",
+                  "Great book!",
+                )
+              }
+            >
+              Update Review
+            </button>
+          </>
         )}
       </div>
     );
@@ -659,5 +689,92 @@ describe("BookDetailPageClient", () => {
       mockUseFeedbacks.mock.calls[mockUseFeedbacks.mock.calls.length - 1]![0]!;
     expect(lastCall.orderBy).toBe("rating");
     expect(lastCall.isDescending).toBe(true);
+  });
+
+  it("decreases and increases quantity when quantity is greater than 1", () => {
+    const mockUpdateMutate = vi.fn();
+    mockUseUpdateBasket.mockReturnValue({
+      mutate: mockUpdateMutate,
+      isPending: false,
+    });
+    mockUseBasket.mockReturnValue({
+      data: { items: [{ id: "test-id", quantity: 3 }] },
+      refetch: vi.fn(),
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("decrease-qty"));
+    expect(mockUpdateMutate).toHaveBeenCalledWith({
+      request: { items: [{ id: "test-id", quantity: 2 }] },
+    });
+
+    fireEvent.click(screen.getByTestId("increase-qty"));
+    expect(mockUpdateMutate).toHaveBeenCalledWith({
+      request: { items: [{ id: "test-id", quantity: 4 }] },
+    });
+  });
+
+  it("handles page change, review form toggle, and review field update", () => {
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    fireEvent.click(screen.getByTestId("page-change"));
+    expect(screen.getByTestId("reviews-container")).toHaveAttribute(
+      "data-page",
+      "2",
+    );
+
+    fireEvent.click(screen.getByTestId("toggle-review-form"));
+    fireEvent.click(screen.getByTestId("update-review-field"));
+  });
+
+  it("handles empty, zero, and out-of-range quantity inputs and dialog open/close", async () => {
+    mockUseBasket.mockReturnValue({
+      data: undefined,
+      refetch: vi.fn(),
+    });
+    mockUseFeedbacks.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    });
+
+    renderWithProviders(<BookDetailPageClient id="test-id" />);
+
+    // Zero input opens remove dialog
+    fireEvent.change(screen.getByTestId("qty-input"), {
+      target: { value: "0" },
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("remove-dialog")).toBeInTheDocument();
+    });
+
+    // Keep open (onOpenChange(true))
+    fireEvent.click(screen.getByTestId("keep-open-remove"));
+    expect(screen.getByTestId("remove-dialog")).toBeInTheDocument();
+
+    // Cancel closes dialog (onOpenChange(false))
+    fireEvent.click(screen.getByTestId("cancel-remove"));
+    await waitFor(() => {
+      expect(screen.queryByTestId("remove-dialog")).not.toBeInTheDocument();
+    });
+
+    // Empty input (from "0" -> "") opens remove dialog
+    fireEvent.change(screen.getByTestId("qty-input"), {
+      target: { value: "" },
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("remove-dialog")).toBeInTheDocument();
+    });
+
+    // Out-of-range / NaN input does not trigger update
+    fireEvent.change(screen.getByTestId("qty-input"), {
+      target: { value: "100" },
+    });
+    fireEvent.change(screen.getByTestId("qty-input"), {
+      target: { value: "abc" },
+    });
+
+    // Confirm remove when basket is undefined
+    fireEvent.click(screen.getByTestId("confirm-remove"));
   });
 });
