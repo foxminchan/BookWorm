@@ -7,6 +7,11 @@ namespace BookWorm.Catalog.Features.Books.Update;
 public sealed class UpdateBookCommand : ICommand, IHasExpectedVersion, IBookInput
 {
     public Guid Id { get; init; }
+    public bool IsRemoveImage { get; init; }
+
+    [JsonIgnore]
+    public string? ImageUrn { get; set; }
+
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public IFormFile? Image { get; init; }
@@ -15,10 +20,6 @@ public sealed class UpdateBookCommand : ICommand, IHasExpectedVersion, IBookInpu
     public Guid CategoryId { get; init; }
     public Guid PublisherId { get; init; }
     public Guid[] AuthorIds { get; init; } = [];
-    public bool IsRemoveImage { get; init; }
-
-    [JsonIgnore]
-    public string? ImageUrn { get; set; }
 
     [JsonIgnore]
     public uint? ExpectedVersion { get; set; }
