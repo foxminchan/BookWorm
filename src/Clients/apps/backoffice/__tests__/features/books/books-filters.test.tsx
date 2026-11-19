@@ -7,7 +7,7 @@ import {
   createMockCategory,
   createMockPublisher,
 } from "@/__tests__/factories";
-import { BooksFilters } from "@/features/books/books-filters";
+import { BooksFilters, filterReducer } from "@/features/books/books-filters";
 
 const mockUseAuthors = vi.hoisted(() => vi.fn());
 const mockUseCategories = vi.hoisted(() => vi.fn());
@@ -337,5 +337,22 @@ describe("BooksFilters", () => {
     expect(lastCall?.categoryId).toBeTruthy();
     expect(lastCall?.publisherId).toBeTruthy();
     expect(lastCall?.authorId).toBeUndefined();
+  });
+
+  it("returns current state for unknown reducer action", () => {
+    const state = {
+      searchTerm: "",
+      debouncedSearch: "",
+      priceRange: [0, 100] as [number, number],
+      debouncedPriceRange: [0, 100] as [number, number],
+      orderBy: "name",
+      isDescending: false,
+      selectedCategory: undefined,
+      selectedAuthors: [],
+      debouncedAuthors: [],
+      selectedPublisher: undefined,
+    };
+    const next = filterReducer(state, { type: "UNKNOWN" } as never);
+    expect(next).toBe(state);
   });
 });

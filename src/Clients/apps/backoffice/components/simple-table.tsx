@@ -67,7 +67,10 @@ const initialTableState: TableState = {
   deletingId: null,
 };
 
-function tableReducer(state: TableState, action: TableAction): TableState {
+export function tableReducer(
+  state: TableState,
+  action: TableAction,
+): TableState {
   switch (action.type) {
     case "START_EDIT":
       return { ...state, editingId: action.id, editValue: action.name };

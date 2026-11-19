@@ -450,4 +450,35 @@ describe("useOfflineQueue", () => {
 
     expect(result.current.isSyncing).toBe(false);
   });
+
+  it("resets isSyncing and schedules retry when sync fails below max retries", async () => {
+    vi.useFakeTimers();
+    const stored = [
+      { id: "retry-msg", content: "retry me", timestamp: 1, retryCount: 0 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    setNavigatorOnline(true);
+
+    const { result } = renderHook(() => useOfflineQueue());
+    await act(async () => {});
+
+    await act(async () => {
+      const pending = result.current.syncQueue();
+      globalThis.dispatchEvent(
+        new CustomEvent("copilot-message-sent", {
+          detail: { id: "retry-msg", success: false },
+        }),
+      );
+      await pending;
+    });
+
+    expect(result.current.queue[0]!.retryCount).toBe(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2500);
+    });
+
+    expect(result.current.isSyncing).toBe(false);
+    vi.useRealTimers();
+  });
 });

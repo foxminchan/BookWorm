@@ -20,6 +20,22 @@ describe("CategorySelect", () => {
     createMockCategory({ name: "Science" }),
   ];
 
+  it("renders loading skeleton while categories are loading", () => {
+    mockUseCategories.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    const { container } = render(
+      <CategorySelect value={undefined} onChange={vi.fn()} />,
+    );
+
+    expect(container.querySelector("#category-select")).toBeNull();
+    expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(
+      2,
+    );
+  });
+
   it.each([
     {
       name: "category label",

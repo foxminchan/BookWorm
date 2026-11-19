@@ -168,11 +168,16 @@ export function useOfflineQueue() {
     return () => {
       globalThis.removeEventListener("online", handleOnline);
       globalThis.removeEventListener("offline", handleOffline);
+    };
+  }, [state.queue.length, syncQueue]);
+
+  useEffect(() => {
+    return () => {
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
     };
-  }, [state.queue.length, syncQueue]);
+  }, []);
 
   const sendMessage = async (
     content: string,

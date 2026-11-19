@@ -20,6 +20,22 @@ describe("PublisherSelect", () => {
     createMockPublisher(),
   ];
 
+  it("renders loading skeleton while publishers are loading", () => {
+    mockUsePublishers.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    const { container } = render(
+      <PublisherSelect value={undefined} onChange={vi.fn()} />,
+    );
+
+    expect(container.querySelector("#publisher-select")).toBeNull();
+    expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(
+      2,
+    );
+  });
+
   it.each([
     {
       name: "publisher label",

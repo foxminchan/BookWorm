@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 const SPECIAL_TOKENS = new Map([
   ["a11y", "Accessibility"],
   ["a2ui", "A2UI"],
@@ -547,9 +549,78 @@ export const isE2ETest = (labels) =>
         (value?.startsWith("e2e/") || value?.endsWith(".feature"))),
   );
 
+export const createFrontendEnvironments = ({
+  featuresScope,
+  componentsScope,
+  coreName,
+  coreScope,
+  coreSegments,
+  e2eScope,
+  includeFuzz = false,
+}) => {
+  const environments = {
+    features: {
+      name: "Domain Features",
+      variables: {
+        Layer: "Integration",
+        Scope: featuresScope,
+        Runner: "Vitest + MSW + TanStack Query",
+      },
+      matcher: ({ labels }) =>
+        !isE2ETest(labels) && hasPathSegment(labels, "features"),
+    },
+    components: {
+      name: "UI Components",
+      variables: {
+        Layer: "Unit",
+        Scope: componentsScope,
+        Runner: "Vitest + Testing Library",
+      },
+      matcher: ({ labels }) =>
+        !isE2ETest(labels) && hasPathSegment(labels, "components"),
+    },
+    core: {
+      name: coreName,
+      variables: {
+        Layer: "Unit",
+        Scope: coreScope,
+        Runner: "Vitest",
+      },
+      matcher: ({ labels }) =>
+        !isE2ETest(labels) &&
+        coreSegments.some((segment) => hasPathSegment(labels, segment)),
+    },
+  };
+
+  if (includeFuzz) {
+    environments.fuzz = {
+      name: "Property & Fuzz Tests",
+      variables: {
+        Layer: "Unit",
+        Scope: "Property-Based Invariants & Fuzzing",
+        Runner: "Vitest + fast-check",
+      },
+      matcher: ({ labels }) =>
+        !isE2ETest(labels) && hasPathSegment(labels, "fuzz"),
+    };
+  }
+
+  environments.e2e = {
+    name: "E2E (Playwright BDD)",
+    variables: {
+      Layer: "E2E",
+      Scope: e2eScope,
+      Runner: "Playwright + Chromium",
+    },
+    matcher: ({ labels }) => isE2ETest(labels),
+  };
+
+  return environments;
+};
+
 export const createAppAllureConfig = ({
   reportName,
-  enricherPluginPath,
+  enricherPluginPath = fileURLToPath(import.meta.url),
   enricherOptions,
   variables,
   environments,

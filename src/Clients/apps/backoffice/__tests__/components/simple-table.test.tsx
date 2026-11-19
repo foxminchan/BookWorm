@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { userEvent } from "@/__tests__/utils/test-utils";
-import { SimpleTable } from "@/components/simple-table";
+import { SimpleTable, tableReducer } from "@/components/simple-table";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -284,5 +284,17 @@ describe("SimpleTable", () => {
     expect(
       screen.getByText(/are you sure you want to delete "this item"\?/i),
     ).toBeInTheDocument();
+  });
+
+  it("should return current state for unknown reducer action", () => {
+    const state = {
+      editingId: null,
+      editValue: "",
+      deletingId: null,
+      deleteConfirmId: null,
+      deleteConfirmName: "",
+    };
+    const next = tableReducer(state, { type: "UNKNOWN" } as never);
+    expect(next).toBe(state);
   });
 });

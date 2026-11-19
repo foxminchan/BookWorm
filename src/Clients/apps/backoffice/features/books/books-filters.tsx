@@ -70,7 +70,10 @@ const initialFilterState: FilterState = {
   selectedPublisher: undefined,
 };
 
-function filterReducer(state: FilterState, action: FilterAction): FilterState {
+export function filterReducer(
+  state: FilterState,
+  action: FilterAction,
+): FilterState {
   switch (action.type) {
     case "SET_SEARCH_TERM":
       return { ...state, searchTerm: action.payload };

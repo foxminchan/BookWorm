@@ -63,9 +63,9 @@ export const test = base.extend<BddFixtures>({
 export const { Given, When, Then } = createBdd(test);
 
 export async function expectTableColumns(page: Page, columns: string[]) {
-  for (const column of columns) {
-    await expect(
-      page.locator("table thead th", { hasText: column }),
-    ).toBeVisible();
-  }
+  await Promise.all(
+    columns.map((column) =>
+      expect(page.locator("table thead th", { hasText: column })).toBeVisible(),
+    ),
+  );
 }
