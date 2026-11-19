@@ -34,7 +34,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-dotnet@v6.1.0'
         - 'docker/setup-docker-action@v5.6.0'
-        - 'jdx/mise-action@v5.2.7'
+        - 'jdx/mise-action@v5.2.9'
         - 'oven-sh/setup-bun@v2.2.0'
     '.github/workflows/docs.yml':
         - 'actions/cache@v6.1.0'
@@ -241,9 +241,9 @@ dependencies:
         commit: 'sha1-53d0749e19424a918acd82b4d140264ce48f2f14'
         owner_id: 9919
         repo_id: 1156386970
-    'jdx/mise-action@v5.2.7':
-        ref: 'v5.2.7'
-        commit: 'sha1-b44d12e7d0d8ee7461bb893e1b1993500433185b'
+    'jdx/mise-action@v5.2.9':
+        ref: 'v5.2.9'
+        commit: 'sha1-236a21c3b91f5db6d4e174b348674a0f0caac06d'
         owner_id: 216188
         repo_id: 738284564
     'ossf/scorecard-action@v2.5.0':
