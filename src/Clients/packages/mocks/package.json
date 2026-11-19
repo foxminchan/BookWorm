@@ -82,12 +82,15 @@
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
+    "@workspace/utils": "workspace:*",
+    "@workspace/validations": "workspace:*",
     "date-fns": "^4.4.0",
     "msw": "^3.0.7"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
     "@workspace/eslint-config": "workspace:*",
+    "@workspace/types": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^10.15.0",
     "typescript": "npm:typescript@^6.0.3"
