@@ -7,6 +7,8 @@ import { useBasketActions } from "@/hooks/useBasketActions";
 
 const registeredActions: Array<{
   name: string;
+  description?: string;
+  webmcp?: unknown;
   handler: (args: any) => Promise<any>;
   render: (args: any) => JSX.Element;
 }> = [];
@@ -52,6 +54,7 @@ describe("useBasketActions", () => {
     const action = registeredActions.find((a) => a.name === "addToBasket");
 
     expect(action).toBeDefined();
+    expect(action?.webmcp).toBe(true);
 
     await act(async () => {
       await action?.handler({
@@ -119,6 +122,13 @@ describe("useBasketActions", () => {
     renderHook(() => useBasketActions());
 
     const action = registeredActions.find((a) => a.name === "viewBasket");
+
+    expect(action).toBeDefined();
+    expect(action?.webmcp).toEqual({
+      annotations: {
+        readOnlyHint: true,
+      },
+    });
     let result: unknown;
 
     await act(async () => {
@@ -142,6 +152,13 @@ describe("useBasketActions", () => {
 
     const action = registeredActions.find((a) => a.name === "viewBasket");
 
+    expect(action).toBeDefined();
+    expect(action?.webmcp).toEqual({
+      annotations: {
+        readOnlyHint: true,
+      },
+    });
+
     const loading = action?.render({ status: "executing" } as any);
     const { getByText, rerender } = render(loading ?? <div />);
 
@@ -161,6 +178,13 @@ describe("useBasketActions", () => {
     renderHook(() => useBasketActions());
 
     const action = registeredActions.find((a) => a.name === "viewBasket");
+
+    expect(action).toBeDefined();
+    expect(action?.webmcp).toEqual({
+      annotations: {
+        readOnlyHint: true,
+      },
+    });
 
     const result = JSON.stringify({
       items: [

@@ -1,0 +1,122 @@
+---
+id: qrtz-triggers
+name: Quartz Triggers
+version: 1.0.0
+identifier: trigger_name
+aggregateRoot: false
+summary: Common Quartz trigger state, timing, retry, pause, and execution metadata.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: trigger_name
+    type: text
+    required: true
+  - name: trigger_group
+    type: text
+    required: true
+  - name: job_name
+    type: text
+    required: true
+    references: qrtz-job-details
+    referencesIdentifier: job_name
+    relationType: belongsTo
+  - name: job_group
+    type: text
+    required: true
+    references: qrtz-job-details
+    referencesIdentifier: job_group
+    relationType: belongsTo
+  - name: description
+    type: text
+    required: false
+  - name: next_fire_time
+    type: bigint
+    required: false
+  - name: prev_fire_time
+    type: bigint
+    required: false
+  - name: priority
+    type: integer
+    required: false
+  - name: trigger_state
+    type: text
+    required: true
+  - name: trigger_type
+    type: text
+    required: true
+  - name: start_time
+    type: bigint
+    required: true
+  - name: end_time
+    type: bigint
+    required: false
+  - name: calendar_name
+    type: text
+    required: false
+  - name: misfire_instr
+    type: smallint
+    required: false
+  - name: misfire_orig_fire_time
+    type: bigint
+    required: false
+  - name: execution_group
+    type: varchar(200)
+    required: false
+  - name: preferred_node
+    type: varchar(200)
+    required: false
+  - name: preferred_node_auto
+    type: boolean
+    required: true
+  - name: retry_policy
+    type: varchar(250)
+    required: false
+  - name: retry_attempt
+    type: integer
+    required: false
+  - name: continues_trigger_name
+    type: text
+    required: false
+  - name: continues_trigger_group
+    type: text
+    required: false
+  - name: continuation_condition
+    type: integer
+    required: false
+  - name: overlap_policy
+    type: integer
+    required: false
+  - name: pause_reason
+    type: varchar(250)
+    required: false
+  - name: paused_by
+    type: varchar(200)
+    required: false
+  - name: paused_at
+    type: bigint
+    required: false
+  - name: misfire_threshold
+    type: bigint
+    required: false
+  - name: fixed_delay
+    type: boolean
+    required: false
+  - name: job_data
+    type: bytea
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name`, `trigger_name`, and `trigger_group`.
+- Each trigger belongs to [[entity|qrtz-job-details]] through
+  `sched_name`, `job_name`, and `job_group`.
+- Trigger-specific records extend this entity through the trigger composite
+  key.

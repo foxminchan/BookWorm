@@ -1,0 +1,166 @@
+---
+id: feedback-publication
+name: Customer feedback publication and projection
+version: 1.0.0
+summary: >-
+  A customer creates feedback, the Rating service persists it, Catalog updates
+  the derived rating summary, and invalid catalog references are compensated
+  through the failure path.
+owners:
+  - contributor-team
+badges:
+  - content: Event-Driven
+    backgroundColor: purple
+    textColor: purple
+steps:
+  - id: customer
+    title: Customer submits feedback for a book
+    actor:
+      name: Customer
+    next_step:
+      id: create-feedback
+      label: Submit the rating and optional comment
+  - id: create-feedback
+    title: CreateFeedback command
+    message:
+      id: CreateFeedback
+      version: 1.0.0
+    next_step:
+      id: rating-api
+      label: Persist the feedback aggregate
+  - id: rating-api
+    title: Rating API persists the new feedback
+    summary: >-
+      The API validates the book ID, rating, reviewer names, and comment, then
+      stores the accepted feedback record in the Rating Database.
+    service:
+      id: rating-api
+      version: 1.0.0
+    next_steps:
+      - id: rating-db
+        label: Save the feedback row and emit the domain event
+      - id: invalid-book-failure
+        label: Catalog rejects the referenced book
+  - id: rating-db
+    title: Rating Database stores committed feedback
+    container:
+      id: rating-database
+      version: 1.0.0
+    next_step:
+      id: feedback-created
+      label: Publish the feedback-created event
+  - id: feedback-created
+    title: FeedbackCreatedIntegrationEvent reaches Catalog
+    message:
+      id: FeedbackCreatedIntegrationEvent
+      version: 1.0.0
+    next_step:
+      id: catalog-api
+      label: Update the Catalog rating projection
+  - id: catalog-api
+    title: Catalog API updates the projected rating summary
+    summary: >-
+      Catalog reads the event, updates the book's average rating and review
+      count, and keeps the summary separate from the original feedback record.
+    service:
+      id: catalog-api
+      version: 1.0.0
+    next_steps:
+      - id: rating-projection
+        label: Summary is refreshed successfully
+      - id: feedback-compensation
+        label: Missing book triggers compensation
+  - id: rating-projection
+    title: Rating summary is available to product discovery
+    custom:
+      title: Projection updated
+      type: Outcome
+      icon: CheckCircleIcon
+      color: green
+  - id: invalid-book-failure
+    title: Catalog reports a missing book reference
+    custom:
+      title: Invalid book reference
+      type: Failure
+      icon: ExclamationTriangleIcon
+      color: red
+    next_step:
+      id: feedback-compensation
+      label: Apply the compensation path
+  - id: feedback-compensation
+    title: BookUpdatedRatingFailedIntegrationEvent triggers feedback cleanup
+    message:
+      id: BookUpdatedRatingFailedIntegrationEvent
+      version: 1.0.0
+    next_step:
+      id: rating-api-cleanup
+      label: Remove the invalid record
+  - id: rating-api-cleanup
+    title: Rating API deletes the invalid feedback record
+    summary: >-
+      The feedback is removed when the Catalog projection cannot be applied,
+      keeping Reviews and Catalog aligned without leaving orphaned rating data.
+    service:
+      id: rating-api
+      version: 1.0.0
+---
+
+## Purpose and scope
+
+This flow captures the exact boundary between [[domain|reviews]] and
+[[domain|catalog]]. Reviews owns the submitted feedback and its lifecycle, while
+Catalog owns the derived rating summary shown in product discovery.
+
+The key rule is that a feedback record is never treated as a Catalog-owned
+product record. When a book reference is invalid, the system compensates rather
+than silently keeping inconsistent data.
+
+## Business context
+
+This flow describes the point where a customer review becomes visible as a
+product signal. It matters because BookWorm uses ratings as a discovery, trust,
+and merchandising signal, but it still must preserve the source-of-truth
+ownership of review data in Reviews.
+
+A customer can submit a single rating and an optional note, but the catalog
+experience only needs the aggregated summary. That separation prevents Catalog
+from becoming a second source of truth for individual review text, reviewer
+identity, or moderation decisions. The system therefore treats the rating
+projection as a derived cache of the review domain, not as a replacement for it.
+
+## Participants and responsibilities
+
+| Participant                                          | Responsibility                                                                                            |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Customer                                             | Submit the review, rating, and optional comment for a specific book.                                      |
+| [[service\|rating-api]]                              | Validate feedback, persist it in the Reviews store, and publish the domain event.                         |
+| [[database\|rating-database]]                        | Keep the authoritative review records and the transactional history of customer feedback.                 |
+| [[message\|FeedbackCreatedIntegrationEvent]]         | Publish the review event to downstream consumers after the Reviews write succeeds.                        |
+| [[service\|catalog-api]]                             | Accept the integration event, update the derived rating summary, and enforce the Catalog-side contract.   |
+| [[message\|BookUpdatedRatingFailedIntegrationEvent]] | Mark the failure path when Catalog cannot safely apply the update because the referenced book is missing. |
+
+## Failure handling and recovery
+
+The failure path is intentionally explicit. If Catalog receives a review event for
+an unknown book, it does not keep a partial projection or silently ignore the
+problem. Instead, it produces the compensation event and the Rating domain
+removes the invalid record.
+
+This pattern creates a clear operational rule:
+
+- A review is accepted only when the review store can commit it.
+- A catalog update is optional and derived.
+- A failed projection triggers cleanup, not silent data drift.
+
+This keeps the two domains aligned and makes troubleshooting easier when a bad
+book reference or stale event is involved.
+
+## Why this flow matters
+
+The flow protects both product correctness and domain boundaries. Without this
+pattern, Catalog could end up with stale or inconsistent ratings, while Reviews
+would no longer be able to treat its feedback records as a stable system of
+record. The design makes the derived summary recoverable and the review data
+auditable.
+
+<NodeGraph />

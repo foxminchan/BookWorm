@@ -1,0 +1,100 @@
+---
+id: SendMail
+name: Send mail
+version: 1.0.0
+badges:
+  - content: Email Delivery
+    backgroundColor: teal
+    textColor: teal
+summary: |
+  Submits one or more email messages to SendGrid for provider-side delivery
+  processing.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /v3/mail/send
+  statusCodes: ["202", "400", "401", "403", "404", "405", "413", "500"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+The `SendMail` command submits email content to [[system|sendgrid]]'s Mail Send API. The
+request can contain one or more `personalizations`, sender and recipient
+addresses, message content, and optional metadata such as a mail batch ID.
+
+The command is accepted asynchronously. A successful response means SendGrid
+accepted the request for processing; it is not confirmation that the message
+reached the recipient.
+
+### Notification connection
+
+[[service|notification-api]] sends this command to [[service|sendgrid-api]] in
+the catalog's logical service graph. Its runtime submission uses MailKit over
+SMTP, with MailPit in development and SendGrid when configured as the provider.
+The HTTP operation and JSON request schema on this page document SendGrid's
+HTTP API; they do not imply that Notification calls that endpoint or sends
+this JSON payload over SMTP.
+
+## Request
+
+Send an authenticated `application/json` request. A minimal request contains a
+verified sender, at least one recipient, and message content:
+
+<CodeGroup dropdown>
+
+```json
+{
+	"personalizations": [
+		{
+			"to": [
+				{
+					"email": "reader@example.com",
+					"name": "BookWorm reader"
+				}
+			]
+		}
+	],
+	"from": {
+		"email": "notifications@example.com",
+		"name": "BookWorm"
+	},
+	"subject": "Your notification",
+	"content": [
+		{
+			"type": "text/plain",
+			"value": "Your requested notification is ready."
+		}
+	]
+}
+```
+
+</CodeGroup>
+
+The complete request contract, including personalization limits, content
+formats, batch association, and optional fields, is defined by the
+SendGrid OpenAPI specification attached to [[service|sendgrid-api]].
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+
+## Response and failures
+
+- `202 Accepted` means SendGrid accepted the request for processing.
+- `400 Bad Request` indicates invalid message data or request structure.
+- `401 Unauthorized` indicates missing or invalid authentication.
+- `403 Forbidden` indicates that the caller is not allowed to send.
+- `404 Not Found` indicates that a referenced provider resource is unavailable.
+- `405 Method Not Allowed` indicates an unsupported HTTP method.
+- `413 Content Too Large` indicates that the request exceeds provider limits.
+- `500 Internal Server Error` indicates a provider-side failure.
+
+The [[system|notification-system]] should record the provider response, preserve the
+[[entity|outbox]] item when submission fails, and apply bounded retry behavior for
+transient failures.
+
+<NodeGraph />

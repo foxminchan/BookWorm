@@ -1,0 +1,43 @@
+---
+title: Requirements Overview
+summary: Essential BookWorm capabilities and architectural requirements synthesized from the current catalog.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+The requirements below summarize the platform's essential customer capabilities and architectural drivers. The `BW-R` identifiers are local references for this overview; they are not IDs from an approved product backlog. Detailed behavior and acceptance criteria remain with the relevant domain, service, and flow documentation.
+
+## Essential requirements
+
+| ID    | Capability or driver             | Requirement                                                                                                                                                                           | Why it matters                                                                                          |
+| ----- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| BW-R1 | Book discovery                   | Customers can find books and receive current product information from [[domain\|catalog]], the owner of book facts, pricing, and availability.                                        | Discovery and purchase decisions rely on authoritative product information.                             |
+| BW-R2 | Basket and checkout              | [[domain\|shopping]] maintains a customer-scoped [[entity\|basket]]. Checkout uses the persisted basket and current Catalog information; an unavailable book prevents order creation. | The submitted purchase must reflect saved customer intent and valid product data.                       |
+| BW-R3 | Order lifecycle                  | A successful checkout creates one accepted [[entity\|order]], after which [[domain\|ordering]] owns its lifecycle and fulfillment state.                                              | Order state must have a clear owner beyond the point of purchase.                                       |
+| BW-R4 | Customer feedback                | Customers can submit [[entity\|feedback]] associated with a book, while [[domain\|reviews]] does not take ownership of Catalog's book data.                                           | Feedback must remain connected to products without blurring context ownership.                          |
+| BW-R5 | Conversational assistance        | Customers can receive Catalog-grounded book discovery and store-policy assistance. The experience must not imply live Basket or Order access where no such integration exists.        | Assistance should be useful without inventing product facts or overstating its access to customer data. |
+| BW-R6 | Shared platform capabilities     | Scheduled processing and email notification delivery support business capabilities without changing their business state or taking ownership of their data.                           | Shared infrastructure must remain enabling rather than becoming an implicit business owner.             |
+| BW-R7 | Independent capability evolution | Each bounded context keeps ownership of its business behavior and data; compatible changes should not require unrelated contexts to share mutable state or release together.          | Explicit boundaries limit hidden dependencies and reduce the impact of change.                          |
+| BW-R8 | Explicit integration             | Cross-context communication uses documented, owned contracts, with compatibility checked when contracts evolve.                                                                       | Teams need to understand the meaning, ownership, and change impact of each integration.                 |
+
+## Requirement relationships
+
+The diagram traces the checkout, order-lifecycle, bounded-context ownership, and explicit-integration requirements to the BookWorm capabilities and contracts that support them.
+
+<MermaidFileLoader file="mermaids/bookworm-technical-requirements.mmd" />
+
+## Driving forces and constraints
+
+The requirements are driven by the end-to-end customer journey and by the platform's bounded-context structure. Checkout is a particularly important boundary: it must use persisted [[entity|basket]] contents and current [[domain|catalog]] data, then transfer lifecycle ownership to [[domain|ordering]] only after acceptance. [[domain|reviews]], [[domain|conversational]], and [[domain|platform]] support that journey while retaining their own responsibilities.
+
+The architecture also has cross-cutting constraints: preserve independent ownership, communicate through explicit contracts, and validate contract compatibility. See [[doc|arc42/02-architecture-constraints]] for the constraints and [[doc|arc42/04-solution-strategy]] for the corresponding architectural approach.
+
+## Traceability and open requirements
+
+These statements synthesize the current BookWorm domain model, checkout flow, and architecture catalog. Use the specific domain, service, flow, and contract entries as the source of detailed behavior; the arc42 [[doc|arc42/03-context-and-scope]] describes the system boundary and neighbors.
+
+No system-wide product backlog, formal acceptance criteria for every row, or approved performance, availability, recovery, and retention targets are established in the current architecture documentation. Product and service owners should refine these requirements and record measurable targets where they are needed.

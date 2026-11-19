@@ -32,29 +32,5 @@ internal sealed class CloudEventHeaderPolicy(string source) : IEnvelopeRule
     public void ApplyCorrelation(IMessageContext originator, Envelope outgoing)
     {
         Modify(outgoing);
-
-        if (originator.Envelope is null)
-        {
-            return;
-        }
-
-        if (
-            originator.Envelope.Headers.TryGetValue("requestid", out var requestId)
-            && !string.IsNullOrEmpty(requestId)
-        )
-        {
-            outgoing.Headers.TryAdd("requestid", requestId);
-        }
-
-        if (
-            !originator.Envelope.Headers.TryGetValue(EventBusHeaders.UserId, out var userId)
-            || string.IsNullOrEmpty(userId)
-        )
-        {
-            return;
-        }
-
-        outgoing.Headers.TryAdd(EventBusHeaders.UserId, userId);
-        outgoing.Headers.TryAdd("userid", userId);
     }
 }

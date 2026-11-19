@@ -1,0 +1,32 @@
+---
+id: author
+name: Author
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: Represents an author in the catalog and enforces the business rules for author names.
+
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the author
+  - name: name
+    type: string
+    required: true
+    description: The author's display name
+owners:
+  - contributor-team
+---
+
+## Overview
+
+The Author aggregate represents a person who writes [[entity|book]]s. It stores the author's unique identifier and required name, enforces a non-empty name during creation and updates, and is associated with books through the [[entity|book-author]] join entity.
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- An author is associated with books through the **BookAuthor** join entity

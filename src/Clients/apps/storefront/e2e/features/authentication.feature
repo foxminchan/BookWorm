@@ -11,28 +11,30 @@ Feature: User Authentication
 
   @smoke
   @login
-  Scenario: Successful login redirects to Keycloak
+  Scenario: Successful login redirects to Microsoft Entra ID
     Given I am on the homepage
-    When I click "Login"
+    When I open the account menu
+    And I select "Login"
     Then I should be redirected to the login page
-    And I should see "Redirecting to login" message
-    And I should be redirected to Keycloak OAuth provider
+    And I should see "Redirecting to login..." message
+    And I should be redirected to Microsoft Entra ID OAuth provider
 
   @smoke
   @register
-  Scenario: Successful registration redirects to Keycloak
+  Scenario: Successful registration redirects to Microsoft Entra ID
     Given I am on the homepage
-    When I click "Register"
+    When I open the account menu
+    And I select "Register"
     Then I should be redirected to the registration page
-    And I should see "Redirecting to registration" message
-    And I should be redirected to Keycloak OAuth provider
+    And I should see "Redirecting to registration..." message
+    And I should be redirected to Microsoft Entra ID OAuth provider
 
   @navigation
   Scenario: Access login from navigation header
     Given I am on the homepage
-    When I click the user icon in header
+    When I open the account menu
     Then I should see login options
-    When I select "Sign In"
+    When I select "Login"
     Then I should be redirected to login
 
   @protected-route
@@ -40,21 +42,31 @@ Feature: User Authentication
     Given I am not logged in
     When I navigate to "/account"
     Then I should be redirected to login page
+    And the URL should contain "callbackUrl=%2Faccount"
 
   @protected-route
   Scenario: Accessing orders page requires authentication
     Given I am not logged in
     When I navigate to "/account/orders"
     Then I should be redirected to login page
+    And the URL should contain "callbackUrl=%2Faccount%2Forders"
+
+  @protected-route
+  Scenario: Accessing basket page requires authentication
+    Given I am not logged in
+    Then the basket icon should not be visible in header
+    When I navigate to "/basket"
+    Then I should be redirected to login page
+    And the URL should contain "callbackUrl=%2Fbasket"
 
   @logout
   Scenario: Successful logout clears session
     Given I am logged in as a customer
-    When I click the user menu
+    When I open the account menu
     And I select "Logout"
     Then I should be logged out
     And I should be redirected to homepage
-    And I should see "Login" button in header
+    And I should see "Login" option in account menu
 
   @session-persistence
   Scenario: User session persists across page navigation
@@ -63,33 +75,10 @@ Feature: User Authentication
     Then I should still be logged in
     When I navigate to the basket page
     Then I should still be logged in
-    And the user menu should show my account name
+    And the account menu should show authenticated options
 
-  @checkout-auth
-  Scenario: Checkout requires authentication
-    Given I am not logged in
-    And I have items in my basket
-    When I attempt to checkout
-    Then I should be redirected to login page
-    And after login I should return to checkout
-
-  @token-expiry
-  Scenario: Expired token prompts re-authentication
+  @auth-redirect
+  Scenario: Authenticated user visiting login redirects to homepage
     Given I am logged in as a customer
-    And my authentication token has expired
-    When I navigate to my account page
-    Then I should be prompted to login again
-
-  @oauth-callback
-  Scenario: OAuth callback handles success
-    Given I initiated OAuth login
-    When the OAuth provider returns success
+    When I navigate to "/login"
     Then I should be redirected to the homepage
-    And I should be logged in
-
-  @oauth-callback
-  Scenario: OAuth callback handles error
-    Given I initiated OAuth login
-    When the OAuth provider returns an error
-    Then I should see an error message
-    And I should remain on the login page

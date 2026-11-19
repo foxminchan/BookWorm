@@ -1,0 +1,112 @@
+---
+id: catalog-database
+name: Catalog Database
+version: 1.0.0
+summary: PostgreSQL system of record for catalog data and vector-indexing work.
+owners:
+  - contributor-team
+container_type: database
+badges:
+  - content: Database
+    backgroundColor: blue
+    textColor: blue
+technology: azure-postgresql-flexible-server
+authoritative: true
+access_mode: readWrite
+purpose: System of record for Catalog data and durable coordination of asynchronous vector indexing.
+classification: internal
+retention: indefinite
+residency: eastasia
+styles:
+  icon: /icons/database/postgresql.svg
+---
+
+<NodeGraph />
+
+### What is this?
+
+The **Catalog Database** is the authoritative PostgreSQL database for the
+BookWorm Catalog. [[service|catalog-api]] reads and writes catalog data for
+request-path operations. [[service|catalog-ingestion]] reads and writes the
+vector-indexing work queue for asynchronous catalog ingestion.
+
+This page documents the **current database state**. EF Core migration history
+and upgrade-only statements are intentionally not included in the displayed
+schema.
+
+### What does it store?
+
+- **[[entity\|book]]s** — product title, description, image Blob Storage URN, prices,
+  lifecycle status, rating summary, deletion state, and timestamps.
+- **[[entity\|author]]s** — authors associated with books.
+- **[[entity\|category]]s** — product categories. Category names are unique.
+- **[[entity\|publisher]]s** — book publishers. Publisher names are unique.
+- **[[entity\|book-author]]** — the many-to-many relationship between books and authors.
+- **Pending vector updates** — durable work items used to refresh vector
+  representations when catalog data changes.
+
+### Schema
+
+<AccordionGroup>
+	<Accordion title="Catalog Database schema">
+		<Schema file="schema.sql" lang="sql" title="schema.sql" />
+	</Accordion>
+</AccordionGroup>
+
+### Access patterns
+
+- [[service|catalog-api]] is the request-path reader and writer for books,
+  authors, categories, publishers, and their relationships.
+- [[service|catalog-ingestion]] consumes `pending_vector_updates` and updates
+  vector representations asynchronously.
+- Database triggers enqueue a [[entity|book]] whenever a book or
+  [[entity|book-author]] relationship
+  changes.
+- Updates or deletes to an [[entity|author]], [[entity|category]], or
+  [[entity|publisher]] enqueue the related
+  books for re-indexing.
+- [[entity|category]] and [[entity|publisher]] deletion preserves
+  [[entity|book]]s by setting the corresponding
+  foreign key to `NULL`.
+- [[entity|book]] deletion cascades to `book_authors`; [[entity|author]]
+  deletion is restricted while
+  relationships exist.
+
+### Vector indexing workflow
+
+The `pending_vector_updates` table is a coalescing work queue keyed by
+`book_id`. If a book changes repeatedly before ingestion runs, the existing
+row is updated with a new `revision` and timestamp instead of creating
+duplicate work items.
+
+The `books_vector_update`, `book_authors_vector_update`,
+`authors_vector_update`, `categories_vector_update`, and
+`publishers_vector_update` triggers enqueue affected books automatically.
+The initial schema load also queues existing books so the first ingestion
+batch can build their vector representations.
+
+### Data integrity notes
+
+- `books.status` is stored as a `smallint`; the application owns the status
+  value mapping.
+- `average_rating` is stored as a denormalized review summary.
+- `total_reviews` is stored alongside `average_rating` to avoid recalculating
+  review counts for catalog reads.
+- `average_rating` and `total_reviews` are maintained from
+  [[domain|reviews]]
+  [[entity|feedback]]
+  integration messages; individual feedback records remain owned by Reviews.
+- `books.image` stores a Blob Storage URN, not the image bytes. The associated
+  file is managed by [[service|catalog-api]] in [[container|catalog-blob]].
+- IDs use PostgreSQL 18 `uuidv7()` defaults.
+- `created_at` and `last_modified_at` use database-generated timestamps.
+
+### Operational guidance
+
+- Treat this database as the system of record; do not edit catalog rows
+  directly unless performing an approved operational correction.
+- Monitor the age and count of rows in `pending_vector_updates` to detect
+  ingestion lag.
+- Apply EF Core migrations separately when upgrading an existing environment;
+  `schema.sql` is intended to describe and initialize the current state, not
+  replay migration history.

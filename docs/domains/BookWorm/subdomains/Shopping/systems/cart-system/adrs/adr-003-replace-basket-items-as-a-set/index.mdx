@@ -1,0 +1,60 @@
+---
+id: adr-003-replace-basket-items-as-a-set
+name: "ADR-003: Replace the basket item collection on update"
+version: 1.0.0
+summary: Basket updates replace the complete item collection, with validation enforcing non-empty baskets and positive quantities.
+status: accepted
+date: 2026-10-21
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: cart-system
+  - type: service
+    id: basket-api
+  - type: entity
+    id: basket
+  - type: entity
+    id: basket-item
+  - type: command
+    id: UpdateBasket
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+The storefront edits the customer's complete current selection. Merge-style
+updates would make removal behavior implicit and could leave stale items in
+the basket when a client submits a new view of the selection.
+
+The Basket API's `PUT /api/v1/baskets` contract therefore accepts the desired
+item collection, validates it, and returns `204 No Content` when the
+replacement succeeds. An update to a missing basket is reported as `404`, and
+invalid input is reported as `400`; the contract does not describe a
+per-item patch operation.
+
+## Decision
+
+[[command|UpdateBasket]] replaces the entire item collection in the
+[[entity|basket]]. The service rejects missing [[entity|book]] identifiers and
+non-positive quantities, and basket creation requires at least one item.
+Removing an item is represented by submitting the desired collection without
+that item; it is not represented by a zero quantity. An empty collection is
+invalid for both creation and update.
+
+## Consequences
+
+- Clients have a deterministic representation of the desired basket state.
+- The API validates the complete submitted collection against the basket
+  invariants rather than interpreting partial edits.
+- Clients must send the full item collection when updating.
+- A client editing a stale view can overwrite a more recent replacement.
+  Concurrent-edit protection (such as a version check) is not part of this
+  decision and would require an explicit contract change.
+- A retry with an old full collection can reapply that older state; clients
+  should refresh the basket when they need to reconcile concurrent changes.

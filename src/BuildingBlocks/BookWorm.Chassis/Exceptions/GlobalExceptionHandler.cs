@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Buffering;
 using Microsoft.Extensions.Logging;
@@ -36,7 +37,7 @@ internal sealed class GlobalExceptionHandler(
             .Problem(
                 title: title,
                 statusCode: statusCode,
-                extensions: new Dictionary<string, object?> { { nameof(traceId), traceId } }
+                extensions: [new(nameof(traceId), traceId)]
             )
             .ExecuteAsync(httpContext);
 
@@ -54,6 +55,10 @@ internal sealed class GlobalExceptionHandler(
             InvalidOperationException or NotSupportedException => (
                 StatusCodes.Status409Conflict,
                 "The request conflicts with the current state of the resource."
+            ),
+            DbUpdateConcurrencyException => (
+                StatusCodes.Status412PreconditionFailed,
+                "The resource was modified by another request. Please retry with the latest version."
             ),
             _ => (StatusCodes.Status500InternalServerError, "We made a mistake but we are on it!"),
         };

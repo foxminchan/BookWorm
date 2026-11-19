@@ -1,0 +1,80 @@
+---
+id: adr-002-stateless-streamable-http-transport
+name: "ADR-002: Use stateless Streamable HTTP for MCP transport"
+version: 1.0.0
+summary: MCP clients communicate with the server over stateless Streamable HTTP, keeping protocol transport independent of client session persistence.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: mcp-tools
+  - type: service
+    id: mcp-server
+  - type: system
+    id: chat-system
+  - type: system
+    id: rating-system
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+The [[service|mcp-server]] is shared by independent AI clients, including [[service|chat-api]] and [[service|rating-api]].
+The transport should provide a common network interface without making the
+server the owner of conversational or workflow session state. Consumers have
+their own lifetimes and workflows, so a connection-level server session
+should not be required for them to retrieve a tool, resource, or prompt.
+
+## Decision
+
+[[service|mcp-server]] uses Streamable HTTP transport configured for stateless sessions
+at `/mcp`. Clients discover the service endpoint and connect through the
+shared MCP client integration. Any longer-lived conversational state belongs
+to the consuming application, not to an MCP transport session. Requests still
+require the configured caller authentication and authorization; stateless
+transport is not anonymous access.
+
+Client workflow state is separate from MCP transport state. Chat, for
+example, owns its interactive session behavior, while Rating owns its own
+agent workflow. Neither should rely on the MCP server to retain conversation
+history between requests.
+
+## Consequences
+
+- Chat, Rating, and other authorized consumers use the same HTTP MCP
+  integration surface and service-discovery model.
+- The MCP Server does not retain transport session state between requests,
+  reducing server-side state and avoiding affinity requirements for the
+  transport.
+- Clients must not rely on MCP server-side session continuity for their own
+  workflow or conversation state; each request must carry the context it
+  requires.
+- Client authentication, token exchange, discovery, and network availability
+  remain required dependencies even though transport sessions are stateless.
+
+## Alternatives considered
+
+### Use a stateful MCP transport session
+
+This could retain protocol context on the server, but would add session
+lifecycle and affinity concerns to a service shared by independent clients.
+It would also risk confusing MCP transport state with conversational state.
+
+### Use separate transport implementations for each consumer
+
+This could tailor the integration to individual clients, but would duplicate
+transport configuration and server operations. A shared stateless endpoint
+keeps the transport contract consistent while leaving workflows client-owned.
+
+### Treat stateless transport as a replacement for authentication
+
+Statelessness describes server-side session handling, not caller identity or
+permission. The `/mcp` endpoint continues to require the configured
+authorization policy.

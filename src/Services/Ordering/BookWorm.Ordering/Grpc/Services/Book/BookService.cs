@@ -45,7 +45,7 @@ internal sealed class BookService(IFusionCache cache, GrpcClientFactory clientFa
         CancellationToken cancellationToken = default
     )
     {
-        var sortedIds = ids.OrderBy(x => x).ToArray();
+        var sortedIds = ids.OrderBy(x => x, StringComparer.Ordinal).ToArray();
 
         var result = await cache.GetOrSetAsync(
             $"books:{string.Join(",", sortedIds)}",

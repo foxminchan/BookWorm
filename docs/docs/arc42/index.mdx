@@ -1,0 +1,44 @@
+---
+title: arc42 Architecture Overview
+summary: System-wide entry point to BookWorm's arc42 architecture documentation.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This documentation describes the architecture of BookWorm at the whole-system level. It is not specific to an individual business domain, bounded context, service, or deployment unit. Detailed ownership and implementation are documented in the relevant catalog entries.
+
+The arc42 chapters are organized into folders and progress from business intent to system boundaries:
+
+1. [[doc|arc42/01-introduction-and-goals]]
+2. [[doc|arc42/02-architecture-constraints]]
+3. [[doc|arc42/03-context-and-scope]]
+4. [[doc|arc42/04-solution-strategy]]
+5. [[doc|arc42/05-building-block-view]]
+6. [[doc|arc42/06-runtime-view]]
+7. [[doc|arc42/07-deployment-view]]
+8. [[doc|arc42/08-crosscutting-concepts]]
+9. [[doc|arc42/09-architecture-decisions]]
+10. [[doc|arc42/10-quality-requirements]]
+11. [[doc|arc42/11-risks-and-technical-debt]]
+12. [[doc|arc42/12-glossary]]
+
+This overview is based on the repository's architecture catalog and [[doc|development/004-engineering-standards]]. It reflects the current BookWorm operating model: a catalog of books and prices, a shopping flow that creates an order, a separate ordering lifecycle after purchase acceptance, review capture as a supporting capability, conversational assistance as a customer-facing experience, and platform infrastructure that provides scheduling and cross-cutting notifications.
+
+## Architectural framing
+
+BookWorm is intentionally modeled as a bounded-context system rather than a monolith with a single shared model. The primary decomposition is by business capability and ownership:
+
+| Context        | Responsibility                                               | Primary relationship                                       |
+| -------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Catalog        | Discoverability, pricing, and availability                   | Source of truth for product facts                          |
+| Shopping       | Basket and pre-order purchase intent                         | Produces accepted checkout requests                        |
+| Ordering       | Accepted order lifecycle                                     | Owns order state after purchase                            |
+| Reviews        | Feedback and ratings                                         | Consumes product identities without owning them            |
+| Conversational | AI-assisted guidance and discovery                           | Reads product and order state through explicit contracts   |
+| Platform       | Notifications, scheduled processing, and shared capabilities | Supports other contexts without owning their business data |
+
+This narrative is intentionally supported by the catalog's domain and service metadata. Where the repository does not state a formal requirement, target, or external interface, the chapters identify it as an architectural intent or an item to confirm rather than treating it as settled fact.

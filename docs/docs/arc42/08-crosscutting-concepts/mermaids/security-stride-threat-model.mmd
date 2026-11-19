@@ -1,0 +1,45 @@
+---
+title: STRIDE threat model
+---
+flowchart LR
+
+	subgraph External["User and provider trust boundaries"]
+		Client["Customer or client"]
+		IdP["Microsoft Entra ID"]
+		Model["External model provider"]
+	end
+
+	subgraph BookWorm["BookWorm service boundary"]
+		subgraph API["Ordering API"]
+			OrderingAPI["Ordering API"]
+			Introspection["Token introspection"]
+			Policy["Role and scope policy"]
+			Endpoint["Authorized endpoint"]
+			OrderingAPI --> Introspection --> Policy
+		end
+
+		subgraph Agents["Chat and Rating agent paths"]
+			Validation["Input validation"]
+			Guardrail["Untrusted-content guardrail"]
+			PIIIn["PII anonymization"]
+			Agent["Agent and tool policy"]
+			PIIOut["Response anonymization"]
+			MCP["Scoped Catalog tools"]
+			Validation --> Guardrail --> PIIIn
+			Agent -->|"scoped tool call"| MCP
+		end
+
+		Logs["Application logs and telemetry"]
+	end
+
+	Client -->|"sign in"| IdP
+	IdP -->|"access token"| Client
+	Client --> |"S: impersonation or token replay; T: request tampering; D: request flood"| OrderingAPI
+	Policy --> |"E: excessive role or scope"| Endpoint
+	Client -->|"user content"| Validation
+	Guardrail --> |"T: prompt manipulation"| PIIIn
+	PIIIn --> |"I: residual sensitive data"| Model
+	Model --> |"T: manipulated response; I: sensitive output"| PIIOut --> Agent
+	MCP --> |"T: untrusted tool result; E: overbroad tool access"| Agent
+	Endpoint --> |"R: attribution gap; I: sensitive fields"| Logs
+	Agent --> |"R: attribution gap; I: sensitive telemetry"| Logs

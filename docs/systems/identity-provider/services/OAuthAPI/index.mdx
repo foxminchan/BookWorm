@@ -1,0 +1,72 @@
+---
+id: oauthapi
+name: OAuth API
+version: 1.0.0
+summary: |
+  External OAuth API used by BookWorm clients and services to authenticate
+  users and verify identity tokens.
+owners:
+  - contributor-team
+badges:
+  - content: External
+    backgroundColor: purple
+    textColor: purple
+  - content: HTTP API
+    backgroundColor: teal
+    textColor: teal
+styles:
+  icon: /icons/third-party/entra-id.svg
+---
+
+## Overview
+
+The OAuth API is the integration surface for the external
+[[system|identity-provider]]. It supports the authentication and
+identity-verification responsibilities used by [[domain|BookWorm]] applications before
+they process protected requests.
+
+The service provides identity evidence; each consuming BookWorm service
+remains responsible for validating the request context and applying its own
+authorization policy. The OAuth API does not own [[domain|catalog]],
+[[domain|shopping]], [[domain|ordering]], or [[domain|reviews]] business data.
+
+## Core capabilities
+
+| Capability            | Behavior                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| User authentication   | Authenticates customers and administrators through the configured identity provider.                             |
+| Token issuance        | Returns OAuth-compatible access credentials for authenticated clients.                                           |
+| Identity verification | Provides the token and claim information needed by BookWorm services to establish an authenticated caller.       |
+| Provider policy       | Applies provider-side account and authentication rules without making BookWorm business authorization decisions. |
+
+## Authentication flow
+
+1. A customer or administrator starts an authentication request with the
+   provider.
+2. The provider verifies the identity and issues an access token for the
+   requested client and audience.
+3. The client sends the token when calling a protected BookWorm API.
+4. The receiving service validates the token before applying endpoint,
+   resource-ownership, or administrator policies.
+
+The token establishes identity, but it does not automatically authorize every
+operation. Individual BookWorm services remain the source of truth for
+business permissions and access decisions.
+
+## Security and operational considerations
+
+- Keep access tokens, refresh credentials, client secrets, and provider
+  configuration outside source control and application logs.
+- Validate the issuer, audience, signature or introspection result, expiry, and
+  required claims before accepting a token.
+- Fail closed for protected requests when the provider or token-validation
+  dependency is unavailable; do not silently downgrade the request to
+  anonymous access.
+- Monitor authentication failures, token-validation failures, and provider
+  availability without recording token contents or unnecessary personal data.
+- Rotate provider credentials and signing keys according to the provider's
+  operational policy, with a controlled rollover path for consumers.
+
+## Architecture
+
+<NodeGraph />

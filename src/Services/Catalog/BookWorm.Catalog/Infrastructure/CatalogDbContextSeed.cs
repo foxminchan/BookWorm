@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Agents.AI;
 using Npgsql;
@@ -65,14 +65,13 @@ internal sealed class CatalogDbContextSeed(
             var categoryIds = await context.Categories.Select(c => c.Id).ToListAsync();
 
             var random = Random.Shared;
-            var books = new List<Book>();
+            var bookSeeds = await LoadSetupDataAsync(
+                "books.json",
+                CatalogSeedSerializationContext.Default.ListBookSeed
+            );
+            List<Book> books = [with(bookSeeds.Count)];
 
-            foreach (
-                var seed in await LoadSetupDataAsync(
-                    "books.json",
-                    CatalogSeedSerializationContext.Default.ListBookSeed
-                )
-            )
+            foreach (var seed in bookSeeds)
             {
                 var book = new Book(
                     seed.Name,

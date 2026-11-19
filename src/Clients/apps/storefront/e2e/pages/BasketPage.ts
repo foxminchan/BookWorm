@@ -16,69 +16,61 @@ export class BasketPage extends BasePage {
 
   // Locators
   get basketItems(): Locator {
-    return this.page.locator(
-      '[data-testid="basket-item"], .basket-item, article',
-    );
+    return this.page.locator('main [role="article"]');
   }
 
   get emptyState(): Locator {
-    return this.page.locator(
-      '[data-testid="empty-basket"], :has-text("Your basket is empty")',
-    );
+    return this.page.locator(':has-text("Your basket is empty")').first();
   }
 
   get exploreCollectionLink(): Locator {
-    return this.page.locator('a:has-text("Explore"), a[href="/shop"]');
+    return this.page.locator(
+      'a:has-text("Explore the Collection"), a[href="/shop"]',
+    );
   }
 
   get subtotalAmount(): Locator {
-    return this.page
-      .locator('[data-testid="subtotal"], :has-text("Subtotal")')
-      .locator("..");
+    return this.page.locator('div:has(> span:text-is("Subtotal"))').first();
   }
 
   get shippingAmount(): Locator {
-    return this.page
-      .locator('[data-testid="shipping"], :has-text("Shipping")')
-      .locator("..");
+    return this.page.locator('div:has(> span:text-is("Shipping"))').first();
   }
 
   get totalAmount(): Locator {
-    return this.page
-      .locator('[data-testid="total"], :has-text("Total")')
-      .locator("..");
+    return this.page.locator('div:has(> span:text-is("Total"))').first();
   }
 
   get checkoutButton(): Locator {
-    return this.page.locator(
-      'button:has-text("Checkout"), button:has-text("Proceed to Checkout")',
-    );
+    return this.page.locator('button:has-text("Checkout")');
   }
 
   get clearBasketButton(): Locator {
-    return this.page.locator(
-      'button:has-text("Clear Basket"), button:has-text("Clear All")',
-    );
+    return this.page.locator('button:has-text("Clear Basket")');
   }
 
   get saveChangesButton(): Locator {
-    return this.page.locator(
-      'button:has-text("Save Changes"), button:has-text("Update Basket")',
-    );
+    return this.page.locator('button:has-text("Save Changes")');
   }
 
   get removeItemDialog(): Locator {
-    return this.page.locator('[role="dialog"], [data-testid="remove-dialog"]');
+    return this.page.locator('[role="alertdialog"]');
   }
 
   get confirmRemoveButton(): Locator {
-    return this.removeItemDialog.locator(
-      'button:has-text("Remove"), button:has-text("Confirm")',
-    );
+    return this.removeItemDialog.locator('button:has-text("Remove")');
   }
 
   get cancelRemoveButton(): Locator {
-    return this.removeItemDialog.locator('button:has-text("Cancel")');
+    return this.removeItemDialog.locator(
+      'button:has-text("Keep in Basket"), button:has-text("Keep Item")',
+    );
+  }
+
+  get confirmClearBasketButton(): Locator {
+    return this.page.locator(
+      '[role="alertdialog"] button:has-text("Clear Basket")',
+    );
   }
 
   // Actions
@@ -101,16 +93,15 @@ export class BasketPage extends BasePage {
 
   async getItemTitle(index: number): Promise<string> {
     const item = this.basketItems.nth(index);
-    const title = await item
-      .locator('h2, h3, [data-testid="item-title"]')
-      .textContent();
+    const title = await item.locator("h3").textContent();
     return title?.trim() || "";
   }
 
   async getItemPrice(index: number): Promise<number> {
     const item = this.basketItems.nth(index);
     const priceText = await item
-      .locator('[data-testid="item-price"], .price')
+      .locator("div.ml-auto.text-right span.font-bold")
+      .first()
       .textContent();
     const cleaned = priceText?.replaceAll(/[$,]/g, "") || "0";
     return Number.parseFloat(cleaned);
@@ -118,54 +109,51 @@ export class BasketPage extends BasePage {
 
   async getItemQuantity(index: number): Promise<number> {
     const item = this.basketItems.nth(index);
-    const input = item.locator(
-      'input[type="number"], [data-testid="quantity-input"]',
-    );
-    const value = await input.inputValue();
-    return Number.parseInt(value) || 0;
+    const text = await item.locator("output").textContent();
+    return Number.parseInt(text?.trim() || "0", 10) || 0;
   }
 
-  async setItemQuantity(index: number, quantity: number): Promise<void> {
-    const item = this.basketItems.nth(index);
-    const input = item.locator(
-      'input[type="number"], [data-testid="quantity-input"]',
-    );
-    await input.fill(quantity.toString());
+  async setItemQuantity(index: number, targetQuantity: number): Promise<void> {
+    const current = await this.getItemQuantity(index);
+    const diff = targetQuantity - current;
+    if (diff > 0) {
+      await this.increaseItemQuantity(index, diff);
+    } else if (diff < 0) {
+      await this.decreaseItemQuantity(index, Math.abs(diff));
+    }
   }
 
   async increaseItemQuantity(index: number, times: number = 1): Promise<void> {
     const item = this.basketItems.nth(index);
     const increaseButton = item.locator(
-      'button[aria-label*="Increase"], button:has-text("+")',
+      'button[aria-label="Increase quantity"]',
     );
 
     await forEachSequentially(Array.from({ length: times }), async () => {
       await increaseButton.click();
-      await this.page.waitForTimeout(200);
+      await this.page.waitForTimeout(150);
     });
   }
 
   async decreaseItemQuantity(index: number, times: number = 1): Promise<void> {
     const item = this.basketItems.nth(index);
     const decreaseButton = item.locator(
-      'button[aria-label*="Decrease"], button:has-text("-")',
+      'button[aria-label="Decrease quantity"]',
     );
 
     await forEachSequentially(Array.from({ length: times }), async () => {
       await decreaseButton.click();
-      await this.page.waitForTimeout(200);
+      await this.page.waitForTimeout(150);
     });
   }
 
   async removeItem(index: number, confirm: boolean = true): Promise<void> {
     const item = this.basketItems.nth(index);
     const removeButton = item.locator(
-      'button[aria-label*="Remove"][aria-label*="from basket"], button:has-text("Remove"), [data-testid="remove-button"]',
+      'button[aria-label*="Remove"][aria-label*="from basket"]',
     );
 
     await removeButton.click();
-
-    // Wait for dialog to appear
     await expect(this.removeItemDialog).toBeVisible();
 
     if (confirm) {
@@ -185,6 +173,8 @@ export class BasketPage extends BasePage {
   async clearBasket(): Promise<void> {
     if (await this.clearBasketButton.isVisible()) {
       await this.clearBasketButton.click();
+      await expect(this.confirmClearBasketButton).toBeVisible();
+      await this.confirmClearBasketButton.click();
       await this.page.waitForTimeout(1000);
     }
   }
@@ -256,8 +246,6 @@ export class BasketPage extends BasePage {
   async assertTotalCalculated(): Promise<void> {
     const displayedTotal = await this.getTotal();
     const expectedTotal = await this.calculateExpectedTotal();
-
-    // Allow small floating point difference
     expect(Math.abs(displayedTotal - expectedTotal)).toBeLessThan(0.01);
   }
 

@@ -1,0 +1,96 @@
+---
+id: adr-005-finance-separate-workflow-and-order-status
+name: "ADR-005: Keep Finance workflow outcomes separate from Order status"
+version: 1.0.0
+summary: Finance reports cleanup outcomes and tracks its own saga lifecycle while Ordering remains authoritative for Order completion and cancellation.
+status: accepted
+date: 2026-11-03
+owners:
+  - contributor-team
+badges:
+  - content: Ownership
+    backgroundColor: purple
+    textColor: purple
+appliesTo:
+  - type: system
+    id: finance-system
+  - type: service
+    id: order-orchestration
+  - type: command
+    id: DeleteBasketCompleteCommand
+  - type: command
+    id: DeleteBasketFailedCommand
+related:
+  - id: adr-003-separate-order-status-from-finance-saga
+    version: 1.0.0
+---
+
+## Context
+
+Basket cleanup, Order status, saga completion, and email delivery are different
+outcomes owned by different services. Treating a failed or completed Finance
+workflow as the Order's business status would introduce competing lifecycle
+owners. In particular, cleanup failure or a timeout describes Finance's
+coordination outcome; only Ordering can declare that an Order is complete or
+cancelled.
+
+This retrospective ADR records Finance's side of the existing Ordering
+ownership decision linked above.
+
+## Decision
+
+Keep Finance authoritative only for saga coordination state. On Basket success,
+send [[command|DeleteBasketCompleteCommand]]; Ordering logs that result without completing
+the Order. On Basket failure, finish the saga as BasketDeletionFailed and send
+[[command|DeleteBasketFailedCommand]]; Ordering soft-deletes the matching Order if it
+exists without changing its business status.
+
+Handle Ordering's explicit completed or cancelled status events as Order facts.
+Complete the corresponding saga handler and request the appropriate notification
+when recipient details allow it. Timeout exhaustion changes only the saga to
+Cancelled, not the Order.
+
+Do not infer payment settlement, shipping execution, or email delivery from any
+of these coordination outcomes.
+
+The separate states may legitimately diverge: an Order can remain New after
+Finance marks its saga cancelled, and an Order can remain New after Finance
+reports a basket deletion failure. A soft deletion of an Order by Ordering is
+also distinct from changing its business status.
+
+## Consequences
+
+- Consumers have one authority for Order status: [[service|order-api]].
+- An Order can remain New while its Finance saga has failed or been cancelled.
+  Soft deletion is also separate from the Order's status.
+- A timeout-triggered cancellation email is not evidence that Ordering
+  cancelled the purchase; support diagnosis must inspect the owning states.
+- Cross-service recovery cannot be implemented by directly editing another
+  service's database or treating Finance's state names as Order transitions.
+- Monitoring and support tools must display Finance saga state and Order
+  status as separate facts, correlated by Order ID.
+- A successful basket-cleanup result means only that cleanup was reported; it
+  neither completes the Order nor ends the saga before an explicit Order
+  lifecycle event.
+- Notification commands are requests to another system and do not establish
+  delivery, payment settlement, or fulfillment.
+
+## Alternatives considered
+
+### Map Finance cancellation directly to Order cancellation
+
+This would make the names appear consistent but would promote a local retry
+outcome into an Order business transition without Ordering's authority or
+workflow.
+
+### Treat basket deletion success as Order completion
+
+Basket cleanup is only one part of checkout coordination. It does not prove
+that Ordering completed the Order, so Finance continues to wait for the
+authoritative status event.
+
+### Merge Finance and Order lifecycle into a shared state machine
+
+This could reduce apparent state divergence, but would couple ownership and
+recovery across independently deployed systems. The current boundary keeps
+each system responsible for its own state and communicates through messages.

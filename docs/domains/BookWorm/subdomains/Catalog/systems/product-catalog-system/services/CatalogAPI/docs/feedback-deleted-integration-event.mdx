@@ -1,0 +1,88 @@
+---
+title: Apply feedback-deleted integration event
+summary: Catalog handler for the shared feedback-deleted integration event.
+version: 1.0.0
+type: contracts
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a deleted feedback rating
+
+Rating maps its `FeedbackDeletedEvent` domain event to the shared integration
+contract. Wolverine uses the chassis metadata to publish it to
+[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]].
+
+- `bookId` identifies the Catalog book to update.
+- `rating` is removed from the book's denormalized rating summary.
+- `feedbackId` identifies the deleted feedback record.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp FeedbackDeletedIntegrationEvent.cs
+[IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-delete")]
+[MessageIdentity("BookWorm.Contracts.FeedbackDeletedIntegrationEvent")]
+public sealed record FeedbackDeletedIntegrationEvent(
+    Guid BookId,
+    int Rating,
+    Guid FeedbackId
+) : IntegrationEvent;
+```
+
+```csharp EventMapper.cs
+FeedbackDeletedEvent feedbackDeletedEvent => new FeedbackDeletedIntegrationEvent(
+    feedbackDeletedEvent.BookId,
+    feedbackDeletedEvent.Rating,
+    feedbackDeletedEvent.FeedbackId
+)
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Apply the deletion in Catalog
+
+Catalog removes the rating when the book exists. A missing book is a no-op
+because there is no local projection to correct.
+
+<CodeGroup dropdown>
+
+```csharp FeedbackDeletedIntegrationEventHandler.cs
+[WolverineHandler]
+public async Task Handle(
+    FeedbackDeletedIntegrationEvent @event,
+    CancellationToken cancellationToken
+)
+{
+    var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
+
+    if (book is null)
+    {
+        return;
+    }
+
+    book.RemoveRating(@event.Rating);
+    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+}
+```
+
+</CodeGroup>
+
+<Footer />

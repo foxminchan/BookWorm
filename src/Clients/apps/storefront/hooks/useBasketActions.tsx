@@ -65,6 +65,7 @@ export function useBasketActions() {
 
       return message;
     },
+    webmcp: true,
     render: ({ status, result }) => {
       if (status === "executing") {
         return (
@@ -108,6 +109,11 @@ export function useBasketActions() {
         totalPrice,
         itemCount: data.items?.length || 0,
       });
+    },
+    webmcp: {
+      annotations: {
+        readOnlyHint: true,
+      },
     },
     render: ({ status, result }) => {
       const parsedResult =

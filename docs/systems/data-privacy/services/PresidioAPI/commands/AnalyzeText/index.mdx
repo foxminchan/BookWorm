@@ -1,0 +1,40 @@
+---
+id: AnalyzeText
+name: Analyze text
+version: 1.0.0
+badges:
+  - content: Privacy
+    backgroundColor: red
+    textColor: red
+summary: Detects PII entities in one text string or a batch, returning entity types, text offsets, confidence scores, and optional analysis explanations.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /analyze
+  statusCodes: ["200"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+The `AnalyzeText` command asks [[service|PresidioAPI]] Analyzer to detect PII in text. The request accepts either a single string or an array of strings and can restrict entity types, configure a score threshold, or request decision explanations.
+
+Analyzer and Anonymizer may be deployed at separate endpoints. Use the configured Analyzer address rather than assuming a shared service URL.
+
+<NodeGraph />
+
+## Request and response
+
+Send `application/json` with the required `text` and ISO 639-1 `language`. A `200 OK` response contains detected entity types, start and end offsets, and confidence scores. For a batch request, the response contains one result array per input string.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="AnalyzeText request JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

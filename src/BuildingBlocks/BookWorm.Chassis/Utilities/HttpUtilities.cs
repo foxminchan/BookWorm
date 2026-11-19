@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 
 namespace BookWorm.Chassis.Utilities;
 
@@ -13,7 +13,7 @@ public static class HttpUtilities
 public sealed class UrlBuilder
 {
     private readonly List<string> _pathSegments = [];
-    private readonly Dictionary<string, string?> _query = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string?> _query = [with(StringComparer.OrdinalIgnoreCase)];
     private string? _baseUrl;
     private string? _fragment;
     private HostString _host;
@@ -41,6 +41,7 @@ public sealed class UrlBuilder
 
     public UrlBuilder WithHost(string host)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(host);
         return WithHost(new HostString(host.Trim()));
     }
 
@@ -68,10 +69,7 @@ public sealed class UrlBuilder
             return this;
         }
 
-        foreach (var segment in path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries))
-        {
-            _pathSegments.Add(segment);
-        }
+        _pathSegments.AddRange(path.Split('/', StringSplitOptions.RemoveEmptyEntries));
 
         return this;
     }

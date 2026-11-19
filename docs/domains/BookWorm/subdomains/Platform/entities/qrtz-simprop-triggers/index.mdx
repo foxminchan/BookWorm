@@ -1,0 +1,71 @@
+---
+id: qrtz-simprop-triggers
+name: Quartz Simple Property Triggers
+version: 1.0.0
+identifier: trigger_name
+aggregateRoot: false
+summary: Typed property values for Quartz property-based triggers.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: trigger_name
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_name
+    relationType: belongsTo
+  - name: trigger_group
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_group
+    relationType: belongsTo
+  - name: str_prop_1
+    type: text
+    required: false
+  - name: str_prop_2
+    type: text
+    required: false
+  - name: str_prop_3
+    type: text
+    required: false
+  - name: int_prop_1
+    type: integer
+    required: false
+  - name: int_prop_2
+    type: integer
+    required: false
+  - name: long_prop_1
+    type: bigint
+    required: false
+  - name: long_prop_2
+    type: bigint
+    required: false
+  - name: dec_prop_1
+    type: numeric
+    required: false
+  - name: dec_prop_2
+    type: numeric
+    required: false
+  - name: bool_prop_1
+    type: boolean
+    required: false
+  - name: bool_prop_2
+    type: boolean
+    required: false
+  - name: time_zone_id
+    type: text
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name`, `trigger_name`, and `trigger_group`.
+- This record extends [[entity|qrtz-triggers]] through the same composite key.

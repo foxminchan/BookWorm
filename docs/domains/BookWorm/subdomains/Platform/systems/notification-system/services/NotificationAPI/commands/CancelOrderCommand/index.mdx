@@ -1,0 +1,38 @@
+---
+id: CancelOrderCommand
+name: Cancel order
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: |
+  Shared Finance cancellation command consumed by Notification to render
+  and submit a canceled-order email.
+schemaPath: schema.json
+owners:
+  - contributor-team
+---
+
+## Overview
+
+Finance's order saga publishes this command through
+[[channel|bookworm.&#123;env&#125;.finance.cancel-order]].
+[[service|notification-api]] maps it to the canceled-order email status; the
+Notification handler does not mutate the order or confirm cancellation.
+
+The payload contains inherited `id` (UUID v7) and `creationDate` (UTC timestamp),
+plus `orderId`, `totalMoney` (C# decimal), and nullable `fullName` and `email`.
+A null name becomes `Customer`. This command carries the payload schema;
+Notification's AsyncAPI specification provides examples. Wolverine uses identity
+`BookWorm.Contracts.CancelOrderCommand`.
+
+Null, empty, or whitespace-only email addresses skip email work. Otherwise
+Notification renders `Orders/OrderEmail`, saves an email outbox record, submits
+through SMTP, and marks the record sent on success. Failures propagate; there
+is no notification result event. Repeated commands can produce duplicate
+submissions, and SMTP acceptance is not proof of final recipient delivery.
+
+## Architecture
+
+<NodeGraph />

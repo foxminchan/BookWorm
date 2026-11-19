@@ -1,10 +1,11 @@
-﻿using BookWorm.Chassis.Security.Settings;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi;
 
 namespace BookWorm.ServiceDefaults.ApiSpecification.OpenApi.Transformers;
 
-internal sealed class AuthorizationChecksTransformer : IOpenApiOperationTransformer
+internal sealed class AuthorizationChecksTransformer(IConfiguration configuration)
+    : IOpenApiOperationTransformer
 {
     public Task TransformAsync(
         OpenApiOperation operation,
@@ -12,16 +13,21 @@ internal sealed class AuthorizationChecksTransformer : IOpenApiOperationTransfor
         CancellationToken cancellationToken
     )
     {
-        var identityOptions = context.ApplicationServices.GetService<IdentityOptions>();
+        var scopes = configuration[$"{Microsoft.Identity.Web.Constants.AzureAd}:Scopes"]
+            ?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        if (identityOptions is null)
+        if (scopes is not { Length: > 0 })
         {
             return Task.CompletedTask;
         }
 
         var metadata = context.Description.ActionDescriptor.EndpointMetadata;
 
-        if (!metadata.OfType<IAuthorizeData>().Any())
+        if (
+            !metadata.OfType<IAuthorizeData>().Any()
+            && !metadata.OfType<AuthorizationPolicy>().Any()
+            && !metadata.OfType<IAuthorizationRequirementData>().Any()
+        )
         {
             return Task.CompletedTask;
         }
@@ -38,7 +44,7 @@ internal sealed class AuthorizationChecksTransformer : IOpenApiOperationTransfor
 
         var oAuthScheme = new OpenApiSecuritySchemeReference(OAuthDefaults.DisplayName);
 
-        operation.Security = [new() { [oAuthScheme] = [.. identityOptions.Scopes.Keys] }];
+        operation.Security = [new() { [oAuthScheme] = [.. scopes] }];
 
         return Task.CompletedTask;
     }

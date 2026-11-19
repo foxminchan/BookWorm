@@ -1,0 +1,72 @@
+---
+summary: Create a SendGrid mail batch and preserve its identifier for a later mail submission.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. Create a mail batch
+
+Create a mail batch before submitting messages that need to share a batch
+identifier. Store the returned `batch_id` with the notification workflow, then
+include it in the [[command|SendMail]] request when required.
+
+### Example response
+
+<CodeGroup dropdown>
+
+```json
+{
+	"batch_id": "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw"
+}
+```
+
+</CodeGroup>
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp create-mail-batch.cs
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+
+var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
+    ?? throw new InvalidOperationException("SENDGRID_API_KEY is required.");
+
+using var client = new HttpClient
+{
+	BaseAddress = new Uri("https://api.sendgrid.com")
+};
+client.DefaultRequestHeaders.Authorization =
+	new AuthenticationHeaderValue("Bearer", apiKey);
+
+using var response = await client.PostAsync("/v3/mail/batch", content: null);
+response.EnsureSuccessStatusCode();
+
+var result = await response.Content.ReadFromJsonAsync<CreateMailBatchResponse>()
+    ?? throw new InvalidOperationException("SendGrid returned an empty response.");
+
+Console.WriteLine(result.BatchId);
+
+internal sealed record CreateMailBatchResponse(
+	[property: JsonPropertyName("batch_id")] string BatchId);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle batch-creation failures
+
+Do not create a replacement batch identifier after an unknown provider failure
+without reconciling the original request. Preserve the workflow state so the
+Notification System can determine whether a retry is safe.

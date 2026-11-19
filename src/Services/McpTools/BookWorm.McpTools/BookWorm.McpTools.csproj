@@ -8,17 +8,27 @@
       Value="BookWorm MCP Tools Image"
     />
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
-    <ContainerLabel
-      Include="io.modelcontextprotocol.server.name"
-      Value="ghcr.io/foxminchan/bookworm/mcptools"
-    />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <PackageReference Include="Vogen" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\BookWorm.ServiceDefaults\BookWorm.ServiceDefaults.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile
+      Include="..\..\Catalog\BookWorm.Catalog\Domain\Values\DecimalValue.cs"
+      Link="Domain\DecimalValue.cs"
+    />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf
+      Include="..\..\Catalog\BookWorm.Catalog\Grpc\Protos\book\v1\book.proto"
+      Link="Grpc\Protos\book\v1\book.proto"
+      GrpcServices="Client"
+    />
   </ItemGroup>
   <ItemGroup Label="Governance Policies">
     <Content Include="Policies\*.yaml">

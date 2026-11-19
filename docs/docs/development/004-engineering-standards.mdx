@@ -1,0 +1,83 @@
+---
+title: Engineering Standards
+summary: BookWorm conventions for C#, service boundaries, integration events, Protocol Buffers, and design patterns.
+owners:
+  - contributor-team
+badges:
+  - content: Onboarding
+    backgroundColor: teal
+    textColor: teal
+---
+
+# Engineering standards
+
+Follow established repository patterns first. These guidelines help keep BookWorm's services maintainable and independently deployable.
+
+## General coding practices
+
+- Apply Domain-Driven Design principles and preserve service boundaries; avoid direct cross-service dependencies.
+- BookWorm targets .NET 11 and uses C# 15. Use the repository SDK and language settings, and follow `.editorconfig` for formatting.
+- Prefer explicit type declarations when the type is not obvious.
+- Use primary constructors for classes with immutable properties and expression-bodied members where they improve clarity.
+- Keep endpoints, handlers, DbContexts, and tests `sealed` by default.
+- Propagate `CancellationToken` through asynchronous operations, and use `async`/`await` consistently.
+- Use `Mediator.SourceGenerator` for CQRS; do not introduce MediatR.
+- Keep package versions centralized in `Directory.Packages.props`.
+- Implement tests for business logic and update relevant documentation when behavior changes.
+
+## Integration events
+
+Integration events communicate across service boundaries:
+
+- Declare integration events in the `BookWorm.Contracts` namespace.
+- Use the `[Action][Entity]IntegrationEvent` naming pattern, such as `BookCreatedIntegrationEvent`.
+- Include only the data consumers need to keep payloads focused.
+- Preserve the `IntegrationMessageOwner` topic routing and `MessageIdentity` metadata used by the event bus.
+
+:::danger
+Do not change integration-event namespaces. The event bus relies on consistent namespace conventions for routing.
+:::
+
+```csharp
+using BookWorm.Constants.Aspire;
+using Wolverine.Attributes;
+
+namespace BookWorm.Contracts;
+
+[IntegrationMessageOwner(ServiceName = Services.Ordering, TopicName = "user-checked-out")]
+[MessageIdentity("BookWorm.Contracts.UserCheckedOutIntegrationEvent")]
+public sealed record UserCheckedOutIntegrationEvent(
+   Guid OrderId,
+   Guid BasketId,
+   string? FullName,
+   string? Email,
+   decimal TotalMoney
+) : IntegrationEvent;
+```
+
+## Protocol Buffers
+
+When changing `.proto` files, validate the schema and compatibility before submitting:
+
+```bash
+# Run from the service's Grpc/Protos directory (Basket or Catalog).
+buf lint
+buf breaking --against lock.binpb
+buf build -o lock.binpb
+```
+
+Run the commands in order: lint the schema, check for breaking changes against that module's committed `lock.binpb`, then update the lock file after validation. Commit the schema and updated lock file together. Breaking changes require coordination and a migration plan.
+
+## Design patterns
+
+Use patterns where they fit the service and its domain:
+
+- CQRS with Mediator
+- Repository pattern for data access
+- Domain events for domain side effects
+- Value Objects for immutable domain concepts
+- Domain Services for complex business logic
+- Factories or Builders for object creation
+- Specification pattern for complex queries
+
+Avoid circular dependencies and keep services independently deployable. Use `snake_case` for PostgreSQL identifiers and raw SQL.

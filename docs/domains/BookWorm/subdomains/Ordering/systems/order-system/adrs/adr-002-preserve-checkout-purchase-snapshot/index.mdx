@@ -1,0 +1,86 @@
+---
+id: adr-002-preserve-checkout-purchase-snapshot
+name: "ADR-002: Preserve the checkout-time purchase snapshot"
+version: 1.0.0
+summary: Each accepted Order records the book identifiers, quantities, and prices selected at checkout so later Catalog changes do not rewrite the purchase.
+status: accepted
+date: 2026-11-03
+owners:
+  - business-strategy
+appliesTo:
+  - type: system
+    id: order-system
+  - type: service
+    id: order-api
+  - type: container
+    id: order-database
+  - type: entity
+    id: order
+  - type: entity
+    id: order-item
+badges:
+  - content: Ownership
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Context
+
+Order creation reads mutable basket contents and current book data from
+Shopping and Catalog. If an Order depended on those sources for its historical
+items or total, later changes to a basket or a Catalog price could alter how an
+already accepted purchase is represented. Those sources are authoritative
+for the current basket and book, but not for what the customer accepted at a
+specific checkout.
+
+## Decision
+
+When creating an Order, [[service|order-api]] records each item's book ID,
+quantity, and selected unit price in the Order. It uses the sale price when
+present and otherwise the regular price. The Order total is calculated from
+these recorded values; subsequent Catalog changes do not update them.
+
+Ordering obtains the current basket through Shopping and resolves its book
+IDs and prices through Catalog before creating the Order. If a requested book
+cannot be resolved, Order creation fails rather than creating an incomplete
+purchase snapshot. Current book names may be added when an Order is read for
+display, but that enrichment does not overwrite the stored item price or
+quantity.
+
+The snapshot records the accepted purchase terms needed by Order history; it
+does not make Ordering the authority for current Catalog descriptions,
+availability, or prices.
+
+## Consequences
+
+- Order history preserves the item values accepted at checkout.
+- Ordering owns the purchase-time item snapshot, while Catalog remains
+  authoritative for current book details and prices.
+- A later price change affects new checkouts, not existing Orders.
+- Basket edits after checkout do not rewrite the accepted Order Items.
+- Order creation depends on successful Basket and Catalog reads before the
+  aggregate can be persisted; unavailable or missing book data prevents a
+  complete snapshot.
+- Read-time book-name enrichment is presentation data. It may reflect a
+  current Catalog name while the persisted item price and quantity remain
+  those accepted at checkout.
+- The stored snapshot does not imply that payment settled, fulfillment
+  occurred, or the Order reached a terminal status.
+
+## Alternatives considered
+
+### Resolve Order history from the current basket
+
+The basket is mutable and can be cleared or changed after checkout, so it
+cannot serve as a historical record of an accepted purchase.
+
+### Re-read Catalog prices whenever an Order is displayed
+
+This would cause historical totals to change when Catalog prices change and
+would no longer represent the terms recorded at checkout.
+
+### Store a complete copy of the Catalog book
+
+Copying all book metadata would duplicate Catalog ownership and introduce
+additional update and retention concerns. The Order stores the item identity,
+quantity, and selected price needed to preserve the purchase snapshot.

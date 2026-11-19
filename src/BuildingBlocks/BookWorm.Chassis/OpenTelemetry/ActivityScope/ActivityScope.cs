@@ -49,15 +49,7 @@ internal sealed class ActivityScope : IActivityScope
         }
         catch (Exception ex)
         {
-            if (activity is null)
-            {
-                throw;
-            }
-
-            activity.SetStatus(ActivityStatusCode.Error);
-            activity.SetTag("otel.status_code", "error");
-            activity.SetTag("otel.status_description", ex.Message);
-            activity.AddException(ex);
+            RecordException(activity, ex);
             throw;
         }
     }
@@ -81,16 +73,19 @@ internal sealed class ActivityScope : IActivityScope
         }
         catch (Exception ex)
         {
-            if (activity is null)
-            {
-                throw;
-            }
-
-            activity.SetStatus(ActivityStatusCode.Error);
-            activity.SetTag("otel.status_code", "error");
-            activity.SetTag("otel.status_description", ex.Message);
-            activity.AddException(ex);
+            RecordException(activity, ex);
             throw;
         }
+    }
+
+    private static void RecordException(Activity? activity, Exception ex)
+    {
+        if (activity is null)
+        {
+            return;
+        }
+
+        activity.SetStatus(ActivityStatusCode.Error, ex.Message);
+        activity.AddException(ex);
     }
 }

@@ -1,0 +1,96 @@
+---
+id: adr-004-protect-scheduler-secrets-and-telemetry
+name: "ADR-004: Keep Scheduler credentials and sensitive payloads out of job state"
+version: 1.0.0
+summary: Scheduler credentials and sensitive downstream data are supplied through runtime configuration and excluded from Quartz metadata and routine telemetry.
+status: accepted
+date: 2026-10-27
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: scheduler-system
+  - type: service
+    id: sheduler-dashboard
+  - type: container
+    id: sheduler-database
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+---
+
+## Context
+
+[[system|scheduler-system]] jobs call internal services with service-to-service credentials and
+may handle notification content or other sensitive request data. Quartz job
+metadata and routine logs are durable, widely queried operational surfaces, so
+placing secrets or full payloads there would increase the impact of a
+credential leak or data disclosure. Operational investigation should still be
+possible using firing, job, trigger, and target correlation identifiers without
+recording the credentials or personal data used by the target.
+
+## Decision
+
+Outbound credentials are supplied through runtime secret configuration and are
+never embedded in job definitions, committed to the catalog, or written to
+routine logs. Quartz job data and execution history contain only the minimum
+non-sensitive identifiers and operational metadata needed to execute and
+diagnose a job.
+
+Logs and telemetry should retain correlation identifiers, target identifiers,
+status, duration, and sanitized failure categories instead of authorization
+headers, credentials, notification contents, or personal data. Any controlled
+diagnostic capture of sensitive values requires restricted access and the
+platform retention policy.
+
+Target-specific authentication material belongs in runtime secret
+configuration. Job data should contain only the minimum non-sensitive
+identifiers required to make the authenticated call; for example, Notification
+maintenance requests carry request metadata and let Notification choose its
+own outbox records.
+
+## Consequences
+
+- Credentials can be rotated through deployment configuration without changing
+  documented resources or schedules.
+- Operators can trace a firing to a target without routinely exposing secrets
+  or message content.
+- Detailed support investigations may require authorized access to the
+  downstream system's records.
+- Secret scanning, access control, and retention monitoring remain required
+  operational controls.
+- Quartz job definitions and execution history are durable and operationally
+  useful, so minimizing their payloads reduces the impact and spread of
+  accidental disclosure.
+- Downstream services remain the appropriate place to inspect recipient,
+  business, or item-level detail under their own authorization controls.
+- Correlation identifiers and sanitized errors must be sufficient to connect
+  scheduler execution history with target-side processing without relying on
+  copied secrets or full request bodies.
+- Runtime secret storage does not remove the need to restrict access to
+  Quartz administration, logs, traces, and diagnostic retention.
+
+## Alternatives considered
+
+### Store access tokens or passwords in Quartz job data
+
+Quartz state is durable and available to operators and scheduler instances.
+Persisting credentials with schedules would expand access and leave secrets
+behind when rotation is needed. Jobs obtain credentials from runtime
+configuration instead.
+
+### Log full requests and downstream responses
+
+Full payloads can simplify debugging but may contain recipient details,
+notification content, or other personal data. Routine telemetry uses
+correlation data and sanitized failure categories, with restricted downstream
+inspection for cases that require detail.
+
+### Omit all operational context from telemetry
+
+Removing every identifier would reduce exposure but make it difficult to
+correlate a firing with its target-side processing. The decision retains
+minimum non-sensitive identifiers and status information.

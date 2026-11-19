@@ -43,8 +43,8 @@ function getDashboard(): Dashboard {
       value,
     })).sort((a, b) => a.name.localeCompare(b.name)),
     dailyOrders,
-    recentOrders: [...orders]
-      .sort(
+    recentOrders: orders
+      .toSorted(
         (a, b) =>
           Date.parse(b.date) - Date.parse(a.date) || b.id.localeCompare(a.id),
       )

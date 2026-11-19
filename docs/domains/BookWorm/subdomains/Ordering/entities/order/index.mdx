@@ -1,0 +1,79 @@
+---
+id: order
+name: Order
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: A purchase record owned by an authenticated Buyer, containing purchase-time items and an Order status.
+owners:
+  - business-strategy
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the Order.
+  - name: buyerId
+    type: UUID
+    required: true
+    description: Identifier of the Buyer who placed the Order.
+    references: buyer
+    referencesIdentifier: id
+    relationType: placedBy
+  - name: status
+    type: string
+    required: true
+    description: Business status owned by Ordering; Finance saga progress is tracked separately.
+    enum:
+      - New
+      - Completed
+      - Cancelled
+  - name: note
+    type: string
+    required: false
+    description: Optional note associated with the Order.
+  - name: orderItems
+    type: array
+    required: true
+    description: Purchase-time items that compose the Order.
+    items:
+      type: order-item
+  - name: totalPrice
+    type: decimal
+    required: true
+    description: Calculated sum of the Order item's price multiplied by quantity; not persisted.
+  - name: isDeleted
+    type: boolean
+    required: true
+    description: Soft-delete flag, separate from the Order's business status.
+  - name: createdAt
+    type: datetime
+    required: true
+    description: Time the Order was created.
+  - name: lastModifiedAt
+    type: datetime
+    required: false
+    description: Time the Order was last modified.
+---
+
+## Overview
+
+The Order aggregate records the authenticated Buyer's purchase from the basket
+and Catalog data available at checkout. It starts as **New** and can transition
+to **Completed** or **Cancelled**; both outcomes are terminal.
+
+Each [[entity|order-item]] retains the referenced book ID, selected purchase-time
+price, and quantity. The Order total is calculated from those item values, so
+later Catalog price changes do not rewrite the accepted purchase.
+
+The `isDeleted` flag represents a soft deletion and does not change `status`.
+Finance's saga states, basket-deletion outcomes, and notification delivery are
+separate from this aggregate's lifecycle.
+
+## Entity Properties
+
+<EntityPropertiesTable />
+
+## Relationships
+
+- An Order is placed by one [[entity|buyer]].
+- An Order contains one or more [[entity|order-item]] records.

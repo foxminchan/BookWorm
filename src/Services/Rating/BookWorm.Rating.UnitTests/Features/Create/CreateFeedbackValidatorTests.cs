@@ -1,4 +1,4 @@
-﻿using BookWorm.Constants.Core;
+using BookWorm.Constants.Core;
 using BookWorm.Rating.Features.Create;
 using FluentValidation.TestHelper;
 
@@ -76,6 +76,86 @@ public sealed class CreateFeedbackValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.LastName);
+    }
+
+    [Test]
+    public void GivenTooLongFirstName_WhenValidating_ThenShouldHaveValidationError()
+    {
+        // Arrange
+        var longFirstName = new string('A', DataSchemaLength.Medium + 1);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            longFirstName,
+            "Doe",
+            "Great book!",
+            5
+        );
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.FirstName);
+    }
+
+    [Test]
+    public void GivenMaxLengthFirstName_WhenValidating_ThenShouldNotHaveValidationError()
+    {
+        // Arrange
+        var validFirstName = new string('A', DataSchemaLength.Medium);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            validFirstName,
+            "Doe",
+            "Great book!",
+            5
+        );
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.FirstName);
+    }
+
+    [Test]
+    public void GivenTooLongLastName_WhenValidating_ThenShouldHaveValidationError()
+    {
+        // Arrange
+        var longLastName = new string('A', DataSchemaLength.Medium + 1);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            "John",
+            longLastName,
+            "Great book!",
+            5
+        );
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.LastName);
+    }
+
+    [Test]
+    public void GivenMaxLengthLastName_WhenValidating_ThenShouldNotHaveValidationError()
+    {
+        // Arrange
+        var validLastName = new string('A', DataSchemaLength.Medium);
+        var command = new CreateFeedbackCommand(
+            Guid.CreateVersion7(),
+            "John",
+            validLastName,
+            "Great book!",
+            5
+        );
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.LastName);
     }
 
     [Test]

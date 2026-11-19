@@ -1,0 +1,82 @@
+## 1. Create a basket for selected products
+
+Create a basket by supplying the selected product IDs and quantities. The
+`items` array is required; each item requires both fields.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request POST "$BASE_URL/api/v1/baskets" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "items": [
+      { "id": "book-9780141182803", "quantity": 2 },
+      { "id": "book-9780061120084", "quantity": 1 }
+    ]
+  }'
+```
+
+</CodeGroup>
+
+The same request from TypeScript can preserve the returned customer ID:
+
+<CodeGroup dropdown>
+
+```ts create-basket.ts
+type CreateBasketResponse = string | null;
+
+const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
+const response = await fetch(`${baseUrl}/api/v1/baskets`, {
+	method: "POST",
+	headers: { "Content-Type": "application/json" },
+	body: JSON.stringify({
+		items: [
+			{ id: "book-9780141182803", quantity: 2 },
+			{ id: "book-9780061120084", quantity: 1 },
+		],
+	}),
+});
+
+if (response.status === 400) {
+	throw new Error("CreateBasket validation failed");
+}
+if (!response.ok) {
+	throw new Error(`CreateBasket failed with ${response.status}`);
+}
+
+const customerId = (await response.json()) as CreateBasketResponse;
+console.log(customerId);
+```
+
+</CodeGroup>
+
+A successful request returns `201 Created` with an `application/json` customer
+ID:
+
+<CodeGroup dropdown>
+
+```json
+"customer-123"
+```
+
+</CodeGroup>
+
+## 2. Correct an invalid basket request
+
+If the body does not satisfy the request contract, the service returns `400
+Bad Request` with `application/problem+json`. Correct the failing fields before
+submitting the basket again.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"items": ["The items field is required."]
+	}
+}
+```
+
+</CodeGroup>

@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Books.Create;
+namespace BookWorm.Catalog.Features.Books.Create;
 
 internal sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
 {
@@ -18,11 +18,6 @@ internal sealed class CreateBookValidator : AbstractValidator<CreateBookCommand>
 
         RuleFor(x => x.AuthorIds).NotEmpty();
 
-        When(IsHasFiles, () => RuleFor(x => x.Image).ApplyImageRules());
-    }
-
-    private static bool IsHasFiles(CreateBookCommand command)
-    {
-        return command.Image is not null;
+        When(x => x.Image is not null, () => RuleFor(x => x.Image).ApplyImageRules());
     }
 }

@@ -1,0 +1,36 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "SummarizeResult",
+	"description": "Generated summary of feedback for a book.",
+	"type": "object",
+	"required": ["summary"],
+	"properties": {
+		"summary": {
+			"type": "string",
+			"description": "Generated summary of the book's feedback."
+		},
+		"classification": {
+			"type": "string",
+			"enum": ["NoData", "Bad", "Good", "TopRated"],
+			"description": "Application-derived feedback classification."
+		},
+		"averageRating": {
+			"type": ["number", "null"],
+			"format": "double",
+			"description": "Arithmetic mean rating; null when no feedback exists."
+		},
+		"reviewCount": {
+			"type": "integer",
+			"format": "int32",
+			"description": "Number of feedback records included in the summary."
+		},
+		"evidence": {
+			"type": "string",
+			"description": "Supporting evidence from the feedback assessment."
+		},
+		"confidence": {
+			"type": "string",
+			"description": "Assessment confidence; empty when no feedback exists."
+		}
+	}
+}

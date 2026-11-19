@@ -1,23 +1,20 @@
-﻿using BookWorm.Chassis.Specification;
+using BookWorm.Chassis.Specification;
 using BookWorm.Chassis.Specification.Evaluators;
 
 namespace BookWorm.Rating.Infrastructure.Repositories;
 
 internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRepository
 {
-    private readonly RatingDbContext _context =
-        context ?? throw new ArgumentNullException(nameof(context));
-
     private static SpecificationEvaluator Specification => SpecificationEvaluator.Instance;
 
-    public IUnitOfWork UnitOfWork => _context;
+    public IUnitOfWork UnitOfWork => context;
 
     public async Task<Feedback> AddAsync(
         Feedback feedback,
         CancellationToken cancellationToken = default
     )
     {
-        var entry = await _context.Feedbacks.AddAsync(feedback, cancellationToken);
+        var entry = await context.Feedbacks.AddAsync(feedback, cancellationToken);
         return entry.Entity;
     }
 
@@ -26,7 +23,9 @@ internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRep
         CancellationToken cancellationToken = default
     )
     {
-        return await _context.Feedbacks.FindAsync([FeedbackId.From(id)], cancellationToken);
+        return await context
+            .Feedbacks.AsTracking()
+            .FirstOrDefaultAsync(f => f.Id == FeedbackId.From(id), cancellationToken);
     }
 
     public async Task<IReadOnlyList<Feedback>> ListAsync(
@@ -35,7 +34,7 @@ internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRep
     )
     {
         return await Specification
-            .GetQuery(_context.Feedbacks.AsQueryable(), spec)
+            .GetQuery(context.Feedbacks.AsQueryable(), spec)
             .ToListAsync(cancellationToken);
     }
 
@@ -45,12 +44,12 @@ internal sealed class FeedbackRepository(RatingDbContext context) : IFeedbackRep
     )
     {
         return await Specification
-            .GetQuery(_context.Feedbacks.AsQueryable(), spec)
+            .GetQuery(context.Feedbacks.AsQueryable(), spec)
             .LongCountAsync(cancellationToken);
     }
 
     public void Delete(Feedback feedback)
     {
-        _context.Feedbacks.Remove(feedback);
+        context.Feedbacks.Remove(feedback);
     }
 }

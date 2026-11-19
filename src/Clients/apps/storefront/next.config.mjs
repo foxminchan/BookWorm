@@ -3,6 +3,9 @@ import "./env.mjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns", "ts-pattern"],
+  },
   images: {
     remotePatterns: [
       {

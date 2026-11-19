@@ -1,0 +1,17 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CancelOrderRequest",
+	"description": "Path and header parameters for cancelling an Order. The operation has no request body.",
+	"type": "object",
+	"required": ["orderId", "x-request-id"],
+	"properties": {
+		"orderId": {
+			"type": "string",
+			"description": "Unique identifier of the Order to cancel."
+		},
+		"x-request-id": {
+			"type": "string",
+			"description": "Idempotency key for the cancellation request."
+		}
+	}
+}

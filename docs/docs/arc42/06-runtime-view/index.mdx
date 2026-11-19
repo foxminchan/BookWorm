@@ -1,0 +1,29 @@
+---
+title: Runtime View
+summary: Representative BookWorm runtime scenarios across commerce, discovery, customer feedback, and platform operations.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This chapter shows how BookWorm's building blocks collaborate at runtime. It focuses on architecturally significant scenarios and their ownership boundaries, including successful interactions, asynchronous work, and representative failure paths. The diagrams describe logical interactions; they do not imply an undocumented deployment topology.
+
+## Scenarios
+
+- [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] follows checkout from the current Basket and Catalog facts through Order creation and Finance-coordinated basket cleanup.
+- [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] shows how Catalog changes reach the derived vector index through durable queued work and a scheduled batch.
+- [[doc|arc42/06-runtime-view/003-feedback-and-rating-projection]] follows customer feedback into the Catalog rating projection, including compensation for an invalid book reference.
+- [[doc|arc42/06-runtime-view/004-conversational-book-discovery]] describes validation, agent routing, optional parallel research, and Catalog tool access for a book-discovery request.
+- [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] covers durable email submission and the scheduled resend and cleanup operations.
+
+## Runtime boundaries
+
+- **Authoritative state stays with its owner.** Ordering owns Order status; Shopping owns Basket state; Reviews owns individual feedback; Catalog owns books and its derived rating and search projections; Notification owns email outbox state.
+- **Asynchronous completion is distinct from request or scheduler completion.** A published command, an acknowledged HTTP invocation, an SMTP acceptance, or a Finance saga outcome does not prove that another capability's business work has completed.
+- **Retries can repeat work.** Consumers and operators should use the target system's state and documented retry behavior rather than infer success from a repeated invocation.
+- **Unknown infrastructure details remain unspecified.** The scenarios use the contracts and mechanisms documented for BookWorm and do not assume production topology or unspecified providers.
+
+These are representative scenarios rather than an exhaustive inventory. See [[doc|arc42/05-building-block-view]] for the static decomposition and the linked capability flows and runbooks for detailed contracts and operational guidance.

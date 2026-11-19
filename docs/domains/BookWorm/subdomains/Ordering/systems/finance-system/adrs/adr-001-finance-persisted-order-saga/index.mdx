@@ -1,0 +1,98 @@
+---
+id: adr-001-finance-persisted-order-saga
+name: "ADR-001: Coordinate checkout with a persisted Order saga"
+version: 1.0.0
+summary: Finance uses Azure Durable Task Scheduler (DTS) keyed by Order ID to coordinate asynchronous checkout work without owning the Order aggregate.
+status: accepted
+date: 2026-11-03
+owners:
+  - contributor-team
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+appliesTo:
+  - type: system
+    id: finance-system
+  - type: service
+    id: order-orchestration
+  - type: event
+    id: UserCheckedOutIntegrationEvent
+---
+
+## Context
+
+Checkout starts in Ordering, while basket cleanup and email processing happen
+in independently deployed services. Coordination must survive the interval
+between checkout and later outcome messages rather than depend on one HTTP
+request or an in-memory workflow.
+
+Finance's role is coordination rather than ownership of the Order. It must
+track enough information to route cleanup and notification work, while
+respecting that Basket, Ordering, and Notification each own separate state.
+The saga therefore needs both a durable correlation key and an explicit
+terminal condition.
+
+This retrospective ADR records the implemented architecture on the date above;
+it does not assert an original approval date or identify unverified decision
+makers.
+
+## Decision
+
+Use Wolverine's `OrderSaga` in [[service|order-orchestration]], started by
+[[event|UserCheckedOutIntegrationEvent]]. Set the saga ID to the Order ID and
+persist its basket reference, recipient details, total, placement timestamp,
+workflow state, and timeout retry count in [[container|finance-database]].
+
+Use explicit handlers for basket outcomes, Order status events, and the local
+scheduled timeout. The workflow states are Placed, BasketDeletionFailed,
+Completed, and Cancelled. Terminal handlers call `MarkCompleted()`; basket
+deletion success alone does not finish the saga.
+
+An in-memory coordinator or a synchronous chain would not preserve the same
+durable coordination boundary. Finance does not introduce another Order
+aggregate or a payment-processing model.
+
+Basket cleanup is one step, not the business completion criterion: after a
+successful deletion, the saga continues waiting for Ordering's explicit
+completed or cancelled status event. Conversely, a basket-cleanup failure or
+timeout exhaustion can terminate Finance's coordination without changing the
+Order's status.
+
+## Consequences
+
+- Each checkout has a stable Order ID for correlating coordination work.
+- PostgreSQL availability and compatible saga mappings become prerequisites
+  for message processing.
+- Saga state is operational workflow state, not an immutable audit history or
+  the authoritative Order status. Completion must not be interpreted as
+  permanent retention of the saga row.
+- Other services remain responsible for their own data and side effects;
+  saga completion does not prove email delivery.
+- A saga requires durable message and state handling to resume work after
+  process interruption; the persisted state still does not make operations
+  across PostgreSQL, Kafka, Basket, and Notification atomic.
+- The saga captures recipient and checkout data needed for later work. Its
+  stored recipient details therefore require the access and retention
+  controls appropriate to the Finance database's confidential classification.
+
+## Alternatives considered
+
+### Coordinate checkout in one synchronous request
+
+This would keep the workflow in one call stack, but would hold a request open
+across independently deployed services and make progress depend on all
+participants being available at once. It would not provide the durable
+coordination needed for delayed outcome messages.
+
+### Keep workflow state only in process memory
+
+An in-memory coordinator could be simpler, but process restart or instance
+replacement would lose the correlation and progress needed to handle later
+messages safely.
+
+### Make Finance the owner of the Order aggregate
+
+This could centralize checkout state, but would create a second authority for
+Order identity and lifecycle. Finance remains responsible for coordination
+only; Ordering remains the Order owner.

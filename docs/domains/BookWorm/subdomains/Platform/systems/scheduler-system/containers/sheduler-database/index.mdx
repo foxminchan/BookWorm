@@ -1,0 +1,106 @@
+---
+id: sheduler-database
+name: Scheduler Database
+version: 1.0.0
+summary: |
+  PostgreSQL persistence for Quartz schedules, trigger state, scheduler
+  coordination, and execution history owned by the Scheduler System.
+owners:
+  - contributor-team
+container_type: database
+badges:
+  - content: Database
+    backgroundColor: blue
+    textColor: blue
+technology: postgresql
+authoritative: true
+access_mode: readWrite
+classification: internal
+styles:
+  icon: /icons/database/postgresql.svg
+---
+
+<NodeGraph />
+
+## Overview
+
+Scheduler Database is the operational system of record for the
+[[system|scheduler-system]]. It stores Quartz definitions and runtime state so
+scheduled work can survive process restarts, coordinate scheduler instances,
+and remain diagnosable after a failed or delayed firing.
+
+It is authoritative for scheduling state, but it is not authoritative for
+Catalog, Notification, or any other business data touched by a job. Downstream
+systems own the work requested by the Scheduler and must expose their own
+durable queues, outboxes, or processing state.
+
+## What it stores
+
+- **Job definitions** — registered job types, groups, durability, and job data.
+- **Trigger definitions** — cron, simple, and blob trigger schedules,
+  calendars, pause state, and misfire configuration.
+- **Runtime coordination** — fired triggers, scheduler-instance check-ins,
+  locks, and job status.
+- **Execution diagnostics** — execution history and misfire history used to
+  investigate duration, completion, failure, and recovery behavior.
+
+The catalogued Quartz entities describe the principal tables and their
+relationships:
+
+- [[entity|qrtz-job-details]] and [[entity|qrtz-triggers]] define what can run
+  and when it is eligible.
+- [[entity|qrtz-cron-triggers]], [[entity|qrtz-simple-triggers]], and
+  [[entity|qrtz-blob-triggers]] store trigger-specific scheduling data.
+- [[entity|qrtz-calendars]] and paused group entities constrain or suspend
+  eligible schedules.
+- [[entity|qrtz-fired-triggers]] and [[entity|qrtz-scheduler-state]] represent
+  active firings and scheduler-instance liveness.
+- [[entity|qrtz-locks]], [[entity|qrtz-job-status]],
+  [[entity|qrtz-execution-history]], and [[entity|qrtz-misfire-history]] support
+  coordination and operations.
+
+## Access patterns
+
+[[service|sheduler-dashboard]] is the Scheduler Database's application owner.
+The Scheduler service uses Quartz's persistent store to read and write job,
+trigger, coordination, and execution records. Its dashboard and HTTP API
+present selected operational state to authorized operators.
+
+No Catalog or Notification service should query this database directly.
+Scheduler jobs invoke versioned service contracts or publish integration work;
+the receiving system owns authorization, processing, retries, and business
+outcomes.
+
+### Schema
+
+<AccordionGroup>
+	<Accordion title="Scheduler Database schema">
+		<Schema file="schema.sql" lang="sql" title="schema.sql" />
+	</Accordion>
+</AccordionGroup>
+
+## Retention and operational behavior
+
+- Quartz scheduling state is durable and must remain available across Scheduler
+  restarts.
+- Execution history is enabled for the Scheduler and retained for 30 days,
+  with a maximum of 100,000 entries per scheduler.
+- Misfire records and failed executions must remain observable long enough to
+  diagnose missed schedules and downstream failures.
+- A successful row in execution history means the Scheduler completed its
+  invocation path. It does not confirm that Catalog indexing or Notification
+  delivery completed successfully.
+- Direct edits to Quartz tables are unsafe. Use the dashboard or the
+  Scheduler's supported management surface for schedule changes.
+
+## Reliability and security
+
+The database is provisioned as the `schedulerdb` PostgreSQL resource and the
+Scheduler waits for it before starting. Persistent state allows the Scheduler
+to recover trigger definitions and continue eligible work after a restart.
+
+Access is restricted to the Scheduler service and authorized operators.
+Connection strings, credentials, authorization headers, notification content,
+and personal data must not be stored in job data or copied into routine logs.
+Operational queries should use job, trigger, and fire-instance identifiers to
+keep diagnosis precise and avoid exposing unrelated scheduler data.

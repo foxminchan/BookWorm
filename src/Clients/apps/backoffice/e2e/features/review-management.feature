@@ -13,50 +13,38 @@ Feature: Review Management
 
   @smoke
   @view-reviews
-  Scenario: View list of reviews
+  Scenario: Reviews page prompts to select a book initially
     When the reviews page loads
+    Then I should see the book selector
+    And I should see "Select a book above to view and manage its reviews"
+
+  @smoke
+  @view-reviews
+  Scenario: View list of reviews for a selected book
+    When I select the first book in the review selector
     Then I should see the reviews table
-    And I should see review information including rating and status
+    And I should see review Customer, Rating, and Comment columns
 
-  @search
-  @reviews
-  Scenario: Search for reviews by book title
-    Given there are multiple reviews
-    When I search for reviews by book title
-    Then I should see only matching reviews
+  @delete-review
+  Scenario: Delete a review with confirmation
+    Given I have selected a book with at least one review
+    When I click the delete button for the first review
+    Then I should see a confirmation dialog
+    When I confirm the review deletion
+    Then I should see a success message
 
-  @approve-review
-  Scenario: Approve a pending review
-    Given there is at least one pending review
-    When I click approve on the first review
-    Then the review should be approved
-    And I should see a success message
-
-  @reject-review
-  Scenario: Reject an inappropriate review
-    Given there is at least one pending review
-    When I click reject on the first review
-    Then the review should be rejected
-    And I should see a success message
-
-  @filter
-  @reviews
-  Scenario: Filter reviews by status
-    Given there are reviews with different statuses
-    When I filter reviews by "Pending" status
-    Then I should see only pending reviews
-
-  @filter
-  @reviews
-  Scenario: Filter reviews by rating
-    Given there are reviews with different ratings
-    When I filter reviews by 5-star rating
-    Then I should see only 5-star reviews
+  @delete-review
+  @cancel
+  Scenario: Cancel review deletion
+    Given I have selected a book with at least one review
+    When I click the delete button for the first review
+    And I cancel the review deletion
+    Then the review should remain in the list
 
   @pagination
   @reviews
   Scenario: Navigate through review pages
-    Given there are more than 10 reviews
-    When I navigate to page 2
+    Given I have selected a book with more than 10 reviews
+    When I navigate to the next page
     Then I should see different reviews
     And the pagination should update

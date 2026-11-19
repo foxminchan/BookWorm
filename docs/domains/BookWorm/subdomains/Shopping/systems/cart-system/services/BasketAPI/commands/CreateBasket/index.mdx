@@ -1,0 +1,45 @@
+---
+id: CreateBasket
+name: Create basket
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Creates a basket containing the supplied item identifiers and quantities.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /api/v1/baskets
+  statusCodes: ["201", "400"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+Creates a new [[entity|basket]] from an item collection. The request body is a
+`CreateBasketCommand`; each item identifies a [[entity|basket-item]] and its requested
+quantity.
+
+<NodeGraph />
+
+## Request and response
+
+Send `application/json` with the required `items` array. Each item requires an
+`id` and `quantity`. A successful `201` response returns a JSON customer ID,
+which may be `null` according to the OpenAPI contract.
+
+`400` returns `application/problem+json` with
+`HttpValidationProblemDetails`.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="CreateBasketCommand JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

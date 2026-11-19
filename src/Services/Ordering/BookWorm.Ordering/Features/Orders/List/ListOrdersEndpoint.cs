@@ -7,10 +7,8 @@ internal sealed class ListOrdersEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                "/orders",
-                async ([AsParameters] ListOrdersQuery query, ISender sender) =>
-                    await HandleAsync(query, sender)
+        app.MapGet("/orders", async ([AsParameters] ListOrdersQuery query, ISender sender) =>
+                await HandleAsync(query, sender)
             )
             .ProducesGet<PagedResult<OrderDto>>(true)
             .WithPaginationHeaders()

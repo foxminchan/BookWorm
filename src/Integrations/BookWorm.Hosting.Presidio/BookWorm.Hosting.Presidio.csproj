@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);ASPIRECERTIFICATES001</NoWarn>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Dotnet" />
   </ItemGroup>

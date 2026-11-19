@@ -1,0 +1,51 @@
+---
+id: adr-bw-017-compatible-contract-evolution
+name: "ADR-BW-017: Gate independent evolution on contract compatibility"
+version: 1.0.0
+summary: Prefer compatible contract changes and coordinate breaking migrations using consumer-impact review and the existing schema and contract checks.
+status: proposed
+date: 2026-11-07
+owners:
+  - contributor-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-004-explicit-http-and-grpc-contracts
+  - id: adr-bw-010-cross-boundary-correlation
+  - id: adr-bw-016-layered-architecture-verification
+---
+
+## Context
+
+Independent deployment is unsafe when a producer changes interface shape, routing identity, or business meaning without considering consumers. Updating a compatibility baseline too early can hide an incompatible schema change.
+
+## Decision
+
+Identify the owner and known consumers before changing a contract. Prefer additive changes that preserve existing behavior, verify asynchronous consumer/provider contracts, and check Protocol Buffer lint and breaking compatibility against the committed baseline before updating it. Commit validated schema and baseline changes together.
+
+Coordinate a migration for breaking changes, including semantic changes that schema tools cannot detect. Independent release is conditional on compatibility, not merely on separate deployment units.
+
+## Decision drivers
+
+- Interoperability across service versions.
+- Deployability without forced platform-wide releases for compatible changes.
+- Preservation of event identity, routing, and business semantics.
+
+## Alternatives considered
+
+| Alternative                                        | Assessment                                                            |
+| -------------------------------------------------- | --------------------------------------------------------------------- |
+| Change the producer and expect consumers to follow | Gives local speed but creates runtime incompatibility.                |
+| Update the baseline before compatibility checks    | Silences evidence instead of validating the change.                   |
+| Release all services together for every change     | Reduces version variation but discards intended release independence. |
+
+## Consequences
+
+- Compatible changes can preserve independent service evolution.
+- Breaking changes require coordination, migration, and updated documentation.
+- Known-consumer tests cannot prove compatibility with undiscovered consumers; ownership and consumer inventory still matter.
+
+## Evidence
+
+See [[doc|arc42/02-architecture-constraints]], [[doc|development/004-engineering-standards]], and [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]].

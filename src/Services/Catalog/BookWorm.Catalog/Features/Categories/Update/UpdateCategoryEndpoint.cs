@@ -1,13 +1,11 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Update;
+namespace BookWorm.Catalog.Features.Categories.Update;
 
 internal sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCategoryCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut(
-                "/categories",
-                async (UpdateCategoryCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPut("/categories", async (UpdateCategoryCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPut()
             .WithTags(nameof(Category))
@@ -15,7 +13,7 @@ internal sealed class UpdateCategoryEndpoint : IEndpoint<NoContent, UpdateCatego
             .WithSummary("Update Category")
             .WithDescription("Update a category if it exists")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

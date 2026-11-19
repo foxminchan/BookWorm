@@ -12,27 +12,16 @@ internal sealed class DeletePublisherValidator : AbstractValidator<DeletePublish
 
 internal sealed class PublisherValidator : AbstractValidator<Guid>
 {
-    private readonly IBookRepository _repository;
-
     public PublisherValidator(IBookRepository repository)
     {
-        _repository = repository;
-
         RuleFor(x => x)
-            .MustAsync(IsNotPublisherBook)
+            .MustAsync(
+                async (publisherId, cancellationToken) =>
+                    await repository.CountAsync(
+                        new BookFilterSpec(null, [publisherId]),
+                        cancellationToken
+                    ) == 0
+            )
             .WithMessage("Publisher has books and cannot be deleted");
-    }
-
-    private async Task<bool> IsNotPublisherBook(
-        Guid publisherId,
-        CancellationToken cancellationToken
-    )
-    {
-        var publisher = await _repository.ListAsync(
-            new BookFilterSpec(null, [publisherId]),
-            cancellationToken
-        );
-
-        return publisher.Count == 0;
     }
 }

@@ -1,0 +1,60 @@
+---
+id: GetDashboardGrpc
+name: Get catalog dashboard over gRPC
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns Catalog totals and category counts through the admin-protected book.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `GetDashboard` RPC returns the total number of [[entity|book]]s and the aggregated
+[[entity|category]] counts used by the Catalog dashboard. This is a read-only query, but
+it requires the admin authorization policy.
+
+[[service|order-api]] produces this query when refreshing its cached
+administrative dashboard, using the named `dashboard-catalog` gRPC client
+with a token exchanged for Catalog. [[service|catalog-api]] consumes the
+synchronous service-to-service query.
+
+<NodeGraph />
+
+## Contract
+
+Send an empty `GetDashboardRequest`. The response is
+`GetDashboardResponse`, containing `total_books` and repeated
+`DashboardCategory` values.
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="GetDashboard gRPC schema" />
+
+## Examples
+
+<CodeGroup dropdown>
+
+```csharp title="GetDashboard gRPC example"
+using Grpc.Net.Client;
+using BookWorm.Catalog.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.GetDashboardAsync(new GetDashboardRequest());
+
+Console.WriteLine($"Books: {response.TotalBooks}");
+foreach (var category in response.Categories)
+{
+    Console.WriteLine($"{category.Name}: {category.Value}");
+}
+```
+
+</CodeGroup>

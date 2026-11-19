@@ -11,26 +11,25 @@ public static class PresidioAnalyzerResourceBuilderExtensions
         ///     Adds a Presidio Analyzer container resource to the distributed application.
         /// </summary>
         /// <param name="name">The name of the resource.</param>
-        /// <param name="httpPort">The optional host port for the HTTP endpoint. Assigned dynamically when omitted.</param>
+        /// <param name="httpsPort">The optional host port for the HTTPS endpoint. Assigned dynamically when omitted.</param>
         /// <returns>An <see cref="IResourceBuilder{PresidioAnalyzerResource}" /> for further configuration.</returns>
         [AspireExport]
         public IResourceBuilder<PresidioAnalyzerResource> AddPresidioAnalyzer(
             [ResourceName] string name,
-            int? httpPort = null
+            int? httpsPort = null
         )
         {
             var resource = new PresidioAnalyzerResource(name);
 
             return builder
                 .AddResource(resource)
-                .WithImage(PresidioAnalyzerContainerImageTags.Image)
-                .WithImageRegistry(PresidioAnalyzerContainerImageTags.Registry)
-                .WithImageTag(PresidioAnalyzerContainerImageTags.Tag)
-                .WithIconName("SearchShield")
-                .WithHttpEndpoint(httpPort, 3000, PresidioAnalyzerResource.HttpEndpointName)
-                .WithHttpHealthCheck(
-                    "/health",
-                    endpointName: PresidioAnalyzerResource.HttpEndpointName
+                .ConfigurePresidioContainer(
+                    PresidioAnalyzerContainerImageTags.Registry,
+                    PresidioAnalyzerContainerImageTags.Image,
+                    PresidioAnalyzerContainerImageTags.Tag,
+                    "SearchShield",
+                    httpsPort,
+                    PresidioAnalyzerResource.HttpsEndpointName
                 );
         }
     }
@@ -44,27 +43,68 @@ public static class PresidioAnonymizerResourceBuilderExtensions
         ///     Adds a Presidio Anonymizer container resource to the distributed application.
         /// </summary>
         /// <param name="name">The name of the resource.</param>
-        /// <param name="httpPort">The optional host port for the HTTP endpoint. Assigned dynamically when omitted.</param>
+        /// <param name="httpsPort">The optional host port for the HTTPS endpoint. Assigned dynamically when omitted.</param>
         /// <returns>An <see cref="IResourceBuilder{PresidioAnonymizerResource}" /> for further configuration.</returns>
         [AspireExport]
         public IResourceBuilder<PresidioAnonymizerResource> AddPresidioAnonymizer(
             [ResourceName] string name,
-            int? httpPort = null
+            int? httpsPort = null
         )
         {
             var resource = new PresidioAnonymizerResource(name);
 
             return builder
                 .AddResource(resource)
-                .WithImage(PresidioAnonymizerContainerImageTags.Image)
-                .WithImageRegistry(PresidioAnonymizerContainerImageTags.Registry)
-                .WithImageTag(PresidioAnonymizerContainerImageTags.Tag)
-                .WithIconName("ShieldCheckmark")
-                .WithHttpEndpoint(httpPort, 3000, PresidioAnonymizerResource.HttpEndpointName)
-                .WithHttpHealthCheck(
-                    "/health",
-                    endpointName: PresidioAnonymizerResource.HttpEndpointName
+                .ConfigurePresidioContainer(
+                    PresidioAnonymizerContainerImageTags.Registry,
+                    PresidioAnonymizerContainerImageTags.Image,
+                    PresidioAnonymizerContainerImageTags.Tag,
+                    "ShieldCheckmark",
+                    httpsPort,
+                    PresidioAnonymizerResource.HttpsEndpointName
                 );
         }
+    }
+}
+
+internal static class PresidioContainerBuilderExtensions
+{
+    internal static IResourceBuilder<TResource> ConfigurePresidioContainer<TResource>(
+        this IResourceBuilder<TResource> builder,
+        string registry,
+        string image,
+        string tag,
+        string iconName,
+        int? port,
+        string httpsEndpointName
+    )
+        where TResource : ContainerResource, IResourceWithConnectionString
+    {
+        builder
+            .WithImage(image)
+            .WithImageRegistry(registry)
+            .WithImageTag(tag)
+            .WithIconName(iconName);
+
+        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+        {
+            return builder
+                .WithHttpsEndpoint(port, 3000, httpsEndpointName)
+                .WithHttpsDeveloperCertificate()
+                .WithHttpsCertificateConfiguration(ctx =>
+                {
+                    ctx.EnvironmentVariables["GUNICORN_CMD_ARGS"] = ReferenceExpression.Create(
+                        $"--certfile={ctx.CertificatePath} --keyfile={ctx.KeyPath}"
+                    );
+                    return Task.CompletedTask;
+                })
+                .WithHttpHealthCheck("/health", endpointName: httpsEndpointName);
+        }
+
+        const string httpEndpointName = "http";
+
+        return builder
+            .WithHttpEndpoint(port, 3000, httpEndpointName)
+            .WithHttpHealthCheck("/health", endpointName: httpEndpointName);
     }
 }

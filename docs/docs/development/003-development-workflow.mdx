@@ -1,0 +1,83 @@
+---
+title: Development Workflow
+summary: A practical workflow for making changes and using BookWorm's development agent skills.
+owners:
+  - contributor-team
+badges:
+  - content: Onboarding
+    backgroundColor: teal
+    textColor: teal
+---
+
+# Make and validate a change
+
+## Branch naming
+
+Use a type prefix followed by a short, lowercase, kebab-case description:
+
+```text
+<type>/<short-description>
+```
+
+Use `feature/` for new features, `fix/` for bug fixes, and `docs/` for documentation changes. For example, `docs/update-development-onboarding`. Keep branch names concise and focused on one change.
+
+<Steps title="Make and validate a change">
+  <Step title="Create a branch">
+    Start from an up-to-date base branch and create a focused branch using the convention above:
+
+    ```bash
+    git checkout -b feature/add-book-search
+    ```
+
+  </Step>
+  <Step title="Review project guidance">
+    Read the relevant service documentation and repository instructions before making changes.
+  </Step>
+  <Step title="Implement the change">
+    Follow the conventions in [[doc|development/004-engineering-standards]] and preserve existing service boundaries and patterns.
+  </Step>
+  <Step title="Test the change">
+    Add or update tests, then run the relevant checks described in [[doc|development/005-testing]]. Prefer the repository's `mise` tasks over raw tool commands.
+  </Step>
+  <Step title="Commit your work">
+    Use a descriptive [Conventional Commit](https://www.conventionalcommits.org/) message:
+
+    - `feat:` for features
+    - `fix:` for bug fixes
+    - `docs:` for documentation
+    - `refactor:` for refactoring
+    - `test:` for tests
+    - `chore:` for maintenance
+
+  </Step>
+  <Step title="Open a pull request">
+    Push your branch and open a pull request using [[doc|development/006-pull-request-process]].
+  </Step>
+</Steps>
+
+## Branch flow
+
+The diagram shows a short-lived change branch from `main` through implementation, validation, and an approved pull request. Use the same flow with `fix/` or `docs/` branch prefixes when appropriate.
+
+<MermaidFileLoader file="mermaids/git-flow.mmd" />
+
+## Use agent skills
+
+<Visibility for="humans">
+	Browse BookWorm's repository skills in
+	[`.agents/skills`](https://github.com/foxminchan/BookWorm/tree/main/.agents/skills/) and choose
+	one that matches your task. For example, use `tunit` for backend test authoring and the Aspire
+	skills for Aspire setup, orchestration, deployment, or monitoring.
+</Visibility>
+
+<Visibility for="agents">
+	Before changing the repository, read `AGENTS.md` and load any skill relevant to the task from
+	`.agents/skills`. Follow the skill's workflow and verify changes with the repository's checks; do
+	not rely on a remembered or copied list of skills because their coverage can change.
+</Visibility>
+
+## Where instructions belong
+
+[AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) is the repository-wide source of agent guidance. File-scoped rules live under [`.github/instructions`](https://github.com/foxminchan/BookWorm/tree/main/.github/instructions); reusable task procedures belong in `.agents/skills/<skill-name>/SKILL.md`.
+
+For routine work, use the repository's documented commands and existing patterns. Skills supplement the repository instructions; they do not replace them.

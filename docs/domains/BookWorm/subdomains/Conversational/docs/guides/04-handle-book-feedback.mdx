@@ -1,0 +1,68 @@
+---
+title: Handle book feedback in conversation
+summary: Set expectations when a customer shares an opinion or feedback about a book with an agent.
+version: 1.0.0
+type: guides
+order: 4
+badges:
+  - content: Guide
+    backgroundColor: teal
+    textColor: teal
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Treat conversational feedback as conversation
+
+The [[agent\|book-agent]] can acknowledge book feedback and continue the
+conversation. A message shared with the agent is not, by itself, a persisted
+Reviews feedback record.
+
+Do not tell a customer that feedback has been submitted, saved, or associated
+with their account unless the interaction explicitly confirms that outcome.
+If the customer wants to create or manage a formal feedback record, explain
+that this conversational flow does not perform that operation and direct them
+to the supported BookWorm feedback channel.
+
+## What the agent should do
+
+When a customer provides a reaction to a book, the assistant should:
+
+- validate the message as a general conversation signal, not a guarantee of data capture
+- acknowledge the customer's sentiment with empathy and context
+- ask clarifying questions if the interaction is likely to become a formal review
+- separate personal opinion from confirmed Catalog facts such as price, availability, or rating summary
+
+## When not to overstate the outcome
+
+Avoid statements such as:
+
+- "Your feedback has been saved"
+- "This review is now live"
+- "We updated the book rating on your behalf"
+
+Those claims are only appropriate when a formal Reviews workflow has actually been completed and confirmed.
+
+## Keep book claims grounded
+
+Feedback may help clarify what the customer likes or dislikes, but it does not
+change authoritative book details such as price, availability, or ratings.
+Use confirmed Catalog information for those facts and distinguish it from the
+customer's personal opinion.
+
+## Recommended escalation path
+
+If the customer is trying to:
+
+- leave a review
+- update or delete a prior rating
+- report an issue with a specific review
+- ask to be acknowledged as a verified buyer or user
+
+then the conversation should route to the formal Reviews or support workflow rather than implying that the agent has already performed that action.
+
+This keeps the conversational layer aligned with the domain boundary between
+[[domain|conversational]] and [[domain|reviews]]. The agent can be helpful and
+empathetic without claiming authority over review state or persistent data.
+
+<Footer />

@@ -1,0 +1,96 @@
+---
+id: order-cache
+name: Order Cache and Distributed Locks
+version: 1.0.0
+summary: Redis-backed coordination and caching for Ordering, including Buyer-scoped creation locks, idempotency markers, and cached Catalog and dashboard responses.
+owners:
+  - business-strategy
+container_type: cache
+badges:
+  - content: Cache
+    backgroundColor: orange
+    textColor: orange
+technology: azure-managed-redis
+authoritative: false
+access_mode: readWrite
+classification: internal
+retention: transient
+purpose: Coordinate concurrent Order creation, detect repeated requests, and share cached responses across Ordering instances.
+styles:
+  icon: /icons/database/redis.svg
+---
+
+<NodeGraph />
+
+## Overview
+
+Order Cache documents [[service|order-api]]'s logical use of the shared Redis
+resource. It is not a dedicated Redis server: the AppHost supplies the same
+Redis resource to multiple services, running it as a local container in
+development and using Azure Managed Redis when deployed.
+
+Ordering reuses one `IConnectionMultiplexer` for the Redis distributed locker,
+the request manager, and FusionCache's distributed cache and backplane.
+[[container|order-database]] remains authoritative for Buyer and Order data.
+
+## Coordination and cached data
+
+| Usage                    | Logical key or scope                                      | Behavior                                                                                                                                                           |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Order creation lock      | Cache name `ordering`, lock name `order-create:{BuyerId}` | Buyer-scoped acquisition around the Order write, released in `finally`. The acquisition call passes a one-minute timeout; this is not a documented lock-entry TTL. |
+| Idempotency marker       | `{HTTP method}:{request path}:{x-request-id}`             | JSON `ClientRequest` containing ID, operation name, and timestamp, with a one-hour expiration.                                                                     |
+| Catalog book batch       | `books:{sorted comma-separated book IDs}`                 | Cached gRPC response used to resolve checkout books and prices, tagged `books` and `catalog`. The default configured duration is 30 minutes.                       |
+| Administrative dashboard | `ordering:dashboard:v1`                                   | Aggregated Ordering and Catalog response cached for 15 seconds.                                                                                                    |
+
+These are application-level keys and lock names, not a claim about
+FusionCache's final Redis key encoding.
+
+## Lock scope and failure behavior
+
+Order creation reads the basket and resolves Catalog books before acquiring
+the Buyer-scoped lock. The lock covers adding the Order and saving the EF Core
+unit of work; it does not cover the earlier network reads or the complete
+checkout workflow.
+
+If acquisition returns no lock handle, the handler throws an
+`InvalidOperationException` stating that another process is already creating
+an Order. Release is attempted in `finally`, including on a failed write.
+The lock does not serialize completion or cancellation and does not replace
+the database concurrency token or endpoint idempotency checks.
+
+## Idempotency behavior
+
+Endpoints using the idempotency filter check for an existing request marker
+and return `409 Conflict` when it is present. A new marker is stored
+**before** the endpoint handler runs, not after a successful Order transaction.
+It records a request, not a cached response or proof of success.
+
+The existence check and marker write are separate Redis operations. These
+markers are therefore not an atomic exactly-once guarantee. A failed request
+can leave its marker until the one-hour expiration, and loss of Redis data
+can remove duplicate-request detection during that window.
+
+## Cache behavior and operations
+
+- FusionCache uses an in-process L1, a Redis-backed L2, JSON serialization,
+  and a Redis backplane to coordinate cache changes across instances.
+- The shared default cache duration is configured through `Caching:Expiration`;
+  the dashboard supplies its own shorter duration.
+- Cached Catalog responses are non-authoritative and can retain earlier
+  prices until refreshed. An accepted Order stores the resolved price in
+  [[container|order-database]] rather than referring back to the cache.
+- Redis is also coordination infrastructure, not only a disposable
+  performance cache. Availability affects lock acquisition and idempotency
+  operations; clearing entries can affect concurrent writes and retry
+  detection without deleting persisted Orders.
+
+## Implementation references
+
+- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/DistributedLock/Extensions.cs`
+- `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Create/CreateOrderCommand.cs`
+- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Idempotency/RequestManager.cs`
+- `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Filters/IdempotencyEndpointFilter.cs`
+- `src/Services/Ordering/BookWorm.Ordering/Grpc/Services/Book/BookService.cs`
+- `src/Services/Ordering/BookWorm.Ordering/Features/Dashboard/GetDashboardQuery.cs`
+- `src/BuildingBlocks/BookWorm.Chassis/Caching/Extensions.cs`
+- `src/Services/Ordering/BookWorm.Ordering/appsettings.json`

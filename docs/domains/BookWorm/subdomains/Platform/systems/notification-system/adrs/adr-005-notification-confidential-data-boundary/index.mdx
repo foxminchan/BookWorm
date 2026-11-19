@@ -1,0 +1,107 @@
+---
+id: adr-005-notification-confidential-data-boundary
+name: "ADR-005: Treat notification content and credentials as confidential"
+version: 1.0.0
+summary: Notification keeps recipient data and rendered content transient during SMTP delivery and requires runtime secrets and restricted operational access.
+status: accepted
+date: 2026-11-01
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: notification-system
+  - type: service
+    id: notification-api
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+---
+
+## Context
+
+Email outbox rows contain recipient names, addresses, subjects, and rendered
+order content. SMTP and PostgreSQL connections also require privileged runtime
+configuration. Copying these values into logs, scheduler metadata, or
+documentation expands access beyond what delivery requires.
+
+## Decision
+
+Treat [[container|notification-database]] as confidential. Limit recipient and
+message-content access to [[service|notification-api]] and authorized operators
+with a delivery or support need. Calling domains remain authoritative for
+business state; the outbox is not a general-purpose order-data export.
+
+Keep SMTP authentication and database connection secrets in runtime secret
+configuration, never in catalog content, source control, outbox rows, or routine
+logs. Scheduler maintenance messages carry only request metadata and do not
+need recipient details or message bodies.
+
+Prefer outbox identifiers, sequence numbers, timestamps, aggregate backlog
+counts, and sanitized error categories for diagnostics. Provider acceptance,
+cleanup, and email-state changes must not be presented as confirmation of the
+underlying business operation.
+
+## Access and observability implications
+
+The Notification service needs recipient and rendered content to submit a
+message, but routine operational checks usually need only row identifiers,
+counts, age, status, and sanitized failure information. Database access,
+support tooling, and logs should follow that distinction. Scheduler requests
+need only maintenance metadata and must not become a transport for email
+content.
+
+The intended sanitized logging policy does not describe the complete current
+implementation: resend logs include recipient addresses, and SMTP failure
+logs include recipients and subjects. Those paths require review and
+remediation; this ADR does not claim that existing logs already meet the
+policy.
+
+## Consequences
+
+- Delivery and authorized support still require access to confidential email
+  data, so database permissions and operational log access need explicit control.
+- Routine backlog inspection can avoid selecting recipient information or
+  rendered content.
+- Current resend logs include recipient addresses, and SMTP failure logs include
+  recipients and subjects. Sanitized logging is an accepted requirement, not
+  a claim that those existing log statements already satisfy it.
+- Cleanup currently deletes sent records without an age threshold; unsent records
+  have no age-based expiry. Neither behavior establishes a formal privacy
+  retention period or delivery audit policy.
+- Any future retention or logging change must preserve recovery needs while
+  minimizing unnecessary exposure of email data.
+- Email outbox data remains confidential after SMTP submission until cleanup
+  removes the row. The current cleanup cadence may leave sent content available
+  until the next run, but does not define a retention period.
+- Aggregated queue metrics and sanitized failure categories are preferred for
+  monitoring; operational queries should avoid selecting recipient or body
+  columns unless the support task requires them.
+- Logging, database, and secret-management controls are separate safeguards:
+  placing credentials in runtime configuration does not by itself restrict
+  access to recipient data or rendered content.
+
+## Alternatives considered
+
+### Include recipient and message content in scheduler requests
+
+Scheduler only decides when maintenance should run. Passing email content
+through its messages would duplicate confidential data and couple scheduling
+to the Notification delivery model.
+
+### Log complete messages for easier debugging
+
+Full bodies and recipient details may simplify local diagnosis but increase
+exposure in routine logs and monitoring systems. Prefer identifiers and
+sanitized failure details, with narrowly authorized support access to the
+outbox when necessary.
+
+### Delete sent records immediately after submission
+
+Immediate deletion would reduce the time content remains in the outbox, but
+would remove the existing bounded cleanup and operational inspection window.
+Any revised retention behavior needs an explicit policy that balances privacy,
+support, and audit requirements; the current hourly cleanup is not such a
+policy.

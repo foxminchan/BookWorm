@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Order } from "@workspace/types/ordering/orders";
@@ -353,5 +354,147 @@ describe("Orders CellAction", () => {
       },
       { timeout: 3000 },
     );
+  });
+
+  it("handles error when complete mutation fails", async () => {
+    const user = userEvent.setup();
+    const error = new Error("Complete failed");
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const toastErrorSpy = vi.spyOn(toast, "error");
+    const mutateFn = vi.fn((_, { onError }) => {
+      Promise.resolve().then(() => onError?.(error));
+    });
+    mockUseCompleteOrder.mockReturnValue({
+      mutate: mutateFn,
+      isPending: false,
+    });
+
+    renderWithQueryClient(<CellAction order={mockOrder} />);
+
+    const completeButton = screen.getByLabelText(
+      new RegExp(`Complete order ${mockOrder.id.slice(0, 8)}`),
+    );
+    await user.click(completeButton);
+
+    const confirmButton = screen.getByRole("button", { name: /complete/i });
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to complete order:",
+        error,
+      );
+      expect(toastErrorSpy).toHaveBeenCalledWith("Failed to complete order");
+    });
+
+    consoleErrorSpy.mockRestore();
+    toastErrorSpy.mockRestore();
+  });
+
+  it("handles error when cancel mutation fails", async () => {
+    const user = userEvent.setup();
+    const error = new Error("Cancel failed");
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const toastErrorSpy = vi.spyOn(toast, "error");
+    const mutateFn = vi.fn((_, { onError }) => {
+      Promise.resolve().then(() => onError?.(error));
+    });
+    mockUseCancelOrder.mockReturnValue({
+      mutate: mutateFn,
+      isPending: false,
+    });
+
+    renderWithQueryClient(<CellAction order={mockOrder} />);
+
+    const cancelButton = screen.getByLabelText(
+      new RegExp(`Cancel order ${mockOrder.id.slice(0, 8)}`),
+    );
+    await user.click(cancelButton);
+
+    const cancelButtons = screen.getAllByRole("button", { name: /cancel/i });
+    const confirmButton = cancelButtons[1] as HTMLElement;
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to cancel order:",
+        error,
+      );
+      expect(toastErrorSpy).toHaveBeenCalledWith("Failed to cancel order");
+    });
+
+    consoleErrorSpy.mockRestore();
+    toastErrorSpy.mockRestore();
+  });
+
+  it("handles error when delete mutation fails", async () => {
+    const user = userEvent.setup();
+    const error = new Error("Delete failed");
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const toastErrorSpy = vi.spyOn(toast, "error");
+    const mutateFn = vi.fn((_, { onError }) => {
+      Promise.resolve().then(() => onError?.(error));
+    });
+    mockUseDeleteOrder.mockReturnValue({
+      mutate: mutateFn,
+      isPending: false,
+    });
+
+    renderWithQueryClient(<CellAction order={mockOrder} />);
+
+    const deleteButton = screen.getByLabelText(
+      new RegExp(`Delete order ${mockOrder.id.slice(0, 8)}`),
+    );
+    await user.click(deleteButton);
+
+    const confirmButton = screen.getByRole("button", { name: /delete/i });
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to delete order:",
+        error,
+      );
+      expect(toastErrorSpy).toHaveBeenCalledWith("Failed to delete order");
+    });
+
+    consoleErrorSpy.mockRestore();
+    toastErrorSpy.mockRestore();
+  });
+
+  it("shows processing state when complete mutation is pending", () => {
+    mockUseCompleteOrder.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: true,
+    });
+
+    renderWithQueryClient(<CellAction order={mockOrder} />);
+
+    const completeButton = screen.getByLabelText(
+      new RegExp(`Complete order ${mockOrder.id.slice(0, 8)}`),
+    );
+    expect(completeButton).toBeDisabled();
+    expect(completeButton).toHaveTextContent("Processing...");
+  });
+
+  it("shows processing state when cancel mutation is pending", () => {
+    mockUseCancelOrder.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: true,
+    });
+
+    renderWithQueryClient(<CellAction order={mockOrder} />);
+
+    const cancelButton = screen.getByLabelText(
+      new RegExp(`Cancel order ${mockOrder.id.slice(0, 8)}`),
+    );
+    expect(cancelButton).toBeDisabled();
+    expect(cancelButton).toHaveTextContent("Processing...");
   });
 });

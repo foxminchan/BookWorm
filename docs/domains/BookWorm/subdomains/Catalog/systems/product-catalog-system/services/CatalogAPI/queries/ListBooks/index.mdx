@@ -1,0 +1,39 @@
+---
+id: ListBooks
+name: List books
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns a filterable collection of books with pricing, availability, relationships, and rating summaries.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: QUERY
+  path: /api/v1/books
+  statusCodes: ["200", "400"]
+sidebar:
+  badge: "QUERY"
+---
+
+## Overview
+
+Returns [[entity|book]] representations with pagination, sorting, text search, price bounds, and [[entity|category]], [[entity|publisher]], and [[entity|author]] filters.
+
+<NodeGraph />
+
+## Contract
+
+Send a JSON request body (optional; defaults apply when omitted) with `pageIndex`, `pageSize`, `orderBy`, and `isDescending` for paging and sorting. Optional filters are `search`, `minPrice`, `maxPrice`, `categoryId`, `publisherId`, and `authorIds` arrays.
+
+The response is a JSON array of `BookDto` objects. The endpoint currently returns the selected page as an array rather than a wrapper object.
+
+## Operational notes
+
+`400` indicates an invalid page, price, UUID, or filter value.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

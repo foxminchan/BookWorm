@@ -1,0 +1,116 @@
+---
+id: mcp-server
+name: MCP Server
+version: 1.0.0
+summary: |
+  Internal stateless Streamable HTTP MCP service that exposes read-only
+  Catalog and Reviews tools, resources, and reusable AI prompts.
+owners:
+  - contributor-team
+sends:
+  - id: ListBooksGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: GetBookDetailsGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListCategoriesGrpc
+    version: 1.0.0
+    group: Catalog Queries
+  - id: ListAuthorsGrpc
+    version: 1.0.0
+    group: Catalog Queries
+repository:
+  language: C#
+  url: https://github.com/foxminchan/BookWorm
+styles:
+  icon: /icons/languages/dotnet.svg
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: HTTP API
+    backgroundColor: teal
+    textColor: teal
+---
+
+## Overview
+
+MCP Server implements the integration boundary of [[system|mcp-tools]]. It
+adapts AI-client requests to the [[service|catalog-api]] and
+[[service|rating-api]] APIs without owning book or feedback records. It
+publishes MCP tools, URI-addressable resources, and prompt templates over
+Streamable HTTP.
+
+The server is stateless and exposes only read capabilities. Clients still
+select which tools they load: for example, Chat's Book Agent and its
+researchers receive the Catalog tools but not every capability exposed by this
+server.
+
+## MCP endpoint and authorization
+
+The server maps `/mcp` using stateless Streamable HTTP transport and requires
+authorization on that endpoint. The default policy requires an authenticated
+caller with the `mcptools_read` scope. Entra ID token introspection,
+authorization filters, and MCP governance are applied at the server boundary.
+
+Chat and Rating connect through service discovery. Their MCP clients use
+service-to-service token exchange when creating the HTTP transport.
+
+## Tools
+
+| Tool               | Purpose                                      | Upstream API |
+| ------------------ | -------------------------------------------- | ------------ |
+| `search_catalog`   | Search for books by description or keyword.  | Catalog      |
+| `get_book`         | Retrieve full details for a book ID.         | Catalog      |
+| `list_categories`  | List available book categories.              | Catalog      |
+| `list_authors`     | List available authors.                      | Catalog      |
+| `get_book_reviews` | Retrieve feedback and ratings for a book ID. | Rating       |
+
+Tool results are serialized as JSON when data is available. API failures
+return an explicit error message; tools do not create or update records.
+Chat loads only the first four tools. Rating uses `get_book` through MCP;
+its raw-feedback lookup is an in-process Rating tool rather than
+`get_book_reviews`.
+
+## Resources
+
+| URI                                   | Data                             |
+| ------------------------------------- | -------------------------------- |
+| `bookworm://catalog/categories`       | Catalog categories.              |
+| `bookworm://catalog/authors`          | Catalog authors.                 |
+| `bookworm://catalog/books/{id}`       | A book's Catalog details.        |
+| `bookworm://ratings/{bookId}/reviews` | Feedback and ratings for a book. |
+
+Resources provide stable JSON data for client context. Catalog and Rating
+remain the source systems; MCP Server does not cache or become authoritative
+for this data.
+
+## Prompts
+
+| Prompt                 | Purpose                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `recommend_books`      | Turns stated genre, price range, author, and reader-profile preferences into a structured Catalog-search task.              |
+| `summarize_rating`     | Guides a grounded summary of supplied review text, including themes and data limitations.                                   |
+| `analyze_book_quality` | Requests an evidence-based assessment of negative review patterns; the application applies final classification thresholds. |
+
+The Rating system calls `summarize_rating` and `analyze_book_quality` for its
+feedback-summary workflow. These prompts are reusable instructions, not data
+records or tool invocations.
+
+## Upstream dependencies
+
+- [[service|catalog-api]] supplies book search, book details, categories, and
+  authors over gRPC ([[query|ListBooksGrpc]], [[query|GetBookDetailsGrpc]],
+  [[query|ListCategoriesGrpc]], and [[query|ListAuthorsGrpc]]).
+- [[service|rating-api]] supplies book feedback for the MCP review tool and
+  resource.
+- [[system|identity-provider]] authenticates callers and supports the
+  server's authorization boundary.
+
+The MCP service has no application-owned data store. Upstream API availability
+and authorization determine whether a lookup can be completed.
+
+## Architecture
+
+<NodeGraph />

@@ -1,0 +1,50 @@
+---
+id: buyer
+name: Buyer
+version: 1.0.0
+identifier: id
+aggregateRoot: true
+summary: The Ordering profile associated with a customer and the Orders they place.
+owners:
+  - business-strategy
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Identifier associated with the authenticated customer.
+  - name: name
+    type: string
+    required: true
+    description: Buyer's name.
+  - name: address
+    type: object
+    required: true
+    description: Buyer's delivery address.
+    properties:
+      - name: street
+        type: string
+        required: true
+        description: Street address.
+      - name: city
+        type: string
+        required: true
+        description: City.
+      - name: province
+        type: string
+        required: true
+        description: Province or state.
+---
+
+## Overview
+
+The Buyer aggregate stores the customer's name and address used by Ordering.
+An Order refers to its Buyer by ID; the Buyer profile does not own Order
+lifecycle state.
+
+## Entity Properties
+
+<EntityPropertiesTable />
+
+## Relationships
+
+- A Buyer can place multiple [[entity|order]]s.

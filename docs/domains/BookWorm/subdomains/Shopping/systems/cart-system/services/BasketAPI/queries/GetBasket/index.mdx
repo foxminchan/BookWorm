@@ -1,0 +1,43 @@
+---
+id: GetBasket
+name: Get basket
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Returns the current basket and its item details.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/baskets
+  statusCodes: ["200", "404"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Retrieves a [[entity|basket]]. The operation defines no query or path parameters.
+
+<NodeGraph />
+
+## Query parameters and response
+
+This query has no documented request body or parameters. A `200` response
+returns an `application/json` `CustomerBasketDto`, containing an `id` and
+`items`. `404` returns `application/problem+json` with `ProblemDetails`.
+
+When the basket has items, BasketAPI enriches them by sending the
+[[query|GetBooksGrpc]] gRPC query to Catalog with the distinct item IDs.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="CustomerBasketDto JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

@@ -1,0 +1,51 @@
+---
+title: Unexpected request routing or rejection
+summary: Diagnose whether an unexpected outcome came from validation, Router decisions, or specialist handoffs.
+version: 1.0.0
+type: runbooks
+order: 2
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- A request is rejected when the customer expected an answer.
+- The Router selects a different specialist than expected.
+- A request receives a boundary response or an English-only response.
+- A mixed support and book request is only partially handled.
+
+## Diagnose
+
+1. Confirm the request entered the composed `/ag-ui` workflow.
+2. Check input validation first: empty text, detected suspicious patterns, or
+   truncation may affect what reaches the Router.
+3. For accepted input, compare the request's language and intent with the
+   routing rules in [[doc|guides/route-customer-requests]].
+4. For a mixed question, check whether QA handed the book-specific part to
+   Book Agent or whether Book Agent returned follow-up handling to Router.
+5. Distinguish a routing outcome from a failure: unrelated requests and
+   unsupported languages can receive intentional boundary responses.
+
+## Recover
+
+- If validation rejected the message, ask the customer to rephrase within the
+  supported input constraints.
+- If the request is outside BookWorm's scope or unsupported by the current
+  language handling, explain the boundary instead of repeatedly resubmitting
+  unchanged text.
+- If the route does not match the documented intent, record the sanitized
+  request category, validation result, chosen agent, and expected destination.
+- For mixed requests, make the supported portion and any limitation explicit.
+
+## Escalation
+
+Contact [[team\|contributor-team]] when accepted requests consistently select
+an unintended route. Include the environment, approximate time, request
+category, validation outcome, and observed handoff.
+
+<Footer />

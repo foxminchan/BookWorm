@@ -1,0 +1,18 @@
+edition = "2023";
+
+package book.v1;
+
+service BookGrpcService {
+  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse);
+}
+
+message ListCategoriesRequest {}
+
+message ListCategoriesResponse {
+  repeated CategoryItem categories = 1;
+}
+
+message CategoryItem {
+  string id = 1;
+  string name = 2;
+}

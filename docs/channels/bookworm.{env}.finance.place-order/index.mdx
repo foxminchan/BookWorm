@@ -1,0 +1,55 @@
+---
+id: bookworm.{env}.finance.place-order
+name: Order Placement Command Channel
+version: 1.0.0
+summary: |
+  Kafka topic carrying Finance's shared order-placement command, consumed by
+  Basket for checkout cleanup and Notification to submit a new-order email.
+owners:
+  - contributor-team
+address: bookworm.{env}.finance.place-order
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    description: BookWorm deployment environment.
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+[[service|order-orchestration]] publishes [[command|PlaceOrderCommand]] when
+checkout starts and may reissue it on placement timeout. [[service|basket-api]]
+consumes the command to delete the submitted basket, while
+[[service|notification-api]] independently consumes it to render and submit a
+new-order email. This is not a Notification-owned topic or proof that an order
+has been persisted.
+
+<ChannelInformation />
+
+## Contract and delivery
+
+The camelCase payload contains `id`, `creationDate`, `basketId`, `orderId`,
+`totalMoney`, and nullable `fullName` and `email` inside the BookWorm
+CloudEvents-compatible envelope. The Wolverine identity is
+`BookWorm.Contracts.PlaceOrderCommand`. Finance uses `OrderId` as the partition
+key; no cross-topic ordering or exactly-once email guarantee is implied.
+
+Basket reports cleanup through [[event|BasketDeletedCompleteIntegrationEvent]]
+or [[event|BasketDeletedFailedIntegrationEvent]]. Successful cleanup does not
+complete the Order or finish the Finance saga. Retrying the shared placement
+command can repeat both basket cleanup and notification work.
+
+Notification ignores `basketId` and skips blank email addresses. Otherwise it
+persists an email outbox record before SMTP submission and marks it sent after
+success. Rendering, persistence, and sender failures propagate. A repeated
+placement command can create another email record and submission.
+
+## Architecture
+
+<NodeGraph />

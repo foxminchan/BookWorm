@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Delete;
+namespace BookWorm.Catalog.Features.Categories.Delete;
 
 internal sealed class DeleteCategoryEndpoint : IEndpoint<NoContent, CategoryId, ISender>
 {
@@ -18,7 +18,7 @@ internal sealed class DeleteCategoryEndpoint : IEndpoint<NoContent, CategoryId, 
             .WithSummary("Delete Category")
             .WithDescription("Delete a category from the catalog system")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

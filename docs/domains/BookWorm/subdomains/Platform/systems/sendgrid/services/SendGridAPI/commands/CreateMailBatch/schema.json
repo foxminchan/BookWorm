@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CreateMailBatchResponse",
+	"description": "Response returned when SendGrid creates a mail batch.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["batch_id"],
+	"properties": {
+		"batch_id": {
+			"type": "string",
+			"minLength": 1,
+			"description": "Identifier for the newly created mail batch."
+		}
+	}
+}

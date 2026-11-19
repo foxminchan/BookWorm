@@ -1,0 +1,101 @@
+---
+id: adr-005-govern-agent-tools-per-agent
+name: "ADR-005: Grant tools according to each agent's responsibility"
+version: 1.0.0
+summary: Chat agents receive only the MCP tools or delegated capabilities needed for their role, with governance policies limiting tool use.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: chat-system
+  - type: service
+    id: chat-api
+  - type: agent
+    id: router-agent
+  - type: agent
+    id: book-agent
+  - type: agent
+    id: qa-agent
+  - type: agent
+    id: book-catalog-researcher
+  - type: agent
+    id: book-recommendation-researcher
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+---
+
+## Context
+
+The Chat host connects to a shared MCP server that exposes capabilities for
+multiple consumers. Giving every agent every available tool would blur agent
+responsibilities and unnecessarily widen the consequences of an invocation.
+Local delegation between agents also creates capabilities that are distinct
+from the MCP tools, so both types of access need an explicit owner and policy.
+
+## Decision
+
+Chat configures tools per agent definition and applies an explicit
+per-agent governance policy. Router and QA have no Catalog MCP tools. Book
+Agent and its Catalog and recommendation researchers receive only the four
+declared Catalog read tools: `search_catalog`, `get_book`, `list_categories`,
+and `list_authors`. Those server tools do not create or update records.
+Book Agent's researcher delegation is configured separately from its direct
+MCP tools.
+
+The client-side tool list is not the only authorization boundary. MCP
+requests remain subject to server authentication, authorization filters, and
+server-side governance, as described in the MCP system's
+[[adr|adr-005-authenticate-and-govern-mcp-calls]]. Registering a tool for an
+agent does not bypass those checks.
+
+## Consequences
+
+- Tool availability reflects the agent's documented responsibility rather
+  than the full server capability list.
+- Adding a tool requires updating the agent definition and its governance
+  policy together, and confirming that the MCP server still authorizes the
+  intended operation.
+- Delegated subagents remain explicit capabilities and must be governed
+  independently from direct tool invocation; the researchers inherit
+  Book Agent's approved read capabilities, not a broader server tool set.
+- Router and QA can answer only from their supplied context and instructions;
+  they do not have live Catalog MCP lookup capability.
+- Per-agent policy and tool declarations add configuration to maintain and
+  test as agents or server capabilities change.
+
+## Alternatives considered
+
+### Give every agent every MCP tool
+
+This would reduce per-agent configuration, but unnecessarily expand the
+capability of agents that do not need catalog access and make it harder to
+reason about the consequences of a tool invocation.
+
+### Rely only on the MCP server's authorization
+
+Server-side authorization remains required, but by itself it would not
+express the different responsibilities of agents within one authorized Chat
+client. Client-side per-agent allow-lists provide a narrower capability
+boundary in addition to server enforcement.
+
+### Treat delegated researchers as ordinary MCP tools
+
+Researchers are agent capabilities that can themselves use approved MCP
+tools. Governing only their underlying MCP calls would omit the separate
+delegation decision made by Book Agent, so delegation is configured and
+reviewed explicitly.
+
+## Change review
+
+When adding or removing a capability, review the agent's documented
+responsibility, its direct tool declarations, the relevant governance policy,
+the server-side authorization rules, and any delegation path together. Verify
+that agents without a business need cannot invoke the new capability and that
+tool results continue to be treated as data from the owning system rather
+than as authorization to change its records.

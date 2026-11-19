@@ -24,12 +24,10 @@ test_args=(
   --no-restore
   --report-trx
   --coverage
-  --coverage-settings Coverage.runsettings
+  --coverage-output-format xml
+  --coverage-settings coverage.settings
   --results-directory ./test-results
   --github-reporter-style full
-  --hangdump
-  --hangdump-timeout "$TEST_HANG_TIMEOUT"
-  --crashdump
   -p:SolutionDir="$GITHUB_WORKSPACE/"
 )
 if [[ "$NO_BUILD" == "true" ]]; then
@@ -55,7 +53,8 @@ mapfile -d '' unit_projects < <(
     -print0 | sort -z
 )
 for project in "${unit_projects[@]}"; do
-  run_test "$project"
+  project_name=$(basename "$project" .csproj)
+  run_test "$project" --allure-results-directory ./allure-results/unit --report-html-filename "${project_name}.html"
 done
 
 consumer_projects=(
@@ -67,7 +66,8 @@ consumer_projects=(
   src/Services/Rating/BookWorm.Rating.ContractTests/BookWorm.Rating.ContractTests.csproj
 )
 for project in "${consumer_projects[@]}"; do
-  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactConsumer]'
+  project_name=$(basename "$project" .csproj)
+  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactConsumer]' --allure-results-directory ./allure-results/contract --report-html-filename "${project_name}.PactConsumer.html"
 done
 
 provider_projects=(
@@ -79,5 +79,6 @@ provider_projects=(
   src/Services/Scheduler/BookWorm.Scheduler.ContractTests/BookWorm.Scheduler.ContractTests.csproj
 )
 for project in "${provider_projects[@]}"; do
-  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactProvider]'
+  project_name=$(basename "$project" .csproj)
+  run_test "$project" --treenode-filter '/*/*/*/*[Category=PactProvider]' --allure-results-directory ./allure-results/contract --report-html-filename "${project_name}.PactProvider.html"
 done

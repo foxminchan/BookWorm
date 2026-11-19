@@ -1,0 +1,38 @@
+---
+title: Introduction and Goals
+summary: BookWorm's business purpose, essential requirements, priority quality scenarios, and stakeholder concerns.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+BookWorm is an online bookstore and commerce platform for discovering books, building a basket, checking out, and managing the accepted order lifecycle. Reviews, conversational assistance, and shared platform capabilities support that core journey.
+
+This chapter explains why the platform exists, what it must do at a system level, which architectural qualities matter most, and who needs the architecture. It describes the complete BookWorm platform, not an individual service or deployment unit. Detailed responsibilities and contracts remain in the relevant catalog entries.
+
+## Business outcomes and architectural drivers
+
+The architecture is driven by the need to:
+
+- make book discovery and purchase a coherent customer journey;
+- preserve trustworthy product and order information across capability boundaries;
+- let Catalog, Shopping, Ordering, Reviews, Conversational, and Platform retain clear ownership;
+- support changes through explicit, compatible contracts rather than shared mutable state.
+
+## Chapter map
+
+| Page                                                               | What it establishes                                                     |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [[doc\|arc42/01-introduction-and-goals/001-introduction]]          | Business purpose, system boundary, and intended readers                 |
+| [[doc\|arc42/01-introduction-and-goals/002-requirements-overview]] | Concise, traceable system-level capability requirements                 |
+| [[doc\|arc42/01-introduction-and-goals/003-quality-goals]]         | Prioritized quality scenarios and how to assess them                    |
+| [[doc\|arc42/01-introduction-and-goals/004-stakeholders]]          | Stakeholder concerns that shape the architecture and this documentation |
+
+## Status and scope of this chapter
+
+The requirements and quality goals are an architecture-level synthesis of the current catalog, not a replacement for an approved product backlog or service acceptance criteria. The repository does not define stakeholder-approved, system-wide numerical service-level targets or named stakeholder contacts; this chapter makes those gaps explicit rather than implying commitments.
+
+Use [[doc|arc42/03-context-and-scope]] for the platform boundary and neighbors, [[doc|arc42/02-architecture-constraints]] for cross-cutting constraints, and [[doc|arc42/04-solution-strategy]] for the architectural responses to these goals.

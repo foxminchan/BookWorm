@@ -11,9 +11,8 @@ internal sealed class IncludeStringEvaluator : IEvaluator
     public IQueryable<T> GetQuery<T>(IQueryable<T> query, ISpecification<T> specification)
         where T : class
     {
-        return specification.IncludeStrings.Aggregate(
-            query,
-            (current, includeString) => current.Include(includeString)
+        return specification.IncludeStrings.Aggregate(query, (current, includeString) =>
+            current.Include(includeString)
         );
     }
 }

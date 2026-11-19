@@ -1,0 +1,155 @@
+---
+id: order-lifecycle
+name: Order lifecycle and status transitions
+version: 1.0.0
+summary: >-
+  A buyer's checkout creates a New Order, Finance coordinates the post-order
+  work, and Ordering moves the order to Completed or Cancelled according to
+  its own state transitions.
+owners:
+  - contributor-team
+badges:
+  - content: Business Process
+    backgroundColor: purple
+    textColor: purple
+steps:
+  - id: customer
+    title: Customer submits checkout
+    actor:
+      name: Customer
+    next_step:
+      id: create-order
+      label: Submit the basket to Ordering
+  - id: create-order
+    title: CreateOrder command
+    message:
+      id: CreateOrder
+      version: 1.0.0
+    next_step:
+      id: order-api
+      label: Build the Order from the current basket
+  - id: order-api
+    title: Ordering API creates the New order
+    summary: >-
+      The order API authenticates the buyer, resolves the current basket and
+      Catalog prices, and writes the Order and item snapshot in the order
+      database.
+    service:
+      id: order-api
+      version: 1.0.0
+    next_steps:
+      - id: order-db
+        label: Persist the accepted purchase
+      - id: finance-saga
+        label: Publish the checkout event for Finance
+  - id: order-db
+    title: Order Database stores the accepted purchase
+    container:
+      id: order-database
+      version: 1.0.0
+    next_steps:
+      - id: order-complete
+        label: Order is completed
+      - id: order-cancel
+        label: Order is cancelled
+  - id: finance-saga
+    title: Finance saga tracks basket cleanup and notifications
+    service:
+      id: order-orchestration
+      version: 1.0.0
+    next_step:
+      id: order-complete
+      label: Wait for explicit ordering status changes
+  - id: order-complete
+    title: Ordering publishes order-completion status
+    message:
+      id: OrderStatusChangedToCompleteIntegrationEvent
+      version: 1.0.0
+    next_step:
+      id: notification-complete
+      label: Notification may emit the completion email
+  - id: order-cancel
+    title: Ordering publishes order-cancellation status
+    message:
+      id: OrderStatusChangedToCancelIntegrationEvent
+      version: 1.0.0
+    next_step:
+      id: notification-cancel
+      label: Notification may emit the cancellation email
+  - id: notification-complete
+    title: Notification renders and sends the completion message
+    service:
+      id: notification-api
+      version: 1.0.0
+  - id: notification-cancel
+    title: Notification renders and sends the cancellation message
+    service:
+      id: notification-api
+      version: 1.0.0
+---
+
+## Purpose and scope
+
+This flow explains the lifecycle of an accepted BookWorm purchase. It begins at
+checkout, continues through the handoff into Finance, and focuses on the point at
+which [[domain|ordering]] changes an Order from **New** to a terminal status.
+
+The key distinction is that Shopping owns the basket and Finance owns the saga
+around cleanup and notification work, while Ordering remains the owner of the
+business state that represents the accepted purchase.
+
+## Business context
+
+The order lifecycle is the backbone of the commerce flow. A checkout is not just
+an API call; it is a handoff from the ephemeral shopping experience into a
+business record that must remain valid even after the basket is no longer active.
+
+BookWorm intentionally separates the order's business state from the operational
+work triggered after checkout. The Basket is a temporary, user-facing collection
+of desired items; the Order is the contractual, traceable record of what was
+accepted and what happened afterward. This distinction is what allows Finance,
+notifications, and downstream systems to react without rewriting the source of
+truth.
+
+### Boundary rules
+
+- Shopping creates the purchase intent and hands it to Ordering.
+- Ordering owns the Order record and its lifecycle transitions.
+- Finance can trigger cleanup and notification work, but it does not own Order
+  state.
+- Notification delivery is a downstream effect, not the source of truth for the
+  actual Order outcome.
+
+## Participants and responsibilities
+
+| Participant                      | Responsibility                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Customer                         | Completes checkout and expects an accepted purchase to transition through a clear lifecycle.                       |
+| [[service\|order-api]]           | Creates the Order from the current basket and stores the accepted purchase in the ordering system.                 |
+| [[database\|order-database]]     | Keeps the authoritative order record and its status transitions.                                                   |
+| [[service\|order-orchestration]] | Coordinates Finance-side follow-up work such as cleanup and order notifications.                                   |
+| [[service\|notification-api]]    | Sends customer-facing completion or cancellation notifications when Ordering publishes the relevant status change. |
+
+## State and recovery model
+
+The Order is the source of truth, while terminal status changes are the durable
+business events that other systems respond to. The intended lifecycle is simple:
+
+- Creation produces a new order backed by the accepted cart snapshot.
+- Ordering may complete or cancel it according to business rules and process
+  outcomes.
+- Finance can act on the resulting status change without owning the order itself.
+
+Because status changes are explicit rather than inferred from downstream actions,
+operators can reconcile with less ambiguity. If a notification fails, the order
+state remains valid; the error is in the delivery path, not the purchase record.
+
+## Why this flow matters
+
+This flow captures the difference between a transaction in progress and a
+committed business outcome. It ensures that Ordering remains accountable for the
+purchase record, while Finance and notification systems remain downstream
+participants that handle side effects. That separation is critical for auditability,
+customer trust, and operational troubleshooting.
+
+<NodeGraph />

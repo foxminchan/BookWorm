@@ -1,0 +1,80 @@
+---
+title: Checkout basket cleanup stalled or failed
+summary: Investigate Finance basket-cleanup retries without confusing saga progress with Order status.
+version: 1.0.0
+type: runbooks
+order: 1
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Symptoms
+
+- An Order was created, but the buyer's basket still appears populated.
+- The Finance workflow has not reported a basket-deletion outcome.
+- A cancellation notification was requested even though the Order still reads
+  **New**.
+- The Order is no longer visible after a basket-deletion failure.
+
+## Diagnose
+
+1. Retrieve the Order using `GET /api/v1/orders/{id}` when it is visible. Record
+   its status separately from Finance's saga state.
+2. Correlate Ordering and Finance activity by Order ID. Check whether
+   [[event\|UserCheckedOutIntegrationEvent]] was published and whether Finance
+   created the corresponding saga.
+3. In [[service\|order-orchestration]], inspect the processing of
+   [[command|PlaceOrderCommand]] and the Basket deletion-result messages:
+   [[event|BasketDeletedCompleteIntegrationEvent]] and
+   [[event|BasketDeletedFailedIntegrationEvent]].
+4. Interpret the result:
+   - Success causes Finance to report
+     [[command\|DeleteBasketCompleteCommand]]; it does not complete the Order.
+   - Failure causes Finance to report
+     [[command\|DeleteBasketFailedCommand]]. Ordering soft-deletes the Order
+     if it still exists, without changing its business status.
+   - With no result, Finance retries according to its persisted timeout
+     workflow. The checked-in configuration uses a 30-minute delay and
+     `MaxAttempts: 3`: the initial command plus two reissues, with exhaustion
+     on the third timeout.
+5. After retry exhaustion, Finance marks its saga Cancelled and can request a
+   cancellation email when recipient details are available. It does not call
+   Ordering's cancellation endpoint.
+
+The current Finance behavior does not cancel the timeout after successful
+basket cleanup. A still-open saga can therefore receive later timeouts and
+reissue [[command|PlaceOrderCommand]]; the command is consumed by both Basket and
+Notification, so repeated processing can repeat work.
+
+## Recover
+
+- Confirm the Order's actual status through Ordering; do not infer it from
+  basket contents, Finance saga state, or an email.
+- If an explicit basket failure was reported, treat the resulting soft delete
+  separately from Order status. Do not issue a completion or cancellation
+  operation just to make the visible state match the saga.
+- If the saga has no recorded outcome after its configured retries, inspect
+  the relevant service and message-processing logs, then escalate to the
+  responsible team. Do not manually edit saga or Order records as a first
+  response.
+- If repeated [[command|PlaceOrderCommand]] processing is observed after cleanup
+  succeeded, preserve the Order ID, message timestamps, and saga history for
+  investigation; do not assume Notification delivery was exactly once.
+
+## Escalation
+
+- Contact [[team\|contributor-team]] for Finance saga and message-processing
+  issues.
+- Contact [[team\|business-strategy]] for Order API, Order status, or
+  soft-delete behavior.
+- Include the Order ID, environment, observed saga state, message outcome,
+  and timestamps in the incident report.
+
+See [[adr\|adr-004-finance-bounded-scheduled-retries]] and
+[[adr\|adr-005-finance-separate-workflow-and-order-status]].
+
+<Footer />

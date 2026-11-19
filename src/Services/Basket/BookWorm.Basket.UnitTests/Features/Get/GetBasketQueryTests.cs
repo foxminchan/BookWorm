@@ -138,8 +138,7 @@ public sealed class GetBasketQueryTests
         var original = new GetBasketQuery();
 
         // Act
-        var copy = original with
-        { };
+        var copy = original with { };
 
         // Assert
         copy.ShouldBe(original);

@@ -1,0 +1,34 @@
+---
+const { CatalogDashboard, Tiles, Tile } = Astro.props.components;
+---
+
+<div class='not-prose'>
+	<CatalogDashboard
+		title='BookWorm Catalog'
+		description='Discover, explore, and understand the event-driven architecture of BookWorm. This internal platform provides a comprehensive view of our systems, services, and message contracts'
+	/>
+	<hr class='my-6 border-t border-gray-200 dark:border-gray-700' />
+	<Tiles columns={3} title='Quick Links'>
+		<Tile
+			icon='ChartBarIcon'
+			iconColor='text-purple-500'
+			href='https://sonarcloud.io/summary/overall?id=foxminchan_BookWorm&branch=main'
+			title='Code Quality'
+			description='View SonarCloud analysis and metrics'
+		/>
+		<Tile
+			icon='DocumentTextIcon'
+			iconColor='text-green-500'
+			href='/custom/reports'
+			title='Test Reports'
+			description='View test reports and coverage'
+		/>
+		<Tile
+			icon='ShieldCheckIcon'
+			iconColor='text-yellow-500'
+			href='https://scorecard.dev/viewer/?uri=github.com/foxminchan/BookWorm'
+			title='OSSF Scorecard'
+			description='Check the OpenSSF Scorecard for security best practices'
+		/>
+	</Tiles>
+</div>

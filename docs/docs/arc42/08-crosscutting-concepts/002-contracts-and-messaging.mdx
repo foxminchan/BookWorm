@@ -1,0 +1,40 @@
+---
+title: Contracts and Messaging
+summary: Owned APIs and events connect independently maintained BookWorm capabilities without sharing business state.
+owners:
+  - contributor-team
+badges:
+  - content: Cross-cutting Concept
+    backgroundColor: purple
+    textColor: purple
+---
+
+BookWorm's services coordinate through explicit interfaces and integration messages. The producing capability owns the meaning and lifecycle of its data, consumers use the published contract rather than reaching into another service's database. This keeps changes reviewable and business rules with their owners.
+
+## Contract forms
+
+- **HTTP APIs** expose service-owned operations, with OpenAPI documents defining the REST contracts where provided. Use the owning service's contract rather than coupling a client to its internal handlers or persistence model.
+- **gRPC APIs** use Protocol Buffer definitions for the documented [[service|basket-api]] and [[service|catalog-api]] interfaces. Schema changes must be checked for compatibility before consumers adopt them.
+- **Integration events** use shared contract types and explicit message metadata. The engineering standards prescribe the `IntegrationEvent` naming pattern and the ownership and identity metadata used for routing.
+
+Contracts describe the boundary, not the implementation's persistence model. For example, [[event|FeedbackCreatedIntegrationEvent]] communicates a feedback change without making Catalog authoritative for the source feedback data.
+
+## Event transport and correlation
+
+Where a broker connection is configured, the shared Wolverine integration sets up Kafka transport with CloudEvents-compatible mapping and per-service PostgreSQL durable outbox and inbox policies. The [[system|product-catalog-system]] and [[system|rating-system]] use this path for their documented feedback projection. The event framework returns without configuring a transport when no broker connection string is present, so the durable messaging path is conditional on host configuration.
+
+The envelope policy supplies message type, destination, response address, and source metadata when available. It also propagates request and user identifiers from an originating message, helping relate downstream processing to its initiating request. These identifiers are correlation context, not authorization credentials.
+
+Durable storage helps preserve message work across process interruptions, but it does not establish exactly-once business effects. Consumers must tolerate repeated delivery and use owned state to determine whether work is already complete.
+
+## Compatibility and change
+
+Treat a contract change as a producer-and-consumer change:
+
+1. Identify the owning service and all known consumers.
+2. Prefer additive changes when they preserve existing consumer behavior.
+3. Run consumer-driven message contract tests and provider verification for asynchronous contracts.
+4. Run Protocol Buffer lint and breaking-change checks against the committed baseline when changing a `.proto` schema.
+5. Update the service and flow documentation when semantics, not just field shape, change.
+
+See [[doc|arc42/05-building-block-view]] for ownership boundaries, [[doc|arc42/06-runtime-view]] for representative message flows, and [[doc|development/004-engineering-standards]] for the repository's contract conventions.

@@ -59,6 +59,10 @@ export const orderingKeys = {
       [...orderingBase, "orders", "list", query] as const,
     details: () => [...orderingBase, "orders", "detail"] as const,
     detail: (id: string) => [...orderingBase, "orders", "detail", id] as const,
+    history: (id: string) =>
+      [...orderingBase, "orders", "history", id] as const,
+    summary: (id: string, query?: unknown) =>
+      [...orderingBase, "orders", "summary", id, query] as const,
   },
 
   buyers: {

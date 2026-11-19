@@ -1,0 +1,96 @@
+---
+summary: Search and filter books with paging, sorting, price, and relationship criteria.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. Search and filter books
+
+The `QUERY` request sends filter criteria in a JSON request body and returns `200` with the matching `BookDto` array.
+
+### Filter details
+
+- `pageIndex` and `pageSize` control paging.
+- `orderBy` and `isDescending` control sorting.
+- `search` performs text search; `minPrice` and `maxPrice` constrain price.
+- `categoryId`, `publisherId`, and `authorIds` filter by arrays of relationship IDs.
+
+### Example response
+
+<CodeGroup dropdown>
+
+```ts
+const books: BookDto[] = [
+	{
+		id: "44444444-4444-4444-4444-444444444444",
+		name: "Foundation",
+		price: 18.99,
+		isAvailable: true,
+	},
+];
+```
+
+</CodeGroup>
+
+### Using this example
+
+Render the matching books and keep the current filters when requesting the next page.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```ts list-books.ts
+type BookDto = {
+	id: string;
+	name: string;
+	price: number;
+	isAvailable: boolean;
+};
+
+const query = {
+	pageIndex: 1,
+	pageSize: 20,
+	orderBy: "Name",
+	isDescending: false,
+	search: "foundation",
+	minPrice: 10,
+	maxPrice: 30,
+	categoryId: ["11111111-1111-1111-1111-111111111111"],
+	authorIds: ["33333333-3333-3333-3333-333333333333"],
+};
+
+const response = await fetch("https://api.example.com/api/v1/books", {
+	method: "QUERY",
+	headers: {
+		"Content-Type": "application/json",
+	},
+	body: JSON.stringify(query),
+});
+if (!response.ok) {
+	throw new Error(`ListBooks failed with ${response.status}`);
+}
+
+const books = (await response.json()) as BookDto[];
+console.log(`Found ${books.length} books`);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle an empty result
+
+No matches return `200` and `[]`.
+
+## 3. Reject invalid filters
+
+Malformed UUIDs, non-numeric price bounds, or invalid paging values return `400` with validation problem details.

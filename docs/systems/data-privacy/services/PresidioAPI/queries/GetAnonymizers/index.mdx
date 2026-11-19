@@ -1,0 +1,48 @@
+---
+id: GetAnonymizers
+name: Get anonymizers
+version: 1.0.0
+badges:
+  - content: Privacy
+    backgroundColor: red
+    textColor: red
+summary: Returns the names of the built-in anonymization operators supported by Presidio Anonymizer.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /anonymizers
+  statusCodes: ["200"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+The `GetAnonymizers` query lists the built-in operators available from [[service|PresidioAPI]] Anonymizer.
+
+<NodeGraph />
+
+## Response
+
+A `200 OK` response returns an array of supported operator names, such as `hash`, `mask`, `redact`, `replace`, and `encrypt`.
+
+### Query using cURL
+
+<CodeGroup dropdown>
+
+```sh GetAnonymizers.sh
+curl "$ANONYMIZER_URL/anonymizers"
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="GetAnonymizers response JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

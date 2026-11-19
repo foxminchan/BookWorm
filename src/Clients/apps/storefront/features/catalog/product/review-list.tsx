@@ -1,10 +1,10 @@
 "use client";
 
-import cn from "classnames";
 import { Star, User } from "lucide-react";
 
 import type { Feedback } from "@workspace/types/rating";
 import { Separator } from "@workspace/ui/components/separator";
+import { cn } from "@workspace/ui/lib/utils";
 
 import { Pagination } from "@/components/pagination";
 

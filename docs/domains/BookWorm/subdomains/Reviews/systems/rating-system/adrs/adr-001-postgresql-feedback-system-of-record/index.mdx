@@ -1,0 +1,92 @@
+---
+id: adr-001-postgresql-feedback-system-of-record
+name: "ADR-001: Use PostgreSQL as the feedback system of record"
+version: 1.0.0
+summary: Rating Database (PostgreSQL) is the authoritative store for individual customer feedback; no other domain may read or write feedback records directly.
+status: accepted
+date: 2026-10-25
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: rating-system
+  - type: service
+    id: rating-api
+  - type: container
+    id: rating-database
+  - type: entity
+    id: feedback
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+Individual feedback has lifecycle rules, reviewer details, a rating, and an
+optional comment. [[domain|catalog]] needs a rating summary for product discovery, but
+storing or querying individual [[entity|feedback]] there would make Catalog
+responsible for [[domain|reviews]] data and couple the two bounded contexts.
+The source of truth must also keep the feedback identity and reviewer
+constraints together so that creation, listing, and deletion use one
+authoritative record rather than a cross-domain copy.
+
+## Decision
+
+[[container|rating-database]], a PostgreSQL database, is the single
+authoritative store for the [[entity|feedback]] aggregate. Only
+[[service|rating-api]] writes feedback. Other domains use the published
+integration contracts and do not access the Rating Database directly.
+
+The service validates ratings from 0 through 5 and persists reviewer
+information, the referenced book ID, and the optional comment with the
+feedback record. The database enforces uniqueness for a book and reviewer
+name combination. Catalog receives only the identifiers and rating needed to
+maintain its own derived summary; it does not receive review text or reviewer
+details as part of those projection events.
+
+## Consequences
+
+- Feedback lifecycle changes retain relational integrity and transactional
+  consistency in one store.
+- Catalog maintains only a rebuildable rating projection, not feedback
+  records.
+- Rating API and the [[agent|rating-agent]] depend on the database being available for
+  feedback operations and reads.
+- Cross-domain consumers must tolerate eventual consistency rather than
+  querying feedback synchronously.
+- Rating API availability and its validation rules are required for feedback
+  creation; the database does not replace API-level validation of the rating
+  range.
+- The database's uniqueness rule is based on book and reviewer name, not a
+  verified customer identity. Callers must not infer stronger identity
+  verification from that constraint.
+- A feedback record can refer to a book ID that Catalog later reports as
+  missing. That condition is handled through the separate compensating
+  integration flow rather than a direct cross-database constraint.
+- Listing and summarization depend on PostgreSQL reads; generated summaries
+  and Catalog's rating projection are separate derived views, not alternate
+  stores for individual feedback.
+
+## Alternatives considered
+
+### Store individual feedback in Catalog
+
+This would make review details available alongside book records, but would
+transfer Reviews lifecycle and customer-content ownership into the Catalog
+domain. Catalog maintains only the rating summary it needs.
+
+### Let consumers read the Rating Database directly
+
+Direct access would couple downstream services and agents to the Rating
+schema and bypass the Rating API's validation, authorization, and integration
+contracts. Consumers use supported service queries or published events.
+
+### Use Catalog's rating projection as the review source
+
+The projection contains aggregate rating information, not individual review
+records or their lifecycle. It cannot replace the authoritative feedback
+store.

@@ -1,19 +1,19 @@
 import { JSX } from "react";
 
 import { render } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import booksApiClient from "@workspace/api-client/catalog/books";
 
 import { useBookSearchActions } from "@/hooks/useBookSearchActions";
 
 const registeredActions: Array<{
   name: string;
+  description?: string;
+  webmcp?: unknown;
   handler: (args: any) => Promise<any>;
   render: (args: any) => JSX.Element;
 }> = [];
-
-const { mockList } = vi.hoisted(() => ({
-  mockList: vi.fn(),
-}));
 
 vi.mock("@copilotkit/react-core/v2", () => ({
   useFrontendTool: vi.fn((config) => {
@@ -21,36 +21,43 @@ vi.mock("@copilotkit/react-core/v2", () => ({
   }),
 }));
 
-vi.mock("@workspace/api-client/catalog/books", () => ({
-  default: {
-    list: mockList,
-  },
-}));
-
 describe("useBookSearchActions", () => {
+  let listSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     registeredActions.length = 0;
     vi.clearAllMocks();
+    listSpy = vi.spyOn(booksApiClient, "list");
+  });
+
+  afterEach(() => {
+    listSpy.mockRestore();
   });
 
   it("registers searchBooks and returns results", async () => {
-    mockList.mockResolvedValue({
+    listSpy.mockResolvedValue({
       items: [
         { id: "1", title: "Title 1", author: "Author", price: 10 },
         { id: "2", title: "Title 2", author: "Author", price: 12 },
       ],
       totalCount: 2,
-    });
+    } as never);
 
     useBookSearchActions();
 
     const action = registeredActions.find((a) => a.name === "searchBooks");
 
     expect(action).toBeDefined();
+    expect(action?.description).toBeTruthy();
+    expect(action?.webmcp).toEqual({
+      annotations: {
+        readOnlyHint: true,
+      },
+    });
 
     const result = await action?.handler({ query: "test", maxResults: 5 });
 
-    expect(mockList).toHaveBeenCalledWith({
+    expect(listSpy).toHaveBeenCalledWith({
       search: "test",
       pageSize: 5,
     });
@@ -67,7 +74,7 @@ describe("useBookSearchActions", () => {
   });
 
   it("renders search results in render function", async () => {
-    mockList.mockResolvedValue({ items: [], totalCount: 0 });
+    listSpy.mockResolvedValue({ items: [], totalCount: 0 } as never);
 
     useBookSearchActions();
 

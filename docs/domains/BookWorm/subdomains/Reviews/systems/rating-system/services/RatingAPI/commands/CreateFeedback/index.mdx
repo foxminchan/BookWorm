@@ -1,0 +1,44 @@
+---
+id: CreateFeedback
+name: Create feedback
+version: 1.0.0
+badges:
+  - content: Reviews
+    backgroundColor: purple
+    textColor: purple
+summary: Creates a feedback rating for a Catalog book and returns its generated UUID.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /api/v1/feedbacks
+  statusCodes: ["200", "400"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+Creates a [[entity|feedback]] record for a [[entity|book]]. The request includes the book UUID,
+reviewer name, optional comment, and an integer rating from 0 through 5.
+
+<NodeGraph />
+
+## Request and response
+
+Send `application/json` with the required fields from the
+`CreateFeedbackCommand` contract. A successful `200` response returns the
+generated feedback UUID as a JSON string.
+
+`400` returns `application/problem+json` with
+`HttpValidationProblemDetails`.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="CreateFeedbackCommand JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

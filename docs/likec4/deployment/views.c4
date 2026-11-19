@@ -1,0 +1,6 @@
+views {
+  deployment view bookwormDeployment {
+    title 'BookWorm Azure deployment'
+    include azure.**, external.**
+  }
+}

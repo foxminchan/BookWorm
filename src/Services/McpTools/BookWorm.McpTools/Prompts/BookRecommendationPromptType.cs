@@ -19,28 +19,24 @@ public static class BookRecommendationPromptType
             string? readerProfile = null
     )
     {
-        var constraints = new List<string>();
-        foreach (
-            var (value, label, prefix) in new[]
-            {
-                (genre, "Genre/Topic", string.Empty),
-                (priceRange, "Price range", "$"),
-                (preferredAuthors, "Preferred authors", string.Empty),
-                (readerProfile, "Reader profile", string.Empty),
-            }
-        )
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                continue;
-            }
+        (string? Value, string Label, string Prefix)[] inputs =
+        [
+            (genre, "Genre/Topic", string.Empty),
+            (priceRange, "Price range", "$"),
+            (preferredAuthors, "Preferred authors", string.Empty),
+            (readerProfile, "Reader profile", string.Empty),
+        ];
 
-            constraints.Add($"- {label}: {prefix}{value}");
-        }
+        List<string> constraints =
+        [
+            .. inputs
+                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                .Select(x => $"- {x.Label}: {x.Prefix}{x.Value}"),
+        ];
 
         var constraintText =
             constraints.Count > 0
-                ? string.Join("\n", constraints)
+                ? string.Join('\n', constraints)
                 : "- No specific constraints (recommend broadly)";
 
         var preferencesJson = JsonSerializer.Serialize(

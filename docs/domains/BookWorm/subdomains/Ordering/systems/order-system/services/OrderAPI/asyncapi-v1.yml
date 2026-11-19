@@ -1,0 +1,243 @@
+asyncapi: 3.1.0
+info:
+  title: Order API integration messages
+  version: 1.0.0
+  description: |
+    AsyncAPI contract for Order API's Finance integration. Order API publishes
+    checkout and Order status events, and consumes basket-cleanup outcomes.
+defaultContentType: application/cloudevents+json
+channels:
+  userCheckedOut:
+    address: bookworm.{env}.ordering.user-checked-out
+    description: Order API publishes this event after placing an Order.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      userCheckedOut:
+        $ref: "#/components/messages/UserCheckedOutIntegrationEvent"
+  orderStatusChangedToComplete:
+    address: bookworm.{env}.ordering.order-status-change-to-complete
+    description: Order API publishes this event after completing an Order.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      orderStatusChangedToComplete:
+        $ref: "#/components/messages/OrderStatusChangedToCompleteIntegrationEvent"
+  orderStatusChangedToCancel:
+    address: bookworm.{env}.ordering.order-status-change-to-cancel
+    description: Order API publishes this event after cancelling an Order.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      orderStatusChangedToCancel:
+        $ref: "#/components/messages/OrderStatusChangedToCancelIntegrationEvent"
+  deleteBasketComplete:
+    address: bookworm.{env}.finance.delete-basket-complete
+    description: Finance publishes this command after successful basket cleanup.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      deleteBasketComplete:
+        $ref: "#/components/messages/DeleteBasketCompleteCommand"
+  deleteBasketFailed:
+    address: bookworm.{env}.finance.delete-basket-failed
+    description: Finance publishes this command when basket cleanup fails.
+    parameters:
+      env:
+        $ref: "#/components/parameters/env"
+    messages:
+      deleteBasketFailed:
+        $ref: "#/components/messages/DeleteBasketFailedCommand"
+operations:
+  sendUserCheckedOut:
+    action: send
+    channel:
+      $ref: "#/channels/userCheckedOut"
+    summary: Publish checkout details
+    messages:
+      - $ref: "#/channels/userCheckedOut/messages/userCheckedOut"
+  sendOrderStatusChangedToComplete:
+    action: send
+    channel:
+      $ref: "#/channels/orderStatusChangedToComplete"
+    summary: Publish completed Order details
+    messages:
+      - $ref: "#/channels/orderStatusChangedToComplete/messages/orderStatusChangedToComplete"
+  sendOrderStatusChangedToCancel:
+    action: send
+    channel:
+      $ref: "#/channels/orderStatusChangedToCancel"
+    summary: Publish cancelled Order details
+    messages:
+      - $ref: "#/channels/orderStatusChangedToCancel/messages/orderStatusChangedToCancel"
+  receiveDeleteBasketComplete:
+    action: receive
+    channel:
+      $ref: "#/channels/deleteBasketComplete"
+    summary: Receive successful basket-cleanup outcomes
+    messages:
+      - $ref: "#/channels/deleteBasketComplete/messages/deleteBasketComplete"
+  receiveDeleteBasketFailed:
+    action: receive
+    channel:
+      $ref: "#/channels/deleteBasketFailed"
+    summary: Receive failed basket-cleanup outcomes
+    messages:
+      - $ref: "#/channels/deleteBasketFailed/messages/deleteBasketFailed"
+components:
+  parameters:
+    env:
+      description: BookWorm deployment environment.
+      enum:
+        - development
+        - staging
+        - production
+      default: development
+  messages:
+    UserCheckedOutIntegrationEvent:
+      name: UserCheckedOutIntegrationEvent
+      title: User checked out
+      summary: An Order was placed and checkout details are ready for Finance.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderIntegrationEventPayload"
+    OrderStatusChangedToCompleteIntegrationEvent:
+      name: OrderStatusChangedToCompleteIntegrationEvent
+      title: Order completed
+      summary: An Order transitioned from New to Completed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderIntegrationEventPayload"
+    OrderStatusChangedToCancelIntegrationEvent:
+      name: OrderStatusChangedToCancelIntegrationEvent
+      title: Order cancelled
+      summary: An Order transitioned from New to Cancelled.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderIntegrationEventPayload"
+    DeleteBasketCompleteCommand:
+      name: DeleteBasketCompleteCommand
+      title: Basket deletion completed
+      summary: Finance reports that basket cleanup completed successfully.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DeleteBasketCompletePayload"
+    DeleteBasketFailedCommand:
+      name: DeleteBasketFailedCommand
+      title: Basket deletion failed
+      summary: Finance reports that basket cleanup failed.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DeleteBasketFailedPayload"
+  schemas:
+    OrderIntegrationEventPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - basketId
+        - fullName
+        - email
+        - totalMoney
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier assigned to the integration event.
+        creationDate:
+          type: string
+          format: date-time
+          description: UTC timestamp when the integration event was created.
+        orderId:
+          type: string
+          format: uuid
+          description: Identifier of the Order.
+        basketId:
+          type: string
+          format: uuid
+          description: |
+            UUID serialized as basketId. The current EventMapper supplies the
+            Order's BuyerId for this field.
+        fullName:
+          type:
+            - string
+            - "null"
+          description: Customer name, when available.
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+          description: Customer email, when available.
+        totalMoney:
+          type: number
+          format: double
+          description: Total purchase amount associated with the Order.
+    DeleteBasketCompletePayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier assigned to the integration message.
+        creationDate:
+          type: string
+          format: date-time
+          description: UTC timestamp when the integration message was created.
+        orderId:
+          type: string
+          format: uuid
+          description: Identifier of the Order whose basket cleanup completed.
+        totalMoney:
+          type: number
+          format: double
+          description: Total purchase amount associated with the Order.
+    DeleteBasketFailedPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - creationDate
+        - basketId
+        - email
+        - orderId
+        - totalMoney
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier assigned to the integration message.
+        creationDate:
+          type: string
+          format: date-time
+          description: UTC timestamp when the integration message was created.
+        basketId:
+          type: string
+          format: uuid
+          description: Identifier of the basket whose cleanup failed.
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+          description: Customer email, when available.
+        orderId:
+          type: string
+          format: uuid
+          description: Identifier of the affected Order.
+        totalMoney:
+          type: number
+          format: double
+          description: Total purchase amount associated with the Order.

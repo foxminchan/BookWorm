@@ -1,0 +1,40 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "ListFeedbacksResponse",
+	"description": "Feedback records returned for a Catalog book.",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"additionalProperties": false,
+		"required": ["id", "firstName", "lastName", "comment", "rating", "bookId"],
+		"properties": {
+			"id": {
+				"type": "string",
+				"format": "uuid",
+				"description": "Unique identifier of the feedback record."
+			},
+			"firstName": {
+				"type": ["string", "null"],
+				"description": "First name of the reviewer."
+			},
+			"lastName": {
+				"type": ["string", "null"],
+				"description": "Last name of the reviewer."
+			},
+			"comment": {
+				"type": ["string", "null"],
+				"description": "Written feedback left by the reviewer."
+			},
+			"rating": {
+				"type": ["integer", "string"],
+				"format": "int32",
+				"description": "Rating value from 0 through 5."
+			},
+			"bookId": {
+				"type": "string",
+				"format": "uuid",
+				"description": "Identifier of the reviewed Catalog book."
+			}
+		}
+	}
+}

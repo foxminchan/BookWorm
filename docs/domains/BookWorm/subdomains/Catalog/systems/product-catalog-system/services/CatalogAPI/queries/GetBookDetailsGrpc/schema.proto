@@ -1,0 +1,56 @@
+edition = "2023";
+
+package book.v1;
+
+service BookGrpcService {
+  rpc GetBookDetails (GetBookDetailsRequest) returns (GetBookDetailsResponse);
+}
+
+message GetBookDetailsRequest {
+  string book_id = 1;
+}
+
+message GetBookDetailsResponse {
+  BookItem book = 1;
+}
+
+message BookItem {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string image_url = 4;
+  DecimalValue price = 5;
+  DecimalValue price_sale = 6;
+  BookStatus status = 7;
+  CategoryItem category = 8;
+  PublisherItem publisher = 9;
+  repeated AuthorItem authors = 10;
+  double average_rating = 11;
+  int32 total_reviews = 12;
+}
+
+enum BookStatus {
+  BOOK_STATUS_UNSPECIFIED = 0;
+  BOOK_STATUS_IN_STOCK = 1;
+  BOOK_STATUS_OUT_OF_STOCK = 2;
+}
+
+message DecimalValue {
+  int64 units = 1;
+  sfixed32 nanos = 2;
+}
+
+message CategoryItem {
+  string id = 1;
+  string name = 2;
+}
+
+message PublisherItem {
+  string id = 1;
+  string name = 2;
+}
+
+message AuthorItem {
+  string id = 1;
+  string name = 2;
+}

@@ -1,0 +1,45 @@
+---
+id: OrderStatusChangedToCompleteIntegrationEvent
+name: Order completed
+version: 1.0.0
+summary: |
+  Reports that an Order transitioned from New to Completed.
+owners:
+  - business-strategy
+schemaPath: schema.json
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Overview
+
+[[service|order-api]] publishes this event after an [[entity|order]]
+transitions from New to Completed. It communicates the accepted Order's
+business status and purchase details to Finance, rather than requesting
+completion or confirming notification delivery.
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]]
+
+## Payload
+
+The payload contains `id`, `creationDate`, `orderId`, `basketId`, nullable
+`fullName` and `email`, and `totalMoney`. All fields are required by the
+AsyncAPI schema, including the nullable fields.
+
+The current EventMapper supplies the Order's Buyer ID as `basketId`.
+Consumers must not assume this field is independently resolved basket data.
+
+## Schema
+
+The schema describes camelCase JSON data inside the BookWorm
+CloudEvents-compatible envelope, not the complete transport envelope.
+
+<SchemaViewer file="schema.json" title="Order completion event payload" maxHeight="500" />
+
+## Architecture
+
+<NodeGraph />

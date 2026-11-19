@@ -1,0 +1,9 @@
+---
+title: Order lifecycle
+---
+stateDiagram-v2
+	[*] --> New: Order created
+	New --> Completed: Complete order
+	New --> Cancelled: Cancel order
+	Completed --> [*]
+	Cancelled --> [*]

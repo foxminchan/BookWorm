@@ -1,0 +1,51 @@
+---
+id: adr-bw-015-explicit-environment-configuration
+name: "ADR-BW-015: Separate logical architecture from environment configuration"
+version: 1.0.0
+summary: Document configured dependencies and environment differences explicitly instead of inferring production infrastructure from local orchestration.
+status: proposed
+date: 2026-11-07
+owners:
+  - platform-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-003-aspire-shared-service-defaults
+  - id: adr-bw-005-kafka-integration-backbone
+  - id: adr-bw-013-opentelemetry-observability
+---
+
+## Context
+
+The catalog identifies logical service and dependency boundaries, but does not establish production hosts, regions, network topology, replicas, or recovery configuration. Some shared mechanisms activate only when connection strings or exporter endpoints are configured.
+
+## Decision
+
+Keep the logical architecture independent of unconfirmed physical placement. Record each environment's actual dependency configuration, data isolation, access boundaries, and enabled mechanisms when established. Verify broker transport, telemetry export, health probes, and other conditional behavior on the actual host.
+
+This is a deployment-documentation and configuration principle, not an approved selection of cloud, region, container platform, or high-availability design.
+
+## Decision drivers
+
+- Accurate deployment and operational expectations.
+- Explicit distinction between reusable defaults and active mechanisms.
+- Avoidance of accidental provider or topology commitments.
+
+## Alternatives considered
+
+| Alternative                                             | Assessment                                                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Treat local Aspire orchestration as production topology | Is convenient but does not establish physical production facts.              |
+| Assume all environments share dependencies and settings | Reduces documentation while concealing meaningful configuration differences. |
+| Choose production infrastructure in this record         | Would resolve uncertainty without the required requirements or evidence.     |
+
+## Consequences
+
+- Architecture diagrams remain honest about their logical scope.
+- Deployment readiness requires environment-specific evidence.
+- Hosting, retention, failover, capacity, and recovery choices remain open until explicitly decided.
+
+## Evidence
+
+See [[doc|arc42/07-deployment-view]], [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], and [[doc|arc42/08-crosscutting-concepts/004-observability]].

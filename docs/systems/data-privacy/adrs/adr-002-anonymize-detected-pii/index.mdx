@@ -1,0 +1,61 @@
+---
+id: adr-002-anonymize-detected-pii
+name: "ADR-002: Anonymize detected PII before model processing"
+version: 1.0.0
+summary: Detected PII is anonymized through Presidio before feedback is sent to the model or returned, without changing persisted feedback.
+status: accepted
+date: 2026-11-02
+owners:
+  - contributor-team
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+appliesTo:
+  - type: system
+    id: data-privacy
+  - type: service
+    id: PresidioAPI
+  - type: agent
+    id: rating-agent
+related:
+  - id: adr-001-use-presidio-analyze-for-pii-detection
+---
+
+## Context
+
+PII detection alone does not remove sensitive values. The Reviews and Chat
+pipelines must prevent detected values from reaching a model or appearing in
+returned text while preserving the ownership and contents of persisted
+feedback. Output filtering also needs to complete before streamed text is
+released to a caller.
+
+## Decision
+
+Use [[service|PresidioAPI]]'s Anonymize API with the original text and the
+analysis results to transform text before it reaches a model and before it is
+returned. Apply the configured anonymization operators to the detected
+entities; do not assume that detection or anonymization changes the original
+feedback persisted by the [[system|rating-system]] or the
+[[domain|catalog]] rating projection.
+
+Do not log raw text, detected PII, or anonymized request/response payloads. If
+analysis or anonymization fails, propagate the failure rather than bypassing
+the middleware. Buffer streamed output until privacy processing is complete,
+so unfiltered chunks are not released.
+
+## Consequences
+
+- The model and caller receive transformed text for entities that were
+  detected and handled by the configured operators; this does not remove
+  undetected sensitive values.
+- Reviews remains responsible for feedback storage. Privacy processing does
+  not rewrite stored feedback or Catalog's derived rating projection.
+- Fail-closed processing protects against silently sending unfiltered content,
+  but Analyzer or Anonymizer outages can make summarization or chat requests
+  unavailable. Monitor failures without recording sensitive payloads.
+- Buffering streamed output delays delivery until filtering completes and
+  requires the middleware to hold the response temporarily.
+- Anonymization effectiveness depends on detection coverage and operator
+  configuration. Changes to either require validation against both input and
+  output paths.

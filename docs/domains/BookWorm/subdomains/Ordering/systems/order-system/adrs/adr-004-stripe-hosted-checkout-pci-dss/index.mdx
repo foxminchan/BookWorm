@@ -1,0 +1,153 @@
+---
+id: adr-004-stripe-hosted-checkout-pci-dss
+name: "ADR-004: Use Stripe-hosted Checkout with PCI DSS controls"
+version: 1.0.0
+summary: Propose Stripe as the payment gateway using hosted Checkout to keep card data outside BookWorm, with explicit merchant PCI DSS responsibilities and verified payment outcomes.
+status: proposed
+date: 2026-11-05
+owners:
+  - business-strategy
+appliesTo:
+  - type: system
+    id: order-system
+  - type: service
+    id: order-api
+  - type: system
+    id: finance-system
+  - type: flow
+    id: user-checkout
+related:
+  - id: adr-002-preserve-checkout-purchase-snapshot
+  - id: adr-003-separate-order-status-from-finance-saga
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+---
+
+## Context
+
+[[system|order-system]] records accepted purchases and owns their business
+status. [[system|finance-system]] currently coordinates basket cleanup and
+notifications; it does not authorize, capture, or settle payments. Neither
+checkout acceptance, basket deletion, nor Order completion proves that a
+payment succeeded.
+
+BookWorm needs a payment gateway without introducing card-number or card
+security-code handling into its APIs, databases, messages, logs, or telemetry.
+Outsourcing payment processing reduces exposure, but does not remove the
+merchant's responsibility to validate PCI DSS compliance.
+
+## Decision
+
+Propose **Stripe as the payment gateway**, using a redirect to
+**Stripe-hosted Checkout** for one-time Order payments. This ADR does not
+describe an implemented integration or certify BookWorm as PCI DSS compliant.
+
+### Payment boundary and workflow
+
+1. An authenticated customer requests payment for an Order they own. A
+   server-side payment integration creates a Checkout Session from the
+   persisted purchase snapshot and an explicitly validated currency, never
+   from browser-supplied prices or totals. Amounts use Stripe's required
+   currency units and rounding rules.
+2. Correlate each Session and PaymentIntent with an opaque Order ID and a
+   persisted payment-attempt ID. Reuse an idempotency key for retries of the
+   same operation, prevent concurrent active attempts from charging the same
+   Order twice, and resolve uncertain outcomes before creating another attempt.
+3. Redirect the customer to the Stripe-provided Checkout URL. Card entry and
+   any required authentication, including 3D Secure, happen on Stripe's page.
+   BookWorm must not collect, proxy, store, or publish full card numbers,
+   security codes, or other sensitive authentication data.
+4. Receive Stripe events over HTTPS and verify the `Stripe-Signature` against
+   the unmodified request body with the endpoint's signing secret and the
+   official SDK's timestamp tolerance. Reject invalid signatures; never
+   disable verification when configuration is missing.
+5. Durably record verified events before acknowledging delivery. Deduplicate
+   by event ID and make payment transitions idempotent by payment attempt.
+   Handle retries and out-of-order events without regressing payment state;
+   retrieve the current Stripe object when reconciliation is necessary.
+6. Confirm the expected Order, payment attempt, amount, currency, and live/test
+   environment before recording payment success. A success-page redirect is
+   not proof of payment. For Checkout events, require a paid payment status;
+   `checkout.session.completed` alone is insufficient for delayed methods.
+   If such methods are enabled, handle asynchronous success and failure.
+7. Keep payment state separate from Order status and Finance saga state.
+   Ordering remains authoritative for business transitions; payment success
+   must not automatically imply fulfillment or Order completion. Basket
+   cleanup failure must not silently erase a paid purchase. Late success
+   after cancellation or soft deletion requires reconciliation and an explicit
+   refund or recovery decision.
+
+### PCI DSS responsibilities
+
+- Target eligibility for **SAQ A** through the fully hosted redirect model.
+  Eligibility is conditional on the complete deployment and all applicable
+  criteria; confirm the required validation with the acquiring bank and,
+  where needed, a Qualified Security Assessor before launch.
+- Document the payment data flow, assessed scope, and responsibility split.
+  Retain Stripe's current PCI DSS Attestation of Compliance and review its
+  service-provider compliance status at least annually. Complete BookWorm's
+  required annual assessment and attestation; Stripe's certification does not
+  certify the merchant.
+- Protect the storefront and redirect-creation path against tampering. Apply
+  the applicable PCI DSS controls for secure changes, vulnerability management,
+  access control, monitoring, incident response, and required scanning or
+  testing. Confirm requirements against the current PCI DSS and SAQ rather
+  than treating this ADR as an exhaustive compliance checklist.
+- Use HTTPS with TLS 1.2 or newer. Keep API keys and webhook signing secrets
+  in managed secret storage, separate test and live credentials, grant least
+  privilege, rotate secrets, and require MFA for administrative access.
+- Persist only necessary provider references, amounts, currency, and payment
+  state. Apply explicit retention and access controls to payment records.
+  Exclude raw payment payloads, secrets, and sensitive customer data from
+  logs, traces, event contracts, and Stripe metadata.
+
+### Acceptance and rollout gates
+
+Before accepting this ADR or enabling live payments:
+
+- Assign the payment integration's service owner and persistence boundary.
+  This proposal does not implicitly turn the existing Finance saga into a
+  payment processor.
+- Define payment outcome contracts, authorization rules, currency policy,
+  cancellation and refund handling, reconciliation jobs, and operational
+  alerts. Preserve Order ownership and review the current soft-deletion and
+  basket-cleanup behavior for races with payment processing.
+- Test successful and declined payments, authentication, abandoned Sessions,
+  duplicate requests and webhooks, invalid signatures, delayed and reordered
+  events, provider timeouts, amount mismatches, and payment/cancellation races.
+  Verify that card data never reaches BookWorm storage, messaging, or telemetry.
+- Obtain documented approval of the PCI DSS scope, validation approach, and
+  required compliance evidence. Roll out behind a disabled-by-default payment
+  feature gate with a reconciliation and incident-response runbook.
+
+## Consequences
+
+- Stripe hosts the card-entry surface and handles payment authentication,
+  reducing BookWorm's card-data exposure and integration effort.
+- BookWorm retains compliance, storefront security, and operational duties;
+  neither hosted Checkout nor this proposal guarantees SAQ A eligibility.
+- Hosted checkout limits UI customization and introduces provider availability,
+  fees, account eligibility, and vendor dependency considerations.
+- Reliable payment processing requires durable payment state, duplicate-safe
+  event handling, refunds, and reconciliation beyond the existing checkout
+  saga. Current Order and Finance behavior remains unchanged until implementation.
+
+## Alternatives considered
+
+- **Collect card data through BookWorm APIs:** rejected because it expands the
+  cardholder-data environment and operational compliance burden.
+- **Embedded Checkout or Stripe Elements:** defer unless customization needs
+  justify another integration and a fresh PCI DSS scope review.
+- **Another hosted payment provider:** remains viable if Stripe's commercial,
+  regional, or payment-method support does not meet BookWorm's requirements.
+
+## References
+
+- [Stripe Checkout](https://docs.stripe.com/payments/checkout)
+- [Stripe integration security and PCI compliance](https://docs.stripe.com/security/guide)
+- [Stripe webhook verification and delivery](https://docs.stripe.com/webhooks)
+- [Stripe Checkout fulfillment](https://docs.stripe.com/checkout/fulfillment)
+- [PCI SSC: PCI Data Security Standard](https://www.pcisecuritystandards.org/standards/pci-dss/)
+- [PCI SSC document library: current standard and SAQs](https://www.pcisecuritystandards.org/document_library/)

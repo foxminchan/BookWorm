@@ -1,5 +1,6 @@
-﻿using Asp.Versioning.Builder;
+using Asp.Versioning.Builder;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -18,6 +19,8 @@ public static class RegisterEndpointExtensions
         /// </param>
         public void AddEndpoints(Type type)
         {
+            services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = false);
+
             services.Scan(scan =>
                 scan.FromAssembliesOf(type)
                     .AddClasses(

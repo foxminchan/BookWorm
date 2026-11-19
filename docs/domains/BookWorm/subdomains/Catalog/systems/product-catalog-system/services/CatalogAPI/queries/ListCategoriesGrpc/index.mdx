@@ -1,0 +1,58 @@
+---
+id: ListCategoriesGrpc
+name: List categories over gRPC
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns all Catalog categories through the book.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `ListCategories` RPC returns all available [[entity|category]] records in
+the Catalog. It is an anonymous read operation exposed for internal
+service-to-service clients.
+
+[[service|mcp-server]] produces this query in its
+`BookService.ListCategoriesAsync` client to power the `list_categories` MCP
+tool; [[service|catalog-api]] consumes it by dispatching
+`ListCategoriesQuery`.
+
+<NodeGraph />
+
+## Contract
+
+Send an empty `ListCategoriesRequest`. The response is `ListCategoriesResponse`,
+containing a repeated collection of `CategoryItem` values (`id` and `name`).
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="ListCategories gRPC schema" />
+
+## Examples
+
+<CodeGroup dropdown>
+
+```csharp title="ListCategories gRPC example"
+using Grpc.Net.Client;
+using BookWorm.Catalog.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.ListCategoriesAsync(new ListCategoriesRequest());
+
+foreach (var category in response.Categories)
+{
+    Console.WriteLine($"{category.Id}: {category.Name}");
+}
+```
+
+</CodeGroup>

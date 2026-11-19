@@ -1,0 +1,43 @@
+---
+id: UpdateAddress
+name: Update Buyer address
+version: 1.0.0
+badges:
+  - content: Customer Management
+    backgroundColor: orange
+    textColor: orange
+summary: Updates the authenticated Buyer's address using the supplied street, city, and province.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: PATCH
+  path: /api/v1/buyers/address
+  statusCodes: ["200", "400", "404"]
+sidebar:
+  badge: "PATCH"
+---
+
+## Overview
+
+Updates the address on the authenticated customer's [[entity|buyer]] profile.
+The operation does not accept a Buyer ID; the service identifies the Buyer
+from the authenticated request.
+
+<NodeGraph />
+
+## Contract
+
+Send an `application/json` body containing the required `street`, `city`, and
+`province` fields. `200 OK` returns the updated `BuyerDto`. `400 Bad Request`
+indicates validation failure, and `404 Not Found` indicates that the Buyer
+profile does not exist.
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="UpdateAddressCommand JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

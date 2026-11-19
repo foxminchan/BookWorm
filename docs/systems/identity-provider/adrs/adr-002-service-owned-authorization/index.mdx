@@ -1,0 +1,62 @@
+---
+id: adr-002-service-owned-authorization
+name: "ADR-002: Keep business authorization in consuming services"
+version: 1.0.0
+summary: A valid provider-issued identity establishes who is calling, while each BookWorm service decides whether that caller may perform an operation.
+status: accepted
+date: 2026-11-02
+owners:
+  - contributor-team
+badges:
+  - content: Security
+    backgroundColor: red
+    textColor: red
+appliesTo:
+  - type: system
+    id: identity-provider
+  - type: service
+    id: oauthapi
+---
+
+## Context
+
+Authentication confirms a caller's identity, but BookWorm operations have
+business-specific permissions, resource ownership rules, and administrative
+requirements. These checks depend on the operation being requested and the
+business resource involved. Centralizing them in an external identity provider
+would separate authorization from the operations and data they govern, and
+would make service-specific policy dependent on an external contract.
+
+## Decision
+
+The [[system|identity-provider]] authenticates users and supplies identity claims.
+Every consuming BookWorm service validates the identity and applies its own
+authorization policy, including endpoint permissions, resource ownership, and
+administrative checks. A service must not treat a valid token or successful
+authentication as sufficient authorization. It must evaluate the caller
+against the rules for the specific operation and resource before allowing
+that operation to proceed.
+
+## Alternatives considered
+
+- **Treat authentication or possession of a valid token as authorization.**
+  This cannot account for resource ownership, operation-specific permissions,
+  or administrative constraints, and would make a token's validity an
+  overly broad grant.
+- **Centralize BookWorm business authorization in the external provider.**
+  This would require provider policy to track application-specific operations
+  and domain resources, while separating authorization changes from the
+  services that enforce and own those rules.
+
+## Consequences
+
+Authorization remains close to the business operation and the data it
+protects. Services can enforce their own resource ownership and administrative
+rules without requiring the provider to understand BookWorm domain semantics.
+In exchange, each service must implement and maintain its checks consistently,
+and must test protected operations independently of the sign-in flow. Shared
+identity claims are an input to those checks, not a substitute for them;
+services should avoid relying on provider claims to express mutable,
+resource-specific business permissions. The separation also makes it possible
+for a service to expose explicitly public or anonymous operations without
+weakening authorization for protected ones.

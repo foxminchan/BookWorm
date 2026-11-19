@@ -1,4 +1,4 @@
-﻿edition = "2023";
+edition = "2023";
 
 option csharp_namespace = "BookWorm.Catalog.Grpc.Services";
 
@@ -8,6 +8,10 @@ service BookGrpcService {
   rpc GetBook (GetBookRequest) returns (GetBookResponse);
   rpc GetBooks (GetBooksRequest) returns (GetBooksResponse);
   rpc GetDashboard (GetDashboardRequest) returns (GetDashboardResponse);
+  rpc ListBooks (ListBooksRequest) returns (ListBooksResponse);
+  rpc GetBookDetails (GetBookDetailsRequest) returns (GetBookDetailsResponse);
+  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc ListAuthors (ListAuthorsRequest) returns (ListAuthorsResponse);
 }
 
 message GetDashboardRequest {}
@@ -51,4 +55,62 @@ enum BookStatus {
 message DecimalValue {
   int64 units = 1;
   sfixed32 nanos = 2;
+}
+
+message ListBooksRequest {
+  string search = 1;
+}
+
+message ListBooksResponse {
+  repeated BookItem books = 1;
+}
+
+message GetBookDetailsRequest {
+  string book_id = 1;
+}
+
+message GetBookDetailsResponse {
+  BookItem book = 1;
+}
+
+message BookItem {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string image_url = 4;
+  DecimalValue price = 5;
+  DecimalValue price_sale = 6;
+  BookStatus status = 7;
+  CategoryItem category = 8;
+  PublisherItem publisher = 9;
+  repeated AuthorItem authors = 10;
+  double average_rating = 11;
+  int32 total_reviews = 12;
+}
+
+message ListCategoriesRequest {}
+
+message ListCategoriesResponse {
+  repeated CategoryItem categories = 1;
+}
+
+message CategoryItem {
+  string id = 1;
+  string name = 2;
+}
+
+message PublisherItem {
+  string id = 1;
+  string name = 2;
+}
+
+message ListAuthorsRequest {}
+
+message ListAuthorsResponse {
+  repeated AuthorItem authors = 1;
+}
+
+message AuthorItem {
+  string id = 1;
+  string name = 2;
 }

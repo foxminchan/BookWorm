@@ -6,7 +6,7 @@ import {
   getOrderStatusStyle,
   isOrderEditable,
   isOrderNew,
-} from "@/lib/pattern";
+} from "@workspace/utils/order";
 
 describe("getOrderStatusStyle", () => {
   it("should return blue style for New status", () => {

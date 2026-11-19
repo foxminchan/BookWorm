@@ -10,9 +10,6 @@
     <PackageReference Include="MailKit" />
     <PackageReference Include="Mjml.Net" />
   </ItemGroup>
-  <ItemGroup Label="EF Core">
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
-  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Templates\**\*.mjml" />
   </ItemGroup>

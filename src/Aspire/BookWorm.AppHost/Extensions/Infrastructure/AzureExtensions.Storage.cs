@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace BookWorm.AppHost.Extensions.Infrastructure;
 
@@ -34,14 +34,17 @@ internal static partial class AzureExtensions
 
                 resource.Sku = new()
                 {
-                    Name = environment.IsDevelopment()
-                        ? StorageSkuName.StandardLrs
-                        : StorageSkuName.StandardGzrs,
+                    Name = (environment.IsDevelopment(), environment.IsStaging()) switch
+                    {
+                        (true, _) => StorageSkuName.StandardLrs,
+                        (false, true) => StorageSkuName.StandardZrs,
+                        _ => StorageSkuName.StandardGzrs,
+                    },
                 };
 
-                resource.AccessTier = environment.IsDevelopment()
-                    ? StorageAccountAccessTier.Cool
-                    : StorageAccountAccessTier.Hot;
+                resource.AccessTier = StorageAccountAccessTier.Hot;
+                resource.AllowBlobPublicAccess = false;
+                resource.MinimumTlsVersion = StorageMinimumTlsVersion.Tls12;
 
                 var corsRule = new StorageCorsRule
                 {
@@ -49,7 +52,6 @@ internal static partial class AzureExtensions
                     [
                         CorsRuleAllowedMethod.Get,
                         CorsRuleAllowedMethod.Head,
-                        CorsRuleAllowedMethod.Post,
                         CorsRuleAllowedMethod.Options,
                     ],
                     AllowedHeaders = ["*"],
@@ -58,13 +60,25 @@ internal static partial class AzureExtensions
                     AllowedOrigins = ["*"],
                 };
 
-                var blobService = new BlobService(nameof(BlobService).ToLowerInvariant())
-                {
-                    Parent = resource,
-                    CorsRules = [corsRule],
-                };
+                var existingBlobService = infra
+                    .GetProvisionableResources()
+                    .OfType<BlobService>()
+                    .FirstOrDefault();
 
-                infra.Add(blobService);
+                if (existingBlobService is not null)
+                {
+                    existingBlobService.CorsRules = [corsRule];
+                }
+                else
+                {
+                    var blobService = new BlobService(nameof(BlobService).ToLowerInvariant())
+                    {
+                        Parent = resource,
+                        CorsRules = [corsRule],
+                    };
+
+                    infra.Add(blobService);
+                }
             });
         }
     }
@@ -73,11 +87,25 @@ internal static partial class AzureExtensions
     {
         public IResourceBuilder<AzureBlobStorageContainerResource> WithAzureStorageExplorer()
         {
-            var storageContainerResource = builder.ApplicationBuilder.CreateResourceBuilder(
-                builder.Resource.Parent
-            );
+            if (!builder.ApplicationBuilder.ExecutionContext.IsRunMode)
+            {
+                return builder;
+            }
 
-            storageContainerResource.WithAzureStorageExplorer();
+            var explorerName = $"{builder.Resource.Parent.Name}-explorer";
+
+            if (
+                !builder.ApplicationBuilder.Resources.Any(r =>
+                    string.Equals(r.Name, explorerName, StringComparison.OrdinalIgnoreCase)
+                )
+            )
+            {
+                var storageContainerResource = builder.ApplicationBuilder.CreateResourceBuilder(
+                    builder.Resource.Parent
+                );
+
+                storageContainerResource.WithAzureStorageExplorer();
+            }
 
             return builder;
         }

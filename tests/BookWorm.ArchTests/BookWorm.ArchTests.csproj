@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <ExcludeFromCodeCoverage>true</ExcludeFromCodeCoverage>
@@ -16,5 +16,6 @@
     <ProjectReference Include="..\..\src\Services\Ordering\BookWorm.Ordering\BookWorm.Ordering.csproj" />
     <ProjectReference Include="..\..\src\Services\Scheduler\BookWorm.Scheduler\BookWorm.Scheduler.csproj" />
     <ProjectReference Include="..\..\src\Services\Notification\BookWorm.Notification\BookWorm.Notification.csproj" />
+    <ProjectReference Include="..\..\src\Services\McpTools\BookWorm.McpTools\BookWorm.McpTools.csproj" />
   </ItemGroup>
 </Project>

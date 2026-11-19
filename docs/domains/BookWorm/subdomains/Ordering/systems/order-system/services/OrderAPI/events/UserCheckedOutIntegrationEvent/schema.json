@@ -1,0 +1,43 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "UserCheckedOutIntegrationEvent",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["id", "creationDate", "orderId", "basketId", "fullName", "email", "totalMoney"],
+	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Unique identifier assigned to the integration event."
+		},
+		"creationDate": {
+			"type": "string",
+			"format": "date-time",
+			"description": "UTC timestamp when the integration event was created."
+		},
+		"orderId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Identifier of the Order."
+		},
+		"basketId": {
+			"type": "string",
+			"format": "uuid",
+			"description": "UUID serialized as basketId. The current EventMapper supplies the\nOrder's BuyerId for this field.\n"
+		},
+		"fullName": {
+			"type": ["string", "null"],
+			"description": "Customer name, when available."
+		},
+		"email": {
+			"type": ["string", "null"],
+			"format": "email",
+			"description": "Customer email, when available."
+		},
+		"totalMoney": {
+			"type": "number",
+			"format": "double",
+			"description": "Total purchase amount associated with the Order."
+		}
+	}
+}

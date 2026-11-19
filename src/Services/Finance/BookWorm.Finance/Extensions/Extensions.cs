@@ -1,6 +1,5 @@
-﻿using BookWorm.Chassis.EventBus.Wolverine;
-using Wolverine.EntityFrameworkCore;
-using Wolverine.Postgresql;
+using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Contracts;
 
 namespace BookWorm.Finance.Extensions;
 
@@ -10,35 +9,42 @@ internal static class Extensions
     {
         public void AddApplicationServices()
         {
-            var services = builder.Services;
+            var env = builder.Environment;
 
-            builder.AddAzurePostgresDbContext<FinanceDbContext>(
-                Components.Database.Finance,
-                _ => services.AddMigration<FinanceDbContext>(),
-                true
+            builder.Configuration.AddInMemoryCollection([
+                new(
+                    "KafkaTopics:UserCheckedOut",
+                    KafkaTopicRouter.CreateTopicName<UserCheckedOutIntegrationEvent>(env)
+                ),
+                new(
+                    "KafkaTopics:BasketDeletedComplete",
+                    KafkaTopicRouter.CreateTopicName<BasketDeletedCompleteIntegrationEvent>(env)
+                ),
+                new(
+                    "KafkaTopics:BasketDeletedFailed",
+                    KafkaTopicRouter.CreateTopicName<BasketDeletedFailedIntegrationEvent>(env)
+                ),
+                new(
+                    "KafkaTopics:OrderStatusChangedToComplete",
+                    KafkaTopicRouter.CreateTopicName<OrderStatusChangedToCompleteIntegrationEvent>(
+                        env
+                    )
+                ),
+                new(
+                    "KafkaTopics:OrderStatusChangedToCancel",
+                    KafkaTopicRouter.CreateTopicName<OrderStatusChangedToCancelIntegrationEvent>(
+                        env
+                    )
+                ),
+            ]);
+
+            builder.AddEventBus<IFinanceApiMarker>(opts =>
+                opts.MessagePartitioning.ByPropertyNamed("OrderId")
             );
 
-            builder.AddSagaStateMachineServices();
-
-            var postgresCs = builder.Configuration.GetConnectionString(Components.Database.Finance);
-            builder.AddEventBus(opts =>
-            {
-                if (!string.IsNullOrWhiteSpace(postgresCs))
-                {
-                    opts.PersistMessagesWithPostgresql(postgresCs, "wolverine");
-                    opts.UseEntityFrameworkCoreTransactions();
-                }
-
-                // Preserve per-order saga ordering on Kafka by routing all events that
-                // expose an OrderId to the same partition.
-                opts.MessagePartitioning.ByPropertyNamed("OrderId");
-
-                opts.Discovery.IncludeAssembly(typeof(IFinanceApiMarker).Assembly);
-                opts.ConfigureIntegrationEventTopicsIn(
-                    builder.Environment,
-                    typeof(IFinanceApiMarker).Assembly
-                );
-            });
+            builder.Configure<OrderStateMachineSettings>(
+                OrderStateMachineSettings.ConfigurationSection
+            );
         }
     }
 }

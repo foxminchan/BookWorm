@@ -1,0 +1,73 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "SendMailRequest",
+	"description": "Request payload accepted by the SendGrid Mail Send API.",
+	"type": "object",
+	"additionalProperties": true,
+	"required": ["personalizations", "from", "content"],
+	"properties": {
+		"personalizations": {
+			"type": "array",
+			"minItems": 1,
+			"description": "Recipient-specific substitutions and headers.",
+			"items": {
+				"type": "object",
+				"required": ["to"],
+				"properties": {
+					"to": {
+						"type": "array",
+						"minItems": 1,
+						"items": {
+							"$ref": "#/$defs/email"
+						}
+					},
+					"subject": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"from": {
+			"$ref": "#/$defs/email"
+		},
+		"subject": {
+			"type": "string"
+		},
+		"content": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "object",
+				"required": ["type", "value"],
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": ["text/plain", "text/html"]
+					},
+					"value": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"batch_id": {
+			"type": "string",
+			"description": "Optional batch identifier returned by CreateMailBatch."
+		}
+	},
+	"$defs": {
+		"email": {
+			"type": "object",
+			"required": ["email"],
+			"properties": {
+				"email": {
+					"type": "string",
+					"format": "email"
+				},
+				"name": {
+					"type": "string"
+				}
+			}
+		}
+	}
+}

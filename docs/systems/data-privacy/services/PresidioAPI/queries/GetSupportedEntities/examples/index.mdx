@@ -1,0 +1,28 @@
+## List supported entities with `HttpClient`
+
+The optional `language` parameter selects the Analyzer language. These are
+available capabilities and do not imply that every entity type is enabled by
+the calling application's privacy policy.
+
+<CodeGroup dropdown>
+
+```csharp GetSupportedEntities.cs
+using System.Net.Http.Json;
+
+var analyzerUrl = Environment.GetEnvironmentVariable("ANALYZER_URL")
+    ?? throw new InvalidOperationException("Set ANALYZER_URL to the Presidio Analyzer base URL.");
+
+using var httpClient = new HttpClient { BaseAddress = new Uri(analyzerUrl) };
+using var response = await httpClient.GetAsync("/supportedentities?language=en");
+response.EnsureSuccessStatusCode();
+
+var entities = await response.Content.ReadFromJsonAsync<string[]>()
+    ?? throw new InvalidOperationException("Presidio returned an empty supported-entities response.");
+
+foreach (var entity in entities)
+{
+    Console.WriteLine(entity);
+}
+```
+
+</CodeGroup>

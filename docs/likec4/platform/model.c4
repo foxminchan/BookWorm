@@ -1,0 +1,61 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element domain
+  element system
+  element container
+}
+
+model {
+  administrator = actor 'Administrator' {
+    description 'Manages schedules and investigates Scheduler job executions.'
+  }
+
+  finance = system 'Finance order workflow' {
+    description 'Owns order coordination and supplies recipient and order details for notifications.'
+  }
+
+  platform = domain 'Platform bounded context' {
+    description 'Provides scheduled processing and email notification without owning business-domain data.'
+
+    scheduler = system 'Scheduler System' {
+      technology 'Quartz'
+      description 'Persists schedules and execution state, and publishes ProcessVectorBatchIntegrationEvent over Kafka.'
+    }
+
+    notification = system 'Notification System' {
+      technology 'Wolverine and MailKit'
+      description 'Consumes order commands, renders MJML email templates, and submits mail over SMTP with resilience.'
+    }
+  }
+
+  catalog = system 'Product Catalog System' {
+    description 'Owns Catalog Ingestion, the durable pending-update queue, and the derived vector index; remains outside Platform.'
+  }
+
+  smtpProvider = system 'Configured SMTP provider' {
+    description 'External email delivery boundary: MailPit in development and a configured provider such as SendGrid elsewhere. SendGrid HTTP Mail Send is not the active submission path.'
+  }
+
+  administrator -> platform.scheduler 'manages schedules and inspects executions' {
+    technology 'Quartz dashboard and HTTP API'
+  }
+
+  finance -> platform.notification 'publishes order commands' {
+    technology 'Kafka'
+    description 'PlaceOrderCommand, CancelOrderCommand, and CompleteOrderCommand supply the business context for order emails.'
+  }
+
+  platform.scheduler -> catalog 'triggers vector-index maintenance every 5 minutes' {
+    technology 'Kafka'
+    description 'Publishes ProcessVectorBatchIntegrationEvent to scheduler.process-vector-batch; Catalog Ingestion consumes it via KafkaTrigger and owns processing and concurrency controls.'
+  }
+
+  platform.notification -> smtpProvider 'submits email for external delivery' {
+    technology 'SMTP'
+    description 'Provider acceptance is not proof of recipient delivery or business completion; Notification publishes no application-level result event.'
+  }
+}

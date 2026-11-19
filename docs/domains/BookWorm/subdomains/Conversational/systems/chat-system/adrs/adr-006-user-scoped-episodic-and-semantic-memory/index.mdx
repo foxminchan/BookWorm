@@ -1,0 +1,269 @@
+---
+id: adr-006-user-scoped-episodic-and-semantic-memory
+name: "ADR-006: Add user-scoped episodic and semantic memory to BookAgent"
+version: 1.0.0
+summary: Proposes private, cross-session memory so BookAgent can use past book discussions and stated reading preferences, while giving users control over stored information.
+status: proposed
+date: 2026-11-05
+owners:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: chat-system
+  - type: service
+    id: chat-api
+  - type: agent
+    id: book-agent
+related:
+  - id: adr-004-in-memory-chat-sessions
+  - id: adr-002-fail-closed-pii-middleware
+  - id: adr-005-govern-agent-tools-per-agent
+badges:
+  - content: Data
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Context
+
+### Business problem
+
+BookAgent helps customers find books and receive recommendations. Today, a returning customer
+cannot rely on the agent remembering reading preferences from an earlier session. The customer
+may need to repeat the same information, and recommendations may lack continuity.
+
+We want BookAgent to use relevant information that the customer previously stated, without
+building an unrestricted personal profile or retaining full chat transcripts.
+
+### Two different kinds of memory
+
+| Term            | Plain-language meaning                                                                   | Example                                                            | How it helps                                                                      |
+| --------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Episodic memory | A short account of a particular past interaction.                                        | "The customer asked for a short mystery novel for a weekend trip." | Recalls a relevant past discussion when a similar request arises.                 |
+| Semantic memory | A reading preference explicitly stated by the customer, retained beyond one interaction. | "I prefer English-language mysteries and avoid horror."            | Guides future recommendations without asking the same preference questions again. |
+
+A one-time request is not automatically a lasting preference. Asking for a gift for someone
+else must not become a preference attributed to the customer.
+
+### Relationship to existing behavior
+
+The existing session and file-memory providers support work within a session. They are not
+the proposed durable, user-scoped memory service. Chat session state remains transient under
+[[adr|adr-004-in-memory-chat-sessions]].
+
+The original code-review draft identifies reusable PostgreSQL, Qdrant, identity and Presidio
+patterns in BookWorm. The implementation details below are design candidates; framework hooks,
+identity propagation and configuration must be checked against the pinned code before delivery.
+
+## Decision
+
+Provide BookAgent with two separate, private memory stores:
+
+- **Qdrant for episodes:** find past interaction summaries that are similar in meaning to the
+  current request.
+- **PostgreSQL for preferences:** maintain structured reading preferences that can be inspected,
+  corrected and deleted.
+
+A context provider will load a small amount of relevant memory before BookAgent answers.
+After the answer, a background worker will identify information worth retaining, apply privacy
+checks and save approved memory. The agent will not choose whether to retrieve memory through
+a tool call.
+
+### Expected customer experience
+
+1. A customer states a book-related preference during a conversation.
+2. The agent answers normally; saving new memory does not delay the streamed answer.
+3. Background processing may retain an eligible preference or a short interaction summary.
+4. In a later conversation, BookAgent receives relevant saved memory and can use it to tailor
+   recommendations.
+5. The customer can inspect and delete stored memory. Explicit corrections take precedence
+   over older preferences.
+
+New memory is not guaranteed to be available immediately after an answer because processing
+happens in the background. The agent must not claim that something was saved unless saving
+has been confirmed.
+
+### Scope and boundaries
+
+| Included                                                                            | Not included                                                              |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Private memory tied to a verified customer identity.                                | Shared memory across customers or an inferred identity from message text. |
+| Short book-related interaction summaries and explicitly stated reading preferences. | Full transcript storage or inferred personal characteristics.             |
+| Reading, updating and deleting memory owned by Chat.                                | Changes to Catalog books, Reviews feedback, Baskets or Orders.            |
+| Use of retrieved memory by BookAgent.                                               | Giving every agent access to the customer's memory.                       |
+| Retention and deletion controls for both stores.                                    | Treating session files as the durable customer profile.                   |
+
+Catalog remains the source of truth for book facts. A remembered conversation is not evidence
+that a book's price, availability or rating is still current.
+
+### Privacy, identity and trust rules
+
+- Resolve the authenticated user for every invocation. Never retain one user's identity in a
+  shared provider or accept a message-supplied user id as authorization.
+- Apply the same user boundary to retrieval, background writes, inspection and deletion.
+  Without a verified user identity, do not read or write personal memory.
+- Remove identifying text with Presidio before sending an exchange to the extraction model
+  or persisting it. Keep only the user identifier needed to enforce ownership.
+- Exclude sensitive information, including health, religion and political views, from both
+  episodes and preferences. Anonymization alone does not make such content safe to retain.
+- Retain only eligible information grounded in the customer's statements, not model guesses.
+  Validate extraction output before saving it.
+- Treat retrieved memory as reference data, not instructions that can override agent policies.
+- The agent may refer to a past interaction only when supporting memory was actually retrieved.
+  With no retrieved memory, it must not pretend to remember.
+- Inspection and deletion must cover both stores. Pending background work must not silently
+  recreate information that the customer has deleted.
+
+## Architecture and runtime behavior
+
+### Architecture
+
+The memory context provider coordinates reads. A separate worker performs privacy checks and
+memory updates. Existing session memory remains separate.
+
+<MermaidFileLoader file="mermaids/user-memory-architecture.mmd" />
+
+### Runtime flow
+
+1. Verify the customer identity and retrieve a capped set of preferences and relevant,
+   unexpired episodes.
+2. Add those results to the agent's context: the information available to it when generating
+   this answer. Add no memory block when there are no results.
+3. Stream the answer using the current request, retrieved memory and current Catalog facts.
+4. Submit the completed exchange to background processing without waiting for extraction.
+5. Anonymize the exchange, extract candidate memories, reject prohibited or unsupported
+   content, and write eligible results to the appropriate store.
+
+<MermaidFileLoader file="mermaids/user-memory-runtime-flow.mmd" />
+
+Only extraction is outside the response path. Retrieval still takes time; this ADR does not
+promise zero added latency. A retrieval budget, timeout behavior and measurable release target
+must be agreed before acceptance.
+
+### Storage and lifecycle
+
+| Aspect            | Episodes                                                                                                             | Preferences                                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Proposed store    | Qdrant collection `bookagent-episodes`.                                                                              | PostgreSQL `chat` database, table `user_preferences`.                                                                   |
+| Saved information | User id, summary, referenced book ids, creation and expiry times, and a vector representation for similarity search. | User id, preference kind and value, confidence, evidence count and last-seen time.                                      |
+| Retrieval         | Mandatory user filter, relevance and recency ranking, proposed limit of 3-5 episodes.                                | User-filtered list ranked by confidence and recency, with a fixed result cap.                                           |
+| Updates           | Append new episodes; remove expired or user-deleted entries.                                                         | Insert or update preferences; repeated evidence can reinforce them and explicit corrections replace conflicting values. |
+| Retention         | Proposed 90 days, configurable and subject to approval.                                                              | Until user deletion or an agreed decay policy removes stale preferences.                                                |
+
+Confidence is a processing signal, not proof that a preference is correct. Decay means reducing
+the weight of older information over time; its rules remain to be defined.
+
+An expiry timestamp alone does not delete a record. Implementation must exclude expired
+episodes from retrieval and provide a cleanup mechanism for physical deletion.
+
+### Developer implementation outline
+
+Proposed code belongs in `Chat/Memory/`, following existing BookWorm patterns:
+
+| Component                                                | Responsibility                                                                                                                                 |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `UserMemoryContextProvider`                              | Resolve identity on every run, load bounded memory before the answer, and submit work after the run. Register through `BookAgentRegistration`. |
+| `IEpisodicMemoryStore` and `EpisodicMemory`              | Encapsulate user-filtered Qdrant search, writes, inspection, expiry and deletion.                                                              |
+| `IPreferenceStore`, `UserPreference` and `ChatDbContext` | Encapsulate user-owned preference queries, updates and deletion with EF Core migrations.                                                       |
+| Background extraction service                            | Consume an in-process `Channel`, call Presidio and the chat model, validate results and consolidate preferences.                               |
+| `AddUserMemory()`                                        | Register stores, provider and worker.                                                                                                          |
+| User-memory endpoints                                    | Let an authenticated customer inspect and delete their own saved memory.                                                                       |
+
+Add `Components.Database.Chat` and wire the Chat PostgreSQL database and Qdrant reference in
+`AppHost.cs`. The proposed episode embedding uses the existing Cohere Embed v4 pattern:
+1536 dimensions with cosine similarity. Verify compatibility before creating the collection.
+
+Update `book-agent.yaml` to enforce the trust rules above without widening the agent's tool
+permissions. Confirm `AIContextProvider` lifecycle hooks against the pinned Agent Framework
+version rather than treating this outline as an API contract.
+
+## Rationale
+
+| Choice                                      | Reason                                                                                                            |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Separate episodes from preferences          | A past event and a lasting preference have different meanings, update rules and retention needs.                  |
+| Qdrant for episodes                         | Similarity search can find relevant discussions without requiring the customer to repeat exact wording.           |
+| PostgreSQL for preferences                  | Structured rows support predictable updates, inspection and deletion. Both stores still need user-level deletion. |
+| A context provider rather than memory tools | The application controls retrieval and its limits rather than relying on the model to request it.                 |
+| Background extraction                       | Model-based summarization and consolidation should not hold up the customer's answer.                             |
+| Explicit privacy processing in the worker   | Response middleware alone must not be assumed to protect the exchange passed to background processing.            |
+| Reuse existing infrastructure               | Avoid introducing another database or managed memory provider solely for this feature.                            |
+
+## Consequences
+
+### Benefits
+
+- Customers can repeat fewer preference details across sessions.
+- Recommendations can reflect relevant earlier discussions while respecting current corrections.
+- Separate memory types make retention, updates and user controls easier to explain.
+- The design reuses PostgreSQL, Qdrant and Presidio patterns already used in BookWorm.
+
+### Costs and risks
+
+- Chat gains database migrations, vector collection operations and cross-store deletion duties.
+- Extraction and embeddings add model cost and background workload.
+- Model-generated memories can be inaccurate. Validation, inspectability and correction are
+  required; confidence scoring does not eliminate this risk.
+- Stored summaries remain user-linked data even after identifying text is removed.
+- Retrieval adds latency and consumes context space, so both results and text size need caps.
+- An in-process `Channel` is not a durable queue. Pending extraction can be lost on restart;
+  acceptable loss, overload handling and retries need explicit agreement.
+- Concurrent conversations and partial writes across two stores require consistency rules.
+  This design does not provide an atomic transaction spanning PostgreSQL and Qdrant.
+
+## Alternatives Considered
+
+| Alternative                               | Why it is not preferred in this proposal                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Keep session-only memory                  | Avoids durable personal data, but does not solve cross-session continuity.                                         |
+| Qdrant for both memory types              | Possible, but structured preference updates and conflict handling are less straightforward.                        |
+| PostgreSQL with vector search for both    | Could simplify storage, but introduces a vector-search approach alongside the existing Qdrant pattern.             |
+| Redis as the primary store                | Does not follow the proposed PostgreSQL and Qdrant persistence patterns; Redis may be considered later as a cache. |
+| A durable folder for `FileMemoryProvider` | Does not by itself provide user-level search, ownership, retention and deletion semantics.                         |
+| Model-selected memory tools               | Makes retrieval dependent on the model and changes the governed tool surface.                                      |
+| An external managed memory service        | Introduces another provider, operating cost and data-residency review.                                             |
+
+## Delivery and acceptance
+
+### Implementation sequence
+
+1. Resolve the product and technical questions below, especially identity, privacy, deletion
+   and failure behavior.
+2. Provision the Chat database and Qdrant collection; implement stores, migrations and lifecycle
+   controls.
+3. Implement bounded retrieval and context injection, then background extraction and preference
+   consolidation.
+4. Deliver authenticated inspection and deletion endpoints and the agreed customer-facing controls.
+5. Update agent guidance and verify the acceptance scenarios before enabling durable memory.
+
+### Acceptance scenarios
+
+| Scenario                                       | Expected result                                                                                                           |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Returning customer                             | A relevant saved preference can influence a later session's recommendation.                                               |
+| One-time or gift request                       | An episode may describe the request, but it is not automatically saved as the customer's lasting preference.              |
+| Different customers, including concurrent runs | Customer A cannot retrieve, change or delete customer B's memory.                                                         |
+| Missing or unverified identity                 | No personal memory is read or written.                                                                                    |
+| No matching memory                             | No memory block is injected and the agent makes no claim of recall.                                                       |
+| Explicit correction                            | The new statement takes precedence over a conflicting saved preference.                                                   |
+| Private or sensitive content                   | Prohibited content is rejected before persistence; identifying text is removed before model extraction.                   |
+| Inspect and delete                             | The customer can inspect both memory types and delete them without queued work restoring deleted data.                    |
+| Expired episode                                | Retrieval excludes it, and cleanup removes it under the agreed retention policy.                                          |
+| Performance and failure                        | Retrieval meets the agreed latency budget; extraction does not delay streaming; failures and dropped work are observable. |
+
+Use deterministic embedding fakes for retrieval tests and PostgreSQL/Qdrant integration tests
+for isolation and deletion. Include concurrent runs, partial failures and pending-work deletion
+tests, not only successful memory writes.
+
+## Open Questions Before Acceptance
+
+| Area                     | Decision still required                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Product and privacy      | Is memory opt-in, how is its use explained, and what customer-facing inspection, correction and deletion controls are required? |
+| Memory policy            | Which preference categories are allowed, what evidence is sufficient, and how are contradictions and stale preferences handled? |
+| Retention                | Is 90 days appropriate for episodes? What is the preference decay policy and deletion completion target?                        |
+| Performance              | What are the retrieval latency budget, result and context-size caps, and timeout or store-outage behavior?                      |
+| Identity                 | How does verified end-user identity reach the provider for both AG-UI workflow handoffs and A2A callers?                        |
+| Framework                | Which lifecycle hooks and concurrency guarantees are available in the pinned Agent Framework version?                           |
+| Background processing    | What queue capacity, overload policy, retry limits and loss-on-restart behavior are acceptable?                                 |
+| Consistency and deletion | How are duplicate work, concurrent corrections, partial writes and deletion racing with extraction handled?                     |

@@ -1,0 +1,104 @@
+---
+id: adr-006-finance-delegate-notification-delivery
+name: "ADR-006: Delegate email delivery through shared Finance commands"
+version: 1.0.0
+summary: Finance supplies order and recipient data through commands while Notification owns rendering, email persistence, and SMTP submission.
+status: accepted
+date: 2026-11-03
+owners:
+  - contributor-team
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+appliesTo:
+  - type: system
+    id: finance-system
+  - type: service
+    id: order-orchestration
+  - type: command
+    id: PlaceOrderCommand
+  - type: command
+    id: CompleteOrderCommand
+  - type: command
+    id: CancelOrderCommand
+  - type: channel
+    id: bookworm.{env}.finance.place-order
+---
+
+## Context
+
+Finance has the Order and recipient information needed to request email work
+but should not own templates, SMTP integration, or delivery records. The
+implemented placement contract is also shared with Basket's cleanup consumer.
+That shared contract means retrying placement for one participant can repeat
+work for the other, so the boundary must not imply exactly-once notification
+or successful delivery.
+
+This retrospective ADR records the existing integration boundary and its
+duplicate-processing trade-off; it does not introduce a new notification
+guarantee.
+
+## Decision
+
+Publish [[command|PlaceOrderCommand]] at saga start and on timeout reissues. Let Basket
+consume it for cleanup and Notification independently consume it for a
+new-order email. Do not wait for cleanup success before publishing this shared
+command.
+
+Publish [[command|CompleteOrderCommand]] or [[command|CancelOrderCommand]] from terminal status
+handlers only when both name and email are nonblank. Apply the same guard to
+the timeout-exhaustion cancellation command. The initial placement command is
+not subject to this guard because it also requests Basket work.
+
+Delegate email rendering, durable email outbox records, SMTP submission, and
+maintenance retries to [[system|notification-system]]. Keep that delivery
+lifecycle separate from Finance's saga.
+
+Finance sends notification commands as requests and receives no
+application-level delivery acknowledgment. The saga's completion is governed
+by Basket and Order lifecycle outcomes, not by whether Notification accepted,
+submitted, or delivered an email.
+
+## Consequences
+
+- Finance does not depend on templates, SMTP credentials, or direct access to
+  Notification's database.
+- Placement retries can create additional emails as well as repeat basket
+  cleanup. The shared command is not an exactly-once notification mechanism.
+- Notification skips blank email addresses, but Finance's terminal guard also
+  requires a name; a saga can finish without producing a terminal email command.
+- A nonblank recipient is not proof of a syntactically valid or deliverable
+  mailbox. Notification failures remain downstream processing failures.
+- Finance receives no application-level email delivery acknowledgment and
+  cannot equate saga completion with provider acceptance or recipient delivery.
+- Reissuing the shared `PlaceOrderCommand` can repeat both basket cleanup and
+  placement-email handling. The Finance timeout policy does not provide
+  exactly-once behavior across those consumers.
+- The shared command is not gated by recipient details because Basket also
+  consumes it; terminal completion and cancellation commands are gated by
+  both nonblank name and email.
+- Changes to shared command payloads or routing can affect Basket and
+  Notification independently and must be reviewed against both consumers.
+
+## Alternatives considered
+
+### Render and send email directly from Finance
+
+This would couple saga handlers to templates, SMTP credentials, delivery
+retries, and email persistence, expanding Finance beyond checkout
+coordination.
+
+### Wait for email delivery before completing the saga
+
+Finance does not receive an application-level delivery acknowledgment, and
+email delivery is not the business criterion for Order completion. Waiting
+for a provider-level outcome would couple saga lifecycle to Notification and
+SMTP behavior.
+
+### Publish a separate placement command for each consumer
+
+This could separate Basket cleanup from the placement email, but the
+implemented contract is shared. Any split would be a contract and workflow
+change requiring coordinated consumer updates, not an implication of the
+current decision.

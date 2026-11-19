@@ -1,0 +1,37 @@
+---
+title: Testing and Change Safety
+summary: Layered tests and schema checks protect BookWorm behavior, service boundaries, and contract compatibility.
+owners:
+  - contributor-team
+badges:
+  - content: Cross-cutting Concept
+    backgroundColor: purple
+    textColor: purple
+---
+
+BookWorm uses multiple forms of verification because no single test level can demonstrate business correctness, interface compatibility, and architectural boundaries at once.
+
+## Verification layers
+
+- **Unit tests** exercise domain rules, handlers, validators, and failure paths in isolation. The repository uses TUnit with Moq and Shouldly.
+- **Consumer-driven contract tests** verify asynchronous message contracts and provider behavior. Generate consumer contracts before running provider verification, as the two stages share generated pact artifacts.
+- **Architecture tests** use ArchUnitNET.TUnit to check selected structural rules and prevent boundary drift.
+- **Protocol Buffer checks** lint schema definitions and compare proposed changes with the committed compatibility baseline before updating that baseline.
+- **End-to-end tests** cover customer-facing flows in the client applications, use them for high-value user journeys rather than as a replacement for focused service tests.
+
+The repository's test framework, focused commands, and contract-test order are described in [[doc|development/005-testing]]. Schema change conventions are in [[doc|development/004-engineering-standards]]. The layered verification strategy is captured in [[adr|adr-bw-016-layered-architecture-verification]] and exercised across customer journeys such as [[flow|user-checkout]].
+
+## Cross-cutting cases to protect
+
+When changing a shared mechanism, include tests for the behavior at its actual boundary:
+
+| Concern                 | Evidence to verify                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Authorization           | Unauthenticated requests, missing roles, and missing or insufficient service scopes are rejected.                                |
+| Privacy                 | Classified log fields are redacted, agent inputs and outputs follow the configured PII handling path.                            |
+| Validation and errors   | Invalid fields produce a stable validation response, unexpected exceptions do not leak implementation details.                   |
+| Idempotency and retries | Duplicate and concurrent requests, handler failures after key creation, and retryable versus non-retryable effects are explicit. |
+| Messaging               | Contract changes remain compatible, repeated delivery is safe where required, and correlation survives service boundaries.       |
+| AI governance           | Tool access follows policy, rejected prompts do not reach agents, and failure behavior is observable.                            |
+
+These are coverage prompts, not claims that every case is already tested. Add or update tests alongside the service or shared building block that owns the behavior, and keep architecture documentation aligned when an observed guarantee changes.

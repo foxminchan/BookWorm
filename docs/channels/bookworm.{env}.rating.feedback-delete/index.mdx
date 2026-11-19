@@ -1,0 +1,69 @@
+---
+id: bookworm.{env}.rating.feedback-delete
+name: Feedback Deleted Channel
+version: 1.0.0
+summary: |
+  Kafka channel used by Rating to publish feedback-deleted events for Catalog
+  to consume and remove from a book's rating summary.
+owners:
+  - contributor-team
+address: bookworm.{env}.rating.feedback-delete
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: Environment to use.
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel carries [[service|rating-api]]'s
+[[event|FeedbackDeletedIntegrationEvent]]
+to Catalog. The [[domain|catalog]] projection uses the event to keep the
+denormalized average rating and review count aligned after
+[[domain|reviews]] removes an individual [[entity|feedback]] record for a
+[[entity|book]].
+
+<ChannelInformation />
+
+## Message contract
+
+| Field        | Type    | Required | Description                               |
+| ------------ | ------- | -------- | ----------------------------------------- |
+| `bookId`     | UUID    | Yes      | Book whose rating summary must be updated |
+| `rating`     | Integer | Yes      | Rating value to remove                    |
+| `feedbackId` | UUID    | Yes      | Identifier of the deleted feedback        |
+
+The payload schema is defined by
+[[event|FeedbackDeletedIntegrationEvent]]. Messages are serialized as
+camelCase JSON inside the BookWorm CloudEvents-compatible Kafka envelope.
+
+## Producers and consumers
+
+- **Producer:** [[service|rating-api]], after a feedback record is deleted.
+- **Consumer:** [[service|catalog-api]], which looks up the book and removes
+  the rating from its denormalized summary.
+- If Catalog cannot find the book, it ignores the deletion because there is no
+  local rating projection to update.
+
+## Delivery and operations
+
+- The topic is created as `bookworm.<environment>.rating.feedback-delete`;
+  `{env}` is replaced with `development`, `staging`, or `production`.
+- Delivery is at least once. Consumers must tolerate duplicate deliveries.
+- Kafka message keys use the Wolverine partition key/group ID when available.
+- Trace context is propagated through the `traceparent` Kafka header.
+
+## Architecture diagram
+
+<NodeGraph />

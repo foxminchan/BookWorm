@@ -3420,21 +3420,25 @@ const userNames = users.flatMap((user) => (user.isActive ? [user.name] : []));
 // Extract valid emails from responses
 // Before
 const emails = responses
-  .map((r) => (r.success ? r.data.email : null))
-  .filter(Boolean);
+  .map(r => r.success ? r.data.email : null)
+  .filter(Boolean)
 
 // After
-const emails = responses.flatMap((r) => (r.success ? [r.data.email] : []));
+const emails = responses.flatMap(r =>
+  r.success ? [r.data.email] : []
+)
 
 // Parse and filter valid numbers
 // Before
-const numbers = strings.map((s) => parseInt(s, 10)).filter((n) => !isNaN(n));
+const numbers = strings
+  .map(s => parseInt(s, 10))
+  .filter(n => !isNaN(n))
 
 // After
-const numbers = strings.flatMap((s) => {
-  const n = parseInt(s, 10);
-  return isNaN(n) ? [] : [n];
-});
+const numbers = strings.flatMap(s => {
+  const n = parseInt(s, 10)
+  return isNaN(n) ? [] : [n]
+})
 ```
 
 **When to use:**

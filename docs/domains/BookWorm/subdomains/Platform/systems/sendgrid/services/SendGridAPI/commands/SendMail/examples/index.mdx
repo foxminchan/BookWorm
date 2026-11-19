@@ -1,0 +1,69 @@
+---
+summary: Send a BookWorm notification through SendGrid's SMTP relay with MailKit.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. Send an email with MailKit
+
+Install the `MailKit` package and configure `SENDGRID_API_KEY` as a runtime
+secret. The sender address must be verified by SendGrid.
+
+MailKit submits through SMTP, so use the [[command|CreateMailBatch]] and [[query|GetMailBatch]]
+REST operations when mail-batch management is required.
+
+### Expected outcome
+
+`SendAsync` completes when SendGrid accepts the SMTP submission. This does not
+confirm that the message has been delivered to its recipient.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```sh install-mailkit.sh
+dotnet add package MailKit
+```
+
+```csharp send-mail.cs
+using System;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
+
+var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
+    ?? throw new InvalidOperationException("SENDGRID_API_KEY is required.");
+
+var message = new MimeMessage();
+message.From.Add(new MailboxAddress("BookWorm", "notifications@example.com"));
+message.To.Add(new MailboxAddress("BookWorm reader", "reader@example.com"));
+message.Subject = "Your requested notification is ready";
+message.Body = new TextPart("plain")
+{
+    Text = "Your requested notification is ready."
+};
+
+using var client = new SmtpClient();
+await client.ConnectAsync("smtp.sendgrid.net", 587, SecureSocketOptions.StartTls);
+await client.AuthenticateAsync("apikey", apiKey);
+await client.SendAsync(message);
+await client.DisconnectAsync(true);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle a rejected submission
+
+Do not treat a successful SMTP submission as delivery confirmation. Preserve the
+outbox item and apply the Notification System's bounded retry policy when the
+SMTP connection or submission fails.

@@ -33,16 +33,7 @@ internal sealed class GetDashboardHandler(
                     orders.CompletedRevenue,
                     totalCustomers,
                     catalog.TotalBooks,
-                    FillDailyOrders(
-                        today,
-                        [
-                            .. orders.DailyOrders.Select(day => new DailyOrdersDto(
-                                day.Date,
-                                day.Orders,
-                                day.Revenue
-                            )),
-                        ]
-                    ),
+                    FillDailyOrders(today, orders.DailyOrders),
                     [
                         .. catalog.Categories.Select(category => new CategoryCountDto(
                             category.Name,
@@ -67,7 +58,7 @@ internal sealed class GetDashboardHandler(
 
     private static IReadOnlyList<DailyOrdersDto> FillDailyOrders(
         DateOnly today,
-        IReadOnlyList<DailyOrdersDto> dailyOrders
+        IReadOnlyList<DailyOrderSummary> dailyOrders
     )
     {
         var byDate = dailyOrders.ToDictionary(day => day.Date);
@@ -78,7 +69,9 @@ internal sealed class GetDashboardHandler(
                 .Select(offset =>
                 {
                     var date = today.AddDays(offset);
-                    return byDate.GetValueOrDefault(date) ?? new DailyOrdersDto(date, 0, 0);
+                    return byDate.TryGetValue(date, out var day)
+                        ? new(day.Date, day.Orders, day.Revenue)
+                        : new DailyOrdersDto(date, 0, 0);
                 }),
         ];
     }

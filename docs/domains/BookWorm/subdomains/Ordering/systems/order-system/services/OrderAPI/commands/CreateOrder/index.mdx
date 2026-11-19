@@ -1,0 +1,37 @@
+---
+id: CreateOrder
+name: Create order
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Creates an Order for the authenticated Buyer using the current basket and Catalog pricing.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /api/v1/orders
+  statusCodes: ["201"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+Creates an [[entity|order]] for the authenticated Buyer. Order API obtains the
+Buyer's current basket and resolves its book details and prices through
+Shopping and Catalog.
+
+<NodeGraph />
+
+## Contract
+
+Send the required `x-request-id` header as the idempotency key. The operation
+has no request body. A successful `201 Created` response returns the Order ID
+as a JSON UUID.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="Request header JSON Schema" maxHeight="500" search="true" />

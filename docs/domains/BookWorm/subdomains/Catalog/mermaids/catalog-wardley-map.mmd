@@ -1,0 +1,28 @@
+wardley-beta
+title Catalog value chain
+anchor Shopper [0.96, 0.95]
+anchor Merchant [0.86, 0.91]
+component Product search [0.82, 0.78]
+component Product catalog [0.68, 0.68]
+component Product data model [0.54, 0.56]
+component Search index [0.68, 0.46]
+component Event bus [0.52, 0.38]
+component Search engine [0.38, 0.30]
+component Catalog database [0.24, 0.24]
+component Cloud compute [0.12, 0.12]
+Shopper->Product search
+Merchant->Product catalog
+Product search->Search index
+Product catalog->Product data model
+Product catalog->Search index
+Product catalog->Event bus
+Product data model->Catalog database
+Search index->Search engine
+Search engine->Catalog database
+Catalog database->Cloud compute
+evolve Search index 0.82
+evolve Search engine 0.90
+evolve Catalog database 0.96
+evolve Cloud compute 1.00
+note "Search relevance is our differentiator; keep it close to the shopper" [0.73, 0.87]
+note "Move self-hosted search to a managed service" [0.39, 0.22]

@@ -1,10 +1,10 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 
 namespace BookWorm.Catalog.Features.Books.Update;
 
 [Transactional]
-public sealed class UpdateBookCommand : ICommand
+public sealed class UpdateBookCommand : ICommand, IHasExpectedVersion
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -19,6 +19,9 @@ public sealed class UpdateBookCommand : ICommand
 
     [JsonIgnore]
     public string? ImageUrn { get; set; }
+
+    [JsonIgnore]
+    public uint? ExpectedVersion { get; set; }
 }
 
 internal sealed class UpdateBookHandler(IBookRepository repository)
@@ -32,6 +35,13 @@ internal sealed class UpdateBookHandler(IBookRepository repository)
         var book = await repository.GetByIdAsync(request.Id, cancellationToken);
 
         Guard.Against.NotFound(book, request.Id);
+
+        if (request.ExpectedVersion is { } expectedVersion && book.RowVersion != expectedVersion)
+        {
+            throw new DbUpdateConcurrencyException(
+                $"Book '{request.Id}' was modified by another request (expected version {expectedVersion}, actual {book.RowVersion})."
+            );
+        }
 
         var imageName = request.IsRemoveImage ? null : request.ImageUrn ?? book.Image;
 

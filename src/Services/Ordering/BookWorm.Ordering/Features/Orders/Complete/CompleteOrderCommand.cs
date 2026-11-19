@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
 using BookWorm.Ordering.Extensions;
@@ -18,24 +18,14 @@ internal sealed class CompleteOrderHandler(
         CancellationToken cancellationToken
     )
     {
-        Order? order;
-
-        if (claimsPrincipal.HasRole(Authorization.Roles.Admin))
-        {
-            order = await repository.FirstOrDefaultAsync(
-                new OrderFilterSpec(request.OrderId, Status.New),
-                cancellationToken
+        var spec = claimsPrincipal.HasRole(Authorization.Roles.Admin)
+            ? new OrderFilterSpec(request.OrderId, Status.New)
+            : new OrderFilterSpec(
+                request.OrderId,
+                (Guid)claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId()
             );
-        }
-        else
-        {
-            var buyerId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
 
-            order = await repository.FirstOrDefaultAsync(
-                new OrderFilterSpec(request.OrderId, (Guid)buyerId),
-                cancellationToken
-            );
-        }
+        var order = await repository.FirstOrDefaultAsync(spec, cancellationToken);
 
         Guard.Against.NotFound(order, request.OrderId);
 

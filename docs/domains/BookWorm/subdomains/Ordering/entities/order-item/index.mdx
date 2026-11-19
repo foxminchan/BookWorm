@@ -1,0 +1,55 @@
+---
+id: order-item
+name: Order Item
+version: 1.0.0
+identifier: id
+aggregateRoot: false
+summary: A child record on an Order that captures a book, its quantity, and its purchase-time price.
+owners:
+  - business-strategy
+properties:
+  - name: id
+    type: UUID
+    required: true
+    description: Unique identifier for the Order item.
+  - name: orderId
+    type: UUID
+    required: true
+    description: Identifier of the parent Order.
+    references: order
+    referencesIdentifier: id
+    relationType: belongsTo
+  - name: bookId
+    type: UUID
+    required: true
+    description: Identifier of the Catalog book captured by this item.
+    references: book
+    referencesIdentifier: id
+    relationType: references
+  - name: quantity
+    type: integer
+    required: true
+    description: Number of copies; must be greater than zero.
+  - name: price
+    type: decimal
+    required: true
+    description: Non-negative per-book price selected when the Order was created.
+---
+
+## Overview
+
+An Order Item belongs to one [[entity|order]] and preserves the [[entity|book]]
+identifier, positive quantity, and non-negative price used at checkout. Its line
+total is the price multiplied by quantity.
+
+Order Items are children of the Order aggregate, not independently managed
+products. Catalog remains the owner of current book information and pricing.
+
+## Entity Properties
+
+<EntityPropertiesTable />
+
+## Relationships
+
+- An Order Item belongs to one [[entity|order]].
+- An Order Item references one [[entity|book]].

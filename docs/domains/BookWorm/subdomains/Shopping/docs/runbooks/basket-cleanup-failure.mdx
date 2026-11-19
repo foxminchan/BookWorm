@@ -1,0 +1,86 @@
+---
+title: Recover a failed basket cleanup
+summary: Operational procedure for investigating and recovering a failed basket deletion after checkout.
+version: 1.0.0
+type: runbooks
+badges:
+  - content: Runbook
+    backgroundColor: orange
+    textColor: orange
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## When to use this runbook
+
+Use this procedure when
+[[event|BasketDeletedFailedIntegrationEvent]] is published on
+[[channel|bookworm.&#123;env&#125;.basket.delete-failed]], or when monitoring reports that a
+submitted [[entity|basket]] remains available after checkout.
+
+## Safety rules
+
+- Treat the event as a cleanup failure, not as an Order or payment failure.
+- Confirm the customer and basket identifiers before taking action.
+- Do not delete a basket manually until the downstream order workflow has
+  confirmed whether the purchase was accepted.
+- Prefer an idempotent replay or the platform's normal recovery command over a
+  direct database mutation.
+
+## Investigation
+
+1. Record the event ID, environment, timestamp, customer identifier, basket
+   identifier, and order identifier.
+2. Check the [[service|basket-api]] logs for the delete request and the
+   underlying database error.
+3. Check the
+   [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] consumer logs for
+   delivery or processing failures.
+4. Check the downstream order workflow to establish whether the Order was
+   created, is still pending, or was rejected.
+5. Determine whether the failure is transient (availability, timeout, or
+   broker delivery) or requires engineering intervention (data or contract
+   mismatch).
+
+## Recovery
+
+### Transient service or delivery failure
+
+1. Restore the affected dependency or consumer.
+2. Replay the failed integration message using the approved broker tooling.
+3. Verify that the basket deletion succeeds and that a completion event is
+   emitted.
+4. Confirm that the completion event is processed exactly once by each
+   downstream consumer.
+
+### Order accepted but basket still exists
+
+1. Confirm the Order ID and basket ID belong to the same checkout attempt.
+2. Run the approved idempotent basket-deletion recovery action.
+3. Verify the customer-scoped basket is no longer available.
+4. Attach the recovery result to the incident and retain the original failure
+   event for auditability.
+
+### Order not accepted or status is ambiguous
+
+Stop before deleting the basket. Escalate to the [[domain|ordering]]/Finance owner with
+the identifiers and evidence collected above. The basket must not be removed
+until the purchase outcome is resolved.
+
+## Verification
+
+- The original failure is correlated to a recovery action.
+- A successful deletion produces
+  [[event|BasketDeletedCompleteIntegrationEvent]].
+- No completion event is emitted while the basket remains present.
+- The customer sees a consistent checkout result and cannot accidentally
+  submit the same accepted purchase again.
+
+## Escalation
+
+Escalate persistent failures to the [[domain|shopping]] owner
+([[team|contributor-team]]) with the event payload, correlation IDs,
+dependency health, and the last successful cleanup timestamp. Do not include
+credentials or full customer secrets in the incident record.
+
+<Footer />

@@ -1,0 +1,87 @@
+---
+summary: Create a Buyer profile using the authenticated customer's address.
+---
+
+## 1. Create a Buyer profile
+
+Send the address as JSON. The service obtains the Buyer identity and name from
+the authenticated customer.
+
+<CodeGroup dropdown>
+
+```sh
+curl --request POST "$BASE_URL/api/v1/buyers" \
+  --header "Authorization: Bearer <access-token>" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "street": "10 Example Street",
+    "city": "Ben Thanh",
+    "province": "Ho Chi Minh City"
+  }'
+```
+
+</CodeGroup>
+
+The same request from TypeScript:
+
+<CodeGroup dropdown>
+
+```ts create-buyer.ts
+type CreateBuyerResponse = string;
+
+const baseUrl = "https://api.example.com";
+const accessToken = "<access-token>";
+const response = await fetch(`${baseUrl}/api/v1/buyers`, {
+	method: "POST",
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		"Content-Type": "application/json",
+	},
+	body: JSON.stringify({
+		street: "10 Example Street",
+		city: "Ben Thanh",
+		province: "Ho Chi Minh City",
+	}),
+});
+
+if (response.status === 400) {
+	throw new Error("CreateBuyer validation failed");
+}
+if (!response.ok) {
+	throw new Error(`CreateBuyer failed with ${response.status}`);
+}
+
+const buyerId = (await response.json()) as CreateBuyerResponse;
+console.log(`Created buyer ${buyerId}`);
+```
+
+</CodeGroup>
+
+`201 Created` returns the generated Buyer UUID:
+
+<CodeGroup dropdown>
+
+```json
+"66666666-6666-6666-6666-666666666666"
+```
+
+</CodeGroup>
+
+## 2. Handle an invalid address
+
+Missing or invalid address fields return `400 Bad Request` with validation
+problem details.
+
+<CodeGroup dropdown>
+
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"Street": ["The Street field is required."]
+	}
+}
+```
+
+</CodeGroup>

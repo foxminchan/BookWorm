@@ -1,0 +1,88 @@
+---
+title: Stateful Data, AI & Messaging Infrastructure
+summary: Technical reference for Azure-managed databases, caches, storage, Durable Task Scheduler, Microsoft Foundry, and external dependencies.
+owners:
+  - platform-team
+badges:
+  - content: Infrastructure Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+BookWorm separates state ownership per bounded context while sharing underlying Azure-managed infrastructure instances where appropriate. All Azure-managed data and AI services disable local/shared-key authentication in favor of Microsoft Entra ID RBAC.
+
+## Azure-Managed Data & Caching Services
+
+### PostgreSQL Flexible Server (`postgres`)
+
+| Property               | Value                                                                                            |
+| :--------------------- | :----------------------------------------------------------------------------------------------- |
+| **SKU / Tier**         | `Standard_D4ds_v5` (General Purpose)                                                             |
+| **Engine Version**     | PostgreSQL `18`                                                                                  |
+| **Storage**            | `256 GB` with auto-grow enabled                                                                  |
+| **High Availability**  | Zone-redundant HA across two availability zones                                                  |
+| **Backups**            | 35-day retention with geo-redundant backup storage                                               |
+| **Connection Pooling** | PgBouncer enabled                                                                                |
+| **Authentication**     | Microsoft Entra ID authentication only (password auth disabled)                                  |
+| **Databases**          | [[container\|catalog-database]], [[container\|order-database]], [[container\|sheduler-database]] |
+
+### Azure Managed Redis (`redis`)
+
+| Property              | Value                                                                                                                               |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
+| **SKU**               | `Balanced_B5` (Enterprise Redis)                                                                                                    |
+| **High Availability** | Enabled                                                                                                                             |
+| **Transport & Port**  | TLS 1.2+ on port `10000`                                                                                                            |
+| **Authentication**    | Access keys disabled; Entra ID `default` access policy assignment per identity                                                      |
+| **Consumers**         | [[service\|basket-api]] ([[container\|basket-database]]), [[service\|catalog-api]], [[service\|order-api]], [[service\|rating-api]] |
+
+### Azure Cosmos DB (`cosmos`)
+
+| Property                 | Value                                                                          |
+| :----------------------- | :----------------------------------------------------------------------------- |
+| **API & Capacity Mode**  | NoSQL API, Serverless                                                          |
+| **Consistency Level**    | Session                                                                        |
+| **Authentication**       | Local authentication disabled; custom Cosmos DB RBAC role assignment           |
+| **Database & Container** | [[container\|rating-database]] (`feedbacks` container, partitioned by book ID) |
+| **Owner**                | [[service\|rating-api]]                                                        |
+
+### Azure Storage (`storage`)
+
+| Property             | Value                                                                                                                      |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **SKU / Redundancy** | `Standard_GZRS` (Geo-zone-redundant storage)                                                                               |
+| **Security Posture** | Shared-key access disabled, public blob access disabled, TLS 1.2+ enforced                                                 |
+| **Endpoints**        | Blob, Queue, Table, and Data Lake (`dfs`)                                                                                  |
+| **Usage**            | [[container\|catalog-blob]], [[container\|chat-session-blob]], Azure Functions host state (`catalog-ingestion`, `finance`) |
+
+## Orchestration & AI Platform
+
+### Azure Durable Task Scheduler (`durable-task-scheduler`)
+
+- **Resource:** `Microsoft.DurableTask/schedulers@2025-11-01` (`Consumption` SKU).
+- **Task Hub:** `finance-taskhub`, used exclusively by [[service|order-orchestration]].
+- **Authentication:** `Authentication=DefaultAzure` via `finance-identity`.
+- **Network Note:** `ipAllowlist` is currently `['0.0.0.0/0']` in the generated Bicep and should be restricted for production (see [[doc|operational/004-security-hardening-checklist]]).
+
+### Microsoft Foundry (`Foundry` & `Foundry-project`)
+
+| Property                       | Configuration                                                                              |
+| :----------------------------- | :----------------------------------------------------------------------------------------- |
+| **Account Kind & SKU**         | `AIServices`, `S0` (`disableLocalAuth: true`, `allowProjectManagement: true`)              |
+| **Capability Host**            | `foundry-caphost` (`capabilityHostKind: 'Agents'`, `enablePublicHostingEnvironment: true`) |
+| **Chat Model Deployment**      | `chat` → `model-router` (`2025-11-18`, `GlobalStandard`, capacity `1`)                     |
+| **Decision Model Deployment**  | `decision` → `Microsoft-Decision-1` (`1`, `GlobalStandard`, capacity `1`)                  |
+| **Embedding Model Deployment** | `embedding` → `embed-v-4-0` (Cohere, `6`, `GlobalStandard`, capacity `1`)                  |
+| **Observability**              | `Foundry-project` provisions and links an Application Insights instance                    |
+
+The neighborhood around [[service|catalog-ingestion]] illustrates how PostgreSQL, Storage, Microsoft Foundry, and Qdrant interact during embedding generation:
+
+<ArchitectureGraph id="catalog-ingestion" type="service" depth="2" maxHeight="28" />
+
+## External Infrastructure Dependencies
+
+The following dependencies are hosted outside the Azure resource group and injected as deployment parameters:
+
+- **Kafka Broker:** Carries asynchronous integration events and commands across [[service|catalog-api]], [[service|catalog-ingestion]], [[service|basket-api]], [[service|order-api]], [[service|order-orchestration]], [[service|rating-api]], [[service|sheduler-dashboard]], and [[service|notification-api]].
+- **Qdrant Cloud ([[container|catalog-vector]]):** External vector database updated by [[service|catalog-ingestion]] and queried by [[service|catalog-api]].
+- **SMTP / [[system|sendgrid]]:** External SMTP relay used by [[service|notification-api]] for transactional email delivery.

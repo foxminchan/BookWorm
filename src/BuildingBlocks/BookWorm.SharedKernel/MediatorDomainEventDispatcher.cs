@@ -7,7 +7,15 @@ namespace BookWorm.SharedKernel;
 
 internal sealed class MediatorDomainEventDispatcher(IPublisher publisher) : IDomainEventDispatcher
 {
-    public async Task DispatchAndClearEvents(ImmutableList<IHasDomainEvents> entitiesWithEvents)
+    public Task DispatchAndClearEvents(ImmutableList<IHasDomainEvents> entitiesWithEvents)
+    {
+        return DispatchAndClearEvents(entitiesWithEvents, CancellationToken.None);
+    }
+
+    public async Task DispatchAndClearEvents(
+        ImmutableList<IHasDomainEvents> entitiesWithEvents,
+        CancellationToken cancellationToken
+    )
     {
         foreach (var entity in entitiesWithEvents)
         {
@@ -21,7 +29,7 @@ internal sealed class MediatorDomainEventDispatcher(IPublisher publisher) : IDom
 
             foreach (var domainEvent in events)
             {
-                await publisher.Publish(domainEvent);
+                await publisher.Publish(domainEvent, cancellationToken);
             }
         }
     }

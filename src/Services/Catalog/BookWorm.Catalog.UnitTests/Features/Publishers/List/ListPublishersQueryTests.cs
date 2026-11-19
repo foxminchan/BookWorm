@@ -140,8 +140,7 @@ public sealed class ListPublishersQueryTests
         var original = new ListPublishersQuery();
 
         // Act
-        var copy = original with
-        { };
+        var copy = original with { };
 
         // Assert
         copy.ShouldBe(original);

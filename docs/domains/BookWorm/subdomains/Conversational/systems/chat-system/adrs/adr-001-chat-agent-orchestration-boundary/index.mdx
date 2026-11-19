@@ -1,0 +1,88 @@
+---
+id: adr-001-chat-agent-orchestration-boundary
+name: "ADR-001: Keep conversational orchestration within the Chat System"
+version: 1.0.0
+summary: The Chat System owns request validation, local specialist handoffs, and response formatting while business records remain in their owning domains.
+status: accepted
+date: 2026-11-04
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: chat-system
+  - type: service
+    id: chat-api
+  - type: agent
+    id: router-agent
+  - type: agent
+    id: book-agent
+  - type: agent
+    id: qa-agent
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+BookWorm needs a conversational entry point that can handle book discovery and
+store-support questions without making the AI workflow the owner of [[domain|catalog]],
+[[domain|reviews]], [[entity|basket]], or [[entity|order]] data. Routing every customer question through one
+general-purpose agent would also blur specialist responsibilities and make
+tool access harder to constrain. The request path needs explicit boundaries
+between deterministic validation and formatting, specialist selection, and
+the business systems that own the facts being discussed.
+
+## Decision
+
+The [[system|chat-system]] composes input validation, local handoffs between the [[agent|router-agent]],
+[[agent|book-agent]], and [[agent|qa-agent]], and response formatting in the interactive AG-UI
+workflow. Validation rejects empty or suspicious input and bounds long
+messages before an agent handoff. Router selects Book Agent for book requests
+and QA Agent for store-policy and service questions. For complex book
+requests, Book Agent may delegate independent research to its specialist
+researchers ([[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]).
+
+The workflow provides assistance, not business transactions. [[domain|catalog]] remains
+the source of book facts, [[domain|reviews]] owns individual feedback, and [[domain|shopping]] and
+[[domain|ordering]] own their respective business state. Chat agents use the approved
+read capabilities available to them and do not mutate those records or make
+the conversation a system of record.
+
+## Consequences
+
+- Routing and response handling can evolve independently from Catalog,
+  Reviews, Shopping, and Ordering ownership.
+- Agents must rely on owning systems and their approved interfaces for
+  business facts; answers should distinguish unavailable information from
+  verified facts.
+- A conversational answer is not confirmation that a basket, order, review,
+  or catalog record was created or changed.
+- Validation, handoff, delegation, and formatting are distinct workflow
+  responsibilities that must remain aligned when routing behavior changes.
+- New capabilities that read or change business state require an explicit
+  ownership and authorization decision; they must not be added implicitly
+  through a general-purpose agent.
+
+## Alternatives considered
+
+### Route every request to one general-purpose agent
+
+This would reduce orchestration structure, but combine unrelated support and
+catalog responsibilities and make it harder to limit the capabilities
+available to each kind of request.
+
+### Let Chat own or mutate the business records it discusses
+
+This could make the conversation appear self-contained, but would duplicate
+domain rules and create competing sources of truth. Mutations belong behind
+the owning systems' contracts and authorization boundaries.
+
+### Allow each specialist to handle all user-facing workflow stages
+
+This would couple input acceptance, routing, and response formatting to each
+agent's instructions. Keeping those stages in the composed workflow makes
+their responsibilities explicit and independent of the selected specialist.

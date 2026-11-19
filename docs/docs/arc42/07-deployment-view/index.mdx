@@ -1,0 +1,32 @@
+---
+title: Deployment View
+summary: Logical deployment view of BookWorm services, their stateful infrastructure, and external dependencies.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: blue
+    textColor: blue
+---
+
+This chapter maps the independently deployable services of [[domain|BookWorm]] and their stateful or external dependencies to Azure infrastructure. It follows arc42's deployment view: where software runs, how data is stored, and which external systems the platform depends on.
+
+The deployment architecture runs 15 container apps inside a single Azure Container Apps environment (supported by Azure Container Registry, Log Analytics, and the Aspire Dashboard), backed by Azure-managed databases, caching, storage, and AI services:
+
+- **Relational & NoSQL data:** Azure PostgreSQL Flexible Server ([[container|catalog-database]], [[container|order-database]], and [[container|sheduler-database]]) and Azure Cosmos DB ([[container|rating-database]]).
+- **Caching & orchestration:** Azure Managed Redis ([[container|basket-database]], [[container|catalog-cache]], [[container|order-cache]], and [[container|rating-cache]]) and Azure Durable Task Scheduler for [[service|order-orchestration]].
+- **Files, AI & identity:** Azure Storage ([[container|catalog-blob]], [[container|chat-session-blob]], and function host storage), Microsoft Foundry with Application Insights, and [[system|identity-provider]] (Microsoft Entra ID with managed identities and Entra Agent Identities).
+- **External services:** Kafka for asynchronous messaging, Qdrant Cloud ([[container|catalog-vector]]) for vector search, and [[system|sendgrid]] (SMTP) for email delivery.
+
+The infrastructure specification defines public access (only the API gateway is externally exposed), a minimum of one replica per app, service tiers, high availability, backup retention, and passwordless managed-identity authentication. It does **not** define target Azure regions, custom domains, private virtual networking, or upper autoscaling limits. The diagrams therefore show published component placement rather than a complete production runbook.
+
+## Chapter contents
+
+- [[doc|arc42/07-deployment-view/001-infrastructure-level-1]] gives the logical deployment overview, its motivation, and the mapping of software building blocks to infrastructure.
+- [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] zooms into service, persistence, messaging, and external-system boundaries and records deployment details that still need confirmation.
+
+## Deployment scope
+
+The view covers the customer-facing client, the BookWorm application boundary, service-owned persistence and integration infrastructure, and the external systems those services depend on. It complements the [[doc|arc42/03-context-and-scope/003-technical-context]], which describes technical neighbors, and the [[doc|arc42/05-building-block-view]], which describes static responsibilities.
+
+The deployment view is intentionally not a substitute for the runtime scenarios in [[doc|arc42/06-runtime-view]]. Those scenarios explain message ordering, retries, and business outcomes; this chapter focuses on where the software and its supporting infrastructure execute.

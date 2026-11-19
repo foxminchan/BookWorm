@@ -1,0 +1,52 @@
+---
+id: adr-bw-012-operation-aware-resilience
+name: "ADR-BW-012: Select resilience according to operation semantics"
+version: 1.0.0
+summary: Use shared outbound defaults and capability-specific failure handling without equating retries or duplicate guards with exactly-once effects.
+status: proposed
+date: 2026-11-07
+owners:
+  - platform-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-008-durable-message-handoffs
+  - id: adr-004-finance-bounded-scheduled-retries
+  - id: adr-003-idempotent-misfire-aware-jobs
+  - id: adr-002-durable-outbox-and-bounded-retries
+---
+
+## Context
+
+Dependencies fail transiently, but repeating a read, command, payment-related operation, or email send has different consequences. A uniform retry policy can amplify load or repeat external effects.
+
+## Decision
+
+Reuse shared outbound HTTP resilience defaults while choosing overrides and workflow recovery according to operation semantics. Review timeouts, retryability, cancellation, and side effects at the owning boundary. Persist recovery state where the relevant local workflow requires it.
+
+Do not claim that a retry, transport acknowledgement, or duplicate-request guard proves an exactly-once result. Existing Finance, Scheduler, and delivery ADRs retain their specific policies.
+
+## Decision drivers
+
+- Recoverability during transient dependency failure.
+- Correctness under duplicate and concurrent execution.
+- Bounded dependency load and visible failure outcomes.
+
+## Alternatives considered
+
+| Alternative                                       | Assessment                                                                             |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Retry every operation identically                 | Is easy to configure but ignores side-effect semantics.                                |
+| No retries or recovery anywhere                   | Avoids repeats but abandons recoverable work.                                          |
+| Treat an idempotency key as transaction atomicity | Offers a reassuring shortcut without proving concurrent safety or business completion. |
+
+## Consequences
+
+- Safe transient failures can be recovered without a universal policy.
+- Each effect needs a documented duplicate and failure strategy.
+- Retry budgets and end-to-end recovery targets remain to be confirmed; local settings are not system-wide guarantees.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] and [[doc|arc42/06-runtime-view]] for the concrete workflow boundaries.

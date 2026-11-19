@@ -1,4 +1,5 @@
-﻿using BookWorm.SharedKernel.Results;
+using BookWorm.SharedKernel.Results;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Catalog.Features.Books.List;
 
@@ -7,13 +8,11 @@ internal sealed class ListBooksEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet(
-                "/books",
-                async ([AsParameters] ListBooksQuery query, ISender sender) =>
-                    await HandleAsync(query, sender)
+        app.MapQuery("/books", async ([FromBody] ListBooksQuery? query, ISender sender) =>
+                await HandleAsync(query ?? new(), sender)
             )
             .WithPaginationHeaders()
-            .ProducesGet<PagedResult<BookDto>>(true)
+            .ProducesQuery<PagedResult<BookDto>>(true)
             .WithTags(nameof(Book))
             .WithName(nameof(ListBooksEndpoint))
             .WithSummary("List Books")

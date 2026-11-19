@@ -1,0 +1,98 @@
+---
+id: notification-system
+name: Notification System
+version: 1.0.0
+summary: |
+  Internal platform system that consumes order commands, renders email
+  templates, and submits messages through SMTP via MailKit.
+scope: internal
+owners:
+  - contributor-team
+services:
+  - id: notification-api
+    version: 1.0.0
+flows:
+  - id: user-checkout
+    version: 1.0.0
+relationships:
+  - id: sendgrid
+    version: 1.0.0
+    label: submits email delivery requests to
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+    icon: LockClosedIcon
+---
+
+## Context Diagram
+
+The Notification System owns BookWorm's email workflow. It uses MailKit over
+SMTP with MailPit in development and a configured provider, which can be
+[[system|sendgrid]], elsewhere. The current implementation does not call the
+SendGrid HTTP API and does not maintain a separate PostgreSQL database.
+
+The service graph connects [[service|notification-api]] to
+[[service|sendgrid-api]] through [[command|SendMail]] as a logical submission
+relationship. It does not change the SMTP transport described here.
+
+<ContextDiagram />
+
+## Overview
+
+[[service|notification-api]] consumes Finance order-placement, cancellation,
+and completion commands, renders order email content with MJML templates, and
+submits each email over SMTP with a configured resilience pipeline.
+
+The system owns email rendering and SMTP submission resilience, not the
+business meaning of the message. Finance provides recipient and order details;
+Notification renders the content. The SMTP provider processes submission but
+does not become the system of record.
+
+## Responsibilities and boundaries
+
+| Concern            | Notification System owns                                 | Boundary                                              |
+| ------------------ | -------------------------------------------------------- | ----------------------------------------------------- |
+| Message submission | Rendering MIME messages and submitting them through SMTP | The configured provider accepts or rejects submission |
+| Resilience         | MailKit resilience pipeline and Wolverine retries        | Exhausted retries move to the dead-letter Kafka topic |
+| Business meaning   | Rendering notifications from supplied order details      | Calling domains own the business operation            |
+
+Notification processing is not a substitute for the state of the business
+operation that caused the message. Consumers should use the owning domain's
+state or events to determine that outcome.
+
+## Delivery lifecycle
+
+1. Finance publishes an order command. Notification skips blank email addresses;
+   otherwise it renders the subject and body using `MjmlTemplateRenderer`.
+2. Notification submits the MIME message using MailKit over SMTP, protected by
+   its mail resilience pipeline.
+3. Provider acceptance completes the handler; Notification does not persist
+   delivery state or publish a downstream result event.
+
+## Reliability and failure handling
+
+- Sender resilience bounds retries within a submission attempt; exhausted
+  Wolverine listener retries route to the dead-letter queue topic.
+- Repeated commands and Finance placement retries can produce duplicate
+  submissions.
+- Do not interpret provider acceptance as confirmation that an email reached
+  its recipient or that the underlying business operation completed.
+
+## Security and data handling
+
+Email provider credentials belong in runtime secret configuration and must not
+be stored in source control, catalog documentation, or routine logs. Recipient
+addresses and message content should be accessible only to components that
+need them for delivery or authorized support.
+
+Prefer stable identifiers, provider status, error categories, and correlation
+metadata in logs over full message bodies or unnecessary personal data.
+
+## Architecture decisions
+
+<ADRTable />
+
+## Architecture
+
+<NodeGraph />

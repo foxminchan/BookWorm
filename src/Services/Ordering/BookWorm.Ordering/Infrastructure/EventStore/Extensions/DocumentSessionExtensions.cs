@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using BookWorm.Ordering.Infrastructure.EventStore.Diagnostic;
 
@@ -50,6 +50,7 @@ internal static class DocumentSessionWithTelemetryExtensions
             Guid id,
             DomainEvent @event,
             IActivityScope activityScope,
+            long? expectedVersion = null,
             CancellationToken cancellationToken = default
         )
             where T : class
@@ -58,11 +59,24 @@ internal static class DocumentSessionWithTelemetryExtensions
                 activityScope,
                 async token =>
                 {
-                    await documentSession.Events.WriteToAggregate<T>(
-                        id,
-                        stream => stream.AppendOne(@event),
-                        token
-                    );
+                    if (expectedVersion.HasValue)
+                    {
+                        var stream = await documentSession.Events.FetchForWriting<T>(
+                            id,
+                            expectedVersion.Value,
+                            token
+                        );
+                        stream.AppendOne(@event);
+                    }
+                    else
+                    {
+                        await documentSession.Events.WriteToAggregate<T>(
+                            id,
+                            stream => stream.AppendOne(@event),
+                            token
+                        );
+                    }
+
                     await documentSession.SaveChangesAsync(token);
                 },
                 cancellationToken

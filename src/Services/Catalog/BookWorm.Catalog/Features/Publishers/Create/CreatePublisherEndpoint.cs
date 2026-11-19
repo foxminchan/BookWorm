@@ -1,14 +1,12 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.Create;
+namespace BookWorm.Catalog.Features.Publishers.Create;
 
 internal sealed class CreatePublisherEndpoint
     : IEndpoint<Ok<PublisherId>, CreatePublisherCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                "/publishers",
-                async (CreatePublisherCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPost("/publishers", async (CreatePublisherCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPostWithoutLocation<PublisherId>()
             .WithTags(nameof(Publisher))
@@ -16,7 +14,7 @@ internal sealed class CreatePublisherEndpoint
             .WithSummary("Create Publisher")
             .WithDescription("Creates a new publisher")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

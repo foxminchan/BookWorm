@@ -1,0 +1,59 @@
+---
+title: Infrastructure Level 1
+summary: Logical deployment overview and software-to-infrastructure mapping for BookWorm.
+owners:
+  - contributor-team
+badges:
+  - content: Deployment View
+    backgroundColor: blue
+    textColor: blue
+---
+
+## 7.1 Infrastructure Level 1
+
+### System distribution
+
+<LikeC4View viewId="bookwormDeployment" project="deployment" />
+
+This deployment view shows how [[domain|BookWorm]] is published to Azure:
+
+- **Application compute:** Both web clients (Storefront and Back office), the YARP API gateway, all business services, and the [[system|data-privacy]] PII containers ([[service|PresidioAPI]]) run as 15 container apps in one Azure Container Apps environment (Consumption tier, minimum 1 replica each), paired with Azure Container Registry, Log Analytics, and the Aspire Dashboard.
+- **Traffic entry point:** Users reach the platform only through the API gateway, which is the sole externally exposed container app. It routes requests to Storefront, Back office, Entra proxy, [[service|chat-api]], [[service|rating-api]], [[service|order-api]], [[service|basket-api]], and [[service|catalog-api]] over internal-only networking.
+- **Azure-managed services:** PostgreSQL Flexible Server (zone-redundant, holding [[container|catalog-database]], [[container|order-database]], and [[container|sheduler-database]]), Azure Cosmos DB ([[container|rating-database]]), Azure Durable Task Scheduler (for [[service|order-orchestration]]), Azure Managed Redis (high availability enabled), Azure Storage (geo-zone-redundant), and Microsoft Foundry (with Application Insights) all use passwordless managed-identity authentication.
+- **Identity & external systems:** [[system|identity-provider]] (Microsoft Entra ID app registrations, managed identities, and Entra Agent Identities for [[agent|book-agent]] and [[agent|rating-agent]]) is provisioned via Microsoft Graph. Kafka, Qdrant Cloud ([[container|catalog-vector]]), and [[system|sendgrid]] (SMTP) are connected as external services.
+
+For asynchronous search indexing, [[service|sheduler-dashboard]] publishes [[event|ProcessVectorBatchIntegrationEvent]] on [[channel|scheduler.process-vector-batch]] to trigger [[service|catalog-ingestion]]. When run locally, containers and emulators substitute for managed Azure and external services.
+
+### Motivation
+
+[[domain|BookWorm]] is organized around business capabilities with clear service boundaries. Separating compute, service-owned data stores, and asynchronous messaging makes operational ownership explicit and lets teams evolve or scale capabilities independently.
+
+The deployment specification establishes the hosting platform, managed services, service tiers, high-availability modes, and passwordless security posture, while leaving target regions, private virtual networking, and upper autoscaling limits to environment-specific operations configuration.
+
+### Quality and performance characteristics
+
+- **Ownership and change isolation:** Services deploy as independent container apps, though shared infrastructure (such as the single PostgreSQL server and Redis instance) creates shared operational dependencies.
+- **Asynchronous work:** Integration events, durable queues, and scheduled batches offload work that does not need to finish during the user request. See [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] and [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]].
+- **State ownership:** Basket, Orders, feedback, and email delivery state belong to their respective systems; search vectors and rating summaries are derived views.
+- **No stated service-level targets:** Availability, latency, throughput, recovery-time, and capacity SLAs are not defined here.
+
+### Mapping of building blocks to infrastructure
+
+| Software building block                                                   | Infrastructure element                                                                                                         | Deployment fact                                                                                                                                                       | Not established                                                 |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Storefront and Back office clients                                        | Internal container apps (min 1 replica) in Azure Container Apps                                                                | Next.js (Bun) apps behind the API gateway; sign in via [[system\|identity-provider]] using managed-identity assertions                                                | CDN, custom domains, and TLS certificates                       |
+| API gateway                                                               | External container app (port 5000, min 1 replica)                                                                              | YARP routes traffic to Storefront, Back office, Entra proxy, Chat, Rating, Ordering, Basket, and Catalog                                                              | Max replica scaling and custom domain/WAF                       |
+| [[system\|product-catalog-system]] / [[service\|catalog-ingestion]]       | Container apps, [[container\|catalog-database]], [[container\|catalog-vector]], [[container\|catalog-blob]], Microsoft Foundry | PostgreSQL holds catalog data and the ingestion queue; [[service\|catalog-ingestion]] updates Qdrant Cloud in batches using Azure Storage                             | Qdrant Cloud tier, backup, and rebuild strategy                 |
+| [[system\|cart-system]] / [[service\|basket-api]]                         | Container app and [[container\|basket-database]] (Azure Managed Redis)                                                         | Redis (high availability, Entra ID access) stores Basket state and is shared with Catalog, Ordering, and Rating caches                                                | Key eviction/persistence policy and per-service isolation       |
+| [[system\|order-system]] / [[system\|finance-system]]                     | Container apps, [[container\|order-database]], Durable Task Scheduler, Azure Storage, Kafka                                    | [[service\|order-api]] persists orders in PostgreSQL; [[service\|order-orchestration]] runs on Azure Functions + Durable Task Scheduler                               | Broker provider and topology                                    |
+| [[system\|rating-system]], [[system\|chat-system]], [[system\|mcp-tools]] | Container apps, [[container\|rating-database]], [[container\|chat-session-blob]], [[service\|PresidioAPI]], Microsoft Foundry  | Rating stores feedback in Cosmos DB (Serverless); Chat stores sessions in Blob Storage; both use Presidio, [[service\|mcp-server]], and Entra Agent Identities        | Model quotas, regions, and private network boundary             |
+| [[system\|scheduler-system]] / [[service\|sheduler-dashboard]]            | Container app and [[container\|sheduler-database]]                                                                             | Quartz state lives in PostgreSQL; publishes [[event\|ProcessVectorBatchIntegrationEvent]] to Kafka                                                                    | Clustering and failover                                         |
+| [[system\|notification-system]] / [[service\|notification-api]]           | Container app, Kafka, [[system\|sendgrid]] (SMTP)                                                                              | Stateless MailKit email sender with resilience pipeline and HMAC verification; MailPit locally, configured SMTP elsewhere                                             | Provider choice and delivery guarantees                         |
+| Shared integration events                                                 | Kafka (external)                                                                                                               | Supplied as an external connection string when published                                                                                                              | Broker provider, cluster size, retention, and disaster recovery |
+| Identity                                                                  | [[system\|identity-provider]] (Microsoft Entra ID)                                                                             | App registration with 3 app roles, 14 OAuth2 scopes, per-service managed identities, and Entra Agent Identities for [[agent\|book-agent]] and [[agent\|rating-agent]] | Tenant conditional access and network policy                    |
+
+### Environments
+
+The deployment distinguishes local development from Azure publishing. Locally, containers and emulators run Kafka, Entra ID, MailPit, Redis, PostgreSQL, Cosmos DB, Durable Task Scheduler, Qdrant, and Azure Storage; in Azure, these map to Azure-managed services or external endpoints. Document environment-specific sizing, external endpoints, data isolation, and access boundaries as each environment is confirmed.
+
+See [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] for the lower-level infrastructure mapping and open operational questions.

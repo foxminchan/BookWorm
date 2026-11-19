@@ -6,33 +6,37 @@ namespace BookWorm.ArchTests.Infrastructure;
 
 public sealed class SagaConventionTests : ArchUnitBaseTest
 {
-    private const string SagaNamespace = $"{nameof(BookWorm)}.*.Saga";
+    private const string OrchestrationNamespace = $"{nameof(BookWorm)}.*.Orchestration";
 
     [Test]
-    public void GivenSagaClasses_WhenCheckingModifiers_ThenShouldBeSealed()
+    public void GivenOrchestratorClasses_WhenCheckingModifiers_ThenShouldBeSealed()
     {
         Classes()
             .That()
-            .ResideInNamespaceMatching(SagaNamespace)
+            .ResideInNamespaceMatching(OrchestrationNamespace)
             .And()
-            .HaveNameEndingWith("Saga")
+            .HaveNameEndingWith("Orchestrator")
             .Should()
             .BeSealed()
-            .Because("Wolverine saga classes should be sealed to prevent unintended inheritance.")
+            .Because(
+                "Durable Functions orchestrator classes should be sealed to prevent unintended inheritance."
+            )
             .Check(Architecture);
     }
 
     [Test]
-    public void GivenSagaSettings_WhenCheckingModifiers_ThenShouldBeSealed()
+    public void GivenOrchestrationSettings_WhenCheckingModifiers_ThenShouldBeSealed()
     {
         Classes()
             .That()
-            .ResideInNamespaceMatching(SagaNamespace)
+            .ResideInNamespaceMatching(OrchestrationNamespace)
             .And()
             .HaveNameEndingWith("Settings")
             .Should()
             .BeSealed()
-            .Because("Saga settings classes should be sealed to prevent unintended inheritance.")
+            .Because(
+                "Orchestration settings classes should be sealed to prevent unintended inheritance."
+            )
             .Check(Architecture);
     }
 }

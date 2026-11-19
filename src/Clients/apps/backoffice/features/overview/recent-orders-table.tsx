@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 
-import type { Order } from "@workspace/types/ordering/orders";
+import type { Order, OrderStatus } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 import {
   Card,
@@ -27,10 +27,10 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { getOrderStatusStyle } from "@workspace/utils/order";
 
 import { RecentOrdersTableSkeleton } from "@/components/loading-skeleton";
 import { currencyFormatter } from "@/lib/constants";
-import { type OrderStatus, getOrderStatusStyle } from "@/lib/pattern";
 import { backofficeTableFeatures } from "@/lib/table";
 
 type RecentOrdersTableProps = Readonly<{
@@ -101,12 +101,10 @@ export function RecentOrdersTable({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} scope="col">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -115,10 +113,7 @@ export function RecentOrdersTable({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
+                <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(

@@ -1,0 +1,33 @@
+---
+title: User memory runtime flow
+---
+sequenceDiagram
+	autonumber
+	actor U as Customer
+	participant A as BookAgent
+	participant P as Memory context provider
+	participant PG as Preferences (PostgreSQL)
+	participant Q as Episodes (Qdrant)
+	participant C as Background queue
+	participant X as Memory worker
+	participant R as Privacy filter (Presidio)
+	participant L as Chat model
+
+	Note over U,L: Proposed successful flow for a verified customer
+	U ->> A: Ask for book recommendations
+	A ->> P: Prepare memory for this answer
+	P ->> P: Resolve verified customer identity
+	P ->> PG: Load only this customer's preferences
+	P ->> Q: Find only this customer's relevant, unexpired episodes
+	P -->> A: Provide bounded memory, or no block if empty
+	A -->> U: Stream answer
+	A ->> P: Answer completed
+	P ->> C: Submit exchange without waiting for extraction
+	C ->> X: Process queued exchange
+	X ->> R: Remove identifying text
+	R -->> X: Anonymized exchange
+	X ->> L: Propose episode and preference candidates
+	L -->> X: Candidate memories
+	X ->> X: Reject sensitive or unsupported content
+	X ->> Q: Save eligible episode with expiry
+	X ->> PG: Merge eligible stated preferences

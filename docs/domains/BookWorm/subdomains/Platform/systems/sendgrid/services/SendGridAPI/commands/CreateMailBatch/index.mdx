@@ -1,0 +1,67 @@
+---
+id: CreateMailBatch
+name: Create mail batch
+version: 1.0.0
+badges:
+  - content: Email Delivery
+    backgroundColor: teal
+    textColor: teal
+summary: |
+  Creates a SendGrid mail batch identifier that can group one or more mail
+  submissions for later scheduled-send operations.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /v3/mail/batch
+  statusCodes: ["201", "400", "401", "403", "404", "405", "500"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+The `CreateMailBatch` command requests a new batch identifier from
+[[system|sendgrid]].
+BookWorm can associate the returned identifier with a later
+[[command|SendMail]] request to group related mail submissions.
+
+Creating a batch does not send an email and does not indicate that a
+notification has been delivered. The [[system|notification-system]] should persist the
+identifier with the workflow that will use it and retain ownership of the
+delivery state.
+
+## Request
+
+This operation does not define a request body. SendGrid authentication and
+optional subuser context are supplied through the API request headers.
+
+## Response
+
+<CodeGroup dropdown>
+
+```json
+{
+	"batch_id": "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw"
+}
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+
+## Response and failures
+
+- `201 Created` returns the new batch identifier.
+- `400 Bad Request` indicates an invalid request.
+- `401 Unauthorized` indicates missing or invalid authentication.
+- `403 Forbidden` indicates that the caller is not allowed to perform the
+  operation.
+- `404 Not Found` indicates that the requested provider resource is unavailable.
+- `405 Method Not Allowed` indicates an unsupported HTTP method.
+- `500 Internal Server Error` indicates a provider-side failure.
+
+<NodeGraph />

@@ -1,0 +1,71 @@
+---
+summary: Publish a missing-book rating failure and compensate the Rating feedback record.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## Publish a missing-book failure
+
+Catalog publishes this event when it receives a feedback-created event for a
+book that no longer exists. The `feedbackId` lets Rating locate the record
+that cannot be projected into Catalog.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```csharp BookUpdatedRatingFailedIntegrationEvent.cs
+[IntegrationMessageOwner(
+    ServiceName = Services.Catalog,
+    TopicName = "book-update-rating-failed"
+)]
+[MessageIdentity("BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent")]
+public sealed record BookUpdatedRatingFailedIntegrationEvent(Guid FeedbackId)
+    : IntegrationEvent;
+```
+
+```csharp PublishFailure.cs
+await bus.PublishAsync(
+    new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId)
+);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## Compensate in Rating
+
+Rating consumes the failure event and deletes the corresponding feedback. If
+the feedback has already been removed, the handler completes without changes.
+
+<CodeGroup dropdown>
+
+```csharp BookUpdatedRatingFailedIntegrationEventHandler.cs
+[WolverineHandler]
+public async Task Handle(
+    BookUpdatedRatingFailedIntegrationEvent @event,
+    CancellationToken cancellationToken
+)
+{
+    var feedback = await repository.GetByIdAsync(@event.FeedbackId, cancellationToken);
+
+    if (feedback is null)
+    {
+        return;
+    }
+
+    repository.Delete(feedback);
+    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+}
+```
+
+</CodeGroup>

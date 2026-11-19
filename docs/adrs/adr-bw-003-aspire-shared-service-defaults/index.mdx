@@ -1,0 +1,51 @@
+---
+id: adr-bw-003-aspire-shared-service-defaults
+name: "ADR-BW-003: Reuse Aspire and shared technical service defaults"
+version: 1.0.0
+summary: Share orchestration and technical host configuration without moving business rules into the platform foundation.
+status: proposed
+date: 2026-11-07
+owners:
+  - platform-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-002-dotnet-platform-foundation
+  - id: adr-bw-013-opentelemetry-observability
+  - id: adr-bw-015-explicit-environment-configuration
+---
+
+## Context
+
+Independent services need repeatable startup, dependency configuration, outbound HTTP defaults, and telemetry. Reimplementing those mechanisms in each host introduces inconsistent configuration and repeated maintenance.
+
+## Decision
+
+Retain .NET Aspire orchestration and reusable service defaults for technical concerns. Each host registers the mechanisms it needs and retains its own business rules, contracts, and configuration overrides.
+
+Aspire's presence is not evidence of a particular production hosting provider or physical topology.
+
+## Decision drivers
+
+- Consistent service setup and diagnostic signals.
+- Reduced duplication of technical hosting code.
+- Preservation of capability ownership despite shared infrastructure.
+
+## Alternatives considered
+
+| Alternative                                      | Assessment                                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Hand-maintained defaults in every host           | Maximizes local control but allows configuration drift.                                    |
+| Central business execution service               | Reduces some duplication while breaking local ownership.                                   |
+| Treat local orchestration as production topology | Avoids separate deployment documentation but makes unsupported infrastructure assumptions. |
+
+## Consequences
+
+- Hosts reuse common technical mechanisms and can override them deliberately.
+- A shared-default change may affect multiple services and needs focused regression checks.
+- Defining a helper does not activate it everywhere; registration and environment configuration remain explicit.
+
+## Evidence
+
+See [[doc|arc42/05-building-block-view/001-whitebox-overall-system]], [[doc|arc42/08-crosscutting-concepts/004-observability]], and [[doc|arc42/07-deployment-view]].

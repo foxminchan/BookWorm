@@ -1,0 +1,49 @@
+---
+id: GetBuyer
+name: Get Buyer
+version: 1.0.0
+badges:
+  - content: Customer Management
+    backgroundColor: orange
+    textColor: orange
+summary: Returns the Buyer profile selected by identifier, subject to the caller's authorization.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/buyers/me
+  statusCodes: ["200", "404"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Retrieves a [[entity|buyer]] profile from the `/buyers/me` endpoint.
+Administrators may retrieve another user's profile; other callers are resolved
+to the Buyer associated with their authenticated identity.
+
+<NodeGraph />
+
+## Query parameters and response
+
+The OpenAPI contract requires an `Id` UUID query parameter. A `200 OK`
+response returns a `BuyerDto` with the Buyer ID, name, and address.
+`404 Not Found` returns `ProblemDetails` when the resolved Buyer profile does
+not exist.
+
+## Query using CURL
+
+<CodeGroup dropdown>
+
+```sh get-buyer.sh
+curl -H "Authorization: Bearer <access-token>" \
+  "https://api.example.com/api/v1/buyers/me?Id=<buyer-id>"
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer file="schema.json" title="BuyerDto JSON Schema" maxHeight="500" search="true" />

@@ -1,0 +1,39 @@
+---
+id: CreateCategory
+name: Create category
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Creates a category in the Catalog.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: POST
+  path: /api/v1/categories
+  statusCodes: ["200", "400"]
+sidebar:
+  badge: "POST"
+---
+
+## Overview
+
+Creates a [[entity|category]] and returns its generated UUID.
+
+<NodeGraph />
+
+## Contract
+
+The request is JSON and requires a non-empty `name`.
+
+The response body is a JSON string containing the new category UUID.
+
+## Operational notes
+
+A validation problem is returned with `400` when `name` is missing or empty.
+
+## Schema
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

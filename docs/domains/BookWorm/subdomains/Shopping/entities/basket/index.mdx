@@ -1,0 +1,43 @@
+---
+id: basket
+name: Basket
+version: 1.0.0
+identifier: customerId
+aggregateRoot: true
+summary: Customer-scoped, pre-order collection of one or more requested books.
+owners:
+  - contributor-team
+properties:
+  - name: customerId
+    type: string
+    required: true
+    description: Identifier of the authenticated customer who owns the basket.
+  - name: items
+    type: array
+    required: true
+    description: Current basket entries, replaced as a set when the basket is updated.
+    references: basket-item
+    referencesIdentifier: bookId
+    relationType: contains
+    items:
+      type: BasketItem
+---
+
+## Overview
+
+The Basket aggregate captures a customer's active pre-order selection. It must
+contain at least one [[entity|basket-item]] when created. Updating it replaces
+the complete item collection, preventing the Basket from being treated as a
+shared or order-lifecycle model.
+
+The Basket is identified by its customer ID in the Basket service. It transfers
+purchase intent to [[domain|ordering]] during checkout but does not own an Order or
+payment.
+
+## Entity Properties
+
+<EntityPropertiesTable />
+
+## Relationships
+
+- A Basket contains one or more [[entity|basket-item]] entries.

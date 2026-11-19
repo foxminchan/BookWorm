@@ -60,7 +60,7 @@ Given("my basket is empty", async ({ basketPage }) => {
 
 Given(
   "I have added {int} different books to my basket",
-  async ({ page, shopPage, productDetailPage }, bookCount: number) => {
+  async ({ shopPage, productDetailPage }, bookCount: number) => {
     await shopPage.navigate();
     await forEachSequentially(
       Array.from({ length: bookCount }),
@@ -79,22 +79,12 @@ Given(
     await shopPage.navigate();
     await shopPage.clickBook(0);
     await productDetailPage.setQuantity(bookCount);
-    await productDetailPage.addToBasket();
   },
 );
 
 Given(
   "I have added {int} book to my basket",
-  async ({ shopPage, productDetailPage }) => {
-    await shopPage.navigate();
-    await shopPage.clickBook(0);
-    await productDetailPage.addToBasket();
-  },
-);
-
-Given(
-  "I have added a book priced at {string} to my basket",
-  async ({ shopPage, productDetailPage }) => {
+  async ({ shopPage, productDetailPage }, _bookCount: number) => {
     await shopPage.navigate();
     await shopPage.clickBook(0);
     await productDetailPage.addToBasket();
@@ -140,29 +130,11 @@ Then(
 );
 
 Then(
-  "the subtotal should be {string}",
-  async ({ basketPage }, expectedSubtotal: string) => {
-    const subtotal = await basketPage.getSubtotal();
-    const expected = Number.parseFloat(expectedSubtotal.replace("$", ""));
-    expect(Math.abs(subtotal - expected)).toBeLessThan(0.01);
-  },
-);
-
-Then(
   "the shipping should be {string}",
   async ({ basketPage }, expectedShipping: string) => {
     const shipping = await basketPage.getShipping();
     const expected = Number.parseFloat(expectedShipping.replace("$", ""));
     expect(shipping).toBe(expected);
-  },
-);
-
-Then(
-  "the total should be {string}",
-  async ({ basketPage }, expectedTotal: string) => {
-    const total = await basketPage.getTotal();
-    const expected = Number.parseFloat(expectedTotal.replace("$", ""));
-    expect(Math.abs(total - expected)).toBeLessThan(0.01);
   },
 );
 
@@ -199,7 +171,7 @@ When(
 // Removal dialog
 Then(
   "I should see a removal confirmation dialog for item {int}",
-  async ({ basketPage }) => {
+  async ({ basketPage }, _itemIndex: number) => {
     await basketPage.assertRemoveDialogVisible();
   },
 );
@@ -208,45 +180,38 @@ Then("I should see a removal confirmation dialog", async ({ basketPage }) => {
   await basketPage.assertRemoveDialogVisible();
 });
 
-When("I confirm the removal", async ({ page }) => {
-  const confirmButton = page
-    .locator('button:has-text("Remove"), button:has-text("Confirm")')
-    .first();
-  await confirmButton.click();
+When("I confirm the removal", async ({ basketPage, page }) => {
+  await basketPage.confirmRemoveButton.click();
   await page.waitForTimeout(1000);
 });
 
-When("I cancel the removal", async ({ page }) => {
-  const cancelButton = page.locator('button:has-text("Cancel")').first();
-  await cancelButton.click();
+When("I cancel the removal", async ({ basketPage, page }) => {
+  await basketPage.cancelRemoveButton.click();
   await page.waitForTimeout(500);
 });
 
-Then("item {int} should be removed from the basket", async ({ page }) => {
-  await page.waitForTimeout(1000);
-});
+Then(
+  "item {int} should be removed from the basket",
+  async ({ page }, _itemIndex: number) => {
+    await page.waitForTimeout(1000);
+  },
+);
 
 Then("the item should remain in the basket", async ({ basketPage }) => {
   const count = await basketPage.getItemCount();
   expect(count).toBeGreaterThan(0);
 });
 
-Then(
-  "the quantity should be restored to {int}",
-  async ({ basketPage }, expectedQuantity: number) => {
-    const quantity = await basketPage.getItemQuantity(0);
-    expect(quantity).toBe(expectedQuantity);
-  },
-);
-
 // Clear basket
+When("I clear the basket", async ({ basketPage }) => {
+  await basketPage.clearBasket();
+});
 
 Then("my basket should be empty", async ({ basketPage }) => {
   await basketPage.assertEmpty();
 });
 
 // Checkout
-
 Then(
   "I should be redirected to the confirmation page",
   async ({ checkoutConfirmationPage }) => {

@@ -1,4 +1,4 @@
-﻿using Aspire.Hosting.Dotnet;
+using Aspire.Hosting.Dotnet;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Scalar.Aspire;
 
@@ -10,95 +10,72 @@ internal static class ScalarExtensions
     {
         /// <summary>
         ///     Adds a Scalar API reference to the distributed application builder with predefined theme and font settings.
-        ///     Only local Keycloak authentication is supported.
         /// </summary>
-        /// <param name="keycloak">The Keycloak resource builder to use for authentication.</param>
+        /// <param name="entraId">The Entra ID application resource builder to use for authentication.</param>
         /// <returns>An <see cref="IResourceBuilder{ScalarResource}" /> configured with the specified theme and font settings.</returns>
         public IResourceBuilder<ScalarResource> AddScalar(
-            IResourceBuilder<IResource>? keycloak = null
+            IResourceBuilder<EntraIdApplicationResource>? entraId = null
         )
         {
             var scalar = builder.AddScalarApiReference(options =>
                 options.DisableDefaultFonts().PreferHttpsEndpoint().AllowSelfSignedCertificates()
             );
 
-            if (keycloak is null)
-            {
-                return scalar;
-            }
-
-            return keycloak switch
-            {
-                IResourceBuilder<KeycloakResource> container => scalar
-                    .WithReference(container)
-                    .WaitForStart(container),
-
-                _ => throw new InvalidOperationException(
-                    "Unsupported Keycloak resource builder type."
-                ),
-            };
+            return entraId is null ? scalar : scalar.WithReference(entraId);
         }
     }
 
     extension(IResourceBuilder<ScalarResource> builder)
     {
         /// <summary>
-        ///     Configures the Scalar resource builder to include an API reference with OAuth authorization.
+        ///     Configures the Scalar resource builder to include API references with OAuth authorization.
         /// </summary>
-        /// <param name="api">The .NET project resource builder representing the API project.</param>
+        /// <param name="apis">The .NET project resource builders representing the API projects.</param>
         /// <returns>The configured Scalar resource builder with OAuth authorization.</returns>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when Keycloak resource is not found in the application builder or when the required 'kc-realm' parameter is
-        ///     not configured.
-        /// </exception>
-        public IResourceBuilder<ScalarResource> WithOpenAPI(
-            IResourceBuilder<DotnetProjectResource> api
-        )
+        public void WithOpenAPI(params IResourceBuilder<DotnetProjectResource>[] apis)
         {
-            return builder.WithApiReference(
-                api,
-                async (options, ctx) =>
+            var entraId = builder
+                .ApplicationBuilder.Resources.OfType<EntraIdApplicationResource>()
+                .FirstOrDefault();
+
+            foreach (var api in apis)
+            {
+                builder.WithApiReference(api, async (options, ctx) =>
                 {
-                    var clientId = api.Resource.Name;
-
-                    var parameter = builder
-                        .ApplicationBuilder.Resources.OfType<ParameterResource>()
-                        .FirstOrDefault(r =>
-                            string.Equals(
-                                r.Name,
-                                $"{clientId}-secret",
-                                StringComparison.OrdinalIgnoreCase
-                            )
-                        );
-
-                    if (parameter is not null)
+                    if (entraId is null)
                     {
-                        var clientSecret = await parameter.GetValueAsync(ctx);
-
-                        options
-                            .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
-                            .AddAuthorizationCodeFlow(
-                                OAuthDefaults.DisplayName,
-                                flow =>
-                                {
-                                    flow.WithPkce(Pkce.Sha256)
-                                        .WithClientId(clientId)
-                                        .AddBodyParameter("audience", "account");
-
-                                    if (!string.IsNullOrWhiteSpace(clientSecret))
-                                    {
-                                        flow.WithClientSecret(clientSecret);
-                                    }
-
-                                    flow.WithSelectedScopes(
-                                        $"{clientId}_{Authorization.Actions.Read}",
-                                        $"{clientId}_{Authorization.Actions.Write}"
-                                    );
-                                }
-                            );
+                        return;
                     }
-                }
-            );
+
+                    var clientId = api.Resource.Name;
+                    var entraClientId = await entraId.ClientIdOutputReference.GetValueAsync(ctx);
+                    var tenantId = await entraId.TenantIdOutputReference.GetValueAsync(ctx);
+                    var effectiveTenantId = string.IsNullOrWhiteSpace(tenantId)
+                        ? "common"
+                        : tenantId;
+                    var authority =
+                        $"{entraId.Instance.TrimEnd('/')}/{effectiveTenantId}/oauth2/v2.0";
+
+                    options
+                        .AddPreferredSecuritySchemes(OAuthDefaults.DisplayName)
+                        .AddAuthorizationCodeFlow(OAuthDefaults.DisplayName, flow =>
+                        {
+                            flow.WithPkce(Pkce.Sha256)
+                                .WithAuthorizationUrl($"{authority}/authorize")
+                                .WithTokenUrl($"{authority}/token");
+
+                            if (!string.IsNullOrWhiteSpace(entraClientId))
+                            {
+                                flow.WithClientId(entraClientId);
+                            }
+
+                            flow.WithSelectedScopes(
+                                $"{clientId}_{Authorization.Actions.Read}",
+                                $"{clientId}_{Authorization.Actions.Write}"
+                            );
+                        });
+                });
+            }
         }
     }
 }

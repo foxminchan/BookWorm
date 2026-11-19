@@ -1,12 +1,15 @@
-﻿using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.CQRS;
 using BookWorm.Chassis.Utilities.Guards;
 using BookWorm.Ordering.Extensions;
 
 namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
 [Transactional]
-public sealed record UpdateAddressCommand(string Street, string City, string Province)
-    : ICommand<BuyerDto>;
+public sealed record UpdateAddressCommand(
+    [property: PIIData] string Street,
+    [property: PIIData] string City,
+    [property: PIIData] string Province
+) : ICommand<BuyerDto>;
 
 internal sealed class UpdateAddressHandler(
     IBuyerRepository repository,
@@ -18,7 +21,7 @@ internal sealed class UpdateAddressHandler(
         CancellationToken cancellationToken
     )
     {
-        var userId = claimsPrincipal.GetClaimValue(ClaimTypes.NameIdentifier).ToBuyerId();
+        var userId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
 
         var buyer = await repository.GetByIdAsync((Guid)userId, cancellationToken);
 

@@ -11,6 +11,7 @@ import { OrderDetailSkeleton } from "@/components/loading-skeleton";
 import OrderDetailHeader from "@/features/ordering/order-detail/order-detail-header";
 import OrderItemsList from "@/features/ordering/order-detail/order-items-list";
 import OrderSummary from "@/features/ordering/order-detail/order-summary";
+import OrderTimeline from "@/features/ordering/order-detail/order-timeline";
 
 export default function OrderDetailPage({
   params,
@@ -52,6 +53,7 @@ export default function OrderDetailPage({
 
       <div className="grid gap-6">
         <OrderItemsList items={orderDetail.items} />
+        <OrderTimeline orderId={orderDetail.id} />
         <OrderSummary total={orderDetail.total} />
       </div>
     </main>

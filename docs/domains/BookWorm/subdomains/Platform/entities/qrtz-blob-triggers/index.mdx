@@ -1,0 +1,38 @@
+---
+id: qrtz-blob-triggers
+name: Quartz Blob Triggers
+version: 1.0.0
+identifier: trigger_name
+aggregateRoot: false
+summary: Serialized trigger data for Quartz blob-based triggers.
+owners:
+  - platform-team
+properties:
+  - name: sched_name
+    type: text
+    required: true
+  - name: trigger_name
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_name
+    relationType: belongsTo
+  - name: trigger_group
+    type: text
+    required: true
+    references: qrtz-triggers
+    referencesIdentifier: trigger_group
+    relationType: belongsTo
+  - name: blob_data
+    type: bytea
+    required: false
+---
+
+### Entity Properties
+
+<EntityPropertiesTable />
+
+### Entity Relationships
+
+- The composite key is `sched_name`, `trigger_name`, and `trigger_group`.
+- This record extends [[entity|qrtz-triggers]] through the same composite key.

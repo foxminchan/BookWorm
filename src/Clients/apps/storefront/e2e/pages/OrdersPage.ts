@@ -4,7 +4,7 @@ import { BasePage } from "./BasePage.js";
 
 /**
  * Orders Page Object Model
- * Represents the order history/list page at '/orders' or '/account/orders'
+ * Represents the order history/list page at '/account/orders'
  */
 export class OrdersPage extends BasePage {
   readonly path = "/account/orders";
@@ -15,57 +15,35 @@ export class OrdersPage extends BasePage {
 
   // Locators
   get pageTitle(): Locator {
-    return this.page.locator('h1, [data-testid="orders-title"]');
+    return this.page.locator('h1:has-text("Order History")');
   }
 
   get orderCards(): Locator {
-    return this.page.locator(
-      '[data-testid="order-card"], article.order, .order-card',
-    );
+    return this.page.locator('main a[href^="/account/orders/"]');
   }
 
   get emptyState(): Locator {
-    return this.page.locator(
-      '[data-testid="empty-orders"], :has-text("No orders found"), :has-text("You haven\'t placed any orders")',
-    );
-  }
-
-  get startShoppingButton(): Locator {
-    return this.page.locator('a:has-text("Start Shopping"), a[href="/shop"]');
+    return this.page.locator('h2:has-text("No Orders Found")');
   }
 
   get filterDropdown(): Locator {
-    return this.page.locator(
-      'select[name="status"], [data-testid="order-status-filter"]',
-    );
-  }
-
-  get searchInput(): Locator {
-    return this.page.locator(
-      'input[placeholder*="Search orders"], input[name="search"]',
-    );
+    return this.page.locator("#order-status-filter");
   }
 
   get clearFilterButton(): Locator {
-    return this.page.locator(
-      'button[aria-label="Clear order status filter"], button:has-text("Clear Filter"), button:has-text("Clear")',
-    );
-  }
-
-  get sortDropdown(): Locator {
-    return this.page.locator('select[name="sort"], [data-testid="order-sort"]');
-  }
-
-  get loadMoreButton(): Locator {
-    return this.page.locator(
-      'button:has-text("Load More"), button:has-text("Show More")',
-    );
+    return this.page.locator('button[aria-label="Clear order status filter"]');
   }
 
   get pagination(): Locator {
-    return this.page.locator(
-      '[data-testid="pagination"], nav[aria-label="Pagination"]',
-    );
+    return this.page.locator('nav[aria-label="Pagination navigation"]');
+  }
+
+  get nextPageButton(): Locator {
+    return this.pagination.locator('button[aria-label="Go to next page"]');
+  }
+
+  get backToAccountLink(): Locator {
+    return this.page.locator('a[href="/account"]:has-text("Back to Account")');
   }
 
   // Actions
@@ -88,48 +66,31 @@ export class OrdersPage extends BasePage {
 
   async getOrderId(index: number): Promise<string> {
     const order = this.orderCards.nth(index);
-    const text = await order
-      .locator('[data-testid="order-id"], :has-text("Order")')
-      .textContent();
-    // Extract UUID from text
-    const match = text?.match(
-      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
-    );
-    return match ? match[0] : "";
+    const text = await order.locator("h3").textContent();
+    return text?.trim() || "";
   }
 
   async getOrderDate(index: number): Promise<string> {
     const order = this.orderCards.nth(index);
     const text = await order
-      .locator('[data-testid="order-date"], time, .date')
+      .locator('div:has(> p:text-is("Order Date")) p.font-medium')
       .textContent();
     return text?.trim() || "";
   }
 
   async getOrderStatus(index: number): Promise<string> {
     const order = this.orderCards.nth(index);
-    const text = await order
-      .locator('[data-testid="order-status"], .status-badge, .status')
-      .textContent();
+    const text = await order.locator("span").first().textContent();
     return text?.trim() || "";
   }
 
   async getOrderTotal(index: number): Promise<number> {
     const order = this.orderCards.nth(index);
     const text = await order
-      .locator('[data-testid="order-total"], .total, :has-text("Total")')
+      .locator('div:has(> p:text-is("Total Amount")) p.font-serif')
       .textContent();
     const match = text?.match(/\$?([\d,]+\.?\d*)/);
     return match ? Number.parseFloat(match[1]!.replaceAll(",", "")) : 0;
-  }
-
-  async getOrderItemCount(index: number): Promise<number> {
-    const order = this.orderCards.nth(index);
-    const text = await order
-      .locator('[data-testid="item-count"], :has-text("item")')
-      .textContent();
-    const match = text?.match(/(\d+)/);
-    return match ? Number.parseInt(match[1] ?? "") : 0;
   }
 
   async clickOrder(index: number): Promise<void> {
@@ -140,57 +101,38 @@ export class OrdersPage extends BasePage {
 
   async clickOrderById(orderId: string): Promise<void> {
     const order = this.page
-      .locator(`[data-testid="order-card"]:has-text("${orderId}")`)
+      .locator(`main a[href="/account/orders/${orderId}"]`)
       .first();
     await order.click();
     await this.waitForPageLoad();
   }
 
-  async viewOrderDetails(index: number): Promise<void> {
-    const order = this.orderCards.nth(index);
-    const viewButton = order.locator(
-      'a:has-text("View Details"), button:has-text("Details")',
-    );
-    await viewButton.click();
-    await this.waitForPageLoad();
-  }
-
   async filterByStatus(status: string): Promise<void> {
-    await this.filterDropdown.selectOption({ label: status });
+    await this.filterDropdown.click();
+    await this.page.locator(`[role="option"]:has-text("${status}")`).click();
     await this.waitForPageLoad();
   }
 
-  async searchOrders(query: string): Promise<void> {
-    await this.searchInput.fill(query);
-    await this.searchInput.press("Enter");
-    await this.waitForPageLoad();
-  }
-
-  async sortBy(option: string): Promise<void> {
-    await this.sortDropdown.selectOption({ label: option });
-    await this.waitForPageLoad();
-  }
-
-  async loadMore(): Promise<void> {
-    if (await this.loadMoreButton.isVisible()) {
-      await this.loadMoreButton.click();
-      await this.page.waitForTimeout(1000);
+  async clearFilter(): Promise<void> {
+    if (await this.clearFilterButton.isVisible()) {
+      await this.clearFilterButton.click();
+      await this.waitForPageLoad();
     }
   }
 
-  async startShopping(): Promise<void> {
-    await this.startShoppingButton.click();
+  async goToPage(pageNumber: number): Promise<void> {
+    const pageButton = this.pagination.locator(
+      `button[aria-label*="page ${pageNumber} of"]`,
+    );
+    await pageButton.click();
     await this.waitForPageLoad();
   }
 
-  async getOrdersByStatus(status: string): Promise<number> {
-    const orders = await this.orderCards
-      .locator(`:has-text("${status}")`)
-      .count();
-    return orders;
+  // Assertions
+  async assertOrdersVisible(): Promise<void> {
+    await expect(this.pageTitle).toBeVisible();
   }
 
-  // Assertions
   async assertEmpty(): Promise<void> {
     await expect(this.emptyState).toBeVisible();
   }
@@ -200,21 +142,8 @@ export class OrdersPage extends BasePage {
     expect(count).toBeGreaterThan(0);
   }
 
-  async assertOrdersCount(expectedCount: number): Promise<void> {
-    const count = await this.getOrdersCount();
-    expect(count).toBe(expectedCount);
-  }
-
   async assertOrderExists(orderId: string): Promise<void> {
-    const order = this.page.locator(`:has-text("${orderId}")`);
+    const order = this.orderCards.filter({ hasText: orderId }).first();
     await expect(order).toBeVisible();
-  }
-
-  async assertOrderStatus(
-    index: number,
-    expectedStatus: string,
-  ): Promise<void> {
-    const status = await this.getOrderStatus(index);
-    expect(status.toLowerCase()).toContain(expectedStatus.toLowerCase());
   }
 }

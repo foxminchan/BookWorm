@@ -1,0 +1,26 @@
+---
+title: BookWorm context map
+---
+flowchart LR
+	customer([Customer])
+
+	subgraph core["BookWorm core domain"]
+		catalog["Catalog<br/>Core"]
+		shopping["Shopping<br/>Core"]
+		ordering["Ordering<br/>Core"]
+		conversational["Conversational<br/>Core"]
+	end
+
+	reviews["Reviews<br/>Supporting"]
+	platform["Platform<br/>Generic"]
+
+	catalog -->|"Upstream / Downstream<br/>Open-host Service + Published Language<br/>BookListed, StockChanged"| shopping
+	catalog -->|"Upstream / Downstream<br/>Open-host Service + Published Language<br/>BookListed, RatingContext"| reviews
+	customer -->|"Browse, add to cart,<br/>checkout"| shopping
+	shopping -->|"Upstream / Downstream<br/>Customer / Supplier<br/>OrderAccepted"| ordering
+	ordering -->|"Upstream / Downstream<br/>Published Language<br/>OrderStatusChanged"| conversational
+	conversational -.->|"Downstream<br/>Anti-corruption Layer"| ordering
+	platform -->|"Upstream / Downstream<br/>Open-host Service + Conformist<br/>Email, scheduling"| ordering
+	platform -->|"Upstream / Downstream<br/>Open-host Service + Conformist<br/>Notifications"| conversational
+
+	legend["Relationship vocabulary:<br/>Arrows show upstream to downstream.<br/>ACL translates into the downstream model."]

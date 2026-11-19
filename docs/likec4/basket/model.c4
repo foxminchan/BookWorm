@@ -1,0 +1,77 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element system
+  element container
+  element database {
+    style {
+      shape storage
+    }
+  }
+}
+
+model {
+  customer = actor 'Customer' {
+    description 'Manages a personal BookWorm basket and starts checkout.'
+  }
+
+  catalog = system 'Catalog context' {
+    description 'Provides book identity, price, and availability information.'
+
+    contract = container 'Published catalog contract' {
+      technology 'Versioned API and integration contract'
+      description 'Publishes product representations consumed by the Basket API.'
+    }
+  }
+
+  idp = system 'Identity Provider' {
+    description 'External identity infrastructure for authenticating BookWorm users.'
+
+    oauthApi = container 'OAuth API' {
+      technology 'OAuth 2.0'
+      description 'Issues and verifies access tokens used by protected BookWorm APIs.'
+    }
+  }
+
+  basket = system 'Basket / Cart System' {
+    description 'Owns customer baskets and coordinates basket cleanup during checkout.'
+
+    api = container 'Basket API' {
+      technology 'HTTP and gRPC API'
+      description 'Manages authenticated customer baskets and checkout basket deletion.'
+    }
+
+    domain = container 'Basket domain' {
+      technology 'Application domain'
+      description 'Owns CustomerBasket and BasketItem behavior.'
+    }
+
+    persistence = database 'Basket persistence' {
+      technology 'Redis'
+      description 'Stores customer baskets using customer-scoped keys.'
+    }
+
+    api -> domain 'invokes'
+    domain -> persistence 'reads and writes'
+  }
+
+  ordering = system 'Ordering context' {
+    description 'Creates the accepted Order from the checkout request.'
+  }
+
+  finance = system 'Finance context' {
+    description 'Coordinates the place-order workflow and basket cleanup.'
+  }
+
+  customer -> basket.api 'creates, views, and updates basket'
+  basket.api -> idp.oauthApi 'verifies caller identity for protected requests' {
+    technology 'OAuth 2.0'
+  }
+  catalog.contract -> basket.api 'provides book, price, and availability'
+  ordering -> finance 'starts checkout workflow'
+  finance -> basket.api 'sends PlaceOrderCommand'
+  basket.api -> finance 'publishes basket deletion result'
+}

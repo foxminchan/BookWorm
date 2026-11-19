@@ -1,0 +1,35 @@
+---
+id: BasketDeletedFailedIntegrationEvent
+name: Basket deletion failed
+version: 1.0.0
+summary: |
+  Indicates that Basket could not delete the submitted basket during checkout
+  cleanup.
+owners:
+  - contributor-team
+schemaPath: schema.json
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Overview
+
+[[service|basket-api]] publishes this event when [[entity|basket]] deletion fails after
+checkout. Consumers should use it to trigger recovery or notification
+processing; it must not be interpreted as successful cleanup.
+
+<NodeGraph />
+
+## Channel
+
+[[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
+
+## Schema
+
+The event is carried in a CloudEvents envelope. The schema below describes the
+JSON data payload. `email` is nullable because downstream recovery may not
+always have a customer address.
+
+<SchemaViewer file="schema.json" title="Basket deletion failed schema" maxHeight="500" />

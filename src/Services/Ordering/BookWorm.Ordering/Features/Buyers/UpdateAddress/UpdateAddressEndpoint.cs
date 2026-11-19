@@ -1,13 +1,11 @@
-﻿namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
+namespace BookWorm.Ordering.Features.Buyers.UpdateAddress;
 
 internal sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddressCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPatch(
-                "/buyers/address",
-                async (UpdateAddressCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPatch("/buyers/address", async (UpdateAddressCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPatch<BuyerDto>()
             .WithTags(nameof(Buyer))
@@ -15,7 +13,7 @@ internal sealed class UpdateAddressEndpoint : IEndpoint<Ok<BuyerDto>, UpdateAddr
             .WithSummary("Update Buyer Address")
             .WithDescription("Update the current buyer's address")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.User)
+            .RequireAuthorization(Authorization.Policies.Customer)
             .RequirePerUserRateLimit();
     }
 

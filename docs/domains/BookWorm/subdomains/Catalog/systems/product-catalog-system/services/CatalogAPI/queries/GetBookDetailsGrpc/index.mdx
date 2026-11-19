@@ -1,0 +1,61 @@
+---
+id: GetBookDetailsGrpc
+name: Get book details over gRPC
+version: 1.0.0
+badges:
+  - content: Catalog Management
+    backgroundColor: green
+    textColor: green
+summary: Returns full Catalog book details by identifier through the book.v1 gRPC contract.
+owners:
+  - contributor-team
+schemaPath: schema.proto
+sidebar:
+  badge: "gRPC"
+---
+
+## Overview
+
+The `GetBookDetails` RPC returns full [[entity|book]] metadata—including
+description, image URL, pricing, availability status, [[entity|category]],
+[[entity|publisher]], [[entity|author]]s, and rating summary—for a requested
+book identifier. It is an anonymous read operation exposed for internal
+service-to-service clients that need the full book projection rather than the
+compact `GetBook` representation.
+
+[[service|mcp-server]] produces this query in its `BookService.GetBookByIdAsync`
+client to power the `get_book` MCP tool; [[service|catalog-api]] consumes it by
+dispatching `GetBookQuery`.
+
+<NodeGraph />
+
+## Contract
+
+Send a `GetBookDetailsRequest` containing the book UUID in `book_id`. Invalid
+UUIDs return `InvalidArgument`, and unknown book IDs return `NotFound`. A
+successful response is `GetBookDetailsResponse` containing a `BookItem`.
+
+## Schema
+
+<Schema file="schema.proto" lang="protobuf" title="GetBookDetails gRPC schema" />
+
+## Examples
+
+<CodeGroup dropdown>
+
+```csharp title="GetBookDetails gRPC example"
+using Grpc.Net.Client;
+using BookWorm.Catalog.Grpc.Services;
+
+using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.GetBookDetailsAsync(new GetBookDetailsRequest
+{
+    BookId = "0192f4d8-5f3c-7a11-b5dd-2c9e4a6f8b20"
+});
+
+Console.WriteLine($"{response.Book.Name}: {response.Book.Description}");
+```
+
+</CodeGroup>

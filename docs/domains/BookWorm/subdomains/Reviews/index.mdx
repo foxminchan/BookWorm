@@ -1,0 +1,186 @@
+---
+id: reviews
+name: Reviews
+summary: |
+  Captures customer feedback for books and publishes the rating changes that
+  Catalog projects into its product-discovery view.
+version: 1.0.0
+owners:
+  - business-strategy
+systems:
+  - id: rating-system
+    version: 1.0.0
+entities:
+  - id: feedback
+    version: 1.0.0
+agents:
+  - id: rating-agent
+    version: 1.0.0
+badges:
+  - content: Supporting Domain
+    backgroundColor: teal
+    textColor: teal
+---
+
+## Business purpose
+
+Reviews owns the customer [[entity|feedback]] record for a [[entity|book]]: a rating, optional
+comment, and reviewer name. It gives customers a way to share their experience
+and gives BookWorm an independent source for product-rating evidence.
+
+The subdomain is deliberately classified as a **Supporting Domain**. Its
+feedback strengthens discovery and customer confidence, but it does not own
+the product proposition, [[entity|basket]], [[domain|ordering]] lifecycle, or
+payment outcome.
+[[domain|catalog]] owns Book identity and product metadata; Reviews references
+that identity and supplies feedback-derived changes through explicit
+integration events.
+
+### Business outcomes
+
+- Customers can use [[command|CreateFeedback]] to submit feedback for a book
+  with a rating from 0 through 5 and an optional comment.
+- Customers can browse feedback for a particular book in a paginated, sortable
+  result.
+- Catalog can display an eventually consistent average rating and review count
+  without querying Reviews during each product read.
+- A feedback record that refers to a Catalog book that no longer exists is
+  removed through an explicit compensating integration signal.
+- Book-rating summaries can be generated from feedback data without making the
+  summary the source of truth.
+
+## Domain scope and language
+
+Reviews owns the feedback lifecycle and its persistence:
+
+- **Feedback** is the aggregate root. It has a generated identifier, references
+  a `BookId`, and contains the reviewer's first and last names, an optional
+  comment, and a rating.
+- **Rating** is an integer from 0 through 5. Values outside that range are
+  rejected by both request validation and the domain model.
+- **Feedback summary** is an AI-assisted interpretation of a book's rating
+  data. It is a derived response, not a persisted replacement for feedback.
+- **Rating projection** is Catalog's derived `average_rating` and
+  `total_reviews` for a book. It is not a Reviews-owned copy of individual
+  feedback.
+
+Important distinctions:
+
+- A feedback record is not a Catalog Book. Reviews stores only the Book
+  identifier and must not modify Catalog metadata.
+- The Catalog rating summary is not authoritative feedback data. It can lag
+  Reviews while messages are being delivered or processed.
+- Deleting feedback after a Catalog missing-book response is a compensation for
+  an invalid reference, not evidence that a customer deleted the feedback.
+- A generated summary does not alter the stored ratings or the Catalog rating
+  projection.
+
+## Capability map
+
+| Capability          | Responsibility                                                                                        | Strategic importance |
+| ------------------- | ----------------------------------------------------------------------------------------------------- | -------------------- |
+| Feedback lifecycle  | Create, list, and delete feedback with [[command\|DeleteFeedback]]                                    | Supporting           |
+| Rating validation   | Enforce a required Book ID and a rating in the inclusive 0–5 range                                    | Supporting           |
+| Rating publication  | Publish feedback-created and feedback-deleted changes to Catalog                                      | Enabling             |
+| Projection recovery | Remove feedback when Catalog reports that its Book does not exist                                     | Enabling             |
+| Feedback insight    | Produce an authenticated, rate-limited AI-assisted feedback summary with [[query\|SummarizeFeedback]] | Differentiating      |
+
+## Interaction surface
+
+The Rating service exposes versioned feedback endpoints. Its API surface is
+backed by PostgreSQL persistence and emits domain events after a successful
+create or delete operation.
+
+| Operation                           | Responsibility                            | Access behavior                                                   |
+| ----------------------------------- | ----------------------------------------- | ----------------------------------------------------------------- |
+| `POST /feedbacks`                   | Create feedback and return its identifier | Validates the Book ID, reviewer names, comment length, and rating |
+| `GET /feedbacks`                    | List feedback for a Book ID               | Supports pagination and rating-based ordering                     |
+| `DELETE /feedbacks/{id}`            | Delete existing feedback                  | Requires the Rating admin policy and per-user rate limiting       |
+| `GET /feedbacks/{bookId}/summarize` | Generate a feedback summary for a book    | Requires authorization and per-user rate limiting                 |
+
+The endpoint group is versioned as v1 by the service. Validation and missing
+resources use the service's problem-details and exception handling behavior;
+a missing feedback is not silently reported as a successful deletion.
+
+## Context boundaries
+
+| Relationship               | Direction           | Integration intent                                       |
+| -------------------------- | ------------------- | -------------------------------------------------------- |
+| Customer → Reviews         | Inbound             | Submit feedback and inspect a book's feedback            |
+| Catalog → Reviews          | Upstream identity   | Provide the Book identity that feedback references       |
+| Reviews → Catalog          | Event publication   | Update Catalog's derived average rating and review count |
+| Catalog → Reviews          | Compensating signal | Report that created feedback refers to a missing Book    |
+| Reviews → AI and MCP tools | Derived insight     | Summarize feedback without changing source feedback      |
+
+Reviews and Catalog retain separate models and persistence. The contexts
+communicate through Kafka integration events rather than a shared database or
+direct mutation of each other's entities.
+
+## Feedback publication and compensation
+
+After a feedback record is created, Reviews publishes
+[[event|FeedbackCreatedIntegrationEvent]] through
+[[channel|bookworm.&#123;env&#125;.rating.feedback-create]]. After a deletion, it
+publishes [[event|FeedbackDeletedIntegrationEvent]] through
+[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]. Both messages include the
+Book ID, rating, and feedback ID needed by Catalog to update its derived
+rating projection.
+
+The event bus partitions messages by Book ID and feedback ID to preserve
+per-book and per-feedback ordering. Delivery is at least once, so consumers
+must remain idempotent.
+
+If Catalog cannot apply a created-feedback event because the Book does not
+exist, it publishes
+[[event|BookUpdatedRatingFailedIntegrationEvent]] through
+[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]. Rating locates
+the feedback by ID and deletes it when present. Re-delivery is safe because a
+missing feedback record is treated as a no-op.
+
+## Business invariants
+
+- A feedback record has a non-empty Book ID, reviewer first name, and reviewer
+  last name.
+- Ratings are inclusive integers from 0 through 5.
+- At most one feedback record exists for the same Book ID and reviewer-name
+  combination.
+- A delete request for an unknown feedback ID is a not-found outcome.
+- Creating or deleting feedback raises the corresponding domain event only
+  after the lifecycle operation is committed through the transactional command
+  path.
+- Catalog owns its denormalized rating projection; Reviews owns the individual
+  feedback used to derive it.
+- A failed Catalog update for a missing Book removes the invalid feedback
+  record rather than leaving an unprojectable record indefinitely.
+
+## Architecture principles
+
+- **Single source of truth:** Keep individual feedback in Reviews and only the
+  aggregate rating projection in Catalog.
+- **Asynchronous bounded-context integration:** Publish rating changes instead
+  of coupling Catalog product reads to Reviews availability.
+- **Explicit compensation:** Model a missing Catalog Book as a named
+  integration outcome rather than silently ignoring the inconsistency.
+- **Ordered, retry-safe messaging:** Partition related rating messages and make
+  the compensating consumer safe under at-least-once delivery.
+- **Derived intelligence:** Use AI-assisted summaries as a read-time aid; do
+  not let them change feedback or product state.
+
+## Quality attributes and operational concerns
+
+| Concern       | High-level expectation                                                                                           |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Consistency   | Catalog's rating values are eventually consistent; Reviews remains authoritative for individual feedback         |
+| Reliability   | Transactional persistence and durable event-bus integration prevent feedback changes from being silently lost    |
+| Resilience    | A missing Catalog Book produces a compensating event and an idempotent cleanup path                              |
+| Security      | Administrative deletion is role- and scope-protected; summary access is authenticated                            |
+| Performance   | Feedback listing is paginated, and Catalog avoids a synchronous Reviews lookup for product discovery             |
+| Observability | Event contracts carry Book and feedback identifiers for correlation across the projection and compensation paths |
+
+## Architecture graph
+
+The graph below shows the Reviews integration boundary: feedback changes flow
+to Catalog, while missing-book projection failures return to Reviews as an
+explicit compensating signal.
+
+<ArchitectureGraph />

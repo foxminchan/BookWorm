@@ -20,11 +20,11 @@ internal sealed partial class MailKitSettings : IValidateOptions<MailKitSettings
 
     public string? Password { get; private set; }
 
-    public bool DisableHealthChecks { get; set; } = false;
+    public bool DisableHealthChecks { get; set; }
 
-    public bool DisableTracing { get; set; } = false;
+    public bool DisableTracing { get; set; }
 
-    public bool DisableMetrics { get; set; } = false;
+    public bool DisableMetrics { get; set; }
 
     internal void ParseConnectionString(string? connectionString)
     {

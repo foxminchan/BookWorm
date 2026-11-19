@@ -59,8 +59,15 @@ export function BookCard({ book, onClick }: Readonly<BookCardProps>) {
         tabIndex: 0,
         onClick,
         onKeyDown: (e: React.KeyboardEvent) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === "Enter") {
             e.preventDefault();
+            onClick();
+          } else if (e.key === " ") {
+            e.preventDefault();
+          }
+        },
+        onKeyUp: (e: React.KeyboardEvent) => {
+          if (e.key === " ") {
             onClick();
           }
         },

@@ -1,0 +1,75 @@
+---
+id: PresidioAPI
+name: Presidio API
+version: 1.0.0
+summary: |
+  External HTTP API for detecting PII in text and anonymizing detected entities,
+  used by the Rating and Chat agents' privacy middleware.
+externalSystem: true
+owners:
+  - contributor-team
+badges:
+  - content: External
+    backgroundColor: purple
+    textColor: purple
+  - content: HTTP API
+    backgroundColor: teal
+    textColor: teal
+receives:
+  - id: AnalyzeText
+    version: 1.0.0
+    group: PII Processing
+  - id: AnonymizeText
+    version: 1.0.0
+    group: PII Processing
+  - id: GetRecognizers
+    version: 1.0.0
+    group: Presidio Configuration Queries
+  - id: GetSupportedEntities
+    version: 1.0.0
+    group: Presidio Configuration Queries
+  - id: GetAnonymizers
+    version: 1.0.0
+    group: Presidio Configuration Queries
+styles:
+  icon: /icons/third-party/presidio.svg
+specifications:
+  - type: openapi
+    path: https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml
+    name: OpenAPI V2
+---
+
+## Overview
+
+The Presidio API is the integration surface of [[system|data-privacy]].
+The [[system|rating-system]] uses it through the
+[[agent|rating-agent]] PII middleware for privacy processing in feedback
+summarization. The Chat service also uses it for [[agent|router-agent]],
+[[agent|qa-agent]], [[agent|book-agent]], [[agent|book-catalog-researcher]], and
+[[agent|book-recommendation-researcher]]. The researchers reuse Book Agent's
+middleware-wrapped chat client.
+
+The agents' middleware sends [[command|AnalyzeText]] for non-empty text to detect
+sensitive entities, then [[command|AnonymizeText]] with the analysis results
+when PII is detected. Both commands connect these agents to this service in
+the catalog graph and represent middleware HTTP requests, not model-selected
+tools or brokered messages.
+
+## API capabilities
+
+| Operation                | Purpose                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------- |
+| `POST /analyze`          | [[command\|AnalyzeText]] detects PII and returns entity types, text offsets, and confidence scores. |
+| `POST /anonymize`        | [[command\|AnonymizeText]] transforms text using detected entities and configured anonymizers.      |
+| `GET /recognizers`       | [[query\|GetRecognizers]] lists available recognizers for a language.                               |
+| `GET /supportedentities` | [[query\|GetSupportedEntities]] lists PII entity types detectable for a language.                   |
+| `GET /anonymizers`       | [[query\|GetAnonymizers]] lists supported anonymization operators.                                  |
+
+The upstream contract also describes deanonymization and health endpoints.
+Those capabilities are not documented as part of the Reviews or Chat integrations.
+Analyzer and Anonymizer may use separate deployed endpoints; consult the
+operation-level server definitions and runtime configuration.
+
+## Architecture
+
+<NodeGraph />

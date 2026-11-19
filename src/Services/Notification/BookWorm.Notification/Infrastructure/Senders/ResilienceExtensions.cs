@@ -1,4 +1,4 @@
-﻿using Polly.CircuitBreaker;
+using Polly.CircuitBreaker;
 using Polly.Retry;
 using Polly.Timeout;
 
@@ -19,7 +19,7 @@ internal static class ResilienceExtensions
 
             services.PostConfigure<CircuitBreakerStrategyOptions>(
                 nameof(CircuitBreakerStrategyOptions),
-                options => options.ShouldHandle = new PredicateBuilder().Handle<Exception>()
+                options => options.ShouldHandle = CreateTransientExceptionPredicate()
             );
 
             services.Configure<RetryStrategyOptions>(
@@ -27,15 +27,12 @@ internal static class ResilienceExtensions
                 builder.Configuration.GetSection(nameof(RetryStrategyOptions))
             );
 
-            services.PostConfigure<RetryStrategyOptions>(
-                nameof(RetryStrategyOptions),
-                options =>
-                {
-                    options.ShouldHandle = new PredicateBuilder().Handle<Exception>();
-                    options.BackoffType = DelayBackoffType.Exponential;
-                    options.UseJitter = true;
-                }
-            );
+            services.PostConfigure<RetryStrategyOptions>(nameof(RetryStrategyOptions), options =>
+            {
+                options.ShouldHandle = CreateTransientExceptionPredicate();
+                options.BackoffType = DelayBackoffType.Exponential;
+                options.UseJitter = true;
+            });
 
             services.Configure<TimeoutStrategyOptions>(
                 nameof(TimeoutStrategyOptions),
@@ -52,26 +49,33 @@ internal static class ResilienceExtensions
                 }
             );
 
-            services.AddResiliencePipeline(
-                nameof(Notification),
-                (pipelineBuilder, context) =>
-                {
-                    var provider = context.ServiceProvider;
-                    var circuitBreakerOptions = provider
-                        .GetRequiredService<IOptionsMonitor<CircuitBreakerStrategyOptions>>()
-                        .Get(nameof(CircuitBreakerStrategyOptions));
-                    var retryOptions = provider
-                        .GetRequiredService<IOptionsMonitor<RetryStrategyOptions>>()
-                        .Get(nameof(RetryStrategyOptions));
-                    var timeoutOptions = provider
-                        .GetRequiredService<IOptionsMonitor<TimeoutStrategyOptions>>()
-                        .Get(nameof(TimeoutStrategyOptions));
+            services.AddResiliencePipeline(nameof(Notification), (pipelineBuilder, context) =>
+            {
+                var provider = context.ServiceProvider;
+                var circuitBreakerOptions = provider
+                    .GetRequiredService<IOptionsMonitor<CircuitBreakerStrategyOptions>>()
+                    .Get(nameof(CircuitBreakerStrategyOptions));
+                var retryOptions = provider
+                    .GetRequiredService<IOptionsMonitor<RetryStrategyOptions>>()
+                    .Get(nameof(RetryStrategyOptions));
+                var timeoutOptions = provider
+                    .GetRequiredService<IOptionsMonitor<TimeoutStrategyOptions>>()
+                    .Get(nameof(TimeoutStrategyOptions));
 
-                    pipelineBuilder.AddCircuitBreaker(circuitBreakerOptions);
-                    pipelineBuilder.AddRetry(retryOptions);
-                    pipelineBuilder.AddTimeout(timeoutOptions);
-                }
-            );
+                pipelineBuilder.AddCircuitBreaker(circuitBreakerOptions);
+                pipelineBuilder.AddRetry(retryOptions);
+                pipelineBuilder.AddTimeout(timeoutOptions);
+            });
         }
+    }
+
+    private static PredicateBuilder<object> CreateTransientExceptionPredicate()
+    {
+        return new PredicateBuilder()
+            .Handle<CommandException>(ex => ex.IsTransient)
+            .Handle<ProtocolException>()
+            .Handle<IOException>()
+            .Handle<TimeoutException>()
+            .Handle<TimeoutRejectedException>();
     }
 }

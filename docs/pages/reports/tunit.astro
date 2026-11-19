@@ -1,0 +1,160 @@
+---
+import Layout from "@catalog/layouts/Layout.astro";
+import ReportsNav from "../_components/ReportsNav.astro";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Layout
+	title="Backend TUnit HTML Reports"
+	description="Per-project self-contained TUnit HTML test reports for BookWorm backend services"
+	sidebar={false}
+	fullWidth={true}
+>
+	<div class="flex h-[calc(100vh-4rem)] flex-col">
+		<div
+			class="border-b border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-6 py-4"
+		>
+			<div class="mx-auto flex max-w-7xl flex-col gap-3">
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<div>
+						<h1 class="text-xl font-bold text-[rgb(var(--ec-page-text))]">
+							Backend TUnit HTML Reports
+						</h1>
+						<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">
+							Self-contained TUnit reports generated per backend test project in CI.
+						</p>
+					</div>
+					<a
+						id="tunit-standalone-link"
+						href={`${base}/reports/tunit/manifest.json`}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="hidden items-center gap-1 rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ec-page-text))] hover:border-[rgb(var(--ec-accent))]"
+					>
+						Open standalone ↗
+					</a>
+				</div>
+				<ReportsNav />
+			</div>
+		</div>
+
+		<div class="flex min-h-0 flex-1 bg-[rgb(var(--ec-page-bg))]">
+			<aside
+				id="tunit-sidebar"
+				class="hidden w-72 shrink-0 overflow-y-auto border-r border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-3"
+			>
+				<p
+					class="mb-2 px-2 text-xs font-semibold tracking-wider text-[rgb(var(--ec-page-text-muted))] uppercase"
+				>
+					Test Projects
+				</p>
+				<ul id="tunit-project-list" class="space-y-1 text-sm"></ul>
+			</aside>
+
+			<div class="relative flex-1">
+				<iframe
+					id="tunit-frame"
+					title="TUnit HTML Report"
+					class="hidden h-full w-full border-0"
+				></iframe>
+
+				<div
+					id="tunit-fallback"
+					class="flex h-full flex-col items-center justify-center p-8 text-center"
+				>
+					<div
+						class="max-w-md rounded-xl border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] p-6"
+					>
+						<h2 class="text-lg font-semibold text-[rgb(var(--ec-page-text))]">
+							TUnit reports not generated locally
+						</h2>
+						<p class="mt-2 text-sm text-[rgb(var(--ec-page-text-muted))]">
+							Backend TUnit HTML reports are uploaded as <code class="text-xs"
+								>tunit-report-backend</code
+							> in CI (<code class="text-xs">sonar.yml</code>) and published to <code
+								class="text-xs">/reports/tunit/</code
+							> on GitHub Pages.
+						</p>
+						<a
+							href={`${base}/custom/reports`}
+							class="mt-4 inline-block rounded-lg bg-[rgb(var(--ec-accent))] px-4 py-2 text-sm font-medium text-[rgb(var(--ec-accent-text))]"
+						>
+							Back to Test Reports Overview
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		type TUnitEntry = {
+			name: string;
+			path: string;
+		};
+
+		const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+		const withBase = (path: string) =>
+			path.startsWith("http") || (base && path.startsWith(base)) ? path : `${base}${path}`;
+
+		const sidebar = document.getElementById("tunit-sidebar");
+		const list = document.getElementById("tunit-project-list");
+		const frame = document.getElementById("tunit-frame") as HTMLIFrameElement | null;
+		const fallback = document.getElementById("tunit-fallback");
+		const standaloneLink = document.getElementById(
+			"tunit-standalone-link"
+		) as HTMLAnchorElement | null;
+
+		function selectReport(entry: TUnitEntry, buttons: HTMLButtonElement[]) {
+			const reportPath = withBase(entry.path);
+			if (frame) {
+				frame.src = reportPath;
+				frame.classList.remove("hidden");
+			}
+			if (fallback) {
+				fallback.classList.add("hidden");
+			}
+			if (standaloneLink) {
+				standaloneLink.href = reportPath;
+				standaloneLink.classList.remove("hidden");
+				standaloneLink.classList.add("inline-flex");
+			}
+			for (const btn of buttons) {
+				const active = btn.dataset.path === entry.path;
+				btn.className = active
+					? "w-full rounded-lg bg-[rgb(var(--ec-accent))] px-2.5 py-2 text-left text-xs font-medium text-[rgb(var(--ec-accent-text))]"
+					: "w-full rounded-lg px-2.5 py-2 text-left text-xs text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-accent-subtle))] hover:text-[rgb(var(--ec-page-text))]";
+			}
+		}
+
+		fetch(`${base}/reports/tunit/manifest.json`)
+			.then((res) => {
+				if (!res.ok) throw new Error("Manifest not found");
+				return res.json() as Promise<TUnitEntry[]>;
+			})
+			.then((entries) => {
+				if (!Array.isArray(entries) || entries.length === 0 || !list || !sidebar) return;
+
+				sidebar.classList.remove("hidden");
+				const buttons: HTMLButtonElement[] = [];
+
+				for (const entry of entries) {
+					const li = document.createElement("li");
+					const btn = document.createElement("button");
+					btn.type = "button";
+					btn.dataset.path = entry.path;
+					btn.textContent = entry.name;
+					btn.addEventListener("click", () => selectReport(entry, buttons));
+					li.appendChild(btn);
+					list.appendChild(li);
+					buttons.push(btn);
+				}
+
+				selectReport(entries[0], buttons);
+			})
+			.catch(() => {
+				// Keep fallback visible in local preview mode
+			});
+	</script>
+</Layout>

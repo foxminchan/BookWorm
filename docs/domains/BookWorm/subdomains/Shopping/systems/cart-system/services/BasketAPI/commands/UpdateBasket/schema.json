@@ -1,0 +1,25 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "UpdateBasketCommand",
+	"type": "object",
+	"required": ["items"],
+	"properties": {
+		"items": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "quantity"],
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"quantity": {
+						"type": ["integer", "string"],
+						"format": "int32",
+						"pattern": "^-?(?:0|[1-9]\\d*)$"
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,48 @@
+---
+id: GetSupportedEntities
+name: Get supported entities
+version: 1.0.0
+badges:
+  - content: Privacy
+    backgroundColor: red
+    textColor: red
+summary: Returns the PII entity types Presidio Analyzer can detect for the requested language.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /supportedentities
+  statusCodes: ["200"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+The `GetSupportedEntities` query lists the PII entity types [[service|PresidioAPI]] Analyzer can detect. Use the optional `language` query parameter to select a language using its two-character ISO 639-1 code.
+
+<NodeGraph />
+
+## Query parameters and response
+
+`language` is optional. A `200 OK` response returns an array of entity type names. The returned list describes Analyzer capability and does not indicate which entity types BookWorm enables in its privacy policy.
+
+### Query using cURL
+
+<CodeGroup dropdown>
+
+```sh GetSupportedEntities.sh
+curl --get --data-urlencode "language=en" "$ANALYZER_URL/supportedentities"
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer
+	file="schema.json"
+	title="GetSupportedEntities response JSON Schema"
+	maxHeight="500"
+	search="true"
+/>

@@ -1,0 +1,99 @@
+---
+id: catalog-ingestion
+name: Catalog Ingestion
+version: 1.0.0
+summary: |
+  Internal Azure Functions worker that reads pending Catalog book updates and maintains the Qdrant search index.
+styles:
+  icon: /icons/compute/function.svg
+writesTo:
+  - id: catalog-database
+  - id: catalog-vector
+readsFrom:
+  - id: catalog-database
+owners:
+  - contributor-team
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+  - content: Background worker
+    backgroundColor: blue
+    textColor: blue
+receives:
+  - id: ProcessVectorBatchIntegrationEvent
+    version: 1.0.0
+    from:
+      - id: scheduler.process-vector-batch
+        version: 1.0.0
+repository:
+  language: C#
+  url: "https://github.com/foxminchan/BookWorm"
+---
+
+## Overview
+
+Catalog Ingestion maintains the derived [[entity|book]] search index in
+[[container|catalog-vector]]. It reads durable work from
+[[container|catalog-database]], creates embeddings for current book content,
+and upserts or removes the matching Qdrant record.
+[[service|catalog-api]] does not wait
+for embedding generation on the request path; the database queue allows search
+index updates to happen asynchronously.
+
+## Trigger and event intake
+
+The Azure Functions worker uses a Kafka trigger (`ProcessVectorBatch`) bound to
+topic `scheduler.process-vector-batch` with consumer group
+`catalog-ingestion`. The Scheduler service publishes
+[[event|ProcessVectorBatchIntegrationEvent]] to this topic every five minutes
+via `ProcessVectorBatchJob`.
+
+Each Kafka trigger invocation processes one bounded batch of pending updates;
+the batch size is controlled by the worker, not by the trigger payload.
+
+## Processing behavior
+
+1. Acquire a PostgreSQL advisory lock so only one vector batch processor runs
+   at a time.
+2. Read up to 200 pending records ordered by their update time and book ID.
+3. Build searchable text from each active [[entity|book]]'s title,
+   description, [[entity|author]] names, [[entity|category]], and
+   [[entity|publisher]].
+4. Generate embeddings for active books and upsert their content and vector
+   into the `data-bookworm-snippets` collection in Qdrant.
+5. Delete the Qdrant record when the queued book is missing or soft-deleted.
+6. Acknowledge each queue item only if its revision still matches the revision
+   that was read. A newer concurrent change therefore remains queued for a
+   subsequent batch.
+7. Release the advisory lock, including when processing fails.
+
+If another worker already holds the lock, the processor does no work during
+that invocation. If embedding generation or a Qdrant operation fails, the
+exception is propagated and the affected queue items are not acknowledged,
+so pending work remains available for a later invocation.
+
+## Data dependencies
+
+- Reads book records, relationships, and pending update revisions from
+  [[container|catalog-database]].
+- Deletes acknowledged pending updates from [[container|catalog-database]]
+  after successful index operations.
+- Writes searchable records to [[container|catalog-vector]].
+- Uses the configured embedding service to create vectors; embedding service
+  details are managed by application configuration.
+
+## Operations
+
+- Monitor the age and count of `pending_vector_updates` in
+  [[container|catalog-database]] alongside Scheduler job outcomes and Qdrant
+  health to detect ingestion lag.
+- A growing queue can indicate that the scheduled job is not invoking this
+  worker, credentials are rejected, or the database, embedding service, or
+  vector store is unavailable.
+- The queue is durable and coalesces changes by book ID. See
+  [[container|catalog-database]] for the triggers and queue semantics.
+
+## Architecture
+
+<NodeGraph />

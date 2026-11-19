@@ -1,0 +1,136 @@
+---
+id: cart-system
+name: Cart System
+version: 1.0.0
+summary: |
+  Internal system that owns customer-scoped baskets throughout the pre-order
+  journey, including basket management, Catalog-backed item presentation, and
+  checkout cleanup coordination.
+scope: internal
+owners:
+  - contributor-team
+services:
+  - id: basket-api
+    version: 1.0.0
+flows:
+  - id: user-checkout
+    version: 1.0.0
+relationships:
+  - id: identity-provider
+    version: 1.0.0
+    label: verifies customer identity for protected basket requests
+actors:
+  - id: customer
+    name: Customer
+    label: creates and manages a shopping basket
+    direction: inbound
+containers:
+  - id: basket-database
+    version: 1.0.0
+badges:
+  - content: Internal
+    backgroundColor: gray
+    textColor: gray
+    icon: LockClosedIcon
+---
+
+## Context Diagram
+
+The Cart System's context diagram shows its interactions with human actors and other system components.
+
+<ContextDiagram />
+
+## Purpose and boundary
+
+The Cart System owns the customer's mutable basket before an order is
+accepted. It provides the [[service|basket-api]] for creating, retrieving,
+replacing, and deleting basket contents, while [[container|basket-database]]
+keeps the authoritative customer-scoped state.
+
+The system owns shopping intent, not the downstream purchase lifecycle:
+
+- A [[entity|basket]] contains [[entity|book]] identifiers and positive requested quantities.
+- [[domain|catalog]] remains the owner of book metadata, names, and prices.
+- [[domain|ordering]] owns the accepted order after checkout.
+- Basket deletion after checkout is a coordination step, not order completion.
+
+## Core capabilities
+
+| Capability            | Responsibility                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| Basket creation       | Create a customer basket with at least one item.                                            |
+| Basket retrieval      | Return the current basket and enrich items with current Catalog data when available.        |
+| Basket replacement    | Replace the complete item set rather than merge arbitrary state.                            |
+| Basket deletion       | Clear the customer basket as an explicit lifecycle operation.                               |
+| Checkout coordination | Support the handoff that removes a submitted basket and reports cleanup success or failure. |
+
+## Interaction surface
+
+[[service|basket-api]] exposes the version 1 HTTP contract at
+`/api/v1/baskets`:
+
+| Operation | Behavior                                                  | Successful response                                       |
+| --------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| `POST`    | Create a basket for a customer from an initial item list. | `201 Created` with the customer identifier.               |
+| `GET`     | Retrieve the customer's current basket.                   | `200 OK` with basket items and available Catalog details. |
+| `PUT`     | Replace the basket's complete item list.                  | `204 No Content`.                                         |
+| `DELETE`  | Delete the customer's basket.                             | `204 No Content`.                                         |
+
+The service also exposes a gRPC contract for internal service-to-service
+access. HTTP validation and not-found responses are represented through the
+versioned API contract rather than silently returning an empty basket.
+
+## Basket lifecycle
+
+1. A customer creates a basket with one or more requested book items.
+2. The system persists the basket under the customer's identifier in
+   [[container|basket-database]].
+3. A basket read resolves distinct book identifiers through Catalog and
+   enriches the response with the current name, regular price, and sale price
+   when those records are available.
+4. Updates replace the stored item collection. The domain rejects an empty
+   basket at creation time, and item validation keeps quantities positive.
+5. Checkout submits the basket to the downstream order workflow. Cleanup is
+   reported explicitly as either
+   [[event|BasketDeletedCompleteIntegrationEvent]] or
+   [[event|BasketDeletedFailedIntegrationEvent]], allowing consumers to distinguish a
+   completed deletion from a recovery path.
+
+## Ownership and consistency
+
+- Basket state is scoped to the authenticated customer; it is not a shared
+  cart or a durable order record.
+- [[container|basket-database]] is authoritative only for active basket state.
+  It is transient and must not be used to reconstruct accepted orders.
+- Catalog data is read for presentation and does not transfer ownership of
+  book metadata to Shopping.
+- A successful checkout must not leave the submitted basket available for
+  accidental reuse.
+- Cleanup failure is an explicit integration outcome and must not be
+  interpreted as successful deletion.
+
+## Operational considerations
+
+| Concern      | Expectation                                                                          |
+| ------------ | ------------------------------------------------------------------------------------ |
+| Security     | Scope basket access to the authenticated customer identity.                          |
+| Availability | Keep basket reads and writes independent from order-history reads.                   |
+| Consistency  | Treat replacement and deletion as deliberate state transitions.                      |
+| Resilience   | Monitor cleanup failure outcomes and provide a recovery path in the order workflow.  |
+| Performance  | Keep the storefront path low-latency; enrich only the distinct book IDs in a basket. |
+
+## System context
+
+<LikeC4View viewId="basketContext" project="basket" />
+
+## Architecture graph
+
+The graph shows the service and persistence boundary owned by the Cart System.
+
+<NodeGraph mode="full" search="false" legend="false" />
+
+## Architecture decisions
+
+The key decisions that shaped this system. Search, filter by status, or sort by clicking a column.
+
+<ADRTable />

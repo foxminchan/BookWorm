@@ -42,19 +42,17 @@ internal sealed class RatingSummarizerWorkflowFactory(
             .AddFanInBarrierEdge([.. maps], join)
             .AddEdge(join, reduce)
             .AddEdge(reduce, quality)
-            .AddSwitch(
-                quality,
-                switchBuilder =>
-                    switchBuilder
-                        .AddCase<QualityAssessmentDecision>(
-                            decision =>
-                                decision is not null
-                                && decision.Candidate.Iteration < options.MaxIterations
-                                && RatingConfidence.Parse(decision.Assessment.Confidence)
-                                    < options.MinimumConfidence,
-                            refine
-                        )
-                        .WithDefault(classify)
+            .AddSwitch(quality, switchBuilder =>
+                switchBuilder
+                    .AddCase<QualityAssessmentDecision>(
+                        decision =>
+                            decision is not null
+                            && decision.Candidate.Iteration < options.MaxIterations
+                            && RatingConfidence.Parse(decision.Assessment.Confidence)
+                                < options.MinimumConfidence,
+                        refine
+                    )
+                    .WithDefault(classify)
             )
             .AddEdge(refine, reduce)
             .WithOutputFrom(classify)

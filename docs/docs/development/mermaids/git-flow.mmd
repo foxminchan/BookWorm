@@ -1,0 +1,12 @@
+---
+title: Git flow
+---
+gitGraph
+	commit id: "Previous commit"
+	commit id: "Base branch"
+	branch feature/add-book-search
+	commit id: "Implement change"
+	commit id: "Run relevant tests"
+	checkout main
+	merge feature/add-book-search id: "Approved PR"
+	commit id: "Some other change"

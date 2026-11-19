@@ -1,0 +1,54 @@
+---
+title: Change checklist
+summary: Checklist for engineers changing the Catalog API, schema, or integration contracts.
+version: 1.0.0
+type: engineering
+order: 2
+badges:
+  - content: Architecture
+    backgroundColor: green
+    textColor: green
+---
+
+import Footer from "@catalog/components/footer.astro";
+
+## Before you merge
+
+- [ ] **Contract:** Update `openapi-v1.yml` and message schemas for
+      [[service|catalog-api]]. Prefer additive, backward-compatible changes;
+      version breaking ones.
+- [ ] **Docs:** Update affected [[command|UpdateBook]], [[query|GetBook]], and
+      [[query|GetBooksGrpc]] pages, the [[entity|book]] page, and any ADR the
+      change supersedes.
+- [ ] **Schema:** Add an EF Core migration and update `schema.sql` for
+      [[container|catalog-database]] to the current state (no migration history
+      in it).
+- [ ] **Search:** If the change affects indexed content, update the searchable
+      text and enqueue triggers for [[service|catalog-ingestion]] and
+      [[container|catalog-vector]]; plan a rebuild (see the
+      [[doc|runbooks/vector-index-lag]] and
+      [[adr|adr-003-database-queue-for-vector-indexing]]).
+- [ ] **Cache:** Ensure writes invalidate `book:{id}` in [[container|catalog-cache]];
+      bump the key version (for example `catalog:dashboard:v1`) if the cached
+      shape changes; follow [[adr|adr-004-fusioncache-redis-for-catalog-reads]].
+- [ ] **Security:** Keep authentication, rate limiting, and the admin policy on
+      dashboard operations such as [[query|GetDashboardGrpc]].
+- [ ] **Downstream:** Check [[domain|shopping]], [[domain|reviews]], and
+      [[domain|ordering]] consumers of gRPC
+      [[query|GetBookGrpc]] / [[query|GetBooksGrpc]] and integration messages
+      [[event|FeedbackCreatedIntegrationEvent]],
+      [[event|FeedbackDeletedIntegrationEvent]], and
+      [[event|BookUpdatedRatingFailedIntegrationEvent]].
+- [ ] **Observability:** Changes to price, availability, or identity remain
+      traceable by [[entity|book]] ID.
+
+## Invariants to test
+
+- Discount price for a [[entity|book]] is between 0 and the original price.
+- A deleted [[entity|book]] is removed from [[container|catalog-vector]].
+- Deleting a [[entity|category]] or [[entity|publisher]] keeps [[entity|book]]s;
+  deleting an [[entity|author]] is restricted.
+- A missing book on [[event|FeedbackCreatedIntegrationEvent]] publishes
+  [[event|BookUpdatedRatingFailedIntegrationEvent]].
+
+<Footer />

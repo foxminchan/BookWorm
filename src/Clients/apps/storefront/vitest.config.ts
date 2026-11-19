@@ -69,8 +69,7 @@ export default defineConfig({
         "**/instrumentation.node.ts",
         "**/proxy.ts",
         "**/middleware.ts",
-        // Feature Flags & Constants
-        "flags.ts",
+        // Constants
         "lib/constants.ts",
         "lib/policy-content.ts",
         "lib/query-client.ts",

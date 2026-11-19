@@ -1,0 +1,21 @@
+{
+	"sections": [
+		{ "section": "$quick-reference", "title": "Overview" },
+		{
+			"title": "Integrate with this service",
+			"icon": "Plug",
+			"pages": ["[[spec|asyncapi-v1.yml]]"]
+		},
+		{
+			"title": "Related systems",
+			"icon": "Network",
+			"pages": ["[[system|scheduler-system]]", "[[system|sendgrid]]"]
+		},
+		"$outbound-messages",
+		"$inbound-messages",
+		"$architecture",
+		"$state-and-persistence",
+		"$decision-records",
+		"$owners"
+	]
+}

@@ -1,0 +1,116 @@
+---
+id: adr-004-notification-scheduled-maintenance-boundary
+name: "ADR-004: Let Scheduler trigger Notification-owned maintenance batches"
+version: 1.0.0
+summary: Scheduler publishes hourly maintenance requests while Notification selects and processes bounded outbox batches and owns resend and cleanup outcomes.
+status: superseded
+date: 2026-11-01
+owners:
+  - contributor-team
+decisionMakers:
+  - contributor-team
+appliesTo:
+  - type: system
+    id: notification-system
+  - type: system
+    id: scheduler-system
+  - type: service
+    id: notification-api
+badges:
+  - content: Ownership
+    backgroundColor: purple
+    textColor: purple
+---
+
+## Context
+
+Unsent emails need another delivery opportunity, and sent records need cleanup.
+Putting email-table queries in Quartz jobs would couple Scheduler to
+Notification's schema and confuse scheduler execution with completed email work.
+
+## Decision
+
+[[system|scheduler-system]] owns timing and publishes
+[[event|ResendErrorEmailIntegrationEvent]] and
+[[event|CleanUpSentEmailIntegrationEvent]] through Kafka. The current jobs fire
+hourly in UTC. Requests contain inherited identity and creation time, not
+recipient data, row selections, batch sizes, or retention criteria.
+
+[[service|notification-api]] owns selection and processing in
+[[container|notification-database]]. Each request handles at most 100 records,
+ordered by `sequence_number`:
+
+- Resend selects all unsent records with tracking enabled. Despite the event
+  name, eligibility does not require a recorded error. Individual delivery
+  failures are logged and the batch continues; successful originals are marked
+  sent. Handler-token cancellation, selection failures, and final save failures
+  propagate.
+- Cleanup selects only sent records, removes the selected batch, and saves.
+  Failures are logged and rethrown. Selection has no minimum age, retention
+  duration, or audit-hold check.
+
+Scheduler never accesses the Notification tables directly. Completed scheduler
+publication is not evidence that Notification processed the batch or delivered
+any email. No application-level maintenance result event is published.
+
+## Operational behavior
+
+Each hourly scheduler firing publishes a request; Notification performs one
+bounded selection of up to 100 rows for that request. A backlog larger than
+one batch therefore requires subsequent scheduled requests to drain. Resend
+orders candidates by `sequence_number` and includes all unsent rows, so
+repeatedly failing older records can delay newer ones. Cleanup selects sent
+rows without a minimum age, retention window, or audit hold.
+
+Resend item failures are logged while the batch continues, so a successfully
+handled maintenance request is not equivalent to every selected email being
+submitted. Conversely, publication success from Scheduler only confirms the
+request left Scheduler; it does not confirm consumer execution. Operators
+correlate job history with Notification's outbox state and provider health.
+
+## Consequences
+
+- Scheduler and Notification can evolve their persistence independently.
+- Bounded selection limits work per invocation, not lifetime retry counts or
+  the total backlog. Unsent records remain eligible regardless of age.
+- Persistent failures among the oldest records can delay later work. Resend
+  also creates additional outbox rows through the shared sender wrapper.
+- Sent records can be deleted at the next cleanup, so the table is not a
+  durable delivery audit archive.
+- Non-overlapping Quartz jobs do not provide Notification-side row claims or
+  exactly-once processing across duplicate requests and consumers.
+- Operators must correlate Scheduler firings with unsent count, oldest pending
+  age, resend success/failure counts, and SMTP health.
+- A single successful hourly invocation cannot guarantee backlog drain or
+  provide a delivery-time SLA; each run is bounded and downstream SMTP work
+  can fail independently.
+- Oldest-first selection without persisted attempt limits can starve newer
+  unsent records when an older record repeatedly fails.
+- Duplicate maintenance requests and overlapping consumers are not guarded by
+  Notification-side row claims or an exactly-once processing mechanism.
+- Sent-record cleanup is operational deletion, not retention-policy
+  enforcement or a guaranteed delivery audit history.
+
+## Alternatives considered
+
+### Have Scheduler query and delete Notification records directly
+
+This would couple Scheduler to Notification's schema and make the scheduler
+responsible for target-system data semantics. Notification remains the owner
+of selection and processing; Scheduler only requests maintenance.
+
+### Process the entire backlog in one job
+
+An unbounded run could monopolize resources or make job duration grow with
+backlog size. The current batch limit bounds each request, at the cost of
+requiring later runs to work through larger backlogs.
+
+### Treat job completion as delivery completion
+
+Scheduler owns invocation timing, not email processing or provider delivery.
+The systems expose no application-level maintenance result that would justify
+this interpretation.
+
+This complements the existing
+[[adr|adr-002-scheduler-invocation-boundary]].
+It does not add a terminal-failure policy or lifetime attempt cap.

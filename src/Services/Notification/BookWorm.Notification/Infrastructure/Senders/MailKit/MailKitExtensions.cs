@@ -1,5 +1,4 @@
 using BookWorm.Chassis.Utilities.Configurations;
-using MailKit;
 
 namespace BookWorm.Notification.Infrastructure.Senders.MailKit;
 
@@ -63,9 +62,9 @@ internal static class MailKitExtensions
                 sp.GetRequiredService<MailKitSettings>()
             ));
 
-            // Register the provider-neutral sender contract for the outbox.
+            // Register the email sender
             services.AddScoped<MailKitSender>();
-            services.AddScoped<IEmailSender>(sp => sp.GetRequiredService<MailKitSender>());
+            services.AddScoped<ISender>(sp => sp.GetRequiredService<MailKitSender>());
 
             if (!rawSettings.DisableHealthChecks)
             {

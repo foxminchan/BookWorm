@@ -133,8 +133,7 @@ public sealed class ListCategoryQueryTests
         var original = new ListCategoriesQuery();
 
         // Act
-        var copy = original with
-        { };
+        var copy = original with { };
 
         // Assert
         copy.ShouldBe(original);

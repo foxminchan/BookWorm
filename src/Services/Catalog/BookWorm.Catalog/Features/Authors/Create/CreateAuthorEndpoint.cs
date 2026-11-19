@@ -1,13 +1,11 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Create;
+namespace BookWorm.Catalog.Features.Authors.Create;
 
 internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<AuthorId>, CreateAuthorCommand, ISender>
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                "/authors",
-                async (CreateAuthorCommand command, ISender sender) =>
-                    await HandleAsync(command, sender)
+        app.MapPost("/authors", async (CreateAuthorCommand command, ISender sender) =>
+                await HandleAsync(command, sender)
             )
             .ProducesPostWithoutLocation<AuthorId>()
             .WithTags(nameof(Author))
@@ -15,7 +13,7 @@ internal sealed class CreateAuthorEndpoint : IEndpoint<Ok<AuthorId>, CreateAutho
             .WithSummary("Create Author")
             .WithDescription("Create a new author in the catalog system")
             .MapToApiVersion(ApiVersions.V1)
-            .RequireAuthorization(Authorization.Policies.Admin)
+            .RequireAuthorization(Authorization.Policies.BusinessUser)
             .RequirePerUserRateLimit();
     }
 

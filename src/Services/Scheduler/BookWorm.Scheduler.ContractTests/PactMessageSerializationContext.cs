@@ -4,7 +4,6 @@ using BookWorm.Contracts;
 
 namespace BookWorm.Scheduler.ContractTests;
 
-[JsonSerializable(typeof(CleanUpSentEmailIntegrationEvent))]
-[JsonSerializable(typeof(ResendErrorEmailIntegrationEvent))]
+[JsonSerializable(typeof(ProcessVectorBatchIntegrationEvent))]
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
 internal sealed partial class PactMessageSerializationContext : JsonSerializerContext;

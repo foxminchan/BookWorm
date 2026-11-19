@@ -1,0 +1,38 @@
+---
+id: bookworm.{env}.finance.delete-basket-failed
+name: Failed Basket Cleanup Command Channel
+version: 1.0.0
+summary: |
+  Kafka topic carrying Finance's failed basket-cleanup outcome consumed
+  by Order API for recovery.
+owners:
+  - business-strategy
+address: bookworm.{env}.finance.delete-basket-failed
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    description: BookWorm deployment environment.
+protocols:
+  - kafka
+---
+
+## Overview
+
+Finance publishes [[command|DeleteBasketFailedCommand]] when basket cleanup
+fails. [[service|order-api]] soft-deletes the matching Order if it still
+exists, without changing its business status. This is separate from Basket's
+own deletion failure event.
+
+The camelCase JSON payload contains `id`, `creationDate`, `basketId`, nullable
+`email`, `orderId`, and `totalMoney` inside the BookWorm CloudEvents-compatible
+envelope.
+
+<ChannelInformation />
+
+## Architecture
+
+<NodeGraph />

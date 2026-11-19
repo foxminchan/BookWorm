@@ -1,0 +1,81 @@
+---
+summary: Retrieve a complete book projection and handle an unknown UUID.
+---
+
+<Columns cols={2}>
+
+<Column>
+
+## 1. Retrieve a book
+
+The query returns `200` with a complete `BookDto`, including pricing, stock status, relationships, and rating aggregates.
+
+### Response details
+
+- `id` and display metadata identify the catalog item.
+- Pricing and availability describe the current sellable state.
+- Category, publisher, authors, and rating aggregates are returned in the projection.
+
+### Example response
+
+<CodeGroup dropdown>
+
+```ts
+const book: BookDto = {
+	id: "44444444-4444-4444-4444-444444444444",
+	name: "The Left Hand of Darkness",
+	price: 18.99,
+	isAvailable: true,
+	averageRating: 4.8,
+	totalReviews: 12,
+};
+```
+
+</CodeGroup>
+
+### Using this example
+
+Use the returned projection to render the book page without issuing separate requests for its catalog metadata.
+
+</Column>
+
+<Column>
+
+<CodeGroup dropdown>
+
+```ts get-book.ts
+type BookDto = {
+	id: string;
+	name: string;
+	price: number;
+	priceSale?: number | null;
+	isAvailable: boolean;
+	averageRating: number;
+	totalReviews: number;
+};
+
+const bookId = "44444444-4444-4444-4444-444444444444";
+const response = await fetch(`https://api.example.com/api/v1/books/${bookId}`);
+
+if (response.status === 404) {
+	throw new Error("Book was not found");
+}
+if (!response.ok) {
+	throw new Error(`GetBook failed with ${response.status}`);
+}
+
+const book = (await response.json()) as BookDto;
+console.log(`${book.name}: ${book.price}`);
+```
+
+</CodeGroup>
+
+</Column>
+
+</Columns>
+
+---
+
+## 2. Handle an unknown book
+
+An unknown UUID returns `404` with problem details. Do not convert a missing resource into an empty `BookDto`.

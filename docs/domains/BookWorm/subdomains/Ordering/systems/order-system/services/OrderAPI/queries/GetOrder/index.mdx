@@ -1,0 +1,48 @@
+---
+id: GetOrder
+name: Get Order
+version: 1.0.0
+badges:
+  - content: Order Lifecycle
+    backgroundColor: blue
+    textColor: blue
+summary: Returns Order details, including the recorded item quantities and prices.
+owners:
+  - contributor-team
+schemaPath: schema.json
+operation:
+  method: GET
+  path: /api/v1/orders/{id}
+  statusCodes: ["200", "404"]
+sidebar:
+  badge: "GET"
+---
+
+## Overview
+
+Retrieves an [[entity|order]] by identifier. Customers can retrieve their own
+Orders, while administrators can retrieve Orders across Buyers.
+
+<NodeGraph />
+
+## Query parameters and response
+
+Provide the Order identifier in the `{id}` path parameter. A `200 OK` response
+returns an `OrderDetailDto` with the Order ID, date, total, status, and item
+details. `404 Not Found` returns `ProblemDetails` when the Order does not exist
+or is outside the caller's permitted scope.
+
+## Query using CURL
+
+<CodeGroup dropdown>
+
+```sh get-order.sh
+curl -H "Authorization: Bearer <access-token>" \
+  "https://api.example.com/api/v1/orders/<order-id>"
+```
+
+</CodeGroup>
+
+## Schema
+
+<SchemaViewer file="schema.json" title="OrderDetailDto JSON Schema" maxHeight="500" search="true" />

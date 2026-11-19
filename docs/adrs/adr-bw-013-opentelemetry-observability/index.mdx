@@ -1,0 +1,52 @@
+---
+id: adr-bw-013-opentelemetry-observability
+name: "ADR-BW-013: Use shared structured logging and OpenTelemetry"
+version: 1.0.0
+summary: Produce correlated logs, traces, metrics, and configured health signals while keeping business completion separate from process health.
+status: proposed
+date: 2026-11-07
+owners:
+  - platform-team
+appliesTo:
+  - type: domain
+    id: BookWorm
+related:
+  - id: adr-bw-003-aspire-shared-service-defaults
+  - id: adr-bw-010-cross-boundary-correlation
+  - id: adr-bw-015-explicit-environment-configuration
+---
+
+## Context
+
+Failures span HTTP, gRPC, messages, background work, and external dependencies. Isolated text logs cannot consistently explain where work failed or which capability owns the outcome.
+
+## Decision
+
+Reuse shared structured logging and OpenTelemetry instrumentation, W3C trace context, and configured OTLP export. Preserve environment-sensitive sampling and verify host health endpoint mapping for each deployment. Use request and message context for diagnosis without logging raw request or response values.
+
+Process health and execution traces do not replace queries of the owning business state.
+
+## Decision drivers
+
+- Diagnosis across independently executing services.
+- Consistent telemetry mechanisms without a mandatory production backend.
+- Data minimization and controlled telemetry volume.
+
+## Alternatives considered
+
+| Alternative                         | Assessment                                                                   |
+| ----------------------------------- | ---------------------------------------------------------------------------- |
+| Local logs only                     | Has low setup cost but weakens cross-service diagnosis.                      |
+| Fully sample every production trace | Improves coverage while increasing volume and cost without an agreed budget. |
+| Hard-code one observability vendor  | Simplifies one deployment while exceeding the documented backend choice.     |
+
+## Consequences
+
+- Operators can correlate configured signals across boundaries.
+- Sampling can omit individual executions; export requires an endpoint and operational backend.
+- Production probes, redaction registration, retention, and alert thresholds need deployment verification.
+- No numerical service-level objective follows from instrumentation alone.
+
+## Evidence
+
+See [[doc|arc42/08-crosscutting-concepts/004-observability]] and [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]].

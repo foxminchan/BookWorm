@@ -27,6 +27,6 @@ export const currencyFormatter = new Intl.NumberFormat("en-US", {
 
 // Authentication
 export const AUTH = {
-  PROVIDER: "keycloak",
+  PROVIDER: "microsoft-entra-id",
   CALLBACK_URL: "/",
 } as const;

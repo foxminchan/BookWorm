@@ -1,0 +1,117 @@
+---
+id: adr-003-database-queue-for-vector-indexing
+name: "ADR-003: Maintain the vector index asynchronously through a database-backed queue"
+version: 1.0.0
+summary: Database triggers enqueue changed books, and Catalog Ingestion drains the queue in batches to update Qdrant, decoupling writes from embedding generation.
+status: accepted
+date: 2026-10-20
+owners:
+  - platform-team
+decisionMakers:
+  - platform-team
+appliesTo:
+  - type: system
+    id: product-catalog-system
+  - type: service
+    id: catalog-ingestion
+  - type: container
+    id: catalog-database
+  - type: container
+    id: catalog-vector
+related:
+  - id: adr-001-postgresql-system-of-record
+  - id: adr-002-hybrid-vector-search-qdrant
+badges:
+  - content: Integration
+    backgroundColor: orange
+    textColor: orange
+---
+
+## Context
+
+Generating embeddings is slow and depends on external services. Doing it in
+the write path of [[service|catalog-api]] would slow catalog edits and make
+them fail when the model or Qdrant is unavailable. [[entity|book]] changes
+also originate from related [[entity|author]], [[entity|category]], and
+[[entity|publisher]] edits, which application code could easily miss.
+Catalog needs a durable handoff from committed product changes to the derived
+search projection without treating every intermediate edit as an event that
+must be replayed.
+
+## Decision
+
+Database triggers on [[entity|book]]s and on their
+[[entity|author]]s, [[entity|category]]s, [[entity|publisher]]s, and
+[[entity|book-author]] links enqueue affected books in a pending-update table
+in [[container|catalog-database]]. [[service|catalog-ingestion]], an Azure
+Functions worker, processes up to 200 pending items per batch, builds text and
+embeddings, and upserts or removes records in [[container|catalog-vector]]. A
+PostgreSQL advisory lock prevents concurrent batches, and an item is
+acknowledged only if its queued revision still matches, so concurrent changes
+remain pending. The queue is keyed by book ID and coalesces repeated changes:
+ingestion reads the latest database state instead of replaying every edit.
+
+The worker processes a bounded batch of up to 200 rows. It acknowledges the
+rows only after all corresponding vector operations succeed, and deletes each
+queue row using both its book ID and the revision read for that batch. The
+five-minute Scheduler cadence is an invocation schedule, not a freshness
+guarantee.
+
+## Decision drivers
+
+The key operational risk is that embedding generation is slow and not always
+available. If we did it in the request path, search changes would become part
+of the write latency budget and could fail product updates when Qdrant or the
+embedding service is degraded.
+
+This decision keeps Catalog writes durable and consistent while allowing
+search to catch up eventually. Keeping queue maintenance in database triggers
+also reduces the chance that a related change is missed because an
+application-code path did not explicitly notify the indexer.
+
+The revision token is important because the queue row can be updated while a
+batch is running. It prevents acknowledgement of the older work item from
+erasing the newer request to refresh that book.
+
+## Alternatives considered
+
+### Perform indexing synchronously in Catalog API
+
+This keeps the index fresher, but it couples user-facing catalog updates to
+external dependencies and can turn a search outage into a product write
+outage. It also puts embedding latency on the request path. Catalog needs a
+clean separation between authoritative data mutation and derived search
+projection.
+
+### Use a broker-based queue instead of a database queue
+
+A broker such as Kafka would provide stronger decoupling and fan-out
+capabilities, but it would add another operational dependency and a longer
+message pipeline. A separate publish step would also need to preserve the
+atomic relationship between a product commit and its indexing work. Keeping
+the queue in PostgreSQL places both within the same transactional boundary.
+
+### Trigger the indexer directly from application code
+
+This is easier to code in a single service, but it is easier to forget a path
+and harder to enforce consistently across database changes, especially when
+book metadata changes through related authors, categories, publishers, or
+book-author links rather than a direct book write.
+
+## Consequences
+
+- Catalog writes do not wait for embedding generation or vector-store
+  availability.
+- Queue insertion or update is transactional with the catalog data change, so
+  committed updates have durable indexing work.
+- The queue represents the latest state to project, not a history of all edits.
+  Search is eventually consistent and can lag while work is pending.
+- Revision-checked acknowledgement preserves work enqueued during a running
+  batch. Stable book IDs make repeated vector upserts and deletes safe to
+  retry, but PostgreSQL and Qdrant do not share an exactly-once transaction.
+- Bounded batches and an advisory lock prevent concurrent batch processors,
+  but allow only one active batch at a time and make backlog drain rate
+  dependent on invocation and processing duration.
+- Queue reads and trigger writes add load to PostgreSQL. Monitor pending-row
+  count and age, ingestion outcomes, and vector-store health; the five-minute
+  schedule alone is not a freshness SLA.

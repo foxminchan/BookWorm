@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Constants.Aspire;
+namespace BookWorm.Constants.Aspire;
 
 public static class Components
 {
@@ -8,7 +8,7 @@ public static class Components
     public const string MailPit = "mailpit";
     public const string Email = "email";
     public const string Postgres = "postgres";
-    public const string KeyCloak = "keycloak";
+    public const string Cosmos = "cosmos";
     public const string Inspector = "inspector";
     public const string VectorDb = "vectordb";
     public const string TurboRepo = "turborepo";
@@ -16,17 +16,21 @@ public static class Components
     public static class Database
     {
         public const string Rating = "ratingdb";
-        public const string Finance = "financedb";
         public const string Catalog = "catalogdb";
         public const string Ordering = "orderingdb";
-        public const string Notification = "notificationdb";
         public const string Scheduler = "schedulerdb";
+    }
+
+    public static class Container
+    {
+        public const string Feedbacks = "feedbacks";
     }
 
     public static class Foundry
     {
         public const string Resource = nameof(Foundry);
         public const string Chat = "chat";
+        public const string Decision = "decision";
         public const string Embedding = "embedding";
         public const string Project = $"{Resource}-project";
     }
@@ -40,6 +44,14 @@ public static class Components
     public static class Azure
     {
         public const string ContainerApp = "aca";
+        public const string EntraId = "entra";
+        public const string EntraAgentIdentities = "entra-agent-identities";
+
+        public static class DurableTask
+        {
+            public const string Scheduler = "durable-task-scheduler";
+            public const string TaskHub = "finance-taskhub";
+        }
 
         public static class Storage
         {

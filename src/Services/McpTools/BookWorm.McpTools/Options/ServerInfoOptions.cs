@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.Options;
 
 namespace BookWorm.McpTools.Options;
@@ -8,7 +9,7 @@ internal sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOpt
 {
     public const string ConfigurationSection = "ServerInfo";
 
-    public static string Name => Constants.Aspire.Services.McpTools;
+    public static string Name => Services.McpTools;
 
     [Required]
     [RegularExpression(
@@ -27,16 +28,9 @@ internal sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOpt
 
     public ValidateOptionsResult Validate(string? name, ServerInfoOptions options)
     {
-        var results = new List<ValidationResult>();
-        var context = new ValidationContext(options);
-
-        if (!Validator.TryValidateObject(options, context, results, true))
+        if (!TryValidate(options, out var failure))
         {
-            var errors = results
-                .Select(r => r.ErrorMessage)
-                .Where(e => !string.IsNullOrEmpty(e))
-                .Cast<string>();
-            return ValidateOptionsResult.Fail(errors);
+            return failure;
         }
 
         if (options.Icons is null)
@@ -46,16 +40,9 @@ internal sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOpt
 
         foreach (var icon in options.Icons)
         {
-            var iconResults = new List<ValidationResult>();
-            var iconContext = new ValidationContext(icon);
-
-            if (!Validator.TryValidateObject(icon, iconContext, iconResults, true))
+            if (!TryValidate(icon, out var iconFailure))
             {
-                var iconErrors = iconResults
-                    .Select(r => r.ErrorMessage)
-                    .Where(e => !string.IsNullOrEmpty(e))
-                    .Cast<string>();
-                return ValidateOptionsResult.Fail(iconErrors);
+                return iconFailure;
             }
 
             var invalidSize = icon.Sizes?.FirstOrDefault(size => !IconSizeRegex().IsMatch(size));
@@ -69,6 +56,24 @@ internal sealed partial class ServerInfoOptions : IValidateOptions<ServerInfoOpt
         }
 
         return ValidateOptionsResult.Success;
+    }
+
+    private static bool TryValidate(
+        object instance,
+        [NotNullWhen(false)] out ValidateOptionsResult? failure
+    )
+    {
+        List<ValidationResult> results = [];
+        if (Validator.TryValidateObject(instance, new(instance), results, true))
+        {
+            failure = null;
+            return true;
+        }
+
+        failure = ValidateOptionsResult.Fail(
+            results.Where(r => !string.IsNullOrEmpty(r.ErrorMessage)).Select(r => r.ErrorMessage!)
+        );
+        return false;
     }
 
     [GeneratedRegex(@"^(\d+x\d+|any)$")]

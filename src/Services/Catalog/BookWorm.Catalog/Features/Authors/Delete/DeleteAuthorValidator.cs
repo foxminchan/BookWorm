@@ -12,24 +12,17 @@ internal sealed class DeleteAuthorValidator : AbstractValidator<DeleteAuthorComm
 
 internal sealed class AuthorValidator : AbstractValidator<AuthorId>
 {
-    private readonly IAuthorRepository _repository;
-
     public AuthorValidator(IAuthorRepository repository)
     {
-        _repository = repository;
-
         RuleFor(x => x)
-            .MustAsync(IsNotAuthorBook)
+            .MustAsync(
+                async (authorId, cancellationToken) =>
+                    await repository.FirstOrDefaultAsync(
+                        new BookAuthorFilterSpec((Guid)authorId),
+                        cancellationToken
+                    )
+                        is null
+            )
             .WithMessage("Author has books and cannot be deleted");
-    }
-
-    private async Task<bool> IsNotAuthorBook(AuthorId authorId, CancellationToken cancellationToken)
-    {
-        var author = await _repository.FirstOrDefaultAsync(
-            new BookAuthorFilterSpec((Guid)authorId),
-            cancellationToken
-        );
-
-        return author is null;
     }
 }

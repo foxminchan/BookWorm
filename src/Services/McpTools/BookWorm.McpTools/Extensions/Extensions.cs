@@ -1,13 +1,13 @@
-﻿using AgentGovernance.Extensions.ModelContextProtocol;
+using AgentGovernance.Extensions.ModelContextProtocol;
 using BookWorm.Chassis.Security.Extensions;
-using BookWorm.Chassis.Security.Keycloak;
-using BookWorm.Chassis.Utilities;
 using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using BookWorm.McpTools.Options;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
+using Microsoft.Identity.Web;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol;
 
@@ -25,36 +25,25 @@ internal static class Extensions
 
             builder.AddDefaultCors();
 
-            builder.AddDefaultAuthentication().WithKeycloakClaimsTransformation();
+            builder.AddDefaultAuthentication();
 
             services
                 .AddAuthorizationBuilder()
                 .SetDefaultPolicy(
                     new AuthorizationPolicyBuilder()
                         .RequireAuthenticatedUser()
-                        .RequireScope(
-                            $"{Constants.Aspire.Services.McpTools}_{Authorization.Actions.Read}"
-                        )
+                        .RequireScope($"{Services.McpTools}_{Authorization.Actions.Read}")
                         .Build()
                 );
 
             services.AddHttpContextAccessor();
-            services.AddKeycloakTokenIntrospection();
 
             // Add exception handlers
             services.AddGlobalExceptionHandler();
             services.AddProblemDetails();
 
-            // Configure HTTP clients
-            services.AddHttpServiceReference<ICatalogApi>(
-                HttpUtilities
-                    .AsUrlBuilder()
-                    .WithScheme(Http.Schemes.HttpOrHttps)
-                    .WithHost(Constants.Aspire.Services.Catalog)
-                    .Build(),
-                HealthStatus.Degraded,
-                ApiSerializationContext.Default
-            );
+            // Configure gRPC clients
+            builder.AddGrpcServices();
 
             services
                 .AddMcpServer()
