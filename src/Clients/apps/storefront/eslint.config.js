@@ -5,11 +5,7 @@ import { nextJsConfig } from "@workspace/eslint-config/next-js";
 /** @type {import("eslint").Linter.Config} */
 export default [
   ...nextJsConfig,
-  {
-    plugins: {
-      "jsx-a11y": jsxA11y,
-    },
-  },
+  jsxA11y.flatConfigs.recommended,
   {
     languageOptions: {
       globals: {
@@ -28,7 +24,6 @@ export default [
       "@typescript-eslint/no-explicit-any": "off",
       "react/no-unescaped-entities": "off",
       "react-hooks/set-state-in-effect": "off",
-      "jsx-a11y/alt-text": "off",
     },
   },
   {

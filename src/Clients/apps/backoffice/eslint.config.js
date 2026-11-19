@@ -5,11 +5,7 @@ import { nextJsConfig } from "@workspace/eslint-config/next-js";
 /** @type {import("eslint").Linter.Config} */
 export default [
   ...nextJsConfig,
-  {
-    plugins: {
-      "jsx-a11y": jsxA11y,
-    },
-  },
+  jsxA11y.flatConfigs.recommended,
   {
     ignores: [
       ".next/**",
