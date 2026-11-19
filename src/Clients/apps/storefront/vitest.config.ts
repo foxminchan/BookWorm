@@ -95,7 +95,6 @@ export default defineConfig({
         "components/footer.tsx",
         "components/mobile-bottom-nav.tsx",
         "components/chat-bot.tsx",
-        "components/chat-bot-content.tsx",
         "components/policy-dialog.tsx",
         // Loading Skeletons (visual only)
         "components/loading-skeleton.tsx",
