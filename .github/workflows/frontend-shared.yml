@@ -47,6 +47,12 @@ jobs:
       - name: 🎨 Setup Frontend
         uses: $/.github/actions/frontend-setup
 
+      - name: 🚧 Boundaries
+        run: ./node_modules/.bin/turbo boundaries
+
+      - name: 🔍 Typecheck
+        run: ./node_modules/.bin/turbo run check-types --affected
+
       - name: 🧹 Lint
         run: ./node_modules/.bin/turbo run lint --affected
 

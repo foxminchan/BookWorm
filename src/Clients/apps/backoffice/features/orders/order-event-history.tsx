@@ -17,8 +17,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/utils/format";
-
-import { getOrderStatusStyle } from "@/lib/pattern";
+import { getOrderStatusStyle } from "@workspace/utils/order";
 
 type OrderEventHistoryProps = Readonly<{
   orderId: string;

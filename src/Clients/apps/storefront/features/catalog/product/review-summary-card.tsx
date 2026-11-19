@@ -1,7 +1,8 @@
 "use client";
 
-import cn from "classnames";
 import { Star } from "lucide-react";
+
+import { cn } from "@workspace/ui/lib/utils";
 
 type ReviewSummaryCardProps = {
   averageRating: number;

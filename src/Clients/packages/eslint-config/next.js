@@ -23,6 +23,7 @@ export const nextJsConfig = [
     languageOptions: {
       ...pluginReact.configs.flat.recommended.languageOptions,
       globals: {
+        ...globals.node,
         ...globals.serviceworker,
       },
     },
@@ -46,6 +47,47 @@ export const nextJsConfig = [
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  {
+    ignores: [
+      ".next/**",
+      ".turbo/**",
+      ".features-gen/**",
+      "node_modules/**",
+      "coverage/**",
+      "**/coverage/**",
+      "playwright-report/**",
+      "test-results/**",
+      "e2e/reports/**",
+      "public/mockServiceWorker.js",
+    ],
+  },
+  {
+    files: [
+      "**/__tests__/**",
+      "**/e2e/**",
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+    ],
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
+    files: ["e2e/**/*.ts", "e2e/**/*.js"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "no-empty-pattern": "off",
     },
   },
 ];

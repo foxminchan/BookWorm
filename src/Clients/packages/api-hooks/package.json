@@ -41,6 +41,7 @@
   },
   "exports": {
     "./keys": "./src/keys.ts",
+    "./query-client": "./src/query-client.ts",
     "./catalog/authors/*": "./src/catalog/authors/*.ts",
     "./catalog/publishers/*": "./src/catalog/publishers/*.ts",
     "./catalog/categories/*": "./src/catalog/categories/*.ts",

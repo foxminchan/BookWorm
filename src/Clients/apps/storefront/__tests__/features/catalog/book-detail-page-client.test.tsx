@@ -62,7 +62,7 @@ vi.mock("next/navigation", async () => {
   };
 });
 
-vi.mock("usehooks-ts", () => ({
+vi.mock("@workspace/ui/hooks/useDebounceCallback", () => ({
   useDebounceCallback: mockUseDebounceCallback,
 }));
 

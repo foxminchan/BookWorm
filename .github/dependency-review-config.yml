@@ -82,6 +82,8 @@ allow-dependencies-licenses:
   - "pkg:npm/%40ag-ui/a2ui-middleware"
   - "pkg:npm/%40ag-ui/langgraph"
   - "pkg:npm/%40copilotkit/license-verifier"
+  # EventCatalog core used for documentation site (docs/package.json) uses BUSL-1.1.
+  - "pkg:npm/%40eventcatalog/core"
   # GitHub Copilot CLI packages used by GitHub Agentic Workflows (.github/workflows/package-lock.json)
   # declare "SEE LICENSE IN LICENSE.md" (mapped to LicenseRef-bad-see-license-in-license.md).
   - "pkg:npm/%40github/copilot"

@@ -1,32 +1,26 @@
-"use client";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
-import { FolderOpen } from "lucide-react";
+import categoriesApiClient from "@workspace/api-client/catalog/categories";
+import { catalogKeys } from "@workspace/api-hooks/keys";
 
-import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
+import CategoriesPageClient from "@/features/catalog/categories/categories-page-client";
+import { getQueryClient } from "@/lib/query-client";
 
-import { EmptyState } from "@/components/empty-state";
-import CategoriesGrid from "@/features/catalog/categories/categories-grid";
-import CategoriesHeader from "@/features/catalog/categories/categories-header";
+export default async function CategoriesPage() {
+  const queryClient = getQueryClient();
 
-export default function CategoriesPage() {
-  const { data: categories, isLoading } = useCategories();
-  const categoryItems = categories ?? [];
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: catalogKeys.categories.lists(),
+      queryFn: () => categoriesApiClient.list(),
+    });
+  } catch (error) {
+    console.error("Failed to prefetch categories:", error);
+  }
 
   return (
-    <main className="container mx-auto grow px-4 py-16 md:py-24">
-      <CategoriesHeader />
-
-      {!isLoading && categoryItems.length === 0 ? (
-        <EmptyState
-          icon={FolderOpen}
-          title="Coming Soon"
-          description="We're setting up our collection. In the meantime, explore our shop for all available books."
-          actionLabel="Browse the Shop"
-          actionHref="/shop"
-        />
-      ) : (
-        <CategoriesGrid categories={categoryItems} isLoading={isLoading} />
-      )}
-    </main>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <CategoriesPageClient />
+    </HydrationBoundary>
   );
 }

@@ -1,8 +1,7 @@
 import type { OrderStatus } from "@workspace/types/ordering/orders";
 import { Badge } from "@workspace/ui/components/badge";
 import { formatPrice } from "@workspace/utils/format";
-
-import { getOrderStatusColor } from "@/lib/pattern";
+import { getOrderStatusColor } from "@workspace/utils/order";
 
 type OrderDetailsSectionProps = {
   status: OrderStatus;

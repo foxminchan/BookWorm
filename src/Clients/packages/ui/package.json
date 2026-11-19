@@ -28,7 +28,6 @@
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
-    "@hookform/resolvers": "^7.0.7",
     "@radix-ui/react-accordion": "^1.3.1",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-checkbox": "^1.4.1",
@@ -56,12 +55,10 @@
     "react-hook-form": "^7.92.0",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
-    "tw-animate-css": "^1.4.0",
-    "zod": "^4.6.7"
+    "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
-    "@turbo/gen": "^2.11.13",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
