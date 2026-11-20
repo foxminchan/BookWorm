@@ -68,11 +68,7 @@ internal static partial class DecisionToolSelectionMiddleware
         )
         {
             var messageList = messages as IReadOnlyList<ChatMessage> ?? [.. messages];
-            var filteredOptions = await SelectToolsAsync(
-                    messageList,
-                    options,
-                    cancellationToken
-                )
+            var filteredOptions = await SelectToolsAsync(messageList, options, cancellationToken)
                 .ConfigureAwait(false);
 
             return await base.GetResponseAsync(messageList, filteredOptions, cancellationToken)
@@ -86,11 +82,7 @@ internal static partial class DecisionToolSelectionMiddleware
         )
         {
             var messageList = messages as IReadOnlyList<ChatMessage> ?? [.. messages];
-            var filteredOptions = await SelectToolsAsync(
-                    messageList,
-                    options,
-                    cancellationToken
-                )
+            var filteredOptions = await SelectToolsAsync(messageList, options, cancellationToken)
                 .ConfigureAwait(false);
 
             await foreach (
@@ -148,9 +140,7 @@ internal static partial class DecisionToolSelectionMiddleware
                     continue;
                 }
 
-                var questionId = seenQuestionIds.Add(tool.Name)
-                    ? tool.Name
-                    : $"{tool.Name}_{i}";
+                var questionId = seenQuestionIds.Add(tool.Name) ? tool.Name : $"{tool.Name}_{i}";
                 seenQuestionIds.Add(questionId);
 
                 var instructions = string.IsNullOrWhiteSpace(tool.Description)
@@ -180,9 +170,10 @@ internal static partial class DecisionToolSelectionMiddleware
                     .GetDecisionAsync(state, questions, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
-            catch (Exception ex) when (
-                ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested
-            )
+            catch (Exception ex)
+                when (ex is not OperationCanceledException
+                    || !cancellationToken.IsCancellationRequested
+                )
             {
                 if (logger is not null)
                 {
@@ -196,7 +187,10 @@ internal static partial class DecisionToolSelectionMiddleware
             foreach (var (tool, questionId) in candidates)
             {
                 var answer = response.GetBinaryAnswer(questionId);
-                if (answer is null || answer.TrueProbability >= selectionOptions.ProbabilityThreshold)
+                if (
+                    answer is null
+                    || answer.TrueProbability >= selectionOptions.ProbabilityThreshold
+                )
                 {
                     selectedByDecision.Add(tool);
                 }
@@ -204,7 +198,9 @@ internal static partial class DecisionToolSelectionMiddleware
 
             List<AITool> selectedTools =
             [
-                .. options.Tools.Where(t => alwaysIncluded.Contains(t) || selectedByDecision.Contains(t)),
+                .. options.Tools.Where(t =>
+                    alwaysIncluded.Contains(t) || selectedByDecision.Contains(t)
+                ),
             ];
 
             if (logger is not null)
@@ -306,8 +302,7 @@ public static class DecisionToolSelectionMiddlewareExtensions
             ArgumentNullException.ThrowIfNull(sp);
 
             var decisionClient = sp.GetRequiredService<IDecisionClient>();
-            var logger = sp
-                .GetService<ILoggerFactory>()
+            var logger = sp.GetService<ILoggerFactory>()
                 ?.CreateLogger("BookWorm.Chassis.AI.Middlewares.DecisionToolSelection");
 
             return DecisionToolSelectionMiddleware.UseDecisionToolSelection(
