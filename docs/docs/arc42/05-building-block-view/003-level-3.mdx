@@ -9,6 +9,36 @@ badges:
     textColor: blue
 ---
 
+## 1. Context & Problem
+
+Completing a customer checkout involves multiple independent capabilities: Ordering accepts and owns the order, Shopping must clear the customer's basket, and Platform Notification must send lifecycle emails. Embedding cross-capability follow-up logic directly inside Ordering or Shopping would blur responsibilities and tangle business rules with workflow tracking.
+
+To keep those boundaries clean, BookWorm isolates post-checkout coordination in the [[service|order-orchestration]] building block (Finance orchestration). This Level-3 view opens that coordination component to show its internal parts and how they interact with neighboring capabilities without duplicating step-by-step runtime sequences.
+
+## 2. Business Value
+
+- **Reliable post-checkout follow-through:** Tracks every order's coordination progress individually so basket cleanup and email notifications happen consistently across service boundaries.
+- **Clean business ownership:** Keeps Ordering focused on order truth, Shopping focused on basket state, and Notification focused on email delivery.
+- **Centralized resilience:** Manages workflow timeouts and retry policies in one dedicated coordination component instead of repeating coordination logic across services.
+
+## 3. How It Works
+
+Finance orchestration acts as a dedicated coordinator for each order after checkout:
+
+1. **Starts tracking at checkout:** When Ordering announces an order checkout, Finance opens a coordination record linked to that specific order.
+2. **Requests basket cleanup:** Finance asks Shopping to remove the submitted basket and waits for an explicit success or failure result, then reports that outcome back to Ordering.
+3. **Requests lifecycle emails:** As checkout and order status updates arrive—and when recipient details are available—Finance asks Platform Notification to send placement, completion, or cancellation emails.
+4. **Respects authority boundaries:** Throughout the workflow, Finance stores only its own coordination progress. Ordering remains the authority for order status, Shopping remains the authority for basket contents, and Notification remains the authority for email rendering and delivery.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Coordination timeouts do not cancel orders:** A timeout or cancellation inside Finance reflects a coordination outcome only—it never automatically cancels the customer's order in Ordering.
+- **Requesting a notification does not prove delivery:** Publishing an email request confirms that Finance handed off the instruction, while Notification owns rendering and actual delivery tracking.
+- **Dedicated coordination store vs. embedded logic:** Maintaining a separate coordination component and data store adds an operational component to manage, but keeps cross-service workflow state out of core order and basket domains.
+- **Structural clarity without contract duplication:** Concrete message definitions, retry settings, and failure scenarios are maintained in the Finance system and flow documentation so this structural view stays focused on boundaries.
+
+## 5. Technical Reference
+
 This level refines the Level-2 [[service|order-orchestration]] building block, whose persisted saga coordinates checkout outcomes across Ordering, Shopping, and Platform Notification. It describes Finance's internal building blocks and the contracts at its boundary; it is not a runtime sequence.
 
 ### 5.3.1 White box: Finance orchestration

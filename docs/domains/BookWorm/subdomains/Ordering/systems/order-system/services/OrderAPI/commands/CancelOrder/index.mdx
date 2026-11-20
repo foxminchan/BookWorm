@@ -18,23 +18,44 @@ sidebar:
   badge: "PATCH"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Cancels an [[entity|order]] through the Order API. The transition is available
-only while the Order is **New**; cancellation raises the corresponding Order
-lifecycle event for downstream coordination.
+Once an order is placed, customers or authorized operational workflows may need to stop it before it reaches completion. Without a dedicated, controlled cancellation capability, downstream systems could continue processing an order the customer no longer wants, or repeated cancellation attempts could create conflicting status records.
+
+## 2. Business Value
+
+- **Stops unwanted downstream work**: Transitioning the order explicitly and broadcasting the change allows connected workflows to halt follow-up actions and inform the customer.
+- **Enforces valid lifecycle rules**: Accepting cancellation only while an order is still new preserves the integrity of completed orders.
+- **Prevents duplicate transitions**: Requiring a unique request tracking identifier protects against accidental double-processing on network retries.
+- **Protects order privacy**: Restricting lookup to the caller's permitted scope ensures users cannot inspect or alter orders belonging to other customers.
+
+## 3. How It Works
+
+1. An authorized caller requests cancellation for a specific [[entity|order]] and provides a unique request tracking identifier. No extra body fields are needed.
+2. Ordering checks that the order exists within the caller's permitted access scope and confirms its current status is **New**.
+3. The order transitions to **Cancelled**, Ordering emits an order lifecycle notification so downstream workflows can coordinate follow-up actions, and the updated order details are returned to the caller.
+4. If the order does not exist or falls outside the caller's permitted scope, the request is declined as not found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Strict state guard**: Limiting cancellation to orders in **New** status keeps the lifecycle simple and deterministic, meaning reversing an already-completed order must be handled by a separate business process (such as returns or refunds) rather than reusing cancellation.
+- **No cancellation reason captured**: Keeping the command payload empty reduces friction for callers, though business analytics requiring structured cancellation reasons would need an optional extension later.
+- **Uniform not-found behavior**: Returning the same not-found result for missing and unauthorized orders avoids exposing the existence of other customers' records.
+
+## 5. Technical Reference
+
+- **Command**: `CancelOrder`
+- **Endpoint**: `PATCH /api/v1/orders/{orderId}/cancel`
+- **Path parameter**: `{orderId}` (Order UUID)
+- **Required header**: `x-request-id` (idempotency header)
+- **Request body**: None
+- **Responses**:
+  - `200 OK` — returns the updated `OrderDetailDto`
+  - `404 Not Found` — returned when the Order cannot be found within the caller's permitted scope
 
 <NodeGraph />
 
-## Contract
-
-Provide the Order UUID in the `{orderId}` path parameter and a required
-`x-request-id` idempotency header. The operation has no request body.
-
-`200 OK` returns the updated `OrderDetailDto`. `404 Not Found` is returned
-when the Order cannot be found within the caller's permitted scope.
-
-## Schema
+### Request Schema
 
 <SchemaViewer
 	file="schema.json"

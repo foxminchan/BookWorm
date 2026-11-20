@@ -22,43 +22,32 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-Customers need names and current price information while reviewing a
-[[entity|basket]], but [[domain|catalog]] is the owner of
-[[entity|book]] metadata.
-Copying those fields into the basket store would create stale duplicated data
-and an ownership conflict.
+When customers view their [[entity|basket]], they need to see book titles and current prices. However, [[domain|catalog]] is the authoritative owner of [[entity|book]] information and pricing. Storing copies of titles and prices inside the basket database would create duplicate data that quickly goes out of date and causes ownership conflicts whenever catalog details change.
 
-A basket stores a book ID and requested quantity, not a quoted or reserved
-price. The Basket API can collect the distinct book IDs and use Catalog's
-batch gRPC query when serving a read, avoiding a separate lookup for every
-line item while keeping product presentation data with its owner.
+## 2. Business Value
 
-## Decision
+- **Always-current presentation**: Shoppers see the latest book names, regular prices, and sale prices whenever they review their cart.
+- **Single source of truth**: Keeps product metadata owned strictly by [[domain|catalog]] with zero background synchronization needed.
+- **Lean storage footprint**: Basket storage stays small and focused because it saves only product references and quantities.
+- **Efficient scaling**: Fetching all distinct book details in one combined request keeps cart loading fast even as baskets grow larger.
 
-The [[system|cart-system]] persists only book identifiers and positive requested
-quantities. On a basket read, [[service|basket-api]] resolves distinct
-[[entity|book]]
-identifiers through the Catalog gRPC contract and enriches the response with
-the currently available name, regular price, and sale price. Missing Catalog
-records remain missing from the presentation; the stored basket is not
-silently rewritten and product details are not invented. This response is
-current presentation data, not a price guarantee, inventory reservation, or
-checkout snapshot.
+## 3. How It Works
 
-## Consequences
+The [[system|cart-system]] saves only the customer's chosen book identifiers and positive requested quantities—it never stores quoted prices or reserved inventory. Whenever a customer reads their basket, the cart service collects all unique book identifiers in the cart and asks [[domain|catalog]] for their current names, regular prices, and sale prices in a single batch lookup.
 
-- Catalog remains the source of truth for book presentation data.
-- Basket reads depend on Catalog availability for complete enrichment.
-- The persistence model stays small and avoids duplicated metadata.
-- Resolving distinct IDs in a batch avoids per-item Catalog calls as basket
-  size grows.
-- An unavailable or unmatched Catalog record does not authorize the Basket
-  service to manufacture details or alter the saved selection.
-- Price and product validity at purchase time must still be established by
-  the downstream checkout workflow; checkout must not treat a basket's
-  displayed price as an accepted price.
-- This decision does not define stale-data caching or a specific response
-  policy for Catalog transport failures; those behaviors must remain explicit
-  in the service contract and implementation.
+If a book record cannot be found in the catalog, the cart service does not invent missing details or silently remove the item from the customer's saved basket; missing presentation fields simply remain absent. Importantly, the prices shown in the basket are for current display only—they are not a price guarantee, inventory reservation, or checkout snapshot.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Catalog read dependency**: Showing complete product details in the basket depends on [[domain|catalog]] being reachable when the basket is read.
+- **Checkout must re-verify prices**: Downstream checkout workflows must independently validate final product eligibility and pricing at purchase time rather than treating the basket's displayed price as an accepted price.
+- **Unprescribed fallback behavior**: This decision does not define stale-data caching or specific error-handling behavior when Catalog communication fails; those policies must be defined explicitly in the service contract and implementation.
+
+## 5. Technical Reference
+
+- **Persisted fields**: [[system|cart-system]] persists only [[entity|book]] identifiers and positive requested quantities per line item.
+- **Read-time enrichment**: [[service|basket-api]] collects distinct [[entity|book]] IDs from the basket and calls Catalog's batch gRPC query (avoiding N+1 per-item lookups) to populate `name`, regular price, and sale price.
+- **Missing records behavior**: Unmatched Catalog records remain omitted from presentation without mutating the stored basket or fabricating product details.
+- **Out of scope**: Stale-data caching and Catalog transport-failure response policies must be specified explicitly in service contracts and implementation.

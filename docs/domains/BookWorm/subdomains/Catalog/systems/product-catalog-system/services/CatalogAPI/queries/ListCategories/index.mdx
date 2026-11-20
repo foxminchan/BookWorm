@@ -18,22 +18,38 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Returns every catalog [[entity|category]] without pagination or request parameters.
+Storefront interfaces, administrative tools, and external clients need a direct way to retrieve all book categories known to the Catalog. Without a dedicated category listing query, consumers would have to hardcode category lists or derive them piecemeal from book records, leading to inconsistent navigation menus and validation mismatches.
+
+## 2. Business Value
+
+- **Consistent user experience**: Every storefront filter and catalog management screen displays the same authoritative list of [[entity|category]] options.
+- **Minimal integration effort**: Consumers can load the complete taxonomy in a single request without configuring filters or pagination.
+- **Predictable empty-catalog behavior**: An unpopulated catalog returns a valid empty list rather than an error, keeping client workflows clean during setup.
+
+## 3. How It Works
+
+1. A consumer requests the list of categories from the Catalog without supplying any search filters, parameters, or page controls.
+2. The Catalog retrieves every known [[entity|category]] record.
+3. The response returns the full list of categories, each containing a unique identifier and an optional display name.
+4. If no categories are currently available, the Catalog treats this as a normal outcome and returns an empty list.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Unpaginated response**: Delivering all categories at once keeps client code simple and assumes the category taxonomy remains relatively small; pagination would need to be introduced if the list grew significantly.
+- **Optional display name**: Because a category's display name can be absent in the response contract, client applications should handle missing names gracefully when rendering labels.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/categories`
+- **Request**: Does not require a request body, path parameters, or query parameters.
+- **Response**: Returns HTTP `200` with a JSON array of objects containing `id` and nullable `name` for every catalog [[entity|category]]. Returns `200` with `[]` when no resources are available.
+
+### Architecture
 
 <NodeGraph />
 
-## Contract
-
-This query does not require a request body or query parameters.
-
-The response is a JSON array of objects containing `id` and nullable `name`.
-
-## Operational notes
-
-The API returns `200` with an empty array when no resources are available.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

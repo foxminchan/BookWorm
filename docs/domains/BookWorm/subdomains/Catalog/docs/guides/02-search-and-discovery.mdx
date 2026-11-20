@@ -12,27 +12,47 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Two ways to find books
+## 1. Context & Problem
+
+Customers find books in two distinct ways: structured browsing (filtering by category, publisher, author, or price range) and open-ended text search (entering keywords or natural phrases). Traditional database filtering alone struggles with semantic or fuzzy discovery, while serving book prices and availability directly from a search engine risks showing stale commercial details. BookWorm combines both capabilities while setting clear expectations around data freshness.
+
+## 2. Business Value
+
+- **Better discovery conversion:** Blending meaning-based and keyword matching helps customers locate relevant titles even without exact titles or keywords.
+- **Accurate prices and stock in search results:** Hydrating displayed results from the authoritative catalog store ensures search pages never show outdated prices or cover data from the search index.
+- **Faster issue triage:** Gives product, support, and engineering teams a shared diagnostic map to tell indexing delays apart from caching or expired image-link behavior.
+
+## 3. How It Works
+
+### Two ways to find books
+
+- **Browse with filters and paging:** When consumers filter by [[entity|category]], [[entity|publisher]], [[entity|author]], or price bounds—along with sorting and paging—results are queried directly from the primary catalog store.
+- **Free-text discovery:** When consumers provide a search term, the catalog generates a semantic representation of the query, combines meaning-based and keyword matching in the search index to find candidate book matches, and then loads the current records from the primary catalog store before applying filters and paging.
+
+### Consistency expectations
+
+- **Eventually consistent search index:** A newly added or edited [[entity|book]] may not appear in free-text search until the next background indexing batch finishes.
+- **Authoritative result details:** Displayed attributes (title, price, availability, and image) always come from the primary catalog store, never from the search index record.
+- **Deletion transition window:** Deleted books are removed from the search index during background ingestion; during a brief window before cleanup completes, the search index may return a deleted candidate whose record is no longer visible when loaded from the primary store.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual search consistency vs. write speed:** Updating the search index asynchronously keeps catalog edits responsive and resilient to search-engine outages, at the cost of a short delay before text search reflects new or edited titles (see [[adr|adr-003-database-queue-for-vector-indexing]]).
+- **Candidate lookup plus primary hydration:** Using the search index only to rank candidate identifiers and loading full records from the primary catalog store adds a second lookup step, but guarantees authoritative pricing and availability on every search response (see [[adr|adr-002-hybrid-vector-search-qdrant]]).
+- **Clear symptom boundaries:** Because search touches the vector index, read cache, and expiring media links, teams should separate indexing lag from stale cache entries and expired image links before escalating.
+
+## 5. Technical Reference
+
+### Discovery paths
 
 | Need                                     | Use                                                                                                                       | Source of results                     |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | Browse with filters and paging           | [[query\|ListBooks]] with [[entity\|category]], [[entity\|publisher]], [[entity\|author]], price bounds, sort, and paging | [[container\|catalog-database]]       |
 | Free-text (semantic + keyword) discovery | [[query\|ListBooks]] with a search term                                                                                   | [[container\|catalog-vector]] then DB |
 
-For a text search, [[service|catalog-api]] generates a query embedding, combines vector and
-keyword matching in Qdrant to find candidate book IDs, then loads the current
-records from PostgreSQL and applies filters and paging.
+For a text search, [[service|catalog-api]] generates a query embedding, combines vector and keyword matching in Qdrant to find candidate book IDs, then loads the current records from PostgreSQL and applies filters and paging.
 
-## Consistency expectations
-
-- The vector index is **eventually consistent**. A new or edited book may not
-  appear in text search until the next ingestion batch completes.
-- Result data (title, price, availability, image) always comes from the
-  database, never from the vector record.
-- Deleted books are removed from the index during ingestion; a short window can
-  exist where an ID is returned but the record is no longer visible.
-
-## Troubleshooting from a consumer view
+### Troubleshooting from a consumer view
 
 | Symptom                                            | Likely cause             | Action                                                   |
 | -------------------------------------------------- | ------------------------ | -------------------------------------------------------- |
@@ -40,7 +60,7 @@ records from PostgreSQL and applies filters and paging.
 | Old price shown after an update                    | Stale cache entry        | Follow the [[doc\|runbooks/stale-cache-or-redis-outage]] |
 | Image link returns 403 or expired                  | SAS URL lifetime elapsed | Re-fetch the book to obtain a new URL                    |
 
-## Related
+### Related
 
 - [[adr|adr-002-hybrid-vector-search-qdrant]]: Hybrid vector search
 - [[adr|adr-003-database-queue-for-vector-indexing]]: Database queue for indexing

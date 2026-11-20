@@ -18,20 +18,34 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Soft-deletes an [[entity|order]] by setting its deletion flag. This operation
-is restricted to administrators and does not transition the Order's business
-status.
+Operational and support teams sometimes need to remove an [[entity|order]] from active customer and fulfillment views without permanently erasing historical records or mislabeling the order as cancelled. A dedicated administrative soft-delete capability lets authorized personnel retire erroneous or obsolete orders cleanly while preserving data integrity.
+
+## 2. Business Value
+
+- **Preserved Audit History**: Retains the underlying order record and its true business status for auditing, financial reconciliation, and compliance.
+- **Clean Operational Views**: Removes invalid or unwanted orders from day-to-day customer and staff lists.
+- **Strong Access Control**: Restricts order removal to authorized administrators so business records cannot be hidden by unauthorized callers.
+
+## 3. How It Works
+
+1. An administrator submits a deletion request specifying the unique identifier of the [[entity|order]] to remove, without sending any additional payload.
+2. The service validates that the caller holds administrator permissions.
+3. If the Order exists, the service sets its deletion marker while leaving its business status unchanged, then confirms completion.
+4. If no Order matches the provided identifier, the service reports that no matching Order exists.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Status Preservation vs. Cancellation**: Leaving the Order's business status unchanged avoids triggering cancellation side effects or skewing cancellation metrics, though consumers must understand that soft deletion is administrative removal rather than a lifecycle cancellation.
+- **Reversibility & Storage Retention**: Keeping soft-deleted records enables auditability and potential recovery, at the cost of retaining storage and requiring read paths to filter out deleted records.
+- **Identifier-Only Contract**: Keeping the input limited to the Order identifier simplifies integration, meaning any administrative justification must be captured in external audit tooling if required.
+
+## 5. Technical Reference
+
+- **Endpoint & Behavior**: `DELETE /api/v1/orders/{id}` soft-deletes an [[entity|order]] by setting its deletion flag. This operation is restricted to administrators and does not transition the Order's business status.
+- **Contract**: Provide the Order identifier in the `{id}` path parameter. The operation has no request body. `204 No Content` confirms the deletion; `404 Not Found` indicates that no matching Order exists.
 
 <NodeGraph />
-
-## Contract
-
-Provide the Order identifier in the `{id}` path parameter. The operation has
-no request body. `204 No Content` confirms the deletion; `404 Not Found`
-indicates that no matching Order exists.
-
-## Schema
 
 <SchemaViewer file="schema.json" title="Path parameter JSON Schema" maxHeight="500" search="true" />

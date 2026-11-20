@@ -18,23 +18,44 @@ sidebar:
   badge: "PUT"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Updates a [[entity|basket]] using an `UpdateBasketCommand`. The request contains the
-complete `items` collection to apply to the basket.
+While browsing, customers frequently add books, adjust quantities, or remove items from their active [[entity|basket]] before checking out. If storefront clients only sent small incremental edits (such as adding one unit or removing a single item), network retries or out-of-order requests could leave the stored basket out of sync with what the customer sees on screen. Providing a single action that replaces the basket with the customer's full current selection keeps the cart accurate.
+
+## 2. Business Value
+
+- **Consistent shopping experience**: Customers see the exact items and quantities they confirmed, even after rapid cart edits or connection retries.
+- **Simpler storefront logic**: Client applications submit the current cart state directly without tracking a history of incremental changes.
+- **Protected data quality**: Missing book references, empty item lists, and invalid quantities are rejected before updating the stored basket.
+
+## 3. How It Works
+
+When a customer edits their shopping cart, the storefront submits the complete, up-to-date list of items and quantities for the customer's active [[entity|basket]].
+
+1. The service confirms that an active basket exists for the signed-in customer.
+2. It verifies that the submitted list contains at least one item, and that every item includes a book reference and a quantity greater than zero.
+3. If the basket does not exist or any validation rule fails, the request is rejected and the stored basket remains unchanged.
+4. When valid, the service replaces the entire stored item list with the newly submitted items and confirms the update without needing to echo the saved contents back.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Full replacement vs. partial patches**: Replacing the entire item list simplifies server state and makes repeated submissions safe, but requires the caller to hold the full, authoritative cart state before updating.
+- **Last-write-wins behavior**: Because each update overwrites the whole collection, simultaneous edits from multiple browser tabs or devices will keep whichever update arrives last.
+- **Pre-order scope only**: Updating the basket only records book references and quantities; product titles, prices, and promotions are resolved separately when the basket is viewed.
+
+## 5. Technical Reference
+
+- **Command**: `UpdateBasketCommand`
+- **Endpoint**: `PUT /api/v1/baskets`
+- **Request**: `application/json` with the required `items` array; each item requires an `id` and `quantity`.
+- **Responses**:
+  - `204`: No response body (basket updated).
+  - `400`: `application/problem+json` with `HttpValidationProblemDetails`.
+  - `404`: `application/problem+json` with `ProblemDetails`.
 
 <NodeGraph />
 
-## Request and response
-
-Send `application/json` with the required `items` array. Each item requires an
-`id` and `quantity`. `204` has no response body.
-
-`400` returns `application/problem+json` with
-`HttpValidationProblemDetails`; `404` returns `application/problem+json` with
-`ProblemDetails`.
-
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

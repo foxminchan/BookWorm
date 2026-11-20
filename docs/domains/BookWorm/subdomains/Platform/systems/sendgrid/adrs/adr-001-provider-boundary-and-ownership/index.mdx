@@ -22,78 +22,52 @@ badges:
     textColor: purple
 ---
 
-## Context
+## 1. Context & Problem
 
-BookWorm uses [[system|sendgrid]] to deliver notification messages, but the provider does
-not understand the business operation that caused a notification. Treating a
-provider response as the business result would couple domain state to an
-external system and make provider changes harder to manage. The provider
-boundary must distinguish accepting a submission for processing from the
-message reaching a recipient and from the Order or other business operation
-that prompted it.
+BookWorm uses [[system|sendgrid]] to deliver customer and operational email notifications, but an external delivery provider has no knowledge of the business workflows—such as an order placement—that triggered a message. If BookWorm relied on the external provider to hold notification status or treated a provider response as proof of business completion, domain state would become tightly coupled to a third-party service.
 
-## Decision
+The architecture must draw a clear line between three distinct milestones:
 
-[[system|sendgrid]] is an external delivery boundary.
-The [[system|notification-system]] remains the system of record for
-notification state, [[entity|outbox]] records, retry policy,
-idempotency decisions, and the business interpretation of delivery outcomes.
-The [[service|sendgrid-api]] integration maps BookWorm notification data to the provider
-contract and records provider responses without transferring ownership of that
-data or business meaning.
+- BookWorm recording that a notification needs to be sent.
+- The external provider accepting a message for delivery processing.
+- The message actually reaching a recipient or confirming the originating business transaction.
 
-An accepted SendGrid request means that the provider accepted the submission. It
-does not mean that the underlying business operation completed or that the
-message reached its final recipient.
+## 2. Business Value
 
-Notification is responsible for translating the provider interaction into
-its own notification-processing state and for correlating it with the
-originating outbox item. Provider-specific identifiers and responses may help
-with diagnosis, but do not transfer ownership of the notification record or
-business meaning to SendGrid.
+- **Vendor independence and flexibility**: BookWorm can switch email providers or delivery transports without rewriting core business services or migrating notification history.
+- **Accurate customer and support visibility**: Support teams and user-facing statuses do not misrepresent a provider's intake acknowledgment as guaranteed inbox delivery or completed business processing.
+- **Domain isolation**: Temporary email delays, rate limits, or delivery errors are managed by notification policies rather than corrupting or blocking order and business records.
+- **Centralized governance**: Credentials, retry rules, and formatting standards live in one dedicated boundary rather than being duplicated across every business service.
 
-The cataloged [[service|sendgrid-api]] documents SendGrid's HTTP API contract.
-The current Notification implementation uses MailKit over SMTP, with MailPit
-in development, and does not call that HTTP Mail Send API or persist provider
-responses. The API resource is therefore a documented provider contract, not
-evidence that the HTTP integration is active.
+## 3. How It Works
 
-## Consequences
+BookWorm establishes [[system|sendgrid]] strictly as an external delivery boundary while the [[system|notification-system]] remains the single system of record for notification state, [[entity|outbox]] records, retry policies, duplicate-prevention decisions, and the business meaning of delivery outcomes.
 
-- Notification workflows remain independent of provider-specific concepts.
-- SendGrid can be replaced without changing the ownership of notification state.
-- The Notification System must translate provider responses into its own
-  delivery states.
-- Operators need correlation between BookWorm notification records and
-  provider identifiers when those identifiers are available.
-- Consumers must use BookWorm notification state and domain events rather than
-  treating SendGrid acceptance as a domain completion event.
-- Provider acceptance is not final delivery confirmation. Any user-facing
-  status or support diagnosis must preserve that distinction.
-- Provider failures, rate limits, and ambiguous responses must be interpreted
-  within Notification's delivery policy rather than changing the status of an
-  Order or other originating business record.
-- Switching between SMTP and the provider HTTP API requires an explicit
-  integration and operational change; documenting an HTTP contract alone
-  does not implement that transport.
+1. A business capability initiates a notification need, and the [[system|notification-system]] records the work internally in its [[entity|outbox]].
+2. The [[service|sendgrid-api]] integration translates BookWorm's internal notification data into the structure expected by the external provider.
+3. When the provider responds, an acceptance means only that the provider took the submission into its queue—not that the email reached the recipient's inbox or that the original business action finished.
+4. The [[system|notification-system]] translates the provider's response back into its own internal delivery state and links it to the originating [[entity|outbox]] item. Provider reference identifiers may be kept for troubleshooting, but ownership never leaves BookWorm.
 
-## Alternatives considered
+## 4. Trade-offs & Lessons Learned
 
-### Let the provider own notification state
+- **Translation and correlation overhead**: BookWorm must maintain its own delivery states, map provider outcomes into internal statuses, and correlate internal records with external reference identifiers when available.
+- **Distinguishing acceptance from delivery**: Customer support tools and downstream consumers must treat BookWorm's own notification states and business events as authoritative, never assuming provider acceptance equals final delivery.
+- **Alternatives rejected**:
+  - _Letting the provider own notification state_: Would lock BookWorm into third-party status lifecycles and data retention limits.
+  - _Treating provider acceptance as completion_: Would create false-positive confirmations when messages bounce, delay, or fail downstream.
+  - _Embedding provider logic in every business service_: Would scatter credentials, formatting, and error-handling rules across the platform.
+- **Documented contract vs. active transport**: Documenting an integration contract in the catalog does not mean that transport is currently live in production; switching delivery mechanisms requires explicit engineering and operational rollout.
 
-This would couple BookWorm's record of pending and completed notification work
-to provider-specific status and retention behavior. BookWorm retains its own
-notification state and uses the provider only for external submission and
-delivery processing.
+## 5. Technical Reference
 
-### Treat provider acceptance as delivery or business completion
+### Ownership & Integration Boundary
 
-Acceptance means that the provider accepted a request for processing. It
-does not prove final delivery or that the originating business operation
-completed, so those outcomes remain separate.
+- **Applies to**: [[system|sendgrid]], [[system|notification-system]], and [[service|sendgrid-api]].
+- **System of record**: The [[system|notification-system]] owns notification state, [[entity|outbox]] persistence, retry policies, idempotency decisions, and domain interpretation of provider responses.
+- **Provider adapter role**: [[service|sendgrid-api]] maps internal notification payloads to SendGrid's HTTP contract and records provider responses for correlation without transferring data ownership.
 
-### Put provider-specific behavior in every business service
+### Current Implementation Alignment
 
-This would duplicate credentials, request mapping, retry decisions, and
-provider-specific error handling across callers. Notification remains the
-delivery boundary for the current email workflow.
+- The cataloged [[service|sendgrid-api]] documents SendGrid's **HTTP Mail Send API** contract.
+- The current Notification implementation sends email using **MailKit over SMTP** (with **MailPit** in local development) and does **not** invoke the SendGrid HTTP Mail Send API or persist provider HTTP responses.
+- Switching between SMTP and SendGrid's HTTP API requires an explicit integration and operational change; the catalog entry documents the provider contract rather than asserting active HTTP usage.

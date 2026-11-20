@@ -9,15 +9,45 @@ badges:
     textColor: purple
 ---
 
+## 1. Context & Problem
+
+BookWorm serves distinct human user groups—customers, business staff, and administrators—alongside autonomous AI assistants and more than a dozen backend services that interact with databases, caches, object storage, and AI models.
+
+Relying on static database passwords, shared API keys, or broad service credentials creates major security and operational risks: secrets can leak, manual rotation slows down delivery, and shared service accounts obscure whether an action was initiated by a user, an AI agent, or a background job. BookWorm needs a passwordless identity and authorization architecture that enforces least privilege across humans, AI agents, and internal services.
+
+## 2. Business Value
+
+- **Elimination of Static Cloud Secrets**: Removing database passwords and storage keys across managed cloud infrastructure eliminates secret-rotation overhead and reduces the risk of credential compromise.
+- **Least-Privilege Blast Radius**: Every service receives only the permissions required for its domain—for instance, the basket service can reach the in-memory cache but has no access to order databases or AI models.
+- **Governed AI Agent Delegation**: Dedicated identities for AI assistants ensure agents act strictly on behalf of the authenticated user rather than operating with unconstrained backend privileges.
+- **Unified Role Governance**: Separating administrator, business user, and customer roles in one central identity provider provides consistent access control across both the customer storefront and back-office operations.
+
+## 3. How It Works
+
+BookWorm splits authentication and authorization into two clear layers:
+
+- **Human & AI Agent Identity**: Customers and internal staff sign in through the central identity provider via the public gateway for both the storefront and back-office portals. Users and client applications receive specific application roles and scoped permissions across BookWorm APIs. When AI assistants (such as the book chat agent or rating agent) need to call downstream services for a user, they authenticate using dedicated agent identities and federated trust to exchange tokens on the user's behalf.
+- **Service-to-Resource Authorization**: Internal workloads that access managed cloud databases, caches, file storage, or AI models each receive their own cloud managed identity, paired with explicit role assignments granting only the required access. A shared environment identity handles pulling container images during deployment.
+- **Stateless & External Exceptions**: Workloads that do not touch managed cloud stores—such as the API gateway and the two privacy-redaction sidecars—do not carry managed identities. The notification service also operates without a cloud managed identity because it connects exclusively to external messaging and email relays using configured deployment parameters.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Per-Service Identities vs. Provisioning Complexity**: Issuing a dedicated managed identity and separate role assignments per service maximizes isolation and audit clarity, at the expense of maintaining more infrastructure definitions as the service catalog grows.
+- **Federated Agent Identities vs. Simpler Service Accounts**: Giving AI assistants dedicated agent identities with on-behalf-of delegation adds registration and trust setup, but prevents AI workflows from bypassing user-level permissions.
+- **Hybrid Credential Posture for External Services**: While all Azure-managed data and AI resources are fully passwordless, external dependencies (such as the event broker and email relay used by notifications) still rely on deployment parameters and require separate credential hygiene.
+- **Server-Level Relational Admin Grants**: Services accessing the relational database currently receive directory administrator membership on the server rather than granular per-database SQL roles—a pragmatic setup choice that may need tightening if stricter intra-server separation is required later.
+
+## 5. Technical Reference
+
 BookWorm eliminates static database passwords and API keys across Azure-managed services. Authentication is split into two layers: **Microsoft Entra ID** ([[system|identity-provider]]) for user/agent identity and **User-Assigned Managed Identities** for service-to-resource authorization.
 
-## Identity Provider System Graph
+### Identity Provider System Graph
 
 <NodeGraph id="identity-provider" version="1.0.0" type="system" maxHeight="28" />
 
-## Entra ID Application & Agent Identities
+### Entra ID Application & Agent Identities
 
-### Core Application (`entra` module)
+#### Core Application (`entra` module)
 
 Provisioned via the Bicep Microsoft Graph extension (`microsoftGraphV1`):
 
@@ -27,7 +57,7 @@ Provisioned via the Bicep Microsoft Graph extension (`microsoftGraphV1`):
   - `https://gateway.<ACA_DEFAULT_DOMAIN>/api/auth/oauth2/callback/microsoft-entra-id` (Storefront)
   - `https://gateway.<ACA_DEFAULT_DOMAIN>/backoffice/api/auth/oauth2/callback/microsoft-entra-id` (Back Office)
 
-### Entra Agent Identities (`entra-agent-identities` module)
+#### Entra Agent Identities (`entra-agent-identities` module)
 
 AI agents authenticate using dedicated Entra Agent Identity applications paired with Federated Identity Credentials (`api://AzureADTokenExchange`) trusting the parent Entra ID service principal:
 
@@ -35,7 +65,7 @@ AI agents authenticate using dedicated Entra Agent Identity applications paired 
 - **[[agent|book-agent]]:** `bookworm-chat-agent-<uniqueSuffix>` (on-behalf-of token exchange for [[service|chat-api]])
 - **[[agent|rating-agent]]:** Rating agent application (on-behalf-of token exchange for [[service|rating-api]])
 
-## Managed Identity RBAC Matrix
+### Managed Identity RBAC Matrix
 
 Each service's `*-identity` Bicep module provisions a dedicated `Microsoft.ManagedIdentity/userAssignedIdentities` resource, and `*-roles-*` modules bind least-privilege permissions:
 
@@ -53,7 +83,7 @@ Each service's `*-identity` Bicep module provisions a dedicated `Microsoft.Manag
 | `storefront-identity`        |                       —                       |                 —                 |            —            |               —               |            —            |
 | `backoffice-identity`        |                       —                       |                 —                 |            —            |               —               |            —            |
 
-### Azure Built-in Role Definition IDs
+#### Azure Built-in Role Definition IDs
 
 | Role Name                         | Role Definition GUID                   | Used By                                               |
 | :-------------------------------- | :------------------------------------- | :---------------------------------------------------- |

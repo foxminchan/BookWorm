@@ -18,22 +18,41 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
+
+Customers and merchandisers rely on clear subject groupings to browse, filter, and organize books across the BookWorm storefront. Without a dedicated way to introduce new categories into the catalog, product teams cannot structure emerging genres or keep book classification consistent as inventory grows.
+
+## 2. Business Value
+
+- **Structured catalog growth**: Enables merchandisers and onboarding workflows to add new product categories quickly as inventory expands.
+- **Data consistency**: Ensures every book category is registered centrally with a valid name and a stable unique identifier rather than ad-hoc labels.
+- **Safer downstream references**: Returning a system-generated unique identifier allows books and reporting tools to link to the category reliably even if its display name is updated later.
+
+## 3. How It Works
+
+1. A catalog operator or onboarding workflow submits a request to create a new [[entity|category]] with a display name.
+2. The catalog validates that a non-empty name has been provided.
+3. When the input is valid, the catalog stores the new category and returns its generated unique identifier so downstream workflows can immediately assign books to it.
+4. When the name is missing or blank, the request is rejected with a validation error and no category record is created.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Minimal required input**: Requiring only a non-empty name keeps category creation fast and low-friction, while deferring richer merchandising attributes (such as descriptions or hierarchy metadata) to separate capabilities.
+- **Identifier stability over name keys**: Using a generated unique identifier rather than the category name as the primary reference prevents broken links across books if category names are later refined.
+- **Fail-fast validation**: Rejecting empty or missing names upfront keeps poor-quality taxonomy entries out of the catalog; callers should fix invalid input before retrying rather than repeating the same request.
+
+## 5. Technical Reference
 
 Creates a [[entity|category]] and returns its generated UUID.
 
+- **Operation**: `POST /api/v1/categories`
+- **Request contract**: JSON request body requiring a non-empty `name`.
+- **Responses**:
+  - `200`: Response body is a JSON string containing the new category UUID.
+  - `400`: A validation problem is returned when `name` is missing or empty.
+
 <NodeGraph />
 
-## Contract
-
-The request is JSON and requires a non-empty `name`.
-
-The response body is a JSON string containing the new category UUID.
-
-## Operational notes
-
-A validation problem is returned with `400` when `name` is missing or empty.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

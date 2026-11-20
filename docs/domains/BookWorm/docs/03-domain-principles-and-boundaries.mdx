@@ -12,72 +12,41 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Guiding principles
+## 1. Context & Problem
 
-BookWorm is designed as a bounded-context system, not as a single shared data
-model. The domain is split so that ownership, semantics, and operational concerns
-stay clear. This is what keeps the product understandable as it expands.
+As a digital commerce platform grows, the greatest risk to maintainability is allowing every capability to share one tangled data model. When multiple areas read and update the same records directly, nobody can tell which part of the business owns the truth, small changes trigger unexpected side effects, and auditing or troubleshooting becomes difficult.
 
-The following rules are the core operating model for the domain:
+BookWorm solves this by separating its domain into well-defined areas with strict rules on ownership, derived copies, and how changes travel across boundaries.
 
-### 1. One context owns each source of truth
+## 2. Business Value
 
-Every business concept has a home. Product facts live in [[domain|catalog]], the
-mutable shopping intent lives in [[domain|shopping]], accepted purchases live in
-[[domain|ordering]], and individual customer feedback lives in
-[[domain|reviews]]. Platform capabilities such as notification delivery and
-scheduled jobs support the business but do not own its state.
+- **Unambiguous accountability**: Every core business fact—product price, active basket, accepted order, customer review—has a single authoritative home.
+- **Safer, faster delivery**: Teams can evolve internal workflows without breaking neighboring business areas as long as shared agreements remain intact.
+- **Easy recovery from display or search drift**: Supporting summaries, search indexes, and temporary speedups can be rebuilt cleanly without risking core business records.
+- **Clear auditing and troubleshooting**: Separating operational tasks (like retrying an email) from official business decisions makes order history and customer support far easier to verify.
 
-This rule prevents accidental cross-context updates and reduces the chance of
-hidden data duplication.
+## 3. How It Works
 
-### 2. Derived data is clearly marked and recoverable
+### Guiding principles
 
-Some information is intentionally copied or projected into other contexts. The
-rating summary in Catalog is derived from Reviews. Search vectors are derived
-from Catalog data. Cache entries are temporary optimization layers.
+1. **One owner for every source of truth**: Product facts live in [[domain|catalog]], temporary shopping intent lives in [[domain|shopping]], accepted purchases live in [[domain|ordering]], and individual customer feedback lives in [[domain|reviews]]. Supporting platform features such as notifications and scheduled work help the business operate without owning business records.
+2. **Derived information is clearly marked and rebuildable**: Some information is intentionally copied for convenience or speed—such as rating summaries shown alongside books, search indexes built from catalog details, and temporary performance copies. These are never treated as independent authorities and can be regenerated from the original source if they ever drift.
+3. **Areas collaborate through explicit agreements, never shortcuts**: One area never reaches directly into another area's records. Instead, key transitions—such as handing a basket over to create an order, sharing order updates, publishing review summaries, or triggering notifications—happen through formal, documented handoffs.
+4. **Operational work stays separate from business ownership**: Background tasks—like refreshing search data or retrying a failed email—must never alter the official business state of an order or a book record.
 
-These are not independent systems of record. When they drift, they can be
-rebuilt or replayed without rewriting the original source data.
-
-### 3. Contracts cross contexts, not databases
-
-Cross-context communication must happen through explicit commands, events,
-queries, or synchronous service interfaces. The domain intentionally avoids
-letting one context read or mutate another context's primary data store directly.
-
-This is especially important in workflows such as:
-
-- Basket to Order handoff
-- Order status change propagation
-- Review publication and Catalog rating projection
-- Platform notifications triggered by business events
-
-### 4. Operational work is separate from business ownership
-
-Business correctness and operational execution are different responsibilities.
-For example, a scheduled job may update a vector index or retry an email, but it
-must not change the authoritative business state of an order or a book record.
-This keeps auditing, debugging, and eventual consistency easier to reason about.
-
-## Core invariants
-
-These are the repeated expectations that hold across the domain:
+### Core business rules
 
 - A basket is not an order.
 - An accepted checkout creates a single order.
 - Ordering owns the order lifecycle after acceptance.
-- Catalog owns the canonical product and pricing metadata.
+- Catalog owns the canonical product and pricing information.
 - Reviews owns the review record; Catalog owns only the derived summary.
 - Platform notifications represent delivery work, not business state.
-- Conversational systems may assist with access to information but do not own the
-  primary records behind it.
+- Conversational assistance helps customers access information without owning the underlying records.
 
-## Ownership model by subdomain
+### Ownership model by subdomain
 
-The contexts in this table are [[domain|catalog]], [[domain|shopping]],
-[[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and
-[[domain|platform]].
+The contexts in this table are [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]].
 
 | Subdomain      | What it owns                                                   | What it does not own                       |
 | -------------- | -------------------------------------------------------------- | ------------------------------------------ |
@@ -88,34 +57,39 @@ The contexts in this table are [[domain|catalog]], [[domain|shopping]],
 | Conversational | Customer-facing interaction patterns and book support guidance | Booking, billing, and order-of-record data |
 | Platform       | Notifications, scheduled jobs, and infrastructure support      | Business state of the domains it serves    |
 
-## Change guidance for contributors
+## 4. Trade-offs & Lessons Learned
 
-When designing or updating code, use the following checklist:
+- **Explicit handoffs over shared shortcuts**: Prohibiting direct cross-area data reads takes more upfront design on workflows like basket-to-order handoff or order status propagation, but prevents hidden coupling and accidental cross-context updates.
+- **Eventual alignment for projections**: Derived summaries and search data may briefly lag behind primary updates; accepting this minor delay keeps core transactions simple and recoverable.
+- **Common anti-patterns to avoid**:
+  - Reading order status, review details, or basket state directly from another context's storage.
+  - Treating a derived summary or projection as the original source of truth.
+  - Mixing operational retry status with official business status.
+  - Embedding business rules inside scheduled background jobs or email delivery flows.
+  - Interpreting an accepted email send as proof that a purchase or support action succeeded.
 
-1. Identify the owning bounded context before touching a model.
-2. Check whether the data is source-of-truth or derived.
+## 5. Technical Reference
+
+BookWorm enforces bounded-context boundaries across [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]]:
+
+- **Cross-context contracts**: Communicate exclusively via explicit commands, events, queries, or synchronous service interfaces—never direct reads/writes against another context's primary database.
+- **Derived projections & caching**: Catalog rating summaries (projected from Reviews), search vectors (derived from Catalog), and cache entries (temporary optimization layers) are disposable/replayable and never authoritative.
+- **Operational separation**: Scheduled jobs (such as vector index updates or email retries) must never mutate authoritative Order or Book domain state.
+
+### Contributor design checklist
+
+1. Identify the owning bounded context before modifying a model.
+2. Classify data explicitly as source-of-truth or derived.
 3. Prefer explicit event or command boundaries over shared persistence.
-4. Ensure the product experience still matches the domain contract.
-5. Update the contract or documentation whenever the ownership model changes.
+4. Confirm the customer-facing product experience still aligns with the domain contract.
+5. Update the contract and documentation whenever ownership changes.
 
-## Common anti-patterns to avoid
+### Three-question boundary gate
 
-- Reading order status, review data, or basket state directly from another
-  context's database.
-- Treating a derived projection as the original source of truth.
-- Mixing operational retry status with business state.
-- Writing business logic into platform jobs or notification delivery flows.
-- Interpreting an accepted email send as proof that a purchase or support action
-  succeeded.
-
-## Practical rule
-
-If a change crosses a context boundary, ask three questions:
+For any cross-context change, verify before implementation:
 
 1. Which context owns the data?
 2. What explicit contract carries the change?
 3. Is the downstream side effect derived or authoritative?
-
-If those answers are not clear, the design is not ready for implementation.
 
 <Footer />

@@ -9,15 +9,25 @@ badges:
     textColor: blue
 ---
 
-The system under consideration is the complete [[domain|BookWorm]] platform. This section intentionally stays at the platform boundary: it describes users, neighboring capabilities, and technical interaction styles without assigning detailed responsibilities to a particular domain or service.
+The system under consideration is the complete [[domain|BookWorm]] platform. This overview establishes the whole-platform boundary—identifying users, internal capabilities, and neighboring systems without assigning detailed service-level contracts.
 
-## System boundary
+## 1. Context & Problem
 
-The system in scope is the BookWorm commerce platform as a whole, not an individual service. It includes the customer-facing commerce capabilities and the shared platform capabilities that support them. The diagram shows the main capabilities and external neighbors at a high level; it is not a deployment view or a complete inventory of providers.
+Before designing individual services or integration details, stakeholders across product, business, and engineering need a shared agreement on what belongs inside BookWorm and what sits outside it. Without an explicit platform boundary, teams risk assuming BookWorm owns external capabilities (such as payment processing or email delivery), misplacing features across domains, or mixing high-level scope decisions with low-level technical choices.
+
+## 2. Business Value
+
+- **Shared scope alignment:** Gives product owners, analysts, architects, and delivery teams a single view of the customer and operational capabilities BookWorm delivers.
+- **Clear dependency awareness:** Separates BookWorm-owned business capabilities from external partner systems, making third-party reliance visible early.
+- **Clean decision separation:** Keeps business-level information exchanges separate from technical communication channels so each audience can review and confirm its own concerns without ambiguity.
+
+## 3. How It Works
+
+BookWorm is scoped as an end-to-end commerce platform rather than a single isolated application. It brings together customer-facing bookstore capabilities and the shared platform capabilities that support them, while relying on external neighbors for specialized functions outside its boundary.
 
 <MermaidFileLoader file="mermaids/bookworm-scope.mmd" />
 
-## In-scope behavior
+### In-Scope Capabilities
 
 | Capability                                   | Included behavior                                                                     |
 | -------------------------------------------- | ------------------------------------------------------------------------------------- |
@@ -27,14 +37,28 @@ The system in scope is the BookWorm commerce platform as a whole, not an individ
 | [[domain\|conversational]]                   | AI-assisted product discovery and customer support                                    |
 | Shared [[domain\|platform]] capabilities     | Notifications, scheduling, and operational support                                    |
 
-## Outside the boundary
+### Outside the Boundary
 
-Identity ([[system|identity-provider]]), payment processing, fulfillment, email delivery ([[system|sendgrid]]), and AI model hosting are neighboring systems, not BookWorm-owned business capabilities. The platform may depend on them, but their internal behavior and operation are outside this system boundary.
+Identity ([[system|identity-provider]]), payment processing, fulfillment, email delivery ([[system|sendgrid]]), and AI model hosting are neighboring systems, not BookWorm-owned business capabilities. The platform depends on these partners for specific interactions, while their internal behavior and operations remain outside BookWorm's boundary.
 
-## Context assumptions and open points
+## 4. Trade-offs & Lessons Learned
+
+- **High-level boundary vs. premature detail:** This overview intentionally avoids acting as a deployment blueprint or an exhaustive vendor catalog. Keeping external provider specifics out of the top-level boundary prevents premature coupling to a single vendor or infrastructure layout.
+- **Business vs. technical separation:** Separating business-level exchanges from technical channels ensures stakeholders can validate the commerce scope before locking down communication styles or hosting arrangements.
+- **Open provider inventory:** Repository-level architecture sources identify the _categories_ of external neighbors rather than a confirmed inventory of providers, owners, and interface commitments. Those open points must be resolved in dedicated service and system documentation.
+
+## 5. Technical Reference
+
+### Scope & Boundary Rules
+
+- **Subject system:** Complete [[domain|BookWorm]] platform (not an individual service).
+- **Owned domains:** [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and shared [[domain|platform]] capabilities.
+- **Tracked domain entities:** [[entity|basket]], [[entity|order]].
+- **Documented external systems:** [[system|identity-provider]], [[system|sendgrid]], plus conceptual neighboring roles for payment processing, fulfillment, and AI model hosting.
+
+### Context Assumptions & Open Points
 
 - The exact inventory of external providers, their owners, and their interfaces is not established by the repository-level architecture sources.
 - This chapter identifies the known interaction categories without implying specific endpoints, protocols, payload schemas, or production topology.
 - Detailed service responsibilities and contracts belong in the relevant service and system documentation.
-
-The following pages separate business-level data exchanges from the technical channels that realize them.
+- The subsequent pages separate business-level data exchanges from the technical channels that realize them.

@@ -14,32 +14,45 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `GetBook` RPC returns the current [[entity|book]] identity, pricing, and availability
-status for a requested book identifier. It is an anonymous read operation
-exposed for internal service-to-service clients that need the compact gRPC
-representation.
+Internal services frequently need to check a [[entity|book]]'s current identity, price, and whether it is available for purchase without transferring full editorial descriptions, author lists, or review summaries. Providing a lightweight single-item internal lookup keeps service-to-service checks concise when only core commercial fields are required.
 
-[[service|basket-api]] and [[service|order-api]] both implement this outgoing
-query in their registered `BookService.GetBookByIdAsync` clients, making them
-its producers; [[service|catalog-api]] consumes it. No current feature calls
-these single-book helpers: basket enrichment, checkout, and Order detail
-enrichment use [[query|GetBooksGrpc]] instead.
+## 2. Business Value
+
+- **Lean data exchange**: Transfers only essential identity, pricing, and availability details instead of full product metadata.
+- **Clear commercial state**: Gives downstream services a consistent, authoritative view of whether a [[entity|book]] can currently be sold and at what price.
+- **Low-overhead internal access**: Supports anonymous internal reads for public catalog state without unnecessary authorization friction.
+
+## 3. How It Works
+
+1. An internal service submits a unique identifier for a single [[entity|book]] to [[service|catalog-api]].
+2. [[service|catalog-api]] retrieves the compact record for that [[entity|book]], focusing on its name, pricing, and current availability status.
+3. The compact result is returned synchronously to the requesting service.
+
+In practice, while [[service|basket-api]] and [[service|order-api]] both have client integrations wired for this single-book lookup, active user flows such as basket enrichment, checkout, and order detail enrichment rely on the multi-book batch lookup instead so they can fetch multiple items in one round trip.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Single-item convenience vs. batch efficiency**: Looking up one [[entity|book]] at a time is simple, but calling it repeatedly in a loop creates unnecessary network chatter. Active workflows in [[service|basket-api]] and [[service|order-api]] therefore prefer [[query|GetBooksGrpc]] to retrieve multiple books together.
+- **Unused client surface**: Because no active feature currently invokes the single-book helper clients in [[service|basket-api]] or [[service|order-api]], teams should evaluate whether to keep this contract for future single-item checks or consolidate around batch lookups to reduce maintenance overhead.
+- **Synchronous coupling**: Direct request-response lookups depend on [[service|catalog-api]] responsiveness during live internal calls.
+
+## 5. Technical Reference
+
+`GetBook` is an anonymous read RPC defined in the `book.v1` gRPC contract (`BookGrpcService`). It returns the compact representation of a single [[entity|book]]—identity, pricing, and availability status—for internal service-to-service clients.
+
+- **Consumers / Callers**: [[service|basket-api]] and [[service|order-api]] both implement this outgoing query in their registered `BookService.GetBookByIdAsync` clients (making them producers of the query), while [[service|catalog-api]] consumes it. No current feature calls these single-book helpers; basket enrichment, checkout, and Order detail enrichment use [[query|GetBooksGrpc]] instead.
+- **Request**: `GetBookRequest` containing the book UUID in `book_id`.
+- **Response**: `GetBookResponse`, with prices represented by `DecimalValue` and availability represented by `BookStatus`.
 
 <NodeGraph />
 
-## Contract
-
-Send a `GetBookRequest` containing the book UUID in `book_id`. The response is
-`GetBookResponse`, with prices represented by `DecimalValue` and availability
-represented by `BookStatus`.
-
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="GetBook gRPC schema" />
 
-## Examples
+### Examples
 
 <CodeGroup dropdown>
 

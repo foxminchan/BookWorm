@@ -20,70 +20,41 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-The Scheduler must retain job definitions, trigger schedules, scheduler
-instance state, locks, and execution history across process restarts. An
-in-memory store would lose schedules and coordination state whenever the
-service is redeployed and would not support reliable recovery or diagnosis.
-The deployment may run more than one scheduler instance, so persisted
-coordination state must also support shared trigger acquisition and make
-firings traceable after an instance restarts.
+Background schedules—such as recurring maintenance and batch processing triggers—must survive service restarts and deployments. Storing schedules only in a service's temporary memory would erase job definitions, timing state, and run history every time the service restarts, leaving teams unable to recover or diagnose missed runs. In addition, deployments with multiple scheduler instances need a reliable shared coordination mechanism so due jobs are claimed cleanly without collisions.
 
-## Decision
+## 2. Business Value
 
-Quartz scheduling state will be persisted in the [[container|sheduler-database]],
-a PostgreSQL database owned by the [[system|scheduler-system]]. The database is authoritative
-for scheduling and operational execution state, including job details,
-triggers, fired triggers, scheduler check-ins, locks, execution history, and
-misfire history.
+- **Operational continuity**: Scheduled work and trigger timings survive deployments and unexpected restarts without manual reconfiguration.
+- **Safe multi-instance scaling**: Multiple scheduler instances can run concurrently using shared coordination locks so jobs are neither missed nor double-triggered.
+- **Faster incident diagnostics**: Operations teams can review recent execution and missed-run history after restarts to investigate delayed or failed triggers.
+- **Clear data ownership**: Keeps internal scheduling mechanics isolated from business domain systems.
 
-Quartz tables remain implementation-owned infrastructure. Schedule changes
-must use the Scheduler's supported management surface rather than direct table
-edits.
+## 3. How It Works
 
-Quartz persistence is the source of truth for when a job is eligible to run
-and for the Scheduler's recorded execution lifecycle. It is not a source of
-truth for whether a downstream business operation succeeded. Execution
-history is retained for 30 days, up to 100,000 entries per scheduler, as
-documented by the Scheduler Database resource.
+1. All job definitions, trigger schedules, instance check-ins, coordination locks, and recent execution and missed-run histories are persisted in a dedicated relational database owned by the scheduler system.
+2. When multiple scheduler instances run together, they coordinate through shared database locks so only one instance claims each eligible trigger firing.
+3. All schedule updates must go through the scheduler's supported management interfaces rather than editing underlying storage directly, protecting coordination and lock integrity.
+4. The scheduler store is the authority on _when_ a job was eligible to run and _whether_ the scheduler attempted to fire it—not on whether the downstream business task ultimately succeeded.
+5. Execution history is retained for 30 days (up to 100,000 entries per scheduler) to support operational diagnostics while bounding storage growth.
 
-## Consequences
+## 4. Trade-offs & Lessons Learned
 
-- Scheduled work and trigger state survive Scheduler restarts.
-- Multiple Scheduler instances can coordinate through durable state and locks.
-- Operators can diagnose missed, delayed, and failed firings after the fact.
-- PostgreSQL availability becomes a prerequisite for Scheduler startup and
-  operation.
-- Other systems must not infer their business state from Quartz rows or query
-  the Scheduler Database directly.
-- Quartz persistence introduces database migrations, availability, capacity,
-  and access-control responsibilities for operational state that would
-  otherwise be held in process memory.
-- Execution history is operational evidence of Scheduler activity, not an
-  indefinite audit archive or a guarantee that a target finished its work.
-  Its retention and maximum size constrain how far back operators can
-  investigate.
-- Quartz tables are implementation-owned. Direct edits can bypass trigger and
-  lock semantics; supported management APIs remain the path for schedule
-  changes.
+- **Database availability becomes mandatory**: The scheduler cannot start or run without its database, introducing ongoing responsibilities for schema migrations, availability, capacity planning, and access control.
+- **Diagnostic evidence, not an indefinite business ledger**: The 30-day / 100,000-entry retention window limits how far back operators can inspect history, and a recorded firing does not prove a downstream system finished its work.
+- **Strict ownership boundaries**: Other systems must never query internal scheduler tables to infer business state, and operators must avoid direct storage edits that could bypass trigger and lock rules.
+- **Alternatives considered**:
+  - _Store schedules only in process memory_: Avoids a database dependency, but loses schedules, trigger state, and coordination on restart and cannot support shared multi-instance state.
+  - _Use the scheduler database to record downstream business outcomes_: Blurs system boundaries; receiving systems own validation, queues, and durable business outcomes.
+  - _Edit scheduler tables directly_: Risks bypassing supported state transitions and locking behavior.
 
-## Alternatives considered
+## 5. Technical Reference
 
-### Store schedules only in process memory
-
-This would avoid the database dependency but lose schedules, trigger state,
-and coordination on restart and would not support shared state across
-Scheduler instances.
-
-### Use PostgreSQL as the record of downstream business outcomes
-
-Quartz can record that an invocation ran or failed, but the receiving system
-owns validation, processing, and durable business work. Scheduler history
-cannot replace target-system queues, outboxes, or state.
-
-### Edit Quartz tables directly
-
-Direct SQL changes could bypass Quartz's supported state transitions and
-coordination behavior. Schedule management must use the Scheduler's supported
-surface.
+- **Decision status**: Accepted (`2026-10-27`)
+- **Persistent store**: [[container|sheduler-database]] (PostgreSQL database owned by [[system|scheduler-system]])
+- **Authoritative Quartz state**: Job details, triggers, fired triggers, scheduler check-ins, locks, execution history, and misfire history.
+- **History retention**: 30 days, up to 100,000 entries per scheduler, as documented by the Scheduler Database resource.
+- **Operational constraints**:
+  - Quartz tables are implementation-owned infrastructure; schedule modifications must use the Scheduler's supported management APIs/surface rather than direct SQL edits.
+  - Quartz persistence is the source of truth for schedule eligibility and recorded execution lifecycle, not for downstream business completion or target-system queues/outboxes.

@@ -2,21 +2,44 @@
 summary: Delete a book and its referenced cover image through the Catalog API.
 ---
 
+## 1. Context & Problem
+
+Removing a book from the BookWorm catalog involves both deleting the catalog entry and cleaning up its stored cover image, while ensuring client applications respond properly if the book is missing. Without clear integration guidance, callers risk leaving local caches out of sync, misunderstanding asset cleanup responsibilities, or mistaking missing-book responses for successful deletions.
+
+## 2. Business Value
+
+- **Automatic media cleanup**: Reclaims storage automatically by removing the book's referenced cover image as part of the same deletion flow, avoiding orphaned files.
+- **Consistent client state**: Gives frontend and admin applications a clear signal for when to remove the book from local views.
+- **Safer operations**: Reminds callers to verify downstream dependencies and confirm identifiers before retrying failed deletions.
+
+## 3. How It Works
+
+- **Deleting an existing book**: Before initiating removal, confirm that downstream consumers no longer rely on the book. Submit the book's unique identifier; the catalog removes the book record and automatically deletes its associated cover image. Once confirmed, the calling application removes the book from its local state.
+- **Handling a missing book**: If no book exists for the supplied unique identifier, treat the result as a missing record rather than a successful deletion, and verify the identifier before retrying.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Coordinated data and media removal**: Deleting the referenced cover image automatically prevents orphaned media files and reduces storage waste, at the cost of making the operation irreversible for both catalog data and visual assets.
+- **Downstream awareness**: Because other services or workflows may still reference a book, callers should verify that downstream consumers no longer need the title before deleting it.
+- **Explicit missing-record handling**: Separating "not found" from "deleted" helps surface stale or mistyped identifiers instead of silently masking errors.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Delete an existing book
+### 1. Delete an existing book
 
 Delete by UUID. A successful deletion returns `204 No Content` and removes the catalog record.
 
-### Operational notes
+#### Operational notes
 
 - The book's referenced cover image is also removed from blob storage.
 - Confirm that downstream consumers no longer need the book before deleting it.
 - Treat `404` as a missing resource, not as a successful deletion.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +49,7 @@ const response = { status: 204, body: null };
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Remove the book from local state after receiving `204 No Content`; its referenced cover is removed by the API.
 
@@ -58,6 +81,6 @@ if (!response.ok) {
 
 ---
 
-## 2. Handle a missing book
+### 2. Handle a missing book
 
 An unknown UUID returns `404` with problem details. Confirm the identifier before retrying.

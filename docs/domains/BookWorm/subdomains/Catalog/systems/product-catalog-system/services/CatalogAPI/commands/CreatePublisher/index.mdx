@@ -18,22 +18,41 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
+
+Books in the BookWorm catalog must be accurately attributed to their publishing houses. Without a dedicated way to register publishers as first-class records, catalog teams cannot consistently link incoming titles to verified publishers or prevent duplicate, inconsistently spelled publisher names.
+
+## 2. Business Value
+
+- **Faster partner onboarding**: Allows catalog managers to register new publishers quickly before adding their titles.
+- **Consistent attribution**: Centralizes publisher records so multiple books reference the same authoritative publisher entry.
+- **Stable references**: Returns a system-generated unique identifier, ensuring book-to-publisher links remain intact even if publisher details are corrected later.
+
+## 3. How It Works
+
+1. A catalog operator or integration submits a request to create a [[entity|publisher]] with a non-empty name.
+2. The catalog checks that the publisher name is present and not empty.
+3. When valid, the catalog creates the publisher record and returns its newly generated unique identifier so it can be used when assigning books.
+4. When the name is missing or blank, the request is rejected with a validation error and no publisher record is created.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Focused creation scope**: Requiring only the publisher name at creation minimizes onboarding friction, while leaving room for additional publisher attributes to be managed independently if needed.
+- **Generated identifier over natural keys**: Relying on a generated unique identifier rather than the publisher name protects downstream book relationships from future name updates.
+- **Upfront validation**: Rejecting missing or empty names immediately keeps incomplete records out of the catalog; callers should correct the input before submitting again.
+
+## 5. Technical Reference
 
 Creates a [[entity|publisher]] and returns its generated UUID.
 
+- **Operation**: `POST /api/v1/publishers`
+- **Request contract**: JSON request body requiring a non-empty `name`.
+- **Responses**:
+  - `200`: Response body is a JSON string containing the new publisher UUID.
+  - `400`: A validation problem is returned when `name` is missing or empty.
+
 <NodeGraph />
 
-## Contract
-
-The request is JSON and requires a non-empty `name`.
-
-The response body is a JSON string containing the new publisher UUID.
-
-## Operational notes
-
-A validation problem is returned with `400` when `name` is missing or empty.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

@@ -19,6 +19,30 @@ properties:
     required: true
 ---
 
+## 1. Context & Problem
+
+Recurring schedules often need exceptions—such as skipping maintenance windows, holidays, or specific blackout dates—without rewriting every individual job trigger. Storing date-exclusion rules directly inside each trigger would duplicate maintenance windows across jobs and make calendar updates error-prone. A shared calendar entity solves this by centralizing date inclusion and exclusion rules that triggers can reference.
+
+## 2. Business Value
+
+- **Centralized Maintenance Windows:** Lets operations define blackout dates or active scheduling windows in one reusable calendar rather than adjusting every job individually.
+- **Predictable Operations:** Prevents automated jobs from firing during planned downtime or restricted calendar dates.
+- **Restart & Cluster Resilience:** Persists calendar rules in shared storage so every scheduler instance enforces the same date boundaries after restarts.
+
+## 3. How It Works
+
+A scheduler calendar is stored as a named record scoped to a scheduler instance. It contains a serialized representation of which dates or time ranges are included or excluded from normal firing.
+
+Triggers in the core trigger registry can optionally reference a calendar by name. When a trigger evaluates its next run time, the scheduler consults the linked calendar and skips any excluded dates before deciding when the job should fire next.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Serialized Format Limits Visibility:** Storing the calendar definition as an opaque binary object keeps the database schema simple for different calendar types, but prevents humans or reporting tools from reading excluded dates directly from the table without going through the scheduler.
+- **Shared Dependency Risk:** Because multiple triggers can point to the same calendar name, updating or removing a calendar affects every linked trigger simultaneously.
+- **Platform-Only Scope:** Like other scheduler persistence tables, calendars are internal infrastructure owned by the Platform team and should be managed through scheduler configuration rather than manual database edits.
+
+## 5. Technical Reference
+
 ### Entity Properties
 
 <EntityPropertiesTable />

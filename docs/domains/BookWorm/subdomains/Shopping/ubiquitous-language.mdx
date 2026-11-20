@@ -34,3 +34,43 @@ dictionary:
       and total money to the cross-context order workflow.
     icon: Send
 ---
+
+## 1. Context & Problem
+
+The Shopping subdomain captures what a customer intends to purchase before an order is formally placed. Without a shared vocabulary across business analysts, product managers, solution architects, and developers, pre-order terms such as "basket", "item", "customer", and "checkout" are easily confused with confirmed orders, catalog records, or inventory holds.
+
+This ubiquitous language defines the authoritative meanings and boundaries for Shopping concepts across BookWorm.
+
+## 2. Business Value
+
+- **Clear pre-order boundaries:** Keeps teams from treating a mutable shopping basket as a committed order, an inventory reservation, or a copy of the product catalog.
+- **Unambiguous identity handoff:** Clarifies that the customer identifier used to address a basket is distinct from the buyer identifier managed during ordering.
+- **Aligned checkout expectations:** Establishes that checkout starts cross-team order coordination rather than immediately completing or cancelling an order.
+
+## 3. How It Works
+
+The Shopping vocabulary is organized around pre-purchase state, customer addressing, and checkout initiation:
+
+- **Basket & Basket Item:** A **Basket** is a customer's current, changeable collection of items before purchase—representing shopping intent rather than an order, inventory reservation, or catalog copy. Each **Basket Item** holds a book identifier and a positive quantity, without embedding the catalog book record or an order price.
+- **Customer Identifier:** The **Customer Identifier** addresses a customer's basket within Shopping and is not automatically identical to the buyer identifier used by Ordering.
+- **Checkout & Checked-out Event:** **Checkout** is the action that initiates order placement for a basket, starting coordination across Shopping, Ordering, and the order workflow rather than completing or cancelling an order directly. The **Checked-out Event** is the integration message that carries order and basket identifiers, buyer contact details, and total money into that cross-context workflow.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Slim basket items:** Excluding catalog book details and locked order prices from **Basket Item** keeps shopping intent lightweight and prevents stale catalog data, while requiring live catalog enrichment for display and explicit price recording during order creation.
+- **Decoupled customer and buyer identities:** Separating **Customer Identifier** from Ordering's buyer identity protects bounded-context autonomy, requiring explicit identity mapping when checkout begins.
+- **Checkout as workflow initiation:** Treating **Checkout** and **Checked-out Event** as the start of coordination—rather than a synchronous completion guarantee—allows downstream workflows to run independently and handle failures or retries explicitly.
+
+## 5. Technical Reference
+
+### Shopping Dictionary Terms
+
+The YAML `dictionary` frontmatter above defines the authoritative Shopping glossary entries rendered by EventCatalog:
+
+| Dictionary ID         | Summary                                                   | Domain & Boundary Notes                                                                       | Icon             |
+| --------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------- |
+| `Basket`              | A customer's current collection of items before purchase. | Mutable shopping intent; not an `Order`, inventory reservation, or copy of Catalog.           | `ShoppingBasket` |
+| `Basket Item`         | A book identifier and positive quantity in a Basket.      | Does not store the Catalog `Book` or an `Order` price.                                        | `Package`        |
+| `Customer Identifier` | The identifier used to address a customer's Basket.       | Not automatically the `Buyer` identifier used by Ordering.                                    | `Fingerprint`    |
+| `Checkout`            | The action that starts order placement for a Basket.      | Begins coordination across Shopping, Ordering, and the order workflow; not order completion.  | `CreditCard`     |
+| `Checked-out Event`   | An integration message that coordinates checkout.         | Carries order and basket identifiers, buyer contact details, and total money to the workflow. | `Send`           |

@@ -19,9 +19,36 @@ owners:
   - contributor-team
 ---
 
-## Overview
+## 1. Context & Problem
 
-The publisher entity represents a publisher in the catalog. It encapsulates publisher information and business rules such as a unique identifier, a name, and a collection of books published by the publisher. The publisher entity also enforces rules such as requiring a non-empty name and ensuring that the publisher is not deleted.
+Readers, buyers, and catalog managers often identify editions and filter inventory by publisher. Storing publisher names as free-form text on individual [[entity|book]]s would quickly lead to inconsistent spellings and make publisher-level grouping or updates error-prone.
+
+## 2. Business Value
+
+- **Consistent attribution:** Ensures every book from the same publisher shares one canonical publisher name.
+- **Reliable filtering & reporting:** Supports accurate catalog searches, merchandising views, and sales or inventory analysis by publisher.
+- **Single-point updates:** Lets catalog teams correct or update a publisher's name in one place without touching individual books.
+
+## 3. How It Works
+
+A Publisher represents a publishing house or imprint that releases [[entity|book]]s in the catalog:
+
+- Each publisher has a unique identity, a required display name, and an associated collection of books it publishes.
+- **Validation rules:** Every publisher must have a non-empty name, and the catalog prevents operations against publishers that have been marked as deleted.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Focused entity scope:** Limiting the publisher model to an identity and display name keeps catalog entry lightweight, while leaving room to add contact, address, or imprint-hierarchy fields later if supplier workflows grow.
+- **Deletion guard:** Enforcing non-deleted checks ensures books are never linked to retired publisher records.
+
+## 5. Technical Reference
+
+### Entity Overview
+
+- **Entity ID:** `publisher` (`Publisher`)
+- **Aggregate Root:** `true`
+- **Rules:** Requires a non-empty `name` and ensures the publisher is not deleted. Maintains a collection of [[entity|book]]s published by the publisher.
+- **Owners:** `contributor-team`
 
 ### Entity Properties
 

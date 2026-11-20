@@ -24,38 +24,39 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-The [[system|cart-system]] needs low-latency reads and writes for the mutable
-[[entity|basket]]
-that exists before checkout. Basket state must be isolated from the durable
-Order lifecycle and must not become a second source of truth for Catalog data.
+During online shopping, customers frequently add, adjust, and remove items before deciding to buy. The [[system|cart-system]] must support fast, responsive reads and writes for this changeable pre-order [[entity|basket]] without slowing down the storefront or tying temporary shopping activity to permanent order records.
 
-The [[service|basket-api]] reads and writes the basket under a key derived from
-the customer identity. The basket contains only the customer's current
-selection and quantities; it is not the checkout-time purchase snapshot or a
-record of payment and fulfilment. Keeping this boundary explicit lets each
-owning system preserve its own lifecycle and data model.
+At the same time, active basket data must remain cleanly separated from completed purchase records in [[domain|ordering]] and must never become a second, out-of-date copy of [[entity|book]] information owned by [[domain|catalog]]. Keeping these boundaries clear allows each business area to manage its own data lifecycle independently.
 
-## Decision
+## 2. Business Value
 
-[[container|basket-database]], implemented with Redis, is the authoritative
-store for active customer [[entity|basket]]s. [[service|basket-api]] is the documented
-reader and writer, using customer-scoped keys. The store is transient and is
-not used to reconstruct accepted orders. [[domain|ordering]] owns the
-accepted Order, while [[domain|catalog]] owns [[entity|book]] metadata and
-prices. Other systems must use the Basket API's contracts rather than reading
-or writing Redis directly.
+- **Fast storefront responsiveness**: Keeps cart updates snappy for shoppers, reducing friction before checkout.
+- **Clear domain ownership**: Prevents temporary cart edits from interfering with confirmed orders, payment records, or fulfillment workflows.
+- **No duplicate catalog data**: Eliminates the risk of stale product details or pricing mismatches being stored inside active carts.
+- **Clean service boundaries**: Allows teams working on shopping, catalog, and ordering capabilities to evolve independently as long as they honor published service contracts.
 
-## Consequences
+## 3. How It Works
 
-- Basket operations remain suitable for a low-latency storefront path.
-- Redis availability is a hard dependency for basket reads and writes.
-- Basket data can be discarded after checkout without losing the accepted
-  Order or its purchase snapshot.
-- Redis loss can discard active shopping intent; recovery procedures must not
-  present basket restoration as Order recovery.
-- The `transient` classification does not itself define an expiry or eviction
-  policy. Deployment settings and recovery expectations must be aligned with
-  the product's basket-retention requirements.
-- Other systems must use published contracts rather than reading Redis directly.
+Active customer baskets are stored in a dedicated, high-speed in-memory store rather than a permanent order database. Only the cart service manages this store, keeping each customer's active [[entity|basket]] separate using their customer identity.
+
+The basket records only the customer's current item selections and requested quantities—it never stores a checkout-time price snapshot, payment status, or fulfillment record. Once an order is placed, [[domain|ordering]] becomes the owner of the confirmed purchase, and the temporary basket can be cleared without affecting the order. All other systems interact with the basket through published cart service contracts instead of accessing the underlying database directly.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Hard availability dependency**: Because active baskets live in this dedicated store, its availability directly affects whether customers can view or edit their carts.
+- **Transient data expectations**: Losing the basket store can discard active shopping intent, so operational recovery procedures must never confuse restoring temporary baskets with recovering confirmed customer orders.
+- **Retention policy alignment**: Marking the store as transient does not automatically define how long idle baskets should remain before expiring; deployment and eviction settings must be aligned with product retention requirements.
+- **Strict encapsulation**: Other systems must integrate only through the cart service's published contracts rather than reading or writing the store directly, preventing tight coupling and accidental data corruption.
+
+## 5. Technical Reference
+
+- **Authoritative store**: [[container|basket-database]] (implemented with Redis; `retention: transient`).
+- **Sole reader/writer**: [[service|basket-api]], accessing baskets via customer-scoped keys derived from the customer identity.
+- **Ownership boundaries**:
+  - [[system|cart-system]] / [[service|basket-api]]: active customer [[entity|basket]] selections and quantities.
+  - [[domain|ordering]]: accepted Orders, checkout-time purchase snapshots, payment, and fulfilment.
+  - [[domain|catalog]]: [[entity|book]] metadata and prices.
+- **Integration rule**: Other systems must consume [[service|basket-api]] contracts rather than reading or writing Redis directly.
+- **Operational note**: Deployment expiry and eviction policies must be explicitly configured to match product basket-retention expectations.

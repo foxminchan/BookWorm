@@ -11,62 +11,65 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Purpose
+## 1. Context & Problem
 
-[[domain|shopping]] owns the [[entity|basket]] up to the point where checkout hands the purchase
-intent to the downstream order workflow. It does not own the Order lifecycle,
-payment settlement, or fulfilment.
+Moving a customer from browsing their cart to placing a formal order crosses multiple business boundaries. Before purchase confirmation, the customer's selection is flexible and belongs to [[domain|shopping]]. Once the customer submits the purchase, order creation, payment settlement, and fulfilment belong to downstream capabilities.
 
-## Before checkout
+Without a clear handoff lifecycle, teams risk treating the shopping basket as a permanent order record, leaving submitted baskets active for accidental double purchases, or confusing basket cleanup errors with failed payments.
 
-1. Authenticate the customer and resolve the customer-scoped basket through
-   [[service|basket-api]].
-2. Confirm that the basket contains valid [[entity|book]] references and positive
-   quantities.
-3. Read the enriched basket representation for the current product details.
-   [[domain|catalog]] remains the source of truth for [[entity|book]] metadata
-   and prices.
+## 2. Business Value
+
+- **Prevents duplicate purchases:** Cleans up the customer's submitted basket once checkout hands off the purchase intent, reducing accidental repeat orders.
+- **Protects order accuracy:** Ensures live product details and pricing are checked from the catalog before submission, while keeping finalized orders independent of mutable basket data.
+- **Clear accountability across domains:** Establishes an unmistakable handoff point between Shopping, Catalog, and Ordering/Finance so customer support and delivery teams know which capability owns each stage.
+- **Transparent failure handling:** Distinguishes basket cleanup outcomes from payment or order outcomes so temporary cleanup issues never trigger false order-cancellation assumptions.
+
+## 3. How It Works
+
+The checkout lifecycle follows four main stages from cart review through post-checkout cleanup:
+
+1. **Verify the customer and basket:** Only an authenticated customer's basket is eligible for checkout, and every selected [[entity|book]] must have a valid reference and a quantity above zero.
+2. **Present live product details and confirm intent:** Before submission, the customer sees up-to-date book details and prices sourced from [[domain|catalog]], which remains the single source of truth for product metadata. The customer explicitly confirms the purchase action before checkout proceeds.
+3. **Hand off purchase intent:** Checkout transfers enough information for the downstream order workflow to create and manage an Order independently, without sharing the mutable [[entity|basket]] structure. From this point forward, downstream processing owns the Order lifecycle, while Shopping is responsible only for cleaning up the submitted basket.
+4. **Emit an explicit cleanup outcome:** After attempting to delete the submitted basket, Shopping publishes exactly one outcome—either confirming that cleanup succeeded or reporting that cleanup failed. Neither outcome indicates whether payment, order completion, or fulfilment has finished.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Handoff snapshot vs. shared basket model:** Passing purchase intent across an explicit boundary avoids coupling Ordering to Shopping's internal storage, though it requires carrying all necessary order details in the handoff payload.
+- **Asynchronous cleanup vs. blocking checkout:** Separating basket deletion from order confirmation keeps the handoff decoupled, but introduces a narrow window where cleanup can fail after an order is accepted—making explicit failure events and safe caller rules essential.
+- **No blind retries on ambiguity:** Because network or messaging hiccups can leave callers unsure whether checkout succeeded, callers must verify downstream order acceptance before retrying so customers are not charged or ordered twice.
+- **Strict domain write boundaries:** Shopping never writes Catalog or Order state, and a basket is never used to reconstruct an accepted Order.
+
+## 5. Technical Reference
+
+### Participating architecture elements
+
+- **Owning domain and system:** [[domain|shopping]] and [[system|cart-system]]
+- **Service:** [[service|basket-api]]
+- **Core entity:** [[entity|basket]] (mutable, customer-scoped purchase context)
+- **Sequence diagram:** [[diagram|checkout-interaction]] (shows the checkout sequence and failure paths)
+
+### Pre-checkout checklist
+
+1. Authenticate the customer and resolve the customer-scoped basket through [[service|basket-api]].
+2. Confirm that the basket contains valid [[entity|book]] references and positive quantities.
+3. Read the enriched basket representation for the current product details; [[domain|catalog]] remains the source of truth for [[entity|book]] metadata and prices.
 4. Confirm the customer action before submitting the purchase.
 
-The basket is mutable shopping intent. It is not an Order and must not be used
-to reconstruct an accepted Order.
+### Cleanup integration events and channels
 
-## Handoff
+The Basket API publishes exactly one cleanup outcome for the attempted deletion:
 
-Checkout submits the basket to the order-processing workflow through the
-documented integration contract. The handoff must carry enough information for
-the downstream workflow to create and continue an Order without sharing the
-basket persistence model.
+- [[event|BasketDeletedCompleteIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] when deletion succeeds.
+- [[event|BasketDeletedFailedIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] when deletion fails.
 
-After the handoff, downstream processing owns the Order lifecycle. Shopping
-continues only with cleanup of the submitted basket.
+These events describe basket cleanup only. Neither event means that payment, order completion, or fulfilment has finished.
 
-## Cleanup outcomes
+### Rules for callers and consumers
 
-The Basket API publishes exactly one cleanup outcome for the attempted
-deletion:
-
-- [[event|BasketDeletedCompleteIntegrationEvent]] on
-  [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] when deletion succeeds.
-- [[event|BasketDeletedFailedIntegrationEvent]] on
-  [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] when deletion fails.
-
-These events describe basket cleanup only. Neither event means that payment,
-order completion, or fulfilment has finished.
-
-## Rules for callers
-
-- Do not retry checkout blindly after an ambiguous response; first determine
-  whether the downstream workflow accepted the purchase.
+- Do not retry checkout blindly after an ambiguous response; first determine whether the downstream workflow accepted the purchase.
 - Do not treat a cleanup failure as successful deletion.
 - Keep consumers idempotent because integration delivery can be retried.
 - Do not write Catalog data or Order state from the Shopping boundary.
-
-## Related architecture
-
-- [[system|cart-system]] owns the basket boundary and its persistence.
-- [[entity|basket]] is the mutable customer-scoped purchase context.
-- [[diagram|checkout-interaction]] shows the checkout sequence and failure
-  paths.
 
 <Footer />

@@ -2,10 +2,32 @@
 summary: Create an Order from the authenticated Buyer's current basket.
 ---
 
-## 1. Create an Order
+## 1. Context & Problem
 
-Send the required idempotency key. Order API reads the basket and book data
-from the connected services; the request has no body.
+Client applications and integration partners need a clear, reliable reference for turning a signed-in buyer's active shopping basket into a submitted order. Sending itemized order lines or prices from client devices would create duplication and expose pricing to tampering, while network retries during checkout risk creating duplicate orders.
+
+## 2. Business Value
+
+- **Faster client integration:** Gives frontend and integration teams concrete request and response examples to implement checkout consistently.
+- **Duplicate-order protection:** Demonstrates how callers attach a unique request tracking key so retried checkout attempts do not create duplicate orders.
+- **Authoritative pricing:** Keeps basket items and book prices sourced exclusively from trusted backend services.
+
+## 3. How It Works
+
+1. The caller authenticates as the buyer and supplies a unique request tracking key representing the checkout attempt.
+2. No itemized order details are included in the request; the ordering service automatically retrieves the buyer's current basket and book pricing from connected services.
+3. After the order is created, the service returns the newly assigned order identifier.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Minimal submission contract:** Omitting a request body simplifies client integrations and prevents client-side price manipulation, while requiring callers to maintain valid sign-in credentials and generate unique tracking keys.
+- **Caller-managed retry keys:** Callers must reuse the same tracking key when retrying an uncertain checkout request and issue a fresh key for each new purchase attempt.
+
+## 5. Technical Reference
+
+### 1. Create an Order
+
+Send the required idempotency key (`x-request-id`). Order API reads the basket and book data from the connected services; the request has no body (`POST /api/v1/orders`).
 
 <CodeGroup dropdown>
 

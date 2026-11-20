@@ -26,124 +26,60 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-Catalog data is relational: [[entity|book]]s reference [[entity|author]]s,
-[[entity|category]]s, and [[entity|publisher]]s, with many-to-many book-author
-relationships. These records must remain coherent when they are created,
-updated, filtered, sorted, or paged. Price and availability also need a
-canonical value that downstream purchase-time checks can trust.
+Catalog information is deeply interconnected: [[entity|book]]s link to [[entity|author]]s, [[entity|category]]s, and [[entity|publisher]]s, including many-to-many relationships between books and authors. These records must stay consistent whenever products are created, updated, filtered, sorted, or paged. Price and availability also require a single trusted value that downstream checkout validation can rely on.
 
-Catalog uses Redis to accelerate selected reads and Qdrant to find books by
-meaning and keywords. Both are projections that can lag or be unavailable;
-neither should become a competing copy of product truth. Review feedback and
-image bytes have separate owners, so the decision must also make the boundary
-of Catalog's authority explicit.
+At the same time, Catalog uses a read cache to speed up popular queries and a search index to match books by meaning and keywords. Both are derived helpers that can lag behind edits or become temporarily unavailable—neither should become a competing source of product truth. Because book cover images and customer reviews belong to separate capabilities, Catalog also needs an explicit boundary around what data it owns.
 
-## Decision
+## 2. Business Value
 
-[[container|catalog-database]] (PostgreSQL) is the authoritative store for
-Catalog-owned books, authors, categories, publishers, and their relationships.
-[[service|catalog-api]] validates and applies request-path changes. Other
-domains use Catalog's published service contracts rather than accessing its
-tables directly. [[service|catalog-ingestion]] may read catalog data and
-maintain its vector-work queue, but does not own or author canonical product
-records.
+- **Single source of product truth:** Pricing, availability, and product descriptions stay consistent across browsing, search, and purchase validation.
+- **Built-in data integrity:** Automated relational rules prevent broken links, orphaned author associations, or inconsistent book metadata.
+- **Resilience without data loss:** Outages in the read cache or search index may slow responses or delay search freshness, but never compromise core product records or block updates.
+- **No lost search updates:** Pending search-index work is recorded alongside every product save, ensuring search catches up reliably even if background workers are temporarily offline.
+- **Clear domain boundaries:** Keeps canonical product data separate from image files and individual customer reviews, reducing cross-team coupling.
 
-Database constraints protect referential integrity. For example, deleting a
-category or publisher preserves books by clearing the corresponding reference,
-book deletion cascades to its author links, and author deletion is restricted
-while links remain. PostgreSQL-generated `uuidv7()` identifiers are used for
-records; database-generated timestamps provide creation and modification times.
+## 3. How It Works
 
-Changes to catalog data and the trigger-generated
-`pending_vector_updates` work item are committed together. The queue coalesces
-work by book and revision, allowing [[service|catalog-ingestion]] to update
-[[container|catalog-vector]] asynchronously without making a product write
-depend on embedding or Qdrant availability. See
-[[adr|adr-003-database-queue-for-vector-indexing]] for the queue and processing
-decision.
+[[container|catalog-database]] serves as the single authoritative store for Catalog-owned books, authors, categories, publishers, and their relationships.
 
-[[container|catalog-cache]] is an optimization, and
-[[container|catalog-vector]] is a search projection: both are non-authoritative
-and can be repopulated or rebuilt from their source data. Search uses Qdrant to
-find candidate book IDs, then reads canonical book data from PostgreSQL; price
-and availability used for purchase-time validation must not come from the
-cache or vector record.
+- **Controlled access:** [[service|catalog-api]] validates and applies all product updates. Other domains consume Catalog's published service interfaces rather than reading its database tables directly. [[service|catalog-ingestion]] reads catalog data and manages the search-indexing work queue, but never authors or alters canonical product records.
+- **Automatic relationship protection:** Database rules keep relationships coherent—removing a category or publisher preserves affected books by clearing that link, deleting a book removes its author associations, and an author cannot be deleted while still linked to books.
+- **Guaranteed handoff to search:** Whenever catalog data changes, a pending search-update marker is saved in the exact same step. This lets [[service|catalog-ingestion]] refresh [[container|catalog-vector]] in the background without making product saves wait on AI embeddings or search availability (see [[adr|adr-003-database-queue-for-vector-indexing]]).
+- **Derived helpers only:** [[container|catalog-cache]] and [[container|catalog-vector]] are non-authoritative copies that can be rebuilt or repopulated from source data at any time. Search queries use the vector index only to identify candidate books, then load current details from the authoritative database—ensuring purchase-time price and availability checks never rely on cached or search-index copies.
+- **Scoped authority:** Book cover images live in [[container|catalog-blob]] and are linked by reference. Individual customer reviews are owned by the Reviews domain; Catalog keeps only a summary rating updated via integration messages.
 
-This authority is intentionally scoped. Book images are stored in
-[[container|catalog-blob]] and referenced from the book by a URN. Reviews owns
-individual feedback records; Catalog stores only a denormalized rating summary
-updated from Reviews integration messages.
+## 4. Trade-offs & Lessons Learned
 
-## Decision drivers
+### Alternatives considered
 
-This choice is designed to preserve the Catalog subdomain's business invariants:
+- **Use a document store or distributed cache as the primary store:** Simplifies some read patterns, but makes cross-entity integrity harder to guarantee and blurs the line between canonical product truth and read optimizations.
+- **Treat the cache or search index as authoritative:** Eliminates extra lookups, but introduces silent drift between what shoppers see and actual product rules due to expiration, indexing lag, and rebuilds.
+- **Split product data across multiple relational stores:** Offers isolated scaling, but introduces duplicate metadata, inconsistent identities, and complex cross-store reconciliation.
 
-- Catalog needs one canonical owner for product descriptions, prices,
-  availability, and product identity.
-- Relational constraints and transactions must keep books and their
-  author/category/publisher associations coherent.
-- Search and caching should improve read performance without making the
-  correctness or freshness of derived stores a prerequisite for product writes.
-- Durable indexing work must not be lost when a product change commits, even
-  when the ingestion worker or vector store is temporarily unavailable.
-- Shopping and other consumers need a stable service boundary and canonical
-  product values for validation.
+### Trade-offs & operational considerations
 
-## Consistency and operational constraints
+- **Hard dependency for writes and search resolution:** Availability of the primary database is essential for saving catalog edits and resolving search candidates into canonical book records.
+- **Shared database load:** Because the database also holds the search-indexing work queue, background ingestion adds database activity that must be monitored alongside queue age and depth (see [[doc|runbooks/vector-index-lag]]).
+- **Eventual search consistency:** Saving a book via the API confirms database persistence, not that semantic search has already refreshed.
+- **Controlled operational changes:** Direct manual edits to database rows should occur only for approved operational corrections, following documented engineering change controls (see [[doc|engineering/02-change-checklist]]).
 
-- PostgreSQL is the consistency boundary for catalog writes and relationships.
-  A successful API write does not mean that semantic search has already
-  refreshed.
-- Vector indexing is eventually consistent. The durable queue retries
-  unacknowledged work, and revision checks prevent an older batch from
-  acknowledging a newer edit. There is no indexing freshness guarantee; queue
-  age and count must be monitored. See
-  [[doc|runbooks/vector-index-lag]].
-- Cache entries are invalidated on book changes and expire according to their
-  configured lifetime. Cache loss must affect performance, not data ownership
-  or correctness.
-- Schema changes require an EF Core migration and an update to the documented
-  current-state `schema.sql`; that schema file is not a migration history.
-  Database rows should only be changed directly for an approved operational
-  correction. See [[doc|engineering/02-change-checklist]].
+## 5. Technical Reference
 
-## Alternatives considered
-
-### Keep catalog data in a document store or distributed cache
-
-This would simplify some read patterns, but it would make cross-entity
-integrity harder to guarantee and blur the boundary between product data and
-read optimizations. It also weakens the guarantee that a book, its
-relationships, and its pricing can be validated as a coherent unit.
-
-### Treat the cache or vector index as authoritative
-
-This would reduce some reads to a single path, but it would create hidden
-drift between the shopping experience and the product definition. Cache
-expiration, invalidation, indexing lag, and rebuilds make these stores
-unsuitable as authorities.
-
-### Separate product data across multiple relational stores
-
-This might unlock isolated scaling, but it would introduce inconsistent
-product identities, duplicate author and category records, and much more
-complex reconciliation. PostgreSQL keeps the model coherent while allowing
-downstream optimizations to be layered on top.
-
-## Consequences
-
-- Catalog writes, relational constraints, and durable vector-indexing work
-  share a transactional boundary in PostgreSQL.
-- Cache and search failures can degrade read performance or discovery, but do
-  not change which store owns canonical product data. The search index can be
-  rebuilt and the cache repopulated.
-- PostgreSQL availability is a hard dependency for catalog writes and for
-  resolving search results into canonical books. It also carries the vector
-  work queue, so ingestion adds database load and must be monitored.
-- Search results may lag behind committed changes while the queue drains;
-  consumers must not interpret indexing completion as part of API write
-  success.
-- Other domains remain decoupled from Catalog's schema but depend on its
-  service contracts for product data.
+- **System of record:** `[[container|catalog-database]]` (PostgreSQL), accessed for writes by `[[service|catalog-api]]` and read for indexing by `[[service|catalog-ingestion]]`.
+- **Identifiers & timestamps:** PostgreSQL-generated `uuidv7()` identifiers and database-generated creation/modification timestamps.
+- **Referential integrity rules:**
+  - Category or publisher deletion clears the foreign-key reference on books (`SET NULL` behavior) so books are preserved.
+  - Book deletion cascades to `book_author` links.
+  - Author deletion is restricted while `book_author` links remain.
+- **Transactional vector queue:** Database triggers atomically write to `pending_vector_updates` (coalesced by book ID and revision) within the same PostgreSQL transaction as the catalog mutation.
+- **External storage & projection boundaries:**
+  - Book images are stored in `[[container|catalog-blob]]` and referenced from the book record by URN.
+  - Individual feedback records belong to Reviews; Catalog stores only a denormalized rating summary updated from Reviews integration messages.
+- **Cache & search rules:**
+  - `[[container|catalog-cache]]` entries are invalidated on book changes and expire per configured lifetime; cache loss impacts performance only.
+  - Text search queries `[[container|catalog-vector]]` for candidate book IDs, then reads canonical records from PostgreSQL; price and availability for purchase validation must never come from cache or Qdrant.
+- **Schema governance & runbooks:**
+  - Schema changes require an EF Core migration and an update to the documented current-state `schema.sql` (note: `schema.sql` is a current-state reference, not migration history).
+  - Operational references: [[doc|runbooks/vector-index-lag]] and [[doc|engineering/02-change-checklist]].

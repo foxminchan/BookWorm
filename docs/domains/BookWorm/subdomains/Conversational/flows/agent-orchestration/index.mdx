@@ -159,134 +159,95 @@ steps:
       newlines. Returns a rephrasing prompt if no usable assistant text remains.
 ---
 
-## Purpose and scope
+## 1. Context & Problem
 
-Chat agent orchestration routes a customer's BookWorm request to a specialist
-and returns a formatted response. [[service|chat-api]] accepts the interaction
-through AG-UI, validates the input, and invokes the composed workflow.
-`DecisionRouterExecutor` (`Microsoft-Decision-1`) selects book discovery,
-customer-support handling, or direct rating analysis; [[agent|book-agent]] can
-delegate independent research before composing its answer.
+Customers interacting with BookWorm's chat assistant arrive with very different needs: searching for books, asking for personalized recommendations, summarizing customer reviews, or checking store policies and support options. Routing every inquiry through a single general-purpose assistant would blur specialist boundaries, increase safety risk, and make it harder to enforce which tools and facts each inquiry can use.
 
-This flow covers the interactive `/ag-ui` request path, agent handoffs
-(including A2A handoffs to [[agent|rating-agent]]), delegated research, and
-response formatting. Durable conversation domain state and business operations
-such as checkout, Order cancellation, and persisted Reviews feedback are
-outside its scope.
+Owned by [[system|chat-system]] and hosted by [[service|chat-api]], this orchestration flow governs the interactive customer request path from initial screening through specialist routing, optional parallel research, and final response cleanup. Durable business records and transactional operations—such as checkout, Order cancellation, and persisted Reviews feedback—remain strictly outside this flow's scope.
 
-### System boundary
+## 2. Business Value
 
-[[system|chat-system]] owns the composed workflow, its executors, agent
-registrations, and Azure Blob Storage session store. The `/ag-ui` endpoint
-invokes the complete `Workflows.Chat` workflow.
+- **Safety and cost efficiency**: Empty, unsafe, off-topic, and unsupported-language inputs are filtered out early before invoking specialist AI reasoning.
+- **Consistent customer experience**: Every specialist reply passes through uniform response cleanup so customers receive well-formatted text free of leaked internal instructions.
+- **Depth without unnecessary delay**: Simple lookups and preference clarifications get fast direct answers, while complex discovery questions can run factual catalog research and recommendation research concurrently.
+- **Clear operational ownership**: Separating screening, routing, specialist handoffs, and formatting gives product, support, and engineering teams clear diagnostic checkpoints.
 
-## Flow visualization
+## 3. How It Works
+
+### End-to-End Request Flow
+
+1. **Enter the interactive chat workflow**: A customer submits a message through the interactive chat experience, which maintains conversation continuity across turns using persisted session storage.
+2. **Screen the incoming message**: Blank messages and messages containing suspicious manipulation patterns are rejected immediately with a clear explanation. Accepted messages that exceed the maximum length are trimmed to a safe prefix with a notice appended before proceeding.
+3. **Classify language, scope, and specialist**: A fast classification gate checks whether the message is in English and relevant to BookWorm without invoking a full conversational assistant:
+   - Non-English or out-of-scope requests stop immediately with a brief boundary message.
+   - Store policy, service, account, order, or billing questions route to [[agent|qa-agent]], which answers from supplied store-policy guidance and directs customers to support when live account or order details are unavailable. If the question also needs book information, it can hand off to [[agent|book-agent]].
+   - Book discovery, recommendations, book information, feedback, or review questions without a specific book identifier route to [[agent|book-agent]].
+   - Review summaries or rating analyses that already identify a specific book route directly to [[agent|rating-agent]].
+4. **Handle directly or delegate parallel book research**: [[agent|book-agent]] answers straightforward requests directly (or asks for missing preferences), and can hand off review or rating analysis to [[agent|rating-agent]]. For complex inquiries requiring independent factual research and preference-based recommendations, it delegates concurrently to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]], then combines their findings and removes duplicates. When operating in planning mode, it presents a plan and waits for customer approval before running multi-step work.
+5. **Normalize and return the response**: The selected specialist's final reply passes through a cleanup step that trims extra whitespace, strips any accidental internal prompt fragments, ensures proper sentence-ending punctuation, and collapses excessive blank lines. If no usable text remains, the customer is asked to rephrase.
+
+### Participants and Responsibilities
+
+| Participant                               | Responsibility                                                                                 |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Customer and interactive client           | Submit the request and receive the formatted response across a continuous session.             |
+| [[service\|chat-api]]                     | Host the composed chat workflow and persist multi-turn session state.                          |
+| Input screening & extraction              | Reject empty or unsafe input and pass valid messages to routing.                               |
+| Request router                            | Evaluate English language, BookWorm scope, and target specialist before invoking an assistant. |
+| [[agent\|qa-agent]]                       | Explain supplied store-policy information and hand book-specific work to Book Agent.           |
+| [[agent\|book-agent]]                     | Handle book requests directly, delegate parallel research, or hand off to Rating Agent.        |
+| [[agent\|rating-agent]]                   | Summarize book reviews and analyze rating and quality signals.                                 |
+| [[agent\|book-catalog-researcher]]        | Return concise findings about books, authors, categories, and catalog details.                 |
+| [[agent\|book-recommendation-researcher]] | Return a preference-matched shortlist with supporting facts.                                   |
+| Response formatter                        | Clean and normalize the final assistant reply before delivery.                                 |
+
+### Key Behavioral Rules
+
+- **Screening and routing are separate gates**: Passing initial input screening does not guarantee a message is in English or within BookWorm's scope.
+- **Specialist handoffs differ from delegated research**: Book, QA, and Rating collaborate through specialist handoffs (QA can hand off to Book; Book can hand off to Rating), whereas the two research assistants are invoked in parallel by Book Agent for complex discovery tasks.
+- **No invented book facts**: Assistants must distinguish verified catalog facts from unavailable information.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Multi-stage orchestration vs. single-agent simplicity**: Keeping screening, routing, specialist handoffs, and formatting as separate workflow stages adds coordination points that must stay aligned when behavior changes, but keeps safety and output hygiene independent of individual assistant prompts.
+- **Fast upfront classification vs. mixed-intent complexity**: Filtering language and scope before specialist execution reduces wasted model calls, though requests spanning multiple topics still rely on specialist handoffs.
+- **Parallel research is not a delivery SLA**: Running catalog and recommendation research concurrently improves answer depth on complex queries, but does not imply a fixed retry budget or guaranteed response time.
+- **Read-only support boundary**: Excluding live account, Basket, and Order lookups preserves domain ownership and authorization boundaries, at the cost of directing account-specific questions to human support.
+- **Session store dependency**: Multi-turn continuity relies on external session persistence; troubleshooting turn-to-turn state loss requires checking session storage separately from routing behavior.
+
+## 5. Technical Reference
+
+### Flow Visualization
 
 <NodeGraph />
 
-The outer validation, handoff, and formatting stages reflect the workflow.
-The two branches from **Delegate both research tasks in parallel** run
-concurrently; the Book Agent resumes after both researchers return.
+The outer validation, handoff, and formatting stages reflect the composed workflow. The two branches from **Delegate both research tasks in parallel** execute concurrently, and Book Agent resumes after both researchers return.
 
-## Participants and responsibilities
+### Endpoints, Executors & Configuration
 
-| Participant                               | Responsibility                                                                             |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Customer and AG-UI client                 | Submit the request and receive the result through `/ag-ui`.                                |
-| [[service\|chat-api]]                     | Host the workflow and persist AG-UI session state in Azure Blob Storage.                   |
-| Input validation and extraction executors | Reject invalid input and route accepted input into the workflow.                           |
-| `DecisionRouterExecutor`                  | Evaluate language and BookWorm scope via `Microsoft-Decision-1`, then select a specialist. |
-| [[agent\|qa-agent]]                       | Explain supplied store-policy information and hand book-specific work to Book Agent.       |
-| [[agent\|book-agent]]                     | Handle book requests directly, delegate research, or hand off to Rating Agent.             |
-| [[agent\|rating-agent]]                   | Summarize book reviews and analyze rating/quality signals via A2A.                         |
-| [[agent\|book-catalog-researcher]]        | Return book, author, category, and detail findings.                                        |
-| [[agent\|book-recommendation-researcher]] | Return a preference-matched shortlist with supporting facts.                               |
-| Response formatter                        | Normalize the final assistant text before returning it.                                    |
+- **Interactive entry point**: `MapAGUIServer("/ag-ui", ...)` binds `/ag-ui` to `Workflows.Chat`, exposed as an AI agent backed by an Azure Blob Storage session store (`ag-ui/` prefix). This is distinct from agent discovery at `/agents` and per-agent `/a2a/{agentName}` endpoints; calling an individual agent via A2A bypasses this composed workflow.
+- **Input validation (`InputValidationExecutor`)**: Trims input, then checks for empty messages, suspicious prompt-injection patterns, and findings from the configured governance injection detector before applying length limits:
 
-## Processing walkthrough
+| Condition                                                        | Result                                                                                       |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Input is empty after trimming                                    | Reject with a request for more details (`RejectedOutputExtractor`).                          |
+| A suspicious pattern or governance injection finding is detected | Reject with a rephrasing or security-policy response (`RejectedOutputExtractor`).            |
+| Accepted input exceeds 2,000 characters                          | Retain a 1,900-character prefix and append the truncation notice (`AcceptedInputExtractor`). |
+| Accepted input is within the length limit                        | Forward the trimmed text as a user message (`AcceptedInputExtractor`).                       |
 
-### 1. Invoke the workflow through AG-UI
+- **Decision routing (`DecisionRouterExecutor`)**: Delegates to `ChatRoutingDecisionService` (`Microsoft-Decision-1` via `IDecisionClient`) to evaluate `is_english`, `is_in_scope`, and `route` with a `0.5` probability threshold without invoking an LLM agent:
 
-The customer submits a request to `/ag-ui`. The host maps that endpoint with
-`MapAGUIServer("/ag-ui", ...)`. The registered workflow is exposed as an AI
-agent and uses an Azure Blob Storage session store (`ag-ui/` prefix).
+| Decision outcome                                                                       | Route or response                                                                                                                 |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `is_english < 0.5` (`NonEnglish`)                                                      | Short-circuit via `DecisionRejectedOutputExtractor` with an English-only message.                                                 |
+| `is_in_scope < 0.5` (`OutOfScope`)                                                     | Short-circuit via `DecisionRejectedOutputExtractor` with a brief boundary response.                                               |
+| Store policies, services, accounts, orders, or billing (`QA`)                          | Route to [[agent\|qa-agent]] sub-workflow (`store-policies` context; no live account, Basket, or Order lookup).                   |
+| Book search, recommendations, info, feedback, or reviews without a catalog ID (`Book`) | Route to [[agent\|book-agent]] sub-workflow (Plan Mode waits for approval before multi-step work, then switches to Execute Mode). |
+| Review summaries or rating analysis with a book catalog ID already present (`Rating`)  | Route to [[agent\|rating-agent]] sub-workflow via A2A.                                                                            |
 
-This entry point is distinct from agent discovery at `/agents` and the
-per-agent `/a2a/{agentName}` endpoints. Calling an individual agent through
-A2A does not execute this composed workflow.
+- **Response formatting (`ResponseFormatterExecutor`)**: Receives messages from `HandoffEnd`, selects the last assistant message, trims whitespace, removes detected system-prompt fragments, ensures sentence-ending punctuation, and reduces runs of three or more newlines to two. Returns a rephrasing prompt if no usable assistant text remains.
 
-### 2. Validate input
-
-`InputValidationExecutor` trims the message, then checks for empty input,
-suspicious prompt-injection patterns, and an injection finding from the
-configured governance detector. These checks occur before length truncation.
-
-| Condition                                                        | Result                                                            |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Input is empty after trimming                                    | Reject with a request for more details.                           |
-| A suspicious pattern or governance injection finding is detected | Reject with a rephrasing or security-policy response.             |
-| Accepted input exceeds 2,000 characters                          | Retain a 1,900-character prefix and append the truncation notice. |
-| Accepted input is within the length limit                        | Forward the trimmed text as a user message.                       |
-
-`AcceptedInputExtractor` forwards the accepted message to the handoff workflow.
-`RejectedOutputExtractor` returns rejection text directly, without invoking
-the agents or response formatter.
-
-### 3. Route the request
-
-`DecisionRouterExecutor` delegates to `ChatRoutingDecisionService`
-(`Microsoft-Decision-1`) to evaluate `is_english`, `is_in_scope`, and `route`
-with a `0.5` probability threshold before entering a specialist sub-workflow.
-
-| Decision outcome                                                                       | Route or response                                      |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `is_english` < 0.5 (`NonEnglish`)                                                      | Short-circuit with an English-only message.            |
-| `is_in_scope` < 0.5 (`OutOfScope`)                                                     | Short-circuit with a brief boundary response.          |
-| Store policies, services, accounts, orders, or billing (`QA`)                          | Route to [[agent\|qa-agent]] sub-workflow.             |
-| Book search, recommendations, info, feedback, or reviews without a catalog ID (`Book`) | Route to [[agent\|book-agent]] sub-workflow.           |
-| Review summaries or rating analysis with a book catalog ID already present (`Rating`)  | Route to [[agent\|rating-agent]] sub-workflow via A2A. |
-
-QA uses the supplied `store-policies` context. It states when information is
-unavailable and directs the customer to support instead of inventing policy
-or account details. If the request also needs book information, QA can hand
-it to Book Agent.
-
-### 4. Handle the book request
-
-Book Agent handles straightforward requests directly and may ask for missing
-preferences. For complex requests with independent book research and
-recommendation work, it delegates to both researchers concurrently. Their
-findings return to Book Agent for synthesis and deduplication.
-
-In Plan Mode, Book Agent presents a plan and waits for customer approval
-before multi-step research. After approval, it switches to Execute Mode.
-Simple requests do not require that approval cycle.
-
-### 5. Format and return the response
-
-The handoff workflow returns its messages to `ResponseFormatterExecutor`.
-The formatter selects the last assistant message, trims whitespace, removes
-detected system-prompt fragments, ensures sentence-ending punctuation, and
-reduces runs of three or more newlines to two.
-
-If no usable assistant text remains, the formatter returns a rephrasing prompt.
-
-## Behavior notes
-
-- **Validation and routing are different gates.** Passing input checks does
-  not establish BookWorm relevance or English-language support.
-- **Handoffs and delegated research are different.** Book, QA, and Rating
-  participate in specialist sub-workflows (QA can hand off to Book; Book can
-  hand off to Rating); the researchers are invoked by Book Agent for parallel
-  work.
-- **Do not invent book details.** Responses should distinguish known facts
-  from information that is unavailable.
-- **Session state is persisted in Azure Blob Storage.** AG-UI workflow sessions
-  use the configured Blob Storage session store under the `ag-ui/` prefix.
-- **Parallel research is not a delivery guarantee.** Both branches are shown
-  as concurrent work, not as a fixed retry budget or response-time SLA.
-
-## Outcomes and recovery
+### Outcomes and Recovery
 
 | Outcome                                   | Behavior                                                                      | Operational interpretation                                                 |
 | ----------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -297,16 +258,12 @@ If no usable assistant text remains, the formatter returns a rephrasing prompt.
 | Policy or account details are unavailable | QA states the limitation and directs the customer to support.                 | This flow has no live account, Basket, or Order lookup.                    |
 | No usable assistant text remains          | The formatter returns its rephrasing prompt.                                  | Inspect the handoff message list and formatting outcome.                   |
 
-## Operational checks
+### Operational Checks
 
 When a conversation appears incomplete or routes unexpectedly:
 
-1. Confirm that the client invoked `/ag-ui` and the composed Chat workflow,
-   not an individual agent's A2A endpoint.
+1. Confirm that the client invoked `/ag-ui` and the composed `Workflows.Chat` workflow, not an individual agent's `/a2a/{agentName}` endpoint.
 2. Check whether input was rejected, truncated, or passed to `DecisionRouterExecutor`.
 3. Inspect the selected route and the specialist context available to it.
-4. For delegated work, check the current agent mode, any required approval,
-   both researcher results, and Book Agent's synthesis.
-5. Check the last assistant message and final formatting separately. Verify
-   Azure Blob Storage session persistence under `ag-ui/` if session continuity
-   across turns fails.
+4. For delegated work, check the current agent mode (Plan Mode vs. Execute Mode), any required approval, both researcher results, and Book Agent's synthesis.
+5. Check the last assistant message and `ResponseFormatterExecutor` output separately. Verify Azure Blob Storage session persistence under the `ag-ui/` prefix if session continuity across turns fails.

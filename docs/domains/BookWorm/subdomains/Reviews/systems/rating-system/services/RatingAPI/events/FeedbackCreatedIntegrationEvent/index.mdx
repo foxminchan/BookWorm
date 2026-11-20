@@ -14,19 +14,39 @@ badges:
     textColor: purple
 ---
 
-## Overview
+## 1. Context & Problem
 
-[[service|rating-api]] publishes this event after a new [[entity|feedback]]
-record is committed. The event contains the identifiers and rating value that
-[[service|catalog-api]] needs to update its denormalized [[entity|book]]
-rating summary.
+When a customer submits a new rating for a book, the Reviews domain stores the individual feedback entry while the Catalog domain maintains and displays the book's overall rating summary. Coupling these two domains through synchronous calls or shared database access would slow down review submission and create tight operational dependencies. An integration event lets the Reviews service announce a newly committed rating asynchronously so Catalog can keep its book summaries up to date independently.
+
+## 2. Business Value
+
+- **Responsive customer experience**: Submitting a book review succeeds as soon as the feedback is saved, without waiting for downstream catalog updates to finish.
+- **Fast catalog browsing**: Catalog keeps a pre-computed rating summary on each book record, avoiding expensive recalculations across all reviews during storefront page loads.
+- **Clear domain boundaries**: Reviews remains the sole source of truth for individual feedback records, while Catalog owns book metadata and display totals.
+
+## 3. How It Works
+
+1. A customer submits a feedback rating for a book, and the Reviews service saves the record.
+2. Once the feedback is safely persisted, Reviews publishes a notification stating that feedback was created, carrying the book identifier, the rating score, and the feedback identifier.
+3. The Catalog service receives the notification and adds the rating to that book's running rating summary.
+4. If Catalog cannot find the referenced book, it sends a failure notification back using the feedback identifier so Reviews can remove the orphaned feedback record.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency**: Because Catalog updates its rating summary asynchronously, a newly submitted rating may take a brief moment to appear on the book's catalog display.
+- **Compensating cleanup over distributed transactions**: Carrying the feedback identifier enables automatic cleanup when a book is missing in Catalog, avoiding complex cross-service locks.
+- **Duplicate delivery tolerance**: Because messaging channels guarantee at-least-once delivery, downstream handlers must remain safe when processing retries.
+
+## 5. Technical Reference
+
+[[service|rating-api]] publishes this event after a new [[entity|feedback]] record is committed. The event contains the identifiers and rating value that [[service|catalog-api]] needs to update its denormalized [[entity|book]] rating summary.
 
 <NodeGraph />
 
-## Channel
+### Channel
 
 [[channel|bookworm.&#123;env&#125;.rating.feedback-create]]
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="Feedback created schema" maxHeight="500" />

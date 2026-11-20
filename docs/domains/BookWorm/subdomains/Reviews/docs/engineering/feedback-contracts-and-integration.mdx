@@ -12,15 +12,41 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Ownership boundary
+## 1. Context & Problem
 
-[[service|rating-api]] owns the [[entity|feedback]] lifecycle and persists
-individual records in [[container|rating-database]]. Catalog owns
-[[entity|book]]s and its derived
-rating summary. Do not introduce a shared database read, a Catalog write from
-Reviews, or a second persisted copy of individual feedback.
+In BookWorm, customer reviews and product catalog listings serve different business needs and change at different speeds. Customers expect to submit and read individual reviews, while shoppers browsing the catalog only need a book's overall rating and review count.
 
-## API contract
+Without clear ownership and integration rules, teams risk coupling the two areas—for example, by letting one service read another's database directly or storing duplicate copies of customer comments. This engineering guidance establishes strict boundaries, business rules, and safe integration patterns between Reviews and Catalog.
+
+## 2. Business Value
+
+- **Clear domain ownership**: Eliminates ambiguity over which team and service owns individual reviews versus aggregated book ratings.
+- **Data integrity**: Enforces consistent validation rules—such as one review per reviewer per book and valid score ranges—regardless of how feedback enters the system.
+- **Resilient customer experience**: Decouples review submission from catalog updates so temporary downstream delays do not block customers from submitting feedback.
+- **Safe change management**: Gives architects, product owners, and developers a concrete pre-release checklist to prevent breaking downstream rating summaries or AI insights.
+
+## 3. How It Works
+
+The contract between Reviews and Catalog is built around four core principles:
+
+1. **Single source of truth per domain**: Reviews owns individual [[entity|feedback]] records and their full lifecycle. Catalog owns [[entity|book]] records and maintains only a derived summary (average rating and total review count). Neither domain reads the other's data store or keeps a duplicate copy of individual reviews.
+2. **Strict business rules on every review**: Every feedback entry must reference a valid book, include the reviewer's first and last name, and carry an integer score between 0 and 5. Only one review is allowed per reviewer name and book combination. Trying to remove a review that does not exist is treated as an explicit not-found condition, never a silent success.
+3. **Post-commit event notifications and compensation**: Reviews notifies Catalog only after a creation or deletion is safely saved. Because notifications can be delivered more than once, Catalog processes updates safely under retries. If Catalog rejects a newly created review because the book no longer exists, it sends a failure notice so Reviews can automatically clean up the invalid feedback record.
+4. **Read-only AI summarization**: Automated summaries read current book context and raw reviews within strict governance and usage limits, returning explicitly derived insights that never overwrite stored feedback or official catalog ratings.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency vs. distributed locking**: Accepting a brief delay before Catalog's rating summary reflects a new or deleted review avoids brittle cross-service transactions and keeps both domains independently deployable.
+- **Idempotency is mandatory**: At-least-once event delivery improves reliability against network blips, but requires both Catalog's rating projection and Reviews' cleanup handler to handle duplicate messages safely without double-counting or failing on already-removed records.
+- **Boundary enforcement**: Enforcing uniqueness and score bounds both at the incoming request boundary and inside the core domain model ensures internal callers cannot accidentally bypass business rules.
+
+## 5. Technical Reference
+
+### Ownership boundary
+
+[[service|rating-api]] owns the [[entity|feedback]] lifecycle and persists individual records in [[container|rating-database]]. Catalog owns [[entity|book]]s and its derived rating summary. Do not introduce a shared database read, a Catalog write from Reviews, or a second persisted copy of individual feedback.
+
+### API contract
 
 The versioned contract is exposed at `/api/v1/feedbacks`:
 
@@ -31,57 +57,36 @@ The versioned contract is exposed at `/api/v1/feedbacks`:
 | `DELETE` | `/api/v1/feedbacks/{id}`           | [[command\|DeleteFeedback]]             | `204 No Content`                |
 | `GET`    | `/api/v1/feedbacks/{id}/summarize` | [[query\|SummarizeFeedback]] by Book ID | `200 OK` with `SummarizeResult` |
 
-Use the service's problem-details behavior for validation and not-found
-failures. A missing feedback must not be converted into a successful delete.
+Use the service's problem-details behavior for validation and not-found failures. A missing feedback must not be converted into a successful delete.
 
-## Domain invariants
+### Domain invariants
 
 - Book ID, reviewer first name, and reviewer last name are non-empty.
 - Rating is an inclusive integer from 0 through 5.
-- At most one feedback record exists for a Book ID and reviewer-name
-  combination.
-- Feedback creation and deletion publish integration changes only after the
-  lifecycle operation commits.
-- The Catalog rating projection is derived and eventually consistent; it is
-  never the source of truth for individual feedback.
+- At most one feedback record exists for a Book ID and reviewer-name combination.
+- Feedback creation and deletion publish integration changes only after the lifecycle operation commits.
+- The Catalog rating projection is derived and eventually consistent; it is never the source of truth for individual feedback.
 
-Validate these rules at the request boundary and in the domain model so
-non-HTTP callers cannot bypass them.
+Validate these rules at the request boundary and in the domain model so non-HTTP callers cannot bypass them.
 
-## Integration event rules
+### Integration event rules
 
 Publish:
 
-- [[event|FeedbackCreatedIntegrationEvent]] to
-  [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] after a successful
-  create.
-- [[event|FeedbackDeletedIntegrationEvent]] to
-  [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]] after a successful
-  delete.
+- [[event|FeedbackCreatedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] after a successful create.
+- [[event|FeedbackDeletedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]] after a successful delete.
 
-Include the `feedbackId`, `bookId`, and `rating` needed by Catalog to apply a
-projection delta. Preserve Kafka trace and correlation context. The channels
-are at-least-once, so Catalog consumers and the Reviews compensation handler
-must be safe under duplicate delivery and retries.
+Include the `feedbackId`, `bookId`, and `rating` needed by Catalog to apply a projection delta. Preserve Kafka trace and correlation context. The channels are at-least-once, so Catalog consumers and the Reviews compensation handler must be safe under duplicate delivery and retries.
 
-When Catalog cannot apply a create because the Book is absent, it publishes
-[[event|BookUpdatedRatingFailedIntegrationEvent]] to
-[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]. The
-compensation handler must locate the exact feedback ID and treat an already
-deleted record as a no-op.
+When Catalog cannot apply a create because the Book is absent, it publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]. The compensation handler must locate the exact feedback ID and treat an already deleted record as a no-op.
 
-## Summarization safety
+### Summarization safety
 
-The [[agent|rating-agent]] is a read-only collaborator. It may call `get_book`
-for current Catalog context and `GetCustomerReviews` for raw feedback, subject
-to authentication, rate limiting, and agent governance. It must not mutate
-feedback, Catalog projections, or the rating database.
+The [[agent|rating-agent]] is a read-only collaborator. It may call `get_book` for current Catalog context and `GetCustomerReviews` for raw feedback, subject to authentication, rate limiting, and agent governance. It must not mutate feedback, Catalog projections, or the rating database.
 
-Keep the summarize response explicitly derived: classification, metrics,
-justification, and confidence must not be presented as a persisted rating or
-as a replacement for customer feedback.
+Keep the summarize response explicitly derived: classification, metrics, justification, and confidence must not be presented as a persisted rating or as a replacement for customer feedback.
 
-## Change checklist
+### Change checklist
 
 Before changing the API or event contract:
 
@@ -92,7 +97,6 @@ Before changing the API or event contract:
 5. Verify payload fields and channel routing for both normal paths.
 6. Test duplicate event delivery and the missing-Book compensation path.
 7. Confirm that summarize tooling remains read-only and rate-limited.
-8. Update the relevant ADR when ownership, persistence, or integration
-   semantics change.
+8. Update the relevant ADR when ownership, persistence, or integration semantics change.
 
 <Footer />

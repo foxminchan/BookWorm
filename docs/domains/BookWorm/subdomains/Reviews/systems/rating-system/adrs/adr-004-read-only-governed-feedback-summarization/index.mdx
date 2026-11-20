@@ -28,78 +28,53 @@ badges:
     textColor: red
 ---
 
-## Context
+## 1. Context & Problem
 
-Customers benefit from a concise interpretation of a [[entity|book]]'s
-[[entity|feedback]], but a
-generated classification is derived insight rather than an authoritative
-business record. Giving the summarization workflow write access would let an
-untrusted tool path alter feedback or the Catalog rating projection.
-Summarization also combines private customer comments with current Catalog
-context, so reads need explicit governance, bounded usage, and privacy
-processing rather than unrestricted access to the model.
+Customers benefit from a concise summary of a [[entity|book]]'s [[entity|feedback]], especially when a title has many reviews. However, an AI-generated summary and classification is a derived interpretation—not an authoritative business record.
 
-## Decision
+Allowing an AI summarization workflow to write directly to data stores could let an untrusted or unexpected model path alter real customer ratings or Catalog's rating counts. In addition, summarizing customer comments combines private review text with Catalog product context, requiring strict privacy protection, controlled tool access, and bounded usage rather than unrestricted model access.
 
-[[agent|rating-agent]] generates summaries only at query time. It uses
-allow-listed, read-only tools to retrieve Catalog context and raw feedback.
-The agent governance policy defaults to deny, blocks write and destructive SQL
-operations, rate-limits review reads, and applies PII redaction before model
-input and output. Generated classifications are returned to the caller and
-are not persisted.
+## 2. Business Value
 
-The authenticated summarize query may serve a cached result; on a cache miss,
-Rating loads the feedback and computes the review count and arithmetic mean
-in application code. The workflow partitions review inputs, summarizes
-bounded batches in parallel, consolidates and assesses the evidence, and
-applies application-owned classification rules. Model output provides
-explanatory text and assessment, not authority to change the stored rating
-data.
+- **Zero risk to authoritative data:** Summaries cannot alter stored customer reviews, numeric ratings, or Catalog projections.
+- **Stronger customer privacy:** Sensitive personal details are redacted before and after model processing, and tool access follows a strict least-privilege policy.
+- **Consistent numeric accuracy:** Review counts and average ratings are calculated deterministically by application logic rather than estimated by the language model.
+- **Cost and performance efficiency:** Rate limits and short-lived caching prevent excessive model calls for repeated requests on the same book.
 
-The summary cache is non-authoritative and can be stale until expiration:
-normal summaries use a six-hour lifetime, while no-feedback results use one
-minute. The query remains read-only even when a cached result is returned.
+## 3. How It Works
 
-## Consequences
+[[agent|rating-agent]] generates book feedback summaries strictly on demand when an authenticated user requests one:
 
-- Generated summaries cannot overwrite feedback or the Catalog projection.
-- The result reflects current source data but may be unavailable when required
-  read dependencies are unavailable.
-- Tool access, PII handling, and rate limits require continued governance and
-  operational monitoring.
-- Consumers must treat the classification as an explanatory response, not as
-  a replacement for stored ratings or review content.
-- Summary freshness is not guaranteed to match every feedback change because
-  cached results can remain available until their time-to-live expires.
-- Summary generation depends on Rating Database, Catalog context, MCP prompt
-  access, and model execution on a cache miss; unavailable dependencies can
-  make a generated result unavailable.
-- The application computes numeric metrics and classification rules, while
-  the model summarizes and assesses review text. Consumers should preserve
-  this distinction when interpreting the explanation and confidence.
-- Read-only access reduces mutation risk but does not remove privacy concerns
-  from reading or processing reviewer comments. PII filtering and tool
-  governance remain required.
-- A cache hit can avoid model execution but may return an older review
-  snapshot; the cache is disposable and does not become an alternate source
-  of feedback truth.
+1. **Check cache first:** The service first checks whether a recent summary is already cached for the book. If found, it returns that cached result immediately without invoking the AI workflow.
+2. **Gather governed, read-only context:** On a cache miss, the workflow retrieves Catalog product context and raw reviews using only explicitly approved, read-only tools. Write or destructive actions are blocked by default, and review reads are rate-limited.
+3. **Protect personal data:** Personally identifiable information is redacted before comments are sent to the model and again on the model's output.
+4. **Separate math from narrative:** Application logic—not the AI model—calculates the exact review count, arithmetic mean rating, and final classification rules. The model partitions reviews into bounded batches, summarizes them in parallel, consolidates the evidence, and produces explanatory narrative and confidence assessment.
+5. **Return without saving as truth:** The generated summary is returned to the caller and optionally placed in a temporary, disposable cache—never persisted as an authoritative record.
 
-## Alternatives considered
+## 4. Trade-offs & Lessons Learned
 
-### Persist generated classifications as authoritative rating data
+- **Bounded staleness from caching:** Because cached summaries remain valid until their expiration window passes (up to six hours for books with reviews, or one minute when no reviews exist), a summary may temporarily lag behind newly added or deleted feedback.
+- **Read-time dependency chain:** On a cache miss, summarization relies on the feedback store, Catalog context, prompt access, and AI model availability. If any dependency is unavailable, the summary request can fail even though regular review browsing continues to work.
+- **Ongoing governance obligation:** Read-only access eliminates mutation risk, but it does not automatically eliminate privacy risk when reading customer comments. PII redaction rules, tool allow-lists, and rate limits require continuous monitoring.
+- **Clear separation of authority:** Consumers should treat the returned narrative as an explanatory aid, while trusting deterministic application metrics for exact rating counts and averages.
 
-This would turn a model-derived explanation into business state and require
-separate update, invalidation, and audit rules. The query returns the insight
-without changing feedback or the Catalog projection.
+### Alternatives Considered
 
-### Give the summarizer write access
+- **Persist generated classifications as authoritative rating data:** Rejected because it would turn model output into business state requiring separate invalidation, update, and audit workflows.
+- **Give the summarizer write access:** Rejected because write capabilities are unnecessary for a read-only summary and introduce unacceptable data-integrity risks.
+- **Summarize on every request without caching:** Rejected because it would repeatedly read reviews and invoke the model for unchanged data, increasing latency and cost.
 
-Write capabilities are unnecessary for an explanatory query and could allow
-model-driven changes to Reviews or Catalog data. The agent remains
-read-only and default-deny.
+## 5. Technical Reference
 
-### Summarize on every request without caching
-
-This would repeatedly load reviews and invoke the model for unchanged input.
-The summary cache reduces repeated work at the cost of a bounded freshness
-window; it remains a disposable optimization.
+- **Participating components:** [[service|rating-api]], [[agent|rating-agent]], [[query|SummarizeFeedback]], and [[container|rating-database]].
+- **Governance & security controls:**
+  - Default-deny tool policy with allow-listed read-only tools for Catalog context and raw feedback retrieval; write and destructive SQL operations are blocked.
+  - Authenticated query access with per-user rate limiting and rate-limited review reads.
+  - PII redaction applied before model input and after model output.
+- **Execution & calculation split:**
+  - On cache miss, `rating-api` loads feedback and computes review count, arithmetic mean, and classification rules in application code.
+  - `rating-agent` partitions review inputs, summarizes bounded batches in parallel, consolidates evidence, and returns explanatory text and confidence assessment without persisting results.
+- **Cache lifetimes (non-authoritative, disposable):**
+  - Books with feedback: `6 hours` TTL.
+  - No-feedback results: `1 minute` TTL.
+- **Cache-miss runtime dependencies:** Rating Database (`rating-database`), Catalog context, MCP prompt access, and AI model execution.

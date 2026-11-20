@@ -19,19 +19,32 @@ styles:
   icon: /icons/database/blob.svg
 ---
 
+## 1. Context & Problem
+
+[[system|chat-system]] requires a dedicated, isolated storage location for conversational session state and AI memory blobs managed by the chat service. Storing these conversational files alongside general business data or allowing other services direct access would risk leaking confidential customer interactions across domain boundaries.
+
+## 2. Business Value
+
+- **Strong confidentiality and isolation:** Keeps sensitive conversational session and memory data locked within the chat domain, preventing cross-domain exposure.
+- **Clear data ownership:** Ensures conversational storage stays strictly separate from authoritative business records in Catalog, Basket, Ordering, and Reviews.
+- **Managed platform simplicity:** Leverages the platform's shared object-storage infrastructure with single-service, least-privilege access.
+
+## 3. How It Works
+
+During environment provisioning, a dedicated object-storage container is created on the shared cloud storage account solely for the chat system. Only the chat service is permitted to read from and write to this container; no other domain service can access it directly.
+
+All data stored in this container is treated as confidential conversational state and AI memory. Core business data—such as book catalog details, shopping baskets, customer orders, and product reviews—continues to live exclusively in its own owning services.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Strict domain boundaries:** Enforcing single-service ownership prevents cross-domain storage coupling, meaning any external service needing conversational data must go through approved service interfaces rather than reading blobs directly.
+- **Confidentiality governance:** Because contents are classified as confidential, access permissions and storage boundaries must be preserved whenever infrastructure provisioning changes.
+- **Clear scope limit:** Only conversational session history and memory blobs belong here; Catalog, Basket, Ordering, and Reviews business state must never be persisted in this container.
+
+## 5. Technical Reference
+
+- **Container & technology:** `chat-session-blob` (`chatSessionContainer`) provisioned on the shared Azure Storage account (`azure-storage-account`) by Aspire AppHost.
+- **Access & permissions:** [[service|chat-api]] is the sole reader and writer (`access_mode: readWrite`), granted `StorageBlobDataContributor` access.
+- **Data classification & ownership:** `authoritative: true`, `classification: confidential`; stores durable Chat conversation session state and Microsoft Foundry memory blobs for [[system|chat-system]].
+
 <NodeGraph />
-
-## Overview
-
-Chat Session Blob Storage holds conversational session state and Microsoft
-Foundry memory for [[system|chat-system]]. The Aspire AppHost provisions this
-container (`chatSessionContainer`) on the shared Azure Storage account and
-grants [[service|chat-api]] `StorageBlobDataContributor` access.
-
-## Access and ownership
-
-- [[service|chat-api]] is the sole reader and writer of this container.
-- Stored conversation session data is classified as confidential and must not be
-  shared directly across domain boundaries.
-- Chat does not own Catalog, Basket, Ordering, or Reviews business state; only
-  conversational session history and memory are persisted here.

@@ -14,19 +14,39 @@ badges:
     textColor: purple
 ---
 
-## Overview
+## 1. Context & Problem
 
-[[service|rating-api]] publishes this event after an existing
-[[entity|feedback]] record is deleted. The event contains the identifiers and
-rating value that [[service|catalog-api]] needs to subtract from its
-denormalized [[entity|book]] rating summary.
+When a customer feedback entry is deleted—such as during moderation or administrative cleanup—its score should no longer count toward the book's displayed rating in the Catalog. Because Catalog keeps its own summary totals separately from the Reviews database, Reviews must notify Catalog asynchronously whenever a feedback record is removed.
+
+## 2. Business Value
+
+- **Accurate storefront ratings**: Ensures deleted or moderated reviews are promptly excluded from each book's displayed rating summary.
+- **Low-overhead updates**: Carrying the removed rating value directly allows Catalog to subtract it without recalculating from every remaining review.
+- **Resilient service isolation**: Moderation actions in Reviews succeed independently without requiring synchronous availability of Catalog.
+
+## 3. How It Works
+
+1. An authorized user deletes an existing feedback record in the Reviews service.
+2. Once the deletion is saved, Reviews publishes a feedback-deleted notification containing the book identifier, the removed rating value, and the feedback identifier.
+3. The Catalog service receives the notification, finds the book, and subtracts that rating value from the book's rating summary.
+4. If the referenced book does not exist in Catalog, Catalog takes no action because there is no local rating summary left to adjust.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Delta subtraction vs. full recalculation**: Subtracting a single rating value keeps updates fast, though it assumes create and delete events are delivered reliably over time.
+- **No-op handling for missing books**: Unlike feedback creation, a missing book during deletion requires no compensating action because there is no summary entry to correct.
+- **Eventual consistency**: Catalog's displayed totals may reflect the removed rating for a brief moment until the deletion notification is processed.
+
+## 5. Technical Reference
+
+[[service|rating-api]] publishes this event after an existing [[entity|feedback]] record is deleted. The event contains the identifiers and rating value that [[service|catalog-api]] needs to subtract from its denormalized [[entity|book]] rating summary.
 
 <NodeGraph />
 
-## Channel
+### Channel
 
 [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="Feedback deleted schema" maxHeight="500" />

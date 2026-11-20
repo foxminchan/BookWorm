@@ -29,9 +29,37 @@ owners:
   - contributor-team
 ---
 
-## Overview
+## 1. Context & Problem
 
-The book author entity represents a relationship between a [[entity|book]] and an [[entity|author]]. It has a unique identifier, a book identifier, and an author identifier. This entity encapsulates the many-to-many relationship between books and authors, allowing for a book to have multiple authors and for an author to have written multiple books. The entity also enforces referential integrity, ensuring that the book and author identifiers exist in their respective tables.
+In publishing, a [[entity|book]] frequently has multiple co-authors, and an [[entity|author]] often writes multiple books. Recording only a single author on a book—or a single book on an author—cannot accurately represent co-authorship without duplicating data. Catalog needs a dedicated link record to connect books and authors cleanly.
+
+## 2. Business Value
+
+- **Accurate attribution:** Supports multi-author titles and complete author bibliographies without duplicating book or author records.
+- **Data integrity:** Prevents broken or orphaned links between books and authors in the catalog.
+- **Flexible discovery:** Lets customers navigate seamlessly from a book to all of its authors, and from an author to every book they wrote.
+
+## 3. How It Works
+
+This association record represents a single pairing between one [[entity|book]] and one [[entity|author]]:
+
+- **Many-to-many connection:** Because each pairing links one book and one author, a book can have multiple pairings (multiple authors) and an author can appear in multiple pairings (multiple books).
+- **Validity rule:** A pairing can only exist when both the referenced book and the referenced author already exist in the catalog, ensuring no link points to a missing record.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit association vs. embedded lists:** Using a dedicated link record keeps the catalog normalized and straightforward to query from either side, at the slight operational cost of managing link records alongside book updates.
+- **Dependent lifecycle:** Because this record is not an independent top-level entity, its validity depends on the underlying book and author records remaining present.
+- **Current scope:** The pairing currently captures only which author wrote which book; future editorial needs such as author display order or contributor roles (for example, editor or translator) would be added to this relationship without altering the core book or author models.
+
+## 5. Technical Reference
+
+### Entity Overview
+
+- **Entity ID:** `book-author` (`BookAuthor`)
+- **Aggregate Root:** `false`
+- **Behavior:** Encapsulates the many-to-many relationship between [[entity|book]]s and [[entity|author]]s and enforces referential integrity, ensuring that `bookId` and `authorId` exist in their respective tables.
+- **Owners:** `contributor-team`
 
 ### Entity Properties
 

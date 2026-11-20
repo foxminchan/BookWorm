@@ -12,18 +12,47 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Symptoms
+## 1. Context & Problem
+
+Whenever books are added, edited, or deleted, their searchable text representations are queued for background indexing rather than updated synchronously. If the scheduled indexing pipeline stalls, loses authentication, encounters an unavailable dependency, or hits a stuck worker lock, newly published or updated books stop appearing in free-text search even though they exist in the catalog.
+
+## 2. Business Value
+
+- **Protects storefront discoverability:** Restores visibility of new and updated titles in customer search without interrupting catalog edits.
+- **Prevents unnecessary downtime:** Confirms upfront that purchasing and direct catalog browsing remain unaffected, keeping incident response proportional.
+- **Enables zero-data-loss recovery:** Because pending work is durably queued and the search index can be rebuilt in full from the primary catalog, teams can recover safely from outages or index loss.
+
+## 3. How It Works
+
+### Symptoms and business impact
+
+New or edited [[entity|book]] records are missing or outdated in free-text search while still appearing normally in filtered listings and direct book lookups. Meanwhile, the backlog of pending search updates grows or its oldest waiting item continues to age.
+
+Impact is limited to search discovery only. The primary catalog remains authoritative, and customer purchasing is not affected.
+
+### Diagnosis and recovery flow
+
+1. **Measure the backlog:** Inspect the pending update queue to check how many books are waiting and how old the oldest pending change is.
+2. **Check the scheduled sync job:** Verify whether the scheduled background job ran and succeeded. Authorization errors indicate a client configuration or identity mismatch; server failures or timeouts point to issues in the text-embedding dependency or the search index.
+3. **Check for a stuck processing lock:** If the scheduled job reports no error yet the backlog does not shrink, another worker session may be stuck holding the exclusive database lock, causing new runs to skip work.
+4. **Recover and verify:** Fix the failing dependency or terminate any dead database session holding the lock. Because pending items are durable and unacknowledged changes retry automatically, triggering the scheduled job repeatedly drains the backlog in fixed-size batches. After a complete search-index loss or schema change, operations can re-enqueue every book to rebuild the entire index, then verify that the queue drains to zero and recently edited books appear in text search.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Durable queue vs. fire-and-forget messaging:** Recording pending updates durably in the database guarantees no catalog change is lost during search or embedding outages, at the cost of actively monitoring queue depth and age.
+- **Exclusive worker lock:** Serializing batch runs with a lock prevents concurrent index corruption, though an orphaned session can silently stall subsequent runs until cleared.
+- **Bounded batch size:** Processing a capped batch per run protects downstream embedding and search services from spikes, meaning large backlogs or full index rebuilds require multiple scheduled runs to drain.
+- **Rebuildable derived index:** Keeping the search index completely rebuildable from catalog records makes recovery straightforward, provided full-rebuild actions are operationally approved and verified against the current schema.
+
+## 5. Technical Reference
+
+### Symptoms
 
 - New or edited [[entity|book]]s are missing or outdated in text search, but present in
   filtered listing and [[query|GetBook]].
 - `pending_vector_updates` is growing or its oldest row is getting older.
 
-## Impact
-
-Degraded discovery only. The database remains authoritative; purchasing is not
-affected.
-
-## Diagnose
+### Diagnose
 
 1. Measure the queue in [[container|catalog-database]]:
 
@@ -47,7 +76,7 @@ affected.
    work in that case). Look for a stuck session holding the lock.
 4. Check [[container|catalog-vector]] (Qdrant) health and the embedding service.
 
-## Recover
+### Recover
 
 - Fix the failing dependency; pending work is durable and un-acknowledged items
   are retried automatically on the next invocation.
@@ -56,7 +85,7 @@ affected.
 - If the lock is held by a dead session, terminate that database session, then
   re-trigger the job.
 
-## Full index rebuild
+### Full index rebuild
 
 The vector index is rebuildable. After a Qdrant data loss or collection
 change, re-enqueue every book and let ingestion drain the queue:
@@ -75,12 +104,12 @@ SET revision = gen_random_uuid(), updated_at = clock_timestamp();
 Run this only as an approved operational action and confirm the conflict
 target against the current schema in [[container|catalog-database]].
 
-## Verify
+### Verify
 
 - Queue count trends to zero and the oldest row age resets.
 - A recently edited book is found by text search.
 
-## Escalation
+### Escalation
 
 - **Contact point:** [[team\|contributor-team]] for Catalog Ingestion and
   application issues; [[team\|platform-team]] for Qdrant, Scheduler, Entra ID,

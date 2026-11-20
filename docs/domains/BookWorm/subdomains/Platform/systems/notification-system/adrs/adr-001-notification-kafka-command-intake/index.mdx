@@ -26,88 +26,46 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-Finance coordinates order placement, cancellation, and completion. Email
-rendering and provider availability must not determine the outcome of those
-business operations. The Notification host needs recipient and order details
-without taking ownership of Finance's workflow.
+Finance coordinates critical order milestones—placement, cancellation, and completion. Sending customer emails requires formatting content and contacting external mail providers, both of which can be slow or temporarily fail. If Finance waited for email delivery to finish before confirming an order action, mail slowdowns or outages could delay or break core order workflows.
 
-This record captures the current architecture; its date is the recording date,
-not a claim about when the implementation was first introduced.
+At the same time, the Notification capability needs recipient and order details to prepare those emails without taking ownership of Finance's business rules or order state. BookWorm needed an asynchronous intake boundary that keeps order workflows fast and authoritative while still giving Notification everything required to send order communications.
 
-## Decision
+## 2. Business Value
 
-[[service|notification-api]] consumes [[command|PlaceOrderCommand]],
-[[command|CancelOrderCommand]], and [[command|CompleteOrderCommand]] through
-Wolverine on separate environment-scoped Kafka topics. Finance supplies the
-recipient and order details; Notification maps the order status and renders
-`Orders/OrderEmail` before invoking its email outbox sender.
+- **Faster, more reliable order checkout and updates:** Order placement, cancellation, and completion are never blocked by email rendering or external mail-provider availability.
+- **Clear domain ownership:** Finance remains the single source of truth for order status, while Notification focuses exclusively on formatting and delivering messages.
+- **Graceful handling of missing addresses:** Requests without a recipient email address are safely skipped rather than failing the order or creating noisy errors.
+- **Decoupled evolution:** Finance does not depend on Notification's internal delivery mechanisms or expose synchronous email endpoints.
 
-Despite its name, Notification API exposes service-default HTTP endpoints,
-not business email-submission or delivery-status endpoints. Its business
-contract is the receive operations in its AsyncAPI specification.
+## 3. How It Works
 
-Blank recipient addresses are skipped. Other rendering, initial persistence,
-and sender failures propagate to messaging failure handling. Wolverine uses
-PostgreSQL envelope persistence and EF Core transaction integration when the
-database connection is configured. These infrastructure envelopes are distinct
-from the application email [[entity|outbox]].
+1. **Asynchronous command publishing:** When an order is placed, cancelled, or completed, Finance emits an order notification command onto the messaging platform containing the recipient and order details.
+2. **Intake and formatting:** The Notification capability picks up each command independently from Finance's workflow, maps the order status to the appropriate message, and checks the recipient address.
+   - If the recipient address is blank, Notification intentionally skips sending an email.
+   - If a recipient is present, Notification formats the order email and hands it off to its internal durable outbox sender.
+3. **Independent failure boundaries:**
+   - Failures during formatting or initial saving are handled by the messaging retry infrastructure.
+   - Failures when handing off to the external mail provider leave work in Notification's own maintenance path for later follow-up.
+4. **No reverse notification to Finance:** Notification does not send a delivery-result message back to Finance. Order completion never waits on or changes based on email submission.
 
-Notification publishes no application-level result event. Email submission
-does not confirm order completion, and order state remains authoritative in
-the calling domain.
+## 4. Trade-offs & Lessons Learned
 
-## Processing and failure semantics
+- **Independent operational dependencies:** Because intake is asynchronous, health of the message broker, Notification's database, and the Notification consumer directly affects email timeliness—even when Finance is healthy.
+- **No exactly-once or cross-topic ordering guarantee:** Partitioning commands by order does not guarantee ordering across separate command types, and repeated commands (such as Finance retrying placement during basket cleanup) or ambiguous consumer retries can produce duplicate email records and deliveries.
+- **Blank-recipient skipping is narrow:** Skipping blank addresses prevents unnecessary failures, but it is not a full email validation guarantee or proof of delivery.
+- **Monitoring requires inspecting Notification directly:** Operators and business stakeholders cannot infer email success from Finance publishing a command or from basic service health checks; they must check Notification's processing and outbox state.
+- **Alternatives rejected:**
+  - _Synchronous sending from Finance:_ Rejected because it would tie order workflows to mail-provider latency and force Finance to own email templates and delivery state.
+  - _Exposing a business email-submission web endpoint:_ Rejected because it would couple callers to request-response lifecycles instead of the current message-consumer contract.
+  - _Publishing delivery outcomes as order facts:_ Rejected because whether an email was submitted does not change the business reality of an order.
 
-The command consumer's success boundary is the handler and sender path, not
-the completion of the underlying order operation. Blank email addresses are
-an intentional no-email outcome. For other recipients, rendering and initial
-outbox persistence failures propagate; SMTP failures leave work for
-Notification's maintenance path. Wolverine's durable message envelopes
-support message processing, but are distinct from the application email
-outbox and do not provide command-level deduplication.
+## 5. Technical Reference
 
-The same Finance placement command can be reissued for basket-cleanup retries
-and consumed independently by Notification. Notification therefore treats
-each received command as a request to render and persist email work rather
-than assuming it has already processed that Order.
-
-## Consequences
-
-- Email processing is asynchronous and can fail independently of the order
-  workflow; broker, database, and consumer health become operational dependencies.
-- Partitioning order commands by `OrderId` does not guarantee ordering across
-  their separate topics or exactly-once email delivery.
-- Repeated commands, including Finance placement retries, can create additional
-  email records. The email outbox has no command-level deduplication constraint.
-- Skipping blank recipients is current behavior, not proof of successful
-  delivery or comprehensive email-address validation.
-- Operators must inspect Notification processing and outbox state rather than
-  infer success from Finance publication or an HTTP health endpoint.
-- Finance does not receive an application-level acknowledgment that the
-  notification was rendered, persisted, or submitted; a command publication
-  and a successful Order outcome must not be presented as email delivery.
-- A consumer retry after an ambiguous sender outcome can create additional
-  email records. The current contract has no message-id-based notification
-  deduplication guarantee.
-
-## Alternatives considered
-
-### Submit email synchronously from Finance
-
-This would couple an Order workflow to SMTP latency and availability and
-require Finance to own email rendering and delivery state. Asynchronous
-command consumption keeps those responsibilities in Notification.
-
-### Expose an HTTP email-submission endpoint to callers
-
-This would add a business submission API that the current service does not
-implement and couple callers to its request-response lifecycle. The current
-business contract is the message consumer, not an email status or submission
-endpoint.
-
-### Publish a delivery result as an Order outcome
-
-An email result is not an Order lifecycle fact. The current boundary keeps
-Order state with its owning domain and Notification state with Notification.
+- **Recording Note:** Status `accepted` (`2026-11-01`). The date reflects when this current architecture was recorded, not when the implementation was first introduced.
+- **Service & Contract:** [[service|notification-api]] exposes only service-default HTTP endpoints (no business email-submission or delivery-status HTTP endpoints); its business contract is the AsyncAPI receive operations.
+- **Consumed Commands:** [[command|PlaceOrderCommand]], [[command|CancelOrderCommand]], and [[command|CompleteOrderCommand]] consumed via Wolverine on separate environment-scoped Kafka topics, partitioned by `OrderId`.
+- **Rendering & Outbox Hand-off:** Maps order status, skips blank recipient addresses, renders the `Orders/OrderEmail` template, and invokes the application email [[entity|outbox]] sender.
+- **Infrastructure Persistence:** Wolverine uses PostgreSQL envelope persistence and EF Core transaction integration when the database connection is configured. These infrastructure envelopes are separate from the application email outbox and do not provide command-level deduplication.
+- **Failure Propagation:** Rendering, initial persistence, and sender failures propagate to messaging failure handling; SMTP failures leave work for Notification's scheduled maintenance path. No application-level result event is published.

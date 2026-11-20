@@ -22,75 +22,37 @@ badges:
     textColor: red
 ---
 
-## Context
+## 1. Context & Problem
 
-[[system|scheduler-system]] jobs call internal services with service-to-service credentials and
-may handle notification content or other sensitive request data. Quartz job
-metadata and routine logs are durable, widely queried operational surfaces, so
-placing secrets or full payloads there would increase the impact of a
-credential leak or data disclosure. Operational investigation should still be
-possible using firing, job, trigger, and target correlation identifiers without
-recording the credentials or personal data used by the target.
+Automated background jobs managed by the [[system|scheduler-system]] must call other internal services using service-to-service credentials and may initiate workflows involving customer notifications or other sensitive operational data. Because saved job definitions, execution history, and routine operational logs are long-lived and broadly accessible to operators for day-to-day support, placing passwords, access tokens, or full message contents inside them would greatly widen the impact of any accidental exposure. At the same time, support teams still need clear, reliable tracking identifiers to connect a scheduled run to its downstream work when investigating delays or failures.
 
-## Decision
+## 2. Business Value
 
-Outbound credentials are supplied through runtime secret configuration and are
-never embedded in job definitions, committed to the catalog, or written to
-routine logs. Quartz job data and execution history contain only the minimum
-non-sensitive identifiers and operational metadata needed to execute and
-diagnose a job.
+- **Lower data and credential exposure**: Keeps service passwords, access tokens, personal details, and notification text out of long-lived scheduling records and everyday operational logs.
+- **Zero-touch credential rotation**: Security and platform teams can rotate service credentials through deployment settings without editing saved schedules or documentation.
+- **Preserved operational traceability**: Support staff can still trace every scheduled run from start to finish using safe correlation identifiers and sanitized error categories.
+- **Cleaner compliance boundaries**: Confines sensitive customer and business records to the downstream services that already enforce dedicated access and retention controls.
 
-Logs and telemetry should retain correlation identifiers, target identifiers,
-status, duration, and sanitized failure categories instead of authorization
-headers, credentials, notification contents, or personal data. Any controlled
-diagnostic capture of sensitive values requires restricted access and the
-platform retention policy.
+## 3. How It Works
 
-Target-specific authentication material belongs in runtime secret
-configuration. Job data should contain only the minimum non-sensitive
-identifiers required to make the authenticated call; for example, Notification
-maintenance requests carry request metadata and let Notification choose its
-own outbox records.
+1. **Runtime-only credentials**: When a scheduled job calls another service, it obtains its authentication credentials from secure runtime configuration at execution time rather than reading them from saved job definitions.
+2. **Minimal job metadata**: Stored schedules keep only the bare minimum non-sensitive identifiers needed to start the work—for instance, a notification maintenance job passes simple request metadata and lets the downstream service choose its own pending records.
+3. **Sanitized operational telemetry**: Routine logs and monitoring records capture run identifiers, job and schedule names, target service names, completion status, duration, and sanitized failure categories, while excluding authorization headers, secrets, message bodies, and personal data.
+4. **Restricted deep investigation**: When an incident requires inspecting recipient details or message content, authorized support staff review records inside the responsible downstream service under that service's own security controls.
 
-## Consequences
+## 4. Trade-offs & Lessons Learned
 
-- Credentials can be rotated through deployment configuration without changing
-  documented resources or schedules.
-- Operators can trace a firing to a target without routinely exposing secrets
-  or message content.
-- Detailed support investigations may require authorized access to the
-  downstream system's records.
-- Secret scanning, access control, and retention monitoring remain required
-  operational controls.
-- Quartz job definitions and execution history are durable and operationally
-  useful, so minimizing their payloads reduces the impact and spread of
-  accidental disclosure.
-- Downstream services remain the appropriate place to inspect recipient,
-  business, or item-level detail under their own authorization controls.
-- Correlation identifiers and sanitized errors must be sufficient to connect
-  scheduler execution history with target-side processing without relying on
-  copied secrets or full request bodies.
-- Runtime secret storage does not remove the need to restrict access to
-  Quartz administration, logs, traces, and diagnostic retention.
+- **Two-step troubleshooting**: Excluding payloads from scheduler logs means operators investigating item-level or recipient-level issues must follow correlation identifiers into the downstream system rather than finding everything in one log entry.
+- **Ongoing governance remains essential**: Storing secrets in runtime configuration reduces blast radius, but teams must still enforce strict access controls on scheduler administration tools, run secret scanning, and monitor log retention policies.
+- **Alternatives considered and rejected**:
+  - _Storing tokens or passwords in job definitions_: Rejected because scheduling state is durable and broadly viewable, and embedded secrets complicate credential rotation.
+  - _Logging full requests and downstream responses_: Rejected because full payloads can expose recipient details, notification content, or personal data in routine telemetry.
+  - _Removing all operational identifiers from telemetry_: Rejected because operators could no longer link a scheduled execution to its downstream processing.
 
-## Alternatives considered
+## 5. Technical Reference
 
-### Store access tokens or passwords in Quartz job data
-
-Quartz state is durable and available to operators and scheduler instances.
-Persisting credentials with schedules would expand access and leave secrets
-behind when rotation is needed. Jobs obtain credentials from runtime
-configuration instead.
-
-### Log full requests and downstream responses
-
-Full payloads can simplify debugging but may contain recipient details,
-notification content, or other personal data. Routine telemetry uses
-correlation data and sanitized failure categories, with restricted downstream
-inspection for cases that require detail.
-
-### Omit all operational context from telemetry
-
-Removing every identifier would reduce exposure but make it difficult to
-correlate a firing with its target-side processing. The decision retains
-minimum non-sensitive identifiers and status information.
+- **Scope**: Applies to `[[system|scheduler-system]]`, `sheduler-dashboard`, and `sheduler-database`.
+- **Credential sourcing**: Outbound service-to-service credentials are supplied exclusively via runtime secret configuration and must never be embedded in Quartz job definitions (`JobDataMap`), committed to the catalog, or written to routine logs.
+- **Job metadata minimization**: Quartz job data and execution history store only minimal non-sensitive identifiers (firing, job, trigger, and target identifiers) and operational metadata required to execute and diagnose runs. For example, Notification maintenance requests carry only request metadata while Notification selects its own outbox records.
+- **Telemetry & retention rules**: Logs and telemetry retain correlation identifiers, target identifiers, status, duration, and sanitized failure categories instead of authorization headers, credentials, notification contents, or personal data. Any controlled diagnostic capture of sensitive values requires restricted access and compliance with the platform retention policy.
+- **Operational controls**: Access to Quartz administration surfaces, logs, traces, and diagnostic retention remains restricted, complemented by ongoing secret scanning and retention monitoring.

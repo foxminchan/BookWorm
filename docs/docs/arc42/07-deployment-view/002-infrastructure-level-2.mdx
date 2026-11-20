@@ -9,11 +9,39 @@ badges:
     textColor: blue
 ---
 
-## 7.2 Infrastructure Level 2
+## 1. Context & Problem
+
+While [[doc|arc42/07-deployment-view/001-infrastructure-level-1]] establishes BookWorm's overall cloud placement, architects, project managers, and operations engineers need a more granular view to plan production readiness. Specifically, teams must know which service owns each database, cache, file store, or background runner, how shared infrastructure is configured today, and which critical operational decisions remain open before the platform can be operated as a production system.
+
+## 2. Business Value
+
+- **Explicit blast-radius and ownership mapping:** Shows exactly which business capabilities depend on shared databases, caches, AI models, or messaging, making incident triage and capacity planning straightforward.
+- **Stronger security and resilience defaults:** Documents baseline safeguards already provisioned—including internal-only service networking, encrypted connections, passwordless identity access, multi-zone relational availability, and 35-day geo-redundant backups.
+- **Clear pre-production action plan:** Surfaces six concrete operational decisions (regions, autoscaling caps, private networking, disaster-recovery testing, secret rotation, and service-level alerts) so delivery teams can close readiness gaps systematically.
+
+## 3. How It Works
+
+At Level 2, BookWorm's infrastructure breaks down into three coordinated layers:
+
+1. **Shared application runtime:** All 15 application components run inside one managed container environment with a single public entry point (the API gateway). Every other application component—including the Storefront, Back office, business services, privacy filters, and AI tools—communicates strictly over internal networking, stays warm with at least one active instance, and streams operational telemetry to centralized monitoring with 90-day log retention.
+2. **Service-owned data and shared foundations:** Each business capability owns its logical data boundaries (such as catalog records, shopping baskets, orders, customer feedback, chat histories, and scheduled job states), even where multiple services share underlying relational database or caching infrastructure. AI-assisted customer experiences pass through dedicated privacy-redaction containers before reaching hosted language, decision, and embedding models.
+3. **External dependencies and identity:** User logins and service permissions are governed by a central identity provider with distinct roles (Administrator, Business User, and Customer) and dedicated identities for AI agents. Asynchronous event messaging, vector search, and outbound email delivery rely on external services configured per environment.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Template provisioning vs. operational readiness:** Automated templates provision zone-redundant databases and 35-day geo-redundant backups, but infrastructure provisioning alone does not replace tested restore procedures, retention policies, or disaster-recovery drills.
+- **Shared platform tiers vs. strict isolation:** Consolidating three relational databases onto one PostgreSQL server and four caches onto one Redis instance simplifies management and cost, yet requires explicit per-database role isolation and per-service cache key separation to avoid cross-service interference.
+- **Public template endpoints vs. production network boundaries:** Several managed resources (databases, cache, storage, AI services, and the task scheduler) currently permit public or broad network access in template defaults and must be locked down behind virtual networks, private endpoints, custom domains, and tightened allowlists before production.
+- **Minimum capacity vs. bounded scaling:** Guaranteeing one minimum instance per app prevents cold-start failures, but upper autoscaling limits, CPU/memory/event triggers, and formal availability or latency targets are not yet defined.
+- **Unconfirmed external operations:** External messaging, vector search, email delivery, and secret rotation policies remain outside the automated template and must be finalized before this view serves as a production runbook.
+
+## 5. Technical Reference
+
+### 7.2 Infrastructure Level 2
 
 This level refines the Azure Container Apps topology from [[doc|arc42/07-deployment-view/001-infrastructure-level-1]]. It records infrastructure responsibilities and the operational details that remain open.
 
-### 7.2.1 Service execution environment
+#### 7.2.1 Service execution environment
 
 All 15 container apps run in a single Azure Container Apps managed environment (Consumption workload profile), backed by Azure Container Registry, Log Analytics (90-day retention), and the Aspire Dashboard. Every app runs in single-revision mode with a minimum of one replica. Only the API gateway is externally reachable (port 5000); all other container apps use internal-only ingress.
 
@@ -33,7 +61,7 @@ All 15 container apps run in a single Azure Container Apps managed environment (
 
 See [[doc|arc42/05-building-block-view/002-level-2]] and [[doc|arc42/06-runtime-view]] for service responsibilities and runtime flows.
 
-### 7.2.2 Stateful and integration infrastructure
+#### 7.2.2 Stateful and integration infrastructure
 
 | Infrastructure element           | Owner or consumer                                                                                                                                                                                                                    | Deployment fact                                                                                                                                                                                                                                                                                                     | Details to confirm                                                                      |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -47,16 +75,14 @@ See [[doc|arc42/05-building-block-view/002-level-2]] and [[doc|arc42/06-runtime-
 | Presidio analyzer and anonymizer | [[service\|chat-api]], [[service\|rating-api]]                                                                                                                                                                                       | Two internal-only container apps (minimum 1 replica, port 3000) providing [[service\|PresidioAPI]] PII detection and redaction                                                                                                                                                                                      | Scaling rules and custom recognizer configuration                                       |
 | Kafka                            | [[service\|catalog-api]], [[service\|catalog-ingestion]], [[service\|basket-api]], [[service\|order-api]], [[service\|order-orchestration]], [[service\|rating-api]], [[service\|sheduler-dashboard]], [[service\|notification-api]] | Carries asynchronous commands and integration events; supplied as an external connection parameter                                                                                                                                                                                                                  | Broker provider, authentication, topic ownership, partitioning, retention, and recovery |
 
-The table distinguishes what the infrastructure templates provision from the operational configuration still needed to run it. Provisioning a zone-redundant PostgreSQL flexible server with 35-day geo-redundant backups, for example, does not replace tested restore procedures or private virtual network rules.
-
-### 7.2.3 External infrastructure
+#### 7.2.3 External infrastructure
 
 - **Identity provider:** [[system|identity-provider]] (Microsoft Entra ID) resources are provisioned via Microsoft Graph—creating the application registration, 3 app roles (Admin, BusinessUser, Customer), 14 OAuth2 scopes, gateway callback URIs, per-service managed identities, and Entra Agent Identities for [[agent|book-agent]] and [[agent|rating-agent]] for on-behalf-of token exchange. Tenant conditional access and network policies are managed outside the deployment.
 - **Email delivery:** [[service|notification-api]] submits email via SMTP (defaulting to [[system|sendgrid]]). SMTP acceptance does not guarantee recipient delivery.
 - **Vector search & messaging:** Qdrant Cloud ([[container|catalog-vector]]) and the Kafka broker are externally hosted and configured via secure deployment parameters.
 - **Customer client:** Storefront and Back office run as internal-only container apps (port 3000) behind the externally exposed API gateway; CDN, custom DNS, TLS certificates, and WAF/ingress policies are not yet defined.
 
-### Operational details to complete
+#### Operational details to complete
 
 The following operational decisions are needed before this view can serve as a production runbook:
 

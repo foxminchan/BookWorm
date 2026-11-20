@@ -7,71 +7,58 @@ owners:
   - business-strategy
 ---
 
-## Event storming board
+## 1. Context & Problem
 
-This workshop artifact was created to align the team around the BookWorm business
-journey before implementation. It captures the end-to-end flow from product discovery
-to purchase, fulfillment, and post-purchase experiences, while also surfacing the
-critical events, commands, policies, and external dependencies that shape the domain.
+Before designing software components or service boundaries, BookWorm needed a shared, visual understanding of how the entire bookstore operates from a customer and business perspective. When product, architecture, and engineering teams interpret workflows differently, systems end up with duplicated data, unclear decision ownership, and hidden handoff gaps—especially across discovery, shopping baskets, order fulfillment, and external collaborators like payment and delivery providers.
 
-The board intentionally focuses on behavior first: what happened, why it mattered,
-and which aggregate or bounded context owns the decision. That makes it a strong
-foundation for the rest of the domain model, including the subdomain boundaries,
-commands, and integration contracts documented elsewhere in BookWorm.
+This event-storming board captures that end-to-end behavioral picture first—focusing on what happens in the business, why it matters, and which domain area owns each decision—so technical design grows directly out of business intent.
 
-### What is on the board
+## 2. Business Value
 
-The event-storming model highlights several layers of the domain:
+- **Cross-role alignment**: Gives product managers, business analysts, architects, and engineers a single visual reference of the customer journey before implementation begins.
+- **Clearer accountability**: Establishes early agreement on which business area owns catalog facts, active shopping baskets, accepted orders, and customer support flows.
+- **Earlier risk detection**: Surfaces missing steps, duplicated state, and unclear handoffs during workshop discovery rather than late in delivery.
+- **Stronger integration design**: Makes external dependencies (payments, delivery, notifications) explicit so core bookstore decisions remain isolated from third-party internals.
 
-- Business events such as `BookListed`, `BookAddedToBasket`, `CheckoutStarted`,
-  `OrderCreated`, and `OrderShipped`.
-- Commands that trigger those events, such as search, add-to-cart, checkout,
-  confirm payment, and fulfilment updates.
-- Policy checks and invariants, including product availability, stock validation,
-  pricing consistency, and order acceptance rules.
-- Read models and projections used to support customer-facing experiences such as
-  product details, basket summaries, and order status.
-- External collaborators such as payment, delivery, and notification systems that
-  sit outside the core BookWorm domain boundaries.
+## 3. How It Works
 
-### Business flow captured in the workshop
+The board maps the end-to-end BookWorm purchase and post-purchase journey as a timeline of business occurrences, user actions, business rules, and customer views:
 
-1. A customer discovers a book and reviews catalog metadata.
-2. The customer adds selections to a basket and confirms the purchase intent.
-3. The system validates the basket, price, and availability before accepting the
-   checkout.
-4. An order is created and ownership shifts from shopping to ordering.
-5. The platform manages fulfilment, notification, and customer communication.
-6. Post-order experiences such as rating, review, and conversational assistance
-   rely on domain events without re-creating the canonical source data.
+1. **Discovery**: A customer browses or searches for a book and reviews catalog details.
+2. **Basket intent**: The customer adds chosen titles to a shopping basket and confirms readiness to buy.
+3. **Checkout validation**: Before accepting the purchase, the system checks product availability, stock, pricing consistency, and order acceptance rules.
+4. **Order handoff**: Once accepted, an order is created and responsibility shifts from shopping to ordering.
+5. **Fulfillment and communication**: The platform coordinates order fulfillment, delivery updates, and customer notifications.
+6. **Post-purchase engagement**: Experiences such as ratings, reviews, and conversational assistance follow along using business updates without duplicating or overwriting original source records.
 
-### How to read the board
+### Reading the board
 
-- Event cards describe what happened in the business, not what the system did.
-- Commands sit on the left or in the workflow path that triggers a state change.
-- Aggregates and bounded contexts clarify which teams or subsystems own the decision.
-- External systems are shown as actors or integrations to make dependencies visible.
-- Shared pain points and inconsistencies in the original process often surface as
-  missing events, duplicated states, or unclear ownership.
+- **Business occurrences** describe meaningful things that happened in the business, rather than internal system steps.
+- **Triggering actions** sit along the workflow path where a user or partner initiates a change.
+- **Decision owners** group rules and data under the business area responsible for enforcing them.
+- **Customer-facing views** show the summarized information needed for screens like product details, basket summaries, and order tracking.
+- **External collaborators** highlight outside capabilities—such as payment, delivery, and notification systems—that sit beyond BookWorm's core boundaries.
 
-### Outcomes of the workshop
+## 4. Trade-offs & Lessons Learned
 
-The event-storming session established a common understanding of:
+- **Workshop snapshot vs. formal specification**: The board prioritizes shared understanding and rapid collaboration over exhaustive field-level schemas; detailed agreements live in the individual domain and message pages.
+- **Behavior before structure**: Focusing on business occurrences first helped expose missing steps, duplicated state, and ambiguous ownership before any code or interfaces were locked in.
+- **Living reference**: Because business workflows evolve, the board works best as a living design companion alongside bounded context definitions and flow documentation rather than a one-time artifact.
 
-- the core BookWorm purchase journey,
-- the roles of the catalog, shopping, ordering, and conversational subdomains,
-- where domain boundaries and integration seams should exist,
-- and the event-driven information flows needed to keep the platform scalable and
-  understandable.
+## 5. Technical Reference
 
-This artifact is a living design reference. It complements the implementation docs,
-bounded context definitions, and flow diagrams in the BookWorm catalog, and helps
-explain how business intent becomes technical behavior.
+The event-storming model bridges business intent and concrete DDD / event-driven architecture across the following modeling layers:
+
+- **Domain events**: `BookListed`, `BookAddedToBasket`, `CheckoutStarted`, `OrderCreated`, and `OrderShipped`.
+- **Commands**: search, add-to-cart, checkout, confirm payment, and fulfilment updates.
+- **Policies & invariants**: product availability checks, stock validation, pricing consistency, and order acceptance rules.
+- **Read models & projections**: customer-facing product details, basket summaries, and order status views.
+- **Aggregates & bounded contexts**: clarify subsystem ownership across [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], and [[domain|conversational]].
+- **External collaborators**: payment, delivery, and notification systems outside core BookWorm domain boundaries.
 
 ### Explore the board
 
-Explore the BookWorm event-storming model in Miro. If the board does not load,
-open it directly in Miro.
+Explore the BookWorm event-storming model in Miro. If the board does not load, open it directly in Miro.
 
 <Miro boardId="uXjVERMMrB0=/" title="BookWorm Event Storming" edit={false} />
 

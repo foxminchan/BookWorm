@@ -47,7 +47,34 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-## Overview
+## 1. Context & Problem
+
+Customers expect timely email updates whenever their order is placed, canceled, or completed. If order workflows sent emails directly, temporary slowdowns or outages in external email providers could block or fail checkout and order fulfillment. Isolating email formatting and delivery into a dedicated messaging service keeps core order processing fast and reliable.
+
+## 2. Business Value
+
+- **Protected checkout and order flows**: Email rendering and provider delays never block upstream order processing.
+- **Consistent customer communication**: Centralizes email templates and status phrasing across placed, canceled, and completed order milestones.
+- **Resilient failure handling and privacy**: Built-in retry policies, dead-letter routing for exhausted failures, and privacy-conscious diagnostics help teams investigate issues without exposing sensitive customer details.
+
+## 3. How It Works
+
+1. Despite its name, this service operates as a background messaging worker rather than exposing public web endpoints for sending emails or checking delivery status.
+2. It listens for three order-lifecycle instructions from Finance order orchestration: order placed, order canceled, and order completed.
+3. For each incoming instruction, it skips processing if the email address is missing or blank.
+4. When a valid email address is present, it maps the order status, applies a default customer greeting if no name was supplied, renders the email layout, and submits it through the configured email provider (a local test inbox in development, or the configured external provider in other environments).
+5. If formatting or submission fails, automatic retries run; messages that exhaust all retries are moved to a dedicated error queue for operator review.
+
+## 4. Trade-offs & Lessons Learned
+
+- **At-least-once delivery vs. strict deduplication**: Because the service is stateless and separate order-status channels do not guarantee cross-channel ordering, repeated commands or upstream timeout retries can result in duplicate emails.
+- **No upfront syntax checks or delivery callbacks**: Email format validity is not checked at command receipt, mail-server acceptance does not guarantee inbox arrival, and no completion event is returned to Finance.
+- **Privacy-first diagnostics**: Operators rely on sanitized traces and structured logs rather than logging customer recipient details or rendered email content unnecessarily.
+- **Logical vs. runtime representation**: Catalog diagrams model outbound delivery as a logical send to the email provider even though actual runtime delivery uses standard mail submission protocols rather than web calls or event streams.
+
+## 5. Technical Reference
+
+### Overview
 
 Notification API documents the messaging host inside
 [[system|notification-system]]. Despite its name, the current application maps
@@ -55,7 +82,7 @@ only service-default HTTP endpoints (such as health checks), not email
 submission or status-query APIs. Its business input is Kafka messages handled
 by Wolverine.
 
-## Consumed messages
+### Consumed messages
 
 | Message                           | Producer                    | Notification action                                             |
 | --------------------------------- | --------------------------- | --------------------------------------------------------------- |
@@ -70,7 +97,7 @@ context travels in `traceparent`. Finance partitions order commands by `OrderId`
 this does not guarantee ordering across different topics or exactly-once emails.
 Notification publishes no application-level result event.
 
-## Email rendering and SMTP delivery
+### Email rendering and SMTP delivery
 
 Order handlers skip null, empty, or whitespace-only email addresses. For other
 values they map the order status, use `Customer` when the name is null, and
@@ -86,7 +113,7 @@ The catalog models outbound provider submission as
 an HTTP call or a Kafka publication. The runtime still uses MailKit over SMTP,
 with MailPit in development and SendGrid when configured as the provider.
 
-## Failure semantics
+### Failure semantics
 
 - Rendering and sender failures propagate from order handlers. There is no
   command-level email syntax validation.
@@ -99,6 +126,6 @@ with MailPit in development and SendGrid when configured as the provider.
 Use sanitized traces and structured logs to diagnose processing; do not log
 recipient details or rendered content unnecessarily.
 
-## Architecture
+### Architecture
 
 <NodeGraph />

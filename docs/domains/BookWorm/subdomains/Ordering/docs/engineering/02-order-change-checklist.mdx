@@ -12,7 +12,47 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Before merging
+## 1. Context & Problem
+
+Ordering sits at the center of BookWorm's checkout experience, connecting the customer's shopping basket, the book catalog, financial coordination, and downstream notifications. Because multiple teams and systems depend on how Orders are created, priced, stored, and transitioned, even a seemingly small change can silently break checkout, skew financial tracking, or leak private customer details. Delivery teams need a shared pre-change verification checklist to keep business rules, ownership boundaries, and integration agreements intact before releasing changes.
+
+## 2. Business Value
+
+- **Revenue & price integrity:** Ensures accepted customer purchases retain their exact selected books, quantities, and prices regardless of later catalog price updates.
+- **Clear cross-team boundaries:** Keeps Ordering, Basket, and Finance responsibilities separated, reducing coordination friction and unintended side effects across services.
+- **Operational reliability & privacy:** Prevents duplicate order creation, protects buyer address and contact details, and keeps order status trustworthy across all channels.
+- **Predictable delivery:** Gives solution architects, product managers, analysts, and engineers a repeatable quality gate before merging changes.
+
+## 3. How It Works
+
+Before merging any change to Ordering, the delivery team verifies nine operational and design areas alongside six core business rules:
+
+- **Customer-facing & background agreements:** Update documented order operations and background business event definitions whenever checkout, completion, cancellation, or order lookup behavior changes.
+- **Cross-system coordination:** Keep Basket, Ordering, and Finance ownership boundaries explicit whenever post-checkout basket-cleanup behavior changes.
+- **Immutable purchase snapshot:** Preserve the rule that every accepted Order item locks in its book reference, positive quantity, and selected non-negative price, and that the Order total equals the sum of those line totals. Later Catalog updates must never rewrite an accepted purchase.
+- **Strict Order lifecycle:** Restrict status changes solely to moving from **New** to **Completed** or from **New** to **Cancelled**. Keep administrative removal from active view and Finance's coordination workflow outcomes completely separate from Order status.
+- **Data storage & reporting views:** Keep database documentation and change plans updated whenever Buyer, Order, Order item, event history, or reporting data changes, and keep derived reporting views separate from the authoritative Order record.
+- **Access control & duplicate protection:** Preserve customer and administrator permission boundaries along with unique request-tracking behavior for creation, completion, and cancellation. Treat a temporary request marker only as a record that an attempt was received—never as proof that the operation succeeded.
+- **Downstream consumers & privacy:** Check how Finance and downstream listeners react to checkout and Order status updates, avoid exposing buyer address or contact details unnecessarily, and correlate checkout investigations by Order ID without treating logs or notifications as the authoritative source of Order status.
+
+**Core business rules that must pass verification:**
+
+1. An Order cannot be created without its required basket items and valid books in Catalog.
+2. The saved Order total always equals the sum of its recorded item prices and quantities.
+3. Only a **New** Order can be completed or cancelled, and neither final state can be reopened.
+4. Successful basket cleanup does not change Order status; an explicit cleanup failure may hide the Order from active view without recording a cancellation.
+5. Exhausting Finance workflow retries updates Finance's own coordination state, never Ordering's status.
+6. Repeated submissions and concurrent creation attempts cannot bypass duplicate-request checks or Buyer-level concurrency locks.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Locked purchase snapshots vs. live catalog sync:** Capturing prices and items at checkout protects customers from unexpected post-checkout price changes, at the cost of requiring explicit reconciliation if a catalog entry is later corrected.
+- **Decoupled lifecycle vs. apparent status mismatch:** Keeping Finance workflow states and soft-deletion separate from the **New** / **Completed** / **Cancelled** lifecycle prevents misleading status transitions, though teams must be careful never to infer Order status from emails or cleanup state.
+- **Conservative duplicate markers:** Treating a temporary request marker as proof of an attempt rather than proof of completion prevents accidental duplicate orders during retries, even though unclear failures require verification before retrying.
+
+## 5. Technical Reference
+
+### Before merging
 
 - [ ] **HTTP contract:** Update the OpenAPI v1 document and the relevant
       [[command\|CreateOrder]], [[command\|CompleteOrder]],
@@ -49,7 +89,7 @@ import Footer from "@catalog/components/footer.astro";
       data unnecessarily. Correlate checkout and saga investigation by Order
       ID without treating logs or notifications as the source of Order status.
 
-## Invariants to test
+### Invariants to test
 
 - An Order cannot be created without its required basket items and resolvable
   Catalog books.

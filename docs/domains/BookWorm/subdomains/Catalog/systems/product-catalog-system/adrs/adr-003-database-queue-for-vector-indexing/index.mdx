@@ -27,91 +27,48 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-Generating embeddings is slow and depends on external services. Doing it in
-the write path of [[service|catalog-api]] would slow catalog edits and make
-them fail when the model or Qdrant is unavailable. [[entity|book]] changes
-also originate from related [[entity|author]], [[entity|category]], and
-[[entity|publisher]] edits, which application code could easily miss.
-Catalog needs a durable handoff from committed product changes to the derived
-search projection without treating every intermediate edit as an event that
-must be replayed.
+Generating AI search embeddings is relatively slow and relies on external services. Performing embedding generation inside [[service|catalog-api]] while an administrator saves a product would add noticeable delay to every catalog edit—and worse, an outage in the embedding model or search store would cause product updates to fail.
 
-## Decision
+In addition, a [[entity|book]]'s searchable details do not change only when the book record itself is edited; they also change when an [[entity|author]], [[entity|category]], [[entity|publisher]], or [[entity|book-author]] link is updated. Relying on application code to remember every indirect path risks silent search drift. Catalog needed a durable handoff from committed database changes to the search projection without treating every intermediate edit as a separate event to replay.
 
-Database triggers on [[entity|book]]s and on their
-[[entity|author]]s, [[entity|category]]s, [[entity|publisher]]s, and
-[[entity|book-author]] links enqueue affected books in a pending-update table
-in [[container|catalog-database]]. [[service|catalog-ingestion]], an Azure
-Functions worker, processes up to 200 pending items per batch, builds text and
-embeddings, and upserts or removes records in [[container|catalog-vector]]. A
-PostgreSQL advisory lock prevents concurrent batches, and an item is
-acknowledged only if its queued revision still matches, so concurrent changes
-remain pending. The queue is keyed by book ID and coalesces repeated changes:
-ingestion reads the latest database state instead of replaying every edit.
+## 2. Business Value
 
-The worker processes a bounded batch of up to 200 rows. It acknowledges the
-rows only after all corresponding vector operations succeed, and deletes each
-queue row using both its book ID and the revision read for that batch. The
-five-minute Scheduler cadence is an invocation schedule, not a freshness
-guarantee.
+- **Fast, resilient catalog administration:** Product saves complete immediately and remain available even when AI embedding or search services are slow or degraded.
+- **No missed indirect updates:** Database-level change capture automatically queues affected books whether an edit touches a book directly or updates an author, category, or publisher.
+- **Lower cost on rapid edits:** Multiple edits to the same book before processing starts are collapsed into one pending refresh of the latest state.
+- **Protection against race conditions:** Concurrent edits made while a search batch is already running are automatically preserved for the next cycle rather than being overwritten or discarded.
 
-## Decision drivers
+## 3. How It Works
 
-The key operational risk is that embedding generation is slow and not always
-available. If we did it in the request path, search changes would become part
-of the write latency budget and could fail product updates when Qdrant or the
-embedding service is degraded.
+1. **Capture pending work inside the save transaction:** Whenever changes are saved to [[entity|book]]s, [[entity|author]]s, [[entity|category]]s, [[entity|publisher]]s, or [[entity|book-author]] links in [[container|catalog-database]], automatic database rules record each affected book in a pending-work table as part of the exact same save.
+2. **Coalesce repeated edits:** The queue keeps one pending entry per book. If a book changes multiple times before indexing runs, its existing waiting entry is updated with a fresh version marker so the worker reads only the latest product state rather than replaying every draft.
+3. **Process bounded batches on a schedule:** Every five minutes, [[service|catalog-ingestion]] claims an exclusive turn so only one batch runs at a time, reads up to 200 waiting books, prepares searchable text and embeddings, and updates or removes the corresponding entries in [[container|catalog-vector]].
+4. **Clear only matching versions:** After every search update in the batch succeeds, the worker removes each waiting entry—but only if its version marker still matches what was read at the start of the batch. If a newer edit arrived mid-batch, that entry stays queued for the next scheduled run.
 
-This decision keeps Catalog writes durable and consistent while allowing
-search to catch up eventually. Keeping queue maintenance in database triggers
-also reduces the chance that a related change is missed because an
-application-code path did not explicitly notify the indexer.
+## 4. Trade-offs & Lessons Learned
 
-The revision token is important because the queue row can be updated while a
-batch is running. It prevents acknowledgement of the older work item from
-erasing the newer request to refresh that book.
+### Alternatives considered
 
-## Alternatives considered
+- **Update the search index synchronously inside Catalog API:** Keeps search fresher, but puts embedding latency directly on the user request path and turns a search outage into a catalog-write outage.
+- **Use an external message broker for indexing:** Offers strong decoupling and fan-out, but adds another infrastructure dependency and makes it harder to guarantee that a committed product save and its queued indexing message stay atomic.
+- **Trigger indexing directly from application code:** Straightforward for a single write endpoint, but too easy to forget across indirect updates to authors, categories, publishers, or book-author links.
 
-### Perform indexing synchronously in Catalog API
+### Trade-offs & operational considerations
 
-This keeps the index fresher, but it couples user-facing catalog updates to
-external dependencies and can turn a search outage into a product write
-outage. It also puts embedding latency on the request path. Catalog needs a
-clean separation between authoritative data mutation and derived search
-projection.
+- **Eventual consistency without a strict freshness SLA:** The five-minute cadence is an execution schedule, not a guarantee that search updates finish within five minutes. Large backlogs drain across multiple 200-item batches because only one batch runs at a time.
+- **At-least-once retries instead of distributed transactions:** Because the database and search store do not share an all-or-nothing transaction, failures can leave partial search updates; stable book identifiers make retrying on the next cycle safe.
+- **Database load and monitoring:** Trigger writes and batch reads add load to [[container|catalog-database]]. Operations teams must monitor pending queue size, oldest pending age, ingestion outcomes, and search-store health.
 
-### Use a broker-based queue instead of a database queue
+## 5. Technical Reference
 
-A broker such as Kafka would provide stronger decoupling and fan-out
-capabilities, but it would add another operational dependency and a longer
-message pipeline. A separate publish step would also need to preserve the
-atomic relationship between a product commit and its indexing work. Keeping
-the queue in PostgreSQL places both within the same transactional boundary.
-
-### Trigger the indexer directly from application code
-
-This is easier to code in a single service, but it is easier to forget a path
-and harder to enforce consistently across database changes, especially when
-book metadata changes through related authors, categories, publishers, or
-book-author links rather than a direct book write.
-
-## Consequences
-
-- Catalog writes do not wait for embedding generation or vector-store
-  availability.
-- Queue insertion or update is transactional with the catalog data change, so
-  committed updates have durable indexing work.
-- The queue represents the latest state to project, not a history of all edits.
-  Search is eventually consistent and can lag while work is pending.
-- Revision-checked acknowledgement preserves work enqueued during a running
-  batch. Stable book IDs make repeated vector upserts and deletes safe to
-  retry, but PostgreSQL and Qdrant do not share an exactly-once transaction.
-- Bounded batches and an advisory lock prevent concurrent batch processors,
-  but allow only one active batch at a time and make backlog drain rate
-  dependent on invocation and processing duration.
-- Queue reads and trigger writes add load to PostgreSQL. Monitor pending-row
-  count and age, ingestion outcomes, and vector-store health; the five-minute
-  schedule alone is not a freshness SLA.
+- **Queue mechanism (`[[container|catalog-database]]`):** PostgreSQL triggers on `[[entity|book]]`, `[[entity|author]]`, `[[entity|category]]`, `[[entity|publisher]]`, and `[[entity|book-author]]` tables insert or update rows in the pending-update table keyed by book ID with a revision token, sharing the PostgreSQL transaction boundary (see [[adr|adr-001-postgresql-system-of-record]]).
+- **Worker (`[[service|catalog-ingestion]]`):** Azure Functions worker invoked on a five-minute Scheduler cadence.
+- **Concurrency control & batching:**
+  - PostgreSQL advisory lock ensures only one batch processor executes at a time.
+  - Reads a bounded batch of up to **200** pending rows per invocation, reading current book state from PostgreSQL and writing to `[[container|catalog-vector]]` (Qdrant; see [[adr|adr-002-hybrid-vector-search-qdrant]]).
+- **Acknowledgement semantics:**
+  - Acknowledgements run only after all vector upserts and deletes in the batch succeed.
+  - Each pending row is deleted using both its **book ID** and the **revision** read at batch start, preserving any newer revision enqueued while the batch was in flight.
+  - Repeated vector upserts/deletes on retry are idempotent by stable book UUID.

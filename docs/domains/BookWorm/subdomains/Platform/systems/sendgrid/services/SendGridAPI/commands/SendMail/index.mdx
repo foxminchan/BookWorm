@@ -20,15 +20,35 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `SendMail` command submits email content to [[system|sendgrid]]'s Mail Send API. The
-request can contain one or more `personalizations`, sender and recipient
-addresses, message content, and optional metadata such as a mail batch ID.
+BookWorm needs a standardized, well-documented way to represent outbound email handoffs to [[system|sendgrid]] so architects, analysts, and delivery teams understand both the logical integration boundary and how messages are submitted at runtime. Without clearly distinguishing between logical service modeling, provider request capabilities, and actual transport behavior, stakeholders can misread API documentation as the live runtime protocol or mistake provider acceptance for guaranteed customer inbox delivery.
 
-The command is accepted asynchronously. A successful response means SendGrid
-accepted the request for processing; it is not confirmation that the message
-reached the recipient.
+## 2. Business Value
+
+- **Aligned architecture and operations:** Clarifies how [[service|notification-api]] logically connects to [[service|sendgrid-api]] while explaining how development and production email providers are switched cleanly.
+- **Reliable delivery resilience:** Protects customer notifications from temporary provider outages by preserving pending [[entity|outbox]] records and enforcing bounded retries instead of losing messages.
+- **Clear delivery expectations:** Helps product and support teams distinguish between "accepted by the email provider" and "delivered to the customer's inbox."
+- **Flexible future integration:** Documents the full provider capability—including multi-recipient personalization, rich content, and batch grouping—so future enhancements do not require guesswork.
+
+## 3. How It Works
+
+1. **Logical handoff vs. runtime delivery:** Within BookWorm's architecture catalog, the notification capability sends this command to the external email service to represent logical email submission. At runtime, BookWorm delivers messages through standard mail transport—routing to a local test inbox in development environments and to the configured external email provider in production.
+2. **Preparing the message details:** A complete submission specifies a verified sender, one or more recipients, a subject, message content, and optional grouping metadata such as a mail batch identifier.
+3. **Asynchronous acceptance:** When the external provider receives a valid submission, it accepts the message into its delivery pipeline asynchronously and returns an acknowledgment that processing has started—not a confirmation that the recipient has received the email.
+4. **Recording outcomes and handling failures:** The [[system|notification-system]] records the provider's response, keeps the [[entity|outbox]] record intact whenever submission fails, and applies a bounded retry policy for temporary issues rather than retrying malformed requests indefinitely.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Logical contract vs. runtime transport:** Modeling the provider's web capability in the catalog gives teams full visibility into supported provider features, even though runtime delivery currently uses standard mail transport. Keeping this distinction explicit prevents teams from assuming web payloads are transmitted directly at runtime.
+- **Asynchronous handoff uncertainty:** Accepting a message asynchronously keeps BookWorm responsive and decoupled from slow downstream mail servers, but means operations teams cannot treat handoff success as end-user delivery proof.
+- **Bounded retries vs. invalid data:** Preserving failed [[entity|outbox]] items protects against transient outages, while requiring teams to distinguish temporary provider errors from invalid message data (such as unverified senders or oversized content) so bad messages are fixed rather than retried forever.
+
+## 5. Technical Reference
+
+The `SendMail` command submits email content to [[system|sendgrid]]'s Mail Send API (`POST /v3/mail/send`). The request can contain one or more `personalizations`, sender and recipient addresses, message content, and optional metadata such as a mail batch ID.
+
+The command is accepted asynchronously. A successful response means SendGrid accepted the request for processing; it is not confirmation that the message reached the recipient.
 
 ### Notification connection
 
@@ -39,7 +59,7 @@ The HTTP operation and JSON request schema on this page document SendGrid's
 HTTP API; they do not imply that Notification calls that endpoint or sends
 this JSON payload over SMTP.
 
-## Request
+### Request
 
 Send an authenticated `application/json` request. A minimal request contains a
 verified sender, at least one recipient, and message content:
@@ -78,11 +98,11 @@ The complete request contract, including personalization limits, content
 formats, batch association, and optional fields, is defined by the
 SendGrid OpenAPI specification attached to [[service|sendgrid-api]].
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
 
-## Response and failures
+### Response and failures
 
 - `202 Accepted` means SendGrid accepted the request for processing.
 - `400 Bad Request` indicates invalid message data or request structure.
@@ -96,5 +116,7 @@ SendGrid OpenAPI specification attached to [[service|sendgrid-api]].
 The [[system|notification-system]] should record the provider response, preserve the
 [[entity|outbox]] item when submission fails, and apply bounded retry behavior for
 transient failures.
+
+### Architecture
 
 <NodeGraph />

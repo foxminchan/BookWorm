@@ -40,6 +40,32 @@ properties:
     required: false
 ---
 
+## 1. Context & Problem
+
+Platform services rely on background jobs that must remain reliably defined across application restarts, deployments, and clustered worker nodes. Separating the definition of _what_ a job does—its parameters, concurrency rules, and recovery behavior—from _when_ it runs allows teams to manage schedules flexibly without duplicating job configuration.
+
+## 2. Business Value
+
+- **Consistent execution behavior**: Centralizes concurrency, durability, and crash-recovery rules in a single authoritative definition per job.
+- **Flexible scheduling**: Enables multiple triggers or schedules to share one job definition without duplicating setup or business logic.
+- **Deployment resilience**: Persists job definitions and associated parameters in the shared schedule store so restarts do not wipe out registered background tasks.
+
+## 3. How It Works
+
+Each background task registered with the scheduler is stored as a job detail entry scoped by scheduler name, job name, and logical group, with an optional description for operators.
+
+- **Implementation and parameters**: The record identifies which job implementation handles the work and optionally stores serialized input parameters needed when the job runs.
+- **Execution policies**: Policy settings govern whether the job stays registered when no active triggers reference it, whether overlapping runs are blocked, whether updated state parameters are saved back after completion, and whether the scheduler should attempt recovery after an unexpected node failure.
+- **Trigger linkage**: One or more triggers reference this job definition to control its run cadence or one-off execution.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Opaque parameter storage**: Storing job parameters in serialized binary form keeps the definition schema generic across all job types, but prevents direct ad-hoc reading or editing of job inputs in the database.
+- **Durability vs. stale definitions**: Keeping durable jobs stored without active triggers supports on-demand execution, though retired jobs must be explicitly removed to avoid cluttering the catalog.
+- **Safety vs. parallelism**: Disallowing concurrent execution prevents race conditions on shared state, at the cost of delaying subsequent runs when a previous execution runs long.
+
+## 5. Technical Reference
+
 ### Entity Properties
 
 <EntityPropertiesTable />
@@ -48,3 +74,4 @@ properties:
 
 - The composite key is `sched_name`, `job_name`, and `job_group`.
 - A job definition is referenced by [[entity|qrtz-triggers]].
+- Core configuration and policy fields include `description`, `job_class_name`, `is_durable`, `is_nonconcurrent`, `is_update_data`, `requests_recovery`, and `job_data` (`bytea`).

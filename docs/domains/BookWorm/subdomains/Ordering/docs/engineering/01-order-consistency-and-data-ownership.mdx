@@ -12,7 +12,53 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Sources of truth
+## 1. Context & Problem
+
+An order touches several moving parts across BookWorm: a customer's mutable shopping basket, changing product catalog prices, durable order records, read-optimized views, temporary caches, and a post-checkout finance workflow. Without clear rules on which data store is authoritative at each stage, later catalog price changes could distort past orders, or temporary workflow states could be mistaken for the official order status.
+
+This document establishes what Ordering owns, what is locked in at checkout, and which data is derived or transient.
+
+## 2. Business Value
+
+- **Financial accuracy:** Guarantees that an accepted order preserves the exact items, quantities, and prices agreed at checkout, even when catalog prices or promotions change later.
+- **Operational reliability:** Prevents duplicate order submissions and race conditions through explicit coordination markers while keeping permanent order records isolated in durable storage.
+- **Clear reporting & support:** Helps teams know which store to trust when reconciling order status, customer notifications, or summary dashboards.
+
+## 3. How It Works
+
+### Authoritative records vs. temporary data
+
+Ordering's primary database is the authoritative system of record for buyer profiles, accepted orders, purchase-time items, and order events. Other data involved in the journey plays supporting roles:
+
+- **Shopping basket:** Represents mutable customer intent before checkout; it is read when creating an order, not stored as an ongoing source of truth.
+- **Catalog details and prices:** Current product information is consulted during checkout, after which the accepted order keeps its own purchase-time price record.
+- **Cache storage:** Holds temporary performance caches along with short-lived coordination locks and duplicate-request checks.
+- **Finance workflow:** Tracks post-checkout coordination (such as clearing the basket and requesting customer emails) separately from the order's business status.
+
+### Capturing the checkout snapshot
+
+When a customer checks out, Ordering reads the current basket and resolves each book through Catalog. For every item, Ordering records the book identifier, requested quantity, and unit price—selecting the sale price if one is active, or the regular price otherwise—and calculates the order total from those locked values.
+
+Future changes to the customer's basket or Catalog prices never rewrite an accepted order's items or total. Order read responses may display current book titles for convenience, but that display enrichment never replaces the stored purchase snapshot.
+
+### Separate order and finance lifecycles
+
+Ordering owns the order's business status (**New**, **Completed**, or **Cancelled**), while Finance coordinates basket cleanup and customer notifications:
+
+- Clearing the shopping basket does not automatically mark an order as **Completed**.
+- If basket cleanup fails, Ordering may mark the order as soft-deleted without changing its business status.
+- If Finance exhausts its timeout retries, it can cancel its own coordination workflow and request a cancellation email without cancelling the order in Ordering.
+- Sending a notification request does not prove an order status changed or that an email was delivered.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Immutable checkout snapshots vs. live catalog reads:** Copying prices at checkout protects historical totals from catalog edits, while still requiring live or cached catalog lookups if read APIs enrich responses with current book titles.
+- **Cache serves coordination, not just speed:** Because Ordering relies on temporary cache storage for creation locks and duplicate-request detection, flushing cache entries can disrupt in-flight coordination or duplicate protection—even though committed orders remain safely stored in the primary database.
+- **Eventual consistency for read projections:** Summary projections and dashboard caches are derived from order events and are convenient for reporting, but teams must consult the authoritative Ordering state rather than derived views or notification records when verifying order status.
+
+## 5. Technical Reference
+
+### Sources of truth
 
 | Data                            | Owner and role                                                                                       | Consistency                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -22,48 +68,13 @@ import Footer from "@catalog/components/footer.astro";
 | Catalog book details and prices | Current product information                                                                          | Resolved during checkout; not the source for an accepted Order's recorded price |
 | Finance saga                    | Post-checkout coordination state                                                                     | Separate persisted workflow, correlated by Order ID                             |
 
-## Checkout snapshot
+### Checkout & ownership symbols
 
-When [[service\|order-api]] creates an [[entity\|order]], it reads the buyer's
-current basket and resolves the referenced books through Catalog. Each
-[[entity\|order-item]] records the book ID, requested quantity, and selected
-unit price: the sale price when present, otherwise the regular price. The
-Order total is calculated from those recorded values.
-
-Later changes to the basket or Catalog do not rewrite an accepted Order's
-purchase-time items or total. Order reads may enrich the response with current
-book names, but that presentation data does not replace the stored snapshot.
-
-## Separate lifecycles
-
-Ordering owns the Order's business status. The Order starts as **New** and
-can transition to **Completed** or **Cancelled** through explicit Ordering
-operations. Finance owns the saga that coordinates basket cleanup and
-notifications.
-
-- A successful basket deletion does not complete the Order.
-- A failed basket deletion can cause Ordering to soft-delete the Order; this
-  does not change its business status.
-- Exhausting Finance's timeout retries can cancel the saga and request a
-  cancellation notification, but does not invoke Ordering's cancel operation.
-- A notification command is not proof of an Order status change or email
-  delivery.
-
-Read Order status from Ordering, and inspect Finance saga progress separately.
-See [[adr\|adr-001-postgresql-order-system-of-record]],
-[[adr\|adr-002-preserve-checkout-purchase-snapshot]], and
-[[adr\|adr-003-separate-order-status-from-finance-saga]].
-
-## Derived and transient data
-
-Marten event streams persist Order placement, completion, and cancellation
-events. The `OrderSummary` and asynchronous `OrderSummaryView` projections are
-derived from those events; they do not replace the authoritative Order
-aggregate. Dashboard and Catalog response caches are also not authoritative.
-
-Redis participates in more than caching: Ordering uses it for creation locks
-and request markers. Clearing cache entries can affect in-flight coordination
-or duplicate-request detection, even though persisted Orders remain in
-PostgreSQL.
+- **Checkout creation:** [[service\|order-api]] creates [[entity\|order]] and [[entity\|order-item]] records (book ID, requested quantity, selected unit price: sale price if present else regular price, and derived Order total).
+- **Derived & transient stores:**
+  - Marten event streams persist Order placement, completion, and cancellation events.
+  - `OrderSummary` and asynchronous `OrderSummaryView` projections are derived from those events and do not replace the authoritative Order aggregate.
+  - Dashboard and Catalog response caches in [[container\|order-cache]] (Redis) are non-authoritative; Redis also stores creation locks and request markers for duplicate-request detection.
+- **Related ADRs:** [[adr\|adr-001-postgresql-order-system-of-record]], [[adr\|adr-002-preserve-checkout-purchase-snapshot]], and [[adr\|adr-003-separate-order-status-from-finance-saga]].
 
 <Footer />

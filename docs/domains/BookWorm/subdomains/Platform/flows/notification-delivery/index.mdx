@@ -68,70 +68,57 @@ steps:
       color: red
 ---
 
-## Purpose and scope
+## 1. Context & Problem
 
-This flow documents the operational platform boundary for BookWorm's email
-notifications. Finance and the domains that initiate business actions provide the
-intent and content; the Notification System owns the durable outbox, delivery
-attempt, and maintenance policy.
+When customers place or update orders in BookWorm, they expect timely email confirmation. However, sending an email depends on external mail providers that can be slow, temporarily unavailable, or reject individual requests. If core business workflows—such as order placement or financial processing—waited directly on email delivery, a mail outage could block customer purchases or corrupt the status of an order.
 
-Scheduler is the trigger mechanism, not the owner of notification business
-state. The important outcome is that delivery state remains explicit and
-observable without confusing email submission with order or purchase success.
+This flow establishes a clear operational boundary for BookWorm's email notifications. Business workflows provide the intent and customer details for a message, while a dedicated Notification capability owns formatting, durable tracking, delivery attempts, retries, and cleanup. Email delivery remains observable and dependable without ever being confused with whether an order or purchase actually succeeded.
 
-## Business context
+## 2. Business Value
 
-BookWorm treats notifications as a platform capability rather than a business
-state domain. The business systems say what should be sent, while the
-Notification System owns the durable mechanics of rendering, retrying, and
-cleaning up those sends. This makes the platform reliable without causing a
-notification failure to mutate the source of truth for the original order,
-feedback, or workflow event.
+- **Protects revenue-critical workflows:** Order and financial operations complete regardless of external email provider slowdowns or outages.
+- **Prevents lost customer communications:** Outgoing email requests are saved safely before external delivery is attempted, surviving service restarts or transient provider errors.
+- **Keeps business truth clean:** Delivery failures, retries, or record cleanup never alter or roll back the underlying order, feedback, or workflow outcome.
+- **Improves operational visibility:** Support and operations teams can see which messages were requested, which were accepted by the mail provider, and which still need another delivery attempt or cleanup.
+- **Controls storage growth:** Completed notification records are periodically cleaned up so operational tables do not grow indefinitely.
 
-The result is an operational model that remains observable: the system records
-what was requested, whether it was accepted by the SMTP provider, and whether a
-later resend or cleanup cycle is still needed. That explicit state is crucial for
-reliability, because email delivery is naturally uncertain even when upstream
-business events already succeeded.
+## 3. How It Works
 
-## Participants and responsibilities
+1. **Business intent is raised:** When an order event occurs, the Finance workflow sends a notification request containing the recipient and order details.
+2. **Request validation and formatting:** The Notification capability verifies that a recipient address is present and formats the email content using a standard order template.
+3. **Durable saving before sending:** Before contacting the external mail provider, the Notification capability saves a durable outgoing record marked as pending.
+4. **Submission to the mail provider:** The formatted email is submitted to the configured external mail provider using built-in retry safeguards.
+5. **Outcome recording:**
+   - If the provider accepts the message, the pending record is updated to indicate that submission succeeded.
+   - If the provider rejects or fails to accept the message after initial retries, the message is routed to a failure queue for operator attention, and the pending record remains eligible for scheduled follow-up.
+6. **Scheduled retry and cleanup:** Periodically, the scheduling capability triggers maintenance runs so pending messages can be retried under bounded rules and previously sent records can be cleaned up—without altering the original business event.
 
-| Participant                         | Responsibility                                                                                       |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Finance workflow                    | Issues the business intent to send an email for an order or status update.                           |
-| [[service\|notification-api]]       | Persists the outgoing message in the outbox, validates the request, and tries SMTP delivery.         |
-| [[database\|notification-database]] | Stores durable email state and the retry/cleanup lifecycle of pending and sent items.                |
-| SMTP provider                       | Accepts or rejects the actual email submission attempt.                                              |
-| [[service\|sheduler-dashboard]]     | Triggers resend and cleanup jobs to maintain the notification outbox without owning business intent. |
+## 4. Trade-offs & Lessons Learned
 
-## Reliability model
+- **Provider acceptance is not inbox delivery:** A successful handoff means the external mail provider accepted the message for sending; it does not confirm that the email reached the customer's inbox or was opened.
+- **Business state and communication state stay strictly separated:** Customers' orders remain valid even if their confirmation email is delayed or fails. Conversely, sending an email never implies an order succeeded.
+- **Resilience favors eventual delivery over strict single-send guarantees:** Because external providers do not share transactions with BookWorm's internal storage, rare network or disconnection failures after handoff can result in a message being retried and delivered more than once.
+- **Scheduler triggers work without owning data:** The scheduler initiates retry and cleanup cycles on a timetable, while Notification retains full ownership of which messages are eligible and what happens to them.
 
-This flow uses the outbox pattern to separate business intent from delivery
-execution. The Notification API writes a durable record before SMTP is called,
-meaning the notification request can survive restarts and service retries. The
-outbox item remains marked as pending while delivery is in progress or has not
-yet succeeded.
+## 5. Technical Reference
 
-When the SMTP provider accepts the email, the system records that the send was
-attempted successfully. When it rejects or defers the email, the item remains in
-pending state so Scheduler can re-run the send under bounded retry rules. Sent
-records are later eligible for cleanup, which prevents the outbox from growing
-without bound.
+### Participants & Responsibilities
 
-## Operational safety rules
+| Participant                          | Responsibility                                                                                       |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Finance workflow                     | Issues the business intent to send an email for an order or status update.                           |
+| [[service\|notification-api]]        | Persists the outgoing message in the outbox, validates the request, and tries SMTP delivery.         |
+| [[container\|notification-database]] | Stores durable email state and the retry/cleanup lifecycle of pending and sent items.                |
+| SMTP provider                        | Accepts or rejects the actual email submission attempt.                                              |
+| [[service\|sheduler-dashboard]]      | Triggers resend and cleanup jobs to maintain the notification outbox without owning business intent. |
 
-- The source business workflow owns the message's meaning and intent.
-- The Notification System owns the operational mechanics of delivery.
-- Delivery success is not the same as business success; a message may be
-  accepted by the provider while the underlying order or event remains unchanged.
-- Retrying or cleaning up notification records never rewrites the original
-  business outcome associated with the message.
+### Implementation Notes
 
-## Why this flow matters
+- **Trigger Command:** `PlaceOrderCommand` (`1.0.0`) emitted by the Finance workflow.
+- **Template & Format:** `notification-api` validates the recipient, renders the `Orders/OrderEmail` MJML template, and constructs a MIME message.
+- **Transport & Resilience:** Delivery runs over SMTP via MailKit with a MailKit resilience pipeline; failures trigger Wolverine retries before routing to a dead-letter queue.
+- **Persistence Pattern:** Uses the outbox pattern in `notification-database` to persist outgoing email records before calling SMTP, keeping pending items recoverable across restarts and eligible for bounded scheduled resend and cleanup batches.
 
-This is the platform layer that keeps BookWorm's downstream communication
-reliable without contaminating the transactional domains with message-delivery
-state. It turns a potentially fragile external dependency into a controllable,
-observable system with explicit retry and cleanup behavior.
+### Flow Visualization
 
 <NodeGraph />

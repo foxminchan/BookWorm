@@ -18,19 +18,43 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Deletes a [[entity|basket]]. This command has no documented parameters or request body.
+Both customers and post-checkout workflows need an explicit way to remove an active [[entity|basket]] once shopping is abandoned or an order has been submitted. Leaving old baskets behind can confuse customers on their next visit or risk accidental resubmission of items that were already ordered.
+
+## 2. Business Value
+
+- **Prevents accidental reuse**: Removing a basket cleanly ensures completed or discarded shopping sessions cannot linger in the storefront.
+- **Clear lifecycle visibility**: Distinguishes between a basket that was actively deleted and one that did not exist, helping operations and workflows track state accurately.
+
+## 3. How It Works
+
+When a caller requests to delete the current [[entity|basket]], no additional parameters or input details are needed. The service checks for an active basket in the current context:
+
+- If a basket exists, the service removes it and confirms completion without returning any extra data.
+- If no basket exists, the service reports that the basket could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit not-found outcome vs. silent success**: Returning a not-found result instead of silently succeeding makes state mismatches visible (such as attempting to delete a basket twice), though callers must handle that outcome intentionally.
+- **Empty request contract**: Keeping deletion parameterless reduces complexity and relies on the caller's identity context to scope which basket is removed.
+
+## 5. Technical Reference
+
+### Command & Endpoint
+
+- **Operation**: `DELETE /api/v1/baskets`
+- **Parameters / Body**: None (empty request body contract)
+
+### Request and Response
+
+Send the `DELETE` request without a request body. `204` confirms deletion and does not include a response payload. `404` returns `application/problem+json` with `ProblemDetails`.
+
+### Architecture Graph
 
 <NodeGraph />
 
-## Request and response
-
-Send the `DELETE` request without a request body. `204` confirms deletion and
-does not include a response payload. `404` returns
-`application/problem+json` with `ProblemDetails`.
-
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

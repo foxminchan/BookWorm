@@ -13,33 +13,36 @@ badges:
     textColor: blue
 ---
 
-## Overview
+## 1. Context & Problem
 
-[[service|order-api]] publishes this event after an [[entity|order]]
-transitions from New to Completed. It communicates the accepted Order's
-business status and purchase details to Finance, rather than requesting
-completion or confirming notification delivery.
+When an order finishes processing and transitions from New to Completed, Finance needs reliable confirmation of the order's final status and purchase total. Without a dedicated completion event, Finance would lack an authoritative signal to finalize its financial tracking and initiate post-completion customer communications.
 
-## Channel
+## 2. Business Value
 
-[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]]
+- **Clear Ownership Boundaries**: Communicates an accepted order's completed status and purchase amount to Finance without confusing a status report with a completion request or an email delivery receipt.
+- **Reliable Financial Reconciliation**: Ensures Finance receives the authoritative purchase details needed to close out completed orders.
+- **Consistent Contract Shape**: Keeps every payload structurally complete, helping downstream teams build predictable, low-maintenance integrations.
 
-## Payload
+## 3. How It Works
 
-The payload contains `id`, `creationDate`, `orderId`, `basketId`, nullable
-`fullName` and `email`, and `totalMoney`. All fields are required by the
-AsyncAPI schema, including the nullable fields.
+1. After an [[entity|order]] transitions from New to Completed, [[service|order-api]] publishes the order completed event to the ordering completion channel.
+2. The event message provides a unique event identifier, creation timestamp, order identifier, customer reference, optional customer name and email address, and the purchase total.
+3. Finance consumes the event to record the completed business status and purchase details rather than treating it as a request to complete the order or confirmation that a customer notification was sent.
 
-The current EventMapper supplies the Order's Buyer ID as `basketId`.
-Consumers must not assume this field is independently resolved basket data.
+## 4. Trade-offs & Lessons Learned
 
-## Schema
+- **Buyer reference in the basket field**: The current mapping populates the basket reference field with the order's buyer identifier, so consumers must not assume it contains independently resolved basket data.
+- **Mandatory structure for optional fields**: Customer full name and email remain required properties in the contract even when empty, preserving a consistent structure while requiring consumers to handle absent values.
+- **Business message vs. transport envelope**: The documented contract covers only the business data inside the platform's event envelope, leaving transport-level headers separate.
 
-The schema describes camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope, not the complete transport envelope.
+## 5. Technical Reference
+
+- **Producer**: [[service|order-api]]
+- **Channel**: [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]]
+- **Payload Fields**: `id`, `creationDate`, `orderId`, `basketId`, nullable `fullName` and `email`, and `totalMoney`. All fields are required by the AsyncAPI schema, including the nullable fields.
+- **Mapping Note**: The current `EventMapper` supplies the Order's Buyer ID as `basketId`. Consumers must not assume this field is independently resolved basket data.
+- **Envelope Note**: The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
 
 <SchemaViewer file="schema.json" title="Order completion event payload" maxHeight="500" />
-
-## Architecture
 
 <NodeGraph />

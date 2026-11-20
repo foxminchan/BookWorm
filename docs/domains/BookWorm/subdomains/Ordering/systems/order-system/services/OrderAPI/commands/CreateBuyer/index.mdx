@@ -18,21 +18,44 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Creates a [[entity|buyer]] profile associated with the authenticated
-customer's identity. The request supplies the Buyer's address; the service
-derives the Buyer ID and name from the authenticated identity.
+Before a customer can place orders or maintain delivery records in the Ordering subdomain, the platform needs a dedicated [[entity|buyer]] profile tied to their account. Because customers already sign in through the central identity system, asking them to re-enter their name or internal account identifiers would add friction and create the risk of mismatched customer records.
+
+This capability establishes a buyer profile from the customer's shipping address alone while deriving identity details directly from their verified sign-in session.
+
+## 2. Business Value
+
+- **Faster customer onboarding:** Customers only enter their street, city, and province, avoiding redundant personal information entry.
+- **Stronger identity integrity:** Binding the buyer profile directly to the verified sign-in identity prevents impersonation and keeps customer records consistent across orders.
+- **Immediate input quality:** Incomplete or invalid address submissions are rejected upfront with clear validation feedback before an order is attempted.
+
+## 3. How It Works
+
+1. A signed-in customer submits their address details (street, city, and province) to create a [[entity|buyer]] profile.
+2. The ordering service checks that all required address fields are present and valid.
+3. Rather than accepting customer-supplied identity fields, the service derives the buyer's unique identifier and name directly from the customer's authenticated identity.
+4. Once validated, the buyer profile is created and the new buyer identifier is returned for use in subsequent ordering steps.
+5. If required address details are missing or invalid, the profile is not created and validation details are returned so the input can be corrected.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Derived identity over user-supplied profile data:** Reading the buyer identifier and name from the authenticated identity prevents spoofing and identity drift, at the cost of requiring customers to be authenticated before creating a buyer profile.
+- **Focused initial address scope:** Requiring only street, city, and province keeps buyer creation lightweight and predictable, though supporting multiple saved addresses or extra contact fields later requires separate capabilities.
+
+## 5. Technical Reference
+
+- **Operation:** `POST /api/v1/buyers`
+- **Content-Type:** `application/json`
+- **Required fields:** `street`, `city`, `province`
+- **Identity derivation:** Derives the Buyer ID and name from the authenticated customer's identity.
+- **Responses:**
+  - `201 Created`: Returns the Buyer ID as a JSON UUID.
+  - `400 Bad Request`: Returns validation problem details.
 
 <NodeGraph />
 
-## Contract
-
-Send an `application/json` body containing the required `street`, `city`, and
-`province` fields. `201 Created` returns the Buyer ID as a JSON UUID.
-`400 Bad Request` returns validation problem details.
-
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

@@ -51,118 +51,89 @@ badges:
     icon: LockClosedIcon
 ---
 
-## Context Diagram
+## 1. Context & Problem
 
-The Order System's context diagram shows the customer and the neighboring
-Shopping and Catalog systems it depends on during checkout.
+When a customer checks out in BookWorm, a temporary shopping basket must become a durable, auditable business commitment. Before checkout, basket contents and catalog prices can change at any moment; after checkout, customers, finance teams, and operations need an authoritative record of exactly what was purchased, at what price, and what stage the order is in.
+
+The Order System exists to own that boundary. It converts an authenticated customer's active basket into an accepted purchase, freezes purchase-time item details and totals, and acts as the single source of truth for the order's business lifecycle.
+
+## 2. Business Value
+
+- **Financial accuracy and trust**: Capturing item quantities and prices at the moment of checkout ensures later catalog price changes or promotions never retroactively alter an accepted order.
+- **Clear ownership across teams**: Separating order ownership from basket management, catalog pricing, payment settlement, and notification delivery prevents conflicting updates and simplifies cross-team coordination.
+- **Reliable customer experience**: Built-in duplicate-request protection and per-user traffic limits prevent accidental double orders or repeated status changes during unstable network retries.
+- **Auditability and history**: Preserving purchase-time records and separating soft deletion from business status ensures customer support and operations retain full visibility into order history.
+
+## 3. How It Works
+
+### Purpose and Ownership
+
+The Order System manages the customer's accepted purchase from creation through completion or cancellation:
+
+- **Buyer profile**: Maintains the [[entity|buyer]] profile used during ordering, including the customer's name and address.
+- **Order record**: Owns the [[entity|order]] and its business status—**New**, **Completed**, or **Cancelled**.
+- **Line items and total**: Stores each [[entity|order-item]] with the book identifier, quantity, and checkout-time price, and calculates the order total from those recorded values.
+
+The system intentionally does **not** own mutable shopping baskets, live book descriptions or prices, Finance's post-checkout coordination workflow, payment settlement, shipping execution, or email delivery.
+
+### Capabilities
+
+| Capability            | Responsibility                                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Buyer management      | Create, retrieve, update the address of, and list Buyer profiles.                                                 |
+| Purchase creation     | Create an Order for the authenticated customer from their current basket and the resolved Catalog books.          |
+| Order history         | Retrieve one Order or list Orders with page-by-page browsing and filtering.                                       |
+| Lifecycle management  | Transition a New Order to Completed or Cancelled and notify downstream workflows.                                 |
+| Checkout coordination | Share checkout details with Finance and handle basket-cleanup outcomes without conflating them with Order status. |
+
+### Checkout and Order Lifecycle Flow
+
+1. **Identify customer and read basket**: When an authenticated customer places an order, Ordering identifies the buyer from the signed-in account and retrieves their current basket from the [[domain|shopping]] domain.
+2. **Resolve books and snapshot prices**: Ordering looks up the basket's books in the [[domain|catalog]] domain. For each item, it records the sale price when available, or the regular price otherwise, along with the requested quantity.
+3. **Create and save the order**: Ordering creates the order in **New** status, calculates the total from the snapshotted item values, and stores the record.
+4. **Coordinate post-checkout cleanup**: Ordering notifies Finance that checkout occurred so Finance can run its separate post-checkout coordination workflow, including requesting basket cleanup within its configured retry and timeout limits.
+5. **Handle basket-cleanup outcomes**: A successful basket cleanup is reported back to Ordering, though it does not mark the order **Completed**. If basket cleanup fails, Ordering soft-deletes the corresponding order record without altering its business status.
+6. **Complete or cancel**: Ordering allows an order to transition to **Completed** or **Cancelled** only while its status is **New**, then notifies Finance so downstream notifications can be coordinated.
+
+For the permitted status transitions and how the order lifecycle differs from Finance's workflow state, see [[diagram|order-lifecycle]].
+
+## 4. Trade-offs & Lessons Learned
+
+- **Decoupled order status vs. Finance workflow state**: Exhausting Finance's basket-cleanup retries can cancel Finance's internal coordination workflow and trigger a cancellation notification without changing the order's business status in Ordering. An order becomes **Cancelled** only when Ordering accepts an explicit cancellation, and basket-cleanup success never marks an order **Completed**. Downstream consumers must read the order itself rather than inferring its status from Finance workflow state or notification delivery.
+- **Price and item snapshotting**: Duplicating book prices and quantities onto order line items trades minimal storage overhead for full immunity to future catalog edits.
+- **Soft deletion separated from business status**: Preserving soft-deleted order data when post-checkout cleanup fails ensures auditability and troubleshooting visibility without misrepresenting whether a customer explicitly cancelled the order.
+- **Cross-system checkout dependencies**: Creating an order depends synchronously on reading the basket and resolving catalog items; keeping those reads focused on checkout minimizes coupling while leaving ongoing basket mutations in Shopping.
+
+## 5. Technical Reference
+
+### System Architecture & Boundaries
+
+- **Context Diagram**: Visualizes the customer actor and neighboring Shopping, Catalog, and Identity systems.
 
 <ContextDiagram />
 
-## Purpose and boundaries
+- **Service**: [[service|order-api]] documents the version 1 HTTP API and domain relationships.
+- **Data Persistence**: [[container|order-database]] documents PostgreSQL persistence for domain entities, events, projections, and messaging.
+- **Caching & Coordination**: [[container|order-cache]] documents Ordering's logical use of shared Redis for distributed locks, idempotency markers, and cached responses.
+- **Lifecycle Diagram**: [[diagram|order-lifecycle]] details state transitions and saga separation.
 
-The Order System accepts a customer's purchase and remains the source of truth
-for Order status. Its Ordering API creates Orders from the customer's current
-basket, resolves book data and prices through Catalog, and persists the Order
-with its purchase-time items.
+### Version 1 Ordering API Surface
 
-The system owns:
+- **Create Order**: `POST /orders` — requires authorization, per-user rate limiting, and an idempotency key; returns the created Order ID and a retrieval location.
+- **Get Order**: `GET /orders/{id}` — retrieves a single Order.
+- **List Orders**: `GET /orders` — lists Orders with pagination and filtering.
+- **Complete Order**: `PATCH /orders/{orderId}/complete` — requires authorization, per-user rate limiting, and an idempotency key.
+- **Cancel Order**: `PATCH /orders/{orderId}/cancel` — requires authorization, per-user rate limiting, and an idempotency key.
+- **Buyer Endpoints**: Authenticated Buyer profile creation, retrieval, address update, and listing with per-user rate limiting.
 
-- The [[entity|buyer]] profile used by Ordering, including its name and address.
-- The [[entity|order]] aggregate and its New, Completed, or Cancelled status.
-- The [[entity|order-item]] records that preserve book IDs, quantities, and
-  prices at checkout.
-- The Order total, calculated from the recorded item prices and quantities.
+### Integration Events & Finance Saga Coordination
 
-It does not own mutable basket state, current book descriptions or prices,
-Finance's post-checkout saga, payment settlement, shipping execution, or email
-delivery. Those responsibilities remain with their respective systems and
-workflows.
+- Order placement maps to [[event|UserCheckedOutIntegrationEvent]], triggering Finance's coordination saga (which sends the basket cleanup command and schedules a bounded-retry timeout).
+- Order completion publishes [[event|OrderStatusChangedToCompleteIntegrationEvent]].
+- Order cancellation publishes [[event|OrderStatusChangedToCancelIntegrationEvent]].
+- Integration events correlate checkout and status workflows by Order ID.
 
-## Capabilities
-
-| Capability            | Responsibility                                                                                                          |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Buyer management      | Create, retrieve, update the address of, and list Buyer profiles.                                                       |
-| Purchase creation     | Create an Order for the authenticated customer from their current basket and the resolved Catalog books.                |
-| Order history         | Retrieve one Order or list Orders with pagination and filtering.                                                        |
-| Lifecycle management  | Transition a New Order to Completed or Cancelled and publish the corresponding integration event.                       |
-| Checkout coordination | Publish checkout details for Finance and handle its basket-deletion outcomes without conflating them with Order status. |
-
-## Request surface
-
-The version 1 Ordering API exposes authenticated Buyer and Order operations.
-Order creation uses `POST /orders`; Order lookup and history use
-`GET /orders/{id}` and `GET /orders`. Lifecycle operations use
-`PATCH /orders/{orderId}/complete` and
-`PATCH /orders/{orderId}/cancel`.
-
-Order creation, completion, and cancellation require an idempotency key.
-These operations, along with Buyer endpoints, require authorization and apply
-per-user rate limiting. Order creation returns the created Order ID and a
-location for retrieving it.
-
-## Checkout and data lifecycle
-
-1. The authenticated customer creates an Order. Ordering identifies the Buyer
-   from the authenticated identity and reads that customer's current basket
-   from the [[domain|shopping]] system.
-2. Ordering resolves the basket's book IDs through the
-   [[domain|catalog]] system. For each item, it records the sale price when
-   present, otherwise the regular price, together with the requested quantity.
-3. Ordering creates the Order with status **New**, computes its total from
-   those item values, and persists the aggregate.
-4. The Order placement event is mapped to
-   [[event|UserCheckedOutIntegrationEvent]], which starts Finance's separate
-   coordination workflow. Finance sends the basket cleanup command and
-   schedules a timeout; retries are bounded by its configured attempt limit.
-5. A successful basket deletion is reported back to Ordering but does not
-   complete the Order. If deletion fails, Ordering soft-deletes the matching
-   Order without changing its business status.
-6. To complete or cancel an Order, Ordering accepts the operation only while
-   its status is **New**. The resulting Order event is published as
-   [[event|OrderStatusChangedToCompleteIntegrationEvent]] or
-   [[event|OrderStatusChangedToCancelIntegrationEvent]] for Finance to coordinate
-   subsequent notifications.
-
-## Order status and Finance saga state
-
-The Order lifecycle is distinct from Finance's saga lifecycle. Ordering owns
-the Order status; Finance tracks whether checkout was placed, basket deletion
-failed, or its workflow completed or was cancelled.
-
-In particular, exhausting Finance's basket-deletion retries can cancel the
-Finance saga and trigger a cancellation notification without changing the
-Order's status. An Order is **Cancelled** only after Ordering accepts its
-explicit cancellation operation. Likewise, basket-deletion success does not
-mark an Order **Completed**.
-
-See [[diagram|order-lifecycle]] for the permitted Order status transitions and
-the distinction between the two lifecycles.
-
-## Ownership and consistency
-
-- Ordering is authoritative for the accepted purchase and its business status.
-- An Order captures the book ID, price, and quantity selected at checkout;
-  later Catalog changes do not rewrite these values.
-- Shopping remains authoritative for the mutable basket. Finance coordinates
-  cleanup but does not own the Order aggregate.
-- Order soft deletion is separate from the business status and preserves the
-  recorded Order data.
-- Integration events correlate the checkout and status workflows by Order ID;
-  Finance saga state and notification delivery are not substitutes for reading
-  the Order itself.
-
-## System architecture
-
-The system boundary and its neighboring systems are shown above. The
-[[service|order-api]] resource documents the HTTP API and its domain
-relationships. [[container|order-database]] documents PostgreSQL domain,
-event, projection, and message persistence. [[container|order-cache]]
-documents Ordering's logical use of shared Redis for distributed locks,
-idempotency markers, and cached responses. The Order lifecycle diagram
-documents state transitions.
-
-## Architecture decisions
+### Architecture Decisions
 
 <ADRTable />
 

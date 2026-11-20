@@ -20,88 +20,51 @@ badges:
     textColor: red
 ---
 
-## Context
+## 1. Context & Problem
 
-Email outbox rows contain recipient names, addresses, subjects, and rendered
-order content. SMTP and PostgreSQL connections also require privileged runtime
-configuration. Copying these values into logs, scheduler metadata, or
-documentation expands access beyond what delivery requires.
+Customer notification records store personal details—such as recipient names and email addresses—alongside email subjects and rendered order content. In addition, the notification service relies on privileged credentials to connect to its database and external mail provider.
 
-## Decision
+If these customer details or connection secrets are copied into routine operational logs, scheduled maintenance requests, or architecture documentation, far more people and systems gain access to sensitive data than email delivery actually requires.
 
-Treat [[container|notification-database]] as confidential. Limit recipient and
-message-content access to [[service|notification-api]] and authorized operators
-with a delivery or support need. Calling domains remain authoritative for
-business state; the outbox is not a general-purpose order-data export.
+## 2. Business Value
 
-Keep SMTP authentication and database connection secrets in runtime secret
-configuration, never in catalog content, source control, outbox rows, or routine
-logs. Scheduler maintenance messages carry only request metadata and do not
-need recipient details or message bodies.
+- **Customer privacy and trust**: Restricts visibility of personal contact information and order messages strictly to delivery processing and authorized support tasks.
+- **Stronger security posture**: Keeps database and mail-provider credentials out of source repositories, documentation, stored message rows, and everyday logs.
+- **Clear data ownership**: Prevents temporary email queues from being misused as an order-reporting store or mistaken for official business confirmation.
+- **Safer operations**: Enables support and operations teams to monitor queue volume, age, and failure trends using non-sensitive counts and identifiers.
 
-Prefer outbox identifiers, sequence numbers, timestamps, aggregate backlog
-counts, and sanitized error categories for diagnostics. Provider acceptance,
-cleanup, and email-state changes must not be presented as confirmation of the
-underlying business operation.
+## 3. How It Works
 
-## Access and observability implications
+This decision sets clear access, secrecy, and monitoring rules around notification data:
 
-The Notification service needs recipient and rendered content to submit a
-message, but routine operational checks usually need only row identifiers,
-counts, age, status, and sanitized failure information. Database access,
-support tooling, and logs should follow that distinction. Scheduler requests
-need only maintenance metadata and must not become a transport for email
-content.
+- **Restricted storage**: The notification database is treated as confidential. Only the notification service and authorized staff with an active delivery or support need may access recipient details or message content.
+- **Authoritative boundaries**: Upstream business areas remain the single source of truth for order state. Stored notification records exist solely for delivery and are not a general-purpose order export.
+- **Isolated credentials**: Passwords and keys for data storage and email sending live exclusively in secure runtime configuration—never in code repositories, documentation, stored messages, or routine logs.
+- **Minimal maintenance messages**: Scheduled cleanup triggers carry only basic request metadata and never copy recipient details or email bodies.
+- **Privacy-friendly diagnostics**: Routine monitoring relies on record identifiers, sequence numbers, timestamps, backlog totals, and sanitized error categories rather than personal data.
+- **Known implementation gaps**: Existing retry and sending-failure logs currently still include recipient addresses (and, for sending failures, email subjects). Those paths are marked for remediation; this decision states the target policy rather than claiming full current compliance.
+- **Housekeeping vs. formal retention**: Sent records are currently cleared on a recurring hourly schedule without an age threshold, while unsent records have no age-based expiry. Neither behavior represents a formal privacy retention period or delivery audit policy.
 
-The intended sanitized logging policy does not describe the complete current
-implementation: resend logs include recipient addresses, and SMTP failure
-logs include recipients and subjects. Those paths require review and
-remediation; this ADR does not claim that existing logs already meet the
-policy.
+## 4. Trade-offs & Lessons Learned
 
-## Consequences
+- **Debugging speed vs. data exposure**: Logging complete email bodies and recipient details makes local troubleshooting easier, but spreads confidential data across monitoring tools. Relying on identifiers and sanitized failure categories requires narrowly authorized support access when deeper inspection is needed.
+- **Immediate deletion vs. operational visibility**: Deleting sent records immediately upon handoff would shorten data exposure, but would eliminate the current inspection window between runs. Any future change must establish an explicit policy balancing privacy, recovery, and audit needs.
+- **Layered controls are mandatory**: Storing credentials in secure runtime configuration protects connections, but does not by itself restrict who can read stored emails or log files. Database permissions and log sanitization must be managed as separate safeguards.
+- **Rejected alternatives**:
+  - _Carrying email content in scheduler messages_: Duplicates confidential data and couples scheduling to the delivery model.
+  - _Logging full message payloads for debugging_: Unacceptably increases personal data exposure in routine logs.
+  - _Immediate post-submission deletion_: Removes the bounded inspection window without establishing a proper retention policy.
 
-- Delivery and authorized support still require access to confidential email
-  data, so database permissions and operational log access need explicit control.
-- Routine backlog inspection can avoid selecting recipient information or
-  rendered content.
-- Current resend logs include recipient addresses, and SMTP failure logs include
-  recipients and subjects. Sanitized logging is an accepted requirement, not
-  a claim that those existing log statements already satisfy it.
-- Cleanup currently deletes sent records without an age threshold; unsent records
-  have no age-based expiry. Neither behavior establishes a formal privacy
-  retention period or delivery audit policy.
-- Any future retention or logging change must preserve recovery needs while
-  minimizing unnecessary exposure of email data.
-- Email outbox data remains confidential after SMTP submission until cleanup
-  removes the row. The current cleanup cadence may leave sent content available
-  until the next run, but does not define a retention period.
-- Aggregated queue metrics and sanitized failure categories are preferred for
-  monitoring; operational queries should avoid selecting recipient or body
-  columns unless the support task requires them.
-- Logging, database, and secret-management controls are separate safeguards:
-  placing credentials in runtime configuration does not by itself restrict
-  access to recipient data or rendered content.
+## 5. Technical Reference
 
-## Alternatives considered
-
-### Include recipient and message content in scheduler requests
-
-Scheduler only decides when maintenance should run. Passing email content
-through its messages would duplicate confidential data and couple scheduling
-to the Notification delivery model.
-
-### Log complete messages for easier debugging
-
-Full bodies and recipient details may simplify local diagnosis but increase
-exposure in routine logs and monitoring systems. Prefer identifiers and
-sanitized failure details, with narrowly authorized support access to the
-outbox when necessary.
-
-### Delete sent records immediately after submission
-
-Immediate deletion would reduce the time content remains in the outbox, but
-would remove the existing bounded cleanup and operational inspection window.
-Any revised retention behavior needs an explicit policy that balances privacy,
-support, and audit requirements; the current hourly cleanup is not such a
-policy.
+- **Decision status & scope**: Accepted (`2026-11-01`), applying to `notification-system` and `[[service|notification-api]]`.
+- **Confidential data store**: `[[container|notification-database]]` (PostgreSQL) holds email outbox rows containing recipient names, addresses, subjects, and rendered order content.
+- **Runtime secrets**: SMTP authentication and PostgreSQL connection strings must be supplied via runtime secret configuration and excluded from catalog content, source control, outbox rows, and routine logs.
+- **Observability & logging policy**:
+  - Prefer outbox identifiers, sequence numbers, timestamps, aggregate backlog counts, and sanitized error categories.
+  - Avoid selecting recipient or body columns in operational queries unless required by an authorized support task.
+  - **Remediation backlog**: Resend logs currently emit recipient addresses, and SMTP failure logs currently emit recipients and subjects.
+- **Outbox cleanup & state semantics**:
+  - Current hourly cleanup deletes sent outbox rows without an age threshold; unsent records have no age-based expiry.
+  - Email outbox data remains confidential after SMTP submission until cleanup removes the row.
+  - Provider acceptance, cleanup, and email-state changes must never be presented as confirmation of the underlying business operation.

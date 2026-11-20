@@ -18,22 +18,38 @@ sidebar:
   badge: "PUT"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Updates the [[entity|publisher]] identified by `id`. The operation is idempotent when the same name is submitted.
+Publisher details in a book catalog occasionally need corrections—for example, fixing spelling mistakes, reflecting corporate rebrands, or standardizing naming conventions. Recreating a [[entity|publisher]] record from scratch would risk breaking associations with existing books in the catalog. Catalog therefore needs a dedicated way to update an existing publisher's name in place.
+
+## 2. Business Value
+
+- **Consistent catalog metadata**: Ensures publisher names displayed to customers and internal teams stay accurate across the storefront.
+- **Preserved book relationships**: Updates the publisher record in place using its existing identifier so linked books remain connected without manual reassignment.
+- **Safe retries**: Repeating the same update produces the same result, reducing risk when administrators or automated workflows retry a request.
+
+## 3. How It Works
+
+1. The caller identifies an existing [[entity|publisher]] using its unique identifier and supplies the updated name.
+2. The system verifies that both the identifier and a non-empty publisher name are provided; incomplete or invalid requests are rejected before any data is changed.
+3. If the publisher exists, its name is updated in place. Submitting the exact same name again leaves the record unchanged (idempotent behavior).
+4. If no publisher matches the supplied identifier, the operation does not create a new record and instead notifies the caller that the publisher could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Full-input contract**: Requiring both the identifier and a non-empty name keeps the update rule simple and predictable, though callers must provide the name even when confirming an unchanged record rather than sending partial edits.
+- **In-place updates over replacement**: Updating the existing record avoids cascading edits across books, assuming downstream views read the current publisher name by reference or refresh on change.
+- **Upfront input validation**: Rejecting blank names before persistence prevents empty labels from appearing in catalog filters and product pages.
+
+## 5. Technical Reference
+
+- **Operation**: `PUT /api/v1/publishers`
+- **Request contract**: JSON payload requiring both `id` (UUID) and a non-empty `name`.
+- **Responses**:
+  - `204 No Content`: Update succeeded (empty response body). Operation is idempotent when the same `name` is submitted.
+  - `400`: Validation failure (missing or invalid fields).
+  - `404`: No publisher exists with the supplied UUID.
 
 <NodeGraph />
-
-## Contract
-
-The request is JSON and requires both `id` and a non-empty `name`.
-
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`400` indicates validation failure. `404` indicates that no publisher exists with the supplied UUID.
-
-## Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

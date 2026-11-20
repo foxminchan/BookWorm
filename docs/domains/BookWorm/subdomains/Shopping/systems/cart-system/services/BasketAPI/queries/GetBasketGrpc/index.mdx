@@ -14,30 +14,53 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `BasketGrpcService.GetBasket` RPC retrieves the current customer's [[entity|basket]]
-for internal service-to-service clients. It accepts an empty request and
-returns the basket identifier and its item quantities.
+When a customer submits an order, the ordering capability needs an authoritative, real-time view of the items and quantities currently in the customer's [[entity|basket]]. Relying on the storefront client to resubmit item quantities during order placement risks stale or tampered cart data, while duplicating basket storage inside the ordering domain would break service boundaries.
 
-[[service|order-api]] produces this query during Order creation, using a
-token exchanged for Basket. [[service|basket-api]] consumes it over a
-synchronous service-to-service gRPC call; it does not use an
-integration-event channel.
+This internal query provides a direct, service-to-service way for ordering to read the customer's active basket during order creation.
+
+## 2. Business Value
+
+- **Accurate order creation:** Ensures every new order is constructed from the customer's actual stored basket contents and quantities rather than unverified client-supplied data.
+- **Fast checkout execution:** Retrieves basket state immediately on demand without waiting for asynchronous event round-trips during live order placement.
+- **Strong customer isolation:** Relies on a delegated customer security context so internal services can only access the active customer's own basket.
+- **Clear domain ownership:** Keeps basket persistence owned exclusively by the shopping cart capability while allowing ordering to consume what it needs at checkout.
+
+## 3. How It Works
+
+1. During order creation, the ordering service obtains an internal security token scoped to act on behalf of the customer for basket access.
+2. It sends an empty internal lookup request directly to the basket service without specifying a basket identifier in the payload.
+3. The basket service resolves the customer's active [[entity|basket]] from the delegated identity and returns the basket identifier alongside its list of item identifiers and quantities.
+4. Because this is a direct synchronous service-to-service lookup, it does not publish or consume asynchronous integration events.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Synchronous availability dependency:** Reading the basket synchronously keeps order creation straightforward and immediate, meaning the basket service must be reachable when an order is created.
+- **Minimal item contract:** Returning only item identifiers and quantities keeps the internal response compact and avoids passing catalog titles or prices through the shopping basket layer.
+- **Token-scoped lookup:** Deriving the target basket from an exchanged customer token prevents callers from requesting arbitrary baskets, while requiring calling services to propagate delegated customer credentials.
+
+## 5. Technical Reference
+
+The `BasketGrpcService.GetBasket` RPC retrieves the current customer's [[entity|basket]] for internal service-to-service clients under the `basket.v1` contract (`csharp_namespace = "BookWorm.Basket.Grpc.Services"`).
+
+[[service|order-api]] produces this query during Order creation using a token exchanged for Basket. [[service|basket-api]] consumes it over a synchronous service-to-service gRPC call; it does not use an integration-event channel.
 
 <NodeGraph />
 
-## Contract
+### Contract
 
-Send `google.protobuf.Empty`. The response is `GetBasketResponse`, containing
-the basket `id` and a repeated `items` collection. Each item contains an
-identifier and an `int32` quantity.
+- **Service & RPC:** `basket.v1.BasketGrpcService/GetBasket`
+- **Request:** `google.protobuf.Empty`
+- **Response (`GetBasketResponse`):**
+  - `id` (`string`): The basket identifier.
+  - `items` (`repeated Item`): Collection of basket items, each containing `id` (`string`) and `quantity` (`int32`).
 
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="GetBasket gRPC schema" />
 
-## Example
+### Example
 
 <CodeGroup dropdown>
 

@@ -12,7 +12,34 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Create an Order
+## 1. Context & Problem
+
+When a customer checks out in BookWorm, Ordering must turn their temporary shopping basket into a permanent purchase record, allow authorized users to review order history, and enforce strict rules on how an order can be completed or cancelled. Without clear boundaries and duplicate-request safeguards, slow connections or repeated submissions could create duplicate orders, shift item prices after checkout, or lead teams to assume that order creation means payment and basket cleanup are already done.
+
+## 2. Business Value
+
+- **Price certainty for customers:** Locks in each book's selected price and quantity at checkout so later Catalog updates never alter an accepted order.
+- **Duplicate & identity protection:** Ties every checkout strictly to the signed-in customer, enforces per-user rate controls, and uses unique request identifiers to block accidental repeat submissions.
+- **Predictable order lifecycle:** Establishes clear, irreversible completion and cancellation rules so downstream systems and support teams can rely on order status.
+
+## 3. How It Works
+
+1. **Checkout prerequisites:** Order actions require an authenticated user and are subject to per-user rate limits. Before checking out, the customer must have a Buyer profile and a current basket containing books that exist in Catalog.
+2. **Creating an Order:** Checkout uses the authenticated customer's own identity—it cannot place an order on behalf of another Buyer. Ordering reads the basket, verifies each book against Catalog, records each item's book reference, quantity, and selected price, and computes the total from those line items. The new Order starts in the **New** status.
+3. **Viewing Orders & history:** Once created, the Order can be retrieved individually by its identifier or browsed through Order history with pagination and optional status or buyer filters. Standard customers see only their own Orders, whereas administrators can filter across buyers.
+4. **Completing or cancelling an Order:** Only a **New** Order can transition to **Completed** or **Cancelled**, and each transition requires its own unique request identifier. Both outcomes are final—an Order cannot be reopened or moved from Completed to Cancelled (or vice versa). A successful transition notifies Finance so downstream steps can proceed.
+5. **Administrative removal vs. cancellation:** Administrators have a separate soft-deletion capability that hides an Order from active view; this does not change the Order's business status to Cancelled.
+6. **What checkout creation does not confirm:** Creating an Order confirms only that Ordering accepted and saved the purchase snapshot. It kicks off Finance's separate background workflow for basket cleanup and follow-up notifications, meaning Order creation alone does not confirm payment settlement, basket deletion, or email delivery.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Fast order acceptance vs. deferred downstream completion:** Confirming the Order immediately upon persistence keeps checkout responsive while delegating basket cleanup and email notifications to background workflows. Stakeholders must avoid treating Order creation as proof that payment or notifications have completed.
+- **Irreversible terminal states:** Making **Completed** and **Cancelled** permanent keeps financial and audit trails clean, even though any change after completion or cancellation requires placing a new Order.
+- **Caller-supplied request uniqueness:** Requiring a unique request identifier on creation, completion, and cancellation prevents accidental double processing, relying on client applications to generate a fresh identifier for each distinct user action.
+
+## 5. Technical Reference
+
+### Create an Order
 
 Order operations are authenticated and subject to per-user rate limiting.
 Before checkout, the customer needs a Buyer profile and a current basket with
@@ -35,7 +62,7 @@ The Order preserves the price selected at checkout. Its total is the sum of
 the recorded item prices multiplied by their quantities; later Catalog price
 changes do not change this accepted purchase.
 
-## Complete or cancel an Order
+### Complete or cancel an Order
 
 Only a **New** Order can be completed or cancelled:
 
@@ -50,7 +77,7 @@ one terminal state to the other.
 Order deletion is a separate, administrator-only soft-delete operation. It
 does not transition the Order to Cancelled.
 
-## What checkout does not confirm
+### What checkout does not confirm
 
 Creating an Order starts Finance's separate workflow for basket cleanup and
 follow-up notifications. A successful `201 Created` confirms Order creation;

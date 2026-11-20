@@ -18,22 +18,39 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Creates an [[entity|author]] and returns its generated UUID.
+Books in the BookWorm catalog must reference standardized [[entity|author]] records so customers can filter, browse, and discover titles by the same writer reliably. Business users and catalog import workflows need a dedicated operation to register a new author and obtain its system identifier before linking that author to book listings.
+
+## 2. Business Value
+
+- **Data integrity across the catalog:** Centralizing author creation ensures every book points to a valid author record instead of inconsistent free-text names.
+- **Reusable catalog reference data:** Once created, an author record can be linked across multiple books without re-entering author details.
+- **Immediate feedback on bad input:** Clear input validation stops incomplete author records from entering the catalog and surfaces actionable errors right away.
+
+## 3. How It Works
+
+1. A business user or integration submits a request containing the author's display name.
+2. The catalog service checks that a non-empty name was provided.
+3. If valid, the service creates the [[entity|author]] record and returns its newly generated unique identifier so it can be stored and referenced when creating or updating books.
+4. If the name is missing or blank, the service rejects the request and returns a validation error explaining the issue.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Minimal required fields for creation:** Requiring only a non-empty author name keeps onboarding fast and unblocks book entry, though downstream workflows must handle any duplicate display names or additional author profile enrichment separately if needed later.
+- **Prerequisite for book creation:** Because books depend on existing author identifiers, teams must ensure author creation or selection happens before saving a new book.
+
+## 5. Technical Reference
+
+- **Operation:** `POST /api/v1/authors`
+- **Request format:** JSON body requiring a non-empty `name`.
+- **Success (`200`):** Response body is a JSON string containing the new author UUID.
+- **Validation failure (`400`):** Returned when `name` is missing or empty.
+
+### Message & Service Graph
 
 <NodeGraph />
 
-## Contract
-
-The request is JSON and requires a non-empty `name`.
-
-The response body is a JSON string containing the new author UUID.
-
-## Operational notes
-
-A validation problem is returned with `400` when `name` is missing or empty.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

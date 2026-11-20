@@ -14,31 +14,48 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `GetBooks` RPC returns the current compact [[entity|book]] representations for a
-requested set of book identifiers. It is a read-only lookup used by internal
-clients that need multiple Catalog records in one call.
+Customer baskets and orders routinely contain several different [[entity|book]]s at once. If [[service|basket-api]] or [[service|order-api]] had to ask [[service|catalog-api]] about each item one by one during basket display, checkout, or order viewing, latency would climb quickly and internal traffic would multiply with basket size.
 
-[[service|basket-api]] produces this query to enrich basket items.
-[[service|order-api]] also produces it during checkout and Order detail
-enrichment, caching book batches. [[service|catalog-api]] consumes the query
-over a synchronous service-to-service gRPC call, not an integration-event
-channel.
+## 2. Business Value
+
+- **Faster checkout and basket loading**: Fetches current names, prices, and availability for an entire set of books in one round trip.
+- **Lower infrastructure load**: Replaces repeated per-item calls with a single compact batch lookup.
+- **Reliable order and basket accuracy**: Ensures [[service|basket-api]] and [[service|order-api]] validate and display up-to-date catalog pricing and stock status before orders are finalized or displayed.
+- **Caching friendliness**: Supports batch caching in [[service|order-api]] to further improve responsiveness on repeated order views.
+
+## 3. How It Works
+
+1. A consuming service—such as [[service|basket-api]] when enriching a shopping basket, or [[service|order-api]] during checkout and order detail enrichment—collects the unique identifiers of all [[entity|book]]s it needs to verify.
+2. It sends that list of identifiers in a single direct request to [[service|catalog-api]].
+3. [[service|catalog-api]] looks up the matching [[entity|book]] records synchronously and returns a compact summary (identity, pricing, and availability) for the requested items in one response.
+4. Where appropriate, [[service|order-api]] caches the returned batch to avoid redundant calls for frequently accessed order details.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Synchronous request-response vs. event-driven replication**: Using a direct synchronous lookup instead of an integration-event channel avoids maintaining duplicated catalog read tables inside [[service|basket-api]] and [[service|order-api]] and guarantees fresh pricing at checkout, though it introduces a runtime dependency on [[service|catalog-api]] availability.
+- **Compact projection**: Returning only compact book fields keeps batch responses fast and small; callers needing full descriptions or author metadata must use a detailed lookup instead.
+- **Batch caching trade-off**: Caching book batches in [[service|order-api]] improves speed and resilience, but teams must ensure cache lifetimes remain aligned with acceptable freshness for price or availability changes.
+
+## 5. Technical Reference
+
+`GetBooks` is a read-only RPC defined in the `book.v1` gRPC contract (`BookGrpcService`) that returns compact [[entity|book]] representations for multiple requested book identifiers in a single synchronous service-to-service call (not an integration-event channel).
+
+- **Producers / Callers**:
+  - [[service|basket-api]] produces this query to enrich basket items.
+  - [[service|order-api]] produces this query during checkout and Order detail enrichment, caching book batches.
+- **Consumer**: [[service|catalog-api]] consumes the query.
+- **Request**: `GetBooksRequest` containing one or more book UUIDs in `book_ids`.
+- **Response**: `GetBooksResponse` containing a repeated collection of `GetBookResponse` values.
 
 <NodeGraph />
 
-## Contract
-
-Send a `GetBooksRequest` containing one or more UUIDs in `book_ids`. The
-response is `GetBooksResponse`, containing a repeated collection of
-`GetBookResponse` values.
-
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="GetBooks gRPC schema" />
 
-## Examples
+### Examples
 
 <CodeGroup dropdown>
 

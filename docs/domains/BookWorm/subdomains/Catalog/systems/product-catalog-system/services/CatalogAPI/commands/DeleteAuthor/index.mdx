@@ -18,22 +18,39 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
+
+Over time, catalog administrators may need to remove duplicate, test, or obsolete author entries to keep BookWorm's catalog accurate. Without a controlled deletion operation, outdated author records would clutter author lists and mislead teams assigning contributors to books.
+
+## 2. Business Value
+
+- **Cleaner catalog data**: Keeps author directories free of test, duplicate, or invalid records.
+- **Clear operational feedback**: Explicitly distinguishes between removing an existing author and requesting an author that does not exist.
+- **Predictable state changes**: Makes permanent removal unambiguous for both operators and downstream integrations.
+
+## 3. How It Works
+
+1. An authorized operator or workflow identifies the [[entity|author]] to remove using its unique identifier.
+2. When the author exists, the catalog permanently deletes the record and confirms completion with no additional response data.
+3. When no author matches the provided unique identifier, the catalog reports that the author was not found so the caller can investigate or confirm whether the record was already removed.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Permanent mutation**: Deletion permanently removes the author record rather than soft-archiving it, so operators should confirm the author is no longer needed before executing the command.
+- **Strict existence check vs. idempotent silence**: Reporting an unknown identifier as "not found" helps catch incorrect references early; a calling workflow should treat an already-absent author as successfully deleted only when that behavior is explicitly acceptable for its business process.
+
+## 5. Technical Reference
 
 Deletes the [[entity|author]] identified by the UUID path parameter. This is a permanent catalog mutation.
 
+- **Operation**: `DELETE /api/v1/authors/{id}`
+- **Request contract**: Provide the resource UUID in the `{id}` path parameter. The operation has no request body.
+- **Responses**:
+  - `204 No Content`: Author deleted successfully with an empty body.
+  - `404`: Indicates that no author exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
+
 <NodeGraph />
 
-## Contract
-
-Provide the resource UUID in the `{id}` path parameter. The operation has no request body.
-
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`404` indicates that no author exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

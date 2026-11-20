@@ -55,25 +55,45 @@ properties:
     description: Time the Order was last modified.
 ---
 
-## Overview
+## 1. Context & Problem
 
-The Order aggregate records the authenticated Buyer's purchase from the basket
-and Catalog data available at checkout. It starts as **New** and can transition
-to **Completed** or **Cancelled**; both outcomes are terminal.
+While a customer is browsing, their shopping basket is temporary and freely editable. Once they check out, however, the business needs a permanent, authoritative record of the accepted purchase tied to an authenticated [[entity|buyer]]. Without a dedicated Order record and clear lifecycle, BookWorm could not distinguish active shopping intent from committed purchases, preserve purchase-time pricing, or track whether a purchase succeeded or was cancelled.
 
-Each [[entity|order-item]] retains the referenced book ID, selected purchase-time
-price, and quantity. The Order total is calculated from those item values, so
-later Catalog price changes do not rewrite the accepted purchase.
+## 2. Business Value
 
-The `isDeleted` flag represents a soft deletion and does not change `status`.
-Finance's saga states, basket-deletion outcomes, and notification delivery are
-separate from this aggregate's lifecycle.
+- **Contractual purchase truth:** Establishes a reliable, auditable record of who placed the purchase, what items were ordered, and the total agreed upon at checkout.
+- **Price protection:** Locks in purchase-time item prices so subsequent catalog promotions or price updates never rewrite completed or in-progress orders.
+- **Clear business outcomes:** Provides customers, operations, and downstream workflows with a single, unambiguous order status (**New**, **Completed**, or **Cancelled**).
+- **Resilient boundaries:** Separates the purchase record from follow-up operational tasks such as basket cleanup and email notifications, ensuring delivery hiccups do not corrupt order truth.
 
-## Entity Properties
+## 3. How It Works
+
+An Order captures an authenticated [[entity|buyer]]'s accepted purchase using the basket contents and catalog pricing available at checkout:
+
+- **Initial state and contents:** Every Order starts in the **New** status and contains one or more [[entity|order-item]] records, an optional note, and creation and modification timestamps.
+- **Calculated total:** The Order total is derived directly by adding up each item's purchase-time price multiplied by its quantity, keeping the total aligned with the recorded items.
+- **Terminal outcomes:** From **New**, an Order can transition to either **Completed** or **Cancelled**. Both outcomes are final.
+- **Visibility vs. business status:** An Order can be marked as hidden from active views (for example, if post-checkout basket cleanup fails) without erasing the historical record or changing its business status.
+- **Independent follow-up tracking:** Finance workflow progress, basket-deletion outcomes, and customer notification delivery are tracked separately from the Order's own lifecycle.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Calculated total vs. stored total:** Deriving the total from item lines guarantees internal consistency between items and total, eliminating drift from a separately stored amount.
+- **Isolated business state vs. end-to-end tracking:** Keeping basket cleanup, workflow retries, and email delivery outside the Order's status protects the purchase record from downstream failures, though stakeholders must remember that Order status alone does not prove email delivery or external settlement.
+- **Separate removal flag vs. cancellation:** Separating record removal from the **Cancelled** status preserves auditability when cleanup fails, but requires reporting and support workflows to distinguish between hidden records and cancelled orders.
+
+## 5. Technical Reference
+
+- **Domain role:** Aggregate root (`aggregateRoot: true`) in the `Ordering` domain.
+- **Status values:** `New`, `Completed`, `Cancelled` (`Completed` and `Cancelled` are terminal).
+- **Key properties:**
+  - `id`, `buyerId`, `status`, `note`, `orderItems`, `createdAt`, `lastModifiedAt`
+  - `totalPrice`: Calculated sum of each `order-item`'s `price * quantity`; not persisted.
+  - `isDeleted`: Soft-delete flag, independent of `status` (Finance saga states, basket-deletion outcomes, and notification delivery are separate from this aggregate's lifecycle).
+- **Relationships:**
+  - Placed by one [[entity|buyer]] (`buyerId` → `buyer.id`, `relationType: placedBy`).
+  - Contains one or more [[entity|order-item]] records (`orderItems`).
+
+### Entity Properties
 
 <EntityPropertiesTable />
-
-## Relationships
-
-- An Order is placed by one [[entity|buyer]].
-- An Order contains one or more [[entity|order-item]] records.

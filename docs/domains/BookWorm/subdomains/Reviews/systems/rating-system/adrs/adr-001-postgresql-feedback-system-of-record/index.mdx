@@ -24,69 +24,49 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-Individual feedback has lifecycle rules, reviewer details, a rating, and an
-optional comment. [[domain|catalog]] needs a rating summary for product discovery, but
-storing or querying individual [[entity|feedback]] there would make Catalog
-responsible for [[domain|reviews]] data and couple the two bounded contexts.
-The source of truth must also keep the feedback identity and reviewer
-constraints together so that creation, listing, and deletion use one
-authoritative record rather than a cross-domain copy.
+Individual customer [[entity|feedback]] carries its own lifecycle rules, reviewer details, a rating, and an optional comment. [[domain|catalog]] needs rating summaries to support product discovery, but storing or querying individual feedback records inside Catalog would shift [[domain|reviews]] ownership into the wrong domain and tightly couple the two areas.
 
-## Decision
+To keep creation, browsing, and deletion consistent, BookWorm needs a single authoritative home for feedback identity, reviewer constraints, and review content—preventing duplicate copies from drifting out of sync across domains.
 
-[[container|rating-database]], a PostgreSQL database, is the single
-authoritative store for the [[entity|feedback]] aggregate. Only
-[[service|rating-api]] writes feedback. Other domains use the published
-integration contracts and do not access the Rating Database directly.
+## 2. Business Value
 
-The service validates ratings from 0 through 5 and persists reviewer
-information, the referenced book ID, and the optional comment with the
-feedback record. The database enforces uniqueness for a book and reviewer
-name combination. Catalog receives only the identifiers and rating needed to
-maintain its own derived summary; it does not receive review text or reviewer
-details as part of those projection events.
+- **Single source of truth:** One authoritative store ensures customer reviews are never fragmented across multiple domains.
+- **Protected domain boundaries:** Other parts of the platform cannot bypass validation, authorization, or business rules by reaching directly into Reviews data.
+- **Transactional reliability:** Creating, listing, and removing feedback operate against consistent, integrity-checked records.
+- **Privacy isolation:** Review text and reviewer names stay inside Reviews rather than being copied unnecessarily into Catalog's product discovery store.
 
-## Consequences
+## 3. How It Works
 
-- Feedback lifecycle changes retain relational integrity and transactional
-  consistency in one store.
-- Catalog maintains only a rebuildable rating projection, not feedback
-  records.
-- Rating API and the [[agent|rating-agent]] depend on the database being available for
-  feedback operations and reads.
-- Cross-domain consumers must tolerate eventual consistency rather than
-  querying feedback synchronously.
-- Rating API availability and its validation rules are required for feedback
-  creation; the database does not replace API-level validation of the rating
-  range.
-- The database's uniqueness rule is based on book and reviewer name, not a
-  verified customer identity. Callers must not infer stronger identity
-  verification from that constraint.
-- A feedback record can refer to a book ID that Catalog later reports as
-  missing. That condition is handled through the separate compensating
-  integration flow rather than a direct cross-database constraint.
-- Listing and summarization depend on PostgreSQL reads; generated summaries
-  and Catalog's rating projection are separate derived views, not alternate
-  stores for individual feedback.
+[[container|rating-database]] serves as the sole authoritative store for all individual [[entity|feedback]] records, and only the Rating service ([[service|rating-api]]) is permitted to write to or manage them.
 
-## Alternatives considered
+- When a customer submits feedback, the service checks that the rating is between 0 and 5 and saves the rating, book reference, reviewer information, and optional comment in one place.
+- The store enforces uniqueness for each combination of book and reviewer name so duplicate submissions with the same details are prevented.
+- Other domains interact only through published integration notices or supported service queries—never by reading the Rating store directly.
+- Catalog receives only the identifiers and rating needed to maintain its own derived summary, without receiving review comments or reviewer details.
+- Both AI-generated summaries and Catalog's aggregate rating view are treated as separate, rebuildable derived views rather than replacements for the authoritative feedback store.
 
-### Store individual feedback in Catalog
+## 4. Trade-offs & Lessons Learned
 
-This would make review details available alongside book records, but would
-transfer Reviews lifecycle and customer-content ownership into the Catalog
-domain. Catalog maintains only the rating summary it needs.
+- **Availability dependency:** Both the Rating service and [[agent|rating-agent]] depend on the database being available for feedback writes, listings, and summarization reads.
+- **Eventual consistency for consumers:** Because external domains cannot query the database directly, cross-domain views such as Catalog's rating summary must tolerate brief delays between a review change and its reflection elsewhere.
+- **API validation remains essential:** Database uniqueness and integrity rules complement, but do not replace, service-level validation of the 0–5 rating range and request rules.
+- **Name uniqueness is not identity verification:** Preventing duplicate entries by book and reviewer name does not constitute verified customer identity; downstream callers should not treat it as proof of identity.
+- **No cross-database foreign keys:** A feedback entry can reference a book that Catalog later reports as missing. That mismatch is resolved via an asynchronous compensation flow rather than a direct cross-domain database constraint.
 
-### Let consumers read the Rating Database directly
+### Alternatives Considered
 
-Direct access would couple downstream services and agents to the Rating
-schema and bypass the Rating API's validation, authorization, and integration
-contracts. Consumers use supported service queries or published events.
+- **Store individual feedback in Catalog:** Rejected because it would move Reviews lifecycle and customer-content ownership into the Catalog domain.
+- **Let consumers read the Rating Database directly:** Rejected because direct access couples downstream services and agents to internal storage structures and bypasses validation, authorization, and integration contracts.
+- **Use Catalog's rating projection as the review source:** Rejected because the projection holds only aggregate numbers, not individual review records or their lifecycle.
 
-### Use Catalog's rating projection as the review source
+## 5. Technical Reference
 
-The projection contains aggregate rating information, not individual review
-records or their lifecycle. It cannot replace the authoritative feedback
-store.
+- **Authoritative store:** [[container|rating-database]] (PostgreSQL) for the [[entity|feedback]] aggregate.
+- **Exclusive writer:** [[service|rating-api]].
+- **Validation & constraints:**
+  - `rating-api` validates ratings in the inclusive `0`–`5` range at the API boundary before persistence.
+  - PostgreSQL enforces a uniqueness constraint on the book and reviewer name combination alongside relational integrity for feedback IDs, book IDs, reviewer details, and optional comments.
+- **Downstream contract boundary:** Projection events emitted to [[domain|catalog]] carry only identifiers and the rating value—omitting comment text and reviewer details.
+- **Dependencies:** Feedback listing, `rating-api` writes, and [[agent|rating-agent]] reads rely on PostgreSQL availability; missing-book references are handled asynchronously via the Catalog rejection compensation flow rather than cross-database foreign keys.

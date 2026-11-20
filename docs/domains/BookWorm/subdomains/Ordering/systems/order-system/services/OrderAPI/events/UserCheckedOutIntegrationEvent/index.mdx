@@ -14,33 +14,42 @@ badges:
     textColor: blue
 ---
 
-## Overview
+## 1. Context & Problem
 
-[[service|order-api]] publishes this event after placing an
-[[entity|order]]. It carries the accepted Order's ID, total purchase amount,
-and customer details for Finance. It does not confirm payment settlement,
-basket cleanup, or Order completion.
+When a customer finishes checkout and places an [[entity|order]] through [[service|order-api]], downstream Finance workflows need to know right away that a new purchase has been accepted so they can start post-checkout coordination. Without an explicit checkout notification, Finance would either have to poll the ordering service continuously or tightly couple its own processes to order placement.
 
-## Channel
+## 2. Business Value
 
-[[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]]
+- **Responsive customer checkout:** Allows ordering to accept purchases promptly without waiting for downstream financial and cleanup tasks to finish.
+- **Reliable cross-domain handoff:** Delivers the accepted order reference, total purchase amount, and available customer details to Finance in one consistent message.
+- **Clear lifecycle boundaries:** Separates the moment an order is placed from payment settlement, shopping basket cleanup, and final order completion.
 
-## Payload
+## 3. How It Works
 
-The payload contains `id`, `creationDate`, `orderId`, `basketId`, nullable
-`fullName` and `email`, and `totalMoney`. All fields are required by the
-AsyncAPI schema, including the nullable fields.
+1. A customer places a new [[entity|order]], and [[service|order-api]] saves the accepted order and its purchase total.
+2. After the order is recorded, [[service|order-api]] publishes a checkout notification for Finance coordination.
+3. The notification carries a unique event identifier, creation timestamp, the accepted order identifier, a buyer-linked basket reference, the total amount, and optional customer name and email details.
+4. Finance consumes this notification to trigger post-checkout coordination. Receiving the notification confirms only that the order was placed—it does not confirm payment settlement, basket cleanup, or order completion.
 
-The current EventMapper supplies the Order's Buyer ID as `basketId`.
-Consumers must not assume this field is independently resolved basket data.
+## 4. Trade-offs & Lessons Learned
 
-## Schema
+- **Order placement vs. fulfillment milestones:** Treating checkout as an "order placed" milestone keeps purchasing fast and decoupled, but requires Finance and operations teams to track payment settlement, basket cleanup, and order completion as separate subsequent outcomes.
+- **Basket reference semantics:** Today, the basket reference in the notification is populated using the buyer identifier rather than an independently looked-up basket record. Downstream consumers must not treat that reference as authoritative basket data.
+- **Optional customer details:** Because customer name and email can be absent, downstream Finance notifications or records must tolerate missing contact details without failing.
 
-The schema describes camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope, not the complete transport envelope.
+## 5. Technical Reference
+
+- **Producer:** [[service|order-api]]
+- **Channel:** [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]]
+- **Payload & Envelope:**
+  - The payload contains `id`, `creationDate`, `orderId`, `basketId`, nullable `fullName` and `email`, and `totalMoney`. All fields are required by the AsyncAPI schema, including the nullable fields.
+  - The current `EventMapper` supplies the Order's Buyer ID as `basketId`. Consumers must not assume this field is independently resolved basket data.
+  - The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
+
+### Schema
 
 <SchemaViewer file="schema.json" title="Checkout event payload" maxHeight="500" />
 
-## Architecture
+### Architecture
 
 <NodeGraph />

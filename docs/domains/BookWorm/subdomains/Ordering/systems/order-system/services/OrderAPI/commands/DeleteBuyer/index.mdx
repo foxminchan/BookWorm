@@ -18,19 +18,34 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Deletes a [[entity|buyer]] profile by its identifier. The endpoint requires
-the administrator authorization policy.
+During customer lifecycle management, administrative teams sometimes need to remove a [[entity|buyer]] profile—for example, for account offboarding, duplicate cleanup, or compliance requests. The Ordering system requires a controlled administrative capability to remove a Buyer profile by its unique identifier without exposing this destructive action to general users.
+
+## 2. Business Value
+
+- **Controlled Data Governance**: Ensures only authorized administrators can delete [[entity|buyer]] profiles.
+- **Operational Clarity**: Gives administrative tools deterministic confirmation when a profile is deleted or clear notification when the requested profile does not exist.
+- **Lightweight Integration**: Eliminates unnecessary input overhead because only the target Buyer identifier is required.
+
+## 3. How It Works
+
+1. An administrator submits a deletion request targeting a specific [[entity|buyer]] profile by its unique identifier, with no additional payload.
+2. The service verifies that the caller satisfies the administrator authorization policy.
+3. If a matching Buyer profile exists, the service deletes it and confirms completion without returning profile data.
+4. If no Buyer matches the provided identifier, the service reports that the Buyer could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Administrator-Only Access**: Limiting profile deletion to administrators reduces the risk of accidental data loss or unauthorized tampering with customer records, at the cost of requiring administrative intervention for profile removal.
+- **Explicit Not-Found Reporting**: Distinguishing a missing profile from a successful deletion prevents callers from assuming a stale or invalid identifier succeeded, though automated cleanup clients must handle missing-record responses explicitly.
+- **Identifier-Only Contract**: Omitting a request body keeps the operation minimal, meaning any audit reason or approval tracking must be recorded outside this command if required by operations teams.
+
+## 5. Technical Reference
+
+- **Endpoint & Authorization**: `DELETE /api/v1/buyers/{id}` deletes a [[entity|buyer]] profile by its identifier and requires the administrator authorization policy.
+- **Contract**: Provide the Buyer identifier in the `{id}` path parameter. The operation has no request body. `204 No Content` confirms deletion; `404 Not Found` indicates that no matching Buyer exists.
 
 <NodeGraph />
-
-## Contract
-
-Provide the Buyer identifier in the `{id}` path parameter. The operation has
-no request body. `204 No Content` confirms deletion; `404 Not Found` indicates
-that no matching Buyer exists.
-
-## Schema
 
 <SchemaViewer file="schema.json" title="Path parameter JSON Schema" maxHeight="500" search="true" />

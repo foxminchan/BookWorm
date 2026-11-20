@@ -20,65 +20,66 @@ classification: internal
 retention: indefinite
 ---
 
+## 1. Context & Problem
+
+BookWorm customers leave ratings and written reviews on books, and those individual submissions need a dedicated, authoritative home inside the Reviews domain. Storing raw reviews separately from the Catalog's book details prevents cross-domain coupling and keeps the product catalog focused on book metadata and high-level rating summaries rather than managing detailed review histories.
+
+## 2. Business Value
+
+- **Clear data ownership**: Reviews acts as the single source of truth for individual [[entity|feedback]] records, preventing conflicting copies across services.
+- **Duplicate submission protection**: Enforcing one review per reviewer name for a given [[entity|book]] helps preserve rating fairness and quality.
+- **Safe read-time insights**: Automated review summarization can inspect stored feedback in read-only mode without risking accidental edits to customer submissions.
+- **Book-centric scalability**: Organizing reviews by book enables fast retrieval of all feedback for a title as review volume grows.
+
+## 3. How It Works
+
+The Rating Database serves as the authoritative store for individual [[entity|feedback]] records. Each record represents one review of a Catalog [[entity|book]] and captures:
+
+- **Identity and relationship** — a unique identifier for the review and a reference to the associated book.
+- **Reviewer identity** — required first and last name for the person who submitted the review.
+- **Review content** — a whole-number rating and an optional written comment of up to 1,000 characters.
+- **Lifecycle timestamps** — when the review was created and, if applicable, when it was last modified.
+
+Only the Rating service creates or deletes records in this database. To protect against duplicate entries, the database enforces uniqueness across the combination of book, first name, and last name. Validating that ratings fall within the allowed 0-through-5 range is handled by the service before data is saved.
+
+Other capabilities interact with review data through well-defined boundaries:
+
+- **Automated summarization** reads reviews for a book through a governed, read-only lookup (capped at 30 requests per minute) and generates insights on the fly without writing classifications back to the database.
+- **Catalog rating summaries** do not read this database directly; instead, Catalog listens for feedback-created and feedback-deleted notifications to maintain its own summary metrics (average rating and total review count).
+
+## 4. Trade-offs & Lessons Learned
+
+- **Service-layer rating validation**: Because the database itself does not enforce a range constraint on the numeric rating, all writes must flow through the Rating service to prevent out-of-range scores from being persisted.
+- **Name-based uniqueness constraint**: Enforcing uniqueness on the combination of book, first name, and last name blocks repeat submissions under the same name, though two distinct customers with identical names reviewing the same book would collide.
+- **Eventual consistency with Catalog**: Because Catalog updates its book rating summaries asynchronously from change notifications rather than querying this database directly, displayed averages and review counts can briefly lag behind newly added or removed reviews.
+- **Historical migration artifacts**: Older database setup artifacts (such as retired messaging tables) remain visible in the historical schema snapshot even though they are no longer part of the active application design.
+
+## 5. Technical Reference
+
 <NodeGraph />
 
-### What is this?
+### Implementation & Data Model
 
-The **Rating Database** is the authoritative **Azure Cosmos DB** store
-(`feedbacks` container, partitioned by `/bookId`) for individual
-[[entity|feedback]] records. The Rating service uses Entity Framework Core's
-Cosmos DB provider (`Microsoft.EntityFrameworkCore.Cosmos`) to persist
-feedback creation and deletion here. The [[agent|rating-agent]] reads reviews
-through the [[query|ListFeedbacks]] query; it does not modify stored feedback.
+The **Rating Database** is an **Azure Cosmos DB** store (`feedbacks` container, partitioned by `/bookId`) accessed by the Rating service via Entity Framework Core's Cosmos DB provider (`Microsoft.EntityFrameworkCore.Cosmos`) for feedback creation and deletion.
 
-## Schema
+- **Identity and relationship**: UUID `id` (with a database-side UUID v7 default) and referenced `bookId`.
+- **Reviewer**: required `firstName` and `lastName`.
+- **Review content**: integer `rating` (validated by the API as `0` through `5`; no database-level check constraint) and optional `comment` (maximum 1,000 characters).
+- **Lifecycle metadata**: required `createdAt` and optional `lastModifiedAt`.
+- **Uniqueness constraint**: Enforced across (`bookId`, `firstName`, `lastName`).
 
-The displayed schema is a snapshot of the current application table. The
-provided `schema.sql` contains the EF Core migration history, including
-inbox/outbox tables that were later removed; those historical objects are not
-part of the current application schema.
+### Access Patterns & Boundaries
+
+- **Writes**: Owned exclusively by the Rating service for feedback creation and deletion.
+- **Agent reads**: [[agent|rating-agent]] reads reviews through [[query|ListFeedbacks]] (returning review IDs, ratings, and comments) under a read-only governance policy limited to 30 calls per minute. Its read-time classification is not persisted in this database.
+- **Cross-service integration**: [[service|catalog-api]] does not read this database; it consumes [[event|FeedbackCreatedIntegrationEvent]] and [[event|FeedbackDeletedIntegrationEvent]] (carrying `bookId`, `feedbackId`, and `rating`) to maintain denormalized `average_rating` and `total_reviews` on Catalog books. Do not treat the Catalog summary as the source for individual reviews, or this database as the source for Catalog book details.
+
+### Schema
+
+The displayed schema is a snapshot of the current application table. The provided `schema.sql` contains the EF Core migration history, including inbox/outbox tables that were later removed; those historical objects are not part of the current application schema.
 
 <AccordionGroup>
 	<Accordion title="Rating Database schema">
 		<Schema file="schema.sql" lang="sql" title="schema.sql" />
 	</Accordion>
 </AccordionGroup>
-
-## What does it store?
-
-Each [[entity|feedback]] record represents one review of a Catalog
-[[entity|book]] and includes:
-
-- **Identity and relationship** — a UUID `id` (with a database-side UUID v7
-  default) and the referenced `bookId`.
-- **Reviewer** — required `firstName` and `lastName`.
-- **Review content** — an integer `rating` and an optional `comment` of up to
-  1,000 characters.
-- **Lifecycle metadata** — required `createdAt` and optional `lastModifiedAt`.
-
-The database enforces uniqueness for the combination of book, first name, and
-last name. The API validates that ratings are from 0 through 5; the database
-table does not define a rating-range check constraint.
-
-## Access patterns
-
-- The Rating service owns writes for feedback creation and deletion.
-- The [[agent|rating-agent]] reads reviews for a book through the
-  [[query|ListFeedbacks]] query, which returns review IDs, ratings, and
-  comments. The agent's documented access is read-only and limited to 30 calls
-  per minute by its governance policy.
-- [[service|catalog-api]] does not read this database. It consumes the
-  [[event|FeedbackCreatedIntegrationEvent]] and
-  [[event|FeedbackDeletedIntegrationEvent]],
-  which carry `bookId`, `feedbackId`, and `rating`, to update the denormalized
-  `average_rating` and `total_reviews` stored with Catalog books.
-- The agent's analysis is a read-time insight. It does not update feedback or
-  persist its classification in this database.
-
-## Data ownership
-
-Reviews owns the individual feedback records in this database. Catalog owns
-book metadata and its denormalized rating summary; it receives feedback-created
-and feedback-deleted integration events to maintain that summary. Do not treat
-the Catalog summary as the source for individual reviews, or this database as
-the source for Catalog book details.

@@ -14,26 +14,35 @@ owners:
 schemaPath: schema.json
 ---
 
-## Overview
+## 1. Context & Problem
 
-Finance publishes this command after successful basket cleanup.
-[[service|order-api]] logs the outcome without changing the
-[[entity|order]]'s business status. Finance saga progress and Order status
-are separate lifecycles.
+Following checkout, the Finance workflow oversees removing the customer's purchased basket so old items do not linger. The ordering service needs visibility into when that cleanup succeeds for operational tracking, while keeping Finance's internal workflow progress strictly separate from the customer-facing status of the [[entity|order]].
 
-This command is distinct from
-[[event|BasketDeletedCompleteIntegrationEvent]], which Basket publishes as
-its own deletion result.
+## 2. Business Value
 
-## Channel
+- **Operational visibility:** Confirms that post-checkout basket cleanup completed successfully for a specific order.
+- **Lifecycle independence:** Prevents Finance workflow milestones from unintentionally altering the business status of the order.
+- **Clear domain ownership:** Distinguishes Finance's coordination confirmation from Basket's own deletion result, avoiding confusion across service teams.
 
-[[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
+## 3. How It Works
 
-## Schema
+1. After Finance verifies that the customer's basket has been cleaned up, it sends this confirmation to [[service|order-api]].
+2. The message identifies itself, when it was created, the associated [[entity|order]], and the total purchase amount.
+3. [[service|order-api]] records the successful outcome for operational logging without modifying the order's business status.
+4. This command is distinct from [[event|BasketDeletedCompleteIntegrationEvent]], which Basket publishes as its own deletion result.
 
-The payload contains `id`, `creationDate`, `orderId`, and `totalMoney`.
-The schema describes camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope, not the complete transport envelope.
+## 4. Trade-offs & Lessons Learned
+
+- **Logging without status mutation:** Keeping order status untouched avoids coupling Finance's orchestration lifecycle to order fulfillment states, though order progression must rely on dedicated order-lifecycle events.
+- **Separated completion signals:** Maintaining both Finance's coordination command and Basket's domain event preserves clear ownership boundaries, at the cost of requiring teams to distinguish between the two messages.
+
+## 5. Technical Reference
+
+- **Channel:** [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
+- **Distinct from:** [[event|BasketDeletedCompleteIntegrationEvent]] (published by Basket as its own deletion result). Finance saga progress and Order status are separate lifecycles.
+- **Payload structure:** Contains `id`, `creationDate`, `orderId`, and `totalMoney`. The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
+
+### Schema
 
 <SchemaViewer
 	file="schema.json"
@@ -41,6 +50,6 @@ CloudEvents-compatible envelope, not the complete transport envelope.
 	maxHeight="500"
 />
 
-## Architecture
+### Architecture
 
 <NodeGraph />

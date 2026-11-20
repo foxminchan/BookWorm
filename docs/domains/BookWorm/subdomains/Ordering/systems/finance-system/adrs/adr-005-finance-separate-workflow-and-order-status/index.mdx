@@ -25,72 +25,54 @@ related:
     version: 1.0.0
 ---
 
-## Context
+## 1. Context & Problem
 
-Basket cleanup, Order status, saga completion, and email delivery are different
-outcomes owned by different services. Treating a failed or completed Finance
-workflow as the Order's business status would introduce competing lifecycle
-owners. In particular, cleanup failure or a timeout describes Finance's
-coordination outcome; only Ordering can declare that an Order is complete or
-cancelled.
+Post-checkout processing involves several distinct outcomes owned by different capabilities: basket cleanup, Order business status, Finance workflow progress, and email delivery. Treating a Finance workflow outcome—such as a cleanup failure or retry timeout—as the Order's business status would create competing owners for the Order lifecycle.
 
-This retrospective ADR records Finance's side of the existing Ordering
-ownership decision linked above.
+Only Ordering can decide and declare that an Order is completed or cancelled. This retrospective ADR records Finance's side of that ownership boundary alongside the related Ordering decision.
 
-## Decision
+## 2. Business Value
 
-Keep Finance authoritative only for saga coordination state. On Basket success,
-send [[command|DeleteBasketCompleteCommand]]; Ordering logs that result without completing
-the Order. On Basket failure, finish the saga as BasketDeletionFailed and send
-[[command|DeleteBasketFailedCommand]]; Ordering soft-deletes the matching Order if it
-exists without changing its business status.
+- **Single source of truth for orders:** Business stakeholders, customer support, and downstream consumers always look to [[service|order-api]] as the sole authority for Order status.
+- **Protection against accidental cancellations:** Technical cleanup delays or coordination timeouts never silently override an Order's business state.
+- **Independent system ownership:** Finance and Ordering can evolve, deploy, and recover independently without sharing a coupled state machine or database.
+- **Honest operational visibility:** Keeping workflow progress distinct from Order status prevents misleading reporting on payments, fulfillment, or customer outcomes.
 
-Handle Ordering's explicit completed or cancelled status events as Order facts.
-Complete the corresponding saga handler and request the appropriate notification
-when recipient details allow it. Timeout exhaustion changes only the saga to
-Cancelled, not the Order.
+## 3. How It Works
 
-Do not infer payment settlement, shipping execution, or email delivery from any
-of these coordination outcomes.
+1. **Finance owns coordination only:** Finance tracks whether post-checkout steps (basket cleanup and notification triggers) succeeded, failed, or timed out, while Ordering owns the Order's business status.
+2. **Basket cleanup success:** Finance notifies Ordering that cleanup succeeded. Ordering logs that result without completing the Order, and Finance keeps its workflow open waiting for Ordering's explicit completion or cancellation decision.
+3. **Basket cleanup failure:** Finance closes its workflow with a basket-deletion failure outcome and informs Ordering. Ordering may soft-delete the matching Order record if it exists, without changing the Order's business status.
+4. **Coordination timeout exhaustion:** When Finance exhausts its placement retries, it marks only its internal workflow as cancelled—not the Order itself.
+5. **Authoritative Order updates:** Only when Ordering publishes an explicit completed or cancelled status update does Finance close its workflow as completed or cancelled and request the corresponding customer notification (when recipient details allow).
 
-The separate states may legitimately diverge: an Order can remain New after
-Finance marks its saga cancelled, and an Order can remain New after Finance
-reports a basket deletion failure. A soft deletion of an Order by Ordering is
-also distinct from changing its business status.
+## 4. Trade-offs & Lessons Learned
 
-## Consequences
+### Alternatives Considered
 
-- Consumers have one authority for Order status: [[service|order-api]].
-- An Order can remain New while its Finance saga has failed or been cancelled.
-  Soft deletion is also separate from the Order's status.
-- A timeout-triggered cancellation email is not evidence that Ordering
-  cancelled the purchase; support diagnosis must inspect the owning states.
-- Cross-service recovery cannot be implemented by directly editing another
-  service's database or treating Finance's state names as Order transitions.
-- Monitoring and support tools must display Finance saga state and Order
-  status as separate facts, correlated by Order ID.
-- A successful basket-cleanup result means only that cleanup was reported; it
-  neither completes the Order nor ends the saga before an explicit Order
-  lifecycle event.
-- Notification commands are requests to another system and do not establish
-  delivery, payment settlement, or fulfillment.
+- **Mapping Finance cancellation directly to Order cancellation:** Would make status labels look uniform, but would escalate a local retry timeout into a business Order cancellation without Ordering's approval or workflow.
+- **Treating basket deletion success as Order completion:** Clearing a shopping basket is only one step of post-checkout coordination and does not prove the Order is complete.
+- **Merging Finance and Order lifecycles into one shared state machine:** Would reduce apparent state differences, but would tightly couple ownership and failure recovery across independently deployed systems.
 
-## Alternatives considered
+### Operational Realities & Support Lessons
 
-### Map Finance cancellation directly to Order cancellation
+- **Divergent states are normal:** An Order can legitimately remain in a new state while its Finance workflow has failed or been cancelled. Likewise, Ordering soft-deleting an Order record is distinct from changing its business status.
+- **Side-by-side observability required:** Monitoring dashboards and support tooling must show Finance workflow state and Order status as separate facts correlated by Order ID, never treating Finance state names as Order transitions.
+- **Avoid false inferences:** A timeout-triggered cancellation email does not confirm that Ordering cancelled the purchase, and none of Finance's coordination outcomes imply payment settlement, shipping execution, or confirmed email delivery.
+- **Respect service boundaries during recovery:** Cross-service incidents must be resolved through explicit workflows and messages—never by manually editing another service's database.
 
-This would make the names appear consistent but would promote a local retry
-outcome into an Order business transition without Ordering's authority or
-workflow.
+## 5. Technical Reference
 
-### Treat basket deletion success as Order completion
+### Ownership & Command Mapping
 
-Basket cleanup is only one part of checkout coordination. It does not prove
-that Ordering completed the Order, so Finance continues to wait for the
-authoritative status event.
+| Outcome / Event                          | Finance Action & Saga State                                                                        | Ordering Effect                                                                                                |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Basket cleanup succeeds                  | Sends [[command\|DeleteBasketCompleteCommand]]; saga stays open awaiting Order lifecycle event.    | Logs cleanup result without completing the Order.                                                              |
+| Basket cleanup fails                     | Sets saga to `BasketDeletionFailed`, completes saga, sends [[command\|DeleteBasketFailedCommand]]. | Soft-deletes matching Order if it exists, without changing its business status (e.g., Order may remain `New`). |
+| Timeout retries exhausted                | Sets saga to `Cancelled`, completes saga; does not cancel the Order.                               | Order status unaffected (can remain `New`).                                                                    |
+| Explicit Order completed/cancelled event | Completes corresponding saga handler and requests notification if recipient details permit.        | Authoritative status owned by [[service\|order-api]].                                                          |
 
-### Merge Finance and Order lifecycle into a shared state machine
+### Key Implementation Rules
 
-This could reduce apparent state divergence, but would couple ownership and
-recovery across independently deployed systems. The current boundary keeps
-each system responsible for its own state and communicates through messages.
+- **Authoritative source:** [[service|order-api]] is the single authority for Order completion and cancellation; related decision recorded in `adr-003-separate-order-status-from-finance-saga` (`1.0.0`).
+- **Non-implication guarantee:** Coordination outcomes (`DeleteBasketCompleteCommand`, `DeleteBasketFailedCommand`, saga `Cancelled`, or notification commands) do not establish payment settlement, shipping execution, or email delivery.

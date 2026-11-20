@@ -2,21 +2,43 @@
 summary: Rename an existing category and handle missing-resource responses.
 ---
 
+## 1. Context & Problem
+
+Client developers integrating catalog administration screens need clear examples of how to rename an existing category and how to distinguish between a successful empty confirmation and a missing-record error.
+
+## 2. Business Value
+
+- **Predictable client integration**: Reduces trial-and-error when building admin interfaces for taxonomy management.
+- **Resilient error handling**: Helps teams avoid treating missing-category errors as successful updates or attempting to read data from an empty success reply.
+
+## 3. How It Works
+
+The client sends the category's unique identifier together with its replacement display name.
+
+When the update succeeds, the catalog returns an empty confirmation, and the client treats that acknowledgement as completion without expecting a response body. If the identifier does not match any known category, the catalog signals that the category was not found so the client can surface an error instead of assuming the rename succeeded.
+
+## 4. Trade-offs & Lessons Learned
+
+- **No response body on success**: Clients must not attempt to parse a body after a successful update; any UI state refresh should use the submitted name or re-fetch the category list.
+- **Strict identifier matching**: Because updates rely on an exact unique identifier, stale client references to deleted categories result in a not-found error rather than silently creating a new category.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Update an existing category
+### 1. Update an existing category
 
 Send the category UUID with its replacement display name. The API returns `204 No Content` when the update succeeds.
 
-### Payload details
+#### Payload details
 
 - `id` identifies the category to update and must be a valid UUID.
 - `name` is required and must be non-empty.
 - A `204` response has no response body.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +48,7 @@ const response = { status: 204, body: null };
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Treat the update as complete when the API returns `204`; do not attempt to parse a response body.
 
@@ -62,6 +84,6 @@ if (!response.ok) {
 
 ---
 
-## 2. Handle a missing category
+### 2. Handle a missing category
 
 If the UUID is not known to the Catalog, the API returns `404` with problem details. Do not treat this response as a successful update.

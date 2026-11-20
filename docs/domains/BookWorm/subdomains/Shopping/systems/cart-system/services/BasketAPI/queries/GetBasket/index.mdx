@@ -18,22 +18,44 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Retrieves a [[entity|basket]]. The operation defines no query or path parameters.
+Before updating quantities or proceeding to checkout, shoppers need to review the contents of their current [[entity|basket]]—including selected quantities alongside up-to-date book titles, regular prices, and sale prices. Because the shopping basket capability intentionally stores only item identifiers and quantities rather than duplicating product catalog records, reading a basket must combine stored cart state with current catalog presentation details.
+
+## 2. Business Value
+
+- **Up-to-date cart presentation:** Displays live book names, regular prices, and promotional prices so shoppers see accurate pricing before checkout.
+- **Simple, secure storefront calls:** Requires no basket identifier or query parameters from the caller, preventing customers from reading another shopper's cart.
+- **Clean domain ownership:** Keeps product metadata owned by the catalog capability rather than storing stale copies inside the basket.
+
+## 3. How It Works
+
+1. A caller requests the authenticated customer's current [[entity|basket]] without providing any path or query parameters.
+2. If no basket exists for the customer, the service reports that the basket could not be found.
+3. When the basket exists and contains items, the basket service gathers the unique book identifiers and requests current book details from the product catalog service in a single batch lookup.
+4. The service merges the stored basket identifier and item quantities with the returned catalog presentation details and delivers the complete basket view to the caller.
+
+## 4. Trade-offs & Lessons Learned
+
+- **On-read enrichment vs. cached catalog copies:** Fetching product details dynamically on each read ensures catalog ownership and fresh pricing, at the cost of depending on catalog availability when a basket is non-empty.
+- **Batching distinct item identifiers:** Deduplicating book identifiers into one batch lookup avoids repeated round-trips for multi-item baskets.
+- **Optional presentation fields:** Because book names or sale prices may be absent when no discount applies or catalog data is missing, storefront interfaces should handle missing display fields gracefully.
+
+## 5. Technical Reference
+
+Retrieves the current customer's [[entity|basket]] (`GET /api/v1/baskets`). The operation defines no documented request body, query parameters, or path parameters.
 
 <NodeGraph />
 
-## Query parameters and response
+### Query parameters and response
 
-This query has no documented request body or parameters. A `200` response
-returns an `application/json` `CustomerBasketDto`, containing an `id` and
-`items`. `404` returns `application/problem+json` with `ProblemDetails`.
+- **Parameters:** None (customer scope is resolved from the caller context).
+- **`200 OK` (`application/json`):** Returns a `CustomerBasketDto` containing `id` (`string | null`) and `items` (each item requires `id` and `quantity` as `int32` integer or string, with optional `name`, `price`, and `priceSale`).
+- **`404 Not Found` (`application/problem+json`):** Returns `ProblemDetails` when no basket is found.
 
-When the basket has items, BasketAPI enriches them by sending the
-[[query|GetBooksGrpc]] gRPC query to Catalog with the distinct item IDs.
+When the basket has items, BasketAPI enriches them by sending the [[query|GetBooksGrpc]] gRPC query to Catalog with the distinct item IDs.
 
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

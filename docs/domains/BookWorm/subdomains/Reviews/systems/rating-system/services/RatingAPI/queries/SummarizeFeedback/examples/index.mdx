@@ -2,11 +2,34 @@
 summary: Generate a feedback summary, handle a book with no feedback, and recognize not-found responses.
 ---
 
+## 1. Context & Problem
+
+Consuming applications displaying book review summaries must handle three distinct outcomes cleanly: a book with enough feedback to generate a rich takeaway, a newly listed book with zero reviews, and a missing book or failed lookup. Without clear examples covering all three paths, client teams can mistakenly treat an error response as "no reviews yet," hiding real operational failures or showing confusing messages to shoppers.
+
+## 2. Business Value
+
+- **Clear storefront messaging**: Separating "no reviews yet" from "not found" ensures customers see appropriate empty-state prompts rather than misleading error banners—and prevents broken links from looking like unreviewed books.
+- **Faster client integration**: Ready-to-use examples clarify both required and optional response fields before frontend work begins.
+- **Predictable resilience**: Explicit examples show consumer teams how to check outcomes and handle missing or optional fields safely.
+
+## 3. How It Works
+
+1. **Generating a summary**: The caller requests a summary for a specific book identifier. When reviews exist, the response includes the synthesized summary narrative, classification label, average rating, review count, supporting evidence, and confidence indicator.
+2. **Handling a book with no feedback**: When a book has zero reviews, the request succeeds immediately without triggering the summarization workflow, returning a standard message stating no feedback was found, a review count of zero, no average rating, and empty evidence and confidence fields.
+3. **Recognizing a not-found outcome**: When the requested book or summary cannot be found, the service returns a structured not-found error. Callers must recognize this as a failure or missing resource rather than treating it as a valid empty-review state.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Defensive handling of optional fields**: Because only the summary text is strictly required across all contract variants, consuming clients should treat classification, metrics, evidence, and confidence as optional when rendering UI cards.
+- **Explicit client error branching**: Checking specifically for not-found and unexpected failure responses prevents client applications from silently masking missing catalog entries or downstream workflow errors as "no feedback."
+
+## 5. Technical Reference
+
+### Summarize feedback
+
 <Columns cols={2}>
 
 <Column>
-
-## 1. Summarize feedback
 
 Provide the Catalog book identifier in the `id` path parameter. A successful
 request returns `200 OK` with a generated summary.
@@ -79,7 +102,7 @@ console.log(result.summary);
 
 ---
 
-## 2. Handle a book with no feedback
+### Handle a book with no feedback
 
 A book with no feedback returns `200 OK` without invoking the model workflow.
 
@@ -98,7 +121,7 @@ A book with no feedback returns `200 OK` without invoking the model workflow.
 
 </CodeGroup>
 
-## 3. Handle a not-found response
+### Handle a not-found response
 
 The endpoint also declares `404 Not Found` with problem details. Do not
 interpret a not-found response as a successful no-feedback result.

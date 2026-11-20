@@ -20,20 +20,45 @@ styles:
   icon: /icons/database/redis.svg
 ---
 
+## 1. Context & Problem
+
+When multiple Ordering service instances run side by side, two problems arise: customers or client apps can accidentally submit duplicate order requests at the exact same moment, and repeatedly fetching book details or administrative dashboard summaries from other services adds unnecessary latency and load.
+
+Ordering needs a fast, shared coordination and caching layer across all running instances—while keeping clear boundaries so temporary operational data is never mistaken for permanent customer or order records.
+
+## 2. Business Value
+
+- **Prevents accidental duplicate orders:** Buyer-level coordination locks and repeat-request detection protect customers from creating multiple identical orders during rapid clicks or network retries.
+- **Faster checkout and reporting:** Caching book batch lookups and administrative dashboard summaries reduces wait times and eases load on upstream Catalog services.
+- **Safe horizontal scaling:** Multiple instances of the Ordering service share the same coordination state and invalidate cached items together.
+- **Zero data-loss impact on flush:** Because permanent orders live in [[container|order-database]], clearing or restarting the cache never erases an accepted purchase.
+
+## 3. How It Works
+
+Order Cache represents [[service|order-api]]'s logical slice of a shared in-memory cache service (which is also shared by other BookWorm services rather than being dedicated solely to Ordering). It supports three operational capabilities:
+
+1. **Buyer-scoped order creation locks:** After reading the shopping basket and looking up book prices from Catalog, Ordering acquires a short-lived lock specific to that customer right before saving the new order. If another process is already saving an order for that customer, the concurrent attempt is rejected. The lock is released as soon as the save completes or fails. It does not cover earlier network reads, order completion/cancellation, or replace database safety checks.
+2. **Duplicate-request detection:** For protected endpoints, Ordering records a temporary marker before running the request handler. If the same request arrives again within the one-hour window, it is rejected as a duplicate. Because the marker records that a request _started_ rather than proving it succeeded, a failed request can still leave a marker behind until it expires.
+3. **Short-lived response caching:** Ordering temporarily caches batched book details (defaulting to 30 minutes) and administrative dashboard summaries (15 seconds) across a local memory tier and the shared cache tier. When an order is accepted, Ordering writes the resolved price permanently into [[container|order-database]] rather than relying on cached prices later.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Coordination dependency, not just a speed boost:** Although Order Cache does not own business records, its availability directly affects concurrency locking and repeat-request detection. Losing cache data does not delete persisted orders, but it temporarily removes duplicate-request protection for active markers within their expiration window.
+- **Non-atomic duplicate checks:** Checking for an existing request marker and writing a new one are two separate steps, so markers act as practical duplicate protection rather than an atomic exact-once guarantee.
+- **Potentially stale catalog cache:** Cached book responses can hold earlier prices until they expire or refresh; accepted orders therefore always store their checkout price permanently in [[container|order-database]].
+- **Shared infrastructure limits:** Because multiple services share the same underlying cache resource, key naming and expiration discipline matter to avoid noisy-neighbor or eviction issues.
+
+## 5. Technical Reference
+
 <NodeGraph />
 
-## Overview
+### Runtime & Connection Sharing
 
-Order Cache documents [[service|order-api]]'s logical use of the shared Redis
-resource. It is not a dedicated Redis server: the AppHost supplies the same
-Redis resource to multiple services, running it as a local container in
-development and using Azure Managed Redis when deployed.
+- **Deployment topology:** Logical use of the shared AppHost Redis resource by [[service|order-api]]—runs as a local container in development and Azure Managed Redis when deployed.
+- **Client wiring:** Ordering reuses a single `IConnectionMultiplexer` for the Redis distributed locker, the request manager, and FusionCache's distributed L2 cache and Redis backplane (paired with an in-process L1 cache and JSON serialization).
+- **Shared default TTL:** Configured via `Caching:Expiration`; individual features (such as the dashboard) may override with shorter durations.
 
-Ordering reuses one `IConnectionMultiplexer` for the Redis distributed locker,
-the request manager, and FusionCache's distributed cache and backplane.
-[[container|order-database]] remains authoritative for Buyer and Order data.
-
-## Coordination and cached data
+### Logical Keys, Locks & Behavior
 
 | Usage                    | Logical key or scope                                      | Behavior                                                                                                                                                           |
 | ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -42,44 +67,9 @@ the request manager, and FusionCache's distributed cache and backplane.
 | Catalog book batch       | `books:{sorted comma-separated book IDs}`                 | Cached gRPC response used to resolve checkout books and prices, tagged `books` and `catalog`. The default configured duration is 30 minutes.                       |
 | Administrative dashboard | `ordering:dashboard:v1`                                   | Aggregated Ordering and Catalog response cached for 15 seconds.                                                                                                    |
 
-These are application-level keys and lock names, not a claim about
-FusionCache's final Redis key encoding.
+_Note: These are application-level keys and lock names, not a claim about FusionCache's final Redis key encoding._
 
-## Lock scope and failure behavior
+### Handler & Filter Semantics
 
-Order creation reads the basket and resolves Catalog books before acquiring
-the Buyer-scoped lock. The lock covers adding the Order and saving the EF Core
-unit of work; it does not cover the earlier network reads or the complete
-checkout workflow.
-
-If acquisition returns no lock handle, the handler throws an
-`InvalidOperationException` stating that another process is already creating
-an Order. Release is attempted in `finally`, including on a failed write.
-The lock does not serialize completion or cancellation and does not replace
-the database concurrency token or endpoint idempotency checks.
-
-## Idempotency behavior
-
-Endpoints using the idempotency filter check for an existing request marker
-and return `409 Conflict` when it is present. A new marker is stored
-**before** the endpoint handler runs, not after a successful Order transaction.
-It records a request, not a cached response or proof of success.
-
-The existence check and marker write are separate Redis operations. These
-markers are therefore not an atomic exactly-once guarantee. A failed request
-can leave its marker until the one-hour expiration, and loss of Redis data
-can remove duplicate-request detection during that window.
-
-## Cache behavior and operations
-
-- FusionCache uses an in-process L1, a Redis-backed L2, JSON serialization,
-  and a Redis backplane to coordinate cache changes across instances.
-- The shared default cache duration is configured through `Caching:Expiration`;
-  the dashboard supplies its own shorter duration.
-- Cached Catalog responses are non-authoritative and can retain earlier
-  prices until refreshed. An accepted Order stores the resolved price in
-  [[container|order-database]] rather than referring back to the cache.
-- Redis is also coordination infrastructure, not only a disposable
-  performance cache. Availability affects lock acquisition and idempotency
-  operations; clearing entries can affect concurrent writes and retry
-  detection without deleting persisted Orders.
+- **Lock scope & failure:** Order creation reads the basket and resolves Catalog books before acquiring the Buyer-scoped lock. The lock covers adding the `Order` and saving the EF Core unit of work (not earlier network reads or the full checkout workflow). If acquisition returns no lock handle, the handler throws an `InvalidOperationException` stating that another process is already creating an Order. Release is attempted in `finally`, including on failed writes. Does not serialize completion/cancellation or replace the database concurrency token or endpoint idempotency checks.
+- **Idempotency filter:** Checks for an existing marker and returns `409 Conflict` when present. Stores the new marker **before** the endpoint handler runs, not after a successful Order transaction; because check and write are separate Redis operations, they do not form an atomic exactly-once guarantee.

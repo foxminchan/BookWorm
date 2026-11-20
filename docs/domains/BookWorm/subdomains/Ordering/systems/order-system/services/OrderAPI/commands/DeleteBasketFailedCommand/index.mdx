@@ -14,31 +14,37 @@ owners:
 schemaPath: schema.json
 ---
 
-## Overview
+## 1. Context & Problem
 
-Finance publishes this command when basket cleanup fails.
-[[service|order-api]] soft-deletes the matching [[entity|order]], if it
-still exists, without changing its business status. This recovery does not
-represent an Order transition to Cancelled.
+During checkout, creating an order and clearing the customer's shopping basket happen across separate business domains. If the Finance process detects that cleaning up the basket failed after an order was already created, leaving that order active creates inconsistent customer records and breaks checkout recovery. The Ordering domain needs a clear recovery signal from Finance so [[service|order-api]] can cleanly remove the affected [[entity|order]] from active customer and operational views.
 
-This command is distinct from [[event|BasketDeletedFailedIntegrationEvent]],
-which Basket publishes as its own deletion failure result.
+## 2. Business Value
 
-## Channel
+- **Consistent Customer Experience**: Prevents orphaned or unrecoverable orders from appearing in active order histories when basket cleanup fails.
+- **Accurate Reporting & Auditability**: Soft-deleting the record preserves the order's historical trail and original business status rather than misrepresenting it as a business cancellation.
+- **Clear Cross-Team Ownership**: Separates Finance-driven recovery coordination from Basket's own failure notifications, reducing ambiguity during incident triage.
 
-[[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]]
+## 3. How It Works
 
-## Schema
+1. When Finance encounters a failure during basket cleanup for a checkout workflow, it sends a basket-deletion-failed command to Ordering.
+2. [[service|order-api]] looks up the matching [[entity|order]] referenced by the notification.
+3. If the order still exists, [[service|order-api]] soft-deletes it so it is excluded from active views while keeping its business status unchanged.
+4. If the order no longer exists, no additional state change occurs.
 
-The payload contains `id`, `creationDate`, `basketId`, nullable `email`,
-`orderId`, and `totalMoney`. All fields, including `email`, are required
-by the AsyncAPI schema.
+## 4. Trade-offs & Lessons Learned
 
-The schema describes camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope, not the complete transport envelope.
+- **Soft Delete vs. Cancelled Status**: Soft-deleting without changing the business status preserves the distinction between a technical checkout recovery and a genuine business cancellation, helping analytics and customer support teams interpret records accurately.
+- **Idempotent Recovery**: Checking whether the order still exists before soft-deleting prevents duplicate recovery messages from causing failures.
+- **Distinct Failure Signals**: Finance's recovery command serves a different coordination purpose than Basket's own deletion failure announcement; operations and monitoring teams should keep these two signals distinct.
+- **Required Contact Context**: Requiring customer email details in the contract (even when empty) ensures downstream support or audit reviews can always tell whether contact information was available at the time of failure.
+
+## 5. Technical Reference
+
+- **Handling Service & Entity**: [[service|order-api]] consumes this command from Finance to soft-delete the matching [[entity|order]] if it still exists, without transitioning the Order to Cancelled.
+- **Distinct Event**: This command is distinct from [[event|BasketDeletedFailedIntegrationEvent]], which Basket publishes as its own deletion failure result.
+- **Channel**: [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]]
+- **Schema & Envelope**: The payload contains `id`, `creationDate`, `basketId`, nullable `email`, `orderId`, and `totalMoney`. All fields, including `email`, are required by the AsyncAPI schema. The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
 
 <SchemaViewer file="schema.json" title="Failed basket cleanup command payload" maxHeight="500" />
-
-## Architecture
 
 <NodeGraph />

@@ -18,22 +18,39 @@ sidebar:
   badge: "PATCH"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Updates the address on the authenticated customer's [[entity|buyer]] profile.
-The operation does not accept a Buyer ID; the service identifies the Buyer
-from the authenticated request.
+Customers need a reliable way to update their delivery or billing address as their details change. If address updates required passing an explicit customer identifier or re-submitting an entire profile, requests would risk unauthorized changes to other accounts or unnecessary friction during maintenance.
+
+## 2. Business Value
+
+- **Stronger Account Security**: Resolves the customer directly from their authenticated session rather than trusting a user-supplied account identifier, preventing cross-account tampering.
+- **Improved Fulfillment Accuracy**: Ensures street, city, and province are captured together so downstream ordering and delivery workflows receive complete, consistent location details.
+- **Self-Service Efficiency**: Lets customers maintain their own address details directly, reducing delivery exceptions and manual support requests.
+
+## 3. How It Works
+
+1. An authenticated customer submits an updated street, city, and province to [[service|order-api]].
+2. The service identifies the customer's [[entity|buyer]] profile directly from the authenticated request context—no customer identifier is provided in the request.
+3. The service checks that all required address fields are present and valid, and verifies that the customer profile exists.
+4. When validation succeeds and the profile is found, the address is updated and the refreshed customer profile is returned; otherwise, the request is rejected with a clear validation or missing-profile outcome.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Session-bound identity**: Deriving the customer from the authenticated session eliminates the risk of updating another customer's address, at the trade-off that administrators or support staff cannot use this operation on a customer's behalf.
+- **All-or-nothing address fields**: Requiring street, city, and province together prevents partial updates that could leave an address in an inconsistent or unroutable state.
+- **Existing profile prerequisite**: Because this capability updates an existing [[entity|buyer]] record, a profile must already exist before an address change can succeed.
+
+## 5. Technical Reference
+
+- **Endpoint**: `PATCH /api/v1/buyers/address`
+- **Request Body (`application/json`)**: Requires `street`, `city`, and `province`.
+- **Responses**:
+  - `200 OK`: Returns the updated `BuyerDto`.
+  - `400 Bad Request`: Indicates a validation failure.
+  - `404 Not Found`: Indicates that the authenticated Buyer profile does not exist.
 
 <NodeGraph />
-
-## Contract
-
-Send an `application/json` body containing the required `street`, `city`, and
-`province` fields. `200 OK` returns the updated `BuyerDto`. `400 Bad Request`
-indicates validation failure, and `404 Not Found` indicates that the Buyer
-profile does not exist.
-
-## Schema
 
 <SchemaViewer
 	file="schema.json"

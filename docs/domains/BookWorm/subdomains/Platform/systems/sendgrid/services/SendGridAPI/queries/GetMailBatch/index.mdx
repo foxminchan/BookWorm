@@ -20,14 +20,32 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `GetMailBatch` query validates a mail batch identifier created by
-[[command|CreateMailBatch]]. A successful response confirms that [[system|sendgrid]]
-recognizes the identifier; it does not confirm that the batch has been
-associated with a send or that any message has been delivered.
+When BookWorm groups related email submissions for scheduled delivery using [[system|sendgrid]] mail batches, a workflow may pause or resume across time. Before attaching new messages to a previously created batch, the platform needs a reliable way to verify that the external provider still recognizes that batch identifier, while ensuring teams do not confuse a valid batch reference with completed email delivery.
 
-## Request
+## 2. Business Value
+
+- **Safe workflow resumption:** Verifies that a stored batch reference is valid before downstream email submissions depend on it.
+- **Clear operational semantics:** Distinguishes between "the batch identifier exists" and "emails in this batch were sent or delivered," preventing misleading status assumptions.
+- **Actionable failure diagnosis:** Separates invalid batch identifiers from authentication, permission, or provider availability issues so operators can respond appropriately.
+
+## 3. How It Works
+
+1. **Request batch verification:** An authenticated caller asks [[system|sendgrid]] to verify a specific batch identifier originally issued during batch creation.
+2. **Confirm identifier recognition:** When the provider recognizes the identifier, it echoes the batch identifier back to confirm its existence—without reporting whether any emails have been attached, submitted, or delivered.
+3. **Reject invalid or unauthorized lookups:** If the batch identifier is invalid, or if the caller lacks valid credentials or permissions, the provider rejects the lookup so the calling workflow can handle the state or configuration error.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Read-only existence check:** Keeping this query focused solely on validating the batch identifier provides a lightweight pre-flight check, but means teams cannot rely on it to monitor message-level delivery progress.
+- **Explicit error differentiation:** Distinguishing an invalid batch identifier from authentication or provider-side failures simplifies troubleshooting, provided callers treat missing or invalid identifiers as workflow errors rather than empty successes.
+
+## 5. Technical Reference
+
+The `GetMailBatch` query (`GET /v3/mail/batch/{batch_id}`) validates a mail batch identifier created by [[command|CreateMailBatch]]. A successful response confirms that [[system|sendgrid]] recognizes the identifier; it does not confirm that the batch has been associated with a send or that any message has been delivered.
+
+### Request
 
 Provide the batch identifier as the `batch_id` path parameter in an
 authenticated request:
@@ -42,7 +60,7 @@ curl -X GET \
 
 </CodeGroup>
 
-## Response
+### Response
 
 <CodeGroup dropdown>
 
@@ -54,11 +72,11 @@ curl -X GET \
 
 </CodeGroup>
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
 
-## Response and failures
+### Response and failures
 
 - `200 OK` returns the valid batch identifier.
 - `400 Bad Request` indicates an invalid batch identifier.
@@ -66,5 +84,7 @@ curl -X GET \
 - `403 Forbidden` indicates that the caller is not allowed to inspect the batch.
 - `405 Method Not Allowed` indicates an unsupported HTTP method.
 - `500 Internal Server Error` indicates a provider-side failure.
+
+### Architecture
 
 <NodeGraph />

@@ -2,11 +2,35 @@
 summary: Publish and consume the failed basket deletion outcome.
 ---
 
+## 1. Context & Problem
+
+Delivery teams implementing checkout compensation need a clear example of how a failed basket cleanup is published and how the ordering workflow handles the failure—including when the target order is already missing.
+
+## 2. Business Value
+
+- **Consistent recovery wiring**: Shows teams how failed cart cleanup triggers order recovery across service boundaries.
+- **Resilient error handling**: Demonstrates how missing orders are safely ignored so duplicate or out-of-order failure notifications do not cause processing errors.
+- **Preserved recovery context**: Keeps the order reference, basket reference, purchase total, and optional email together for downstream follow-up.
+
+## 3. How It Works
+
+1. When checkout cleanup fails to delete the submitted basket, the basket service emits a failure notification carrying the order reference, basket reference, optional customer email, and purchase total.
+2. The messaging platform routes the notification to the failure stream.
+3. The ordering workflow receives the notification and looks up the matching order.
+4. If the order exists, it is marked for removal along the recovery path; if no matching order exists, the step exits safely without making changes.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Safe handling of missing orders**: Treating an absent order as a safe no-op prevents repeated retry errors when failure notifications arrive more than once or after the order was already removed.
+- **Nullable email expectation**: Downstream notification handlers must account for cases where no customer email is present on the failure payload.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish failed cleanup
+### Publish failed cleanup
 
 Basket publishes this event when the checkout workflow cannot delete the
 submitted basket. Wolverine routes it to
@@ -56,7 +80,7 @@ if (!basketDeleted)
 
 ---
 
-## Consume the failure outcome
+### Consume the failure outcome
 
 Ordering consumes the failure and marks the corresponding order for the
 recovery path. A missing order is treated as an idempotent no-op.

@@ -2,22 +2,44 @@
 summary: Update book metadata, relationships, pricing, and cover images.
 ---
 
+## 1. Context & Problem
+
+Integration teams and frontend developers frequently need concrete examples showing how to update specific parts of a book listing—such as adjusting pricing and relationships, removing an outdated cover image, or handling missing records—without inadvertently altering unrelated fields.
+
+## 2. Business Value
+
+- **Faster onboarding**: Gives delivery teams ready-to-use patterns for common catalog maintenance tasks.
+- **Fewer integration defects**: Clarifies how partial updates, cover removal, and missing-record errors behave so storefront and back-office clients handle responses reliably.
+
+## 3. How It Works
+
+Callers identify the target book with its unique identifier and include only the attributes they want to update, such as standard price, sale price, category, or author assignments. Omitted details remain unchanged on the listing.
+
+To remove a book cover without uploading a replacement, callers explicitly signal that the existing cover should be cleared. A successful update returns an empty confirmation, prompting the client to refresh its view of the book rather than reading data from the reply. If the specified book does not exist, the system reports a not-found error so the client can surface an appropriate message.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Empty confirmation requires client refresh**: Because updates return no body upon success, client applications must avoid parsing a response body and should refresh their local book view instead.
+- **Explicit cover removal**: Removing an image requires an explicit removal indicator rather than simply omitting the cover field, preventing accidental image deletion during metadata-only edits.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Update pricing and relationships
+### 1. Update pricing and relationships
 
 The command uses `multipart/form-data` so metadata and optional image changes can be submitted together. A successful update returns `204 No Content`.
 
-### Payload details
+#### Payload details
 
 - `id` is the only required field and identifies the book.
 - `price`, `priceSale`, `categoryId`, and `authorIds` replace the supplied values.
 - Omitted fields remain unchanged.
 - `isRemoveImage=true` removes the existing cover.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -27,7 +49,7 @@ const response = { status: 204, body: null };
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Refresh the book projection after `204 No Content`; do not attempt to parse a response body.
 
@@ -66,7 +88,7 @@ if (!response.ok) {
 
 ---
 
-## 2. Remove a cover image
+### 2. Remove a cover image
 
 Send the book `id` with `isRemoveImage=true`. The API returns `204` after the cover is removed.
 
@@ -89,6 +111,6 @@ if (!response.ok) {
 
 </CodeGroup>
 
-## 3. Handle a missing book
+### 3. Handle a missing book
 
 An unknown book UUID returns `404` with problem details.

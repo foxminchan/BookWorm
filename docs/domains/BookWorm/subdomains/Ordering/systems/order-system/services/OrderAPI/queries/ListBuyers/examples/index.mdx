@@ -2,7 +2,30 @@
 summary: List Buyer profiles using page index and page size.
 ---
 
-## 1. List Buyer profiles
+## 1. Context & Problem
+
+Frontend and integration developers building buyer-lookup screens or back-office directories need concrete request and response examples showing how to authenticate, request a specific page of buyer profiles, and handle optional profile fields.
+
+## 2. Business Value
+
+- **Faster integration onboarding**: Ready-to-use request and response examples reduce guesswork when connecting client applications to Ordering.
+- **Consistent paging behavior**: Demonstrating explicit page selection helps teams implement predictable multi-page directory views.
+- **Safer UI rendering**: Highlighting that buyer names and addresses can be empty prevents display bugs in customer-facing or administrative screens.
+
+## 3. How It Works
+
+1. The client attaches valid caller authorization credentials and specifies the desired page number and page size.
+2. Ordering verifies caller authorization and returns the requested page of buyer profiles containing each buyer's identifier, name, and address.
+3. The client renders the returned profiles and advances the page number when loading additional entries.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit page tracking on the client**: Because the response is a plain list of buyer profiles without total-page counts, client screens must track the current page number and inspect returned page sizes to control next-page navigation.
+- **Handling optional profile attributes**: Treating name and address as optional in client code prevents runtime errors when partial buyer records are returned.
+
+## 5. Technical Reference
+
+### 1. List Buyer profiles
 
 Use `PageIndex` and `PageSize` to select the page to return.
 

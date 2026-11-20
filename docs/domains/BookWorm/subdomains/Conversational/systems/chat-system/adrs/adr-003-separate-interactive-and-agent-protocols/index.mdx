@@ -22,60 +22,43 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-The customer-facing interactive workflow and agent-to-agent communication
-have different consumers and interaction models. The interactive workflow
-validates a customer request, coordinates local specialist handoffs, and
-formats a final answer. A2A clients discover and invoke individual agents
-through protocol-specific surfaces. Treating these as one undifferentiated
-endpoint would couple the user experience to the agent protocol surface and
-confuse workflow invocation with direct agent invocation.
+The customer-facing interactive chat experience and external agent-to-agent integrations serve different audiences and interaction models. The interactive customer workflow validates an incoming request, coordinates handoffs among local specialist agents, and formats a unified answer. In contrast, agent-to-agent clients discover and call individual agents directly.
 
-## Decision
+Treating both needs as a single undifferentiated entry point would tightly couple the customer chat experience to agent integration protocols and create confusion between invoking a full coordinated workflow and calling an individual specialist agent.
 
-[[service|chat-api]] (within [[system|chat-system]]) exposes the composed interactive workflow through AG-UI at `/ag-ui` and
-agent discovery separately at `/agents`. Per-agent A2A endpoints are mapped
-only for agents that register an A2A server. The host maps the documented
-JSON-RPC, HTTP JSON, and gRPC A2A surfaces; the per-agent HTTP A2A endpoints
-require authorization. Discovery identifies registered agents but does not
-grant permission to invoke them.
+## 2. Business Value
 
-An AG-UI request runs the composed local workflow; a direct A2A call targets
-an individual registered agent and does not implicitly execute
-`DecisionRouterExecutor`, specialist handoffs, or the final response formatter. Exposing one protocol does
-not imply that every local or remote agent participates in every protocol.
+- **Clear product boundaries:** Keeps the interactive shopper experience cleanly separated from external agent-to-agent interoperability.
+- **Stronger access governance:** Separating agent discovery from agent invocation ensures that listing available agents never implies permission to call them.
+- **Explicit capability exposure:** Only agents intentionally configured for external agent-to-agent use are exposed, preventing unintended direct access to internal workflow steps.
+- **Predictable client contracts:** Interactive applications receive full workflow orchestration, while agent clients get direct protocol-level access where supported.
 
-## Consequences
+## 3. How It Works
 
-- Interactive clients use the workflow endpoint while agent clients use the
-  protocol surface supported by the target agent.
-- Discovery, A2A server registration, and the set of agents actually hosted
-  by the service must remain aligned.
-- Clients invoking an individual agent cannot assume the composed workflow's
-  validation, routing, or response-formatting behavior will run for them.
-- A2A endpoints require the configured authorization behavior; discovery
-  alone does not grant access to invoke an agent.
-- Supporting multiple protocol bindings increases endpoint and client
-  compatibility work; protocol-specific behavior must be documented and
-  tested separately from the interactive workflow.
+The chat system provides distinct entry points depending on who is calling and what they need:
 
-## Alternatives considered
+- **Interactive customer workflow:** Customer-facing applications connect to the interactive workflow channel. Every request through this channel goes through request validation, coordinated handoffs to the appropriate local specialists, and final response formatting before returning an answer.
+- **Agent discovery:** A separate discovery directory lets agent-to-agent consumers see which agents are registered and available. Seeing an agent in this directory only identifies it—it does not grant permission to invoke it.
+- **Direct agent-to-agent calls:** Individual agents expose direct agent-to-agent access only when they explicitly opt in. Direct calls require proper authorization and run only the targeted specialist agent—they do not automatically trigger the full customer workflow's validation, routing, specialist handoffs, or final response formatting.
+- **Selective participation:** Supporting one communication style for a service does not mean every local or remote agent participates in every protocol.
 
-### Expose only the composed interactive workflow
+## 4. Trade-offs & Lessons Learned
 
-This would keep the public surface smaller, but would not provide direct
-agent-to-agent interoperability for consumers that need to discover and call
-an individual agent.
+- **Multiple protocol surfaces to maintain:** Supporting separate interactive and agent-to-agent bindings increases endpoint compatibility, documentation, and testing effort across protocols.
+- **Alignment discipline:** The agent discovery directory, explicit server registrations, and the set of agents actually hosted by the service must be kept in sync.
+- **No implicit workflow guarantees on direct calls:** External callers invoking an individual agent directly cannot assume that the customer workflow's validation, routing, or response-formatting behavior will run for them.
+- **Alternatives considered:**
+  - _Expose only the composed interactive workflow:_ Would keep the public surface smaller, but would block direct agent-to-agent interoperability for consumers needing to discover and invoke individual agents.
+  - _Use the agent-to-agent protocol as the customer chat endpoint:_ Would conflate calling a single agent with running the coordinated customer workflow, leaving local validation, specialist handoffs, and response formatting outside the implied contract.
+  - _Expose one protocol for every agent:_ Would simplify client assumptions, but would advertise capabilities for agents that are neither registered nor intended for direct invocation.
 
-### Use A2A as the customer chat endpoint
+## 5. Technical Reference
 
-This would conflate invocation of a single agent with the coordinated
-customer workflow. It would also leave the local validation, specialist
-handoffs, and response formatting outside the endpoint's implied contract.
-
-### Expose one protocol for every agent
-
-This would simplify client assumptions but would advertise capabilities that
-may not be registered or intended for direct invocation. Protocol exposure
-remains explicit per agent.
+- **Target scope:** [[service|chat-api]] within [[system|chat-system]] (including [[agent|qa-agent]] and explicitly registered A2A agents).
+- **Interactive workflow endpoint:** AG-UI mapped at `/ag-ui`. Executes the composed local workflow, including `DecisionRouterExecutor`, specialist handoffs, and the final response formatter.
+- **Agent discovery endpoint:** `/agents` exposes agent discovery metadata; discovery alone does not authorize invocation.
+- **Per-agent A2A endpoints:** Mapped only for agents that explicitly register an A2A server.
+- **Supported A2A protocol bindings:** JSON-RPC, HTTP JSON, and gRPC A2A surfaces mapped by the host.
+- **Security enforcement:** Per-agent HTTP A2A endpoints require configured authorization; direct A2A calls target the registered agent without implicitly executing `DecisionRouterExecutor`, specialist handoffs, or the final response formatter.

@@ -18,15 +18,38 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Lists [[entity|order]] summaries with pagination and optional filters.
-Non-administrators receive only their own Orders; the service scopes their
-results to the authenticated Buyer.
+Customers reviewing their purchase history and administrators monitoring store activity need to browse orders cleanly without retrieving every historical order at once, while enforcing strict privacy boundaries so shoppers only see their own orders.
+
+## 2. Business Value
+
+- **Data privacy by default**: Non-administrator callers are automatically restricted to their own [[entity|order]] records, preventing unauthorized cross-customer visibility.
+- **Targeted order lookup**: Optional filtering by order status and buyer helps customers track open orders and enables staff to focus on specific lifecycle stages or accounts.
+- **Predictable error handling**: Invalid filter values are caught immediately with clear validation feedback rather than returning misleading results.
+
+## 3. How It Works
+
+1. An authenticated caller requests a page of [[entity|order]] summaries, optionally specifying page size, page number, an order status filter (`New`, `Cancelled`, or `Completed`), or a buyer filter.
+2. If paging preferences are omitted, the service applies standard default page settings.
+3. Ordering enforces access scope: standard callers always receive only orders belonging to their own authenticated buyer profile, whereas administrators can filter across buyers.
+4. If any filter or paging input is invalid, the service rejects the request with validation details; otherwise, it returns the matching page of order summaries containing identifier, date, total amount, and status.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Server-enforced buyer scoping**: Scoping buyer filtering on the server for non-administrators guarantees privacy even if a caller supplies another buyer identifier, while requiring explicit administrative privileges for cross-customer queries.
+- **Compact summary payload**: Returning order summaries (identifier, date, total, and status) rather than full line-item details keeps list views fast, though callers must retrieve individual orders when line items are needed.
+- **Flat page response without total counts**: Returning a direct list of summaries keeps payloads lean, meaning client interfaces must infer pagination boundaries from returned item counts.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/orders`
+- **Status codes**: `200`, `400`
+- **Entities**: [[entity|order]]
 
 <NodeGraph />
 
-## Query parameters and response
+### Query parameters and response
 
 | Parameter   | Description                                                                                   | Default |
 | ----------- | --------------------------------------------------------------------------------------------- | ------- |
@@ -39,7 +62,7 @@ The OpenAPI contract documents the `200 OK` response as a JSON array of
 `OrderDto` values containing ID, date, total, and status. `400 Bad Request`
 returns validation problem details.
 
-## Query using CURL
+### Query using CURL
 
 <CodeGroup dropdown>
 
@@ -50,6 +73,6 @@ curl -H "Authorization: Bearer <access-token>" \
 
 </CodeGroup>
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="OrderDto array JSON Schema" maxHeight="500" search="true" />

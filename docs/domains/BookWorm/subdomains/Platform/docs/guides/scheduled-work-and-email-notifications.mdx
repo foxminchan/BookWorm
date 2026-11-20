@@ -12,15 +12,69 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Audience
+## 1. Context & Problem
 
-Teams integrating with Platform capabilities, and operators checking whether
-scheduled work or an email notification has progressed.
+In a distributed retail platform like BookWorm, critical background work—such as refreshing search indexes, retrying stalled customer emails, cleaning up completed email records, and confirming that background services are alive—must run reliably without manual intervention. At the same time, different teams own different parts of these workflows: the Platform team runs the central clock, while individual business systems (Catalog and Notification) own their own data and processing.
 
-## Scheduled jobs
+Without clear boundaries, teams integrating with Platform schedules or investigating delayed emails can easily misinterpret what a "completed" scheduled run means, accidentally inspect the wrong system, or bypass service boundaries by touching another domain's database directly. This guide provides shared clarity for integrating teams and operations staff on how scheduled work and durable email delivery fit together.
 
-The [[service|sheduler-dashboard]] exposes the Quartz job and trigger state.
-Current schedules are in UTC:
+## 2. Business Value
+
+- **Clear Operational Accountability:** Separates the responsibility of "triggering work on time" from "completing the business work," helping teams route issues to the right owners faster.
+- **Reliable Customer Communications:** Uses a durable waiting list for outbound emails so temporary email provider or network outages do not permanently lose customer notifications.
+- **Controlled System Load:** Processes maintenance and retries in bounded batches so recovery after an outage does not overwhelm downstream systems or mail providers.
+- **Data Privacy & Safety:** Keeps sensitive recipient details and message contents out of routine scheduler logs and encourages safe, boundary-respecting integrations.
+
+## 3. How It Works
+
+### How Platform Schedules Work
+
+The central Platform Scheduler operates on a unified UTC clock and runs four recurring jobs:
+
+- **Search Index Refresh (every 5 minutes):** Prompts the Catalog system to process any pending search index updates.
+- **Sent Email Cleanup (every hour):** Asks the Notification system to remove a bounded batch of emails that have already been sent.
+- **Unsent Email Retry (every hour):** Asks the Notification system to retry a bounded batch of emails that are still waiting to be sent.
+- **Health Heartbeat (every 30 seconds):** Records a regular pulse to confirm the scheduler service itself is running.
+
+If the scheduler is temporarily unavailable and misses a scheduled run, it catches up by running once as soon as it recovers, rather than replaying every missed interval back-to-back.
+
+Crucially, a "completed" status on the scheduler only confirms that the reminder or request was sent out—not that the receiving system finished the job. To verify real progress, teams must check the target system itself:
+
+- For search updates, check the pending-update backlog and index health in the Catalog system.
+- For email maintenance, check the unsent email count and mail delivery health in the Notification system.
+
+### How the Durable Email Lifecycle Works
+
+1. **Order Event Published:** When an order action requires an email, the Finance domain publishes an order instruction onto its designated messaging channel.
+2. **Validation & Queuing:** The Notification service reads the instruction. If the recipient email address is blank, it intentionally skips the message. Otherwise, it prepares the email and saves it as an unsent record in its own database.
+3. **Delivery Attempt:** The email sender transmits the message to the external mail provider. Once the provider accepts it, the record is marked as sent.
+4. **Hourly Maintenance:** Once per hour, the scheduler triggers both retry and cleanup tasks. Each run processes at most 100 records in sequence order.
+
+When retrying unsent emails, the Notification service selects all records that have not yet been marked as sent—there is no separate "failed" status. Cleanup only removes records already marked as sent and has no age-based retention window, so it must never be used to clear a backlog of unsent emails.
+
+### Integration & Operational Rules
+
+- Always submit email-triggering requests through the documented Finance channel rather than writing directly to the Notification database.
+- Never treat an email being marked as sent—or accepted by the mail provider—as proof that it reached the customer's inbox or that the underlying business order succeeded.
+- Keep sensitive customer addresses and message contents out of job metadata and routine logs.
+- Always check the receiving system's current state before manually retrying work to reduce the risk of sending duplicate emails.
+
+## 4. Trade-offs & Lessons Learned
+
+- **At-Least-Once Delivery Over Duplicate Prevention:** Retries can create a new record for each attempt, and ambiguous responses from an email provider (such as a timeout after the provider actually accepted the message) mean a customer may occasionally receive duplicate emails. This trade-off prioritizes not losing important notifications over strict once-only delivery.
+- **Triggering vs. Completion Separation:** The scheduler acts purely as a reliable alarm clock, keeping it decoupled from business logic. The trade-off is that operators must check two places—the scheduler and the target system—to confirm end-to-end completion.
+- **Bounded Batch Sizes (100 Records):** Limiting hourly retry and cleanup runs to 100 records protects the database and mail provider from sudden spikes, though large backlogs will drain gradually over multiple hourly cycles rather than all at once.
+- **No Built-in Retention Window on Cleanup:** Sent email records are eligible for hourly deletion immediately after being sent rather than being retained for historical auditing.
+
+## 5. Technical Reference
+
+### Audience
+
+Teams integrating with Platform capabilities, and operators checking whether scheduled work or an email notification has progressed.
+
+### Scheduled Jobs (Quartz / UTC)
+
+The [[service|sheduler-dashboard]] exposes the Quartz job and trigger state. Current schedules are in UTC:
 
 | Job                     | Cadence          | Work started                                                                   |
 | ----------------------- | ---------------- | ------------------------------------------------------------------------------ |
@@ -29,52 +83,31 @@ Current schedules are in UTC:
 | `ResendErrorEmailJob`   | Every hour       | Publishes a request for Notification to try a bounded batch of unsent records  |
 | `HeartbeatJob`          | Every 30 seconds | Emits Scheduler liveness to logs and telemetry                                 |
 
-Triggers use `FireOnceNow` misfire handling. A missed trigger can therefore
-become eligible for one immediate execution; it does not replay every missed
-interval.
+Triggers use `FireOnceNow` misfire handling. A missed trigger can therefore become eligible for one immediate execution; it does not replay every missed interval.
 
-Scheduler completion means the invocation or publication completed. It does
-not prove that the target system finished its work. Check the target system's
-own state:
+Scheduler completion means the invocation or publication completed. It does not prove that the target system finished its work. Check the target system's own state:
 
-- For Catalog vector work, check the pending-update queue and index health in
-  [[system|product-catalog-system]].
-- For email maintenance, check unsent outbox counts and SMTP health in
-  [[system|notification-system]].
+- For Catalog vector work, check the pending-update queue and index health in [[system|product-catalog-system]].
+- For email maintenance, check unsent outbox counts and SMTP health in [[system|notification-system]].
 
-## Email lifecycle
+### Email Lifecycle & Contracts
 
 1. Finance publishes an order command to its Kafka channel.
-2. Notification consumes the command. A blank email address is skipped;
-   otherwise, the service renders an email and stores an unsent record in
-   [[container|notification-database]].
-3. The sender submits the email over SMTP. A successful submission marks the
-   outbox record sent.
-4. Scheduler publishes the cleanup and resend integration events hourly.
-   Notification handles at most 100 records per event, ordered by sequence
-   number.
+2. Notification consumes the command. A blank email address is skipped; otherwise, the service renders an email and stores an unsent record in [[container|notification-database]].
+3. The sender submits the email over SMTP. A successful submission marks the outbox record sent (`is_sent`).
+4. Scheduler publishes the cleanup and resend integration events hourly. Notification handles at most 100 records per event, ordered by sequence number.
 
-[[event|ResendErrorEmailIntegrationEvent]] selects all unsent records; the name does
-not mean the database records a separate failed state. Resend can create a new
-outbox record for each attempt. Repeated commands, retries, or an ambiguous
-SMTP response can therefore lead to duplicate submissions.
+[[event|ResendErrorEmailIntegrationEvent]] selects all unsent records; the name does not mean the database records a separate failed state. Resend can create a new outbox record for each attempt. Repeated commands, retries, or an ambiguous SMTP response can therefore lead to duplicate submissions.
 
-Cleanup selects sent records only and has no retention cutoff. Do not use it
-to address a delivery backlog.
+Cleanup selects sent records only and has no retention cutoff. Do not use it to address a delivery backlog.
 
-## Working with these contracts
+### Working with These Contracts
 
-- Send order commands through the documented Finance channel; do not write to
-  the Notification database.
-- Do not use SMTP acceptance or `is_sent` as proof that an email reached a
-  recipient or that the order completed.
-- Keep sensitive recipient and message data out of job metadata and routine
-  logs.
-- Before manually retrying work, inspect the target state and account for
-  duplicate-submission risk.
+- Send order commands through the documented Finance channel; do not write to [[container|notification-database]].
+- Do not use SMTP acceptance or `is_sent` as proof that an email reached a recipient or that the order completed.
+- Keep sensitive recipient and message data out of job metadata and routine logs.
+- Before manually retrying work, inspect the target state and account for duplicate-submission risk.
 
-For ownership and failure semantics, see
-[[doc|engineering/platform-integration-boundaries]] and the
-[[system|scheduler-system]] and [[system|notification-system]] documentation.
+For ownership and failure semantics, see [[doc|engineering/platform-integration-boundaries]] and the [[system|scheduler-system]] and [[system|notification-system]] documentation.
 
 <Footer />

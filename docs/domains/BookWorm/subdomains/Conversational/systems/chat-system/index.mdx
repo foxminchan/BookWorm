@@ -45,82 +45,55 @@ badges:
     icon: LockClosedIcon
 ---
 
-## Context diagram
+## 1. Context & Problem
 
-The Chat System accepts customer requests, uses the shared
-[[system|mcp-tools]] server for Catalog-backed book data, and applies PII
-processing through the external [[system|data-privacy]] system. It discovers
-Rating agents through the Rating system's agent-discovery endpoint and can
-call a Rating-hosted agent through A2A. Protected agent-to-agent endpoints
-validate tokens using the external [[system|identity-provider]].
+Customers visiting an online bookstore often need help finding the right book, understanding store policies, or checking what readers think about a title before buying. Relying on a single general-purpose assistant makes it difficult to keep answers accurate, protect personal information, and stay within clear business boundaries.
+
+The Chat System solves this by hosting BookWorm's conversational assistant and coordinating a focused team of specialist agents:
+
+- **Store support** ([[agent|qa-agent]]): answers store policy and general service questions from approved policy context.
+- **Book discovery and guidance** ([[agent|book-agent]]): helps customers search the catalog, explore book details, get recommendations, and discuss feedback, supported by two dedicated research specialists ([[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]).
+- **Review and rating insights** ([[agent|rating-agent]]): provides review analysis hosted in the Rating system when a specific book is identified.
+
+To keep responsibilities clean, the Chat System connects to [[system|mcp-tools]] for live catalog facts, [[system|data-privacy]] to screen and redact personal information, and [[system|identity-provider]] to verify caller permissions. It acts strictly as an advisor and does not own catalog records, place orders, modify shopping baskets, or publish business events.
 
 <ContextDiagram />
 
-## Purpose and boundary
+## 2. Business Value
 
-The Chat System hosts the interactive conversational workflow,
-`DecisionRouterExecutor` (backed by `Microsoft-Decision-1`), and four
-specialist agents: [[agent|book-agent]], [[agent|qa-agent]],
-[[agent|book-catalog-researcher]], and
-[[agent|book-recommendation-researcher]]. The Decision Router selects
-Book Agent, QA Agent, or the Rating-hosted [[agent|rating-agent]]; the Book
-Agent can delegate complex Catalog work to its two researchers.
+- **Better customer discovery and self-service**: Shoppers get tailored book recommendations, catalog facts, and store-policy answers in one conversation without waiting for human support.
+- **Built-in safety and compliance**: Automatic screening filters out unsafe prompts, keeps conversations focused on English bookstore topics, and anonymizes personally identifiable information before and after an assistant responds.
+- **Trusted answers with clear accountability**: Book details come directly from the authoritative catalog rather than model memory, reducing inaccurate titles, authors, or descriptions.
+- **Protected transactional boundaries**: Because the assistant cannot modify baskets, place orders, or write customer reviews, conversational mistakes cannot corrupt business records.
+- **Modular team delivery**: Separating policy support, catalog research, recommendations, and rating analysis lets teams improve each specialist independently.
 
-The system provides assistance, not ownership of the business records it
-discusses:
+## 3. How It Works
 
-- Catalog remains authoritative for book details, categories, and authors.
-- The QA Agent uses supplied store-policy information; it has no live account,
-  Basket, or Order lookup or mutation tool.
-- Book feedback in a conversation is not a Reviews feedback record.
-- The workflow does not place Orders, modify Baskets, or publish business
-  events.
+When a customer sends a message to the Chat System, the request moves through a predictable multi-step flow:
 
-## Request workflow
+1. **Safety and length screening**: Empty messages and suspected prompt-manipulation attempts are blocked immediately before reaching any AI specialist. Overly long messages are trimmed to a safe length with a clear truncation notice.
+2. **Scope and routing check**: A routing step checks whether the message is in English and relevant to BookWorm. Out-of-scope or non-English requests receive a polite boundary response without invoking specialist agents.
+3. **Specialist selection**: In-scope requests are sent to the right specialist:
+   - Store policy and service questions go to [[agent|qa-agent]].
+   - Book searches, details, recommendations, and feedback discussions go to [[agent|book-agent]].
+   - Review or rating questions that already reference a specific book go directly to [[agent|rating-agent]].
+4. **Collaboration and research**: Specialists can hand off follow-up work when a customer's need shifts—for example, [[agent|qa-agent]] can pass a book-specific follow-up to [[agent|book-agent]], and [[agent|book-agent]] can hand review analysis to [[agent|rating-agent]] once a book is identified. For complex book requests, [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] can investigate catalog facts and preference matches in parallel.
+5. **Privacy filtering and response cleanup**: Every customer message and assistant reply passes through [[system|data-privacy]] to detect and anonymize personal details. Streaming replies are held briefly until privacy screening finishes. A final formatting step selects the final assistant reply, strips any leaked internal instructions, and normalizes spacing before returning the answer.
+6. **Session memory**: Conversation state and assistant memory are persisted between turns so customers can continue naturally across multiple messages.
 
-1. A request enters the interactive AG-UI workflow at `/ag-ui`.
-2. `InputValidationExecutor` rejects empty input and detected prompt-injection
-   patterns, consults the configured governance injection detector, and
-   truncates messages over 2,000 characters to a 1,900-character prefix plus a
-   truncation notice.
-3. `DecisionRouterExecutor` evaluates `is_english`, `is_in_scope`, and `route`
-   via `Microsoft-Decision-1`. Non-English and out-of-scope requests
-   short-circuit with a boundary response; in-scope questions route to Book
-   Agent, QA Agent, or Rating Agent (when a book catalog ID is already present).
-4. The QA Agent can hand book-specific follow-up work to the Book Agent. The
-   Book Agent can hand review/rating analysis to the Rating Agent once a book
-   catalog ID is resolved. For complex book requests, the two research
-   agents can run concurrently.
-5. `ResponseFormatterExecutor` selects the last assistant response, removes
-   detected system-prompt fragments, normalizes whitespace, and returns the
-   formatted response. Rejected input bypasses the agent handoff.
+## 4. Trade-offs & Lessons Learned
 
-The workflow persists conversation session state and Microsoft Foundry memory
-in [[container|chat-session-blob]] (Azure Blob Storage).
+- **Advisory boundary vs. conversational checkout**: Preventing the assistant from placing orders, changing baskets, or saving reviews eliminates accidental transactions, at the cost of requiring customers to complete purchases and review submissions through the store's dedicated workflows.
+- **Strict privacy enforcement vs. streaming latency**: Buffering streamed replies until privacy checks finish—and failing closed if privacy screening is unavailable—protects customer data, even though it slightly delays how quickly words appear and ties chat availability to privacy screening health.
+- **Scoped specialist permissions vs. broad tool access**: Giving policy support no catalog tools and restricting book specialists to read-only catalog lookup tools minimizes the blast radius of unexpected AI behavior, though adding new capabilities requires explicit allow-list updates.
+- **Context-based policy answers vs. live account lookups**: Answering policy questions from supplied store context keeps the assistant simple and safe, meaning it cannot look up individual customer accounts, baskets, or order statuses.
+- **Clear domain ownership**: Treating conversational book feedback separately from verified review records avoids mixing casual chat comments with official customer ratings.
 
-## Endpoints and protocols
+## 5. Technical Reference
 
-| Surface            | Purpose                                                                       | Access notes                                      |
-| ------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------- |
-| `/ag-ui`           | Interactive access to the composed Chat workflow.                             | Mapped as the AG-UI server endpoint.              |
-| `/agents`          | Agent discovery.                                                              | Exposes the registered agent discovery surface.   |
-| `/a2a/{agentName}` | Per-agent A2A JSON-RPC and HTTP JSON endpoints for agents with an A2A server. | Both mapped HTTP endpoints require authorization. |
-| gRPC A2A           | gRPC agent-to-agent access.                                                   | Mapped by the Chat host.                          |
+### Purpose, Boundaries, and Agent Responsibilities
 
-The Chat host registers Microsoft Foundry chat (`model-router`) and decision
-(`Microsoft-Decision-1`) deployments, and shares the `mcptools` MCP client
-across its book agents. The client uses service discovery, Streamable HTTP
-transport at `/mcp`, and token exchange. Chat's MCP client only loads the four
-Catalog tools declared by Book Agent and its researchers; it does not grant
-these agents every capability on the shared MCP server.
-
-Chat connects to the Rating-hosted agent through the A2A client integration
-and wires it into the Chat workflow alongside Book and QA sub-workflows
-(receiving direct routes from `DecisionRouterExecutor` when a book catalog ID
-is present, or handoffs from Book Agent). The A2A client supports gRPC,
-JSON-RPC, and HTTP JSON bindings, preferring them in that order.
-
-## Agent responsibilities
+The Chat System hosts the interactive conversational workflow, `DecisionRouterExecutor` (backed by `Microsoft-Decision-1`), and four specialist agents: [[agent|book-agent]], [[agent|qa-agent]], [[agent|book-catalog-researcher]], and [[agent|book-recommendation-researcher]].
 
 | Agent                                     | Responsibility                                                               | MCP access                                  |
 | ----------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------- |
@@ -129,23 +102,46 @@ JSON-RPC, and HTTP JSON bindings, preferring them in that order.
 | [[agent\|book-catalog-researcher]]        | Finds Catalog-backed book, author, category, and detail facts.               | Catalog tools                               |
 | [[agent\|book-recommendation-researcher]] | Finds a Catalog-backed shortlist matched to stated preferences.              | Catalog tools                               |
 
-## Privacy and governance
+Authoritative boundaries:
 
-QA and Book Agent register PII middleware directly. The two researchers inherit
-Book Agent's wrapped chat client. For non-empty text, the middleware calls
-[[service|PresidioAPI]] using [[command|AnalyzeText]] and, when PII is detected,
-[[command|AnonymizeText]]. It filters input and output; streaming output is
-buffered until filtering completes. Middleware failures propagate rather than
-bypassing privacy processing.
+- Catalog remains authoritative for book details, categories, and authors.
+- The QA Agent uses supplied store-policy information; it has no live account, Basket, or Order lookup or mutation tool.
+- Book feedback in a conversation is not a Reviews feedback record.
+- The workflow does not place Orders, modify Baskets, or publish business events.
 
-The Chat host also applies per-agent governance policies. QA has no permitted
-catalog tools; Book Agent and its researchers are allow-listed for their
-documented Catalog tools and delegation paths.
+### Request Workflow & Persistence
 
-## Architecture
+1. A request enters the interactive AG-UI workflow at `/ag-ui`.
+2. `InputValidationExecutor` rejects empty input and detected prompt-injection patterns, consults the configured governance injection detector, and truncates messages over 2,000 characters to a 1,900-character prefix plus a truncation notice.
+3. `DecisionRouterExecutor` evaluates `is_english`, `is_in_scope`, and `route` via `Microsoft-Decision-1`. Non-English and out-of-scope requests short-circuit with a boundary response; in-scope questions route to Book Agent, QA Agent, or [[agent|rating-agent]] (when a book catalog ID is already present).
+4. The QA Agent can hand book-specific follow-up work to the Book Agent. The Book Agent can hand review/rating analysis to the Rating Agent once a book catalog ID is resolved. For complex book requests, the two research agents can run concurrently.
+5. `ResponseFormatterExecutor` selects the last assistant response, removes detected system-prompt fragments, normalizes whitespace, and returns the formatted response. Rejected input bypasses the agent handoff.
+
+The workflow persists conversation session state and Microsoft Foundry memory in [[container|chat-session-blob]] (Azure Blob Storage).
+
+### Endpoints, Protocols & Integrations
+
+| Surface            | Purpose                                                                       | Access notes                                      |
+| ------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| `/ag-ui`           | Interactive access to the composed Chat workflow.                             | Mapped as the AG-UI server endpoint.              |
+| `/agents`          | Agent discovery.                                                              | Exposes the registered agent discovery surface.   |
+| `/a2a/{agentName}` | Per-agent A2A JSON-RPC and HTTP JSON endpoints for agents with an A2A server. | Both mapped HTTP endpoints require authorization. |
+| gRPC A2A           | gRPC agent-to-agent access.                                                   | Mapped by the Chat host.                          |
+
+- **Model deployments**: The Chat host registers Microsoft Foundry chat (`model-router`) and decision (`Microsoft-Decision-1`) deployments.
+- **MCP integration**: Shares the `mcptools` MCP client across its book agents using service discovery, Streamable HTTP transport at `/mcp`, and token exchange. Chat's MCP client only loads the four Catalog tools declared by Book Agent and its researchers; it does not grant every capability on the shared MCP server.
+- **A2A integration**: Connects to the Rating-hosted agent through the A2A client integration alongside Book and QA sub-workflows (receiving direct routes from `DecisionRouterExecutor` when a book catalog ID is present, or handoffs from Book Agent). The A2A client supports gRPC, JSON-RPC, and HTTP JSON bindings, preferring them in that order.
+
+### Privacy and Governance Middleware
+
+QA and Book Agent register PII middleware directly; the two researchers inherit Book Agent's wrapped chat client. For non-empty text, the middleware calls [[service|PresidioAPI]] using [[command|AnalyzeText]] and, when PII is detected, [[command|AnonymizeText]]. It filters input and output; streaming output is buffered until filtering completes. Middleware failures propagate rather than bypassing privacy processing.
+
+The Chat host also applies per-agent governance policies: QA has no permitted catalog tools; Book Agent and its researchers are allow-listed for their documented Catalog tools and delegation paths.
+
+### Architecture
 
 <NodeGraph />
 
-## Architecture decisions
+### Architecture Decisions
 
 <ADRTable />

@@ -9,9 +9,40 @@ badges:
     textColor: blue
 ---
 
+## 1. Context & Problem
+
+BookWorm brings together customer-facing web storefronts, back-office tools, core commerce capabilities, recurring background jobs, email notifications, and AI-powered book assistants. Running these diverse workloads without a unified compute strategy risks operational sprawl, inconsistent network exposure, and uneven availability across customer journeys.
+
+To keep operations predictable while supporting both always-on web requests and asynchronous background processing, the platform standardizes all workloads onto a single managed container runtime with clear boundaries between public entry points and private internal services.
+
+## 2. Business Value
+
+- **Reduced Security Exposure**: Only one public gateway accepts traffic from the internet; all 14 storefronts, domain services, AI assistants, and privacy filters remain private inside the shared environment.
+- **Consistent Responsiveness**: Keeping at least one warm instance active for every workload prevents cold-start delays during book browsing, checkout, and interactive AI chat.
+- **Unified Operations & Elastic Cost**: Hosting all 15 applications in a single consumption-based container environment gives platform and delivery teams one consistent deployment model while scaling capacity with demand.
+- **Built-In Customer Privacy**: Dedicated privacy-screening sidecars inspect and mask sensitive personal details in user prompts and book feedback before any content is saved or sent to external AI models.
+
+## 3. How It Works
+
+All 15 applications run inside one shared cloud container environment, configured to serve a single active release at a time and to keep at least one running instance available per workload.
+
+- **Single Front Door**: External browser and client traffic enters exclusively through the reverse-proxy gateway, which routes requests privately to the customer storefront, back-office portal, and core domain services. None of the 14 internal workloads accept direct public connections.
+- **Core Commerce & AI Experience**: Dedicated internal applications power the book catalog, shopping basket, order processing, customer ratings, AI chat assistant, and AI tool integrations.
+- **Background Workflows & Scheduled Jobs**: Recurring jobs trigger search-index updates on a schedule, notification workers send transactional emails asynchronously, and specialized workflow workers manage multi-step order checkout processes and vector embedding batches.
+- **Privacy Redaction**: Before customer chat messages or book reviews are stored or forwarded to generative AI models, the chat and rating services pass the text through two internal privacy-screening containers that detect and anonymize personally identifiable information.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Shared Runtime vs. Physical Isolation**: Grouping all 15 workloads into a single container environment simplifies internal networking and platform governance, but requires monitoring resource usage so heavy background batch work (such as catalog vector ingestion) does not affect customer-facing storefront or checkout responsiveness.
+- **Always-Warm Instances vs. Scale-to-Zero Savings**: Maintaining a minimum of one active instance per application eliminates cold starts and keeps scheduled tasks and message listeners ready, at the trade-off of a steady baseline compute cost across all workloads.
+- **Single Active Revision Simplicity**: Serving one active revision per container app keeps routing and troubleshooting straightforward, though advanced release patterns such as canary traffic splitting would require switching revision modes for selected services.
+- **Dedicated Privacy Sidecars**: Isolating PII detection and anonymization into stateless internal containers avoids duplicating redaction logic across AI services, while introducing an extra internal network hop on chat and rating requests.
+
+## 5. Technical Reference
+
 All BookWorm workloads run as **15 Azure Container Apps** inside the shared `cae-<token>` Consumption environment. Every container app is configured with `activeRevisionsMode: 'Single'` and `minReplicas: 1`.
 
-## Container Apps Inventory
+### Container Apps Inventory
 
 | Bicep Module          | Catalog Service / System         | Workload Type                      | Ingress      | Target Port                  | Managed Identity             |
 | :-------------------- | :------------------------------- | :--------------------------------- | :----------- | :--------------------------- | :--------------------------- |
@@ -31,13 +62,13 @@ All BookWorm workloads run as **15 Azure Container Apps** inside the shared `cae
 | `presidio-analyzer`   | [[service\|PresidioAPI]]         | Microsoft Presidio PII Analyzer    | Internal     | `3000`                       | —                            |
 | `presidio-anonymizer` | [[service\|PresidioAPI]]         | Microsoft Presidio PII Anonymizer  | Internal     | `3000`                       | —                            |
 
-## Platform Subdomain Graph
+### Platform Subdomain Graph
 
 The [[domain|platform]] subdomain groups cross-cutting operational capabilities including scheduled processing and durable email notification delivery.
 
 <NodeGraph id="platform" version="1.0.0" type="domain" maxHeight="30" />
 
-## Stateful Function Workers & Orchestration
+### Stateful Function Workers & Orchestration
 
 Two compute workloads run on Azure Functions containers (port `8080`) with `Storage Blob Data Owner` access for Azure Functions host state:
 
@@ -48,6 +79,6 @@ The graph below highlights the 2-hop neighborhood around [[service|order-orchest
 
 <ArchitectureGraph id="order-orchestration" type="service" depth="2" maxHeight="28" />
 
-## PII Redaction Sidecars
+### PII Redaction Sidecars
 
 [[service|chat-api]] and [[service|rating-api]] route user-generated prompts and feedback through `presidio-analyzer` and `presidio-anonymizer` ([[service|PresidioAPI]]) on internal port `3000` before persisting or forwarding content to Microsoft Foundry models. Neither Presidio container requires a managed identity or external database.

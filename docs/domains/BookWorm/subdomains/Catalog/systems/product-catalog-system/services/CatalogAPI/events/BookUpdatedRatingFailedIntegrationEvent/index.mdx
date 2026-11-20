@@ -14,20 +14,34 @@ badges:
     textColor: purple
 ---
 
-## Overview
+## 1. Context & Problem
 
-The [[service|catalog-api]] publishes this event when a
-[[event|FeedbackCreatedIntegrationEvent]] references a [[entity|book]] that
-does not exist. The event contains the [[entity|feedback]] identifier so the
-Rating service can
-identify the failed update and apply its retry or reconciliation behavior.
+When customers submit ratings in the Rating domain, those ratings are propagated asynchronously to update the corresponding [[entity|book]] summary in Catalog. If the referenced book does not exist when Catalog processes the update—for example, due to concurrent deletion—Catalog cannot apply the rating and needs to inform the Rating service so the two domains do not drift out of sync.
+
+## 2. Business Value
+
+- **Self-healing data integrity**: Enables the Rating service to reconcile or remove orphaned [[entity|feedback]] when a target book is missing.
+- **Explicit failure visibility**: Captures missing-book mismatches on a dedicated event channel rather than silently discarding incoming rating updates.
+- **Preserved service autonomy**: Avoids distributed transactions across Catalog and Rating while maintaining eventual consistency.
+
+## 3. How It Works
+
+1. The [[service|catalog-api]] receives a [[event|FeedbackCreatedIntegrationEvent]] indicating that new feedback was submitted for a book.
+2. Catalog checks for the referenced [[entity|book]] in its catalog store.
+3. When the book does not exist, Catalog publishes this failure event containing the [[entity|feedback]] identifier.
+4. The Rating service receives the event, locates the affected feedback record by its identifier, and applies its retry or reconciliation behavior.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Minimal identifier payload**: Including only the feedback identifier keeps the failure contract compact and independent of catalog internals, requiring the Rating service to look up full feedback details locally during reconciliation.
+- **Eventual reconciliation**: Handling missing-book errors asynchronously keeps normal review submission fast, though there is a brief window before orphaned feedback is reconciled.
+
+## 5. Technical Reference
+
+- **Producer**: [[service|catalog-api]]
+- **Trigger**: [[event|FeedbackCreatedIntegrationEvent]] referencing a missing [[entity|book]]
+- **Channel**: [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]
 
 <NodeGraph />
-
-## Channel
-
-[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]
-
-## Schema
 
 <SchemaViewer file="schema.json" title="Book rating update failed schema" maxHeight="500" />

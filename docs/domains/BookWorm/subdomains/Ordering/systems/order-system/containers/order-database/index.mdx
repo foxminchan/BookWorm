@@ -19,21 +19,52 @@ styles:
   icon: /icons/database/postgresql.svg
 ---
 
+## 1. Context & Problem
+
+[[system|order-system]] needs a single, trustworthy storage foundation for customer profiles, accepted orders, and the exact item prices locked in at checkout. At the same time, it must reliably record order lifecycle history, power fast order summaries, and ensure integration messages to other systems are never lost when a transaction succeeds.
+
+Scattering these responsibilities across disconnected stores would create split-brain risks—where an order is saved, but its history event or notification message is lost—or allow temporary caches and external catalog updates to alter accepted customer purchases.
+
+## 2. Business Value
+
+- **Audit-grade purchase records:** Accepted orders and their checkout-time line items are stored reliably in one authoritative place, protected against subsequent catalog price changes.
+- **Reliable cross-system communication:** Order state changes and outbound integration messages share the same durable storage boundary, preventing lost notifications during crashes.
+- **Controlled data privacy:** Confidential customer profile details (names and addresses) sit inside a clearly owned database boundary with explicit access paths.
+- **Safe concurrency & deletion:** Built-in uniqueness and concurrency safeguards prevent duplicate line items or accidental overwrites, while soft deletion preserves audit visibility when needed.
+
+## 3. How It Works
+
+Order Database is the authoritative relational store owned by [[system|order-system]] and accessed exclusively through [[service|order-api]]. It holds three closely connected layers of Ordering data inside one logical database:
+
+1. **Core business records:** Stores [[entity|buyer]] profiles (identity, name, and street/city/province address), [[entity|order]] records (buyer link, business status, notes, lifecycle timestamps, and soft-delete status), and [[entity|order-item]] snapshots (book reference, quantity, and checkout unit price). Duplicate book lines within the same order are prevented, and concurrent edits are guarded against accidental overwrites.
+2. **Order event history and summary views:** Records permanent lifecycle events whenever orders are placed, completed, or cancelled, and maintains live and background-updated summary views (order ID, status, and total price) for fast reading.
+3. **Reliable outbound messaging storage:** Persists integration message envelopes alongside business transactions so Ordering's announcements to other services are delivered reliably.
+
+Ownership boundaries remain strict:
+
+- Ordering manages buyer profiles, order creation, completion/cancellation transitions, and soft deletions (such as administrative cleanup or failed basket-cleanup handling, which filters deleted orders out of normal reads).
+- Shopping still owns active shopping baskets, Catalog still owns current book descriptions and prices, Finance owns its separate workflow state, and [[container|order-cache]] only holds temporary locks and cached responses.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Derived summaries are not the source of truth:** Background-updated order summary views are optimized for reading and may briefly lag behind live changes; they never replace the core Order record as the authority for business status.
+- **Shared server, isolated database:** While Ordering gets its own dedicated database, it runs on a shared database server provisioned by the platform—requiring mindful resource sizing and schema management.
+- **Confidential customer data governance:** Because buyer names and addresses are confidential personal data, deployment environments must enforce appropriate retention and data-residency policies outside the application code itself.
+- **Legacy migration awareness:** Older database migration setups may leave behind historical messaging objects; teams must treat the active messaging schema as authoritative rather than legacy tables.
+
+## 5. Technical Reference
+
 <NodeGraph />
 
-## Overview
+### Hosting & Persistence Stack
 
-Order Database is the authoritative PostgreSQL store owned by
-[[system|order-system]] and accessed by [[service|order-api]]. The service uses
-EF Core for domain records, Marten for Order events and projections, and
-Wolverine for durable messaging. All three use the same Ordering database
-connection.
+- **Provisioning:** AppHost provisions a separate Ordering database on the shared PostgreSQL server (local PostgreSQL in development; Azure Database for PostgreSQL Flexible Server when deployed).
+- **Single connection, three libraries:** [[service|order-api]] accesses Order Database over one Ordering database connection using:
+  - **EF Core** for domain records (Buyer profiles, Orders, and Order Items), repositories, soft-delete query filtering, and an Order row-version concurrency token.
+  - **Marten** for Order event streams, live `OrderSummary` aggregation, asynchronous `OrderSummaryView` projections, and the asynchronous daemon running the event publisher subscription.
+  - **Wolverine** for durable integration message envelopes (with EF Core transaction integration) in the `wolverine` schema.
 
-The AppHost provisions a separate Ordering database on the shared PostgreSQL
-server, running PostgreSQL locally and using Azure Database for PostgreSQL
-Flexible Server when deployed.
-
-## Stored data
+### Stored Data & Schemas
 
 | Data                      | Purpose                                                                                                                     |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -44,38 +75,9 @@ Flexible Server when deployed.
 | Marten projections        | Live `OrderSummary` aggregation and asynchronous `OrderSummaryView` documents containing Order ID, status, and total price. |
 | Wolverine message storage | Durable message envelopes used by Ordering's integration messaging, configured in the `wolverine` schema.                   |
 
-Marten's event and document schemas default to `public`; configuration can
-override the write/read schema names, and `SchemaName` overrides both. The
-asynchronous projection is derived data, not a replacement for the EF Core
-Order aggregate.
+### Constraints, Schemas & Operational Notes
 
-## Access and consistency
-
-- [[service|order-api]] creates and reads Buyer profiles, updates addresses,
-  and supports administrative Buyer deletion.
-- Order creation persists the accepted purchase and its item snapshot.
-  Completion and cancellation update the business status; administrative
-  deletion and failed basket cleanup use soft deletion.
-- Order reads and dashboard queries use the service's repositories. EF Core
-  filters out soft-deleted Orders and their items.
-- The database enforces a unique combination of Book ID and Order ID for
-  Order Items and uses an Order row-version concurrency token.
-- Marten records Order domain events and maintains projections. Its
-  asynchronous daemon also runs the event publisher subscription.
-- Wolverine uses PostgreSQL message persistence and EF Core transaction
-  integration. Historical migration inbox/outbox objects should not be
-  treated as the current Wolverine schema.
-
-## Ownership and data handling
-
-Buyer names and addresses are confidential customer data. Retention and
-residency are deployment policies and are not specified here.
-
-Shopping owns mutable baskets, and Catalog owns current book details and
-prices. Neither is stored here as an authoritative copy. Order Items preserve
-the price and quantity accepted at checkout even when Catalog data changes.
-Finance owns its separate saga state, not the Ordering database.
-
-[[container|order-cache]] coordinates creation locks and stores transient
-request markers and cached responses; it does not own Buyer profiles or
-accepted Orders.
+- **Database constraints:** Enforces a unique combination of Book ID and Order ID for Order Items and uses an Order row-version concurrency token.
+- **Marten schemas:** Event and document schemas default to `public`; configuration can override write/read schema names, and `SchemaName` overrides both.
+- **Wolverine schema note:** Historical migration inbox/outbox objects should not be treated as the current Wolverine schema.
+- **Privacy classification:** `confidential` — Buyer names and addresses are confidential customer data; retention and residency are deployment policies not specified in this specification.

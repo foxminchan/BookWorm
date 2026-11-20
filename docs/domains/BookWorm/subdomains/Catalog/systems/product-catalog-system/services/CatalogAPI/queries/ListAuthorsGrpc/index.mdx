@@ -14,28 +14,47 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `ListAuthors` RPC returns all available [[entity|author]] records in the
-Catalog. It is an anonymous read operation exposed for internal
-service-to-service clients.
+Internal platform services—such as AI assistant integrations—often need a complete list of [[entity|author]] records in the Catalog to answer user questions or resolve author names without routing through public storefront gateways. Without a dedicated internal read path, internal consumers would either duplicate catalog data or rely on slower public interfaces.
 
-[[service|mcp-server]] produces this query in its
-`BookService.ListAuthorsAsync` client to power the `list_authors` MCP tool;
-[[service|catalog-api]] consumes it by dispatching `ListAuthorsQuery`.
+## 2. Business Value
+
+- **Consistent catalog knowledge**: Internal tools and assistants read directly from the authoritative Catalog rather than maintaining stale copies.
+- **Responsive internal integrations**: High-speed internal service-to-service communication keeps automated workflows and assistant responses fast.
+- **Simple onboarding for internal consumers**: No user sign-in or complex filter setup is required to retrieve the full directory of authors.
+
+## 3. How It Works
+
+1. An internal consumer—such as [[service|mcp-server]]—sends an empty request to [[service|catalog-api]] asking for all [[entity|author]] records.
+2. Because this is an anonymous read operation for internal services, no customer identity or search criteria are needed.
+3. The catalog service retrieves every available author record and returns their identifiers and display names.
+4. The consuming service uses this directory to power internal capabilities such as listing known authors for users or assistants.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Unpaginated full list**: Returning all authors in a single response keeps the interaction simple for internal callers, assuming the author directory remains small enough to fit comfortably in one payload; if the catalog grows substantially, pagination or filtering will be needed.
+- **Anonymous internal access**: Omitting per-user authorization simplifies internal service-to-service calls, assuming network-level trust between internal services and that only non-sensitive public catalog metadata is exposed.
+- **Dedicated internal contract**: Maintaining a binary internal contract alongside the public web interface improves efficiency for service-to-service calls at the cost of keeping both contracts aligned as author fields evolve.
+
+## 5. Technical Reference
+
+The `ListAuthors` RPC returns all available [[entity|author]] records in the Catalog through the `book.v1` gRPC contract. It is an anonymous read operation exposed for internal service-to-service clients.
+
+- **Producer**: [[service|mcp-server]] invokes `BookService.ListAuthorsAsync` to power the `list_authors` MCP tool.
+- **Consumer**: [[service|catalog-api]] handles the request by dispatching `ListAuthorsQuery`.
 
 <NodeGraph />
 
-## Contract
+### Contract
 
-Send an empty `ListAuthorsRequest`. The response is `ListAuthorsResponse`,
-containing a repeated collection of `AuthorItem` values (`id` and `name`).
+Send an empty `ListAuthorsRequest`. The response is `ListAuthorsResponse`, containing a repeated collection of `AuthorItem` values (`id` and `name`).
 
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="ListAuthors gRPC schema" />
 
-## Examples
+### Examples
 
 <CodeGroup dropdown>
 

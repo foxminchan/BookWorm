@@ -9,11 +9,43 @@ badges:
     textColor: blue
 ---
 
+## 1. Context & Problem
+
+An online bookstore with AI-assisted discovery has widely varying data needs: strict transactional integrity for orders and book inventory, sub-second response times for shopping baskets and cached catalog reads, flexible document storage for customer reviews, durable object storage for book assets and conversation histories, semantic vector search, generative AI models, and reliable event delivery across decoupled services.
+
+Provisioning separate infrastructure servers for every single service would drive up cost and operational overhead, whereas letting services share tables or schemas would erode domain boundaries. BookWorm resolves this by separating logical data ownership per business domain while consolidating onto managed cloud infrastructure where appropriate and removing static passwords and shared keys.
+
+## 2. Business Value
+
+- **Resilience & Business Continuity**: Zone-redundant relational databases, high-availability in-memory caching, geo-zone-redundant storage, and 35-day geo-redundant backups protect critical order, catalog, and operational data against infrastructure outages.
+- **Reduced Credential Risk**: Disabling local database passwords, cache access keys, and storage shared keys in favor of centralized role-based identity eliminates static secret sprawl and simplifies security audits.
+- **Cost & Performance Alignment**: Matching each workload to its ideal storage pattern—relational for core commerce, in-memory cache for baskets, serverless document storage for reviews, and consumption-based workflow orchestration—keeps performance high without over-provisioning.
+- **Turnkey AI & Semantic Discovery**: Managed chat, decision, and embedding models paired with an external vector store enable natural-language book search and intelligent workflows without maintaining custom machine-learning infrastructure.
+
+## 3. How It Works
+
+BookWorm enforces strict logical ownership of data per business capability while sharing underlying managed cloud services where practical.
+
+- **Relational & Scheduled Data**: Catalog data, order records, and scheduled job state reside in separate logical relational databases on a shared, zone-redundant server with automated connection pooling and multi-week geo-redundant backups.
+- **High-Speed Caching & Shopping Baskets**: Active shopping baskets and frequently queried catalog, order, and rating data use a shared, encrypted, high-availability in-memory cache.
+- **Reviews, Files & Host State**: Customer book feedback is stored in a serverless document database partitioned by book so review lookups remain fast as ratings grow. Book media, chat session histories, and background workflow host state live in geo-redundant object storage with public access disabled.
+- **Workflow Orchestration & AI Platform**: Multi-step order checkout orchestration relies on a dedicated consumption-based task scheduler, while conversational AI, decisioning, and text-embedding generation run through a centralized managed AI platform with integrated telemetry.
+- **External Messaging, Search & Email**: Cross-service integration events travel over an external event broker, semantic book embeddings are maintained in an external vector database, and transactional customer emails are sent via an external email relay.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Shared Hosts vs. Blast Radius**: Hosting multiple domain databases on one relational server and sharing one enterprise cache cuts cost and administrative overhead, but requires monitoring so heavy traffic or maintenance in one domain does not degrade neighboring services.
+- **Scheduler Network Hardening Needed**: The generated infrastructure definition for the durable task scheduler currently allows broad network access and must be restricted to trusted addresses before production deployment (tracked in [[doc|operational/004-security-hardening-checklist]]).
+- **External Dependencies Outside the Cloud Resource Group**: Keeping event streaming, vector search, and email delivery on external platforms provides specialized capabilities and flexibility, at the cost of injecting connection parameters outside the core cloud boundary.
+- **Baseline Serverless & Model Quotas**: Using serverless document capacity and baseline AI model allocations minimizes idle spend early on, though higher production volume will require capacity increases and active throttling alerts.
+
+## 5. Technical Reference
+
 BookWorm separates state ownership per bounded context while sharing underlying Azure-managed infrastructure instances where appropriate. All Azure-managed data and AI services disable local/shared-key authentication in favor of Microsoft Entra ID RBAC.
 
-## Azure-Managed Data & Caching Services
+### Azure-Managed Data & Caching Services
 
-### PostgreSQL Flexible Server (`postgres`)
+#### PostgreSQL Flexible Server (`postgres`)
 
 | Property               | Value                                                                                            |
 | :--------------------- | :----------------------------------------------------------------------------------------------- |
@@ -26,7 +58,7 @@ BookWorm separates state ownership per bounded context while sharing underlying 
 | **Authentication**     | Microsoft Entra ID authentication only (password auth disabled)                                  |
 | **Databases**          | [[container\|catalog-database]], [[container\|order-database]], [[container\|sheduler-database]] |
 
-### Azure Managed Redis (`redis`)
+#### Azure Managed Redis (`redis`)
 
 | Property              | Value                                                                                                                               |
 | :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,7 +68,7 @@ BookWorm separates state ownership per bounded context while sharing underlying 
 | **Authentication**    | Access keys disabled; Entra ID `default` access policy assignment per identity                                                      |
 | **Consumers**         | [[service\|basket-api]] ([[container\|basket-database]]), [[service\|catalog-api]], [[service\|order-api]], [[service\|rating-api]] |
 
-### Azure Cosmos DB (`cosmos`)
+#### Azure Cosmos DB (`cosmos`)
 
 | Property                 | Value                                                                          |
 | :----------------------- | :----------------------------------------------------------------------------- |
@@ -46,7 +78,7 @@ BookWorm separates state ownership per bounded context while sharing underlying 
 | **Database & Container** | [[container\|rating-database]] (`feedbacks` container, partitioned by book ID) |
 | **Owner**                | [[service\|rating-api]]                                                        |
 
-### Azure Storage (`storage`)
+#### Azure Storage (`storage`)
 
 | Property             | Value                                                                                                                      |
 | :------------------- | :------------------------------------------------------------------------------------------------------------------------- |
@@ -55,16 +87,16 @@ BookWorm separates state ownership per bounded context while sharing underlying 
 | **Endpoints**        | Blob, Queue, Table, and Data Lake (`dfs`)                                                                                  |
 | **Usage**            | [[container\|catalog-blob]], [[container\|chat-session-blob]], Azure Functions host state (`catalog-ingestion`, `finance`) |
 
-## Orchestration & AI Platform
+### Orchestration & AI Platform
 
-### Azure Durable Task Scheduler (`durable-task-scheduler`)
+#### Azure Durable Task Scheduler (`durable-task-scheduler`)
 
 - **Resource:** `Microsoft.DurableTask/schedulers@2025-11-01` (`Consumption` SKU).
 - **Task Hub:** `finance-taskhub`, used exclusively by [[service|order-orchestration]].
 - **Authentication:** `Authentication=DefaultAzure` via `finance-identity`.
 - **Network Note:** `ipAllowlist` is currently `['0.0.0.0/0']` in the generated Bicep and should be restricted for production (see [[doc|operational/004-security-hardening-checklist]]).
 
-### Microsoft Foundry (`Foundry` & `Foundry-project`)
+#### Microsoft Foundry (`Foundry` & `Foundry-project`)
 
 | Property                       | Configuration                                                                              |
 | :----------------------------- | :----------------------------------------------------------------------------------------- |
@@ -79,7 +111,7 @@ The neighborhood around [[service|catalog-ingestion]] illustrates how PostgreSQL
 
 <ArchitectureGraph id="catalog-ingestion" type="service" depth="2" maxHeight="28" />
 
-## External Infrastructure Dependencies
+### External Infrastructure Dependencies
 
 The following dependencies are hosted outside the Azure resource group and injected as deployment parameters:
 

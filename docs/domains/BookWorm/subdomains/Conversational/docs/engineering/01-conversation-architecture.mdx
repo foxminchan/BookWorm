@@ -12,35 +12,55 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Request path
+## 1. Context & Problem
 
-The Chat API accepts interactive requests through `/ag-ui`. The composed
-workflow validates the request, evaluates routing via `DecisionRouterExecutor`
-(`Microsoft-Decision-1`), and formats the final assistant response. Rejected,
-non-English, or out-of-scope input returns without entering a specialist
-sub-workflow.
+An interactive bookstore chat experience handles diverse customer requests—ranging from book discovery and personalized recommendations to review summaries and store return policies. Without an explicit orchestration path and firm domain boundaries, conversational assistants can waste effort on off-topic or unsupported input, give inconsistent answers across specialists, or blur the line between providing guidance and owning core bookstore records such as orders, baskets, and reviews.
 
-The Decision Router selects [[agent|book-agent]] for book discovery, feedback,
-or review requests without a catalog ID, [[agent|qa-agent]] for store and
-customer-support questions, or [[agent|rating-agent]] for review/rating requests
-that already include a book catalog ID. The QA Agent can hand book-specific work
-to the Book Agent, and the Book Agent can hand review/rating analysis to the
-Rating Agent once a book ID is resolved. For complex requests, Book Agent can
-delegate independent book research to [[agent|book-catalog-researcher]] and
-[[agent|book-recommendation-researcher]] before composing a response.
+This document defines how customer requests move through the Chat workflow and establishes clear boundaries separating conversational assistance from BookWorm's transactional and catalog domains.
 
-## Domain boundaries
+## 2. Business Value
 
-- Conversational provides assistance; it does not own Catalog, Basket, Order,
-  or persisted feedback records.
-- Book details and availability must be grounded in Catalog information.
-- The QA Agent uses supplied policy context. It does not retrieve or modify
-  live account, Basket, or Order data.
-- Discussing book feedback in a conversation does not create a persisted
-  Reviews feedback record.
-- Chat sessions use in-memory state and are not durable conversation history.
+- **Predictable scope and safety:** Early validation and language/scope screening turn away empty, suspicious, non-English, or out-of-scope input before specialist workflows run.
+- **Accurate first-step routing:** Incoming questions reach the right specialist—book discovery, customer support, or review analysis—based on customer intent and whether a book is already identified.
+- **Protected domain ownership:** Keeping Catalog, Basket, Order, and persisted Reviews data outside Conversational ownership prevents unintended side effects during natural-language interactions.
+- **Consistent customer experience:** A dedicated final formatting stage ensures every reply is normalized cleanly, even after handoffs or parallel research.
 
-## Workflow responsibilities
+## 3. How It Works
+
+Customer requests move through a four-stage conversational flow with clear handoff paths and strict ownership rules:
+
+1. **Input validation:** Each incoming request is checked first to constrain message length and reject empty or suspicious input before routing begins.
+2. **Routing evaluation:** A dedicated decision step checks English language compliance and bookstore scope. Non-English, rejected, or out-of-scope inputs return immediately with a boundary response without entering any specialist workflow. In-scope requests route to:
+   - [[agent|book-agent]] for book discovery, feedback discussions, or review requests without a specific book identifier.
+   - [[agent|qa-agent]] for store-policy and customer-support questions.
+   - [[agent|rating-agent]] for review or rating requests that already include a book identifier.
+3. **Specialist execution and handoffs:** [[agent|qa-agent]] can transfer book-specific needs to [[agent|book-agent]], and [[agent|book-agent]] can transfer review or rating analysis to [[agent|rating-agent]] once a single book identifier is resolved. For complex book inquiries, [[agent|book-agent]] can also delegate independent research concurrently to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] before synthesizing a response.
+4. **Response formatting:** The final stage selects and normalizes the assistant's reply before delivering it to the customer.
+
+### Domain boundaries
+
+- Conversational provides interactive assistance; it does not own Catalog, Basket, Order, or persisted feedback records.
+- Book details and availability must always be grounded in Catalog information.
+- [[agent|qa-agent]] relies on supplied policy context and does not retrieve or modify live account, Basket, or Order data.
+- Discussing book feedback in a conversation does not create a persisted Reviews feedback record.
+- Chat sessions rely on in-memory state and do not serve as durable conversation history.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Dedicated decision router vs. letting specialists filter traffic:** Screening language, scope, and initial specialist selection up front avoids invoking specialist agents on invalid or off-topic messages and keeps routing predictable.
+- **Read-only guidance vs. live transactional actions:** Keeping conversational agents decoupled from live Basket, Order, account, and feedback writes eliminates accidental mutations, while requiring customers to use dedicated storefront flows for purchases or record updates.
+- **In-memory sessions vs. durable conversation logs:** Holding session state in memory keeps the chat workflow lightweight and avoids long-term transcript storage overhead, at the trade-off of non-durable conversation history.
+
+## 5. Technical Reference
+
+### Request Path & Orchestration
+
+- The Chat API accepts interactive requests through `/ag-ui`.
+- The composed workflow validates the request, evaluates routing via `DecisionRouterExecutor` (`Microsoft-Decision-1`), and formats the final assistant response.
+- Rejected, non-English, or out-of-scope input returns without entering a specialist sub-workflow.
+- See [[flow|agent-orchestration]] for the customer-facing workflow; system and agent resources describe their own responsibilities in more detail.
+
+### Workflow Responsibilities
 
 | Stage              | Responsibility                                                                                          |
 | ------------------ | ------------------------------------------------------------------------------------------------------- |
@@ -50,8 +70,5 @@ delegate independent book research to [[agent|book-catalog-researcher]] and
 | QA Agent           | Answer from supplied store-policy context and identify when information is unavailable.                 |
 | Rating Agent       | Summarize reviews or analyze rating/quality signals via A2A when a book ID is known.                    |
 | Response formatter | Select and normalize the final assistant message.                                                       |
-
-The [[flow|agent-orchestration]] documents the customer-facing workflow.
-System and agent resources describe their own responsibilities in more detail.
 
 <Footer />

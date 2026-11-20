@@ -64,3 +64,48 @@ dictionary:
       delivery can be retried and tracked.
     icon: Mail
 ---
+
+## 1. Context & Problem
+
+BookWorm spans catalog management, pre-purchase shopping, order fulfillment, customer reviews, conversational discovery, and platform messaging. When product managers, business analysts, solution architects, and developers use everyday words like "book", "basket", "buyer", "order", or "checkout" differently across subdomains, requirements drift and service boundaries blur.
+
+This domain-level ubiquitous language establishes one shared set of core concepts and ownership rules across the entire BookWorm domain.
+
+## 2. Business Value
+
+- **Shared cross-team vocabulary:** Aligns business stakeholders and engineering teams on the exact meaning of BookWorm's core domain concepts.
+- **Protected service ownership:** Makes explicit which subdomain owns each record—such as books in Catalog, baskets in Shopping, orders in Ordering, and feedback in Reviews—preventing accidental data duplication.
+- **Reliable business semantics:** Distinguishes mutable shopping intent from durable purchase records, live catalog prices from recorded order prices, and checkout initiation from completed orders.
+
+## 3. How It Works
+
+The BookWorm domain vocabulary connects six core capability areas:
+
+- **Catalog & Reviews (`Book`, `Feedback`):** A **Book** is a title represented in the bookstore catalog with descriptive, pricing, availability, and classification details owned by Catalog, while other contexts reference it only by identifier. **Feedback** captures a customer's rating and optional comment about a book; Reviews owns individual submissions, whereas Catalog maintains only an aggregate rating summary.
+- **Shopping (`Basket`):** A **Basket** is a customer's changeable collection of book references and quantities before purchase, representing mutable shopping intent rather than an order or an inventory reservation.
+- **Checkout & Ordering (`Checkout`, `Buyer`, `Order`, `Order Item`):** **Checkout** is the cross-context process that coordinates transitioning a checked-out basket into the order workflow—it is a process, not another name for an order. A **Buyer** is the person associated with an order in Ordering (holding a name and delivery address, and not automatically sharing the same identifier used for a shopping basket). An **Order** is the durable purchase record with a lifecycle status, composed of **Order Items** that record the book identifier, quantity, and price used for that purchase rather than live catalog pricing.
+- **Conversational Support & Platform (`Chat Request`, `Email Outbox Item`):** A **Chat Request** is a customer question routed or answered by conversational agents that may discuss a book or order without taking ownership of those records. An **Email Outbox Item** is a stored customer email awaiting delivery or already sent, recording recipient, subject, body, and delivery state so email delivery can be retried and tracked.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Identifier references over duplicated entities:** Having other contexts reference a **Book** by identifier instead of copying full catalog data keeps Catalog as the single source of truth, while requiring targeted lookups or read projections when enriched details are needed.
+- **Recorded order prices vs. live catalog prices:** Storing the agreed purchase price on each **Order Item** guarantees historical financial accuracy when catalog prices change, whereas a **Basket** remains transient and reflects current catalog state until checkout.
+- **Aggregated ratings vs. individual reviews:** Keeping detailed **Feedback** records in Reviews while storing only an aggregate summary in Catalog avoids tight runtime coupling between browsing and reviews, at the cost of eventual consistency for rating totals.
+
+## 5. Technical Reference
+
+### BookWorm Domain Dictionary Terms
+
+The YAML `dictionary` frontmatter above defines the authoritative domain-wide glossary entries rendered by EventCatalog:
+
+| Dictionary ID       | Summary                                                      | Ownership & Boundary Notes                                                                | Icon             |
+| ------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ---------------- |
+| `Book`              | A title represented in the bookstore catalog.                | Owned by Catalog (descriptive, pricing, availability, classification); referenced by ID.  | `BookOpen`       |
+| `Basket`            | A customer's changeable collection of books before purchase. | Mutable shopping intent (book IDs + quantities); not an `Order` or inventory reservation. | `ShoppingBasket` |
+| `Buyer`             | The person associated with an Order in Ordering.             | Holds name and delivery address; identifier is not automatically the Basket customer ID.  | `User`           |
+| `Order`             | The durable purchase record managed by Ordering.             | Contains `Order Item` records and lifecycle status; distinct from a preceding `Basket`.   | `ClipboardList`  |
+| `Order Item`        | One book, quantity, and price recorded on an Order.          | Captures purchase-time book ID, quantity, and price; not a live Catalog price copy.       | `ListOrdered`    |
+| `Feedback`          | A customer's rating and optional comment about a Book.       | Individual records owned by Reviews; Catalog maintains an aggregate rating summary.       | `MessageSquare`  |
+| `Checkout`          | The cross-context process that starts order placement.       | Coordinates transition from a checked-out `Basket` to the order workflow; not an `Order`. | `CreditCard`     |
+| `Chat Request`      | A customer question handled by Conversational agents.        | May discuss a `Book` or `Order`, but those records remain owned by their contexts.        | `MessageCircle`  |
+| `Email Outbox Item` | A stored customer email awaiting delivery or already sent.   | Platform stores recipient, subject, body, and delivery state for retry and tracking.      | `Mail`           |

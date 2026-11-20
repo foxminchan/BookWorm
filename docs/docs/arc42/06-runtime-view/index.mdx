@@ -9,21 +9,66 @@ badges:
     textColor: blue
 ---
 
-This chapter shows how BookWorm's building blocks collaborate at runtime. It focuses on architecturally significant scenarios and their ownership boundaries, including successful interactions, asynchronous work, and representative failure paths. The diagrams describe logical interactions; they do not imply an undocumented deployment topology.
+## 1. Context & Problem
 
-## Scenarios
+Static architecture diagrams show which business capabilities exist in BookWorm, how they are separated, and who owns them—but they do not explain what happens over time when a customer places an order, searches for a book, or submits a review. Without a runtime view, solution architects, product managers, business analysts, and developers can easily make conflicting assumptions about who owns a piece of business state, which steps finish immediately versus in the background, and how the platform behaves when something goes wrong partway through.
 
-- [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] follows checkout from the current Basket and Catalog facts through Order creation and Finance-coordinated basket cleanup.
-- [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] shows how Catalog changes reach the derived vector index through durable queued work and a scheduled batch.
-- [[doc|arc42/06-runtime-view/003-feedback-and-rating-projection]] follows customer feedback into the Catalog rating projection, including compensation for an invalid book reference.
-- [[doc|arc42/06-runtime-view/004-conversational-book-discovery]] describes validation, agent routing, optional parallel research, and Catalog tool access for a book-discovery request.
-- [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] covers durable email submission and the scheduled resend and cleanup operations.
+This chapter fills that gap by documenting representative runtime scenarios and clear ownership rules across commerce, discovery, customer feedback, and platform operations.
 
-## Runtime boundaries
+## 2. Business Value
 
-- **Authoritative state stays with its owner.** Ordering owns Order status; Shopping owns Basket state; Reviews owns individual feedback; Catalog owns books and its derived rating and search projections; Notification owns email outbox state.
-- **Asynchronous completion is distinct from request or scheduler completion.** A published command, an acknowledged HTTP invocation, an SMTP acceptance, or a Finance saga outcome does not prove that another capability's business work has completed.
-- **Retries can repeat work.** Consumers and operators should use the target system's state and documented retry behavior rather than infer success from a repeated invocation.
-- **Unknown infrastructure details remain unspecified.** The scenarios use the contracts and mechanisms documented for BookWorm and do not assume production topology or unspecified providers.
+- **Shared end-to-end understanding:** Gives business and technical teams a common view of how customer actions translate into cross-capability work, background processing, and customer-visible outcomes.
+- **Clear data accountability:** Prevents conflicting updates by making it explicit which capability is the single source of truth for orders, shopping baskets, book catalog details, customer reviews, and outbound notifications.
+- **Predictable failure and delay handling:** Clarifies why background work (such as updating search indexes or delivering emails) can finish after a customer's action succeeds, and how failures are compensated rather than leaving records out of sync.
+- **Safer cross-team delivery:** Helps delivery teams design and review changes without breaking assumptions across service boundaries.
 
-These are representative scenarios rather than an exhaustive inventory. See [[doc|arc42/05-building-block-view]] for the static decomposition and the linked capability flows and runbooks for detailed contracts and operational guidance.
+## 3. How It Works
+
+The runtime view focuses on five representative business and operational journeys rather than trying to catalog every possible interaction:
+
+- **Checkout and order coordination** ([[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]]): Follows a customer checkout from current shopping basket and catalog facts through order creation and coordinated basket cleanup.
+- **Catalog search index maintenance** ([[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]]): Explains how updates to the book catalog flow through queued background work and a scheduled batch to keep the search index fresh.
+- **Feedback and rating projection** ([[doc|arc42/06-runtime-view/003-feedback-and-rating-projection]]): Traces how customer feedback updates a book's overall rating summary, including corrective compensation if feedback references an invalid book.
+- **Conversational book discovery** ([[doc|arc42/06-runtime-view/004-conversational-book-discovery]]): Describes how a conversational discovery request is validated, routed to an assistant, optionally enriched with parallel research, and connected to catalog information.
+- **Notification delivery and maintenance** ([[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]]): Covers how outbound emails are durably queued for delivery, along with scheduled resend and cleanup maintenance.
+
+Across every scenario, four plain-language coordination principles govern how capabilities interact:
+
+1. **Authoritative state stays with its owner:** Ordering owns order status, Shopping owns basket state, Reviews owns individual feedback, Catalog owns book records along with derived rating and search summaries, and Notification owns email outbox state.
+2. **Handing off background work is not the same as finishing it:** Acknowledging a customer request, accepting a scheduled job, handing an email to a mail provider, or completing a coordination step only proves the handoff occurred—not that downstream business work is finished.
+3. **Retries can repeat work:** When steps are retried automatically, consumers and operators should check the owning capability's actual business state rather than assuming a repeated attempt succeeded cleanly.
+4. **Logical behavior stays separate from hosting details:** These scenarios describe logical interactions and documented contracts without assuming an undocumented production topology or unspecified infrastructure providers.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Immediate responsiveness vs. eventual background updates:** Derived views such as search indexes and rating summaries are updated asynchronously after source changes. This keeps customer-facing actions fast and isolated, at the cost of a short delay before updates appear in search or ratings.
+- **Representative scenarios vs. exhaustive documentation:** Documenting the most architecturally significant flows—including happy paths, background processing, and representative failure compensation—keeps the documentation maintainable without duplicating every minor endpoint.
+- **Verification via authoritative state vs. assuming handoff success:** Because asynchronous work and retries can be delayed or repeated, operational monitoring and downstream consumers must inspect the owning capability's state instead of relying solely on acknowledgment signals.
+- **Logical clarity vs. deployment assumptions:** Keeping runtime flows independent of undocumented production details avoids locking architecture decisions to unconfirmed environment configurations.
+
+## 5. Technical Reference
+
+### Representative Scenario Index
+
+- [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] — Checkout from Basket and Catalog facts through Order creation and Finance-coordinated basket cleanup.
+- [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] — Catalog changes propagating to the derived vector index via durable queued work and a scheduled batch.
+- [[doc|arc42/06-runtime-view/003-feedback-and-rating-projection]] — Customer feedback flowing into the Catalog rating projection, including compensation for an invalid book reference.
+- [[doc|arc42/06-runtime-view/004-conversational-book-discovery]] — Request validation, agent routing, optional parallel research, and Catalog tool access for book discovery.
+- [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] — Durable email submission plus scheduled resend and cleanup operations.
+
+### Authoritative State Ownership & Runtime Boundaries
+
+- **Authoritative state stays with its owner:**
+  - **Ordering** owns Order status.
+  - **Shopping** owns Basket state.
+  - **Reviews** owns individual feedback.
+  - **Catalog** owns books and its derived rating and search projections.
+  - **Notification** owns email outbox state.
+- **Asynchronous completion is distinct from request or scheduler completion:** A published command, an acknowledged HTTP invocation, an SMTP acceptance, or a Finance saga outcome does not prove that another capability's business work has completed.
+- **Retries can repeat work:** Consumers and operators should use the target system's state and documented retry behavior rather than infer success from a repeated invocation.
+- **Unknown infrastructure details remain unspecified:** The scenarios use the contracts and mechanisms documented for BookWorm and do not assume production topology or unspecified providers.
+
+### Related Documentation
+
+- [[doc|arc42/05-building-block-view]] for the static decomposition.
+- Linked capability flows and runbooks for detailed contracts and operational guidance.

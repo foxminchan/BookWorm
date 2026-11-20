@@ -2,15 +2,37 @@
 summary: Cancel a New Order with an idempotent request.
 ---
 
-## 1. Cancel an Order
+## 1. Context & Problem
 
-Provide the Order UUID and an idempotency key. The operation has no request
-body.
+Customers or internal support flows sometimes need to cancel an active order shortly after placement. Because network connections and client applications can time out or retry automatically, sending a cancellation request without safeguards could cause confusion or inconsistent error handling. Teams integrating with Order management need a clear example showing how to request cancellation safely and interpret the response.
+
+## 2. Business Value
+
+- **Safe retries without duplicate side effects**: Attaching a unique request tracking identifier guarantees a retried cancellation is handled once rather than causing repeated state transitions.
+- **Immediate confirmation for clients**: Returning the full updated order summary lets storefronts or support tools immediately display the cancelled status, total, and items without making a second lookup.
+- **Protected customer privacy**: Treating missing orders and unauthorized orders identically prevents callers from probing whether another customer's order exists.
+
+## 3. How It Works
+
+1. The caller authenticates and specifies the target order's unique identifier along with a unique request tracking identifier to protect against duplicate submissions. No additional request details are required.
+2. The system verifies that the order exists within the caller's permitted access scope and is eligible for cancellation.
+3. On success, the order status changes to **Cancelled**, and the caller receives the updated order summary—including the order identifier, order date, total amount, updated status, and line items (identifier, quantity, unit price, and book title).
+4. If the order does not exist or the caller is not permitted to access it, the system reports that the order could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Client-managed request tracking**: Requiring callers to supply and reuse a unique request identifier makes retries safe, though client implementations must reuse the same identifier when retrying a failed network call and generate a fresh one for any new action.
+- **Minimal cancellation input**: Omitting a request payload simplifies client integration, at the trade-off of not capturing a customer cancellation reason directly within this operation.
+- **Uniform not-found outcome**: Returning the same not-found response for both nonexistent and inaccessible orders improves security, though operational troubleshooting requires checking authorization logs separately.
+
+## 5. Technical Reference
+
+Provide the Order UUID in the `{orderId}` path parameter and a required `x-request-id` idempotency header. The operation has no request body.
 
 <CodeGroup dropdown>
 
 ```sh
-curl --request PATCH "$BASE_URL/api/v1/orders/44444444-4444-4444-4444-444444444444/cancel" \
+curl --request PATCH "$BASE_URL/api/v1/orders/44444444-44444444-4444-4444-4444-444444444444/cancel" \
   --header "Authorization: Bearer <access-token>" \
   --header "x-request-id: cancel-order-2026-001"
 ```

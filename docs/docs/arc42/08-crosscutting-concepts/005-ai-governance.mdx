@@ -9,26 +9,57 @@ badges:
     textColor: purple
 ---
 
-[[domain|conversational]] and [[agent|rating-agent]] capabilities cross service and trust boundaries: they process user-provided text, call model providers, and may invoke tools. BookWorm composes controls around these paths so that prompt handling, data minimization, and tool authorization are considered together.
+## 1. Context & Problem
 
-## Chat workflow
+BookWorm's conversational and rating AI capabilities cross sensitive service and trust boundaries: they accept free-form customer text, send prompts to language model providers, and invoke internal tools on behalf of workflows. Without coordinated guardrails, AI features are exposed to prompt-manipulation attacks, accidental leakage of personally identifiable information (PII), excessive provider usage, or unauthorized tool execution.
 
-The [[service|chat-api]] workflow validates input before routing it to specialized agents. It trims empty input, rejects suspicious prompt-injection patterns, consults the configured governance injection detector, and limits accepted content to a bounded length. Rejected requests do not proceed to the agent handoff. The workflow then routes accepted requests and formats the selected agent's response.
+BookWorm composes input screening, privacy anonymization, untrusted-content separation, and policy-driven tool governance around these AI paths so safety, privacy, and authorization are treated as a single boundary concern.
 
-Chat agent clients use [[service|PresidioAPI]]-backed PII anonymization and a guardrail middleware that marks user and tool content as untrusted and filters selected injection or prompt-leakage patterns. Agents are wrapped with the shared governance kernel, function-call middleware applies governance policies to tool invocations.
+## 2. Business Value
 
-## Policy configuration and scope
+- **Customer privacy protection:** Personal information is masked before text leaves BookWorm for a language model and handled consistently on return.
+- **Safer AI behavior:** Suspicious prompt-injection attempts and oversized inputs are blocked before reaching specialized agents.
+- **Controlled tool access and cost:** Explicit allow/deny rules, rate limits, and overload circuit breakers ensure agents can only run approved actions within safe limits.
+- **Repeatable governance for product teams:** Shared building blocks make it straightforward to review and enforce consistent AI rules when adding or updating agent capabilities.
 
-The shared governance kernel loads policy files from configuration, uses a deny-overrides conflict strategy, and can enable rings, prompt-injection detection, and a circuit breaker. The default policy describes deny-by-default tool access with explicit allow, deny, and rate-limit rules. [[service|chat-api]] and [[service|rating-api]] provide additional service-specific policy files, their actual permitted operations are defined by those policy rules and agent tool registration.
+## 3. How It Works
 
-[[service|rating-api]] registers the same governance, PII, and chat-client guardrail building blocks for its summarization agent ([[agent|rating-agent]]). These protections are evidenced in Chat and Rating, do not assume they automatically apply to other AI-enabled code or to every model integration.
+BookWorm protects AI workflows through four sequential layers of defense:
 
-Policy configuration and the regular expressions are defense-in-depth, not a guarantee that all malicious or sensitive content will be identified. Review policies and tool permissions when adding an agent or capability, and review the default policy before production use.
+1. **Pre-agent input screening:** Before a user request reaches an AI agent, the workflow trims empty input, enforces a maximum content length, checks for suspicious prompt-manipulation patterns, and consults an injection detector. Rejected requests stop immediately without reaching an agent.
+2. **Privacy anonymization:** Personal data in text sent to and returned from AI models is masked using a dedicated privacy service so sensitive customer details are minimized across model boundaries.
+3. **Untrusted content isolation and output guardrails:** Guardrail rules mark user-provided text and external tool outputs as untrusted—keeping them separate from trusted system instructions—and filter known injection or prompt-leakage patterns.
+4. **Policy-based tool governance:** Every tool an agent can call is governed by declarative policy files using a strict deny-by-default approach where denials override approvals. Policies enforce which tools are allowed, apply rate limits, and support a circuit breaker if failures spike.
 
-## Change checklist
+When teams add or modify an AI agent, they follow a standard governance checklist: grant only the minimum tools and data needed, keep untrusted content separated from system instructions, apply PII masking across privacy boundaries, test allow/deny/rate-limit/injection/failure scenarios, and verify policy configuration at startup.
 
-1. Give each agent only the tools and data it needs, and define the permitted operations in its policy.
+## 4. Trade-offs & Lessons Learned
+
+- **Defense-in-depth is not a 100% guarantee:** Pattern matching, injection detectors, and policy rules reduce risk significantly, but no filter catches every possible adversarial prompt or sensitive string. Policies and tool permissions must be reviewed carefully—especially before production launch.
+- **Controls are capability-scoped, not universal:** Governance, PII masking, and guardrail components are explicitly wired into BookWorm's Conversational Chat and Rating summarization workflows. Teams must not assume new AI features or model integrations inherit these protections automatically without registering them.
+- **Least privilege and startup validation matter:** Relying on permissive defaults or misconfigured policy file paths can weaken boundaries silently; explicit per-service policies and startup checks are essential.
+
+## 5. Technical Reference
+
+### Protected AI Capabilities & Workflows
+
+- **[[domain|conversational]] / [[service|chat-api]]:**
+  - Pre-routing workflow trims empty input, enforces bounded content length, rejects suspicious prompt-injection patterns, and consults the configured governance injection detector before handoff to specialized agents; formats the selected agent's response.
+  - Agent clients register [[service|PresidioAPI]]-backed PII anonymization and guardrail middleware that marks user and tool content as untrusted and filters selected injection or prompt-leakage patterns.
+  - Agents are wrapped with the shared governance kernel, and function-call middleware applies governance policies to tool invocations.
+- **[[service|rating-api]] / [[agent|rating-agent]]:**
+  - Registers the same shared governance kernel, [[service|PresidioAPI]] PII anonymization, and chat-client guardrail building blocks for its summarization agent ([[agent|rating-agent]]).
+  - Scope note: these protections are evidenced in [[service|chat-api]] and [[service|rating-api]] only; verify registration on any other AI-enabled code or model integration.
+
+### Governance Kernel & Policy Configuration
+
+- **Shared governance kernel:** Loads policy files from configuration, applies a `deny-overrides` conflict strategy, and supports security rings, prompt-injection detection, and a circuit breaker.
+- **Default & service policies:** The default policy defines deny-by-default tool access with explicit allow, deny, and rate-limit rules. [[service|chat-api]] and [[service|rating-api]] supply additional service-specific policy files; effective permissions are governed by those policy rules plus registered agent tools.
+
+### Developer Change Checklist
+
+1. Give each agent only the tools and data it needs, and define permitted operations in its policy file.
 2. Keep untrusted user and tool output separate from trusted instructions.
-3. Apply input and output PII handling where model requests cross a privacy boundary.
-4. Test allow, deny, rate-limit, injection, and failure cases for each registered tool.
-5. Recheck policy file deployment paths and startup validation when changing policy configuration.
+3. Apply input and output PII handling ([[service|PresidioAPI]]) wherever model requests cross a privacy boundary.
+4. Test allow, deny, rate-limit, prompt-injection, and failure cases for each registered tool.
+5. Recheck policy file deployment paths and startup validation whenever policy configuration changes.

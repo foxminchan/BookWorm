@@ -19,9 +19,36 @@ owners:
   - contributor-team
 ---
 
-## Overview
+## 1. Context & Problem
 
-The Author aggregate represents a person who writes [[entity|book]]s. It stores the author's unique identifier and required name, enforces a non-empty name during creation and updates, and is associated with books through the [[entity|book-author]] join entity.
+A bookstore catalog needs a consistent way to represent the people who write [[entity|book]]s. If author names were stored only as plain text on each book, the same creator could end up spelled differently across titles, making author-based search unreliable and requiring repetitive edits whenever an author's name changes.
+
+## 2. Business Value
+
+- **Data consistency:** Keeps each author's display name uniform across every book they have written.
+- **Better discovery:** Enables customers to browse and filter the catalog reliably by author.
+- **Reduced editorial effort:** Allows catalog teams to update an author's record once rather than editing every associated title.
+
+## 3. How It Works
+
+An Author represents an individual creator who writes [[entity|book]]s in the catalog:
+
+- Each author has a unique identity and a display name.
+- **Naming rule:** An author's name cannot be left blank—the catalog enforces a non-empty name both when an author is created and whenever an existing author is updated.
+- **Book association:** Authors are connected to books through a dedicated [[entity|book-author]] relationship, allowing one author to be credited on many books and a single book to credit multiple co-authors.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Separate record vs. embedded text:** Managing Author as its own standalone record avoids duplicate author data across books, at the cost of maintaining an explicit link between books and authors.
+- **Minimal initial profile:** Limiting the model to an identifier and a display name keeps onboarding and data entry simple, though future capabilities such as biographies, pen names, or distinguishing authors who share the same name would require adding fields later.
+
+## 5. Technical Reference
+
+### Entity Overview
+
+- **Aggregate Root:** `true` (`id: author`)
+- **Behavior:** Stores the author's unique identifier and required name, enforces a non-empty name during creation and updates, and links to [[entity|book]]s via the **BookAuthor** ([[entity|book-author]]) join entity.
+- **Owners:** `contributor-team`
 
 ### Entity Properties
 
@@ -29,4 +56,4 @@ The Author aggregate represents a person who writes [[entity|book]]s. It stores 
 
 ### Entity Relationships
 
-- An author is associated with books through the **BookAuthor** join entity
+- An author is associated with [[entity|book]]s through the **BookAuthor** ([[entity|book-author]]) join entity.

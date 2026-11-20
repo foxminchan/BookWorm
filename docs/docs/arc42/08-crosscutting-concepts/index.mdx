@@ -9,22 +9,54 @@ badges:
     textColor: blue
 ---
 
-This section describes practices and mechanisms that span the [[domain|BookWorm]] services and business capabilities. It focuses on concepts that influence multiple building blocks rather than repeating service-specific behavior.
+## 1. Context & Problem
 
-## Chapter contents
+In a distributed platform like [[domain|BookWorm]], multiple services and business capabilities share foundational concerns: protecting customer identity and privacy, exchanging messages reliably, validating inputs, diagnosing failures, governing AI features, and safely releasing changes.
 
-- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] explains identity boundaries, authorization, sensitive-data handling, and where protections are currently applied.
-- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] describes owned contracts, event envelopes, durable message handling, and compatibility checks.
-- [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] covers validation, consistent HTTP errors, retries, timeouts, idempotency, and their limits.
-- [[doc|arc42/08-crosscutting-concepts/004-observability]] describes shared logs, traces, metrics, health checks, and operational signals.
-- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] documents the controls applied to the [[domain|conversational]] and [[agent|rating-agent]] workflows.
-- [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] explains how tests and compatibility checks protect service behavior and boundaries.
+Without shared crosscutting practices, each team would reinvent these safeguards differently, creating inconsistent user experiences, hidden security gaps, and false assumptions about what the platform guarantees end to end. This chapter documents the practices and mechanisms that span multiple building blocks without repeating service-specific business logic.
 
-## Shared principles
+## 2. Business Value
 
-- **Keep ownership local.** A cross-cutting mechanism supports a capability, it does not transfer ownership of that capability's business data or decisions. See the [[doc|arc42/05-building-block-view]].
-- **Treat asynchronous outcomes explicitly.** Publishing a message, receiving an acknowledgement, or retrying work does not by itself prove a business operation completed. See the [[doc|arc42/06-runtime-view]].
-- **Distinguish common defaults from universal guarantees.** Some safeguards are registered through shared building blocks, while others are currently wired only into specific services. Each concept page identifies that scope.
-- **Do not infer unstated service levels.** The repository does not establish system-wide latency, availability, recovery, or retention targets. See the [[doc|arc42/01-introduction-and-goals/003-quality-goals]].
+Shared crosscutting concepts create clear, practical benefits across business, operations, and delivery teams:
 
-These pages describe the current implementation where it is evidenced in the BookWorm source checkout. They also call out important limits so that a configured mechanism is not mistaken for an end-to-end guarantee.
+- **Predictable customer protection:** Consistent identity boundaries, privacy controls, and validation rules reduce the risk of unauthorized access or sensitive-data exposure.
+- **Honest operational expectations:** Distinguishing local technical defaults from end-to-end business guarantees prevents teams and stakeholders from assuming unstated latency, availability, or recovery promises.
+- **Faster incident resolution:** Common observability signals and explicit failure reporting help operations pinpoint which capability owns a delayed or failed step.
+- **Safer, faster delivery:** Shared contract-compatibility checks and verification practices let teams evolve capabilities independently without breaking downstream consumers.
+
+## 3. How It Works
+
+BookWorm organizes its shared practices around four core principles and six focused topic guides:
+
+### Shared principles
+
+1. **Keep ownership local:** A shared mechanism supports a capability; it never transfers ownership of that capability's business data or decisions. Structural boundaries are detailed in [[doc|arc42/05-building-block-view]].
+2. **Treat asynchronous outcomes explicitly:** Sending a message, receiving an acceptance acknowledgement, or retrying background work does not prove that the overall business operation succeeded. End-to-end flows are traced in [[doc|arc42/06-runtime-view]].
+3. **Distinguish common defaults from universal guarantees:** Some safeguards are applied through shared building blocks, while others are enabled only in specific services. Each guide states its exact scope.
+4. **Do not infer unstated service levels:** Source-level defaults do not establish system-wide latency, availability, data retention, or recovery targets. Approved goals belong in [[doc|arc42/01-introduction-and-goals/003-quality-goals]].
+
+### Chapter guides
+
+- **Security and privacy:** [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] explains identity boundaries, access control, sensitive-data handling, and where protections are currently enforced.
+- **Contracts and messaging:** [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] covers owned service contracts, message structures, durable message handoffs, and compatibility checks.
+- **Validation, errors, and resilience:** [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] explains input validation, consistent error responses, retries, timeouts, duplicate-request handling, and their limits.
+- **Observability:** [[doc|arc42/08-crosscutting-concepts/004-observability]] covers shared logging, tracing, metrics, health checks, and diagnostic signals.
+- **AI governance:** [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] documents the safeguards applied to the [[domain|conversational]] and [[agent|rating-agent]] workflows.
+- **Testing and change safety:** [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] explains how automated checks and contract verification protect service behavior and boundaries.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Shared defaults are not blanket guarantees:** Registering a capability in a shared library does not automatically mean every service or endpoint uses it. Each concept page explicitly calls out partial coverage so teams do not overestimate protection.
+- **Resilience mechanisms can introduce duplicate side effects:** Retries and durable handoffs improve recoverability, but without universal exactly-once guarantees, downstream steps must account for repeated work.
+- **Evidence-bound documentation prevents drift:** These guides reflect what is actually evidenced in the BookWorm source checkout, calling out limits directly instead of assuming idealized production behavior.
+
+## 5. Technical Reference
+
+| Concept guide                                                                | Technical mechanisms and scope covered                                                                                                   |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| [[doc\|arc42/08-crosscutting-concepts/001-security-and-privacy]]             | Identity boundaries, endpoint authorization policies, sensitive-data handling, redaction/PII limits, and per-service coverage            |
+| [[doc\|arc42/08-crosscutting-concepts/002-contracts-and-messaging]]          | Owned HTTP/gRPC/event contracts, event envelopes, durable inbox/outbox message handling, and schema compatibility checks                 |
+| [[doc\|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] | Request validation pipelines, structured HTTP error contracts, retries, timeouts, idempotency guards, and known duplicate/failure limits |
+| [[doc\|arc42/08-crosscutting-concepts/004-observability]]                    | Structured logs, distributed traces, metrics, health check endpoints, and operational correlation signals                                |
+| [[doc\|arc42/08-crosscutting-concepts/005-ai-governance]]                    | Controls, middleware, tool governance, and model boundaries applied to [[domain\|conversational]] and [[agent\|rating-agent]] workflows  |
+| [[doc\|arc42/08-crosscutting-concepts/006-testing-and-change-safety]]        | Unit, contract, boundary/architecture, and integration verification protecting service behavior and public contracts                     |

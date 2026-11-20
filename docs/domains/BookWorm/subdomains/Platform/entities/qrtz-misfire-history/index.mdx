@@ -52,6 +52,32 @@ properties:
     required: false
 ---
 
+## 1. Context & Problem
+
+Even well-configured schedules occasionally miss their intended execution window—for example, during service restarts, maintenance pauses, or periods when all worker threads are busy. When a trigger misses its planned firing time, teams need a clear record of what was missed and why, rather than discovering silent gaps in business processing later.
+
+## 2. Business Value
+
+- **Auditability for missed schedules**: Gives operations and business teams visibility into when scheduled triggers failed to fire on time.
+- **Root-cause clarity**: Pairs the planned schedule time, misfire detection time, and reason code to distinguish capacity bottlenecks from downtime or scheduling pauses.
+- **Better capacity and priority tuning**: Repeated misfire entries highlight triggers that need higher priority, wider misfire tolerances, or additional worker capacity.
+
+## 3. How It Works
+
+When the scheduler detects that a trigger's planned fire time has passed beyond the allowed threshold without executing, it can optionally record a misfire history entry.
+
+- **Affected schedule context**: Each entry identifies the scheduler, the worker instance that observed the misfire, the trigger that missed its window, and—when applicable—the associated job definition.
+- **Timing comparison**: It captures both the original scheduled time and the time the misfire was detected so teams can see how far behind schedule the trigger fell.
+- **Cause classification**: An optional reason indicator records why the misfire occurred, creating a dedicated audit trail separate from completed job runs.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Storage growth during outages**: If many high-frequency triggers misfire during prolonged downtime, misfire records can accumulate rapidly; teams enabling this optional table should define retention rules.
+- **Records the miss, not the recovery action**: Misfire history documents that a schedule window was missed and why, while any resulting catch-up execution or skip behavior depends on the trigger's configured misfire policy.
+- **Code translation needed for reporting**: Storing the misfire reason as a compact numeric code keeps records small, but operational dashboards or runbooks should translate those codes into clear labels for non-technical readers.
+
+## 5. Technical Reference
+
 ### Entity Properties
 
 <EntityPropertiesTable />
@@ -61,3 +87,5 @@ properties:
 - The composite key is `sched_name` and `entry_id`.
 - Misfire history records missed executions of [[entity|qrtz-triggers]] and
   may reference [[entity|qrtz-job-details]].
+- Foreign key references map (`trigger_name`, `trigger_group`) to `qrtz-triggers` and optionally (`job_name`, `job_group`) to `qrtz-job-details`.
+- Diagnostic fields include `instance_name`, `misfire_time`, `sched_time`, and `reason`.

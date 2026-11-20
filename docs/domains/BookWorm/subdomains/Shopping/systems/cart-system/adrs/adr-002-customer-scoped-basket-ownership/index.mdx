@@ -26,39 +26,32 @@ badges:
     textColor: purple
 ---
 
-## Context
+## 1. Context & Problem
 
-Basket contents represent one customer's current purchase intent. Allowing a
-caller to select an arbitrary basket identifier, or treating baskets as a
-shared store, would create cross-customer access risks and blur the boundary
-between [[domain|shopping]] and [[domain|ordering]].
+A customer's [[entity|basket]] represents their personal, pre-order purchase intent. If callers were allowed to specify any basket identifier they wanted, or if baskets were treated as a shared workspace, one user could read or alter another customer's cart. It would also blur the boundary between active [[domain|shopping]] intent and confirmed [[domain|ordering]] records.
 
-The HTTP API requires authorization and applies a per-user rate limit. Its
-customer identity comes from the authenticated request, not from a
-client-selected basket identifier. The internal gRPC query also returns the
-current customer's basket without accepting a basket ID in its request, so
-service-to-service access must preserve the identity context for the intended
-customer.
+## 2. Business Value
 
-## Decision
+- **Strong customer privacy and security**: Prevents unauthorized access or accidental cross-customer cart tampering.
+- **Clear ownership boundaries**: Reinforces that a basket belongs solely to one authenticated shopper before checkout, while confirmed orders belong to [[domain|ordering]].
+- **Consistent access control**: Applies one predictable ownership rule across both storefront requests and internal service-to-service workflows.
 
-The authenticated customer identity is the basket's identifier and ownership
-boundary. [[service|basket-api]] derives the customer-scoped Redis key from
-that identity; callers do not choose another customer's basket ID. The
-[[entity|basket]] is pre-order state containing [[entity|basket-item]]
-references and quantities. After checkout, [[domain|ordering]] owns the accepted Order
-lifecycle. This ownership rule applies to every read, create, update, and
-delete path, including internal service-to-service calls.
+## 3. How It Works
 
-## Consequences
+Each authenticated customer is automatically matched to their own personal [[entity|basket]] containing their selected [[entity|basket-item]] references and quantities. Callers never choose a basket identifier on their own—the system derives the basket's location strictly from the verified customer identity on the request.
 
-- Every basket operation must authenticate and authorize the current customer.
-- The HTTP request identity and the identity context used by internal clients
-  must stay aligned; internal access is not permission to select another
-  customer's basket.
-- Basket data cannot be used as a shared shopping list or order record.
-- Key derivation and authorization are security-critical parts of the API and
-  must be enforced consistently across HTTP and gRPC entry points.
-- Cross-customer access attempts must fail rather than return an empty basket.
-- Rate limiting helps protect the HTTP surface, but does not replace
-  customer-level authorization.
+This rule applies uniformly to every operation—reading, creating, updating, and deleting—whether the request comes directly from a customer's browser or from an internal service acting on the customer's behalf. Any attempt to access another customer's basket is rejected explicitly rather than returning an empty cart. After checkout completes, ownership of the resulting purchase transfers to [[domain|ordering]].
+
+## 4. Trade-offs & Lessons Learned
+
+- **No shared baskets**: This design intentionally rules out shared family carts, collaborative shopping lists, or using baskets as historical order records.
+- **End-to-end identity propagation**: Internal services cannot treat internal access as a free pass to look up arbitrary customers' baskets; they must always pass along the intended customer's verified identity context.
+- **Fail-closed enforcement**: Cross-customer access attempts must fail explicitly rather than masking unauthorized requests with an empty basket response.
+- **Rate limiting is not authorization**: Per-user traffic limits help protect public entry points from abuse, but they do not replace strict customer-level authorization and identity checks.
+
+## 5. Technical Reference
+
+- **Identity-derived key**: [[service|basket-api]] derives the customer-scoped Redis key directly from the authenticated customer identity; callers never supply a basket ID.
+- **HTTP surface**: Requires customer authorization and enforces per-user rate limiting across read, create, update, and delete endpoints.
+- **Internal gRPC surface**: The internal gRPC query returns the current customer's [[entity|basket]] without accepting a basket ID parameter; service-to-service callers must preserve the authenticated customer identity context.
+- **Data scope**: [[entity|basket]] and [[entity|basket-item]] represent pre-order state only; [[domain|ordering]] owns the accepted Order lifecycle post-checkout.

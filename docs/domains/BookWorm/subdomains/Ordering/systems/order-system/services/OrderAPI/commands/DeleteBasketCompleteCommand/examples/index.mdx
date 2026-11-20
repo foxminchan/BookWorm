@@ -2,11 +2,36 @@
 summary: Consume Finance's successful basket-cleanup outcome without changing Order status.
 ---
 
+## 1. Context & Problem
+
+Once an order is placed, Finance coordinates cleaning up the customer's shopping basket so purchased items do not remain there. The ordering service needs a clear record that this post-checkout cleanup succeeded, without mistaking that operational milestone for a change in the customer's order status.
+
+## 2. Business Value
+
+- **Clear audit trail:** Records confirmation of successful basket cleanup alongside the order identifier and purchase total for operational visibility.
+- **Protected order lifecycle:** Ensures post-checkout housekeeping messages cannot inadvertently alter or prematurely complete an order's business status.
+- **Explicit service boundaries:** Separates Finance's saga confirmation from Basket's own completion notification so teams can reason about each responsibility independently.
+
+## 3. How It Works
+
+1. After Finance confirms that basket cleanup has succeeded, it sends this notification to [[service|order-api]].
+2. The notification carries a unique message identifier, the time it was issued, the related order identifier, and the purchase total—without including basket or customer personal details.
+3. The ordering service logs that basket cleanup succeeded for that order and purchase amount.
+4. Processing this notification leaves the order's business status unchanged and does not mark the order as completed.
+5. This coordination message is separate from Basket's own completion announcement ([[event|BasketDeletedCompleteIntegrationEvent]]).
+
+## 4. Trade-offs & Lessons Learned
+
+- **Observational handling without state changes:** Logging the outcome without updating the order status keeps Finance's internal workflow decoupled from order fulfillment, though it means order completion must be driven by separate business events.
+- **Minimal message data:** Omitting basket identifiers and customer details narrows coupling between services, at the cost of relying on the order identifier alone for operational correlation.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Receive successful cleanup
+### Receive successful cleanup
 
 Finance publishes this command after successful basket cleanup.
 [[service|order-api]] consumes it through
@@ -48,7 +73,7 @@ public DeleteBasketCompleteCommand Handle(BasketDeletedCompleteIntegrationEvent 
 
 ---
 
-## Payload
+### Payload
 
 <CodeGroup dropdown>
 
@@ -63,7 +88,7 @@ public DeleteBasketCompleteCommand Handle(BasketDeletedCompleteIntegrationEvent 
 
 </CodeGroup>
 
-## Handle the outcome
+### Handle the outcome
 
 The example shows the camelCase JSON data inside the BookWorm
 CloudEvents-compatible envelope. Order API logs successful cleanup without

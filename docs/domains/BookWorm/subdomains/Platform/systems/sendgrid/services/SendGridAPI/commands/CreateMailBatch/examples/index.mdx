@@ -2,17 +2,40 @@
 summary: Create a SendGrid mail batch and preserve its identifier for a later mail submission.
 ---
 
+## 1. Context & Problem
+
+When BookWorm needs to group related email notifications—such as messages intended for coordinated or scheduled delivery—it must first reserve a shared batch identifier from the email provider before submitting the individual emails.
+
+If an error occurs while creating that identifier, blindly requesting a new one can orphan tracking state or cause duplicate batches, leaving the notification workflow unable to tell whether a retry is safe.
+
+## 2. Business Value
+
+- **Coordinated batch tracking**: Grouping related messages under a single batch identifier makes scheduled sends easier to manage, audit, and correlate across systems.
+- **Safe failure recovery**: Preserving workflow state before retrying prevents duplicate batch creation and keeps operational diagnostics clear when provider responses are uncertain.
+
+## 3. How It Works
+
+The batch-creation workflow follows two core rules:
+
+1. **Reserve and store the batch identifier first**: Before submitting messages that need to be grouped together, request a new batch identifier from SendGrid, store it within the notification workflow, and include it later in the [[command|SendMail]] request when required.
+2. **Reconcile before replacing on unknown errors**: If batch creation fails with an uncertain outcome from the provider, do not immediately generate a replacement batch identifier. Preserve the current workflow state so the Notification System can check what happened and decide whether a retry is safe.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Extra upfront step**: Reserving a batch identifier adds a separate call and state-persistence step before sending mail, so it should only be used when workflows genuinely require grouped or scheduled-send tracking.
+- **Reconciliation complexity**: Avoiding duplicate batches after an ambiguous failure requires keeping durable workflow state rather than treating batch creation as a stateless, throwaway call.
+
+## 5. Technical Reference
+
+### Step 1: Create a mail batch
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Create a mail batch
+Create a mail batch before submitting messages that need to share a batch identifier. Store the returned `batch_id` with the notification workflow, then include it in the [[command|SendMail]] request when required.
 
-Create a mail batch before submitting messages that need to share a batch
-identifier. Store the returned `batch_id` with the notification workflow, then
-include it in the [[command|SendMail]] request when required.
-
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -65,8 +88,8 @@ internal sealed record CreateMailBatchResponse(
 
 ---
 
-## 2. Handle batch-creation failures
+### Step 2: Handle batch-creation failures
 
-Do not create a replacement batch identifier after an unknown provider failure
-without reconciling the original request. Preserve the workflow state so the
-Notification System can determine whether a retry is safe.
+- **Endpoint**: `POST https://api.sendgrid.com/v3/mail/batch`
+- **Authentication**: Bearer token supplied via `SENDGRID_API_KEY` environment/runtime secret configuration.
+- **Recovery rule**: Do not create a replacement `batch_id` after an unknown provider failure without reconciling the original request; preserve workflow state so the Notification System can determine whether a retry is safe.

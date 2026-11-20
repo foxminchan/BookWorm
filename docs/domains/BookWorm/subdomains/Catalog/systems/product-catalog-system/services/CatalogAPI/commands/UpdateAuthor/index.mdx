@@ -18,22 +18,43 @@ sidebar:
   badge: "PUT"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Updates the [[entity|author]] identified by `id`. The operation is idempotent when the same name is submitted.
+Author details in a book catalog occasionally need corrections—such as fixing spelling mistakes, updating pen names, or standardizing formatting across titles. Without a dedicated way to update an existing [[entity|author]] record in place, staff would have to create duplicate author entries or manually update every book associated with that writer.
+
+## 2. Business Value
+
+- **Catalog consistency**: Keeps author names accurate and uniform everywhere the author appears across book listings.
+- **Operational efficiency**: Enables catalog managers to fix or refine an author's name once rather than editing multiple linked titles.
+- **Safe retries**: Repeating the same correction with the same name produces the exact same outcome without duplicating records or corrupting data.
+
+## 3. How It Works
+
+A catalog administrator or integrated system provides the author's unique identifier along with the updated display name.
+
+1. The catalog checks that both the unique identifier and a non-empty display name are supplied and properly formatted.
+2. If the author exists, the system updates the stored display name and completes with an empty confirmation. Submitting the exact same update again leaves the author record unchanged.
+3. If the provided details are incomplete or invalid, or if no author matches the given identifier, the system rejects the change and notifies the caller so no partial update occurs.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Focused scope**: Updating only the display name keeps the operation simple and predictable, while linking or unlinking authors from specific books remains managed on the book listing itself.
+- **Identifier-driven updates**: Requiring a stable unique identifier prevents accidental changes to the wrong author when two writers share a similar name, though callers must know the identifier beforehand.
+- **Empty confirmation on success**: Returning no body content reduces network overhead, meaning callers should rely on the confirmation itself (or refresh their author view if needed) rather than expecting the updated record in the reply.
+
+## 5. Technical Reference
+
+- **Endpoint**: `PUT /api/v1/authors`
+- **Command**: `UpdateAuthor` (updates [[entity|author]])
+- **Request contract**: JSON payload requiring `id` (UUID) and a non-empty `name` (`minLength: 1`, `additionalProperties: false`).
+- **Idempotency**: Submitting the same `name` for an existing `id` is idempotent.
+- **Responses**:
+  - `204 No Content`: Author updated successfully; response body is empty.
+  - `400`: Validation failure (e.g., invalid UUID or empty `name`).
+  - `404`: No author exists with the supplied UUID.
 
 <NodeGraph />
 
-## Contract
-
-The request is JSON and requires both `id` and a non-empty `name`.
-
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`400` indicates validation failure. `404` indicates that no author exists with the supplied UUID.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

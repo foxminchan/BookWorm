@@ -12,25 +12,33 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Use the available policy context
+## 1. Context & Problem
 
-The [[agent\|qa-agent]] handles questions about store services, policies,
-accounts, orders, billing, delivery, returns, and refunds using supplied
-store-policy information. Explain the relevant information clearly and state
-when the supplied context does not answer the question.
+Customers frequently ask conversational support questions about store services, delivery, returns, refunds, billing, accounts, and orders. Without clear operational boundaries, an automated assistant could accidentally present general store policies as live confirmation of a customer's personal order or account status, or fail to clearly bridge questions that mix store policy with book inquiries.
 
-## Respect the account-data boundary
+## 2. Business Value
 
-The QA Agent does not perform live account, Basket, or Order lookups and does
-not modify customer records. Do not present general policy context as a
-confirmation of an individual customer's transaction or account state. When
-an answer requires unavailable details, explain the limitation and direct the
-customer to support.
+- **Consistent policy guidance**: Answers common store and support questions rapidly using authoritative store-policy context.
+- **Protected account and transaction integrity**: Eliminates false assurances about live order states or unauthorized record modifications.
+- **Clear multi-topic support**: Seamlessly handles requests that combine store-support questions with book inquiries while keeping each part distinct.
 
-## Requests that also involve books
+## 3. How It Works
 
-If a customer-support request also needs book information, QA can hand that
-part to [[agent\|book-agent]]. Keep the response clear about which part is
-general store guidance and which part is book-specific.
+1. **Answer from Supplied Policy Context**: Store-support inquiries covering services, policies, accounts, orders, billing, delivery, returns, and refunds are answered using the store-policy information provided to the assistant. When the supplied context does not cover a question, the assistant states that limitation clearly.
+2. **Enforce the Account-Data Boundary**: The support specialist does not look up live personal accounts, shopping baskets, or individual orders, and cannot modify customer records. General policy rules are never presented as confirmation of an individual customer's transaction or account state. Whenever an answer requires unavailable personal details, the assistant explains the limitation and directs the customer to support.
+3. **Hand Off Book-Specific Questions**: If a customer-support conversation also requires book information, the book-specific portion is handed off to the book discovery specialist, and the response clearly separates general store guidance from book-specific details.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Policy-only self-service vs. live account integration**: Keeping the support specialist disconnected from live account, basket, and order lookups reduces security and state-mutation risks, at the cost of escalating account-specific inquiries to human support.
+- **Explicit separation in mixed responses**: Clearly distinguishing general store rules from book-specific answers prevents customers from misinterpreting policy context as personalized book or order confirmation.
+
+## 5. Technical Reference
+
+- **Primary agent**: [[agent\|qa-agent]]
+- **Handoff target**: [[agent\|book-agent]] (for book-specific portions of mixed customer-support requests)
+- **Supported policy scope**: Store services, policies, accounts, orders, billing, delivery, returns, and refunds (sourced strictly from supplied store-policy context).
+- **Restricted operations**: No live account, Basket, or Order lookups; no modifications to customer records.
+- **Fallback behavior**: State explicitly when supplied context does not answer the question or when unavailable transaction/account details require directing the customer to support.
 
 <Footer />

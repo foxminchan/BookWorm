@@ -12,12 +12,48 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Symptoms
+## 1. Context & Problem
+
+Book cover images are stored in cloud object storage, while each [[entity|book]] record holds only a structured internal storage reference. When a book is requested, the catalog issues a short-lived, read-only link so browsers and apps can load the artwork safely. If a client caches that link past its expiration, if a database restore points to the wrong storage location, or if an image file goes missing, book covers fail to render.
+
+## 2. Business Value
+
+- **Preserves storefront visual quality:** Restores missing book covers quickly so merchandising pages remain complete and trustworthy.
+- **Prevents risky manual data fixes:** Steers support and operations teams toward safe storage restoration or standard catalog updates rather than unapproved direct database edits.
+- **Maintains media security:** Balances easy cover rendering with controlled, time-limited media access.
+
+## 3. How It Works
+
+### Symptoms and common causes
+
+This runbook applies when an image link fails with an access-denied or not-found error, or when a [[entity|book]] has an image reference recorded but its cover fails to display.
+
+Diagnosis checks three possibilities in order:
+
+1. **Expired image link (most common):** Generated image links are read-only and valid only for a limited time. Consumers must never store these links permanently; re-fetching the book issues a fresh working link.
+2. **Wrong storage account or container:** Every book's internal image reference identifies the expected storage account, container, and file name, and the catalog validates the account and container before serving the image. A restored or migrated record pointing to another environment's account or container will fail validation.
+3. **Missing image file:** Confirm whether the underlying media file exists in the configured media storage container.
+
+### Recovery and verification
+
+- If the media file is missing and recoverable, restore it to the exact same container and file name so the existing book reference works without changing catalog records.
+- If the file cannot be recovered, update the book with a new image—or remove the image—through the catalog service so a valid new reference is generated. Avoid hand-editing the stored image field directly unless performing an approved operational correction.
+- Verify resolution by fetching the book and confirming a working, time-limited image link is returned.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Time-limited links vs. static public URLs:** Issuing short-lived, read-only links prevents unrestricted media scraping and decouples clients from storage internals, at the trade-off of failing if any client persists a link beyond its expiry window.
+- **Strict account and container validation:** Checking storage location details on read catches cross-environment restore mismatches immediately, though environment migrations require careful alignment of image references.
+- **API-mediated image updates:** Updating or clearing missing images through [[service|catalog-api]] keeps storage objects and catalog references consistent, avoiding manual database drift.
+
+## 5. Technical Reference
+
+### Symptoms
 
 - Image URL returns `403`/`404`.
 - The [[entity|book]] record has an image URN but the image does not render.
 
-## Diagnose
+### Diagnose
 
 1. **Expired URL (most common):** SAS URLs are read-only and time-limited
    (`SasExpiryHours`). Re-fetch the book to get a fresh URL; never store the
@@ -28,7 +64,7 @@ import Footer from "@catalog/components/footer.astro";
 3. **Missing blob:** confirm the blob exists in the configured container in
    [[container|catalog-blob]].
 
-## Recover
+### Recover
 
 - Restore the blob to the same container and blob name, keeping the URN
   unchanged.
@@ -37,11 +73,11 @@ import Footer from "@catalog/components/footer.astro";
 - Do not hand-edit `books.image` unless it is an approved operational
   correction.
 
-## Verify
+### Verify
 
 [[query|GetBook]] returns a working time-limited URL for the book.
 
-## Contact
+### Contact
 
 - **Contact point:** [[team\|platform-team]] for Blob Storage or infrastructure
   incidents; [[team\|contributor-team]] for Catalog API, URN, or image-handling

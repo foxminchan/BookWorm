@@ -2,21 +2,43 @@
 summary: Rename an existing publisher and handle missing-resource responses.
 ---
 
+## 1. Context & Problem
+
+Publisher names occasionally change due to rebranding, acquisitions, or corrections to initial data entry. Integration developers need clear examples showing how to submit a publisher rename and handle cases where the target publisher record no longer exists.
+
+## 2. Business Value
+
+- **Consistent catalog attribution**: Keeps publisher branding accurate across all associated book listings without manual per-book edits.
+- **Faster, safer client development**: Shows exact request expectations and error-handling behavior so admin tools handle empty confirmations and missing records properly.
+
+## 3. How It Works
+
+The caller provides the publisher's unique identifier together with its updated display name.
+
+Upon validating the request and locating the publisher, the catalog applies the new name and returns an empty confirmation, which the caller treats as completion without expecting a response body. If no publisher matches the supplied identifier, the catalog reports that the publisher could not be found so the caller does not mistake the failure for a completed update.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Lightweight confirmation**: Returning an empty acknowledgement avoids unnecessary response data, requiring callers not to parse a reply body and to update local UI state or refresh publisher views as needed.
+- **No implicit creation**: Supplying an unknown identifier fails with a not-found error rather than creating a new publisher, preventing accidental duplicate records from stale references.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Update an existing publisher
+### 1. Update an existing publisher
 
 Send the publisher UUID with its replacement display name. The API returns `204 No Content` when the update succeeds.
 
-### Payload details
+#### Payload details
 
 - `id` identifies the publisher to update and must be a valid UUID.
 - `name` is required and must be non-empty.
 - A `204` response has no response body.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +48,7 @@ const response = { status: 204, body: null };
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Treat the update as complete when the API returns `204`; do not attempt to parse a response body.
 
@@ -62,6 +84,6 @@ if (!response.ok) {
 
 ---
 
-## 2. Handle a missing publisher
+### 2. Handle a missing publisher
 
 If the UUID is not known to the Catalog, the API returns `404` with problem details. Do not treat this response as a successful update.

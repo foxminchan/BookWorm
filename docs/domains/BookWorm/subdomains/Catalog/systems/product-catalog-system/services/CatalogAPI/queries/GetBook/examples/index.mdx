@@ -2,21 +2,43 @@
 summary: Retrieve a complete book projection and handle an unknown UUID.
 ---
 
+## 1. Context & Problem
+
+Client applications rendering a product detail page need a clear, predictable way to request all information for a single book—and an equally clear way to recognize when a book identifier does not exist so they do not display broken or blank product screens.
+
+## 2. Business Value
+
+- **Single-step page rendering**: Clients receive pricing, availability, catalog relationships, and rating summaries together without making follow-up requests.
+- **Predictable error handling**: Missing books are surfaced explicitly rather than disguised as empty records, preventing misleading product pages or accidental checkout attempts.
+- **Faster client onboarding**: Ready-to-use request and response examples shorten integration time for storefront and partner teams.
+
+## 3. How It Works
+
+1. **Happy path (book found)**: The client requests a book using its unique identifier and receives the complete book summary, including display metadata, regular and sale pricing, stock availability, category, publisher, authors, and review ratings.
+2. **Missing book path (unknown identifier)**: If no book matches the supplied identifier, the service reports that the resource was not found instead of returning an empty placeholder object, allowing the client to show a proper "not found" state.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit failure vs. empty fallback**: Returning a distinct not-found error instead of an empty book object prevents silent UI bugs, though every client must explicitly handle the missing-resource case.
+- **All-in-one response**: Bundling ratings and catalog relationships into one response reduces round trips for detail views, even if a caller only needs a subset of fields.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Retrieve a book
+### 1. Retrieve a book
 
 The query returns `200` with a complete `BookDto`, including pricing, stock status, relationships, and rating aggregates.
 
-### Response details
+#### Response details
 
 - `id` and display metadata identify the catalog item.
 - Pricing and availability describe the current sellable state.
 - Category, publisher, authors, and rating aggregates are returned in the projection.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -33,7 +55,7 @@ const book: BookDto = {
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Use the returned projection to render the book page without issuing separate requests for its catalog metadata.
 
@@ -76,6 +98,6 @@ console.log(`${book.name}: ${book.price}`);
 
 ---
 
-## 2. Handle an unknown book
+### 2. Handle an unknown book
 
 An unknown UUID returns `404` with problem details. Do not convert a missing resource into an empty `BookDto`.

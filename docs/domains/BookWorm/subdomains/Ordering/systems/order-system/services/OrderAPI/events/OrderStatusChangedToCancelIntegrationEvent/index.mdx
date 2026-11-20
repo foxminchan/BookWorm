@@ -13,32 +13,36 @@ badges:
     textColor: blue
 ---
 
-## Overview
+## 1. Context & Problem
 
-[[service|order-api]] publishes this event after an [[entity|order]]
-transitions from New to Cancelled. It reports a business-status change to
-Finance, not a soft deletion or a request to cancel an Order.
+In an event-driven ordering architecture, Finance and other downstream consumers cannot rely on synchronous queries to detect when an order is cancelled. Without a dedicated lifecycle event signaling that an order moved from New to Cancelled, downstream financial workflows could remain open indefinitely or misinterpret a cancellation as a record deletion or a pending request.
 
-## Channel
+## 2. Business Value
 
-[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]]
+- **Unambiguous Business Semantics**: Clearly communicates an authoritative transition from New to Cancelled rather than a soft deletion or a cancellation request.
+- **Reliable Cross-Service Alignment**: Enables Finance to reconcile cancelled orders and their purchase amounts promptly without tight runtime coupling to Ordering.
+- **Predictable Integration Contract**: Enforces a stable set of required fields across every message, reducing integration defects for subscribing teams.
 
-## Payload
+## 3. How It Works
 
-The payload contains `id`, `creationDate`, `orderId`, `basketId`, nullable
-`fullName` and `email`, and `totalMoney`. All fields are required by the
-AsyncAPI schema, including the nullable fields.
+1. When an [[entity|order]] transitions from New to Cancelled, [[service|order-api]] publishes the order cancelled event to the ordering cancellation channel.
+2. Each message includes a unique event identifier, creation timestamp, order identifier, customer reference, optional customer name and email address, and the purchase total.
+3. Finance consumes the event as a confirmed status change and updates its own records accordingly, without treating it as a request to initiate cancellation.
 
-The current EventMapper supplies the Order's Buyer ID as `basketId`.
-Consumers must not assume this field is independently resolved basket data.
+## 4. Trade-offs & Lessons Learned
 
-## Schema
+- **Buyer reference in the basket field**: The current mapping supplies the order's buyer identifier in the basket reference field, so consumers must not assume it represents independently resolved basket data.
+- **Mandatory structure for optional fields**: Customer full name and email remain required properties in the contract even when their values are empty, ensuring consistent message parsing at the cost of consumers having to handle absent values gracefully.
+- **Business message vs. transport envelope**: The event contract documents the business data carried inside the platform's standard envelope rather than transport-level routing metadata.
 
-The schema describes camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope, not the complete transport envelope.
+## 5. Technical Reference
+
+- **Producer**: [[service|order-api]]
+- **Channel**: [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]]
+- **Payload Fields**: `id`, `creationDate`, `orderId`, `basketId`, nullable `fullName` and `email`, and `totalMoney`. All fields are required by the AsyncAPI schema, including the nullable fields.
+- **Mapping Note**: The current `EventMapper` supplies the Order's Buyer ID as `basketId`. Consumers must not assume this field is independently resolved basket data.
+- **Envelope Note**: The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
 
 <SchemaViewer file="schema.json" title="Order cancellation event payload" maxHeight="500" />
-
-## Architecture
 
 <NodeGraph />

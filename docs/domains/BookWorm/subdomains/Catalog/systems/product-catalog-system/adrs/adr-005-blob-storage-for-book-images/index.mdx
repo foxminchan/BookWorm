@@ -26,88 +26,48 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-[[entity|book]] cover images are large binary objects. Storing them in
-PostgreSQL would bloat the database and backups, and generated SAS URLs
-expire, so they cannot serve as stable identifiers. Images also have a
-different serving and lifecycle profile from relational book metadata:
-clients need a usable read URL, while the database needs a durable reference
-that survives URL expiry.
+[[entity|book]] cover images are large binary files with very different storage and delivery needs than structured catalog details like titles, prices, and descriptions. Storing image files directly inside the product database would bloat storage, slow down backups and restores, and tie transactional product operations to heavy file transfers.
 
-## Decision
+At the same time, direct download links used by storefronts are intentionally time-limited for security reasons. Because those links expire, the database cannot rely on saving a temporary web address as a permanent identifier for a book's cover image. Catalog needs a durable asset reference that survives link expiration while keeping media files outside the core database.
 
-[[service|catalog-api]] uploads image bytes to
-[[container|catalog-blob]] and stores only the resulting image URN on the book
-record in [[container|catalog-database]]. Each uploaded object receives a
-unique UUIDv7-based name and retains its content type. The URN has the form
-`urn:{account}:{container}:{blobName}` and is the stable reference.
+## 2. Business Value
 
-When returning a book, Catalog API validates the URN's account and container
-against the configured storage target and resolves a fresh, read-only,
-time-limited SAS URL. The URL lifetime is controlled by `SasExpiryHours`.
-Generated SAS URLs are never persisted. Explicit image removal and book
-deletion remove the referenced blob and its snapshots.
+- **Leaner, faster core database:** Keeping heavy image bytes out of the product database keeps catalog queries focused and reduces backup and replication size and duration.
+- **Independent scaling for media assets:** Dedicated object storage holds and serves cover images independently of relational product queries.
+- **Safer image delivery:** Storefronts receive short-lived, read-only access links generated on demand rather than exposing long-lived or permanent credentials.
+- **Durable catalog links:** Each book record holds a permanent asset reference that remains valid even as temporary access links expire and rotate.
 
-## Decision drivers
+## 3. How It Works
 
-Book cover assets differ from catalog metadata in both shape and lifecycle.
-They are large binary objects and do not benefit from being stored as rows in
-the relational product table. Their storage and serving needs should scale
-independently of product queries.
+When a [[entity|book]] cover image is uploaded through [[service|catalog-api]], the image file is saved to [[container|catalog-blob]] under a unique generated name while preserving its file type. Instead of storing the image content in [[container|catalog-database]], the book record stores only a permanent asset reference identifying where the file lives.
 
-Keeping image bytes out of PostgreSQL preserves database performance and
-reduces the operational footprint of catalog backups and replication. Using a
-stable URN instead of a signed URL keeps book records independent of the
-short-lived credentials used to read an image.
+Whenever a client or storefront requests book details, Catalog API checks that the saved asset reference matches the active storage location and generates a fresh, read-only, time-limited access link for viewing the image. These temporary links are never written back to the database. When an image is explicitly removed—or when the book itself is deleted—Catalog API deletes both the stored image file and any saved snapshots from object storage.
 
-## Alternatives considered
+### Alternatives considered
 
-### Store images directly in the database
+- **Store images directly on the book record:** Keeping image files in the same database row would combine everything in one system, but it would enlarge catalog tables, slow down backup and restore operations, and mix large binary payloads into transactional product updates.
+- **Store images in a separate table within the product database:** Separating image bytes into another relational table still traps media assets inside the database's backup and storage footprint rather than giving object storage clean ownership of files.
+- **Save long-lived signed links in the database:** Persisting pre-signed access links would avoid generating links on each read, but it would turn an expiring security credential into permanent product data, increasing stale-link risk and complicating security management.
 
-This would keep the book and its image bytes in one storage system, but would
-enlarge catalog tables, increase backup and restore times, and couple a
-write-heavy product model to large binary payloads that are not part of its
-transactional business logic.
+## 4. Trade-offs & Lessons Learned
 
-### Put the image content in a separate relational table inside PostgreSQL
+- **Non-atomic updates and orphan risk:** The product database and object storage do not share a single all-or-nothing transaction. If an image upload succeeds before a book update fails, an unreferenced file can remain in object storage; operational reconciliation must account for cleaning up orphaned files or repairing broken links.
+- **On-demand link resolution:** Reading a book requires generating a fresh access link, and client applications must handle time-limited links by fetching a current book representation rather than caching image links indefinitely.
+- **Operational recovery rules:** An expired image link does not mean the cover image is missing—fetching the book again resolves a fresh link. When moving or restoring records, teams must preserve the asset reference and restore the image under the exact same name in the configured storage location. If an image cannot be recovered, replace or remove it through [[service|catalog-api]] rather than hand-editing database records (see [[doc|runbooks/broken-book-images]]).
+- **Storage-target coupling:** Because the asset reference encodes the storage account and container, moving images between storage targets requires coordinated updates across both object storage and catalog references.
 
-This separates image bytes from the book row but still keeps binary blobs in
-the same storage and backup model as product data. The boundary between
-metadata and assets remains cleaner when the object store owns the bytes.
+## 5. Technical Reference
 
-### Generate and store long-lived signed URLs
-
-This would reduce URL-resolution work at read time, but it would turn an
-expiring access credential into persistent book data. It introduces stale-link
-risk and a harder security lifecycle. URLs are deliberately short-lived and
-resolved from the stable URN when the book is returned.
-
-## Consistency and recovery constraints
-
-- PostgreSQL and Blob Storage do not share a transaction. An upload can
-  succeed before the book record is updated, leaving an unreferenced blob;
-  record updates and object operations must account for this orphan risk.
-- An expired SAS URL is not evidence that the object is missing. Fetch the
-  book again to resolve a fresh URL rather than persisting or reusing an old
-  one.
-- Preserve the URN when moving or restoring a book, and restore the object
-  under the same name in the configured account and container.
-- If an image cannot be recovered, replace or remove it through Catalog API
-  rather than hand-editing the database reference. See
-  [[doc|runbooks/broken-book-images]].
-
-## Consequences
-
-- PostgreSQL stores compact image references instead of image bytes, keeping
-  relational backups and product queries focused on catalog data.
-- Blob Storage owns image content and can serve and scale it independently of
-  catalog queries.
-- Book reads incur URL-resolution work, and clients must be able to handle
-  time-limited URLs by fetching a current book representation when needed.
-- Image bytes and book metadata are not updated atomically. Failed or
-  interrupted operations can leave orphaned blobs or references to unavailable
-  objects, requiring operational reconciliation.
-- The URN's account and container are part of the reference contract; moving
-  objects between storage targets requires coordinated reference and object
-  handling.
+- **Related decision:** [[adr|adr-001-postgresql-system-of-record]]
+- **Scope:** `product-catalog-system`, [[service|catalog-api]], [[container|catalog-blob]], [[container|catalog-database]]
+- **Asset identity and URN contract:**
+  - Uploaded blobs receive a unique `UUIDv7`-based `blobName` and retain their uploaded content type.
+  - The stable reference persisted on the book record has the format `urn:{account}:{container}:{blobName}`.
+- **Read-time SAS URL resolution:**
+  - On book reads, `catalog-api` validates the URN's account and container against the configured storage target and resolves a fresh, read-only, time-limited SAS URL.
+  - URL lifetime is controlled by `SasExpiryHours`.
+  - Generated SAS URLs are never persisted in PostgreSQL.
+- **Deletion behavior:** Explicit image removal and book deletion remove the referenced blob and its snapshots from Azure Blob Storage.
+- **Recovery reference:** [[doc|runbooks/broken-book-images]] — preserve the URN when restoring records, restore the object under the same `blobName` in the configured account and container, or replace/remove the asset via `catalog-api` rather than manually editing PostgreSQL.

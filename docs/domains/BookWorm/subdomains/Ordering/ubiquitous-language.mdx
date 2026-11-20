@@ -45,3 +45,41 @@ dictionary:
     description: Cancelled is reached from New when the Order is cancelled.
     icon: CircleX
 ---
+
+## 1. Context & Problem
+
+Order management touches customer identity, delivery locations, line-item pricing, financial totals, and lifecycle states. Without a shared vocabulary across business analysts, product managers, solution architects, and developers, terms like "item", "total", or "cancelled" can easily be interpreted differently across storefront, checkout, and fulfillment discussions.
+
+This ubiquitous language defines the core concepts and lifecycle rules for BookWorm's Ordering subdomain.
+
+## 2. Business Value
+
+- **Aligned requirements and design**: Gives business and technical stakeholders a single, unambiguous definition for buyers, orders, line items, totals, and lifecycle states.
+- **Consistent financial rules**: Makes explicit that line totals and order totals are derived strictly from positive item quantities and non-negative unit prices.
+- **Clear lifecycle governance**: Establishes which order states are active versus terminal so workflows, customer communications, and reports stay consistent.
+
+## 3. How It Works
+
+The Ordering vocabulary is organized around customer identity, purchase structure, and lifecycle state:
+
+- **Buyer & Address**: A **Buyer** is the named person associated with one or more orders and holds a delivery **Address** containing street, city, and province details.
+- **Order, Order Item & Order Total**: An **Order** is a purchase record belonging to a buyer and containing one or more **Order Items**. Each **Order Item** captures a book reference, a positive quantity, and a non-negative price, with its line total equal to price multiplied by quantity. The **Order Total** is the sum of all order item line totals on that order.
+- **Lifecycle States (New, Completed, Cancelled)**: Every order begins in **New** and transitions from **New** to either **Completed** (successfully finished) or **Cancelled** (will not complete). Both **Completed** and **Cancelled** are terminal states.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Strict terminal states**: Treating **Completed** and **Cancelled** as final outcomes prevents ambiguous state reversals in reporting and downstream workflows, meaning any post-completion adjustments must be handled as separate processes rather than reopening a closed order.
+- **Derived totals over manual overrides**: Computing **Order Total** strictly from recorded **Order Item** quantities and prices preserves arithmetic integrity, while requiring future discounts or fees to be modeled as explicit items or adjustments if introduced later.
+
+## 5. Technical Reference
+
+| Dictionary ID | Summary                                                | Domain & Invariant Notes                                                        |
+| ------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `Buyer`       | The named person associated with Orders.               | Has a name, an `Address`, and a collection of `Order` records.                  |
+| `Address`     | A Buyer's street, city, and province information.      | Delivery location held by a `Buyer`.                                            |
+| `Order`       | A purchase record containing one or more Order items.  | Belongs to a `Buyer`; transitions from `New` to `Completed` or `Cancelled`.     |
+| `Order Item`  | A book identifier, quantity, and price on an Order.    | Positive quantity and non-negative price; line total equals `price * quantity`. |
+| `Order Total` | The sum of all Order item line totals.                 | Derived from the `Order Item` records on the `Order`.                           |
+| `New`         | The initial status of an Order.                        | Starting state; can transition to `Completed` or `Cancelled`.                   |
+| `Completed`   | A terminal status for a successfully completed Order.  | Terminal state reached from `New` when the Order is completed.                  |
+| `Cancelled`   | A terminal status for an Order that will not complete. | Terminal state reached from `New` when the Order is cancelled.                  |

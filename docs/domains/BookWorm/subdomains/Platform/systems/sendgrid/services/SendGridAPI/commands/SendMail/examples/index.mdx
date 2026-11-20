@@ -2,11 +2,38 @@
 summary: Send a BookWorm notification through SendGrid's SMTP relay with MailKit.
 ---
 
+## 1. Context & Problem
+
+Delivery teams and architects integrating email notifications need a clear, practical guide for handing off outbound messages from BookWorm to an external email provider. Two common pitfalls cause operational issues: sending through an unverified sender address, and mistakenly treating the provider's acceptance of a message as proof that the email actually reached the customer's inbox. Without explicit guidance on credentials, transport setup, and failure recovery, notifications can be silently lost during transient network or provider outages.
+
+## 2. Business Value
+
+- **Reliable customer communication:** Ensures notification messages are safely retained and retried when external delivery fails temporarily, preventing lost order or platform updates.
+- **Faster implementation consistency:** Gives engineering teams a verified reference pattern for connecting to the external email relay with proper authentication and encrypted transport.
+- **Clear operational boundaries:** Separates standard single-message relay delivery from batch-management workflows, reducing integration mistakes and support confusion.
+- **Protected credentials and sender trust:** Reinforces runtime secret management and verified sender domains so BookWorm emails maintain strong deliverability and security hygiene.
+
+## 3. How It Works
+
+1. **Prepare credentials and verified sender:** The platform retrieves the provider credential from secure runtime configuration and verifies that the sender address is approved by the external email provider.
+2. **Submit the message over encrypted mail transport:** The notification workflow establishes an authenticated, encrypted connection to the external mail relay and hands off the recipient, sender, subject, and message content.
+3. **Separate handoff from delivery:** Once the external provider accepts the submission, the handoff step finishes—though actual delivery to the recipient's inbox occurs asynchronously afterward.
+4. **Recover safely from failed submissions:** If the connection or submission fails, the platform preserves the pending outbound record rather than discarding it and schedules a controlled retry under the notification retry policy.
+5. **Use batch operations only when grouping is needed:** Standard relay submissions send individual messages directly; when scheduled grouping or batch tracking is required, workflows use the dedicated mail-batch operations instead.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Handoff acceptance is not inbox delivery:** Completing a relay submission only confirms the external provider received the request; downstream bounces, spam filtering, or mailbox delays happen outside BookWorm's immediate visibility.
+- **Standard relay vs. batch workflows:** Sending directly through the mail relay keeps routine notification delivery simple, while forfeiting provider-side batch grouping unless teams explicitly adopt the mail-batch workflow.
+- **Preserving pending work over silent drops:** Keeping failed items in the durable outbox enables recovery from provider outages, at the cost of requiring bounded retries and operational monitoring so failing records do not accumulate indefinitely.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Send an email with MailKit
+### 1. Send an email with MailKit
 
 Install the `MailKit` package and configure `SENDGRID_API_KEY` as a runtime
 secret. The sender address must be verified by SendGrid.
@@ -14,7 +41,7 @@ secret. The sender address must be verified by SendGrid.
 MailKit submits through SMTP, so use the [[command|CreateMailBatch]] and [[query|GetMailBatch]]
 REST operations when mail-batch management is required.
 
-### Expected outcome
+#### Expected outcome
 
 `SendAsync` completes when SendGrid accepts the SMTP submission. This does not
 confirm that the message has been delivered to its recipient.
@@ -62,7 +89,7 @@ await client.DisconnectAsync(true);
 
 ---
 
-## 2. Handle a rejected submission
+### 2. Handle a rejected submission
 
 Do not treat a successful SMTP submission as delivery confirmation. Preserve the
 outbox item and apply the Notification System's bounded retry policy when the

@@ -15,24 +15,40 @@ badges:
 schemaPath: schema.json
 ---
 
-## Overview
+## 1. Context & Problem
 
-`ProcessVectorBatchIntegrationEvent` is published by
-[[service|sheduler-dashboard]]'s `ProcessVectorBatchJob` to notify
-[[service|catalog-ingestion]] that pending book embedding updates should be
-processed.
+BookWorm's semantic search index must stay aligned with ongoing catalog updates without coupling the scheduling system to catalog database queries, batching rules, or embedding logic. The platform needs a lightweight, contract-driven signal that tells [[service|catalog-ingestion]] when to wake up and process pending book embedding updates.
 
-It inherits only `id` and `creationDate` from `IntegrationEvent`; batch size
-and selection order remain owned by [[service|catalog-ingestion]].
+## 2. Business Value
 
-## Schema
+- **Predictable search freshness**: Drives a steady five-minute indexing cycle so catalog changes appear reliably in search results.
+- **Stable integration contract**: Carrying only basic event identity and timing prevents breaking changes when catalog indexing rules or batch sizes evolve.
+- **Clear team ownership**: [[service|sheduler-dashboard]] owns schedule timing, while [[service|catalog-ingestion]] owns how pending records are selected, embedded, and acknowledged.
+
+## 3. How It Works
+
+1. On a recurring five-minute schedule, [[service|sheduler-dashboard]] emits this event as a lightweight wake-up notification.
+2. The event carries only a unique identifier and creation timestamp—it intentionally omits batch sizes, book lists, or processing rules.
+3. [[service|catalog-ingestion]] receives the signal and independently retrieves, embeds, and acknowledges its own waiting catalog updates under its own concurrency controls.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Thin wake-up signal vs. payload-heavy event**: Sending only an identifier and timestamp avoids stale book data in transit and keeps the contract durable, at the trade-off of requiring the consumer to query its own pending updates upon receipt.
+- **Scheduled batching vs. per-edit triggers**: Triggering every five minutes smooths indexing workload and simplifies failure recovery, while accepting up to a five-minute lag before edits are indexed.
+
+## 5. Technical Reference
+
+- **Producer & consumer**: Published by [[service|sheduler-dashboard]]'s `ProcessVectorBatchJob` over Kafka to notify [[service|catalog-ingestion]].
+- **Contract shape**: Inherits only `id` and `creationDate` from `IntegrationEvent`; batch size and selection order remain owned by [[service|catalog-ingestion]].
+
+### Schema
 
 <Schema file="schema.json" />
 
-## Examples
+### Examples
 
 <SchemaViewer file="schema.json" />
 
-## Architecture
+### Architecture
 
 <NodeGraph />

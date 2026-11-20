@@ -27,24 +27,42 @@ badges:
     textColor: teal
 ---
 
-## Overview
+## 1. Context & Problem
 
-Chat API is the HTTP and gRPC application surface of
-[[system|chat-system]]. It hosts the composed conversational workflow and
-exposes discovery and agent-to-agent protocol endpoints. The API coordinates
-`DecisionRouterExecutor` (`Microsoft-Decision-1`), [[agent|book-agent]], and
-[[agent|qa-agent]]; it does not own Catalog, Basket, Order, or Feedback data.
+The conversational experience in [[system|chat-system]] relies on multiple specialist AI agents, safety checks, privacy screening, and external integrations. Without a single coordinated entry point, client applications and partner systems would have to manage authentication, rate limits, routing rules, session storage, and agent discovery on their own.
 
-The interactive workflow validates a customer request, evaluates routing via
-`ChatRoutingDecisionService` (`Microsoft-Decision-1`), hands accepted input to
-the appropriate specialist sub-workflow, and formats the result. The Decision
-Router routes book-related requests to Book Agent, store-policy or service
-questions to QA Agent, and review/rating requests with a book catalog ID to
-[[agent|rating-agent]]. The Book Agent can delegate complex Catalog research to
-[[agent|book-catalog-researcher]] and
-[[agent|book-recommendation-researcher]].
+Chat API provides that unified application host. It serves as the gateway where interactive user conversations enter the system, where partner services discover and communicate with BookWorm's conversational agents, and where security, privacy, and conversation rules are enforced consistently.
 
-## HTTP and agent protocols
+## 2. Business Value
+
+- **Consistent security and abuse protection**: Centralizes authentication, permission checks, per-user rate limiting, and prompt-safety screening in one place so every conversation follows the same guardrails.
+- **Seamless customer experience**: Coordinates routing, specialist handoffs, and session memory behind a single host, giving shoppers uninterrupted multi-turn conversations.
+- **Safe reuse across systems**: Exposes clean discovery and agent-to-agent interfaces so other BookWorm systems can collaborate with conversational agents without duplicating orchestration logic.
+- **Privacy by default**: Guarantees that every message entering or leaving any specialist agent is inspected and anonymized before delivery.
+- **Strict protection of business data**: Enforces clear boundaries so conversational interactions cannot alter orders, baskets, catalog records, or official customer reviews.
+
+## 3. How It Works
+
+Chat API receives incoming requests and guides each interaction through a controlled sequence:
+
+1. **Access and traffic protection**: Incoming requests pass through standard web security checks, per-user rate limiting, caller identity verification, and consistent error handling.
+2. **Input screening**: Before any AI model runs, the host rejects empty or suspicious messages, checks for prompt-manipulation attempts, and shortens overly long inputs.
+3. **Intelligent routing**: A routing step determines whether the request is in English and within bookstore scope. Out-of-scope or non-English requests stop early with a standard boundary reply. In-scope requests are directed to [[agent|book-agent]] for catalog help, [[agent|qa-agent]] for store-policy questions, or [[agent|rating-agent]] when review insights are requested for a specific book.
+4. **Specialist execution and collaboration**: While handling a request, [[agent|book-agent]] can enlist [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] to look up catalog facts using approved read-only tools, or hand review analysis off to [[agent|rating-agent]]. Every message sent to or received from these specialists passes through [[system|data-privacy]] to detect and anonymize personal data.
+5. **Response cleanup and session storage**: A formatting step selects the final assistant reply, removes any unintended internal instructions, and normalizes spacing. Conversation history and memory are saved to dedicated session storage so follow-up questions keep context.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Single host orchestration vs. distributed agent endpoints**: Hosting the interactive workflow, agent discovery, and agent-to-agent endpoints together simplifies deployment and shared middleware, though it concentrates conversational traffic on one host that must enforce per-user rate limits.
+- **Fail-closed privacy middleware vs. fault tolerance**: Propagating privacy-service errors instead of skipping checks guarantees no unscreened text reaches users or models, at the cost of making chat availability depend on the privacy service.
+- **Least-privilege tool loading vs. dynamic discovery**: Limiting book agents to four specific read-only catalog tools prevents unintended actions, even though exposing additional capabilities requires explicit updates to the host configuration.
+- **Delegated identity vs. shared service credentials**: Acting on behalf of the authenticated caller preserves per-user accountability across downstream services, while adding token-exchange dependencies between Chat API, the identity provider, and downstream APIs.
+
+## 5. Technical Reference
+
+### Overview & Protocols
+
+Chat API is the HTTP and gRPC application surface of [[system|chat-system]]. It hosts the composed conversational workflow and exposes discovery and agent-to-agent protocol endpoints. OpenAPI metadata is configured for the Chat API, and the host maps the versioned endpoint set under the `chats` route group (separate from the interactive AG-UI endpoint and per-agent A2A endpoints).
 
 | Endpoint or surface | Purpose                                                               | Notes                                                                              |
 | ------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -54,66 +72,28 @@ questions to QA Agent, and review/rating requests with a book catalog ID to
 | gRPC A2A            | Agent-to-agent communication over gRPC.                               | Mapped by the Chat host.                                                           |
 | Versioned Chat API  | Other application endpoints registered under the `chats` route group. | API version set is `v1`; concrete operations are supplied by registered endpoints. |
 
-OpenAPI metadata is configured for the Chat API, and the host maps the
-versioned endpoint set under the `chats` route group. The interactive AG-UI
-endpoint is separate from the per-agent A2A endpoints.
+### Request Processing, Domain Model & AI Models
 
-## Request processing
+1. The host applies CORS, rate limiting, Entra ID token introspection, global exception handling, and status-code handling.
+2. The workflow's `InputValidationExecutor` rejects empty or suspicious input, consults the configured injection detector, and truncates overly long messages.
+3. Accepted input is evaluated by `DecisionRouterExecutor` (`Microsoft-Decision-1`) via `ChatRoutingDecisionService` (`Microsoft-Decision-1`). Non-English or out-of-scope requests short-circuit to `DecisionRejectedOutputExtractor`, while in-scope requests enter the selected specialist sub-workflow ([[agent|book-agent]], [[agent|qa-agent]], or [[agent|rating-agent]]). Invalid input bypasses both routing and agent calls.
+4. `ResponseFormatterExecutor` selects the last assistant response, removes detected system-prompt fragments, and normalizes its formatting.
 
-1. The host applies CORS, rate limiting, Entra ID token introspection, global
-   exception handling, and status-code handling.
-2. The workflow's `InputValidationExecutor` rejects empty or suspicious input,
-   consults the configured injection detector, and truncates overly long
-   messages.
-3. Accepted input is evaluated by `DecisionRouterExecutor`
-   (`Microsoft-Decision-1`). Non-English or out-of-scope requests short-circuit
-   to `DecisionRejectedOutputExtractor`, while in-scope requests enter the
-   selected specialist sub-workflow. Invalid input bypasses both routing and
-   agent calls.
-4. `ResponseFormatterExecutor` selects the last assistant response, removes
-   detected system-prompt fragments, and normalizes its formatting.
+The composed workflow persists conversation session state in Azure Blob Storage (`chatSessionContainer`) for Microsoft Foundry memory integration, and enforces strict DDD domain invariants through the `Conversation` aggregate, `ChatTurn`, `PromptValidationService`, and `ResponseFormattingService`. It uses Microsoft Foundry model deployments including `ModelRouter`, `MicrosoftDecision1`, and Cohere `EmbedV40`.
 
-The composed workflow persists conversation session state in Azure Blob
-Storage (`chatSessionContainer`) for Microsoft Foundry memory integration, and
-enforces strict DDD domain invariants through the `Conversation` aggregate,
-`ChatTurn`, `PromptValidationService`, and `ResponseFormattingService`. It uses
-Microsoft Foundry model deployments including `ModelRouter`, `MicrosoftDecision1`,
-and Cohere `EmbedV40`.
+### Downstream Integrations
 
-## Downstream integrations
+- **MCP Catalog Tools**: [[agent|book-agent]], [[agent|book-catalog-researcher]], and [[agent|book-recommendation-researcher]] connect to [[service|mcp-server]] through the MCP client over Streamable HTTP at `/mcp`, using service discovery and token exchange. They load only `search_catalog`, `get_book`, `list_categories`, and `list_authors`. [[agent|qa-agent]] has no MCP tools.
+- **Data Privacy Middleware**: All four Chat agents use privacy middleware backed by [[service|PresidioAPI]] in [[system|data-privacy]]. It calls [[command|AnalyzeText]] for non-empty text and [[command|AnonymizeText]] when PII is detected, filtering both input and output. Failures propagate rather than bypassing the middleware.
+- **Rating A2A Client**: The host registers an agent-discovery client pointed at the Rating system, and Chat connects to [[agent|rating-agent]] through A2A. The A2A client supports gRPC, JSON-RPC, and HTTP JSON, preferring gRPC first, and receives direct routes from `DecisionRouterExecutor` (when a book catalog ID is present) or handoffs from Book Agent alongside QA.
 
-Book Agent and its two researchers connect to [[service|mcp-server]] through
-the MCP client over Streamable HTTP at `/mcp`, using service discovery and
-token exchange. They load only `search_catalog`, `get_book`,
-`list_categories`, and `list_authors`. QA Agent has no MCP tools.
+### Access Policies & Boundaries
 
-All four Chat agents use privacy middleware backed by
-[[service|PresidioAPI]] in [[system|data-privacy]]. It calls
-[[command|AnalyzeText]] for non-empty text and [[command|AnonymizeText]] when
-PII is detected, filtering both input and output. Failures propagate rather
-than bypassing the middleware.
+- Configures authenticated user and administrator policies requiring the applicable `chatting_read` and `chatting_write` scopes.
+- Per-agent A2A JSON-RPC and HTTP JSON endpoints explicitly require authorization.
+- Uses Microsoft Entra ID authentication with Entra Agent Identities (`chatAgentId`, `ratingAgentId`) for On-Behalf-Of (OBO) token exchange, claims-based agent isolation, and per-user rate limiting.
+- Does not place Orders, mutate Baskets, persist Reviews feedback, or publish business integration events. Store policy answers are based on supplied context, not live account or order lookups.
 
-The host registers an agent-discovery client pointed at the Rating system,
-and Chat connects to the Rating-hosted agent through A2A. The A2A client
-supports gRPC, JSON-RPC, and HTTP JSON, preferring gRPC first. The Rating
-agent participates in the Chat workflow, receiving direct routes from
-`DecisionRouterExecutor` (when a book catalog ID is present) or handoffs from
-Book Agent alongside QA.
-
-## Access and boundaries
-
-The Chat service configures authenticated user and administrator policies
-requiring the applicable `chatting_read` and `chatting_write` scopes.
-Per-agent A2A JSON-RPC and HTTP JSON endpoints explicitly require
-authorization. The host uses Microsoft Entra ID authentication with Entra Agent
-Identities (`chatAgentId`, `ratingAgentId`) for On-Behalf-Of (OBO) token
-exchange, claims-based agent isolation, and per-user rate limiting.
-
-Chat API coordinates assistance; it does not place Orders, mutate Baskets,
-persist Reviews feedback, or publish business integration events. Store
-policy answers are based on supplied context, not live account or order
-lookups.
-
-## Architecture
+### Architecture
 
 <NodeGraph />

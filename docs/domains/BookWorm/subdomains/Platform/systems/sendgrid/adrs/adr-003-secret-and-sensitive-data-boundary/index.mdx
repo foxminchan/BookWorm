@@ -22,76 +22,50 @@ badges:
     textColor: red
 ---
 
-## Context
+## 1. Context & Problem
 
-The [[system|sendgrid]] integration requires credentials and handles email addresses,
-subjects, and message bodies. Exposing these values in source control,
-architecture documentation, or routine logs would increase the impact of a
-credential leak or an operational data disclosure. The durable Notification
-outbox and provider calls also create more than one place where these values
-may be accessible, so controls must cover both stored delivery work and
-transient submission and diagnostic paths.
+Integrating with [[system|sendgrid]] requires sensitive provider credentials and processes personal customer data, including email addresses, subject lines, and full message bodies.
 
-## Decision
+If credentials or message contents leak into source repositories, architecture documentation, background job payloads, or routine operational logs, the blast radius of a breach or accidental exposure grows dramatically. Because notifications pass through both local storage and external delivery calls, security and privacy boundaries must govern stored records, active transmissions, and diagnostic telemetry alike.
 
-[[system|sendgrid]] credentials are supplied only through runtime secret configuration and
-are never stored in source control, catalog documentation, or logs. The
-[[system|notification-system]] and [[service|sendgrid-api]] integration may access recipient,
-sender, and message content only for the delivery operation and the minimum
-support workflow required to diagnose it.
+## 2. Business Value
 
-Logs and delivery records should prefer stable identifiers, provider status,
-error categories, and correlation metadata over full message content. Any
-diagnostic capture of sensitive values must be explicitly controlled, access
-restricted, and subject to the platform's retention policy.
+- **Reduced breach and compliance risk**: Keeping personal email addresses and message contents out of routine logs and shared telemetry limits exposure of sensitive customer data.
+- **Safer, faster credential rotation**: Managing provider credentials purely through runtime configuration allows operations teams to rotate keys without editing code or documentation.
+- **Least-privilege operations**: Separating access to credentials, stored messages, and operational metrics ensures support and monitoring teams see only what they need to do their jobs.
 
-Only the components that need email details for rendering, submission, or
-authorized support should have access to those values. Scheduler messages and
-routine telemetry should use identifiers and aggregate status rather than
-recipient or body content. Secret storage protects credentials but does not
-replace access controls and retention decisions for the email itself.
+## 3. How It Works
 
-## Consequences
+BookWorm enforces a strict boundary around both authentication secrets and customer message data:
 
-- Credential rotation can be performed through deployment configuration without
-  changing catalog resources.
-- Operational telemetry is safer to share and retain, but may contain less
-  detail than the original provider request.
-- Support tooling must provide authorized access to the underlying notification
-  record when message content is genuinely required.
-- Secret scanning, access control, and retention monitoring remain required
-  operational controls.
-- The outbox remains confidential while pending and after submission until
-  cleanup removes it. Current cleanup behavior does not define a formal
-  privacy retention period or audit-retention policy.
-- Routine logs should not contain full recipient and message data. The current
-  Notification documentation identifies resend logs with recipient addresses
-  and SMTP failure logs with recipients and subjects; those existing paths
-  require remediation and must not be considered compliant merely because
-  this policy is documented.
-- Provider credentials, database credentials, notification records, and
-  operational telemetry have separate access surfaces; each needs appropriate
-  least-privilege controls and monitoring.
-- Reducing data in logs may require support operators to inspect the protected
-  Notification record using its stable identifier when detailed diagnosis is
-  necessary.
+1. **Runtime-only credentials**: Authentication secrets for [[system|sendgrid]] are injected strictly through secure runtime configuration and never appear in source code, catalog documentation, or logs.
+2. **Need-to-know content access**: Only the [[system|notification-system]] and the [[service|sendgrid-api]] integration may access recipient addresses, sender details, and message content, and only to deliver messages or perform authorized support investigations.
+3. **Identifier-first telemetry**: Routine logs, scheduler messages, and delivery records rely on stable notification identifiers, provider status, error categories, and correlation metadata instead of full message content or recipient addresses.
+4. **Controlled retention and diagnostics**: Any diagnostic capture of sensitive fields must be explicitly authorized, access-restricted, and governed by platform retention rules.
 
-## Alternatives considered
+## 4. Trade-offs & Lessons Learned
 
-### Put provider credentials in source or Quartz job metadata
+- **Extra step for detailed troubleshooting**: Excluding email addresses and bodies from standard logs makes routine telemetry safer to share, but requires support operators to look up protected notification records by their stable identifier when deep inspection is needed.
+- **Internal storage remains in scope**: Protecting the external provider connection is not enough; BookWorm's own outbox records, databases, and logs hold rendered messages and must be protected with least-privilege access controls and secret scanning.
+- **Retention and logging remediation needed**: Documenting a security policy does not automatically make existing code compliant. Current cleanup behavior lacks a formal privacy or audit retention period, and existing resend and failure logging paths still record sensitive details that must be remediated.
+- **Alternatives rejected**:
+  - _Storing credentials in source code or durable scheduler metadata_: Increases exposure risk and complicates key rotation.
+  - _Copying full message content into logs and events_: Spreads personal data across too many downstream monitoring systems.
+  - _Treating the external provider as the sole confidential boundary_: Ignores local storage, telemetry, and internal support surfaces.
 
-This would make credentials available through code or durable scheduler state
-and complicate rotation. Runtime secret configuration keeps credentials out
-of those surfaces.
+## 5. Technical Reference
 
-### Copy full message content into logs and events
+### Security & Access Surfaces
 
-This can simplify some investigations but increases the number of systems
-that store recipient and message data. Prefer stable identifiers, sanitized
-status and errors, and controlled access to the outbox when necessary.
+- **Applies to**: [[system|sendgrid]], [[system|notification-system]], [[service|sendgrid-api]].
+- **Secret injection**: Provider credentials must be supplied via runtime secret configuration—never in source control, EventCatalog documentation, logs, or durable **Quartz** job metadata.
+- **Distinct least-privilege surfaces**:
+  1. Provider API credentials
+  2. Database credentials
+  3. Notification / outbox records (confidential while pending and after submission until cleanup)
+  4. Operational telemetry and routine logs
 
-### Treat provider storage as the only confidential boundary
+### Known Remediation Gaps
 
-BookWorm stores rendered messages before submitting them and may log
-diagnostic data locally. Its own database, telemetry, and support access
-remain in scope regardless of the provider's controls.
+- **Retention policy gap**: Current outbox cleanup behavior does **not** define a formal privacy retention period or audit-retention policy.
+- **Sensitive logging gap**: Current Notification documentation identifies **resend logs** containing recipient addresses and **SMTP failure logs** containing recipients and subjects. These existing paths require remediation and must not be treated as compliant solely because this ADR is accepted.

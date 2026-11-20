@@ -2,10 +2,35 @@
 summary: Update the address on the authenticated Buyer's profile.
 ---
 
-## 1. Update a Buyer address
+## 1. Context & Problem
 
-Send the new address as JSON. The service identifies the Buyer from the
-authenticated request.
+Customers frequently need to update their shipping or profile address before placing new orders. Application teams building account-management screens need clear, end-to-end examples showing how a signed-in customer submits structured address details (street, city, and province) and handles validation or missing-profile errors cleanly.
+
+## 2. Business Value
+
+- **Self-Service Convenience**: Enables customers to keep delivery addresses accurate without contacting support, reducing failed deliveries.
+- **Immediate Confirmation**: Returns the updated Buyer profile right away so user interfaces can refresh displayed address details without an extra lookup.
+- **Actionable Validation Feedback**: Gives frontend teams predictable, field-level error details to guide users when required address fields are missing or invalid.
+
+## 3. How It Works
+
+1. A signed-in customer submits their updated street, city, and province details.
+2. The service identifies the Buyer directly from the authenticated session rather than requiring a separate customer identifier in the request.
+3. The service validates that all required address fields are present and valid.
+4. When valid, the Buyer's saved address is updated and the refreshed profile—including the formatted full address—is returned immediately.
+5. If required address information is missing or invalid, or if the customer has no Buyer profile yet, the service rejects the update and returns clear details explaining why.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Identity Derived from Authentication**: Determining the Buyer from the caller's authenticated credentials prevents a customer from modifying another user's address, while assuming the Buyer profile already exists before an address update is attempted.
+- **Structured Input, Formatted Output**: Accepting separate street, city, and province fields enforces consistent input quality, while returning a combined display address simplifies UI rendering.
+- **Strict Validation Up Front**: Rejecting incomplete address fields immediately prevents storing partial addresses that could disrupt downstream order fulfillment.
+
+## 5. Technical Reference
+
+### 1. Update a Buyer address
+
+Send the new address as JSON. The service identifies the Buyer from the authenticated request.
 
 <CodeGroup dropdown>
 
@@ -78,10 +103,9 @@ console.log(buyer.address);
 
 </CodeGroup>
 
-## 2. Handle invalid address fields
+### 2. Handle invalid address fields
 
-Invalid address data returns `400 Bad Request` with validation problem
-details.
+Invalid address data returns `400 Bad Request` with validation problem details.
 
 <CodeGroup dropdown>
 

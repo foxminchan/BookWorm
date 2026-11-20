@@ -2,15 +2,36 @@
 summary: Complete a New Order with an idempotent request.
 ---
 
-## 1. Complete an Order
+## 1. Context & Problem
 
-Provide the Order UUID and an idempotency key. The operation has no request
-body.
+After an order is placed, an authorized workflow or operator must explicitly confirm when the order has reached completion. Because network interruptions can trigger client retries, integrating teams need a concrete example showing how to mark an order as completed safely and how to handle missing or inaccessible orders.
+
+## 2. Business Value
+
+- **Safe retry reliability**: Supplying a unique request tracking identifier ensures retried completion requests do not trigger duplicate updates or downstream notifications.
+- **Single-step confirmation**: Receiving the complete updated order summary in response eliminates follow-up read calls to verify the new status.
+- **Consistent access safety**: Treating unauthorized and missing orders uniformly prevents information leakage across customer accounts.
+
+## 3. How It Works
+
+1. The caller authenticates, identifies the target order, and attaches a unique request tracking identifier. No request body is needed.
+2. The system verifies that the order is accessible to the caller and eligible to transition to **Completed**.
+3. Once accepted, the order status updates to **Completed**, and the response returns the full order summary—covering the order identifier, date, total amount, updated status, and line items (identifier, quantity, unit price, and book title).
+4. If the order is missing or outside the caller's permitted scope, the system informs the caller that the order was not found or is not accessible.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit completion over implicit assumptions**: Requiring a dedicated completion action ensures intermediate background steps (such as clearing a shopping basket) never prematurely mark an order finished, though callers must explicitly trigger this step when fulfillment criteria are met.
+- **Caller-supplied tracking key**: Delegating unique request identifier generation to the caller enables safe retries across unreliable networks, provided clients reuse the same identifier per attempt and rotate it for distinct actions.
+
+## 5. Technical Reference
+
+Provide the Order UUID in the `{orderId}` path parameter and a required `x-request-id` idempotency header. The operation has no request body.
 
 <CodeGroup dropdown>
 
 ```sh
-curl --request PATCH "$BASE_URL/api/v1/orders/44444444-4444-4444-4444-444444444444/complete" \
+curl --request PATCH "$BASE_URL/api/v1/orders/44444444-44444444-4444-4444-4444-444444444444/complete" \
   --header "Authorization: Bearer <access-token>" \
   --header "x-request-id: complete-order-2026-001"
 ```

@@ -61,6 +61,32 @@ properties:
     required: true
 ---
 
+## 1. Context & Problem
+
+Operations teams and health dashboards often need an instant answer to a simple question: is each scheduled job currently healthy? Scanning thousands of historical execution records to compute latest outcomes, last success timestamps, and failure streaks on the fly is slow and adds unnecessary load to the database.
+
+## 2. Business Value
+
+- **At-a-glance health visibility**: Summarizes each job's latest result, duration, total run count, and last worker instance in one lightweight record.
+- **Early detection of chronic failures**: Tracks consecutive failures and the latest failure message so recurring issues stand out immediately from isolated blips.
+- **Efficient monitoring**: Powers status views and operational checks without expensive queries across full execution logs.
+
+## 3. How It Works
+
+For each registered job, this optional status entity maintains a single rolling summary updated as executions complete.
+
+- **Latest execution snapshot**: It records when the job first ran, when it most recently fired, how long the latest run lasted, which instance executed it, and the latest outcome code and summary.
+- **Success and failure markers**: Separate timestamps track the last successful run and last failed run, alongside the most recent failure message when errors occur.
+- **Health counters**: A total run counter tracks overall volume, while a consecutive failure counter rises with each failure in a row and resets once a run succeeds. When detailed history is enabled, the status record can also link back to the latest execution entry.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Snapshot vs. full history**: Storing only the latest summary and aggregate counters keeps status lookups fast, but overwrites older error details—so teams still rely on execution history for multi-run forensics.
+- **Additional write per run**: Updating rolling counters adds a small write overhead to every job completion, making this feature optional for workloads that do not need per-job status rollups.
+- **Alert noise vs. sensitivity**: Consecutive failure counts are well suited for alerting on persistent breakdowns without paging teams on single transient retries.
+
+## 5. Technical Reference
+
 ### Entity Properties
 
 <EntityPropertiesTable />
@@ -69,3 +95,5 @@ properties:
 
 - The composite key is `sched_name`, `job_group`, and `job_name`.
 - Job status belongs to [[entity|qrtz-job-details]].
+- Foreign key references map (`job_group`, `job_name`) to `qrtz-job-details`.
+- Summary and health-tracking fields include `first_fired_time`, `last_fired_time`, `last_result`, `last_run_time`, `last_instance_name`, `last_entry_id`, `last_summary`, `last_success_time`, `last_failure_time`, `last_failure_message`, `consecutive_failures`, and `run_count`.

@@ -9,6 +9,38 @@ badges:
     textColor: blue
 ---
 
+## 1. Context & Problem
+
+A high-level platform diagram shows the major capabilities, but it does not explain why certain capabilities split into multiple services or maintain separate data stores. To plan integrations, isolate storage ownership, and understand asynchronous handoffs, architects, analysts, and developers need to look one level deeper inside each capability—without getting bogged down in routine framework internals.
+
+This Level-2 view refines each BookWorm capability where distinct data ownership, background processing, or multiple internal modules shape how the capability behaves.
+
+## 2. Business Value
+
+- **No shared-database surprises:** Each capability persists its authoritative records in its own dedicated store, protecting data integrity and independent evolution.
+- **Resilient, responsive user experience:** Read-optimized caches, image storage, and background search indexing keep customer browsing fast without overloading primary transactional writes.
+- **Clear separation between operational and business work:** Separating checkout coordination, scheduling, and notification delivery from core order and catalog data makes failures easier to isolate and recover.
+
+## 3. How It Works
+
+Each capability organizes its internal building blocks around what it owns:
+
+- **Catalog:** Separates live book, author, category, and publisher management from background search indexing. Primary book records live in Catalog's authoritative store, while supporting stores handle fast reads, book images, and searchable indexes. Because indexing runs in a separate worker, a catalog update succeeds immediately even while search results catch up asynchronously.
+- **Shopping:** Manages the customer's active basket before an order is accepted. It looks up current book details from Catalog for display and handles basket cleanup after checkout as an explicit step—removing a basket alone never implies that an order succeeded.
+- **Ordering:** Divides core order management (accepted orders, purchase-time item prices, and official order status) from post-checkout coordination. The coordination service tracks checkout steps, asks Shopping to clear the basket, and asks Platform Notification to send order emails, while Ordering remains the authority on order status.
+- **Reviews:** Stores individual customer feedback and hosts a read-only summarization assistant that prepares review summaries using stored reviews and current book context. Rating changes are published so Catalog can update its own book-rating totals without directly reading Review data; if applying a rating fails, a documented compensating path handles recovery.
+- **Conversational:** Coordinates customer questions and book discovery through a structured workflow and specialist assistants, supported by personal-information screening and scoped Catalog and Review lookups. The workflow is strictly advisory—it cannot place orders, change baskets, or trigger commerce lifecycle events.
+- **Platform:** Splits recurring job scheduling from notification delivery. The Scheduler tracks schedules and job runs and triggers batch indexing or maintenance notices, while Notification prepares, stores, and sends outgoing emails. Each owns only its operational state, not the business outcome of the work.
+- **Shared Technical Foundation:** Supplies common application hosting, host defaults, reusable plumbing, and technical constants across services without holding shared business rules or domain data.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency for search and ratings:** Offloading search indexing and derived book-rating updates keeps primary writes responsive and services decoupled, at the cost of brief lag before search results or rating summaries reflect the latest change.
+- **Dedicated stores per responsibility:** Maintaining separate data stores for Catalog, Shopping, Ordering, Checkout Coordination, Reviews, Scheduler, and Notification eliminates hidden database coupling, while requiring explicit integration messages and recovery paths across boundaries.
+- **Operational confirmation vs. end-to-end outcome:** A completed basket deletion, a triggered scheduled job, or an accepted email submission confirms only that operational step—not order completion or final inbox delivery to the recipient.
+
+## 5. Technical Reference
+
 This level refines the Level-1 capabilities where distinct data ownership, asynchronous coordination, or multiple internal modules make the structure useful to understand. It omits routine framework internals.
 
 ### Overview diagram

@@ -18,22 +18,38 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Returns the [[entity|book]] identity, description, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary for one UUID.
+Storefront applications and external consumers need a straightforward way to load the complete profile of a single [[entity|book]]—such as when a shopper opens a product detail page or follows a direct link—without having to fetch the [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating details in separate requests.
+
+## 2. Business Value
+
+- **Faster product pages**: Delivers description, pricing, availability, catalog relationships, and customer ratings in a single round trip.
+- **Consistent product presentation**: Keeps pricing, stock state, and descriptive metadata aligned from one authoritative catalog source.
+- **Clear missing-item signaling**: Distinguishes between a valid product and an unknown identifier so storefronts can present accurate messages to shoppers.
+
+## 3. How It Works
+
+1. A caller requests details for a single [[entity|book]] by providing its unique identifier.
+2. The catalog service looks up the [[entity|book]] together with its description, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary.
+3. If the book exists, the complete book record is returned; optional relationships such as [[entity|category]] or [[entity|publisher]] may be absent if unassigned, while [[entity|author]]s are always returned as a list.
+4. If no book matches the supplied identifier, the service responds that the book could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Consolidated read model vs. granular endpoints**: Combining core book attributes, related entities, and rating summaries into one response simplifies client rendering and reduces network latency, at the cost of returning a larger payload even when a caller only needs a few fields.
+- **Optional relationships**: Allowing [[entity|category]] and [[entity|publisher]] to be omitted when unassigned gives catalog administrators flexibility while requiring consumers to handle missing relationship metadata gracefully.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/books/{id}`
+- **Parameters**: Required `id` path parameter containing the book UUID. No request body.
+- **Responses**:
+  - `200`: Returns a `BookDto` JSON object containing the [[entity|book]] identity, description, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary. Related category and publisher values may be `null`; `authors` is an array.
+  - `404`: Indicates that no book exists with the supplied UUID.
 
 <NodeGraph />
 
-## Contract
-
-Provide the book UUID as the required `id` path parameter. The query has no request body.
-
-The response is a `BookDto` JSON object. Related category and publisher values may be `null`; authors is an array.
-
-## Operational notes
-
-`404` indicates that no book exists with the supplied UUID.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

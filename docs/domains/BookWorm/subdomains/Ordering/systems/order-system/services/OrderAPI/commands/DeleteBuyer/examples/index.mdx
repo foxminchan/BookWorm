@@ -2,7 +2,30 @@
 summary: Delete a Buyer profile as an administrator.
 ---
 
-## 1. Delete a Buyer
+## 1. Context & Problem
+
+Administrators occasionally need to remove a Buyer profile for account cleanup, data-retention compliance, or test-account removal. Without clear usage examples demonstrating how to authorize a deletion request and interpret missing-profile outcomes, internal tooling developers and QA teams risk misconfiguring permissions or error handling.
+
+## 2. Business Value
+
+- **Faster Onboarding**: Provides administrative portal developers and QA engineers with ready-to-use examples for invoking Buyer deletion safely.
+- **Reduced Integration Errors**: Clarifies how callers should distinguish between a completed deletion and a profile that does not exist.
+- **Access Governance**: Reinforces that Buyer deletion is strictly limited to authorized administrators.
+
+## 3. How It Works
+
+1. An authorized administrator submits a deletion request identifying the target Buyer profile, without providing any additional request details.
+2. The system verifies that the caller holds administrator permissions.
+3. If the Buyer profile exists, the system deletes it and confirms completion without returning profile data.
+4. If no matching Buyer profile exists, the system informs the caller that the profile was not found so administrative tools can surface an accurate message.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit Missing-Record Feedback**: Reporting a missing Buyer profile rather than silently succeeding helps administrative tools detect stale identifiers or out-of-sync views.
+- **Strict Administrator Boundary**: Restricting this action to administrator credentials prevents accidental or unauthorized self-service deletion outside approved administrative workflows.
+- **Minimal Input & Output**: Requiring only the Buyer identifier and returning no body keeps administrative scripts lightweight and avoids unnecessary data exposure.
+
+## 5. Technical Reference
 
 The endpoint requires administrator authorization and has no request body.
 
@@ -38,5 +61,4 @@ if (!response.ok) {
 
 </CodeGroup>
 
-`204 No Content` confirms the Buyer profile was deleted. There is no response
-body.
+`204 No Content` confirms the Buyer profile was deleted. There is no response body.

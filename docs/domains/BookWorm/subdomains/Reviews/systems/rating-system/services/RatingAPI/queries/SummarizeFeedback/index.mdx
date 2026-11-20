@@ -21,24 +21,44 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Generates a summary of the [[entity|feedback]] for the [[entity|book]] identified by the `id` path
-parameter. This read-only query does not create, update, or delete feedback.
+Readers evaluating a [[entity|book]] rarely have time to read through dozens or hundreds of individual [[entity|feedback]] entries, and a simple star average does not explain _why_ readers liked or disliked a title. BookWorm needs an on-demand way to distill reader sentiment into a concise narrative takeaway backed by objective rating metrics, supporting evidence, and a quality check—without altering stored review records.
+
+## 2. Business Value
+
+- **Faster customer decisions**: Shoppers quickly understand common praise, recurring criticisms, and overall standing before buying.
+- **Trustworthy insights**: Pairing a generated summary with exact review count, average rating, supporting evidence, and confidence keeps recommendations transparent and verifiable.
+- **Lower processing cost on unreviewed titles**: Books with zero reviews bypass the summarization pipeline altogether, returning an immediate empty-state summary.
+- **Safe read-only behavior**: Summaries and classifications are computed on demand without creating, modifying, or deleting customer feedback.
+
+## 3. How It Works
+
+1. A caller requests a summary for a specific [[entity|book]] using the book's identifier.
+2. If the book has no recorded [[entity|feedback]], the capability immediately returns a standard "no feedback found" message with zero reviews, no average rating, and empty evidence and confidence—without running the summarization workflow.
+3. When feedback exists, the capability calculates exact rating metrics (review count and arithmetic average rating) and executes the summarization workflow shown in [[diagram|rating-summarizer-workflow]].
+4. The workflow splits reviews into parallel batches, combines their takeaways into a unified summary, and runs a quality assessment step. If quality needs improvement, the summary is refined; once approved, application rules assign a classification alongside supporting evidence and a confidence indication.
+5. This classification is a read-time insight and is never persisted back to storage.
+6. If the target cannot be found or a downstream dependency fails, an error is returned rather than falsely reporting "no feedback."
+
+## 4. Trade-offs & Lessons Learned
+
+- **Read-time insights vs. stored summaries**: Computing summaries and classifications at read time guarantees results reflect the latest feedback without extra storage synchronization, at the cost of running the workflow on demand.
+- **Application-owned rules for numbers and labels**: Computing the average rating, review count, and final classification with deterministic business rules—rather than leaving them to generative text—prevents inaccurate math or inconsistent category labels.
+- **Strict separation of empty state and failures**: Treating "no reviews yet" as a valid result while surfacing missing targets or workflow failures as errors ensures storefront users are not shown misleading "no feedback" messages during outages.
+- **Quality-gated refinement**: Checking summary quality and refining weak drafts improves accuracy and provides supporting evidence, while adding extra steps for larger review sets.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/feedbacks/{id}/summarize`
+- **Path parameter**: `id` (required) — Catalog [[entity|book]] identifier.
+- **Read-only guarantee**: This query does not create, update, or delete feedback, and `classification` is not persisted.
 
 <NodeGraph />
 
-## Path parameter and response
+### Response contract (`200 OK`, `application/json`)
 
-Provide the book identifier in the required `id` path parameter. The `200 OK`
-response is an `application/json` object containing the generated `summary`,
-classification, rating metrics, supporting evidence, and confidence. The
-classification is a read-time insight and is not persisted.
-
-### Response fields
-
-The OpenAPI `SummarizeResult` schema requires only `summary`; the remaining
-fields are optional in the contract.
+The OpenAPI `SummarizeResult` schema requires only `summary`; the remaining fields are optional in the contract.
 
 | Field            | Type             | Description                                                                              |
 | ---------------- | ---------------- | ---------------------------------------------------------------------------------------- |
@@ -49,26 +69,16 @@ fields are optional in the contract.
 | `evidence`       | string           | Supporting evidence from the final quality assessment.                                   |
 | `confidence`     | string           | Confidence from the final quality assessment; the contract does not restrict its values. |
 
-### No feedback and errors
+### No feedback and error responses
 
-A book with no feedback returns `200 OK` with summary
-`No feedback found for this book.`, classification `NoData`, `reviewCount`
-`0`, a null `averageRating`, and empty `evidence` and `confidence`. This path
-does not invoke the model workflow; lack of feedback is not itself a `404`.
+- **No feedback (`200 OK`)**: Returns `summary` = `"No feedback found for this book."`, `classification` = `"NoData"`, `reviewCount` = `0`, `averageRating` = `null`, and empty `evidence` and `confidence`. This path does not invoke the model workflow; lack of feedback is not itself a `404`.
+- **Not found / errors (`404 Not Found`)**: Returns `application/problem+json` with `ProblemDetails`. Dependency and workflow failures must not be represented as successful no-feedback results.
 
-The endpoint also declares `404 Not Found` with `application/problem+json`
-and `ProblemDetails`. Dependency and workflow failures must not be represented
-as successful no-feedback results.
+### Summarizer workflow
 
-## Summarizer workflow
+The workflow partitions the input across parallel map executors, joins their results, and reduces them. Quality assessment either sends the reduction for refinement or proceeds to classification. See [[diagram|rating-summarizer-workflow]] for the complete workflow.
 
-The workflow partitions the input across parallel map executors, joins their
-results, and reduces them. Quality assessment either sends the reduction for
-refinement or proceeds to classification.
-
-See [[diagram|rating-summarizer-workflow]] for the complete workflow.
-
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

@@ -9,9 +9,26 @@ badges:
     textColor: blue
 ---
 
-The requirements below summarize the platform's essential customer capabilities and architectural drivers. The `BW-R` identifiers are local references for this overview; they are not IDs from an approved product backlog. Detailed behavior and acceptance criteria remain with the relevant domain, service, and flow documentation.
+## 1. Context & Problem
 
-## Essential requirements
+BookWorm brings together several distinct business capabilities—book discovery, shopping, ordering, reviews, conversational assistance, and shared platform operations. Without a clear, system-level summary of what the platform must deliver and how those capabilities relate, teams risk making conflicting assumptions about data authority, checkout rules, or cross-capability dependencies.
+
+This page synthesizes BookWorm's essential customer capabilities and architectural drivers from the current domain model and checkout flow. The `BW-R` identifiers (`BW-R1` through `BW-R8`) serve as local reference labels for this overview; they are not items from an approved product backlog, and detailed behavior and acceptance criteria live in the owning domain, service, and flow documentation.
+
+## 2. Business Value
+
+- **Purchase integrity**: Ensures customers only check out against current, authoritative book details and availability, preventing invalid orders and clarifying exactly when an accepted order becomes Ordering's responsibility.
+- **Reliable supporting experiences**: Connects customer feedback to books without duplicating product ownership, and grounds conversational assistance in accurate Catalog facts without overpromising access to live basket or order data.
+- **Safer, faster change delivery**: Independent ownership and explicit integration agreements let capabilities evolve without forcing unrelated teams to coordinate releases or share mutable state.
+- **End-to-end traceability**: Gives product managers, business analysts, solution architects, and developers a shared map connecting customer needs to architectural boundaries.
+
+## 3. How It Works
+
+BookWorm's essential requirements fall into two complementary groups: customer-facing and supporting capabilities (`BW-R1` to `BW-R6`), and architectural rules that protect capability boundaries (`BW-R7` to `BW-R8`).
+
+A central seam in the customer journey is **checkout**: it combines the customer's saved [[entity|basket]] with current [[domain|catalog]] facts, blocks order creation if a book is unavailable, and transfers lifecycle ownership to [[domain|ordering]] only after acceptance. Supporting capabilities—[[domain|reviews]], [[domain|conversational]], and [[domain|platform]]—enhance that journey while preserving their own boundaries.
+
+### Essential requirements
 
 | ID    | Capability or driver             | Requirement                                                                                                                                                                           | Why it matters                                                                                          |
 | ----- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -24,20 +41,23 @@ The requirements below summarize the platform's essential customer capabilities 
 | BW-R7 | Independent capability evolution | Each bounded context keeps ownership of its business behavior and data; compatible changes should not require unrelated contexts to share mutable state or release together.          | Explicit boundaries limit hidden dependencies and reduce the impact of change.                          |
 | BW-R8 | Explicit integration             | Cross-context communication uses documented, owned contracts, with compatibility checked when contracts evolve.                                                                       | Teams need to understand the meaning, ownership, and change impact of each integration.                 |
 
-## Requirement relationships
+## 4. Trade-offs & Lessons Learned
 
-The diagram traces the checkout, order-lifecycle, bounded-context ownership, and explicit-integration requirements to the BookWorm capabilities and contracts that support them.
+- **Explicit contracts vs. ad-hoc coupling**: Enforcing independent ownership (`BW-R7`) and explicit, compatibility-checked integrations (`BW-R8`) introduces more coordination when designing cross-context interactions, but avoids fragile shared state and makes the impact of changes visible upfront.
+- **Scoped AI assistance over unverified claims**: Limiting conversational assistance (`BW-R5`) to Catalog-grounded product facts and store policy prevents misleading customers about live basket or order state where integrations do not exist.
+- **Identified documentation gaps**: No system-wide product backlog, formal acceptance criteria for every row, or approved performance, availability, recovery, and data retention targets are currently established in the architecture documentation. Product and service owners should refine these requirements and record measurable targets where needed.
+
+## 5. Technical Reference
+
+### Requirement traceability diagram
+
+The diagram below traces the checkout (`BW-R2`), order-lifecycle (`BW-R3`), bounded-context ownership (`BW-R7`), and explicit-integration (`BW-R8`) requirements to the BookWorm capabilities and owned contracts that satisfy them:
 
 <MermaidFileLoader file="mermaids/bookworm-technical-requirements.mmd" />
 
-## Driving forces and constraints
+### Catalog and architecture cross-references
 
-The requirements are driven by the end-to-end customer journey and by the platform's bounded-context structure. Checkout is a particularly important boundary: it must use persisted [[entity|basket]] contents and current [[domain|catalog]] data, then transfer lifecycle ownership to [[domain|ordering]] only after acceptance. [[domain|reviews]], [[domain|conversational]], and [[domain|platform]] support that journey while retaining their own responsibilities.
-
-The architecture also has cross-cutting constraints: preserve independent ownership, communicate through explicit contracts, and validate contract compatibility. See [[doc|arc42/02-architecture-constraints]] for the constraints and [[doc|arc42/04-solution-strategy]] for the corresponding architectural approach.
-
-## Traceability and open requirements
-
-These statements synthesize the current BookWorm domain model, checkout flow, and architecture catalog. Use the specific domain, service, flow, and contract entries as the source of detailed behavior; the arc42 [[doc|arc42/03-context-and-scope]] describes the system boundary and neighbors.
-
-No system-wide product backlog, formal acceptance criteria for every row, or approved performance, availability, recovery, and retention targets are established in the current architecture documentation. Product and service owners should refine these requirements and record measurable targets where they are needed.
+- **Local requirement IDs**: `BW-R1` through `BW-R8` (overview identifiers; detailed behavior resides in each domain, service, and flow entry).
+- **System boundary and neighbors**: [[doc|arc42/03-context-and-scope]]
+- **Cross-cutting constraints**: [[doc|arc42/02-architecture-constraints]]
+- **Architectural solution strategy**: [[doc|arc42/04-solution-strategy]]

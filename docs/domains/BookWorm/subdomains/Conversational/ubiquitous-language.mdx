@@ -44,3 +44,42 @@ dictionary:
       to Rating Agent. It is not a business process such as placing an Order.
     icon: Forward
 ---
+
+## 1. Context & Problem
+
+Conversational AI systems introduce terms—such as request routing, specialist agents, tone classification, and handoffs—that can easily overlap with core e-commerce concepts like orders, baskets, or customer reviews. Without an agreed vocabulary across product, business analysis, architecture, and engineering teams, requirements can blur what an AI assistant actually owns versus what belongs to transactional business domains.
+
+This ubiquitous language defines the exact domain terms for BookWorm's Conversational subdomain and draws clear boundaries around data ownership.
+
+## 2. Business Value
+
+- **Shared clarity across roles:** Gives architects, product managers, business analysts, and developers one consistent vocabulary for conversational workflows.
+- **Clear ownership boundaries:** Makes explicit that books, baskets, orders, and reviews remain owned by their core contexts even when discussed in chat.
+- **Safer feature design:** Prevents policy-answering or routing components from being mistaken for transactional workflows that modify business records.
+
+## 3. How It Works
+
+Each term captures a distinct responsibility in handling customer conversations:
+
+- **Customer Request:** The incoming BookWorm-related message being routed or answered. Referencing a book, basket, or order inside a message does not move ownership of those records into the conversational system.
+- **Decision Router:** The entry gatekeeper that verifies whether a request is in English and within BookWorm's scope, then selects the right specialist (Book, QA, or Rating) without needing a full generative AI conversation step.
+- **Book Agent:** The specialist that helps customers search for titles and receive recommendations using Catalog data, while Catalog remains the authoritative source of book information.
+- **QA Agent:** The specialist that answers store-policy and service questions (shipping, returns, accounts, orders, billing) strictly as read-only guidance without changing any business records.
+- **Sentiment Agent:** A message interpreter that labels the emotional tone of text as positive, negative, or neutral. This label describes the message itself, not a permanent customer profile or product review.
+- **Handoff:** A conversational transfer between specialists—either from the QA Agent to the Book Agent, or from the Book Agent to the Rating Agent. A handoff moves dialogue control only; it does not execute a business process such as placing an order.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Strict read-only separation vs. conversational convenience:** Keeping specialist agents out of transactional mutations protects business integrity, though future capabilities that initiate actions must cross explicit domain boundaries rather than hiding inside conversational handoffs.
+- **Non-LLM routing efficiency:** Screening language, scope, and target specialist before engaging a generative specialist avoids unnecessary model cost and latency, at the trade-off of maintaining explicit routing rules alongside agent capabilities.
+
+## 5. Technical Reference
+
+| Dictionary ID      | Summary                                                                  | Technical & Boundary Notes                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Customer Request` | BookWorm-related message being handled by agents.                        | Interaction only; Books, Baskets, and Orders mentioned remain owned by their respective contexts.                                                            |
+| `Decision Router`  | Evaluates language, scope, and target specialist for a customer request. | Implemented by `DecisionRouterExecutor` backed by `Microsoft-Decision-1`; selects `Book Agent`, `QA Agent`, or `Rating Agent` without invoking an LLM agent. |
+| `Book Agent`       | Helps customers search for books and receive recommendations.            | Uses Catalog capabilities for search, details, categories, authors, and recommendations; Catalog remains source of book data.                                |
+| `QA Agent`         | Answers general questions about bookstore policies and services.         | Handles shipping, returns, account, order, billing, and store-policy questions without changing business records.                                            |
+| `Sentiment Agent`  | Classifies the emotional tone of a customer message.                     | Classifies text as `positive`, `negative`, or `neutral`; message interpretation only, not a customer profile or review.                                      |
+| `Handoff`          | Transfer of a request between specialist agents.                         | Routes `QA Agent` -> `Book Agent` or `Book Agent` -> `Rating Agent`; conversational routing, not a business process like Order placement.                    |

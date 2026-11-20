@@ -2,7 +2,30 @@
 summary: List Orders with pagination and optional status and Buyer filters.
 ---
 
-## 1. List New Orders
+## 1. Context & Problem
+
+Developers integrating order-history screens or administrative dashboards need practical examples of how to page and filter orders by status or buyer, as well as how to handle rejected filter inputs cleanly.
+
+## 2. Business Value
+
+- **Consistent customer order history**: Shows teams how to request new, completed, or cancelled orders reliably while preserving user-scoped access.
+- **Resilient error handling**: Demonstrates how validation failures are structured so client applications can surface clear guidance instead of generic error messages.
+- **Faster client implementation**: Provides ready-to-adapt examples for both command-line testing and typed frontend integration.
+
+## 3. How It Works
+
+1. The client sends an authenticated request with paging settings and optional filters such as order status (`New`, `Cancelled`, or `Completed`) or buyer identifier.
+2. Ordering scopes non-administrator callers to their own authenticated buyer record, validates the supplied criteria, and returns matching order summaries containing identifier, date, total, and status.
+3. When a caller provides an unrecognized status or invalid parameter value, Ordering rejects the request and returns structured validation details so the client can correct the input.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit validation failure handling**: Distinguishing invalid filter parameters from unexpected server failures lets client apps handle bad input gracefully, at the cost of requiring explicit checks on error responses.
+- **Server-side authorization over client trust**: Relying on the service to enforce buyer scoping means frontend code does not need to trust client-supplied buyer filters for security, though administrative interfaces must still check roles before exposing a buyer selector.
+
+## 5. Technical Reference
+
+### 1. List New Orders
 
 Use the query parameters to select a page and optionally filter by status or
 Buyer. Non-administrators are scoped to their authenticated Buyer.
@@ -75,7 +98,7 @@ summaries:
 
 </CodeGroup>
 
-## 2. Handle invalid filters
+### 2. Handle invalid filters
 
 Invalid parameter values return `400 Bad Request` with validation problem
 details.

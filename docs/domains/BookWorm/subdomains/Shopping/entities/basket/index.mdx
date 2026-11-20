@@ -23,21 +23,43 @@ properties:
       type: BasketItem
 ---
 
-## Overview
+## 1. Context & Problem
 
-The Basket aggregate captures a customer's active pre-order selection. It must
-contain at least one [[entity|basket-item]] when created. Updating it replaces
-the complete item collection, preventing the Basket from being treated as a
-shared or order-lifecycle model.
+Before a customer commits to placing an order, they need a personal workspace to gather, review, and adjust the books they intend to buy. If that pre-order state were shared globally or treated as an early version of an Order, customers could run into ownership leaks, premature order records, or tangled payment and fulfilment lifecycles.
 
-The Basket is identified by its customer ID in the Basket service. It transfers
-purchase intent to [[domain|ordering]] during checkout but does not own an Order or
-payment.
+The **Basket** entity defines a customer-scoped, transient aggregate for active pre-order selections inside Shopping, giving the storefront a single source of truth for what a shopper currently intends to buy before checkout.
 
-## Entity Properties
+## 2. Business Value
+
+- **Clear customer privacy and ownership:** Scoping every basket to a single authenticated customer prevents cross-customer cart conflicts and protects user privacy.
+- **Simpler order management:** Keeping the Basket strictly pre-order ensures that abandoned or edited carts never clutter [[domain|ordering]] or Finance systems.
+- **Consistent cart state:** Updating the basket as a complete set eliminates partial-update drift between what the customer sees on screen and what is stored.
+
+## 3. How It Works
+
+The Basket acts as the root container for a customer's active pre-order selection:
+
+- **Customer-scoped identity:** Each authenticated customer has at most one active Basket tied directly to their customer identity.
+- **Minimum content on creation:** A newly created Basket must contain at least one [[entity|basket-item]]; empty shells are not created at initialization.
+- **Whole-set updates:** Whenever a customer modifies their cart, the Basket replaces its entire item collection with the new selection as a single unit, rather than merging partial patches.
+- **Checkout handoff:** During checkout, the Basket passes the customer's purchase intent to [[domain|ordering]], then is cleaned up once handed off—it never transitions into an Order or stores payment state itself.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Single customer-scoped cart vs. anonymous/multi-cart support:** Tying the Basket directly to an authenticated customer simplifies authorization and ownership boundaries, though anonymous browsing carts must be managed client-side until sign-in.
+- **Whole-collection replacement vs. item-level deltas:** Replacing the full item set on update avoids complex concurrency merges and keeps the Basket aggregate simple, at the trade-off of requiring clients to send the full current selection on each update.
+- **Strict pre-order lifecycle:** Refusing to repurpose the Basket as an Order model keeps Shopping cleanly decoupled from [[domain|ordering]], even though checkout must explicitly copy purchase intent into the downstream order workflow.
+
+## 5. Technical Reference
+
+- **Aggregate role:** Aggregate root (`aggregateRoot: true`), identified by `customerId` in the Basket service.
+- **Contained child entity:** One or more [[entity|basket-item]] (`BasketItem`) entries via the `items` collection.
+- **Downstream handoff:** Transfers purchase intent to [[domain|ordering]] during checkout; does not own Order or payment state.
+
+### Entity Properties
 
 <EntityPropertiesTable />
 
-## Relationships
+### Relationships
 
 - A Basket contains one or more [[entity|basket-item]] entries.

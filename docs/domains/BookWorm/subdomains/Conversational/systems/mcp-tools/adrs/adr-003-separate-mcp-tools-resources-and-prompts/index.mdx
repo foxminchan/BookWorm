@@ -20,66 +20,47 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-AI clients need both on-demand access to domain data and reusable context for
-their tasks. Treating every capability as a tool invocation would mix
-operations, ambient data, and task instructions into one contract. Different
-consumer intents also need different interaction shapes: a parameterized
-lookup, a stable URI-addressed data item, or reusable task guidance.
+AI applications interact with domain knowledge in three distinct ways: running an explicit lookup with search parameters, reading a well-known piece of reference context, and following reusable task guidance. Treating every capability as a single generic action mixes on-demand queries, reference data, and instructions into one confusing contract.
 
-## Decision
+BookWorm needed a clear convention for structuring its shared AI integration capabilities so that each type of interaction matches how AI clients actually consume it.
 
-[[service|mcp-server]] uses:
+## 2. Business Value
 
-- **Tools** for explicit, parameterized read requests such as `get_book` and
-  `get_book_reviews`.
-- **Resources** for stable URI-addressed JSON context such as
-  `bookworm://catalog/books/{id}` and
-  `bookworm://ratings/{bookId}/reviews`.
-- **Prompts** for reusable task instructions such as `recommend_books`,
-  `summarize_rating`, and `analyze_book_quality`.
+- **Clearer contracts for AI teams**: Separating lookups, reference data, and reusable instructions makes integrations easier to understand, govern, and evolve.
+- **Consistent guidance without code duplication**: Sharing reusable task instructions centrally ensures multiple AI agents follow consistent analysis patterns without duplicating prompt text across every client release.
+- **Targeted compatibility management**: Teams can version and review data lookups, reference identifiers, and prompt templates independently based on how clients use them.
+- **Cleaner separation from business workflows**: Keeps AI integration capabilities clearly distinct from core domain events and transactional commands.
 
-These primitives remain distinct from domain events and commands.
+## 3. How It Works
 
-Tools, resources, and prompts are separate MCP surfaces even when they refer
-to the same business subject. For example, a client can invoke `get_book` for
-an explicit lookup or read `bookworm://catalog/books/{id}` as a resource;
-prompts such as `recommend_books` provide instructions but do not perform
-either operation.
+The shared integration server organizes its capabilities into three distinct categories based on what the consumer intends to do:
 
-## Consequences
+- **Lookups (Tools)**: Used when a client needs to run an explicit request with parameters—such as looking up a specific book or retrieving reviews with filters.
+- **Reference data (Resources)**: Used when a client wants to read a stable, directly addressed item of context—such as a book record or a book's review collection—identified by a consistent address.
+- **Reusable guidance (Prompts)**: Used when a client wants structured instructions for a common task—such as recommending books, summarizing ratings, or analyzing book quality.
 
-- Clients can choose between invoking a lookup, reading a resource, and
-  requesting a task template.
-- Resource URIs and prompt names are compatibility surfaces and should be
-  changed deliberately.
-- MCP prompts guide model tasks but do not perform operations or replace
-  application-level validation and governance.
-- Tool schemas, resource URIs, and prompt names and arguments have distinct
-  compatibility expectations; changes should be reviewed against the clients
-  that consume each primitive.
-- Resources and tool results expose data from the owning APIs and do not make
-  the MCP server authoritative or provide a cross-domain transaction.
-- Prompts can structure a task but cannot enforce its final classification or
-  replace application-side policy checks.
+Even when a lookup, a reference item, and a task template refer to the same book or review topic, they remain separate capabilities: retrieving reference data does not run a search, and fetching a prompt template provides guidance without executing any lookup or enforcing application policy on its own.
 
-## Alternatives considered
+## 4. Trade-offs & Lessons Learned
 
-### Represent every capability as a tool
+- **Three distinct surfaces vs. one uniform mechanism**: Separating lookups, reference data, and task templates adds structural discipline and avoids awkward workarounds, though teams must actively review compatibility across all three contract types before making changes.
+- **Guidance is not enforcement**: Shared task instructions help structure how an AI model reasons, but they cannot perform operations or replace application-level validation, classification, and governance checks.
+- **Reference consistency without transactions**: Both lookups and reference reads expose data from the owning domain APIs at request time; they do not make the integration server authoritative or provide cross-domain transactions.
 
-This would give clients one interaction mechanism, but would turn stable
-context reads and reusable instructions into artificial invocations and
-conflate data retrieval with task guidance.
+### Alternatives Evaluated
 
-### Represent all domain data as resources
+- **Represent every capability as a tool**: Rejected because it turns simple reference reads and reusable instructions into artificial action calls, blurring data retrieval with task guidance.
+- **Represent all domain data as resources**: Rejected because static addresses do not replace parameterized searches driven by user criteria.
+- **Embed task instructions inside every client**: Rejected because it duplicates guidance across applications and forces a new client deployment whenever instructions need refinement.
 
-Resources work well for URI-addressed context, but do not replace
-parameterized operations such as searching with user-supplied criteria.
-Explicit lookups remain tools where invocation parameters matter.
+## 5. Technical Reference
 
-### Embed task instructions in every client
-
-This would duplicate reusable guidance and make updates dependent on each
-client release. MCP prompts let clients retrieve shared task templates while
-leaving execution and validation to the consuming application.
+- **Decision status**: Accepted (`2026-11-04`)
+- **Affected systems & services**: `mcp-tools`, [[service|mcp-server]]
+- **MCP Primitive Mapping in [[service|mcp-server]]**:
+  - **Tools** (explicit, parameterized read requests): `get_book`, `get_book_reviews`
+  - **Resources** (stable URI-addressed JSON context): `bookworm://catalog/books/{id}`, `bookworm://ratings/{bookId}/reviews`
+  - **Prompts** (reusable task instructions): `recommend_books`, `summarize_rating`, `analyze_book_quality`
+- **Contract governance**: Tool schemas, resource URIs, and prompt names/arguments are distinct compatibility surfaces and remain separate from domain events and commands. Prompts structure model tasks but do not execute operations or replace application-side policy checks.

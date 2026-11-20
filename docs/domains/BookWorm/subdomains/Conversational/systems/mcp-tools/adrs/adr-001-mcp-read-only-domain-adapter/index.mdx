@@ -24,61 +24,51 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-AI clients need access to current [[domain|catalog]] and [[domain|reviews]] information and reusable
-analysis prompts. Giving those clients direct access to domain databases or
-write operations would couple model interactions to persistence and weaken
-the ownership boundaries of Catalog and Reviews. A shared integration surface
-also needs to make it clear which capabilities retrieve information and which
-systems remain responsible for the underlying data.
+BookWorm's AI assistants and external AI clients need up-to-date information from [[domain|catalog]] and [[domain|reviews]], along with reusable guidance for analyzing that information. However, allowing AI clients to read domain databases directly—or allowing AI-driven workflows to modify business records—would create serious architectural risks:
 
-## Decision
+- It would tightly couple AI integrations to internal storage details of Catalog and Reviews.
+- It would blur which system owns business rules and data integrity.
+- It would increase the risk of unintended data changes triggered by automated model decisions.
 
-The [[system|mcp-tools]] system ([[service|mcp-server]]) provides a shared adapter exposing read-only
-capabilities for AI clients. It does not expose domain write operations or
-become the system of record for Catalog or Reviews data. Its tools retrieve
-information, its resources expose URI-addressed domain data, and its prompts
-provide reusable task instructions; none of those primitives changes domain
-records.
+BookWorm needed a shared, predictable integration layer that makes clear which capabilities simply retrieve information and which systems remain responsible for the underlying data.
 
-MCP clients select only the capabilities they need, subject to server-side
-authentication, authorization, and governance. [[service|catalog-api]] and [[service|rating-api]] remain
-responsible for their respective API behavior and data ownership.
+## 2. Business Value
 
-## Consequences
+- **Clear data ownership**: Catalog and Reviews remain the single sources of truth for books, ratings, and reviews, preserving clean domain boundaries.
+- **Safer AI adoption**: Restricting the shared AI integration layer to read-only access limits the impact of unexpected AI behavior and prevents accidental business-state changes.
+- **Reusable integration across teams**: Multiple AI clients and agents can rely on one standardized integration boundary rather than building bespoke connections to each domain.
+- **Explicit change management**: Business mutations continue to flow exclusively through established domain workflows with full validation and authorization.
 
-- AI clients can reuse a stable read-only integration boundary.
-- Catalog and Reviews remain authoritative for their own data.
-- Write workflows and business-state changes must continue to use the owning
-  domains' supported operations.
-- The MCP adapter's tool, resource, and prompt definitions become public
-  integration contracts for its clients and must be versioned and changed
-  deliberately.
-- MCP results reflect the source APIs at lookup time; the adapter does not
-  provide a durable cache or guarantee that separately retrieved facts form
-  one cross-domain snapshot.
-- Read-only scope limits the impact of an agent invocation, but does not
-  replace authentication, authorization, or validation of client behavior.
+## 3. How It Works
 
-## Alternatives considered
+The [[system|mcp-tools]] system acts as a dedicated read-only adapter sitting in front of Catalog and Reviews:
 
-### Give AI clients direct database access
+- **Read-only retrieval**: AI clients use the adapter to look up book and review information or fetch reusable analysis instructions. None of these capabilities creates, updates, or deletes business records.
+- **Selective capability access**: Each AI client requests only the specific capabilities it is permitted to use, governed by authentication, authorization, and client-level policies.
+- **Authoritative source ownership**: Whenever data is requested, the owning domains remain solely responsible for their business rules, access controls, and stored records. Any action that changes business state must go through the owning domain's standard operations outside this adapter.
 
-This would bypass the owning APIs and couple clients to database schemas,
-credentials, and storage choices. It would also make it harder for domain
-owners to preserve their service contracts and access rules.
+## 4. Trade-offs & Lessons Learned
 
-### Expose domain write operations through MCP
+- **Safety of read-only boundaries vs. conversational mutations**: Keeping the adapter strictly read-only prevents conversational workflows from appearing transactional or accidentally mutating state; supporting write actions later will require a separate, explicit architectural and authorization decision.
+- **Contract stability responsibility**: Once exposed to AI clients, the adapter's tools, data references, and prompt templates become shared integration contracts that must be versioned and evolved carefully.
+- **Live lookups without cross-domain snapshots**: Results reflect source systems at the moment each request runs; the adapter does not maintain a durable cache or guarantee a single consistent snapshot across separate lookups.
+- **Read-only is not a substitute for security**: Limiting capabilities to reads reduces blast radius, but caller authentication, authorization, and client validation remain mandatory.
 
-This could make conversational workflows appear transactional, but would
-expand the consequences of model-selected calls and blur ownership of
-business decisions. The current adapter remains read-only; any future
-mutation capability requires a separate explicit authorization and domain
-workflow decision.
+### Alternatives Evaluated
 
-### Let each AI client integrate independently with every domain
+- **Direct database access for AI clients**: Rejected because it bypasses owning services, exposes private storage schemas and credentials, and weakens access control enforcement.
+- **Exposing domain write operations through the adapter**: Rejected because model-selected writes would blur ownership of business decisions and expand failure consequences.
+- **Point-to-point integration per AI client**: Rejected because each client would duplicate connection, discovery, and contract-mapping logic across domains.
 
-This would duplicate connection, discovery, and contract-mapping logic across
-clients. The shared adapter provides one reusable boundary while keeping
-source data and rules in the domains that own them.
+## 5. Technical Reference
+
+- **Decision status**: Accepted (`2026-11-04`)
+- **Affected systems & services**: [[system|mcp-tools]], [[service|mcp-server]], `product-catalog-system`, `rating-system`
+- **Adapter implementation**: [[service|mcp-server]] exposes three read-only MCP primitive categories:
+  - **Tools**: Retrieve information on demand without changing domain records.
+  - **Resources**: Expose URI-addressed domain data.
+  - **Prompts**: Provide reusable task instructions.
+- **Authoritative backends**: [[service|catalog-api]] and [[service|rating-api]] retain ownership of their respective API behavior, persistence, and write workflows.
+- **Governance**: MCP clients select only the capabilities they need, subject to server-side authentication, authorization, and governance policies.

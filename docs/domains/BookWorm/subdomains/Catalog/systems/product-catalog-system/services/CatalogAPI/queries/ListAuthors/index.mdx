@@ -18,22 +18,47 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Returns every catalog [[entity|author]] without pagination or request parameters.
+Storefront users, catalog administrators, and client applications need a straightforward way to retrieve the full directory of [[entity|author]] records in the Catalog—for example, to populate selectable author lists when creating or updating books, or to display browseable author options.
+
+## 2. Business Value
+
+- **Streamlined catalog authoring**: Content managers and administrative tools can reliably select existing authors from a single source of truth, reducing duplicate author entries.
+- **Predictable client behavior**: An empty catalog is treated as a valid empty list rather than an error, preventing unnecessary error screens during initial setup or test environments.
+- **Zero-configuration retrieval**: Callers do not need to supply search terms or paging parameters to fetch the directory.
+
+## 3. How It Works
+
+1. A client application requests the full list of catalog [[entity|author]] entries without providing any filters, paging settings, or request inputs.
+2. The catalog looks up every known author record.
+3. Each author entry is returned with its unique identifier and display name (which may be absent if not set).
+4. If no authors exist in the catalog yet, the request succeeds with an empty list instead of treating the absence of data as a failure.
+
+## 4. Trade-offs & Lessons Learned
+
+- **No pagination or filtering**: Returning every author in one response keeps client integrations simple and eliminates multi-page fetching, assuming the total number of authors remains bounded; very large catalogs would eventually require pagination.
+- **Empty list instead of a missing-resource error**: Returning an empty list when no authors exist avoids false alarms on fresh deployments, though clients must explicitly handle rendering an empty state.
+- **Optional display name**: Allowing the author name to be absent protects readers from missing-data failures while requiring user interfaces to provide a sensible fallback when displaying incomplete records.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/authors`
+- **Status codes**: `200` (returns `[]` when no resources are available)
+- **Entity**: [[entity|author]]
 
 <NodeGraph />
 
-## Contract
+### Contract
 
 This query does not require a request body or query parameters.
 
 The response is a JSON array of objects containing `id` and nullable `name`.
 
-## Operational notes
+### Operational notes
 
 The API returns `200` with an empty array when no resources are available.
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

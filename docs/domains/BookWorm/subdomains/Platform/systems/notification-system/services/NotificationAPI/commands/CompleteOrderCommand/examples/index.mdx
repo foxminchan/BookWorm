@@ -2,11 +2,35 @@
 summary: Show how Finance publishes a completion notification after the Order status changes.
 ---
 
+## 1. Context & Problem
+
+Teams working on post-purchase communications need a clear example showing when a completed-order email is requested, what order and customer data it contains, and how responsibilities remain separated between Ordering, Finance, and Notification.
+
+## 2. Business Value
+
+- **Alignment across roles**: Helps product, business, and engineering teams verify that completion emails carry the expected customer name, email address, order reference, and accepted total.
+- **Clear workflow sequencing**: Demonstrates that the email request is emitted only _after_ Ordering confirms completion, preventing premature customer notices.
+- **Faster onboarding**: Offers a ready-to-use reference of both the trigger logic and the message structure.
+
+## 3. How It Works
+
+1. Ordering reports that an order is complete, prompting Finance to close its internal order-tracking step.
+2. Finance checks whether both the customer's name and email address are present; only when both are nonblank does it issue a completion notification request with the order identifier, customer details, and accepted order total.
+3. Notification maps the request to the completed-order email template. Blank email addresses are skipped safely; otherwise, Notification renders the message, records it for sending, and submits it to the mail provider.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Contact completeness guard**: Checking that both name and email are nonblank avoids broken greetings or failed sends, at the cost of skipping completion emails when either field is missing.
+- **One-way notification handoff**: Finishing without a return delivery-status event keeps cross-service workflows simpler, while meaning upstream systems cannot verify final inbox delivery.
+- **Notification is not state**: Emitting or processing this request never completes or modifies the order itself; Ordering remains the authoritative owner of order status.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish a completed-order notification
+### Publish a completed-order notification
 
 Finance consumes [[event|OrderStatusChangedToCompleteIntegrationEvent]] after
 Ordering reports that the Order is complete. Its saga marks itself completed,
@@ -41,7 +65,7 @@ return messages;
 
 ---
 
-## Command payload
+### Command payload
 
 This is the camelCase message data inside BookWorm's CloudEvents-compatible
 envelope; the transport envelope is omitted. The command carries the Order ID,
@@ -62,7 +86,7 @@ customer details, and accepted total used to render the completed-order email.
 
 </CodeGroup>
 
-## Notification handling
+### Notification handling
 
 Notification maps the command to the completed status for the email template;
 the Order's status is owned by Ordering. A blank email skips email work. For a

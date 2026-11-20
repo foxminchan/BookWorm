@@ -12,71 +12,70 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Purpose
+## 1. Context & Problem
 
-Reviews owns the individual [[entity|feedback]] record for a Catalog
-[[entity|book]]. The feedback record contains the Book ID, reviewer names, an integer rating from 0
-through 5, and an optional comment.
+BookWorm separates customer review management from product catalog browsing. Reviews owns each individual [[entity|feedback]] record—capturing who submitted the review, their 0-to-5 rating, and any optional comment for a [[entity|book]]—while Catalog owns the book listing and displays only an aggregated average rating and total review count.
 
-Catalog remains the source of truth for the Book and owns only the derived
-average-rating and review-count projection. Reviews must not write Catalog
-data or share the [[container|rating-database]] with another bounded context.
+Teams and stakeholders need a shared understanding of how a review moves from customer submission to catalog visibility, how reviews are read or summarized, and how administrative removals or invalid book references are handled without sharing databases across domain boundaries.
 
-## Create feedback
+## 2. Business Value
 
-1. Authenticate the caller, then use [[command|CreateFeedback]] to submit the
-   Book ID, reviewer first name, reviewer last name, optional comment, and
-   rating.
-2. Validate that the Book ID and reviewer names are non-empty, the comment
-   satisfies the service length limit, and the rating is an integer from 0
-   through 5.
-3. Persist the feedback aggregate in [[container|rating-database]].
-4. Return the new feedback identifier.
-5. After the transaction commits, publish
-   [[event|FeedbackCreatedIntegrationEvent]] on
-   [[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
+- **Clean domain separation**: Keeps review ownership and storage isolated from catalog product data, simplifying maintenance and independent scaling.
+- **Trustworthy customer signals**: Ensures every rating follows consistent rules (0 to 5 score, required reviewer identity, validated comments) before affecting product summaries.
+- **Flexible insights**: Supports both paginated raw review browsing and on-demand AI summaries without risking changes to stored customer ratings.
+- **Controlled moderation**: Restricts feedback deletion to authorized administrators and propagates score updates automatically.
 
-The event is a change to committed feedback, not a notification that Catalog
-has already updated its projection.
+## 3. How It Works
 
-## Read feedback and summaries
+The feedback lifecycle covers four stages:
 
-- List feedback through [[query|ListFeedbacks]] with a Book ID, pagination,
-  ordering, and direction.
-- Generate a summary through [[query|SummarizeFeedback]] when an
-  insight is needed. The [[agent|rating-agent]] reads current Catalog context
-  and raw feedback, then returns a classification, metrics, justification, and
-  confidence.
-- Treat summaries as read-time derived insight. They do not replace feedback,
-  change a rating, or update Catalog.
+1. **Create feedback**: An authenticated user submits a rating (0 through 5), reviewer first and last names, the target book reference, and an optional comment. The system validates all required fields and comment length limits, saves the feedback record, returns its new identifier, and then emits a notification so Catalog can update its rating summary. That notification confirms the review was saved—not that Catalog has finished updating yet.
+2. **Read feedback and summaries**: Users can browse paginated, ordered reviews for a specific book. When a quick overview is needed, an on-demand summary analyzes current book details and raw feedback to return a quality classification, metrics, justification, and confidence level. Summaries are read-only insights and never alter ratings.
+3. **Delete feedback**: Authorized administrators can remove a feedback record by its identifier. If the record does not exist, the request fails explicitly rather than reporting a false success. Once removed, a deletion notification is sent so Catalog recalculates its rating summary asynchronously.
+4. **Synchronization and compensation**: Because updates flow asynchronously, Catalog's displayed score and review count may briefly trail behind Reviews. If Catalog rejects a newly submitted review because the book no longer exists, a dedicated compensation procedure cleans up the invalid feedback record rather than leaving orphaned data behind.
 
-## Delete feedback
+## 4. Trade-offs & Lessons Learned
 
-1. Use [[command|DeleteFeedback]] with administrator authorization for the feedback ID.
-2. A missing feedback ID is a not-found outcome; do not treat it as a
-   successful deletion.
-3. After the aggregate is removed, publish
-   [[event|FeedbackDeletedIntegrationEvent]] on
-   [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]].
-4. Catalog applies the deletion to its rating projection asynchronously.
+- **Asynchronous projection vs. immediate consistency**: Publishing changes after saving keeps customer review submissions fast and resilient, at the cost of a short delay before Catalog displays updated averages.
+- **Idempotent downstream processing**: Because integration messages are delivered at least once, Catalog must safely handle duplicate notifications without skewing review counts.
+- **Compensating invalid references**: Rather than checking Catalog synchronously on every database write or sharing tables, Reviews accepts valid submissions and relies on Catalog's rejection signal to remove reviews for deleted or nonexistent books. This cleanup is strictly corrective and must never be communicated as a customer-initiated deletion.
 
-## Consistency expectations
+## 5. Technical Reference
 
-Catalog's `average_rating` and `total_reviews` can lag behind Reviews while
-Kafka delivery or processing is pending. Consumers must be idempotent because
-the integration channels provide at-least-once delivery.
-
-If Catalog rejects a created-feedback event because the Book does not exist,
-follow the **Recover a failed Catalog rating projection** procedure in the
-Runbooks section. That compensation removes the invalid feedback reference; it
-is not a customer initiated deletion.
-
-## Related architecture
+### Ownership & related architecture
 
 - [[system|rating-system]] owns the Reviews boundary.
-- [[service|rating-api]] exposes the feedback lifecycle.
+- [[service|rating-api]] exposes the feedback lifecycle and must not write Catalog data or share [[container|rating-database]] with another bounded context.
 - [[agent|rating-agent]] provides governed, read-only feedback insight.
-- [[adr|adr-002-publish-feedback-events-for-catalog-projection]] defines the
-  projection integration.
+- [[adr|adr-002-publish-feedback-events-for-catalog-projection]] defines the projection integration.
+
+### Create feedback
+
+1. Authenticate the caller, then use [[command|CreateFeedback]] to submit the Book ID, reviewer first name, reviewer last name, optional comment, and rating.
+2. Validate that the Book ID and reviewer names are non-empty, the comment satisfies the service length limit, and the rating is an integer from 0 through 5.
+3. Persist the feedback aggregate in [[container|rating-database]].
+4. Return the new feedback identifier.
+5. After the transaction commits, publish [[event|FeedbackCreatedIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
+
+The event is a change to committed feedback, not a notification that Catalog has already updated its projection.
+
+### Read feedback and summaries
+
+- List feedback through [[query|ListFeedbacks]] with a Book ID, pagination, ordering, and direction.
+- Generate a summary through [[query|SummarizeFeedback]] when an insight is needed. The [[agent|rating-agent]] reads current Catalog context and raw feedback, then returns a classification, metrics, justification, and confidence.
+- Treat summaries as read-time derived insight. They do not replace feedback, change a rating, or update Catalog.
+
+### Delete feedback
+
+1. Use [[command|DeleteFeedback]] with administrator authorization for the feedback ID.
+2. A missing feedback ID is a not-found outcome; do not treat it as a successful deletion.
+3. After the aggregate is removed, publish [[event|FeedbackDeletedIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]].
+4. Catalog applies the deletion to its rating projection asynchronously.
+
+### Consistency expectations
+
+Catalog's `average_rating` and `total_reviews` can lag behind Reviews while Kafka delivery or processing is pending. Consumers must be idempotent because the integration channels provide at-least-once delivery.
+
+If Catalog rejects a created-feedback event because the Book does not exist, follow the **Recover a failed Catalog rating projection** procedure in the Runbooks section. That compensation removes the invalid feedback reference; it is not a customer initiated deletion.
 
 <Footer />

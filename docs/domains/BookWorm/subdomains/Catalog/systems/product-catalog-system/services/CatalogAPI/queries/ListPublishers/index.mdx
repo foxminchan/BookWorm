@@ -18,22 +18,38 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Returns every catalog [[entity|publisher]] without pagination or request parameters.
+Storefront views, catalog administration tools, and integrations need a reliable way to retrieve every book publisher known to the Catalog. Without a dedicated publisher listing operation, consumers would have to maintain duplicate lists or infer publishers from existing books, causing inconsistent filters and form validation issues.
+
+## 2. Business Value
+
+- **Consistent publisher data**: Storefronts and management tools always present the same authoritative set of [[entity|publisher]] records.
+- **Simple integration**: Consumers retrieve all publishers in one step without managing search parameters or pagination.
+- **Clean empty-state behavior**: Returning an empty list when no publishers are registered avoids unnecessary error handling during initial setup.
+
+## 3. How It Works
+
+1. A consumer requests the list of publishers from the Catalog without providing any filters, request body, or pagination parameters.
+2. The Catalog gathers every known [[entity|publisher]] record.
+3. The response delivers the complete list, where each entry provides a unique identifier and an optional display name.
+4. When no publishers exist in the Catalog, the operation completes normally and returns an empty list.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Unpaginated response**: Returning all publishers in one payload keeps client integration simple while the publisher list remains manageable; pagination would be required if the catalog scaled to a very large publisher directory.
+- **Optional display name**: Because the publisher display name is optional in the response contract, client interfaces should handle missing names safely when displaying options.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/publishers`
+- **Request**: Does not require a request body, path parameters, or query parameters.
+- **Response**: Returns HTTP `200` with a JSON array of objects containing `id` and nullable `name` for every catalog [[entity|publisher]]. Returns `200` with `[]` when no resources are available.
+
+### Architecture
 
 <NodeGraph />
 
-## Contract
-
-This query does not require a request body or query parameters.
-
-The response is a JSON array of objects containing `id` and nullable `name`.
-
-## Operational notes
-
-The API returns `200` with an empty array when no resources are available.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

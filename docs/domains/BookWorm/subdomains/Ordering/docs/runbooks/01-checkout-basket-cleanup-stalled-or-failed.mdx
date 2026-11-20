@@ -12,7 +12,45 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Symptoms
+## 1. Context & Problem
+
+Once checkout creates an Order, Finance's background workflow is responsible for clearing the customer's shopping basket. Because this process happens asynchronously across multiple services, basket cleanup can stall, fail explicitly, or exhaust its scheduled retries. When that happens, customers or operators may see a still-populated basket, receive a cancellation email while the Order still shows **New**, or find that the Order has disappeared from active view. Support and operations teams need a safe diagnostic and recovery playbook that keeps authoritative Order records intact.
+
+## 2. Business Value
+
+- **Protects commercial data integrity:** Prevents operators from issuing forced completions, forced cancellations, or manual database edits just to make screens match.
+- **Speeds up incident triage:** Gives responders a clear sequence to correlate Ordering and Finance records by Order ID and route issues to the right owning team.
+- **Prevents misdiagnosis of duplicate work:** Documents a known timeout behavior so teams preserve message history and understand why repeated notifications or basket commands may appear.
+
+## 3. How It Works
+
+**Common symptoms:**
+
+- An Order was created, yet the buyer's basket still appears to contain items.
+- Finance has not reported a basket-deletion result.
+- A cancellation email was requested even though the Order still reads **New**.
+- The Order is no longer visible after a basket-deletion failure.
+
+**Investigation & recovery flow:**
+
+1. **Verify Order status first:** Look up the Order when visible and record its business status separately from Finance's workflow state.
+2. **Correlate across services:** Use the Order ID to confirm whether the checkout event was published and whether Finance started its corresponding workflow.
+3. **Interpret the basket-cleanup outcome:**
+   - **Success:** Finance reports completion to Ordering; the Order remains **New** (cleanup success does not complete the Order).
+   - **Explicit failure:** Finance reports the failure to Ordering, and Ordering hides the Order from active view if it still exists without changing its business status.
+   - **No outcome:** Finance retries on a bounded schedule (an initial attempt plus two timed reissues, exhausting on the third timeout). Upon exhaustion, Finance marks its workflow cancelled and may request a cancellation email if recipient details exist, without cancelling the Order in Ordering.
+4. **Watch for known timeout reissues:** Under current Finance behavior, successful basket cleanup does not cancel the scheduled timeout. An open workflow can therefore hit later timeouts and reissue the placement command to both Basket and Notification, causing repeated work.
+5. **Recover safely:** Never infer Order status from basket contents, Finance workflow state, or emails. Do not trigger completion or cancellation just to match a soft-deleted state, do not manually edit records as a first response, and preserve the Order ID, timestamps, and workflow history when escalating.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Bounded retries vs. indefinite retries:** Limiting timed retries to a fixed number of attempts prevents stalled workflows from looping indefinitely, while requiring operator escalation if a transient outage outlasts the retry window.
+- **Uncancelled timers on open workflows:** Because Finance does not currently cancel its timeout after successful cleanup, downstream Basket and Notification consumers can receive duplicate commands, and responders must not assume single-delivery notifications.
+- **No manual record patching:** Avoiding ad-hoc edits or artificial status transitions preserves an accurate audit trail for root-cause investigation.
+
+## 5. Technical Reference
+
+### Symptoms
 
 - An Order was created, but the buyer's basket still appears populated.
 - The Finance workflow has not reported a basket-deletion outcome.
@@ -20,7 +58,7 @@ import Footer from "@catalog/components/footer.astro";
   **New**.
 - The Order is no longer visible after a basket-deletion failure.
 
-## Diagnose
+### Diagnose
 
 1. Retrieve the Order using `GET /api/v1/orders/{id}` when it is visible. Record
    its status separately from Finance's saga state.
@@ -50,7 +88,7 @@ basket cleanup. A still-open saga can therefore receive later timeouts and
 reissue [[command|PlaceOrderCommand]]; the command is consumed by both Basket and
 Notification, so repeated processing can repeat work.
 
-## Recover
+### Recover
 
 - Confirm the Order's actual status through Ordering; do not infer it from
   basket contents, Finance saga state, or an email.
@@ -65,7 +103,7 @@ Notification, so repeated processing can repeat work.
   succeeded, preserve the Order ID, message timestamps, and saga history for
   investigation; do not assume Notification delivery was exactly once.
 
-## Escalation
+### Escalation
 
 - Contact [[team\|contributor-team]] for Finance saga and message-processing
   issues.

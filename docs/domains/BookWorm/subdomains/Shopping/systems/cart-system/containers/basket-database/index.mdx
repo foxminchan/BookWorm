@@ -19,36 +19,45 @@ styles:
   icon: /icons/database/redis.svg
 ---
 
+## 1. Context & Problem
+
+Online shoppers need a fast, dedicated place to keep their active selections as they browse, add books, and adjust quantities before checkout. Storing this temporary pre-order state inside a permanent order database would slow down everyday browsing and mix unconfirmed shopping intent with completed purchases. At the same time, storing full product descriptions inside the cart would duplicate catalog information and create stale pricing.
+
+## 2. Business Value
+
+- **Responsive shopping experience**: Supports quick cart reads and updates during active browsing.
+- **Strict customer isolation**: Keeps each authenticated customer's basket separate and private.
+- **Lean, clean data boundaries**: Stores only selections and quantities while leaving product pricing and confirmed orders to their rightful owning domains.
+- **Safe post-checkout cleanup**: Tracks basket lifecycle state so checked-out carts can be cleared cleanly and not accidentally reused.
+
+## 3. How It Works
+
+Basket Database holds each authenticated customer's active [[entity|basket]] along with its [[entity|basket-item]]s—specifically the chosen [[entity|book]] identifiers, positive quantities, and the lifecycle information needed to clear the cart after checkout.
+
+Only the cart service is permitted to read from or write to this store, using the customer's verified identity to isolate each basket. When a basket is updated, the entire item selection is replaced at once rather than merged piece by piece. Product names, prices, and other metadata are never stored here; instead, they are pulled fresh from [[domain|catalog]] whenever a customer views their basket. After checkout, deleting the basket is handled as an explicit cleanup step whose success or failure is announced to downstream systems.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Not a record of completed purchases**: This store holds transient customer-session data only. [[domain|ordering]] owns every accepted order once checkout begins, and downstream workflows must never read order state from Basket Database.
+- **Single-writer discipline**: Restricting direct access to one owning service prevents hidden dependencies across teams, though it makes that service and store availability critical for active cart edits.
+- **Read-time dependency on Catalog**: Keeping product metadata out of the basket store avoids synchronization bugs, at the cost of needing [[domain|catalog]] available to display full book details.
+
+## 5. Technical Reference
+
 <NodeGraph />
 
-## Overview
-
-Basket Database is the authoritative persistence store for customers' active
-[[entity|basket]]s. [[service|basket-api]] uses customer-scoped keys to read,
-create, replace, and delete basket state throughout the pre-order journey.
-
-## What does it store?
-
-- **[[entity|basket]]s** — the current basket for an authenticated customer.
-- **[[entity|basket-item]]s** — [[entity|book]] identifiers and positive requested quantities.
-- **Basket lifecycle state** — the data needed to clear a basket after checkout
-  and prevent the same basket from being reused.
-
-Product names, prices, and other metadata from [[domain|catalog]] are not owned
-by this store. They are resolved through the Catalog contract when the basket
-is presented.
-
-## Access patterns
-
-- [[service|basket-api]] is the only documented reader and writer.
-- Reads and writes are scoped to the authenticated customer's identifier.
-- Basket replacement writes the complete item set rather than merging arbitrary
-  state.
-- Deleting a basket is an explicit checkout cleanup operation. Its success or
-  failure is reported through the basket integration events.
-
-## Operational guidance
-
-Treat this store as transient customer-session data rather than the system of
-record for accepted purchases. [[domain|ordering]] owns the resulting order after
-checkout, so downstream workflows must not read order state from this store.
+- **Container metadata**:
+  - `technology`: `redis`
+  - `authoritative`: `true`
+  - `access_mode`: `readWrite`
+  - `classification`: `internal`
+  - `retention`: `transient`
+- **Access & key model**: [[service|basket-api]] is the sole documented reader and writer, addressing baskets via customer-scoped keys derived from the authenticated customer identity.
+- **Stored data**:
+  - Customer-scoped [[entity|basket]] records
+  - [[entity|basket-item]] entries ([[entity|book]] IDs and positive requested quantities)
+  - Basket lifecycle state for post-checkout deletion and reuse prevention
+- **Write & cleanup behavior**:
+  - Basket replacement writes the complete item set rather than merging partial edits.
+  - [[domain|catalog]] metadata is resolved via the Catalog contract at read time rather than persisted.
+  - Checkout deletion is an explicit cleanup operation whose success or failure is published through basket integration events.

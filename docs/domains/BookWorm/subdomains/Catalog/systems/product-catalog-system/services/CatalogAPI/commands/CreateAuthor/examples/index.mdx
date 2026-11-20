@@ -2,21 +2,51 @@
 summary: Create an author through the Catalog API and handle validation failures.
 ---
 
+## 1. Context & Problem
+
+Every book in the catalog must be linked to one or more recognized authors rather than using free-text author names that vary in spelling or formatting. Integrators and catalog tools need a clear, predictable way to register a new author first—and handle missing or invalid author details cleanly—before assigning that author to book listings.
+
+## 2. Business Value
+
+- **Consistent catalog records:** Registering authors once and reusing their unique identifiers prevents duplicate or misspelled author entries across books.
+- **Faster onboarding for integrators:** Clear success and failure examples reduce integration guesswork and shorten delivery time for admin tools and import scripts.
+- **Cleaner error handling:** Distinguishing invalid input from temporary service outages stops automated callers from blindly retrying requests that will never succeed.
+
+## 3. How It Works
+
+Creating an author follows two main paths:
+
+1. **Successful registration:** The caller submits a non-empty display name for the author. Once validated and saved, the catalog returns a unique identifier for that author. The caller keeps this identifier so it can be attached when creating or updating books later.
+2. **Rejected invalid input:** If the author name is missing or blank, the catalog rejects the submission and returns a structured field-level error message. The calling application should display the error so a user or operator can correct the name rather than automatically repeating the same request.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Two-step book authoring workflow:** Requiring authors to exist before they can be linked to books enforces clean catalog relationships, at the cost of requiring callers to create or look up authors first.
+- **No blind retries on validation failures:** Treating missing or empty fields as permanent input errors prevents retry loops and noisy logs, placing responsibility on the caller to fix the input before trying again.
+
+## 5. Technical Reference
+
+- **Endpoint:** `POST https://api.example.com/api/v1/authors`
+- **Request headers:** `Content-Type: application/json`
+- **Request body:** JSON object requiring non-empty `name` (at least one character).
+- **Success response:** `200` returning the generated author UUID as a JSON string.
+- **Validation failure:** Omitting `name` returns `400` with an RFC 7807 validation response.
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Create an author
+### 1. Create an author
 
 The command requires a non-empty display name. A successful request returns `200` and the generated author UUID.
 
-### Payload details
+#### Payload details
 
 - `name` is required and must contain at least one character.
 - The returned UUID should be persisted by the caller when creating related books.
 - The request uses the Catalog API's JSON endpoint.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +56,7 @@ const authorId = "5e4a1c9b-3f72-4b8d-a605-7c2e9f1d8430";
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Use the returned UUID when assigning this author to a book.
 
@@ -59,6 +89,6 @@ console.log(`Created author ${authorId}`);
 
 ---
 
-## 2. Reject an invalid request
+### 2. Reject an invalid request
 
 Omitting `name` returns `400` with an RFC 7807 validation response. Display the field error and do not retry unchanged input.

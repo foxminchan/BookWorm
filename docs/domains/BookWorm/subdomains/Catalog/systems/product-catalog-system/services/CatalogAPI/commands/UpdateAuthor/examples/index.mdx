@@ -2,21 +2,45 @@
 summary: Rename an existing author and handle missing-resource responses.
 ---
 
+## 1. Context & Problem
+
+Author names occasionally need corrections—for example, fixing spelling mistakes, standardizing pen names, or updating formatting across the bookstore catalog. Client applications and administrative tools need a clear, reliable pattern for submitting a corrected name and knowing how to react if the author record no longer exists or if the response contains no body to read.
+
+## 2. Business Value
+
+- **Trusted catalog data:** Keeps author credits accurate across storefronts, search results, and book detail pages without recreating author records.
+- **Fewer client bugs:** Clarifies that a successful rename returns an empty confirmation, preventing applications from failing while trying to read non-existent response text.
+- **Safe failure handling:** Ensures missing-author notices are treated as errors rather than mistaken for completed updates.
+
+## 3. How It Works
+
+1. The caller provides the author's unique identifier along with the new non-empty display name.
+2. The catalog service locates the matching author and applies the updated name.
+3. When the update succeeds, the service sends back an empty confirmation with no extra details, which the caller treats as completion without attempting to read a body.
+4. If the catalog does not recognize the supplied identifier, it leaves data unchanged and returns a missing-resource error so the caller knows the rename did not occur.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Empty confirmation on update:** Returning no body on success keeps updates lightweight, but requires clients not to assume every successful response carries readable data.
+- **Strict missing-author reporting:** Failing loudly when an identifier is unknown prevents silent data mismatches between admin tools and the catalog.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Update an existing author
+### 1. Update an existing author
 
 Send the author's UUID with its replacement display name. The API returns `204 No Content` when the update succeeds.
 
-### Payload details
+#### Payload details
 
 - `id` identifies the author to update and must be a valid UUID.
 - `name` is required and must be non-empty.
 - A `204` response has no response body.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +50,7 @@ const response = { status: 204, body: null };
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Treat the update as complete when the API returns `204`; do not attempt to parse a response body.
 
@@ -62,6 +86,6 @@ if (!response.ok) {
 
 ---
 
-## 2. Handle a missing author
+### 2. Handle a missing author
 
 If the UUID is not known to the Catalog, the API returns `404` with problem details. Do not treat this response as a successful update.

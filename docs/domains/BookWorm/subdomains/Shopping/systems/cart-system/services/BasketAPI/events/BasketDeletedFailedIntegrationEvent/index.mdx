@@ -14,22 +14,37 @@ badges:
     textColor: blue
 ---
 
-## Overview
+## 1. Context & Problem
 
-[[service|basket-api]] publishes this event when [[entity|basket]] deletion fails after
-checkout. Consumers should use it to trigger recovery or notification
-processing; it must not be interpreted as successful cleanup.
+During checkout cleanup, removing a customer's [[entity|basket]] can occasionally fail. If that failure went unreported, stale items could remain in the customer's cart or downstream checkout workflows would be left waiting without knowing cleanup did not succeed. Publishing an explicit failure signal lets recovery and notification workflows react promptly.
+
+## 2. Business Value
+
+- **No silent failures**: Ensures failed cart cleanup is surfaced immediately instead of stalling checkout coordination.
+- **Automated recovery**: Allows ordering and support processes to trigger compensating actions when a basket cannot be cleared.
+- **Customer communication support**: Passes an optional customer email address so recovery workflows can notify the shopper when appropriate.
+
+## 3. How It Works
+
+1. During checkout cleanup, the basket service attempts to remove the submitted [[entity|basket]].
+2. When deletion does not succeed, the service emits a failure notification instead of a completion signal.
+3. The notification carries the order reference, basket reference, purchase total, and, when available, the customer's email address.
+4. Downstream consumers use this signal to start recovery or customer notification steps and never treat it as a successful cleanup.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Dedicated failure stream vs. combined outcome**: Separating failure signals onto their own channel makes alerting, monitoring, and recovery routing straightforward.
+- **Optional customer email**: A customer email address may not always be available during recovery, so downstream notification logic must handle a missing address gracefully.
+- **Strict failure interpretation**: Consumers must never treat a failure event as completed cleanup, even when retrying recovery steps.
+
+## 5. Technical Reference
+
+- **Publisher**: [[service|basket-api]]
+- **Channel**: [[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
+- **Envelope & Payload**: The event is carried in a CloudEvents envelope. The schema below describes the JSON data payload. `email` is nullable because downstream recovery may not always have a customer address.
 
 <NodeGraph />
 
-## Channel
-
-[[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
-
-## Schema
-
-The event is carried in a CloudEvents envelope. The schema below describes the
-JSON data payload. `email` is nullable because downstream recovery may not
-always have a customer address.
+### Schema
 
 <SchemaViewer file="schema.json" title="Basket deletion failed schema" maxHeight="500" />

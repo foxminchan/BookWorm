@@ -9,9 +9,39 @@ badges:
     textColor: blue
 ---
 
-## 7.1 Infrastructure Level 1
+## 1. Context & Problem
 
-### System distribution
+As [[domain|BookWorm]] transitions from logical business capabilities to cloud-hosted software, stakeholders need a clear Level 1 view of how web storefronts, internal services, databases, AI capabilities, and external providers map to cloud infrastructure. Without this baseline, solution architects, project managers, and operations teams lack visibility into hosting boundaries, shared dependencies, security exposure, and which operational details remain unconfirmed before production rollout.
+
+## 2. Business Value
+
+- **Clear operational ownership:** Separating application compute, service-owned data stores, and asynchronous background processing allows teams to evolve and scale business capabilities independently.
+- **Reduced exposure and credential risk:** Routing all external traffic through a single gateway while keeping services on internal networking—and relying on passwordless identity access across managed cloud resources—minimizes attack surface and secret-management overhead.
+- **Predictable resilience and cost structure:** Consumption-based container compute paired with zone-redundant databases, high-availability caching, and geo-redundant storage establishes a solid baseline for availability without unnecessary idle infrastructure.
+- **Smooth developer-to-cloud parity:** Local containers and emulators mirror cloud services so teams can build and test realistically before deploying.
+- **Explicit gap tracking:** Calling out unconfirmed items (such as target regions, private networking, scaling ceilings, and SLAs) prevents teams from mistaking a deployment template for a finished production runbook.
+
+## 3. How It Works
+
+At Level 1, the BookWorm deployment organizes software and supporting services into four logical layers:
+
+1. **Single public entry point and private application compute:** Customers and staff access the Storefront and Back office web applications exclusively through a single public API gateway. That gateway routes requests over private internal networking to the web clients and core business services. All 15 application components—including web clients, business services, and privacy-redaction containers—run in a shared managed container environment with at least one active instance each, backed by a container registry and centralized monitoring dashboards.
+2. **Managed data, caching, and AI services:** Core business records (catalog items, orders, scheduled jobs), customer feedback, shopping baskets, uploaded files, workflow state, and AI model capabilities run on dedicated cloud-managed services. Services authenticate to these resources without stored passwords using cloud-managed identities.
+3. **Background work and asynchronous messaging:** Tasks that do not need to finish while a customer waits—such as updating the catalog search index or sending emails—run asynchronously through scheduled triggers, durable task queues, and event messaging. For further detail on these flows, see [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] and [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]].
+4. **Identity, external providers, and local parity:** User authentication, role permissions, and AI agent identities are managed through a central identity provider. Event messaging, vector search, and email delivery connect as external services. During local development, containers and emulators stand in for managed cloud and external providers.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Independent service deployment vs. shared infrastructure:** While each business capability deploys as its own container app, several services share a single relational database server and a single caching cluster, creating shared operational and capacity dependencies.
+- **Offloading slow work vs. immediate consistency:** Moving search indexing and email delivery into background queues and scheduled batches keeps user-facing requests responsive, while accepting that search indexes and notification delivery complete asynchronously.
+- **Baseline security and HA vs. production hardening:** The deployment template defines hosting tiers, high-availability modes, and passwordless authentication, but intentionally leaves target regions, private virtual networking, custom domains, TLS certificates, upper autoscaling caps, and formal service-level targets (availability, latency, throughput, recovery time, and capacity) for environment-specific operations configuration.
+- **Next level of detail:** See [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] for lower-level infrastructure configuration and open operational questions.
+
+## 5. Technical Reference
+
+### 7.1 Infrastructure Level 1
+
+#### System distribution
 
 <LikeC4View viewId="bookwormDeployment" project="deployment" />
 
@@ -24,20 +54,7 @@ This deployment view shows how [[domain|BookWorm]] is published to Azure:
 
 For asynchronous search indexing, [[service|sheduler-dashboard]] publishes [[event|ProcessVectorBatchIntegrationEvent]] on [[channel|scheduler.process-vector-batch]] to trigger [[service|catalog-ingestion]]. When run locally, containers and emulators substitute for managed Azure and external services.
 
-### Motivation
-
-[[domain|BookWorm]] is organized around business capabilities with clear service boundaries. Separating compute, service-owned data stores, and asynchronous messaging makes operational ownership explicit and lets teams evolve or scale capabilities independently.
-
-The deployment specification establishes the hosting platform, managed services, service tiers, high-availability modes, and passwordless security posture, while leaving target regions, private virtual networking, and upper autoscaling limits to environment-specific operations configuration.
-
-### Quality and performance characteristics
-
-- **Ownership and change isolation:** Services deploy as independent container apps, though shared infrastructure (such as the single PostgreSQL server and Redis instance) creates shared operational dependencies.
-- **Asynchronous work:** Integration events, durable queues, and scheduled batches offload work that does not need to finish during the user request. See [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] and [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]].
-- **State ownership:** Basket, Orders, feedback, and email delivery state belong to their respective systems; search vectors and rating summaries are derived views.
-- **No stated service-level targets:** Availability, latency, throughput, recovery-time, and capacity SLAs are not defined here.
-
-### Mapping of building blocks to infrastructure
+#### Mapping of building blocks to infrastructure
 
 | Software building block                                                   | Infrastructure element                                                                                                         | Deployment fact                                                                                                                                                       | Not established                                                 |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
@@ -52,8 +69,6 @@ The deployment specification establishes the hosting platform, managed services,
 | Shared integration events                                                 | Kafka (external)                                                                                                               | Supplied as an external connection string when published                                                                                                              | Broker provider, cluster size, retention, and disaster recovery |
 | Identity                                                                  | [[system\|identity-provider]] (Microsoft Entra ID)                                                                             | App registration with 3 app roles, 14 OAuth2 scopes, per-service managed identities, and Entra Agent Identities for [[agent\|book-agent]] and [[agent\|rating-agent]] | Tenant conditional access and network policy                    |
 
-### Environments
+#### Environments
 
 The deployment distinguishes local development from Azure publishing. Locally, containers and emulators run Kafka, Entra ID, MailPit, Redis, PostgreSQL, Cosmos DB, Durable Task Scheduler, Qdrant, and Azure Storage; in Azure, these map to Azure-managed services or external endpoints. Document environment-specific sizing, external endpoints, data isolation, and access boundaries as each environment is confirmed.
-
-See [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] for the lower-level infrastructure mapping and open operational questions.

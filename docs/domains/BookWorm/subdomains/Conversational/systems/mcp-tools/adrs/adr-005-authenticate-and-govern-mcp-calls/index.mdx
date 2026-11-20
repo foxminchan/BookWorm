@@ -22,64 +22,45 @@ badges:
     textColor: red
 ---
 
-## Context
+## 1. Context & Problem
 
-The shared MCP endpoint exposes [[domain|catalog]] and [[domain|reviews]] data to multiple AI
-clients. A network-accessible endpoint needs caller authentication and an
-explicit policy boundary so a client cannot invoke capabilities simply
-because they are present on the server. Client-side tool selection alone is
-not a sufficient server authorization boundary: clients may be misconfigured,
-or call a capability directly after discovery.
+The shared AI integration boundary exposes [[domain|catalog]] and [[domain|reviews]] data to multiple internal AI clients. Because this capability is reachable over the network, it needs both caller identity verification and an explicit server-side permission boundary so a client cannot run capabilities simply because they exist on the server.
 
-## Decision
+Relying only on which tools a client application chooses to load is not an adequate security control. A client could be misconfigured, or a caller could attempt to invoke a capability directly after discovering what the server offers.
 
-The `/mcp` endpoint on [[service|mcp-server]] requires authorization. The default policy requires an
-authenticated caller with the `mcptools_read` scope, and [[system|identity-provider]] token
-introspection and MCP authorization filters are enabled. MCP governance is
-configured with a default-deny policy and allow rules for approved tool
-categories; dangerous tool patterns are denied. These checks are enforced at
-the MCP server boundary for requests and tool invocations.
+## 2. Business Value
 
-Clients receive only the tools they configure, in addition to the server-side
-authorization and governance checks. [[service|chat-api]] and [[service|rating-api]] use service-to-service
-token exchange when connecting. Discovery indicates available MCP
-capabilities; it does not grant permission to invoke them.
+- **Defense in depth:** Prevents unauthorized callers or misconfigured AI clients from invoking capabilities they should not access.
+- **Least-privilege access:** Ensures AI applications can only discover and run approved read-only capabilities aligned with their role.
+- **Safer growth:** Allows new AI clients and capabilities to be introduced without relying on implicit network trust.
+- **Clear accountability:** Separates identity verification and policy enforcement failures from upstream catalog or review data issues.
 
-## Consequences
+## 3. How It Works
 
-- Unauthenticated requests and callers without the required scope are denied.
-- Tool invocation remains subject to server-side governance even when a client
-  has discovered a tool.
-- Policy and client tool declarations must be reviewed together when
-  capabilities change.
-- Authentication and governance failures are availability dependencies for
-  MCP-backed agent behavior.
-- A new client must be configured for service authentication and the required
-  scope before it can use the endpoint.
-- Allow rules must remain narrowly scoped and reviewed when tools or
-  categories change; client-side allow-lists do not replace server-side
-  default-deny policy.
-- Token introspection and governance add dependencies to MCP request
-  availability and should be observable separately from upstream data API
-  failures.
+Every incoming request to [[service|mcp-server]] passes through a strict two-layer security boundary before any book or review data is accessed:
 
-## Alternatives considered
+1. **Caller authentication and read permission check:** Callers must present valid credentials verified through [[system|identity-provider]] showing they are authorized to read MCP capabilities. Internal consumers such as [[service|chat-api]] and [[service|rating-api]] obtain these credentials using service-to-service credential exchange.
+2. **Server-side capability governance:** Even after a caller is authenticated, the server enforces a default-deny policy on tool invocations. Only explicitly approved tool categories are permitted, and unsafe tool patterns are blocked at the server boundary.
 
-### Allow unauthenticated access on the internal network
+Client applications still configure which subset of tools they intend to use, while capability discovery only advertises what exists—it never grants permission to run a tool.
 
-Network location alone does not identify a caller or limit which capabilities
-it may invoke. The endpoint requires an authenticated principal and scope
-regardless of client network placement.
+## 4. Trade-offs & Lessons Learned
 
-### Rely only on client-side tool declarations
+- **Availability and latency dependency:** Token verification and governance checks are now on the critical path for every AI tool call. Operations teams must monitor authentication and policy failures separately from upstream [[domain|catalog]] and [[domain|reviews]] API health.
+- **Onboarding and review overhead:** New AI clients cannot connect immediately; they must first be provisioned with service authentication and read permissions. Whenever tools or categories change, server allow rules and client tool configurations must be reviewed together.
+- **Rejected alternatives:**
+  - _Allowing unauthenticated internal-network access:_ Network placement alone does not identify who is calling or limit which tools can be run.
+  - _Relying only on client-side tool declarations:_ Client configuration controls intended usage, not server enforcement against misconfiguration or direct calls.
+  - _Allowing every authenticated caller to run all tools:_ Proving identity does not mean every caller should have unrestricted access to every capability.
 
-Client configuration controls which tools an application intends to load,
-but cannot enforce the server boundary. Authorization filters and
-server-side governance remain necessary if a client is misconfigured or calls
-the endpoint outside its expected path.
+## 5. Technical Reference
 
-### Allow all tools to every authenticated caller
-
-Authentication establishes who is calling, not that every caller should be
-able to invoke every capability. Default-deny governance limits access to
-approved tool categories.
+- **Decision status:** `accepted` (2026-11-04)
+- **Scope:** [[system|mcp-tools]], [[service|mcp-server]], [[system|identity-provider]]
+- **Protected endpoint:** `/mcp` on [[service|mcp-server]]
+- **Required scope:** `mcptools_read`
+- **Server-side controls:**
+  - [[system|identity-provider]] token introspection
+  - MCP authorization filters at the server boundary for requests and tool invocations
+  - Default-deny MCP governance configuration with explicit allow rules for approved tool categories and denial of dangerous tool patterns
+- **Client authentication pattern:** [[service|chat-api]] and [[service|rating-api]] connect using service-to-service token exchange

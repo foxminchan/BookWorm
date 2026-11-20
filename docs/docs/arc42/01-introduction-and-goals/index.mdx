@@ -9,20 +9,26 @@ badges:
     textColor: blue
 ---
 
-BookWorm is an online bookstore and commerce platform for discovering books, building a basket, checking out, and managing the accepted order lifecycle. Reviews, conversational assistance, and shared platform capabilities support that core journey.
+## 1. Context & Problem
 
-This chapter explains why the platform exists, what it must do at a system level, which architectural qualities matter most, and who needs the architecture. It describes the complete BookWorm platform, not an individual service or deployment unit. Detailed responsibilities and contracts remain in the relevant catalog entries.
+BookWorm is an online bookstore and commerce platform supporting book discovery, basket building, checkout, order lifecycle management, customer reviews, conversational assistance, and shared platform capabilities.
 
-## Business outcomes and architectural drivers
+Because the platform spans multiple autonomous capabilities, teams need a single starting point that answers foundational questions before diving into individual services: _Why does the platform exist? What must it do at a system level? Which architectural qualities win when trade-offs arise? Who relies on this architecture?_ Without that shared baseline, local service decisions can drift away from end-to-end business goals.
 
-The architecture is driven by the need to:
+This chapter establishes that platform-wide baseline. It describes the complete BookWorm platform rather than an individual service or deployment unit, leaving detailed responsibilities and contracts in the relevant catalog entries.
 
-- make book discovery and purchase a coherent customer journey;
-- preserve trustworthy product and order information across capability boundaries;
-- let Catalog, Shopping, Ordering, Reviews, Conversational, and Platform retain clear ownership;
-- support changes through explicit, compatible contracts rather than shared mutable state.
+## 2. Business Value
 
-## Chapter map
+- **Coherent customer journey**: Aligns every capability around a seamless path from discovering books to completing checkout and managing accepted orders.
+- **Trustworthy business data**: Protects the accuracy and clear ownership of product facts and order records across capability handoffs.
+- **Clear domain autonomy**: Enables Catalog, Shopping, Ordering, Reviews, Conversational, and Platform to evolve independently without blurring responsibilities.
+- **Safer cross-team collaboration**: Encourages changes through explicit, compatible agreements rather than entangled shared state.
+
+## 3. How It Works
+
+Chapter 1 organizes BookWorm's strategic foundation into four focused sections—moving from business purpose and boundaries, to essential requirements, to prioritized quality scenarios, and finally to the stakeholder roles served by the architecture.
+
+### Chapter map
 
 | Page                                                               | What it establishes                                                     |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
@@ -31,8 +37,21 @@ The architecture is driven by the need to:
 | [[doc\|arc42/01-introduction-and-goals/003-quality-goals]]         | Prioritized quality scenarios and how to assess them                    |
 | [[doc\|arc42/01-introduction-and-goals/004-stakeholders]]          | Stakeholder concerns that shape the architecture and this documentation |
 
-## Status and scope of this chapter
+## 4. Trade-offs & Lessons Learned
 
-The requirements and quality goals are an architecture-level synthesis of the current catalog, not a replacement for an approved product backlog or service acceptance criteria. The repository does not define stakeholder-approved, system-wide numerical service-level targets or named stakeholder contacts; this chapter makes those gaps explicit rather than implying commitments.
+- **Architecture synthesis vs. formal backlog**: The requirements and quality goals in this chapter synthesize the current catalog at a system level; they do not replace an approved product backlog or service-level acceptance criteria.
+- **Explicit gaps over implied commitments**: The repository does not currently define stakeholder-approved, system-wide numerical service-level targets or named stakeholder contacts. Calling out those gaps explicitly avoids treating architectural goals as formal operational commitments before stakeholders agree on them.
+- **Separation of concerns in documentation**: Keeping strategic intent in Chapter 1 while placing external boundaries, constraints, and solution strategies in dedicated chapters keeps each document concise and easier to maintain.
 
-Use [[doc|arc42/03-context-and-scope]] for the platform boundary and neighbors, [[doc|arc42/02-architecture-constraints]] for cross-cutting constraints, and [[doc|arc42/04-solution-strategy]] for the architectural responses to these goals.
+## 5. Technical Reference
+
+- **Scope**: Complete BookWorm platform (individual services, contracts, schemas, and deployment units are documented in their respective catalog entries).
+- **Chapter 1 pages**:
+  - [[doc|arc42/01-introduction-and-goals/001-introduction]]
+  - [[doc|arc42/01-introduction-and-goals/002-requirements-overview]]
+  - [[doc|arc42/01-introduction-and-goals/003-quality-goals]]
+  - [[doc|arc42/01-introduction-and-goals/004-stakeholders]]
+- **Adjacent arc42 chapters**:
+  - Cross-cutting constraints: [[doc|arc42/02-architecture-constraints]]
+  - System boundary and external neighbors: [[doc|arc42/03-context-and-scope]]
+  - Architectural responses and solution strategy: [[doc|arc42/04-solution-strategy]]

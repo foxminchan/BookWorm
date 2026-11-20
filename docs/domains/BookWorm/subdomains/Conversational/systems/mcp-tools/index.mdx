@@ -31,29 +31,50 @@ badges:
     icon: LockClosedIcon
 ---
 
-## Context diagram
+## 1. Context & Problem
 
-Chat and Rating connect to the MCP server over Streamable HTTP. MCP tools
-retrieve their source data from the [[system|product-catalog-system]] and
-[[system|rating-system]] APIs; the MCP server does not own those systems'
-books or feedback. MCP requests are authenticated and authorized through the
-external [[system|identity-provider]].
+BookWorm's conversational and rating AI workflows need live access to book catalog details, customer feedback, and consistent task instructions. Without a shared adapter, each AI client would need custom integration logic to reach [[system|product-catalog-system]] and [[system|rating-system]], increasing duplication and risking inconsistent data access or unintended write operations.
+
+MCP Tools solves this by providing a single, read-only, stateless integration layer tailored for internal AI clients while keeping book and review records strictly owned by their source systems.
+
+## 2. Business Value
+
+- **Data safety:** Exposes strictly read-only lookups so AI agents cannot create, alter, or delete catalog or review records.
+- **Single source of truth:** Retrieves live data from [[system|product-catalog-system]] and [[system|rating-system]] without duplicating or caching authoritative records.
+- **Consistent AI behavior:** Centralizes reusable instruction templates for book recommendations and review summaries so teams get repeatable quality.
+- **Controlled access:** Pairs client-specific capability selection with central authentication and permission checks via [[system|identity-provider]].
+
+## 3. How It Works
+
+MCP Tools acts as an intermediary between BookWorm's internal AI clients (Chat and Rating) and the upstream systems that own product and feedback data. Every request is authenticated through [[system|identity-provider]] and checked against governance rules before any lookup runs.
 
 <ContextDiagram />
 
-## Purpose and boundary
+The system exposes three types of read-only capabilities:
 
-The MCP Tools system is a shared adapter between AI clients and BookWorm's
-Catalog and Reviews APIs. It publishes tools for explicit read operations,
-URI-addressable resources for ambient context, and prompts that structure
-book-discovery and review-analysis tasks.
+1. **Lookup tools:** Explicit operations that AI agents invoke to search the catalog, fetch details for a specific book, list categories or authors, or read book reviews. If an upstream lookup fails or finds nothing, an explicit error or not-found response is returned without changing any data.
+2. **Reference resources:** Stable, address-based data references that give AI clients background context (such as current categories, authors, book details, or reviews) without requiring a model-initiated tool call.
+3. **Reusable prompts:** Standardized instruction templates that structure book recommendation requests, grounded review summaries, and quality theme assessments. Prompts provide guidance only—they do not execute actions or store messages.
 
-The MCP server does not own catalog or feedback records and does not expose
-write tools. A client sees only the tools it is configured and authorized to
-use: Chat's Book Agent and two researchers load the four Catalog tools, while
-the MCP server also exposes review lookup for other authorized consumers.
+Each AI consumer loads only the capabilities it needs: Chat's Book Agent and researchers load only the four catalog lookup tools, while the Rating Agent uses the book-detail lookup alongside the review-analysis prompts (reading raw feedback through its own local review tool).
 
-## Tools
+## 4. Trade-offs & Lessons Learned
+
+- **Stateless read-only boundary:** Keeping the server stateless and free of owned data stores prevents synchronization drift, but means every lookup depends directly on upstream API and [[system|identity-provider]] availability.
+- **Selective client loading vs. server governance:** Letting clients pick which tools they load keeps agent prompts focused, but client configuration alone is never trusted as a security boundary—server-side authorization and default-deny governance remain mandatory.
+- **Selective adoption across agents:** Not every consumer needs every MCP capability; for example, the Rating system reuses MCP book lookups and analysis prompts while keeping raw feedback retrieval in-process.
+
+## 5. Technical Reference
+
+- **Service:** `mcp-server` (C#, stateless Streamable HTTP transport)
+- **Endpoint & discovery:** `/mcp` accessed through service discovery
+- **Registration:** Tools, prompts, and resources are registered from implementation assemblies
+- **Security & governance:**
+  - Authenticated caller required with `mcptools_read` scope
+  - [[system|identity-provider]] token introspection, authorization filters, and MCP governance policy at the server boundary
+  - Chat and Rating connect using service-to-service token exchange
+
+### Tools
 
 | Tool               | Responsibility                                    | Source      |
 | ------------------ | ------------------------------------------------- | ----------- |
@@ -63,11 +84,11 @@ the MCP server also exposes review lookup for other authorized consumers.
 | `list_authors`     | List available authors.                           | Catalog API |
 | `get_book_reviews` | Retrieve customer reviews and ratings for a book. | Rating API  |
 
-These are read operations. They return serialized JSON for successful
-lookups; unsuccessful API responses produce an explicit error or not-found
-message rather than changing data.
+- Results are returned as serialized JSON; unsuccessful API responses return an explicit error or not-found message.
+- Chat loads `search_catalog`, `get_book`, `list_categories`, and `list_authors`.
+- Rating uses `get_book` via MCP and reads individual feedback through its own in-process Review tool rather than `get_book_reviews`.
 
-## Resources
+### Resources
 
 | URI                                   | Resource        | Content                               |
 | ------------------------------------- | --------------- | ------------------------------------- |
@@ -76,10 +97,7 @@ message rather than changing data.
 | `bookworm://catalog/books/{id}`       | Book Details    | Current details for one book ID.      |
 | `bookworm://ratings/{bookId}/reviews` | Book Reviews    | Feedback and ratings for one book ID. |
 
-Resources provide stable, JSON-formatted references for clients that need
-ambient context rather than a model-selected tool invocation.
-
-## Prompts
+### Prompts
 
 | Prompt                 | Purpose                                                                                                                         | Inputs                                                              |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -87,31 +105,12 @@ ambient context rather than a model-selected tool invocation.
 | `summarize_rating`     | Produces a grounded summary of supplied review text.                                                                            | Review content.                                                     |
 | `analyze_book_quality` | Requests an evidence-based assessment of review themes and confidence; the application applies final classification thresholds. | Average rating, review count, and review summary.                   |
 
-The Rating system retrieves `summarize_rating` and
-`analyze_book_quality` as MCP prompts for its feedback-summary workflow.
-Prompts provide instructions and are not themselves tool calls or persisted
-domain messages.
+- Rating retrieves `summarize_rating` and `analyze_book_quality` for its feedback-summary workflow.
 
-## Transport and access control
-
-The server uses stateless Streamable HTTP transport and registers tools,
-prompts, and resources from its implementation assemblies. MCP clients use
-the `/mcp` endpoint through service discovery.
-
-Requests require an authenticated caller with the `mcptools_read` scope.
-Token introspection and authorization filters run at the server boundary, and
-the MCP governance policy applies to tool invocation. Chat and Rating use
-service-to-service token exchange when connecting to the server.
-
-The Chat system intentionally loads only `search_catalog`, `get_book`,
-`list_categories`, and `list_authors`. The Rating Agent uses `get_book` and
-the review-analysis prompts; it reads individual feedback through its own
-in-process Review tool rather than the MCP `get_book_reviews` tool.
-
-## Architecture
+### Architecture
 
 <NodeGraph />
 
-## Architecture decisions
+### Architecture decisions
 
 <ADRTable />

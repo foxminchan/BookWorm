@@ -9,14 +9,41 @@ badges:
     textColor: blue
 ---
 
-This chapter describes the static structure of the complete BookWorm platform as a hierarchy of building blocks. The view begins with the platform as a white box, then refines selected capabilities and one complex coordination service.
+## 1. Context & Problem
 
-The content is based on the architecture catalog and the adjacent `BookWorm` source checkout. Source paths are relative to that repository's `src/` directory. This is a structural view, not a deployment diagram or a sequence of runtime interactions.
+As a multi-capability commerce platform grows, stakeholders often hold different mental models of how the system is put together. Without a clear structural map, architects, project managers, analysts, and developers struggle to see where one capability ends and another begins, which teams own which data, and where complex coordination lives.
 
-## Chapter contents
+The Building Block View solves this by presenting BookWorm's static structure as a progressive hierarchy—moving from the whole platform down to specific capabilities and complex coordination components—before diving into runtime sequences or deployment details.
+
+## 2. Business Value
+
+- **Shared language across roles:** Gives architects, project managers, business analysts, and engineers a single structural map for scoping features and estimating impact.
+- **Clear ownership boundaries:** Makes it obvious which capability owns each business concept and data store, reducing duplicate logic and cross-team friction.
+- **Faster onboarding and review:** Helps new contributors and reviewers locate responsibilities quickly without having to reverse-engineer the entire codebase first.
+
+## 3. How It Works
+
+The Building Block View uses three zoom levels so readers can inspect only the level of detail they need:
+
+1. **Level 1 — Platform Overview:** Opens the entire BookWorm platform as a single white box in [[doc|arc42/05-building-block-view/001-whitebox-overall-system]], showing the six business capabilities, the shared foundation, their responsibilities, and their main interactions.
+2. **Level 2 — Capability Internals:** Zooms into Catalog, Shopping, Ordering, Reviews, Conversational, and Platform in [[doc|arc42/05-building-block-view/002-level-2]] to reveal their internal services and dedicated data stores.
+3. **Level 3 — Deep Dive on Checkout Coordination:** Zooms into the multi-step checkout coordination component inside Ordering in [[doc|arc42/05-building-block-view/003-level-3]], showing how it tracks progress and coordinates outcomes across Ordering, Shopping, and Platform Notification.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Selective refinement over exhaustive diagrams:** Not every capability is expanded to Level 3. Level 2 refines capabilities where multiple modules, distinct data ownership, or asynchronous coordination matter, and Level 3 zooms into only the single coordination block whose cross-capability workflow warrants extra clarity.
+- **Structure separated from runtime and deployment:** This chapter deliberately captures static building blocks rather than deployment topologies or step-by-step runtime sequences, keeping ownership boundaries easy to read. Neighboring systems and technical mechanisms are covered separately in [[doc|arc42/03-context-and-scope/003-technical-context]], and guiding design strategies live in [[doc|arc42/04-solution-strategy]].
+
+## 5. Technical Reference
+
+### Chapter contents
 
 - [[doc|arc42/05-building-block-view/001-whitebox-overall-system]] describes the Level-1 decomposition of the complete BookWorm platform, its rationale, responsibilities, and interfaces.
 - [[doc|arc42/05-building-block-view/002-level-2]] refines the principal services and data stores inside the Catalog, Shopping, Ordering, Reviews, Conversational, and Platform capabilities.
 - [[doc|arc42/05-building-block-view/003-level-3]] zooms into Finance orchestration, whose persisted saga coordinates checkout outcomes across service boundaries.
 
-The neighboring systems and technical mechanisms at BookWorm's boundary are described in [[doc|arc42/03-context-and-scope/003-technical-context]]. Capability-level design strategies are in [[doc|arc42/04-solution-strategy]].
+### Source & catalog basis
+
+- Content is derived from the architecture catalog and the adjacent `BookWorm` source checkout.
+- Documented source paths across this chapter are relative to that repository's `src/` directory.
+- Related architectural context: [[doc|arc42/03-context-and-scope/003-technical-context]] and [[doc|arc42/04-solution-strategy]].

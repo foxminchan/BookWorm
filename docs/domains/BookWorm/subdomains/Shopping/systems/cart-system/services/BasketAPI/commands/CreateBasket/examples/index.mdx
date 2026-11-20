@@ -1,7 +1,27 @@
-## 1. Create a basket for selected products
+## 1. Context & Problem
 
-Create a basket by supplying the selected product IDs and quantities. The
-`items` array is required; each item requires both fields.
+When integrating a storefront or client application with the Cart System, delivery teams need concrete examples showing how a new customer basket is initialized with selected products and how the service responds when required information is missing. Without clear, tested request and response examples, client teams can misinterpret field requirements or build fragile error-handling logic.
+
+## 2. Business Value
+
+- **Faster client onboarding**: Gives frontend and integration teams verified patterns for creating baskets and reading back the assigned customer identifier.
+- **Better user experience on errors**: Shows exactly how validation issues are reported so applications can guide customers to fix missing selections rather than displaying generic failures.
+
+## 3. How It Works
+
+1. **Creating a basket for selected products**: The client application gathers the customer's chosen product identifiers and quantities and submits them to start a new basket. Both a product identifier and a quantity are required for each item. When the submission is valid, the service creates the basket and returns the customer identifier associated with it.
+2. **Correcting an invalid basket request**: If the submitted request omits the required item list or violates input rules, the service rejects the submission and returns a structured validation summary identifying which field failed so the caller can correct the payload before trying again.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Upfront validation over silent defaults**: Rejecting requests that omit required item fields prevents malformed baskets from being saved, placing a small responsibility on clients to inspect validation errors and prompt corrections.
+- **Defensive handling of the returned customer identifier**: Client implementations should allow for the possibility of an empty customer identifier in the creation response and validate failure outcomes explicitly before proceeding.
+
+## 5. Technical Reference
+
+### 1. Create a basket for selected products
+
+Create a basket by supplying the selected product IDs and quantities. The `items` array is required; each item requires both fields.
 
 <CodeGroup dropdown>
 
@@ -50,8 +70,7 @@ console.log(customerId);
 
 </CodeGroup>
 
-A successful request returns `201 Created` with an `application/json` customer
-ID:
+A successful request returns `201 Created` with an `application/json` customer ID:
 
 <CodeGroup dropdown>
 
@@ -61,11 +80,9 @@ ID:
 
 </CodeGroup>
 
-## 2. Correct an invalid basket request
+### 2. Correct an invalid basket request
 
-If the body does not satisfy the request contract, the service returns `400
-Bad Request` with `application/problem+json`. Correct the failing fields before
-submitting the basket again.
+If the body does not satisfy the request contract, the service returns `400 Bad Request` with `application/problem+json`. Correct the failing fields before submitting the basket again.
 
 <CodeGroup dropdown>
 

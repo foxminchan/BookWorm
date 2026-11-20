@@ -14,30 +14,47 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `ListBooks` RPC returns matching [[entity|book]] records with their
-descriptions, images, pricing, availability status, [[entity|category]],
-[[entity|publisher]], [[entity|author]]s, and rating summary. It is an
-anonymous read operation exposed for internal service-to-service clients.
+Internal platform services—especially AI assistants helping customers discover titles—need a fast way to search the Catalog and retrieve rich [[entity|book]] details in a single interaction. Relying on separate lookups for pricing, availability, ratings, and related catalog attributes would slow down discovery and complicate internal integrations.
 
-[[service|mcp-server]] produces this query in its `BookService.ListBooksAsync`
-client to power the `search_catalog` MCP tool; [[service|catalog-api]] consumes
-it by dispatching `ListBooksQuery`.
+## 2. Business Value
+
+- **Rich single-call discovery**: Internal tools receive complete book context—descriptions, images, pricing, availability, [[entity|category]], [[entity|publisher]], [[entity|author]] details, and rating summaries—without stitching together multiple requests.
+- **Responsive customer assistance**: Optional keyword filtering enables quick catalog searches and recommendations for interactive assistants.
+- **Low-friction internal access**: Anonymous read access lets internal services query public catalog inventory without user-specific credentials.
+
+## 3. How It Works
+
+1. An internal consumer—such as [[service|mcp-server]]—sends a book search request to [[service|catalog-api]], optionally including a search phrase.
+2. If the search phrase is omitted or blank, the catalog returns its default list of [[entity|book]] records without applying a text filter.
+3. When a search phrase is provided, the catalog finds matching books and returns each record with its description, images, price, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary.
+4. The consuming service uses the returned collection to answer user catalog searches.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Simplified search surface**: Exposing only an optional text search parameter keeps the internal contract lightweight for assistant queries, though internal callers needing price ranges or multi-attribute filtering must use the full query interface instead.
+- **Full metadata per item**: Including descriptions, relationships, and rating summaries on every returned book avoids follow-up calls, at the cost of larger payloads compared to lightweight summaries.
+- **Anonymous internal access**: Allowing unauthenticated internal reads reduces friction for service-to-service consumers, assuming only publicly shareable catalog data is returned and internal network boundaries are enforced.
+
+## 5. Technical Reference
+
+The `ListBooks` RPC returns matching [[entity|book]] records with their descriptions, images, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary through the `book.v1` gRPC contract. It is an anonymous read operation exposed for internal service-to-service clients.
+
+- **Producer**: [[service|mcp-server]] invokes `BookService.ListBooksAsync` to power the `search_catalog` MCP tool.
+- **Consumer**: [[service|catalog-api]] handles the request by dispatching `ListBooksQuery`.
 
 <NodeGraph />
 
-## Contract
+### Contract
 
-Send a `ListBooksRequest` with an optional `search` string (empty or whitespace
-returns the default list without a search filter). The response is
-`ListBooksResponse`, containing a repeated collection of `BookItem` values.
+Send a `ListBooksRequest` with an optional `search` string (empty or whitespace returns the default list without a search filter). The response is `ListBooksResponse`, containing a repeated collection of `BookItem` values.
 
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="ListBooks gRPC schema" />
 
-## Examples
+### Examples
 
 <CodeGroup dropdown>
 

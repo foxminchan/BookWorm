@@ -1,7 +1,30 @@
-## 1. Create feedback for a book
+## 1. Context & Problem
 
-Submit the book UUID, reviewer details, optional comment, and a rating from 0
-through 5. A successful request returns the new feedback UUID.
+Client applications and integrating teams need clear, runnable examples showing how to submit customer book feedback and how to interpret validation rejections. Without concrete examples, integrators risk sending incomplete payloads or mishandling out-of-range ratings in storefront forms.
+
+## 2. Business Value
+
+- **Faster client onboarding**: Storefront and partner developers have ready-to-use examples for both happy-path submissions and error handling.
+- **Cleaner user experience**: Understanding the exact validation feedback format allows user interfaces to highlight invalid fields (such as an out-of-range rating) directly for customers.
+- **Fewer integration defects**: Standardizing request and error handling upfront prevents invalid review data from being dropped silently.
+
+## 3. How It Works
+
+To submit feedback for a book, the caller sends the target book's unique identifier, the reviewer's first and last name, an optional written comment, and a whole-number rating from 0 through 5.
+
+- **Valid submission**: The service records the feedback and returns the newly generated feedback identifier so the caller can reference or track the created review.
+- **Invalid submission**: When required fields are missing, the book identifier is malformed, or the rating falls outside the 0-through-5 range, the service rejects the request and returns structured validation errors identifying the problematic fields.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Fail-fast validation**: Rejecting the entire request on any field violation protects stored review integrity, though client apps should retain user-entered form text so customers can fix a single error without retyping their review.
+- **Identifier-only confirmation**: Returning only the generated feedback identifier keeps the confirmation lightweight, assuming the client already holds the submitted review details or will fetch the review list separately if needed.
+
+## 5. Technical Reference
+
+### 1. Create feedback for a book
+
+Submit the book UUID, reviewer details, optional comment, and a rating from 0 through 5 to `POST /api/v1/feedbacks` (`application/json`). A successful `200` response returns the new feedback UUID.
 
 <CodeGroup dropdown>
 
@@ -60,10 +83,9 @@ console.log(`Created feedback ${feedbackId}`);
 
 </CodeGroup>
 
-## 2. Handle validation errors
+### 2. Handle validation errors
 
-Missing required fields, an invalid book UUID, or a rating outside the
-0-through-5 range returns `400 Bad Request`.
+Missing required fields, an invalid book UUID, or a rating outside the 0-through-5 range returns `400 Bad Request`.
 
 <CodeGroup dropdown>
 

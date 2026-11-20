@@ -2,21 +2,44 @@
 summary: List catalog authors and distinguish an empty collection from a missing resource.
 ---
 
+## 1. Context & Problem
+
+Integration teams and frontend builders need clear guidance on how to retrieve the catalog author directory, how to reuse returned author identifiers in follow-up book workflows, and how to distinguish an empty catalog from a broken request or missing resource.
+
+## 2. Business Value
+
+- **Faster client integration**: Concrete request and response examples reduce guesswork and onboarding time for client developers.
+- **Resilient empty-state UX**: Clarifying that an empty catalog is a valid response prevents client applications from showing misleading "not found" error pages during initial setup.
+- **Accurate book-to-author linking**: Guiding consumers to reuse returned author identifiers ensures books are linked to valid, existing catalog authors.
+
+## 3. How It Works
+
+1. A client requests the author directory without supplying a specific author identifier.
+2. When authors exist, the catalog returns a list of author summaries, each pairing a unique identifier with a display name, which user interfaces can render as selectable options when creating or updating books.
+3. When no authors are registered yet, the catalog treats the request as successful and returns an empty list rather than reporting a missing resource.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Distinguishing empty collections from missing resources**: Treating an empty directory as a valid empty collection simplifies client error handling, reserving error states for genuine connectivity or server issues.
+- **Identifier-driven workflows**: Requiring downstream book creation or update flows to reference returned author identifiers improves data integrity, though it means clients must fetch or know the author list beforehand.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. List authors
+### Example: List authors
 
 The query returns `200` with an array of author summaries. Each item contains its UUID and display name.
 
-### Response details
+#### Response details
 
 - An empty collection is represented by `200` and `[]`.
 - The endpoint does not require a resource UUID.
 - Use the returned identifiers when creating or updating books.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -28,7 +51,7 @@ const authors: AuthorSummary[] = [
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Render the returned summaries as selectable author options; an empty array is a valid catalog state.
 
@@ -60,6 +83,6 @@ for (const author of authors) {
 
 ---
 
-## 2. Handle an empty catalog
+### Handling an empty catalog
 
 An empty collection is represented by `200` and `[]`, not by `404`.

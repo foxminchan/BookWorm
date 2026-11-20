@@ -40,35 +40,58 @@ model:
   version: "2025-11-18"
 ---
 
-The Book Recommendation Researcher is an internal subagent initialized by
-the [[agent|book-agent]] and exposed as a delegated tool. It searches for
-catalog-backed recommendations matching customer preferences and returns a
-concise shortlist with book IDs and supporting catalog facts.
+## 1. Context & Problem
 
-It does not infer demographics or invent availability, ratings, popularity,
-prices, or bibliographic details. Its model provider is inherited from the
-shared chat client; the agent definition does not specify a provider or model.
+When customers ask for reading suggestions or gift ideas, an AI assistant can easily drift into recommending titles the store does not sell, exaggerating popularity or ratings, or making unstated assumptions about the customer's background. At the same time, blending preference discovery with general chat and factual verification in a single step slows down multi-part requests.
 
-## Privacy middleware
+The Book Recommendation Researcher solves this by acting as an internal recommendation specialist for [[agent|book-agent]], curating preference-matched shortlists backed strictly by BookWorm's live catalog.
 
-`InitSubAgent` receives the [[agent|book-agent]]'s chat client, already wrapped
-with `UsePIIMiddleware(sp)`; this subagent does not register a separate PII
-middleware. Its input and output text therefore passes through
-[[service|PresidioAPI]] via [[command|AnalyzeText]] and, when PII is detected,
-[[command|AnonymizeText]]. These are middleware HTTP calls, not model-selected
-tools or brokered messages.
+## 2. Business Value
 
-## Tools
+- **Catalog-verified recommendations:** Every suggested title exists in BookWorm's catalog and includes supporting product evidence so customers never hit dead-end recommendations.
+- **Ethical, bias-aware personalization:** Prohibiting demographic assumptions and fabricated popularity or rating claims builds customer trust.
+- **Concurrent execution for complex asks:** Working in parallel with catalog fact-finding lets [[agent|book-agent]] respond faster to multi-faceted customer inquiries.
+- **Consistent privacy safeguards:** Inheriting the parent agent's privacy screening protects customer preferences and personal details automatically.
+
+## 3. How It Works
+
+The Book Recommendation Researcher supports [[agent|book-agent]] as an internal delegated specialist:
+
+1. **Receives customer preferences:** When a request involves finding books that fit stated interests, genres, or themes, [[agent|book-agent]] delegates shortlist discovery to this researcher.
+2. **Searches catalog options:** It explores matching titles, categories, authors, and full book details using official catalog capabilities.
+3. **Delivers an evidence-backed shortlist:** It returns a concise shortlist containing book identifiers and supporting catalog facts—without inferring customer demographics or inventing availability, ratings, popularity, prices, or bibliographic details.
+4. **Protected by shared privacy filtering:** All text entering and leaving the researcher passes through the same personal-information screening inherited from [[agent|book-agent]].
+
+## 4. Trade-offs & Lessons Learned
+
+- **Catalog-only shortlist vs. open-ended suggestions:** Restricting recommendations to verified catalog matches prevents hallucinated titles, even though sparse catalog coverage for niche topics can yield a shorter list.
+- **Balanced creativity vs. factual discipline:** Allowing slightly higher flexibility than pure fact-finding helps match nuanced reader preferences, while strict grounding rules keep all product claims verifiable.
+- **No demographic inference:** Relying solely on preferences explicitly shared by the customer avoids stereotyping and privacy risks, at the cost of asking clarifying preferences when prompts are vague.
+
+## 5. Technical Reference
+
+### Initialization & Model Inheritance
+
+- **Parent agent:** Initialized by [[agent|book-agent]] via `InitSubAgent` and exposed as a delegated tool.
+- **Inherited model provider:** The agent definition does not specify a provider or model; it inherits the shared chat client (`Microsoft` `model-router`, version `2025-11-18`).
+
+### Privacy Middleware
+
+- This subagent does not register a separate PII middleware; `InitSubAgent` receives [[agent|book-agent]]'s chat client already wrapped with `UsePIIMiddleware(sp)`.
+- Input and output text passes through [[service|PresidioAPI]] via [[command|AnalyzeText]] and, when PII is detected, [[command|AnonymizeText]].
+- These are middleware HTTP calls, not model-selected tools or brokered messages.
+
+### Runtime Settings
+
+- **Temperature:** `0.4`
+- **Maximum output:** `1,200` tokens
+- **Reasoning effort:** `medium`
+- **Multiple tool calls:** `enabled`
+
+### Tools
 
 <AgentTools />
 
-## Architecture
+### Architecture
 
 <NodeGraph />
-
-## Runtime settings
-
-- Temperature: 0.4
-- Maximum output: 1,200 tokens
-- Reasoning effort: medium
-- Multiple tool calls: enabled

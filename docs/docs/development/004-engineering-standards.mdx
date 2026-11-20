@@ -11,9 +11,37 @@ badges:
 
 # Engineering standards
 
+## 1. Context & Problem
+
+BookWorm is built as a set of independent backend services paired with customer-facing and back-office web applications. Without shared engineering standards, teams risk introducing hidden cross-service coupling, breaking asynchronous event routing, drifting in data naming conventions, or duplicating user-interface components across applications.
+
+## 2. Business Value
+
+- **Independent service delivery**: Clean boundaries allow teams to build, test, and deploy individual services without unintentionally breaking neighboring capabilities.
+- **Reliable cross-service communication**: Consistent event naming, minimal payloads, and compatibility checks prevent silent messaging failures or breaking interface updates.
+- **Lower maintenance cost**: Centralized package management, shared frontend primitives, and consistent domain modeling keep the codebase understandable and easier to evolve.
+
+## 3. How It Works
+
+BookWorm's engineering standards align backend services, cross-service messaging, contract schemas, and client applications around four core practices:
+
+1. **Preserve service boundaries and centralized governance**: Each service owns its business domain and avoids direct dependencies on other services. Software dependency versions are managed centrally across the repository, and business-logic changes are paired with automated tests and updated documentation.
+2. **Keep cross-service events focused and stable**: Services exchange state changes through integration events that carry only the minimum data consumers need. Event naming follows a consistent action-and-entity convention, and routing metadata stays fixed so the messaging layer delivers events accurately.
+3. **Validate shared service contracts before merging**: Changes to shared service-to-service interface definitions are checked for style compliance and backward compatibility against a committed baseline. Any intentionally breaking update requires team coordination and a migration plan.
+4. **Apply consistent domain and frontend architecture**: Services model business rules using established patterns—separating reads from writes, encapsulating business invariants, isolating persistence, and using consistent database naming. Client applications reuse shared visual building blocks across the storefront and back-office apps while preserving strict type safety and clear separation between server-rendered and interactive client behavior.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Strict service isolation vs. convenience**: Avoiding direct cross-service dependencies requires explicit contracts and asynchronous messaging, trading extra upfront design effort for independent deployment and fault isolation.
+- **Compatibility locks on interface schemas**: Validating contract changes against a committed lock baseline prevents accidental breaking changes for consumers, but requires explicit coordination and migration planning whenever incompatible changes are needed.
+- **Immutable integration-event routing**: Because the event bus routes messages using consistent naming and namespace conventions, renaming or relocating published event types can silently break downstream subscribers.
+- **Shared frontend packages and centralized dependencies**: Managing package versions and UI components centrally prevents drift and duplication across apps, though updates to shared modules affect multiple consumers at once.
+
+## 5. Technical Reference
+
 Follow established repository patterns first. These guidelines help keep BookWorm's services maintainable and independently deployable.
 
-## General coding practices
+### General coding practices
 
 - Apply Domain-Driven Design principles and preserve service boundaries; avoid direct cross-service dependencies.
 - BookWorm targets .NET 11 and uses C# 15. Use the repository SDK and language settings, and follow `.editorconfig` for formatting.
@@ -25,7 +53,7 @@ Follow established repository patterns first. These guidelines help keep BookWor
 - Keep package versions centralized in `Directory.Packages.props`.
 - Implement tests for business logic and update relevant documentation when behavior changes.
 
-## Integration events
+### Integration events
 
 Integration events communicate across service boundaries:
 
@@ -55,9 +83,9 @@ public sealed record UserCheckedOutIntegrationEvent(
 ) : IntegrationEvent;
 ```
 
-## Protocol Buffers
+### Protocol Buffers
 
-When changing `.proto` files, validate the schema and compatibility before submitting:
+When changing `.proto` files, ensure `buf` is installed (`mise run setup:buf`) and validate the schema and compatibility before submitting:
 
 ```bash
 # Run from the service's Grpc/Protos directory (Basket or Catalog).
@@ -68,7 +96,7 @@ buf build -o lock.binpb
 
 Run the commands in order: lint the schema, check for breaking changes against that module's committed `lock.binpb`, then update the lock file after validation. Commit the schema and updated lock file together. Breaking changes require coordination and a migration plan.
 
-## Design patterns
+### Design patterns
 
 Use patterns where they fit the service and its domain:
 
@@ -81,3 +109,12 @@ Use patterns where they fit the service and its domain:
 - Specification pattern for complex queries
 
 Avoid circular dependencies and keep services independently deployable. Use `snake_case` for PostgreSQL identifiers and raw SQL.
+
+### Frontend (`src/Clients`)
+
+The client applications live in a Bun + Turborepo monorepo under `src/Clients` (`apps/storefront`, `apps/backoffice`, and shared `packages/*`):
+
+- Use `bun` and `bun run` from `src/Clients`; do not introduce `npm`, `pnpm`, or `yarn` lockfiles.
+- Target Next.js 16 (App Router) and idiomatic React 19 with explicit server/client boundaries.
+- Keep TypeScript strict; avoid `any` and prefer typed interfaces and discriminated unions.
+- Reuse shared UI primitives and utilities from `@workspace/*` packages instead of duplicating code across apps.

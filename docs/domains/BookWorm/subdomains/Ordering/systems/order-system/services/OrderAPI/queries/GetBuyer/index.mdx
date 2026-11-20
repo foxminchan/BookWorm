@@ -18,22 +18,39 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Retrieves a [[entity|buyer]] profile from the `/buyers/me` endpoint.
-Administrators may retrieve another user's profile; other callers are resolved
-to the Buyer associated with their authenticated identity.
+Customers need to view their saved [[entity|buyer]] details—such as their name and shipping address—during account management and checkout, while support administrators need to inspect a specific buyer's profile when assisting with orders. Providing this information safely requires enforcing ownership rules so customers cannot read another person's profile.
 
-<NodeGraph />
+## 2. Business Value
 
-## Query parameters and response
+- **Seamless customer experience:** Enables storefronts to display or prefill saved customer contact and address information.
+- **Privacy by design:** Ensures regular customers can only access their own buyer profile while authorized administrators can inspect any requested buyer.
+- **Single governed capability:** Consolidates self-service and administrative profile lookups behind one consistent query.
 
-The OpenAPI contract requires an `Id` UUID query parameter. A `200 OK`
-response returns a `BuyerDto` with the Buyer ID, name, and address.
-`404 Not Found` returns `ProblemDetails` when the resolved Buyer profile does
-not exist.
+## 3. How It Works
 
-## Query using CURL
+1. An authenticated caller requests a [[entity|buyer]] profile and supplies a buyer identifier.
+2. The service checks the caller's authorization: standard customers are always resolved to the buyer profile tied to their own signed-in identity, while administrators can retrieve the specific buyer requested.
+3. If the resolved buyer profile exists, the service returns the buyer's identifier, name, and address.
+4. If no profile exists for the resolved buyer, the service reports that the profile was not found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Shared lookup vs. separate endpoints:** Routing both self-service and administrative lookups through one operation avoids duplicating retrieval logic, at the trade-off of requiring a buyer identifier even when a customer is only retrieving their own profile.
+- **Explicit missing-profile outcome:** Returning a not-found outcome when a profile does not exist means storefront journeys must handle new customers whose buyer profile has not been created yet.
+
+## 5. Technical Reference
+
+Retrieves a [[entity|buyer]] profile from the `/buyers/me` endpoint (`GET /api/v1/buyers/me`). Administrators may retrieve another user's profile; other callers are resolved to the Buyer associated with their authenticated identity.
+
+### Query parameters and response
+
+- **Query parameter:** The OpenAPI contract requires an `Id` UUID query parameter.
+- **`200 OK`:** Returns a `BuyerDto` with the Buyer ID, name, and address.
+- **`404 Not Found`:** Returns `ProblemDetails` when the resolved Buyer profile does not exist.
+
+### Query using CURL
 
 <CodeGroup dropdown>
 
@@ -44,6 +61,10 @@ curl -H "Authorization: Bearer <access-token>" \
 
 </CodeGroup>
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="BuyerDto JSON Schema" maxHeight="500" search="true" />
+
+### Architecture
+
+<NodeGraph />

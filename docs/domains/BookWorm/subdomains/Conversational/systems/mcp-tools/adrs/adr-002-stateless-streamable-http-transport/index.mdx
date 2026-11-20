@@ -24,57 +24,43 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-The [[service|mcp-server]] is shared by independent AI clients, including [[service|chat-api]] and [[service|rating-api]].
-The transport should provide a common network interface without making the
-server the owner of conversational or workflow session state. Consumers have
-their own lifetimes and workflows, so a connection-level server session
-should not be required for them to retrieve a tool, resource, or prompt.
+BookWorm's shared AI integration server serves multiple independent consumers—including the Chat and Rating systems—each with its own conversation lifecycles, workflows, and scaling patterns. If the shared integration server had to track connection-level session state for every consumer, it would become coupled to each client's workflow lifetime and complicate routing and scaling.
 
-## Decision
+The team needed a standard network communication approach that lets any authorized consumer fetch tools, context, or prompts without making the integration server responsible for storing conversational or workflow state.
 
-[[service|mcp-server]] uses Streamable HTTP transport configured for stateless sessions
-at `/mcp`. Clients discover the service endpoint and connect through the
-shared MCP client integration. Any longer-lived conversational state belongs
-to the consuming application, not to an MCP transport session. Requests still
-require the configured caller authentication and authorization; stateless
-transport is not anonymous access.
+## 2. Business Value
 
-Client workflow state is separate from MCP transport state. Chat, for
-example, owns its interactive session behavior, while Rating owns its own
-agent workflow. Neither should rely on the MCP server to retain conversation
-history between requests.
+- **Simpler scaling and higher resilience**: Because the integration server does not hold session state between requests, traffic can be routed to any available instance without sticky connections.
+- **Clear separation of responsibilities**: Each consuming application owns its own conversation and workflow history, avoiding tangled session lifecycles across teams.
+- **Consistent integration experience**: Chat, Rating, and future AI consumers connect through one shared integration surface and discovery model.
+- **Security preserved**: Stateless communication eliminates server-side session clutter while continuing to require full caller authentication and permission checks on every request.
 
-## Consequences
+## 3. How It Works
 
-- Chat, Rating, and other authorized consumers use the same HTTP MCP
-  integration surface and service-discovery model.
-- The MCP Server does not retain transport session state between requests,
-  reducing server-side state and avoiding affinity requirements for the
-  transport.
-- Clients must not rely on MCP server-side session continuity for their own
-  workflow or conversation state; each request must carry the context it
-  requires.
-- Client authentication, token exchange, discovery, and network availability
-  remain required dependencies even though transport sessions are stateless.
+Instead of keeping long-lived server sessions open for each client, every request to the shared AI integration server is self-contained:
 
-## Alternatives considered
+1. A consuming application—such as Chat or Rating—discovers the integration service and sends a request carrying its authorization credentials and any context needed for that specific lookup.
+2. The integration server verifies the caller's identity and permissions, handles the request, and returns the response immediately (supporting streamed delivery where needed).
+3. Any ongoing conversation history or multi-step workflow state stays with the consuming application (for example, Chat manages interactive customer sessions, while Rating manages its own review workflows).
 
-### Use a stateful MCP transport session
+## 4. Trade-offs & Lessons Learned
 
-This could retain protocol context on the server, but would add session
-lifecycle and affinity concerns to a service shared by independent clients.
-It would also risk confusing MCP transport state with conversational state.
+- **Zero server session affinity vs. self-contained requests**: Removing server-side transport state eliminates session cleanup and sticky-routing constraints, but requires clients to send all necessary context with each call rather than assuming the server remembers earlier turns.
+- **Stateless does not mean anonymous**: Session statelessness applies strictly to transport continuity, not security; caller identity, token exchange, service discovery, and network availability remain hard dependencies.
+- **Shared standard vs. client-specific tuning**: Using one stateless transport across all consumers avoids maintaining duplicate transport stacks, at the cost of requiring every consumer to fit the shared protocol contract.
 
-### Use separate transport implementations for each consumer
+### Alternatives Evaluated
 
-This could tailor the integration to individual clients, but would duplicate
-transport configuration and server operations. A shared stateless endpoint
-keeps the transport contract consistent while leaving workflows client-owned.
+- **Stateful transport sessions**: Rejected because tracking protocol sessions on a shared server introduces lifecycle management, instance affinity, and confusion between transport state and conversational state.
+- **Separate transport mechanisms per consumer**: Rejected because it duplicates server operations and transport configuration across teams.
+- **Treating statelessness as a substitute for authentication**: Rejected because lack of server session state does not remove the need for strict authorization checks.
 
-### Treat stateless transport as a replacement for authentication
+## 5. Technical Reference
 
-Statelessness describes server-side session handling, not caller identity or
-permission. The `/mcp` endpoint continues to require the configured
-authorization policy.
+- **Decision status**: Accepted (`2026-11-04`)
+- **Affected systems & services**: [[service|mcp-server]], [[service|chat-api]], [[service|rating-api]], `mcp-tools`, `chat-system`, `rating-system`
+- **Transport configuration**: [[service|mcp-server]] uses Streamable HTTP transport configured for stateless sessions at `/mcp`.
+- **Client connectivity**: Clients discover the service endpoint through service discovery and connect via the shared MCP client integration using token exchange and configured caller authentication/authorization policies.
+- **State boundary**: Consuming applications (`chat-api`, `rating-api`) own conversational and workflow persistence; `/mcp` retains no transport session state between requests.

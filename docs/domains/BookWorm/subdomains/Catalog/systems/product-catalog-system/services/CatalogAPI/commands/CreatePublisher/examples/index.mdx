@@ -2,21 +2,43 @@
 summary: Create a publisher through the Catalog API and handle validation failures.
 ---
 
+## 1. Context & Problem
+
+Integrating admin portals and catalog import tools need concrete guidance on how to register a new publisher and how to handle missing or invalid input. Without clear usage examples, client teams risk either failing to retain the new publisher's unique identifier for later book assignments or repeatedly retrying invalid requests.
+
+## 2. Business Value
+
+- **Faster integration**: Gives delivery teams a ready-to-follow pattern for publisher creation and error handling.
+- **Reliable book onboarding**: Ensures callers capture the newly generated publisher identifier before attempting to link books to that publisher.
+- **Reduced noise and wasted traffic**: Clarifies when requests should not be retried automatically, keeping error logs clean and avoiding unnecessary load.
+
+## 3. How It Works
+
+- **Creating a publisher**: The calling application sends a request containing a non-empty publisher name. When accepted, the catalog returns the generated unique identifier, which the caller stores before assigning the publisher to any book.
+- **Handling validation failures**: If the publisher name is omitted or empty, the catalog rejects the request and returns a structured validation error. The calling application should display the field error to the user and avoid retrying unchanged input.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Lightweight creation response**: Returning only the generated unique identifier keeps the response simple, but requires callers to retain that identifier in local state before creating or updating linked books.
+- **No automatic retries on validation errors**: Because missing or blank names fail deterministically, retrying the exact same input will always fail; client workflows must prompt for corrected input first.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Create a publisher
+### 1. Create a publisher
 
 The command requires a non-empty publisher name. A successful request returns `200` and the generated publisher UUID.
 
-### Payload details
+#### Payload details
 
 - `name` is required and must contain at least one character.
 - Store the returned UUID before assigning the publisher to a book.
 - The endpoint accepts a JSON request body.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +48,7 @@ const publisherId = "5e4a1c9b-3f72-4b8d-a605-7c2e9f1d8430";
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Use the returned UUID when assigning this publisher to a book.
 
@@ -59,6 +81,6 @@ console.log(`Created publisher ${publisherId}`);
 
 ---
 
-## 2. Reject an invalid request
+### 2. Reject an invalid request
 
 Omitting `name` returns `400` with an RFC 7807 validation response. Display the field error and do not retry unchanged input.

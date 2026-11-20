@@ -21,26 +21,26 @@ badges:
     icon: GlobeAltIcon
 ---
 
-## Context Diagram
+## 1. Context & Problem
 
-The SendGrid system's context diagram shows its interactions with human actors and other system components.
+BookWorm needs to send transactional emails—such as checkout and order notifications—reliably without building or operating its own internet mail-routing infrastructure. At the same time, BookWorm cannot allow an external email vendor to dictate internal business state, lose pending notifications during provider downtime, or expose sensitive customer communications across unrelated services.
+
+SendGrid serves as BookWorm's external email delivery boundary, isolating third-party delivery mechanics from BookWorm's internal business workflows.
+
+## 2. Business Value
+
+- **Reliable customer communication**: Offloads complex email routing, reputation management, and downstream mail-provider delivery to a dedicated external platform.
+- **Resilience to provider disruptions**: Keeping notification work queued inside BookWorm prevents temporary email-provider outages from dropping customer messages or blocking core workflows like checkout.
+- **Clear accountability**: Splitting provider delivery responsibilities from BookWorm business ownership ensures operations, support, and product teams share a clear view of what "submitted" versus "completed" means.
+- **Protected customer data**: Concentrates email credentials and sensitive message content within a tightly controlled outbound integration boundary.
+
+## 3. How It Works
+
+The [[system|notification-system]] prepares notification messages and submits them through [[service|sendgrid-api]], while SendGrid handles external validation, routing, rate limiting, and delivery processing.
 
 <ContextDiagram />
 
-## Overview
-
-SendGrid is BookWorm's external provider boundary for email delivery. The
-Notification System prepares and submits messages through the
-[[service|sendgrid-api]] service; SendGrid then applies provider-side
-validation, routing, rate limits, and delivery processing.
-
-SendGrid does not own BookWorm notification state or business outcomes. The
-[[system|notification-system]] remains responsible for the
-[[entity|outbox]] record, retry policy,
-and the distinction between a pending, failed, and successfully submitted
-email.
-
-## Integration boundary
+SendGrid never owns BookWorm's notification state or business outcomes. The [[system|notification-system]] retains full ownership of the [[entity|outbox]] record, retry decisions, and the distinction between a pending, failed, or successfully submitted email.
 
 | Concern             | SendGrid responsibility                                      | BookWorm responsibility                                |
 | ------------------- | ------------------------------------------------------------ | ------------------------------------------------------ |
@@ -50,34 +50,27 @@ email.
 | Failures and limits | Return errors for invalid requests, outages, or rate limits  | Preserve pending work and decide when to retry         |
 | Business meaning    | Deliver the supplied message                                 | Own the business event and notification content        |
 
-The provider response is an integration outcome, not proof that the underlying
-business operation completed. Consumers should use BookWorm's notification
-state and business-domain events for that distinction.
+A provider response indicates only whether SendGrid accepted or rejected a submission—not whether the underlying business operation succeeded or the message reached the recipient's inbox.
 
-## Reliability and failure handling
+## 4. Trade-offs & Lessons Learned
 
-- Pending outbox records must remain durable when SendGrid is unavailable.
-- Transient provider failures should leave work eligible for a controlled retry.
-- Rate-limit responses should be observable and handled without an unbounded
-  retry loop.
-- Invalid or rejected requests should be recorded with enough diagnostic
-  context for operators while avoiding sensitive message content in logs.
-- A successful provider response should update delivery state exactly once from
-  the perspective of the Notification System.
+- **Bounded reliability over naive retries**: Pending outbox records must survive provider outages, temporary failures should be retried in a controlled manner, rate limits must be observable without infinite retry loops, and permanent rejections must be captured with enough non-sensitive context for diagnosis.
+- **Exactly-once expectation management**: A successful submission updates BookWorm's internal state once, yet distributed communication means rare duplicates or ambiguous outcomes must still be accounted for operationally.
+- **Strict data minimization**: Credentials must stay out of code, documentation, and logs, while email addresses and message bodies are treated as sensitive data accessible only to components required for delivery and authorized support.
 
-## Security and data handling
+## 5. Technical Reference
 
-Access to SendGrid is an outbound, authenticated integration from BookWorm.
-Credentials should be supplied through the runtime secret configuration and
-must not be stored in catalog documentation, source control, or operational
-logs. Email addresses and message bodies should be treated as sensitive
-notification data and exposed only to the components that require them for
-delivery and support.
+### Integration & Architecture Details
 
-## Architecture decisions
+- **Scope**: External system (`sendgrid`), exposing [[service|sendgrid-api]] (`1.0.0`).
+- **Flows**: Participates in `user-checkout` (`1.0.0`).
+- **Security**: Outbound authenticated integration using runtime secret configuration; credentials and message content must not appear in catalog documentation, source control, or routine operational logs.
+- **Ownership boundary**: [[system|notification-system]] persists [[entity|outbox]] records, applies retry and rate-limit policies, and updates delivery state exactly once per successful provider response from the Notification System's perspective.
+
+### Architecture Decisions
 
 <ADRTable />
 
-## Architecture
+### Architecture
 
 <NodeGraph />

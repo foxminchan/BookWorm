@@ -24,67 +24,45 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-BookWorm needs a conversational entry point that can handle book discovery and
-store-support questions without making the AI workflow the owner of [[domain|catalog]],
-[[domain|reviews]], [[entity|basket]], or [[entity|order]] data. Routing every customer question through one
-general-purpose agent would also blur specialist responsibilities and make
-tool access harder to constrain. The request path needs explicit boundaries
-between deterministic validation and formatting, specialist selection, and
-the business systems that own the facts being discussed.
+BookWorm needs a conversational entry point for book discovery and store-support questions without turning the AI workflow into the owner of [[domain|catalog]], [[domain|reviews]], [[entity|basket]], or [[entity|order]] data. Routing every customer inquiry through one general-purpose assistant would also blur specialist responsibilities and make it much harder to constrain which tools and data each question can access.
 
-## Decision
+The request path therefore needs explicit architectural boundaries separating input screening, specialist selection, output formatting, and the core business domains that own the underlying facts and transactions.
 
-The [[system|chat-system]] composes input validation, `DecisionRouterExecutor`
-routing (via `Microsoft-Decision-1`), specialist sub-workflows for
-[[agent|book-agent]], [[agent|qa-agent]], and [[agent|rating-agent]], and
-response formatting in the interactive AG-UI workflow. Validation rejects empty
-or suspicious input and bounds long messages before routing. The Decision
-Router selects Book Agent for book requests (and review requests without a
-catalog ID), QA Agent for store-policy and service questions, and Rating Agent
-for review/rating requests that already include a book catalog ID. For complex
-book requests, Book Agent may delegate independent research to its specialist
-researchers ([[agent|book-catalog-researcher]] and
-[[agent|book-recommendation-researcher]]).
+## 2. Business Value
 
-The workflow provides assistance, not business transactions. [[domain|catalog]] remains
-the source of book facts, [[domain|reviews]] owns individual feedback, and [[domain|shopping]] and
-[[domain|ordering]] own their respective business state. Chat agents use the approved
-read capabilities available to them and do not mutate those records or make
-the conversation a system of record.
+- **Protects system-of-record integrity**: Keeps product facts, customer reviews, baskets, and orders under their owning domains so conversational replies never create competing sources of truth or unapproved state changes.
+- **Enables independent delivery**: Allows routing rules, validation checks, and response formatting to evolve without coupling to [[domain|catalog]], [[domain|reviews]], [[domain|shopping]], or [[domain|ordering]] release cycles.
+- **Improves safety and least-privilege control**: Restricts each specialist assistant to the approved read capabilities and context required for its job.
+- **Sets clear expectations**: Ensures neither customers nor teams mistake a conversational answer for confirmation that a basket, order, review, or catalog record was created or changed.
 
-## Consequences
+## 3. How It Works
 
-- Routing and response handling can evolve independently from Catalog,
-  Reviews, Shopping, and Ordering ownership.
-- Agents must rely on owning systems and their approved interfaces for
-  business facts; answers should distinguish unavailable information from
-  verified facts.
-- A conversational answer is not confirmation that a basket, order, review,
-  or catalog record was created or changed.
-- Validation, handoff, delegation, and formatting are distinct workflow
-  responsibilities that must remain aligned when routing behavior changes.
-- New capabilities that read or change business state require an explicit
-  ownership and authorization decision; they must not be added implicitly
-  through a general-purpose agent.
+[[system|chat-system]] owns and coordinates the full interactive conversational workflow:
 
-## Alternatives considered
+1. **Input screening**: Incoming messages are checked upfront—rejecting empty or suspicious inputs and bounding oversized messages before routing begins.
+2. **Specialist routing**: A dedicated routing step directs book requests (and review requests without a specific book identifier) to [[agent|book-agent]], store-policy and service questions to [[agent|qa-agent]], and review or rating requests with an already identified book to [[agent|rating-agent]].
+3. **Delegated book research**: For complex book inquiries, [[agent|book-agent]] may delegate independent research tasks to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] before synthesizing a reply.
+4. **Centralized formatting**: Final assistant replies pass through a shared formatting step before delivery.
+5. **Read-only domain assistance**: Chat provides guidance, not business transactions. [[domain|catalog]] remains the source of truth for book facts, [[domain|reviews]] owns individual feedback, and [[domain|shopping]] and [[domain|ordering]] own their respective business state. Assistants use only approved read capabilities and never mutate those records.
 
-### Route every request to one general-purpose agent
+## 4. Trade-offs & Lessons Learned
 
-This would reduce orchestration structure, but combine unrelated support and
-catalog responsibilities and make it harder to limit the capabilities
-available to each kind of request.
+### Operational & Governance Consequences
 
-### Let Chat own or mutate the business records it discusses
+- **Cross-stage alignment**: Screening, routing, handoffs, delegation, and formatting are separate responsibilities that must be kept aligned whenever routing behavior changes.
+- **Explicit grounding**: Specialists must rely on owning systems and approved interfaces for business facts, clearly distinguishing unavailable details from verified information.
+- **Explicit authorization for future state changes**: Any future capability that reads or modifies protected business state requires an explicit ownership and authorization decision—it must never be added implicitly through a general-purpose assistant.
 
-This could make the conversation appear self-contained, but would duplicate
-domain rules and create competing sources of truth. Mutations belong behind
-the owning systems' contracts and authorization boundaries.
+### Alternatives Considered
 
-### Allow each specialist to handle all user-facing workflow stages
+- **Route every request to one general-purpose agent**: Would reduce orchestration structure, but would combine unrelated support and catalog duties and make it harder to limit capabilities per request type.
+- **Let Chat own or mutate the business records it discusses**: Could make conversations appear self-contained, but would duplicate domain rules and create competing sources of truth. Mutations belong behind owning systems' contracts and authorization checks.
+- **Allow each specialist to handle all user-facing workflow stages**: Would couple input acceptance, routing, and formatting to individual agent instructions instead of keeping cross-cutting stages explicit and independent.
 
-This would couple input acceptance, routing, and response formatting to each
-agent's instructions. Keeping those stages in the composed workflow makes
-their responsibilities explicit and independent of the selected specialist.
+## 5. Technical Reference
+
+- **Decision status**: `accepted` (`2026-11-04`)
+- **Orchestration composition**: [[system|chat-system]] composes input validation, `DecisionRouterExecutor` routing (via `Microsoft-Decision-1`), specialist sub-workflows for [[agent|book-agent]], [[agent|qa-agent]], and [[agent|rating-agent]], delegated researchers ([[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]), and response formatting within the interactive AG-UI workflow.
+- **Domain ownership boundaries**: [[domain|catalog]] (book facts), [[domain|reviews]] (individual feedback), [[domain|shopping]] ([[entity|basket]] state), and [[domain|ordering]] ([[entity|order]] state).

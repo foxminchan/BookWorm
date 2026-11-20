@@ -22,82 +22,42 @@ badges:
     textColor: green
 ---
 
-## Context
+## 1. Context & Problem
 
-A process restart, database interruption, timeout, or downstream failure can
-leave the [[system|scheduler-system]] uncertain whether a target operation completed. Silently
-discarding a missed trigger loses work, while replaying every missed interval
-or retrying indefinitely can overload a target and create duplicate effects.
-Each job therefore needs a policy matched to its target contract: a recurring
-maintenance trigger may run once after a misfire, whereas replaying every
-missed interval could create unnecessary load without recovering a distinct
-business event.
+Service restarts, database interruptions, timeouts, or downstream outages can cause scheduled jobs to miss their planned execution windows or leave it uncertain whether a triggered task completed. Silently dropping missed runs risks leaving recurring maintenance undone, while replaying every missed interval or retrying endlessly can overwhelm downstream systems and create duplicate business effects. Each job needs an explicit recovery policy matched to its downstream contract.
 
-## Decision
+## 2. Business Value
 
-Every durable job must define an explicit misfire policy and retain observable
-firing and execution history. Jobs use the configured recovery behavior,
-including `FireOnceNow` where appropriate, rather than silently skipping
-eligible work or replaying an unbounded backlog.
+- **System stability after outages**: Prevents sudden traffic bursts after downtime by running a single recovery execution rather than replaying an entire backlog of missed intervals.
+- **Duplicate-safe reliability**: Ensures recurring jobs can be safely re-run after interruptions without corrupting business data or repeating side effects.
+- **Bounded, predictable workloads**: Keeps individual maintenance runs sized responsibly while preserving operational visibility into missed schedules and recovery attempts.
 
-Jobs that invoke external services or publish integration work must be safe to
-run more than once. The Scheduler prevents overlapping executions where the
-job requires it, while the receiving system provides idempotency, durable
-queues, or equivalent duplicate protection. Retries remain bounded and
-observable, and a successful Scheduler invocation is never treated as proof of
-downstream business completion.
+## 3. How It Works
 
-The current recurring jobs use `FireOnceNow` for misfires and disallow
-concurrent executions. The Catalog batch is also protected by its own
-database advisory lock and revision-aware queue acknowledgement. Notification
-maintenance handles at most 100 records per request, but that batch limit is
-not a per-email lifetime retry limit; unsent records remain eligible on later
-hourly runs.
+1. Every durable job defines an explicit missed-schedule recovery policy and keeps observable firing history. For recurring maintenance jobs, if one or more scheduled times are missed during an outage, the scheduler runs one prompt catch-up execution upon recovery instead of replaying every missed slot.
+2. Jobs that must not overlap are configured so two runs of the same job do not execute concurrently within the scheduler.
+3. Because restarts, timeouts, manual triggers, or downstream retries can still cause work to be requested more than once, receiving systems protect themselves with their own locks, duplicate detection, and durable work tracking.
+4. Per-run batch limits (such as capping email maintenance at 100 records per request) control load per invocation; any remaining eligible items stay queued for subsequent scheduled hourly runs rather than being lost.
+5. Retries remain bounded and visible, and a successful trigger handoff is never treated as proof that the downstream business task completed.
 
-## Consequences
+## 4. Trade-offs & Lessons Learned
 
-- Missed schedules and recovery attempts remain visible to operators.
-- A restart can make eligible work runnable without replaying every missed
-  interval.
-- Target systems must design contracts and state transitions for repeated
-  invocation.
-- Operators need both Scheduler execution history and downstream business
-  metrics to distinguish a retry from duplicate business work.
-- Job-specific retry and misfire policies must be documented and tested.
-- `FireOnceNow` makes one execution eligible after a misfire; it does not
-  replay each missed interval or guarantee immediate downstream completion.
-- Non-overlapping Scheduler executions prevent two firings of the same job
-  from running concurrently in that scheduler configuration, but do not
-  replace target-side locks, idempotency, or duplicate-safe processing.
-- A bounded target batch limits work per invocation, not backlog size or
-  lifetime retries. Monitoring must distinguish invocation frequency from
-  target queue age, backlog, and per-item outcomes.
-- Retry limits and idempotency belong to the relevant job and target contract;
-  they cannot be inferred from the fact that Quartz persists execution
-  history.
+- **Single catch-up vs. full interval replay**: Running once after a misfire avoids catch-up spikes, assuming missed recurring maintenance intervals do not each represent a distinct business event that must be replayed individually.
+- **Scheduler non-concurrency is not complete protection**: Preventing overlapping runs inside the scheduler does not guard against manual invocations, other consumers, or target-side retries; target systems must still enforce duplicate-safe processing.
+- **Batch caps are not lifetime retry limits**: A 100-record per-request cap controls single-run volume, not total backlog size or how many times an individual item is retried across future runs. Monitoring must track queue age, backlog, and per-item outcomes separately from trigger frequency.
+- **Alternatives considered**:
+  - _Replay every missed interval_: Preserves nominal execution counts, but risks a burst of redundant catch-up work after downtime.
+  - _Skip all missed executions_: Avoids catch-up load, but silently loses scheduled maintenance opportunities.
+  - _Rely only on scheduler-level non-concurrency_: Cannot cover manual calls, external consumers, or downstream retries.
+  - _Treat bounded batches as bounded retry policies_: Confuses per-invocation work limits with per-record terminal failure rules.
 
-## Alternatives considered
+## 5. Technical Reference
 
-### Replay every missed interval
-
-This could preserve the nominal number of executions but may create a burst
-of redundant work after downtime. The current jobs use one immediate eligible
-execution after a misfire rather than replaying an unbounded interval backlog.
-
-### Skip all misfired executions
-
-This would avoid catch-up load but silently lose scheduled opportunities for
-durable maintenance. A visible one-time recovery execution is preferred for
-these jobs.
-
-### Rely only on Scheduler-level non-concurrency
-
-Scheduler non-concurrency does not cover manual calls, other consumers, or
-target-side retries. Target systems must still make work durable and handle
-duplicate invocations safely.
-
-### Treat every bounded batch as a bounded retry policy
-
-A 100-record batch limits one Notification invocation, but leaves unsent rows
-eligible in later runs. Batch size is not a per-record attempt count or
-terminal-failure rule.
+- **Decision status**: Accepted (`2026-10-27`)
+- **Applies to**: [[system|scheduler-system]] durable Quartz jobs.
+- **Misfire & concurrency policy**:
+  - Current recurring jobs use `FireOnceNow` for misfires (making one execution eligible after a misfire without replaying every missed interval) and disallow concurrent executions.
+  - Quartz persists misfire and execution history, but retry limits and idempotency belong to the specific job and target contract.
+- **Target-side duplicate protection & batching**:
+  - **Catalog batch**: Protected by its own database advisory lock and revision-aware queue acknowledgement.
+  - **Notification maintenance**: Handles at most 100 records per request; this batch limit is not a per-email lifetime retry limit, and unsent records remain eligible on later hourly runs.

@@ -12,58 +12,84 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Symptoms
+## 1. Context & Problem
+
+BookWorm relies on the Platform Scheduler to regularly prompt background tasks across different domains—such as refreshing Catalog search indexes and triggering Notification email retries and cleanup. Failures can look misleading: sometimes a scheduled job misses its window, pauses, or errors outright; other times, the scheduler reports success while the downstream business system makes no actual progress.
+
+When these symptoms occur, teams need a clear diagnostic path to distinguish between a scheduler outage, an authentication or connectivity problem, and a downstream processing stall—without tampering with the scheduler's internal database or creating duplicate work.
+
+## 2. Business Value
+
+- **Faster Incident Resolution:** Helps operations distinguish scheduler faults from downstream service failures in minutes rather than chasing the wrong component.
+- **Prevents Data Corruption & Duplicates:** Establishes guardrails against editing internal scheduler tables or blindly re-running jobs that may already have timed out mid-flight.
+- **Protects Security Boundaries:** Guides teams to resolve credential or permission mismatches through proper deployment channels without exposing tokens or secrets.
+- **Ensures End-to-End Reliability:** Keeps search indexing and email maintenance flowing smoothly by confirming true downstream progress rather than relying on scheduler status alone.
+
+## 3. How It Works
+
+### Recognizing a Failure
+
+Operators typically investigate when a job misses its expected UTC cadence, shows as paused, blocked, or failed in execution history, or reports success while the target system's work queue remains stuck.
+
+### Investigation Flow
+
+1. **Check Scheduler Health & Timing:** Review instance check-ins, job and trigger states, next scheduled run time, and verify times are being read in UTC.
+2. **Review Execution History:** Check recent run durations and sanitized error summaries, taking care never to copy authentication headers or secrets into incident logs.
+3. **Check Pause & Misfire Rules:** Confirm whether a trigger was paused. If a job missed its run window, Platform triggers are configured to catch up with a single immediate execution rather than replaying every missed interval.
+4. **Inspect the Target System:** If the scheduler itself completed without error, investigate the receiving domain directly:
+   - For search index updates, verify Catalog service authorization, the pending-update backlog, and search store health.
+   - For email maintenance, verify message publication, Notification service health, and the email outbox state.
+5. **Check Authorization Failures:** When a protected call to Catalog fails access checks, distinguish between missing/invalid credentials and an identity that lacks permission, then fix runtime secrets or identity settings safely without exposing secret values.
+
+### Safe Recovery & Verification
+
+- Restore database or network connectivity and apply any configuration fixes through the standard deployment workflow.
+- Only resume or adjust a paused trigger using approved operational permissions and change processes.
+- After fixing the underlying issue, prefer waiting for the next scheduled run. Before triggering a manual retry, inspect the target system's state to account for timeouts or duplicate-submission risk.
+- Never modify target-system data through the scheduler database.
+- Confirm full recovery only when the trigger shows a valid next run time, fresh execution history succeeds, and the target system's own queue or outbox shows measurable progress. Route scheduler, schedule, or authentication issues to the platform team and target-system processing issues to the contributor team.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Single Catch-Up vs. Full Replay:** Recovering from a missed window with one immediate execution avoids flooding downstream services with a backlog of redundant triggers, though any interval-specific expectations must tolerate skipped intermediate runs.
+- **Asynchronous Dispatch vs. End-to-End Proof:** Because scheduler history only proves a trigger fired or a message was published, operators cannot rely on green scheduler checks as proof of downstream completion.
+- **Strict Database Isolation:** Prohibiting direct edits to target records via the scheduler database preserves clean service ownership and prevents hard-to-trace state drift.
+
+## 5. Technical Reference
+
+### Symptoms
 
 - A Platform job has not fired at its expected UTC cadence.
-- A trigger is paused, misfired, or blocked, or the execution history records a
-  failure.
+- A trigger is paused, misfired, or blocked, or the execution history records a failure.
 - Scheduler reports success but the target system's work is not progressing.
 
-## Diagnose
+### Diagnose
 
-1. Open the [[service|sheduler-dashboard]] and check Scheduler instance
-   check-ins, job and trigger state, next-fire time, and UTC time zone.
-2. Inspect fired-trigger and execution-history records for the job and
-   trigger. Note duration and sanitized failure details; do not copy
-   authorization headers or credentials.
-3. Check whether the trigger is paused and review the configured misfire
-   behavior. Jobs use `FireOnceNow`, which makes one execution eligible after
-   a misfire instead of replaying every missed interval.
+1. Open the [[service|sheduler-dashboard]] and check Scheduler instance check-ins, job and trigger state, next-fire time, and UTC time zone.
+2. Inspect fired-trigger and execution-history records for the job and trigger. Note duration and sanitized failure details; do not copy authorization headers or credentials.
+3. Check whether the trigger is paused and review the configured misfire behavior. Jobs use `FireOnceNow`, which makes one execution eligible after a misfire instead of replaying every missed interval.
 4. If the Scheduler invocation completed, inspect the target system:
-   - `ProcessVectorBatchJob`: check Catalog Ingestion authorization,
-     `pending_vector_updates`, and vector-store health.
-   - `ResendErrorEmailJob` or `CleanUpSentEmailJob`: check Kafka publication,
-     Notification consumer health, and outbox state.
-5. For Catalog's protected HTTP request, distinguish `401` (missing or invalid
-   credentials) from `403` (the caller identity is not authorized). Check
-   runtime secret configuration and service identity; never reveal token
-   values.
+   - `ProcessVectorBatchJob`: check Catalog Ingestion authorization, `pending_vector_updates`, and vector-store health.
+   - `ResendErrorEmailJob` or `CleanUpSentEmailJob`: check Kafka publication, Notification consumer health, and outbox state.
+5. For Catalog's protected HTTP request, distinguish `401` (missing or invalid credentials) from `403` (the caller identity is not authorized). Check runtime secret configuration and service identity; never reveal token values.
 
-## Recover
+### Recover
 
-- Restore Scheduler database or downstream connectivity, and correct the
-  runtime configuration through the normal deployment process.
-- Resume or otherwise adjust a paused trigger only with the approved
-  operational permissions and change process.
-- Prefer the next scheduled firing after restoring the target. Before a manual
-  retry, confirm target-side state and account for timeouts or duplicate
-  submissions; Scheduler history cannot prove whether downstream work finished.
+- Restore Scheduler database or downstream connectivity, and correct the runtime configuration through the normal deployment process.
+- Resume or otherwise adjust a paused trigger only with the approved operational permissions and change process.
+- Prefer the next scheduled firing after restoring the target. Before a manual retry, confirm target-side state and account for timeouts or duplicate submissions; Scheduler history cannot prove whether downstream work finished.
 - Do not edit target-system records through the Scheduler database.
 
-## Verify
+### Verify
 
 - The expected trigger has a valid next-fire time and new execution history.
 - The target system's own queue or outbox shows progress.
-- For email, confirm Notification state and SMTP health; for vector indexing,
-  confirm the Catalog queue and search index. A successful Scheduler execution
-  by itself is not sufficient.
+- For email, confirm Notification state and SMTP health; for vector indexing, confirm the Catalog queue and search index. A successful Scheduler execution by itself is not sufficient.
 
-## Escalation
+### Escalation
 
-- Contact [[team|platform-team]] for Scheduler health, schedules,
-  authentication configuration, or infrastructure.
+- Contact [[team|platform-team]] for Scheduler health, schedules, authentication configuration, or infrastructure.
 - Contact [[team|contributor-team]] for target-system processing behavior.
-- Use the established support or on-call channel for urgent incidents; no
-  specific channel or rotation is documented here.
+- Use the established support or on-call channel for urgent incidents; no specific channel or rotation is documented here.
 
 <Footer />

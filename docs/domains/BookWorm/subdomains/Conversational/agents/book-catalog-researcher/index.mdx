@@ -40,36 +40,58 @@ model:
   version: "2025-11-18"
 ---
 
-The Book Catalog Researcher is an internal subagent initialized by the
-[[agent|book-agent]] and exposed as a delegated tool. It researches catalog
-facts about books, authors, categories, and details, then returns concise
-findings with book IDs for Book Agent to use in its response.
+## 1. Context & Problem
 
-It uses catalog tool results as its only source for factual claims and does
-not invent book details, availability, ratings, or prices. Its model provider
-is inherited from the shared chat client; the agent definition does not specify
-a provider or model.
+Complex customer questions often blend conversational requests—like gift advice or preference matching—with strict factual lookups across books, authors, and categories. Asking a single conversational assistant to handle open-ended dialogue and precise catalog verification in one step can blur verified facts with speculation.
 
-## Privacy middleware
+The Book Catalog Researcher solves this by serving as an internal fact-finding specialist for [[agent|book-agent]], focused strictly on retrieving verified catalog information and returning concise, accurate facts.
 
-`InitSubAgent` receives the [[agent|book-agent]]'s chat client, already wrapped
-with `UsePIIMiddleware(sp)`; this subagent does not register a separate PII
-middleware. Its input and output text therefore passes through
-[[service|PresidioAPI]] via [[command|AnalyzeText]] and, when PII is detected,
-[[command|AnonymizeText]]. These are middleware HTTP calls, not model-selected
-tools or brokered messages.
+## 2. Business Value
 
-## Tools
+- **Higher factual reliability:** Separating pure catalog research from customer-facing conversation reduces the risk of fabricated titles, availability, ratings, or prices.
+- **Parallel research speed:** Because it operates as a dedicated internal helper, fact-finding can run concurrently alongside recommendation research.
+- **Exact product traceability:** Returning verified book identifiers allows [[agent|book-agent]]—and any subsequent review handoffs—to reference the exact catalog item.
+- **Zero duplicated privacy logic:** Reusing the parent agent's privacy screening guarantees consistent protection for personal information without extra configuration.
+
+## 3. How It Works
+
+The Book Catalog Researcher works behind the scenes whenever [[agent|book-agent]] delegates a catalog lookup task:
+
+1. **Receives a focused research request:** [[agent|book-agent]] invokes this internal helper when a customer request benefits from dedicated catalog fact-finding.
+2. **Consults official catalog tools:** The researcher searches the catalog, retrieves full details for known titles, and lists available authors or categories.
+3. **Returns concise, grounded findings:** It provides a brief factual summary accompanied by exact book identifiers, using catalog results as its only source and never inventing missing details, availability, ratings, or prices.
+4. **Protected by shared privacy filtering:** Every input and output passes automatically through the same personal-information screening used by [[agent|book-agent]].
+
+## 4. Trade-offs & Lessons Learned
+
+- **Internal helper vs. standalone customer agent:** Exposing this researcher only as a delegated tool keeps customer conversations unified under [[agent|book-agent]], though the quality of final phrasing depends on the parent agent's synthesis.
+- **Conservative response settings for accuracy:** Lower creative variation favors exact, deterministic catalog reporting, leaving conversational warmth and synthesis to [[agent|book-agent]].
+- **Shared privacy dependency:** Inheriting privacy filtering from the parent agent avoids duplicate setup and drift, while coupling this researcher's availability to the shared privacy pipeline.
+
+## 5. Technical Reference
+
+### Initialization & Model Inheritance
+
+- **Parent agent:** Initialized by [[agent|book-agent]] via `InitSubAgent` and exposed as a delegated tool.
+- **Inherited model provider:** The agent definition does not specify a provider or model; it inherits the shared chat client (`Microsoft` `model-router`, version `2025-11-18`).
+
+### Privacy Middleware
+
+- This subagent does not register a separate PII middleware; `InitSubAgent` receives [[agent|book-agent]]'s chat client already wrapped with `UsePIIMiddleware(sp)`.
+- Input and output text passes through [[service|PresidioAPI]] via [[command|AnalyzeText]] and, when PII is detected, [[command|AnonymizeText]].
+- These are middleware HTTP calls, not model-selected tools or brokered messages.
+
+### Runtime Settings
+
+- **Temperature:** `0.2`
+- **Maximum output:** `1,200` tokens
+- **Reasoning effort:** `medium`
+- **Multiple tool calls:** `enabled`
+
+### Tools
 
 <AgentTools />
 
-## Architecture
+### Architecture
 
 <NodeGraph />
-
-## Runtime settings
-
-- Temperature: 0.2
-- Maximum output: 1,200 tokens
-- Reasoning effort: medium
-- Multiple tool calls: enabled

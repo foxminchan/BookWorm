@@ -13,27 +13,56 @@ The Aspire-generated Bicep templates establish strong defaults—passwordless ma
 
 See [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] for the architectural context behind these items.
 
-## 1. Network Isolation & Ingress Hardening
+## 1. Context & Problem
+
+BookWorm's automated deployment templates provide resilient defaults out of the box—including passwordless service authentication, zone-redundant relational databases, high-availability caching, and geo-redundant storage. However, generated infrastructure templates intentionally start with open network defaults, minimal replica bounds, and baseline AI quotas so teams can provision and validate environments quickly. Moving straight to live customer traffic without closing those environment-specific gaps exposes the business to unauthorized network access, uncalibrated scaling limits, untested recovery procedures, and silent operational blind spots.
+
+## 2. Business Value
+
+- **Production Go-Live Governance:** Gives project managers, architects, and security reviewers a shared, auditable pre-launch gate before exposing customer traffic.
+- **Data & Perimeter Protection:** Eliminates public exposure of backend databases, caches, storage, and AI endpoints behind private networking and web application firewall protections.
+- **Predictable Performance & Cost Control:** Defines clear upper scaling limits, load-tested worker sizing, and raised AI quotas to avoid both traffic bottlenecks and runaway resource consumption.
+- **Verified Business Continuity:** Proves through actual restore and rebuild drills that relational data, review records, search indexes, and event streams meet recovery targets.
+
+## 3. How It Works
+
+Closing pre-production gaps spans four coordinated workstreams completed prior to production cutover:
+
+1. **Network Isolation & Edge Protection:** Teams place the container hosting environment inside a dedicated private virtual network, disable public internet access to all databases, caches, storage accounts, and AI workspaces in favor of private endpoints, restrict workflow scheduler network access to known platform addresses, and place a custom domain, managed security certificates, and a web application firewall in front of the public gateway.
+2. **Compute Sizing & Scaling Governance:** Engineering defines maximum replica ceilings and demand-based scaling triggers across all services, load-tests personal-data redaction and background worker apps to right-size memory and compute, and increases AI model throughput allocations above starter levels to match expected traffic.
+3. **Backup Validation & Disaster Preparedness:** Operations teams execute and document real point-in-time database restore exercises, confirm continuous backup and regional failover policies for document stores, verify that semantic search vectors can be fully rebuilt from primary catalog data, and align on retention and dead-letter recovery policies with the external event-streaming provider.
+4. **Secret Rotation, Alerting & Service Targets:** Security and operations teams establish rotation schedules for external partner credentials that sit outside cloud managed identities, configure automated alerts for error spikes, container restarts, database saturation, and AI throttling, and agree on measurable availability, latency, and recovery objectives per service boundary.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Starter Convenience vs. Production Lockdown:** Keeping initial templates accessible without private endpoints or strict IP allowlists speeds up early environment testing, but requires disciplined pre-production hardening so test-friendly defaults never reach live users.
+- **Network Isolation Complexity:** Moving data and AI services onto private endpoints strengthens security, while introducing private DNS management and requiring CI/CD runners or jump hosts inside the network to run migrations and diagnostics.
+- **Drills Over Assumptions:** Having geo-redundant backups configured is not enough; only executing restore and vector re-indexing drills uncovers permission gaps or slow recovery times before an actual outage.
+- **Shared Responsibility with External Partners:** Even with passwordless cloud authentication internally, external messaging, vector search, and email providers still rely on rotated credentials and coordinated disaster recovery agreements.
+
+## 5. Technical Reference
+
+### 1. Network Isolation & Ingress Hardening
 
 - [ ] **Virtual Network Integration:** Attach the Azure Container Apps environment (`cae-<token>`) to a dedicated VNet subnet.
 - [ ] **Private Endpoints:** Disable public network access and provision Private Endpoints for PostgreSQL, Azure Managed Redis, Azure Cosmos DB, Azure Storage, and Microsoft Foundry.
 - [ ] **Durable Task Scheduler IP Allowlist:** Replace the default `['0.0.0.0/0']` `ipAllowlist` on the Durable Task Scheduler resource with the ACA environment's outbound IP addresses or private networking.
 - [ ] **Edge TLS, Custom DNS & WAF:** Configure a custom domain, managed/Key Vault TLS certificate, and Azure Front Door or Application Gateway WAF in front of `gateway` (port `5000`).
 
-## 2. Compute & Scaling Governance
+### 2. Compute & Scaling Governance
 
 - [ ] **Upper Autoscaling Limits:** Define `maxReplicas` and HTTP/CPU/KEDA Kafka-lag scaling rules per container app (currently only `minReplicas: 1` is set).
 - [ ] **Presidio & Functions Sizing:** Load-test `presidio-analyzer`, `presidio-anonymizer`, `catalog-ingestion`, and `finance` to right-size CPU/memory allocations under peak traffic.
 - [ ] **Foundry Model Quotas:** Increase `GlobalStandard` deployment capacities (`chat`, `decision`, `embedding`) from the template baseline (`capacity: 1`) to match expected RPM/TPM.
 
-## 3. Backup, Recovery & Disaster Preparedness
+### 3. Backup, Recovery & Disaster Preparedness
 
 - [ ] **PostgreSQL Restore Drill:** Execute and document a point-in-time restore exercise using the 35-day geo-redundant backups ([[container|catalog-database]], [[container|order-database]], [[container|sheduler-database]]).
 - [ ] **Cosmos DB Backup Policy:** Confirm continuous vs. periodic backup mode and regional failover configuration for [[container|rating-database]].
 - [ ] **Qdrant Cloud Rebuild Runbook:** Document and test full vector re-indexing from PostgreSQL via [[service|catalog-ingestion]] in case [[container|catalog-vector]] must be rebuilt.
 - [ ] **Kafka Topic Governance:** Verify broker retention, partitioning, dead-letter topic (DLT) handling, and disaster recovery with the external Kafka provider.
 
-## 4. Secrets, Alerts & SLOs
+### 4. Secrets, Alerts & SLOs
 
 - [ ] **External Secret Rotation:** Establish rotation schedules for external Kafka credentials, Qdrant Cloud API keys, SMTP/[[system|sendgrid]] credentials, and application signing secrets.
 - [ ] **Alerting Rules:** Configure Azure Monitor alert rules on `law-<token>` and Application Insights for 5xx error spikes, container restarts, PostgreSQL/Redis saturation, and Foundry throttling.

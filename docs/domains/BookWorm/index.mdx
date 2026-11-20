@@ -30,33 +30,28 @@ repository:
 
 import Footer from "@catalog/components/footer.astro";
 
-**BookWorm** runs an e-commerce platform that allows users to browse and purchase
-[[entity|book]]s online,
-providing a seamless shopping experience. The platform is designed to handle various aspects of
-the online bookstore, including product catalog management, shopping cart functionality,
-checkout processes, and order management.
+## 1. Context & Problem
 
-## Domain-Driven Design
+**BookWorm** runs an online bookstore enabling customers to browse and purchase [[entity|book]]s through a seamless end-to-end experience—covering product discovery, shopping cart management, checkout, order processing, customer reviews, and conversational support.
 
-BookWorm is organised as a bounded-context landscape. The core subdomains are
-[[domain|catalog]], [[domain|shopping]], [[domain|ordering]], and
-[[domain|conversational]]. [[domain|reviews]] is a supporting subdomain, while
-[[domain|platform]] provides generic capabilities such as notifications and
-scheduled processing.
+Operating all of these capabilities inside a single undifferentiated system would blur business rules and tie differentiating customer features directly to commodity infrastructure. BookWorm therefore structures the domain into distinct areas with clear strategic roles and explicit external boundaries—separating what BookWorm owns from external capabilities like payment settlement, shipping execution, email infrastructure internals, AI model hosting, and identity infrastructure.
 
-Each subdomain owns its model and ubiquitous language. Context boundaries are
-crossed through explicit events and contracts rather than by sharing domain
-entities:
+## 2. Business Value
 
-- **Catalog** is the upstream source for book availability and product
-  information. Shopping and Reviews consume catalog concepts through their own
-  models.
-- **Shopping** coordinates the customer cart and checkout experience, then
-  hands an accepted purchase to Ordering.
-- **Ordering** owns order lifecycle and fulfilment state. Conversational uses
-  an anti-corruption layer when presenting order information to customers.
-- **Platform** is a generic-domain supplier for cross-cutting capabilities such
-  as email delivery and scheduled jobs.
+- **Focused investment**: Classifying capabilities by strategic importance ensures teams invest deep effort in differentiating bookstore experiences (discovery, shopping, ordering, conversational help) while keeping supporting and commodity utilities modular.
+- **Reliable customer transactions**: Clear domain rules protect purchase integrity—ensuring checkouts use valid book and pricing data and each accepted checkout produces a single official order.
+- **Cleaner partner integration**: Defining explicit boundaries around external payment, delivery, email, AI, and identity providers prevents third-party details from leaking into core business decisions.
+
+## 3. How It Works
+
+BookWorm coordinates six specialized business areas across the customer journey:
+
+- **[[domain|catalog]]** supplies authoritative book information, pricing, and availability. Other areas consume product facts through their own tailored views.
+- **[[domain|shopping]]** manages the customer [[entity|basket]] and checkout experience, then hands off an accepted purchase to Ordering.
+- **[[domain|ordering]]** owns the official order lifecycle and fulfillment progress, while Conversational translates order details safely for customers without exposing or altering internal order mechanics.
+- **[[domain|conversational]]** delivers AI-assisted customer guidance and support.
+- **[[domain|reviews]]** captures customer ratings and feedback as a supporting capability.
+- **[[domain|platform]]** provides shared, generic capabilities such as email delivery and scheduled operational tasks.
 
 ### Strategic classification
 
@@ -71,35 +66,33 @@ entities:
 
 ### Business invariants
 
-- A [[entity|basket]] cannot be checked out without valid [[entity|book]] and
-  price information.
-- An accepted Checkout creates exactly one Order.
+- A [[entity|basket]] cannot be checked out without valid [[entity|book]] and price information.
+- An accepted checkout creates exactly one Order.
 - [[domain|ordering]] owns the Order lifecycle after acceptance.
 - Reviews references a [[entity|book]] identity but does not own Catalog data.
 - Platform notifications must not change Ordering or payment state.
+
+### Domain boundaries and shared language
+
+BookWorm owns the customer-facing book discovery and purchase experience—catalog information, baskets, checkout, orders, reviews, and conversational assistance—and leaves payment-provider settlement, external shipping execution, email infrastructure internals, AI model hosting, and identity/authentication infrastructure outside its domain. Shared business terms are defined in the [ubiquitous language](/docs/domains/BookWorm/language) alongside the [[diagram|bookworm-event-storming]] board.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit contracts over shared entities**: Preventing subdomains from sharing internal records directly requires translating concepts across boundaries (for instance, Shopping and Reviews maintain their own view of catalog items, and Conversational translates Ordering data rather than reading it raw). This adds translation effort, but keeps every subdomain independent and resilient to change.
+- **Externalized commodity infrastructure**: Keeping payment settlement, physical shipping, email transport, AI model hosting, and authentication outside BookWorm narrows internal operational burden while requiring clear boundary safeguards so external outages or delays do not corrupt core order state.
+
+## 5. Technical Reference
+
+- **Bounded-context landscape**: Core ([[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|conversational]]), Supporting ([[domain|reviews]]), and Generic ([[domain|platform]]).
+- **Integration mechanics**: Boundaries are crossed via explicit events and contracts rather than shared domain entities; [[domain|conversational]] uses an anti-corruption layer when presenting [[domain|ordering]] information.
+- **Ubiquitous language & modeling**: Each bounded context maintains context-specific terminology alongside the shared [ubiquitous language](/docs/domains/BookWorm/language) and the [[diagram|bookworm-event-storming]] artifact.
 
 ### DDD context map
 
 <MermaidFileLoader file="mermaids/bookworm-context-map.mmd" />
 
-The [[diagram|bookworm-event-storming]] board captures the collaborative
-event-storming model for the BookWorm domain.
-
 ### Strategic Wardley map
 
 <MermaidFileLoader file="mermaids/bookworm-wardley-map.mmd" />
-
-### Domain boundaries
-
-BookWorm owns the customer-facing book discovery and purchase experience,
-including catalog information, baskets, checkout, orders, reviews, and
-conversational assistance. It does not own payment-provider settlement,
-external shipping execution, email infrastructure internals, AI model hosting,
-or identity and authentication infrastructure.
-
-See the [ubiquitous language](/docs/domains/BookWorm/language) for shared
-business terms and definitions.
-Each bounded context also maintains its own language where terms have a
-context-specific meaning.
 
 <Footer />

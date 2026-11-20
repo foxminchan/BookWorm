@@ -9,30 +9,66 @@ badges:
     textColor: purple
 ---
 
+## 1. Context & Problem
+
+BookWorm processes customer orders, user feedback, and conversational search requests across multiple independent services and AI-assisted experiences. Because data crosses service entry points, external AI model providers, and operational logs, the platform faces risks of unauthorized access, tampered inputs, unintended exposure of personally identifiable information (PII) or credentials, and excessive resource consumption. Teams need consistent cross-cutting security and privacy boundaries without assuming that every service automatically enforces identical rules.
+
+## 2. Business Value
+
+- **Protects customer trust and privacy:** Masks personal and sensitive data before it reaches external AI models or operational logs, reducing data-exposure risk.
+- **Enforces least-privilege access:** Combines user roles and granular service permissions so standard customers, reporters, and administrators only reach authorized capabilities.
+- **Prevents silent security assumptions:** Clarifies which protections are actively wired versus merely available as shared platform helpers, reducing gaps when launching new services or AI agents.
+- **Guides consistent design reviews:** Equips architects, product managers, and developers with a threat-model lens and a clear four-step checklist whenever introducing new endpoints or AI capabilities.
+
+## 3. How It Works
+
+BookWorm applies security and privacy controls at three primary boundaries: where requests enter a service, where an AI assistant processes user or tool content, and where operational events are recorded.
+
+1. **Identity and access control:** User authentication relies on a central identity provider. At service boundaries (as documented in Ordering), incoming requests are verified for a valid login token, and access policies combine the caller's role (such as standard user, reporter, or administrator) with service-specific permissions. Shared helpers do not make every service identical—each service must explicitly wire and verify its own entry rules.
+2. **AI privacy and safety guardrails:** On the customer chat and rating assistant paths, incoming and outgoing text passes through privacy-redaction middleware that masks personal information before it reaches an AI model and after the model responds. Input length limits, content guardrails, and tool-governance policies (including rate limits, circuit breakers, and default-deny tool rules) help protect against tampered prompts, privilege escalation, and resource exhaustion.
+3. **Privacy-aware logging:** Operational logging is designed to record action types and field names rather than full customer payloads. Shared classification and redaction helpers allow services to mask sensitive values and obscure PII when enabled on a host.
+
+When introducing any new service endpoint or AI agent, teams follow a four-step **boundary checklist**:
+
+1. Define who may call it and which role and permission authorize the operation.
+2. Keep tokens, credentials, PII, and user content out of logs unless there is a documented and approved need.
+3. If an AI model receives user data, determine whether it needs the raw value and apply the established PII and governance middleware.
+4. Confirm the control is registered on the actual service path—a shared helper is not automatically active everywhere.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Reusable platform helpers vs. explicit per-service activation:** Shared authentication, logging-redaction, and AI-privacy helpers reduce duplicated effort, but availability in shared libraries does not guarantee every service enables them. Each service boundary must be verified individually.
+- **Privacy redaction vs. data minimization:** Anonymizing text before sending it to an AI model is an important processing safeguard, yet it does not replace limiting what data is collected or deciding whether an agent needs that data in the first place.
+- **Flexible permission matching vs. strict endpoint checks:** Accepting a request when a token holds _any_ one of several listed permissions simplifies policy reuse, which means teams must carefully verify each endpoint's exact role and permission requirements so privileges are never broader than intended.
+- **Operational correlation vs. immutable auditing:** Propagating request and user identifiers helps trace failures, but correlation metadata is not a tamper-proof audit trail; operations requiring formal attribution and retention need explicit audit coverage.
+- **High-level threat modeling vs. runtime validation:** The documented threat assessment highlights boundary risks to check during design and deployment, rather than serving as a penetration test or proof that every control is active across all services.
+
+## 5. Technical Reference
+
+### Security Boundaries
+
 <MermaidFileLoader file="mermaids/security-boundaries.mmd" />
 
-Security controls are applied at the boundaries where a request enters a service, where an AI agent processes content, and where application data is recorded. They complement service ownership, a shared identity provider or redaction helper does not make every service's policy identical.
+Security controls are applied at the boundaries where a request enters a service, where an AI agent processes content, and where application data is recorded. They complement service ownership; a shared identity provider or redaction helper does not make every service's policy identical.
 
-## Identity and authorization
+The diagram distinguishes the API identity and authorization path from the AI data-protection path. The AI path applies to [[service|chat-api]] and [[service|rating-api]] agent clients, including the [[agent|rating-agent]], where the middleware is registered; it is not a universal control on every model integration.
 
-Entra ID is the identity provider used by the application. [[service|order-api]] configures bearer authentication and token introspection, then applies authorization policies that combine a role with service-specific OAuth scopes. Its default policy requires an authenticated user with the user role and an Ordering read or write scope, the admin and reporter policies make their own role and scope requirements explicit.
+### Identity and Authorization
+
+Entra ID is the identity provider used by the application. [[service|order-api]] configures bearer authentication and token introspection, then applies authorization policies that combine a role with service-specific OAuth scopes. Its default policy requires an authenticated user with the user role and an Ordering read or write scope; the admin and reporter policies make their own role and scope requirements explicit.
 
 The shared `RequireScope` helper accepts a request when the token contains **any** of the scopes listed by the policy. It does not require every listed scope. Endpoint-level authorization still needs to be checked against the policy and role expected for that operation.
 
 These policies are evidenced in [[system|order-system]]'s authorization setup. Do not infer that every API uses the same policy: verify each service's startup and endpoint configuration when adding or reviewing a new boundary.
 
-## Security boundaries
-
-The diagram distinguishes the API identity and authorization path from the AI data-protection path. The AI path applies to [[service|chat-api]] and [[service|rating-api]] agent clients, including the [[agent|rating-agent]], where the middleware is registered; it is not a universal control on every model integration.
-
-## Personal and sensitive data
+### Personal and Sensitive Data
 
 - [[service|chat-api]] and [[service|rating-api]] agent clients register Presidio-backed middleware that anonymizes text sent to the model and text returned by it. This is a processing safeguard, not a substitute for limiting the data collected or deciding which data an agent needs.
 - The shared logging building block defines separate classifications for sensitive data and personally identifiable information (PII). Its redactors mask sensitive values and apply deterministic HMAC redaction to PII when a host enables the helper.
 - The CQRS logging behavior records message and response type names and property names, rather than serializing request or response values. Properties marked as classified are explicitly logged as redacted.
 - [[service|order-api]] currently wires the shared logging redaction helper. Treat the helper's availability as reusable capability, not evidence that every host has enabled the same redaction configuration.
 
-## STRIDE threat model
+### STRIDE Threat Model
 
 This high-level assessment covers the documented Ordering identity and authorization path, Chat and Rating agent paths, their model and tool interactions, and operational logging. It identifies threats to validate during design and deployment; it is not a penetration test or a claim that every control is enabled on every service. The diagram shows the main trust boundaries and representative STRIDE threats.
 
@@ -47,13 +83,6 @@ This high-level assessment covers the documented Ordering identity and authoriza
 | **Denial of service**      | Excessive requests or expensive agent/tool/model work exhausts service or provider capacity.               | Chat bounds accepted input length; governance policies support tool rate limits and a circuit breaker. Confirm effective per-service and provider quotas, timeouts, concurrency limits, and failure behavior in deployment.                                      |
 | **Elevation of privilege** | A caller gains access to an operation or agent tool beyond their intended role.                            | Ordering policies combine roles and scopes; the shared scope helper accepts any listed scope. The governance kernel supports deny-overrides and deny-by-default tool policies. Verify each endpoint's exact policy and each agent's registered tool permissions. |
 
-## Boundary checklist
-
-When introducing a new API or agent:
-
-1. Define who may call it and which role and scope authorize the operation.
-2. Keep tokens, credentials, PII, and user content out of logs unless there is a documented and approved need.
-3. If an AI model receives user data, determine whether it needs the raw value and apply the established PII and governance middleware.
-4. Confirm the control is registered on the actual service path, a helper defined in the chassis is not automatically active everywhere.
+### Related Documentation
 
 See [[doc|arc42/03-context-and-scope/003-technical-context]] for the system's external identity and integration boundaries.

@@ -2,21 +2,45 @@
 summary: List catalog categories and distinguish an empty collection from a missing resource.
 ---
 
+## 1. Context & Problem
+
+Client applications and partner integrations that render category filters or assign categories when creating and updating books need clear, practical examples of how to retrieve the category list. Without concrete guidance, integrators frequently treat an empty category list as a missing-resource error rather than a valid catalog state.
+
+## 2. Business Value
+
+- **Faster client onboarding**: Ready-to-use request and response examples reduce integration effort for frontend and partner teams.
+- **Reliable empty-state handling**: Clearly distinguishing an empty catalog from an error prevents broken dropdowns or confusing failure messages when no categories have been added yet.
+- **Accurate book classification**: Showing how unique category identifiers pair with display names helps teams pass valid category references when creating or updating books.
+
+## 3. How It Works
+
+1. A client requests the category list from the catalog without providing a specific category identifier.
+2. The catalog responds with a list of category summaries, each pairing a unique identifier with a display name.
+3. Client applications display the names as selectable options and use the returned identifiers when creating or updating books.
+4. When the catalog has no categories yet, the request still succeeds and returns an empty list rather than reporting a missing resource.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Empty collection over missing-resource signal**: Returning an empty list as a normal result simplifies error handling for client apps, though user interfaces should explicitly show an empty state when no options are available.
+- **Identifier-driven writes**: Requiring clients to look up category identifiers before creating or updating books protects data integrity, at the cost of an initial read call before submitting book changes.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. List categories
+### 1. List categories
 
 The query returns `200` with an array of category summaries. Each item contains its UUID and display name.
 
-### Response details
+#### Response details
 
 - An empty collection is represented by `200` and `[]`.
 - The endpoint does not require a resource UUID.
 - Use the returned identifiers when creating or updating books.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -31,7 +55,7 @@ const categories: CategorySummary[] = [
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Render the returned summaries as selectable category options; an empty array is a valid catalog state.
 
@@ -63,6 +87,6 @@ for (const category of categories) {
 
 ---
 
-## 2. Handle an empty catalog
+### 2. Handle an empty catalog
 
 An empty collection is represented by `200` and `[]`, not by `404`.

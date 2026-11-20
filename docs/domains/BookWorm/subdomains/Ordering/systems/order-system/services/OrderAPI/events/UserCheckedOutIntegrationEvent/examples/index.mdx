@@ -2,19 +2,43 @@
 summary: Publish checkout details after placing an Order for Finance coordination.
 ---
 
+## 1. Context & Problem
+
+Placing an order starts a multi-step fulfillment and financial coordination journey across services. Once a customer checks out, Finance needs the accepted order details immediately to begin downstream processing and monitor for timeouts—without forcing checkout to block on basket cleanup, payment settlement, or final order completion.
+
+## 2. Business Value
+
+- **Fast, Non-Blocking Checkout**: Lets Ordering confirm order placement quickly while handing off downstream financial coordination asynchronously.
+- **Built-In Reliability**: Enables Finance to schedule an initial retry timeout right when checkout occurs, ensuring stalled orders are detected and handled.
+- **Accurate Order Context**: Passes the accepted order identifier, customer details, and purchase total cleanly so downstream steps operate on consistent figures.
+
+## 3. How It Works
+
+1. After a customer places an [[entity|order]], [[service|order-api]] publishes a checkout event containing the event identifier, timestamp, accepted order identifier, customer reference, optional customer name and email, and the accepted purchase amount.
+2. Publishing this event hands off checkout details for Finance coordination; it does not confirm that basket cleanup, payment settlement, or order completion has finished.
+3. Finance receives the event, initializes a new tracking workflow with the checkout details, and immediately triggers both the downstream order placement step and an initial retry timeout.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Asynchronous handoff vs. immediate settlement**: Treating checkout publication as a coordination trigger keeps checkout responsive, at the cost that downstream services must manage payment settlement, basket cleanup, and timeout recovery independently.
+- **Shared identifier in the basket field**: Because the current mapper populates the basket reference with the order's buyer identifier, consumers should treat it according to the current mapping rather than assuming it is independently resolved basket data.
+- **Required optional contact fields**: Customer full name and email remain required properties in the message even when empty, guaranteeing a uniform message shape across all consumers.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish a checkout event
+### Publish a checkout event
 
 [[service|order-api]] publishes this event after placing an Order, through
 [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]].
 
 - `id` identifies this integration event; `creationDate` is its UTC timestamp.
 - `orderId` identifies the accepted Order.
-- `basketId` currently contains the Order's Buyer ID, supplied by EventMapper.
-- `fullName` and `email` are required fields but may contain null.
+- `basketId` currently contains the Order's Buyer ID, supplied by `EventMapper`.
+- `fullName` and `email` are required fields but may contain `null`.
 - `totalMoney` is the accepted purchase amount.
 
 </Column>
@@ -53,7 +77,7 @@ OrderPlacedEvent orderPlacedEvent => new UserCheckedOutIntegrationEvent(
 
 ---
 
-## Payload
+### Payload
 
 <CodeGroup dropdown>
 
@@ -71,7 +95,7 @@ OrderPlacedEvent orderPlacedEvent => new UserCheckedOutIntegrationEvent(
 
 </CodeGroup>
 
-## Coordinate checkout
+### Coordinate checkout
 
 The example shows the camelCase JSON data inside the BookWorm
 CloudEvents-compatible envelope, not the full transport message. Finance uses

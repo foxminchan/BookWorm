@@ -21,34 +21,43 @@ styles:
   icon: /icons/database/redis.svg
 ---
 
+## 1. Context & Problem
+
+Individual [[entity|book]] detail lookups and catalog dashboard summaries (total book counts and counts per category) are read repeatedly by storefronts and internal users. Hitting [[container|catalog-database]] for every repeated lookup or dashboard view adds avoidable query load and response latency.
+
+## 2. Business Value
+
+- **Faster read performance:** Frequently requested book details and dashboard summaries are served quickly from memory instead of waiting on repeated database queries.
+- **Protected database capacity:** Offloading hot read traffic preserves primary database resources for writes, filtering, and complex queries.
+- **Zero data-loss risk:** Because the cache is strictly non-authoritative and transient, it can be cleared or rebuilt at any time without affecting permanent catalog records.
+
+## 3. How It Works
+
+[[service|catalog-api]] uses Catalog Cache as a read-through performance layer in front of [[container|catalog-database]]:
+
+- **Book lookups:** When a book is requested by ID, Catalog API checks the cache first. On a miss, it loads the book from the database, saves a copy in the cache, and returns the response. Whenever a book changes, an internal event immediately evicts that book's cached entry so the next lookup retrieves the updated record.
+- **Dashboard summary:** The catalog dashboard summary (containing total book count and per-category counts) is cached briefly for 15 seconds and automatically refreshes from the database once that window expires.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Brief dashboard staleness:** Dashboard totals use a 15-second expiration window rather than instant event-driven eviction, meaning counts can lag real-time edits by a few seconds in exchange for lower database churn.
+- **Disposable by design:** Cache entries must always be treated as disposable. Never treat the cache as the authority for [[entity|book]], [[entity|author]], [[entity|category]], or [[entity|publisher]] data—misses simply repopulate from [[container|catalog-database]].
+- **Monitoring slow reads:** When investigating slow catalog reads or unexpected staleness, operators should check cache metrics, connectivity, and network latency alongside database health.
+
+## 5. Technical Reference
+
 <NodeGraph />
 
-## Overview
-
-Catalog Cache is the Redis-backed cache used by [[service|catalog-api]]. It is an optimization only: [[container|catalog-database]] remains the system of record, and cached values can be repopulated from PostgreSQL.
-
-The application registers FusionCache with an in-process L1 cache and a Redis-backed distributed cache. Cache values are serialized as JSON. The default entry duration is configured by `Caching:Expiration`; individual entries can override it.
-
-## Cached data
+- **Container configuration:** `azure-managed-redis` (`catalog-cache`), `readWrite`, `authoritative: false`, `classification: internal`, `retention: transient`, `residency: eastasia`.
+- **Caching architecture:** `catalog-api` registers `FusionCache` combining an in-process L1 cache with a Redis-backed distributed cache. Values are serialized as JSON. Default entry duration is controlled by `Caching:Expiration`, with per-entry overrides where specified.
+- **Cached entries & invalidation:**
 
 | Data                          | Key                    | Source           | Expiration           |
 | ----------------------------- | ---------------------- | ---------------- | -------------------- |
 | [[entity\|book]] lookup by ID | `book:{id}`            | Catalog Database | `Caching:Expiration` |
 | Catalog dashboard summary     | `catalog:dashboard:v1` | Catalog Database | 15 seconds           |
 
-The book lookup caches the book read before it is mapped to the API response. The dashboard entry contains the total book count and per-category counts.
-
-## Access and invalidation
-
-- [[service|catalog-api]] reads and writes cache entries for book lookups and the dashboard query.
-- Book changes publish a domain event with the corresponding `book:{id}` key; the cache handler removes that entry so the next lookup reloads the current database record.
-- The dashboard summary is refreshed when its 15-second entry expires.
-- The cache does not own catalog data and can be cleared or rebuilt without changing the authoritative records in [[container|catalog-database]].
-
-## Operational guidance
-
-- Treat cache entries as disposable; never use Redis as the authority for
-  [[entity|book]], [[entity|author]], [[entity|category]], or
-  [[entity|publisher]] data.
-- Cache misses are populated from the database-backed query path.
-- Monitor FusionCache metrics and traces, and watch Redis connectivity and latency when investigating slow catalog reads.
+- **Behavior details:**
+  - `book:{id}` caches the book read before it is mapped to the API response; book changes publish a domain event with the `book:{id}` key so the cache handler removes the entry.
+  - `catalog:dashboard:v1` stores total book count and per-category counts and refreshes when its 15-second TTL expires.
+  - **Observability:** Monitor FusionCache metrics and traces, as well as Redis connectivity and latency, when diagnosing slow catalog reads.

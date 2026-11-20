@@ -24,76 +24,54 @@ appliesTo:
     id: bookworm.{env}.finance.place-order
 ---
 
-## Context
+## 1. Context & Problem
 
-[[domain|ordering]], [[service|basket-api]], and [[system|notification-system]] must evolve independently while exchanging
-enough information to correlate checkout work. Multiple Order workflows can
-run concurrently, so a global processing sequence would unnecessarily couple
-unrelated purchases. Finance also needs a stable key that can be used
-consistently by the persisted saga and the messages that advance it.
+During checkout, [[domain|ordering]], [[service|basket-api]], [[system|notification-system]], and Finance all perform parts of the post-checkout process, yet each area must be able to evolve and deploy independently. At the same time, many customer orders run concurrently, so forcing all orders through a single sequential queue would needlessly slow down unrelated purchases.
 
-This retrospective ADR describes the implemented message contract and routing
-configuration.
+Finance needed a clean integration approach and a stable shared identifier that connects each incoming checkout notification, its stored workflow state, and the follow-up requests it sends downstream. This retrospective Architecture Decision Record (ADR) documents the implemented messaging and correlation design.
 
-## Decision
+## 2. Business Value
 
-Use Kafka integration contracts discovered from Finance's assembly and topic
-ownership attributes. Exchange Ordering and Basket events and Finance commands
-through environment-scoped topics such as
-[[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] and
-[[channel|bookworm.&#123;env&#125;.finance.place-order]].
+- **Parallel checkout throughput:** Separate customer orders are processed independently rather than waiting behind unrelated checkouts in a single global queue.
+- **Safer team autonomy:** Participating services communicate through agreed public contracts instead of reading each other's internal data stores, reducing accidental breakage when one team updates its internals.
+- **Resilient customer experience:** Because checkout coordination does not hold a single live request open across every downstream participant, temporary slowdowns in one downstream area do not immediately block the rest of the platform.
+- **Clear operational traceability:** Using the Order ID across workflow state, messages, and operational traces makes it straightforward for support and engineering teams to follow a specific purchase end to end.
 
-Configure `MessagePartitioning.ByPropertyNamed("OrderId")` so messages exposing
-that property use the Order identifier for partitioning. Keep the payload
-contracts and send/receive directions documented in the [[service|order-orchestration]]
-AsyncAPI specification.
+## 3. How It Works
 
-Use published contracts instead of reading another service's tables or
-holding a synchronous request open for the entire workflow.
+1. **Contract-based message exchange:** Rather than reaching into another system's private database or keeping a synchronous request open for the entire lifecycle, services publish and consume agreed integration messages on environment-isolated channels.
+2. **Order-level correlation:** Each checkout workflow carries the Order ID as its common tracking key. Messages for the same purchase are routed consistently within a channel based on that identifier, while different purchases run in parallel.
+3. **Pass-through basket reference:** Ordering supplies the basket reference on the initial checkout message, and Finance forwards that value directly to downstream participants instead of independently resolving basket ownership.
+4. **Independent asynchronous completion:** Sending a message hands off work to the channel; each receiving capability processes messages at its own pace and handles repeated deliveries safely.
 
-Order ID is the correlation and partitioning key for the relevant contracts.
-Partitioning provides per-key routing within a Kafka topic; it does not
-establish a single total order across topics, replace saga persistence, or
-guarantee that every consumer has completed its work when a message is
-published.
+## 4. Trade-offs & Lessons Learned
 
-## Consequences
+### Alternatives Considered
 
-- Order ID connects saga state, integration messages, and operational traces.
-- Partitioning supports per-Order processing within a topic partition; it is
-  not a total order across different topics or a replacement for database
-  concurrency control.
-- Consumers must tolerate asynchronous processing and possible repeated
-  delivery. Message publication is not proof that a consumer completed work.
-- Contract evolution must preserve compatibility with the participating
-  producers and consumers.
-- The current Ordering mapper supplies Buyer ID as `basketId`; Finance
-  forwards the received value rather than independently resolving a basket.
-- A message lacking the expected `OrderId` property cannot rely on the
-  configured key-based partitioning behavior; producers and contract changes
-  must preserve the correlation field.
-- Asynchronous consumers must handle repeated delivery and distinguish
-  message acceptance from completion of their own side effects.
-- Environment-scoped topics isolate routing by environment but do not by
-  themselves guarantee identical deployment or consumer configuration across
-  environments.
+- **Reading another service's database directly:** Would have avoided some message hops, but would tightly couple Finance to private data structures and bypass the ownership boundaries of Ordering and Basket.
+- **Keeping the entire checkout workflow synchronous:** Would have provided an immediate single request-response path, but would tie checkout progress to the availability and speed of every participant and fit poorly with independently timed outcomes.
+- **Serializing all messages under a single global key:** Would have forced unrelated orders to wait in one line; per-order correlation preserves independent progress across checkouts.
 
-## Alternatives considered
+### Operational Realities & Risks
 
-### Read another service's database
+- **Routing is per channel, not global:** Grouping messages by Order ID orders traffic within a single channel partition, but it does not establish a strict global sequence across separate channels or replace database concurrency controls.
+- **Publication does not equal completion:** Receiving or sending a message only means the handoff occurred; downstream participants must handle asynchronous timing and possible duplicate deliveries.
+- **Contract discipline is essential:** Producers and schema updates must preserve the Order identifier; messages missing that identifier will not receive key-based routing. Similarly, Ordering's current mapping supplies the buyer identifier as the basket reference, which Finance passes through unchanged.
+- **Environment isolation is necessary but not sufficient:** Keeping channels scoped by environment prevents cross-environment traffic leakage, though teams still need consistent deployment and consumer configuration across environments.
 
-This could avoid a message exchange for some information, but would couple
-Finance to private schemas and bypass the service contracts and ownership of
-Ordering and Basket.
+## 5. Technical Reference
 
-### Keep the entire checkout workflow synchronous
+### Integration Configuration & Contracts
 
-This would provide a direct request-response path, but would couple progress
-to the availability and latency of every participant and would not fit the
-independently processed outcome messages.
+- **Transport & discovery:** Finance exchanges integration events and commands over Kafka using contracts discovered from Finance's assembly and topic ownership attributes.
+- **Partitioning rule:** Configured via `MessagePartitioning.ByPropertyNamed("OrderId")`, routing messages that expose `OrderId` by that identifier within a Kafka topic.
+- **Contract specifications:** Payload schemas and send/receive directions are documented in the [[service|order-orchestration]] AsyncAPI specification.
+- **Mapped field note:** The current Ordering mapper supplies Buyer ID as `basketId`; Finance forwards the received `basketId` value rather than resolving a basket independently.
 
-### Serialize all messages through a global ordering key
+### Key Channels & Contracts
 
-This would unnecessarily serialize unrelated Orders. Per-Order correlation
-allows work for separate checkouts to proceed independently while preserving
-the intended partitioning for messages that carry the Order ID.
+| Role                     | Target                                                          | Notes                                                       |
+| ------------------------ | --------------------------------------------------------------- | ----------------------------------------------------------- |
+| Inbound checkout topic   | [[channel\|bookworm.&#123;env&#125;.ordering.user-checked-out]] | Carries checkout integration events into Finance.           |
+| Outbound placement topic | [[channel\|bookworm.&#123;env&#125;.finance.place-order]]       | Carries Finance placement commands to downstream consumers. |
+| Partitioning property    | `OrderId`                                                       | Required on messages relying on key-based partitioning.     |

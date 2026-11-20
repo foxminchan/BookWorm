@@ -9,6 +9,37 @@ badges:
     textColor: blue
 ---
 
+## 1. Context & Problem
+
+In a modular platform spanning shopping, ordering, catalog management, customer reviews, conversational AI, and shared infrastructure, everyday words like "order," "basket," "rating," or "checkout" can easily take on conflicting meanings across teams. Without a shared vocabulary, business analysts may assume a basket reserves inventory, product managers may expect checkout acceptance to mean payment is settled, or engineering teams may duplicate authoritative records across boundaries.
+
+This glossary establishes a single, platform-wide set of definitions that clarifies both what key terms mean and which business area owns the underlying truth.
+
+## 2. Business Value
+
+A shared glossary reduces costly misunderstandings between business, architecture, and delivery teams:
+
+- **Clear ownership (SA & PM)**: Makes it unmistakable which capability owns each business record—such as separating pre-purchase shopping intent from an accepted order, or individual customer reviews from an aggregate book rating.
+- **Accurate requirements and expectations (BA)**: Prevents flawed assumptions around real-time consistency, inventory reservation, payment settlement, or workflow guarantees.
+- **Faster onboarding and safer integration (Engineering)**: Gives teams consistent terminology when designing boundaries, interpreting system behavior, and translating between business areas.
+
+## 3. How It Works
+
+BookWorm's shared vocabulary is structured around two foundational principles:
+
+1. **Clear Business Ownership**: Each core business concept belongs to one primary area—its **source of truth**. For example, the shopping area manages a customer's mutable basket before purchase, while the ordering area takes over once a checkout request is accepted as an order. Similarly, the reviews area owns individual customer feedback, while the catalog area maintains canonical book details and displays a summarized rating view derived from that feedback. Supporting areas—such as conversational AI assistance and shared platform utilities—access or coordinate work without taking ownership of those core business records.
+2. **Explicit Boundaries Over Shared State**: Independent business areas do not reach directly into each other's internal records. Instead, they communicate through agreed boundaries, translate external concepts into their own language when needed, and publish facts about completed actions so other areas can update derived views asynchronously. Because derived views update in the background, they may briefly trail the authoritative source.
+
+Each individual business area may also define more detailed, context-specific terms in its own documentation; within that area, those local definitions remain authoritative.
+
+## 4. Trade-offs & Lessons Learned
+
+- **System-wide consistency vs. local precision**: A global glossary prevents cross-team ambiguity, while allowing each business area to maintain specialized local terminology avoids forcing an unnatural one-size-fits-all vocabulary.
+- **Explicit conceptual separation vs. conversational shorthand**: Distinguishing between a basket, checkout acceptance, order status, payment settlement, and fulfillment adds rigor to requirements and specifications, but avoids expensive rework when edge cases occur.
+- **Definitions must reflect real boundaries**: Terms such as "idempotency" and "eventual consistency" are intentionally scoped in plain caveats so stakeholders understand what guarantees exist—and what is not guaranteed—without overpromising.
+
+## 5. Technical Reference
+
 This glossary defines terms used across the BookWorm architecture and clarifies distinctions that affect ownership and system behavior. Each bounded context may use additional terms or more specific meanings in its own documentation; those local definitions remain authoritative within that context.
 
 | Term                             | Definition                                                                                                                                                                                                                                                          |

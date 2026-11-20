@@ -21,16 +21,40 @@ properties:
     description: Positive number of copies requested for the referenced book.
 ---
 
-## Overview
+## 1. Context & Problem
 
-A Basket Item represents one requested [[entity|book]] and its quantity within
-a [[entity|basket]]. It is a child of the Basket aggregate, not an independently
-owned product or an Order line.
+When a customer adds a book to their cart, the Shopping domain needs a simple, well-defined way to record _which_ book was chosen and _how many_ copies the customer wants. Storing full product titles, descriptions, or prices directly on every cart entry would duplicate [[domain|catalog]] data and risk showing stale prices, while mixing cart items with finalized order lines would blur the boundary between browsing intent and confirmed purchases.
 
-[[service|basket-api]] rejects quantities less than or equal to zero.
-[[domain|catalog]] owns the product name, price, and sale price that may enrich
-the basket response, but they are not owned by the Basket Item domain model.
+The **Basket Item** entity solves this by modeling a single requested [[entity|book]] and its quantity inside a customer's [[entity|basket]], keeping ownership strictly within the pre-order shopping boundary.
 
-## Entity Properties
+## 2. Business Value
+
+- **Always-current catalog pricing:** Because a Basket Item stores only a reference to the book rather than copied catalog attributes, shoppers always see live titles, regular prices, and sale prices when viewing their cart.
+- **Cleaner domain boundaries:** Keeps product catalog attributes owned by [[domain|catalog]] and finalized purchase lines owned by Ordering, reducing cross-team coordination overhead.
+- **Data integrity by design:** Enforcing positive quantities prevents invalid zero or negative line items from entering checkout workflows.
+
+## 3. How It Works
+
+A Basket Item exists solely as a child entry inside a customer's [[entity|basket]]—it cannot live independently as a standalone product record or as an Order line.
+
+- Each Basket Item pairs one reference to a Catalog [[entity|book]] with the positive number of copies the customer wants to purchase.
+- Requests with zero or negative quantities are rejected; removing a book from the cart means omitting that item from the basket's updated collection rather than keeping a zero-quantity entry.
+- Whenever the basket is displayed to the customer, product details such as the book's name, regular price, and sale price are enriched from [[domain|catalog]] at read time rather than stored inside the Basket Item model.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Reference-only model vs. embedded product snapshot:** Storing only the book reference and quantity keeps the basket lightweight and prevents stale catalog data, at the cost of requiring a Catalog lookup when presenting full item details to the customer.
+- **Child entity vs. independent aggregate:** Treating Basket Item strictly as a child of the Basket aggregate simplifies consistency rules (such as replacing all basket items together), though individual items cannot be managed or queried outside their parent basket.
+- **Strict positive quantities:** Rejecting quantities of zero or less keeps the domain model clean and unambiguous, shifting "set quantity to zero to remove" behavior to storefront UI workflows.
+
+## 5. Technical Reference
+
+- **Owning service:** [[service|basket-api]]
+- **Parent aggregate:** [[entity|basket]] (`aggregateRoot: false`)
+- **Referenced entity:** [[entity|book]] (owned by [[domain|catalog]])
+- **Validation rule:** [[service|basket-api]] rejects `quantity <= 0`.
+- **Enrichment note:** [[domain|catalog]] owns the product name, price, and sale price used to enrich basket responses; these fields are not persisted on the Basket Item domain model.
+
+### Entity Properties
 
 <EntityPropertiesTable />

@@ -20,48 +20,54 @@ styles:
   icon: /icons/database/redis.svg
 ---
 
-<NodeGraph />
+## 1. Context & Problem
 
-## Overview
+Generating an AI-assisted feedback summary for a book requires loading customer reviews, fetching product context, and running a multi-step summarization workflow. Repeating that full workflow on every summary request—even when multiple shoppers view the same book in succession—wastes compute, adds latency, and places unnecessary load on downstream AI and database resources.
 
-Rating Cache is the Redis-backed distributed cache used by
-[[service|rating-api]] for the [[query|SummarizeFeedback]] query. It is an optimization,
-not a source of truth: individual feedback remains authoritative in
-[[container|rating-database]], and summaries can be generated again after a
-cache miss or expiration.
+**Rating Cache** addresses this by temporarily storing generated per-book summaries so repeated requests can be served quickly without turning the cache into a source of truth.
 
-The service uses FusionCache with an in-process L1 and a Redis-backed
-distributed cache. Values are serialized as JSON. Summarization entries set
-their own expiration rather than using the general cache expiration.
+## 2. Business Value
 
-## Cached data
+- **Faster response times:** Repeated summary requests for popular books return quickly from cache instead of waiting on full AI summarization.
+- **Lower operating cost:** Avoiding redundant model executions for unchanged reviews reduces AI usage and database read pressure.
+- **Zero data-loss risk:** Because the cache is strictly temporary and non-authoritative, clearing or losing cached entries never affects real customer feedback.
+- **Responsive first-review experience:** Books with no reviews yet expire quickly so newly submitted first reviews appear promptly in summaries.
+
+## 3. How It Works
+
+Rating Cache acts as a two-tier temporary memory and shared cache layer used by the Rating service when answering summary requests:
+
+1. **Serve from cache when available:** When a summary is requested for a book, the service checks for an existing cached summary under that book's versioned key.
+2. **Generate and store on a miss:** If no cached entry exists or the previous one has expired, the service runs the summarization workflow against authoritative feedback in [[container|rating-database]] and stores the result in the cache for subsequent callers.
+3. **Different lifetimes by state:** A full summary for a book with reviews stays cached for up to six hours, while an empty "no feedback yet" result expires after one minute so newly arrived reviews are picked up quickly.
+4. **Disposable by design:** Entries expire automatically based on time rather than being actively cleared when individual reviews are added or deleted. If the cache is cleared or unavailable, summaries are simply regenerated from authoritative feedback data.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Up to six hours of summary staleness:** Because creating or deleting feedback does not immediately evict a book's cached summary, a cached summary can reflect slightly older feedback until its expiration window ends.
+- **Short window for empty books:** Using a one-minute expiration for no-feedback results balances preventing burst requests on unreviewed books with allowing the very first customer reviews to show up quickly.
+- **Operational diagnostics:** When summaries feel unexpectedly slow or stale, teams should inspect cache hit behavior, distributed cache availability, and whether the entry is still within its expiration window—while remembering the cache can always be safely flushed.
+
+## 5. Technical Reference
+
+- **Consumer service:** [[service|rating-api]] for the [[query|SummarizeFeedback]] query.
+- **Authoritative fallback:** [[container|rating-database]] (cache is `authoritative: false`, `retention: transient`).
+- **Technology stack:** FusionCache with an in-process L1 cache and a Redis-backed (`azure-managed-redis`) distributed cache; values are serialized as JSON. Summarization entries configure explicit per-entry expiration rather than relying on the general cache expiration.
+- **Cached payload:** `SummarizeResult` containing `summary`, `classification`, `average rating`, `review count`, `evidence`, and `confidence`.
+
+### Cache Keys & Expiration
 
 | Data                           | Key                          | Source                           | Expiration |
 | ------------------------------ | ---------------------------- | -------------------------------- | ---------- |
 | Generated summary for a book   | `rating:summary:v1:{BookId}` | Feedback and summarizer workflow | 6 hours    |
 | No-feedback summary for a book | `rating:summary:v1:{BookId}` | Feedback query                   | 1 minute   |
 
-The cached value is the `SummarizeResult`, including the summary,
-classification, average rating, review count, evidence, and confidence. The
-no-feedback result uses a shorter duration so the first submitted reviews can
-be reflected promptly.
+### Operational Guidance
 
-## Access and freshness
+- Cache keys are scoped per `BookId` and versioned with the `v1` prefix (`rating:summary:v1:{BookId}`).
+- No active invalidation occurs when feedback is created or deleted; stale entries clear on TTL expiration.
+- Treat all entries as disposable; investigate FusionCache and Redis availability when summaries are slow or cache entries are not being reused.
 
-- [[service|rating-api]] reads cached summaries and stores results after a
-  cache miss.
-- Cache keys are scoped to a book ID and versioned with the `v1` prefix.
-- The current implementation does not invalidate a book's summary when
-  feedback is created or deleted. A cached result can therefore be stale until
-  its entry expires (up to 6 hours for books with feedback).
-- The cache does not own feedback or summaries; entries can be discarded and
-  regenerated without changing [[container|rating-database]].
+### Container Graph
 
-## Operational guidance
-
-- Treat cache values as disposable; the Rating summarizer is responsible for
-  producing a result on cache misses.
-- Investigate FusionCache and Redis availability when summaries are slow or
-  cache entries are not being reused.
-- Consider the TTL-based freshness window when diagnosing a summary that does
-  not reflect recent feedback.
+<NodeGraph />

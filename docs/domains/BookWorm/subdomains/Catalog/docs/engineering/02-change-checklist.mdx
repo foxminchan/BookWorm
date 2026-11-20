@@ -12,7 +12,36 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Before you merge
+## 1. Context & Problem
+
+Changes to the book catalog—whether introducing new book attributes, refining pricing rules, or adjusting how catalog data is shared—affect more than a single screen or database table. Search indexing, read caching, administrative reporting, and downstream workflows in [[domain|shopping]], [[domain|reviews]], and [[domain|ordering]] all depend on predictable catalog behavior. Without a structured pre-release review, seemingly small modifications can silently break downstream consumers, leave search results out of sync, or expose inconsistent book data.
+
+## 2. Business Value
+
+- **Protects cross-domain stability:** Reduces the risk of unexpected disruptions in shopping carts, order processing, and customer reviews when the catalog evolves.
+- **Preserves data consistency:** Ensures pricing rules, search visibility, and book details remain aligned across storefronts and internal dashboards.
+- **Accelerates safe delivery:** Gives product, architecture, and engineering teams a shared quality gate so integration and operational impacts are caught before release rather than during incidents.
+- **Keeps documentation trustworthy:** Ensures business contracts, architectural decisions, and security controls stay synchronized with live system behavior.
+
+## 3. How It Works
+
+Before any catalog change is merged or released, teams review eight impact areas and verify four core business invariants:
+
+- **Contracts and documentation:** Prefer additive, backward-compatible updates to public contracts; any breaking change must be explicitly versioned. Update affected catalog documentation and any architectural decision records superseded by the change.
+- **Data structure and search alignment:** Keep the underlying catalog data definitions synchronized with structural changes. Whenever searchable book content changes, update the indexed text, ensure change triggers feed the background search queue, and plan an index rebuild if needed (see [[doc|runbooks/vector-index-lag]] and [[adr|adr-003-database-queue-for-vector-indexing]]).
+- **Cache freshness and security:** Ensure book updates clear outdated cached entries, and bump cache key versions whenever cached shapes change (see [[adr|adr-004-fusioncache-redis-for-catalog-reads]]). Preserve authentication, rate limiting, and administrative access policies on dashboard operations.
+- **Downstream alignment and traceability:** Check compatibility with [[domain|shopping]], [[domain|reviews]], and [[domain|ordering]] consumers of catalog lookups and rating events, and ensure price, availability, and identity updates remain traceable by [[entity|book]] identifier.
+- **Business invariants:** Verify that promotional discount prices stay between zero and the original price, deleted books are removed from search, removing a [[entity|category]] or [[entity|publisher]] preserves associated books, removing an [[entity|author]] with active books is blocked, and rating feedback for a missing book notifies the reviews workflow.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Upfront review effort vs. incident prevention:** Checking contracts, search, cache, security, and downstream consumers adds review overhead before merge, but prevents costly cross-domain regressions and manual data cleanup in production.
+- **Additive compatibility vs. rapid cleanup:** Favoring additive, versioned contract updates allows [[domain|shopping]], [[domain|reviews]], and [[domain|ordering]] to deploy independently, at the trade-off of supporting legacy shapes during transition periods.
+- **Asynchronous search updates:** Because search indexing runs asynchronously, structural or content changes require deliberate re-indexing plans rather than assuming immediate search parity.
+
+## 5. Technical Reference
+
+### Before you merge
 
 - [ ] **Contract:** Update `openapi-v1.yml` and message schemas for
       [[service|catalog-api]]. Prefer additive, backward-compatible changes;
@@ -42,7 +71,7 @@ import Footer from "@catalog/components/footer.astro";
 - [ ] **Observability:** Changes to price, availability, or identity remain
       traceable by [[entity|book]] ID.
 
-## Invariants to test
+### Invariants to test
 
 - Discount price for a [[entity|book]] is between 0 and the original price.
 - A deleted [[entity|book]] is removed from [[container|catalog-vector]].

@@ -2,11 +2,37 @@
 summary: Consume Finance's failed basket-cleanup outcome and soft-delete the affected Order.
 ---
 
+## 1. Context & Problem
+
+If cleaning up a customer's shopping basket fails after checkout, leaving the newly created order active can create inconsistencies between the customer's basket and their order history. The ordering service needs a dependable recovery path when Finance reports that basket cleanup failed.
+
+## 2. Business Value
+
+- **Consistent customer experience:** Prevents half-completed checkout flows from leaving active orders behind when basket cleanup fails.
+- **Resilient recovery:** Safely ignores orders that no longer exist so repeated failure notifications do not cause processing errors.
+- **Preserved audit history:** Marks the affected order as removed rather than permanently erasing it, and avoids misrepresenting a technical recovery as a customer-driven cancellation.
+
+## 3. How It Works
+
+1. When Finance detects that basket cleanup has failed, it sends this recovery notification to [[service|order-api]].
+2. The notification includes a message identifier, timestamp, the affected order identifier, the basket identifier, the purchase amount, and an optional customer email reference.
+3. The ordering service looks up the matching order.
+4. If the order no longer exists, the service safely takes no action.
+5. If the order exists, the service marks it as removed (soft-deleted) without changing its business status to Cancelled.
+6. This Finance recovery command is separate from Basket's own failure notification ([[event|BasketDeletedFailedIntegrationEvent]]).
+
+## 4. Trade-offs & Lessons Learned
+
+- **Soft removal instead of Cancelled status:** Soft-deleting the order removes it from active order views while keeping historical records intact and avoiding confusion with business cancellations, though downstream reporting must account for soft-deleted records.
+- **Idempotent missing-order handling:** Treating an absent order as a safe no-action path protects against duplicate or out-of-order recovery messages, at the cost of silently skipping orders that were already removed.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Receive failed cleanup
+### Receive failed cleanup
 
 Finance publishes this command when basket cleanup fails.
 [[service|order-api]] consumes it through
@@ -42,7 +68,7 @@ public sealed record DeleteBasketFailedCommand(
 
 ---
 
-## Payload
+### Payload
 
 <CodeGroup dropdown>
 
@@ -59,7 +85,7 @@ public sealed record DeleteBasketFailedCommand(
 
 </CodeGroup>
 
-## Apply the recovery path
+### Apply the recovery path
 
 The example shows the camelCase JSON data inside the BookWorm
 CloudEvents-compatible envelope. Order API soft-deletes the matching Order if

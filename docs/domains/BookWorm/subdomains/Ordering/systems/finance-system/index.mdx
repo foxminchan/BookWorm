@@ -32,93 +32,75 @@ badges:
     icon: LockClosedIcon
 ---
 
-## Context Diagram
+## 1. Context & Problem
 
-Finance coordinates work across Ordering, Shopping, and Notification without
-owning their Order, basket, or email-delivery state.
+Once a customer submits a checkout, several follow-up actions must happen reliably across independent parts of BookWorm: the submitted shopping basket must be cleared, Ordering needs visibility into cleanup outcomes, and the customer needs confirmation or status-change emails. Having Ordering directly orchestrate Shopping and Notification would create tight coupling and brittle error handling.
+
+Finance System exists as an internal, message-driven coordinator for those post-checkout steps. Despite its name, Finance has no customer-facing Order API and does **not** authorize, capture, or settle payments; Ordering remains the sole authority for the Order and its business status.
+
+## 2. Business Value
+
+- **Reliable post-checkout follow-through:** Durable workflows and bounded scheduled retries recover cleanly from temporary downstream delays without losing track of an Order.
+- **Clean system boundaries:** Ordering, Shopping, and Notification remain decoupled and focused on their core domains while Finance handles cross-system coordination.
+- **Protected Order truth:** Basket cleanup failures or coordination timeouts never silently overwrite an Order's business status.
+- **Centralized email delegation:** Finance supplies order and recipient context while Notification owns templates, email persistence, and delivery retries.
+
+## 3. How It Works
+
+Finance runs one persisted coordination workflow per checkout, linked by Order ID, across four core capabilities:
+
+| Capability            | Responsibility                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| Checkout coordination | Start and persist a workflow from the checkout notice, correlated by Order ID.                      |
+| Basket cleanup        | Request deletion of the submitted basket and process the cleanup outcome.                           |
+| Retry and timeout     | Reissue the basket cleanup request on a schedule when no outcome arrives, within configured limits. |
+| Order notifications   | Trigger placement, completion, or cancellation email requests for Notification to deliver.          |
+
+### Coordination Lifecycle
+
+1. **Checkout starts coordination:** When Ordering announces a checkout, Finance starts a workflow in a **Placed** state, requests basket cleanup (and a new-order placement email), and schedules a follow-up check.
+2. **Basket cleanup succeeds:** Basket deletes the submitted cart and reports success. Finance forwards that confirmation to Ordering and keeps waiting for Ordering's final Order decision—successful basket cleanup does not complete the Order or end the workflow.
+3. **Basket cleanup fails:** Finance marks its workflow as a basket-deletion failure, closes the workflow, and informs Ordering (which may soft-delete the Order record without changing its business status).
+4. **No cleanup response arrives:** Finance retries on a 30-minute schedule up to 3 total attempts. If the limit is reached, Finance marks its own workflow **Cancelled** and requests a cancellation email if recipient details are present, without asking Ordering to cancel the Order.
+5. **Order reaches a final status:** When Ordering announces that the Order is explicitly completed or cancelled, Finance closes its workflow in the matching state and requests the corresponding email when both customer name and email are present.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Strict ownership separation:** Ordering owns Order status, Shopping owns basket contents, Notification owns email rendering and delivery, and Finance owns only workflow coordination state.
+- **Divergent states are intentional:** A Finance workflow marked cancelled after timeouts does not mean the Order was cancelled in Ordering, and successful basket cleanup does not mean the Order is complete.
+- **Shared placement request trade-off:** Because both Basket (for cleanup) and Notification (for the placement email) act on the same initial placement request, retry attempts can trigger duplicate email processing.
+- **Requests are not proof of downstream outcomes:** Publishing a notification or cleanup command does not confirm payment settlement, an Order status change, or successful inbox delivery.
+- **Managed durable orchestration:** Moving workflow state and timers from a general database-backed store to a dedicated durable scheduler simplified timer management and per-Order isolation.
+
+## 5. Technical Reference
+
+### Context & Architecture Diagrams
+
+Finance coordinates work across Ordering, Shopping, and Notification without owning their Order, basket, or email-delivery state.
 
 <ContextDiagram />
 
-## Purpose and boundaries
+<NodeGraph />
 
-Finance is a message-driven service that runs a persisted saga for each
-checkout. It requests basket cleanup, handles cleanup outcomes, and reacts to
-Order lifecycle events by publishing notification commands. It has no
-customer-facing Order API and does not authorize, capture, or settle payments;
-Ordering remains authoritative for the Order and its business status.
+### Architecture Decision Records
 
-| Capability            | Responsibility                                                                                       |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| Checkout coordination | Start and persist a saga from the checkout event, correlated by Order ID.                            |
-| Basket cleanup        | Send [[command\|PlaceOrderCommand]] for Basket to delete the submitted basket and handle the result. |
-| Retry and timeout     | Reissue the basket command when no outcome arrives, using the configured retry count and delay.      |
-| Order notifications   | Publish placement, completion, or cancellation commands for Notification to process.                 |
-
-## Message interactions
-
-| Direction               | Contract                                                                                                       | Purpose                                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Ordering to Finance     | [[event\|UserCheckedOutIntegrationEvent]]                                                                      | Starts a saga with the Order, basket, and notification details.                                               |
-| Ordering to Finance     | [[event\|OrderStatusChangedToCompleteIntegrationEvent]], [[event\|OrderStatusChangedToCancelIntegrationEvent]] | Provides the authoritative Order outcome that completes the saga.                                             |
-| Finance to Basket       | [[command\|PlaceOrderCommand]]                                                                                 | Requests deletion of the submitted basket. Basket reports success or failure on its deletion-result channels. |
-| Finance to Ordering     | [[command\|DeleteBasketCompleteCommand]], [[command\|DeleteBasketFailedCommand]]                               | Reports the basket-cleanup result; a failure may cause Ordering to soft-delete the Order.                     |
-| Finance to Notification | [[command\|PlaceOrderCommand]], [[command\|CompleteOrderCommand]], [[command\|CancelOrderCommand]]             | Requests order-placement or lifecycle emails.                                                                 |
-
-[[command|PlaceOrderCommand]] is consumed by both Basket for cleanup and Notification
-for the placement email. A retry republishes the command, so repeated delivery
-can result in repeated notification processing; command delivery is not proof
-of payment settlement or of an Order status change.
-
-## Saga lifecycle
-
-1. Ordering publishes [[event|UserCheckedOutIntegrationEvent]]. Finance persists an
-   `OrderSaga` in the **Placed** state, sends [[command|PlaceOrderCommand]], and
-   schedules a timeout.
-2. Basket processes the command and publishes a deletion result. On success,
-   Finance sends [[command|DeleteBasketCompleteCommand]] to Ordering and continues
-   waiting for the Order's explicit completion or cancellation event.
-   Successful basket deletion does not complete the Order or the Finance
-   saga.
-3. On deletion failure, Finance marks its saga **BasketDeletionFailed**,
-   completes that saga, and sends [[command|DeleteBasketFailedCommand]] to Ordering.
-   This outcome does not itself change the Order's business status.
-4. If no deletion result arrives, Finance retries according to
-   `OrderStateMachine` settings. The current configuration sets a 30-minute
-   timeout and a maximum-attempt value of 3. Once the retry limit is reached,
-   Finance marks its saga **Cancelled** and sends [[command|CancelOrderCommand]] when
-   the notification recipient details are available. It does not call
-   Ordering's cancel operation.
-5. When Ordering publishes an explicit completed or cancelled status event,
-   Finance marks its saga **Completed** or **Cancelled** and publishes the
-   corresponding notification command when both the recipient name and email
-   are present.
-
-## State and consistency
-
-- Ordering owns Order status; Finance owns only the coordination state in its
-  saga. A Finance saga cancellation after timeouts is not an Order
-  cancellation.
-- Shopping owns basket contents. Finance requests cleanup and forwards its
-  outcome but does not own basket state.
-- Notification owns email rendering, persistence, and delivery state.
-  Finance's commands request notification work; they do not confirm email
-  delivery.
-- Finance persists durable orchestration state and timers in Azure Durable
-  Task Scheduler (`financeTaskHub`), replacing the previous PostgreSQL and
-  Wolverine saga store. Orchestration instances are keyed by Order ID.
-
-## Architecture decisions
-
-These records capture the implemented Finance architecture and its trade-offs.
-Their dates record documentation of the current design, not an inferred
-historical approval date.
+These records capture the implemented Finance architecture and its trade-offs. Their dates record documentation of the current design, not an inferred historical approval date.
 
 <ADRTable />
 
-## Architecture
+### Message Interactions
 
-[[service|order-orchestration]] documents the Azure Functions Durable Task
-Scheduler host, Kafka triggers, durable activities, and its input/output
-contracts.
+| Direction               | Contract                                                                                                       | Purpose                                                                                                                        |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Ordering to Finance     | [[event\|UserCheckedOutIntegrationEvent]]                                                                      | Starts an `OrderSaga` with Order, basket, and notification details.                                                            |
+| Ordering to Finance     | [[event\|OrderStatusChangedToCompleteIntegrationEvent]], [[event\|OrderStatusChangedToCancelIntegrationEvent]] | Provides the authoritative Order outcome that completes the saga.                                                              |
+| Finance to Basket       | [[command\|PlaceOrderCommand]]                                                                                 | Requests deletion of the submitted basket; Basket reports success or failure on its deletion-result channels.                  |
+| Finance to Ordering     | [[command\|DeleteBasketCompleteCommand]], [[command\|DeleteBasketFailedCommand]]                               | Reports the basket-cleanup result; a failure may cause Ordering to soft-delete the Order without changing its business status. |
+| Finance to Notification | [[command\|PlaceOrderCommand]], [[command\|CompleteOrderCommand]], [[command\|CancelOrderCommand]]             | Requests order-placement or lifecycle emails.                                                                                  |
 
-<NodeGraph />
+### Runtime & State Details
+
+- **Service implementation:** [[service|order-orchestration]] documents the Azure Functions Durable Task Scheduler host, Kafka triggers, durable activities, and its input/output contracts.
+- **State & timer store:** Finance persists durable orchestration state and timers in Azure Durable Task Scheduler (`financeTaskHub`), replacing the previous PostgreSQL and Wolverine saga store. Orchestration instances are keyed by Order ID.
+- **Saga states & settings:** `OrderSaga` starts in **Placed** and transitions to **BasketDeletionFailed**, **Completed**, or **Cancelled**. `OrderStateMachine` settings configure a 30-minute timeout and a maximum-attempt value of `3`.
+- **Shared command & guard behavior:** [[command|PlaceOrderCommand]] is consumed by both Basket and Notification and is not gated by recipient details; [[command|CompleteOrderCommand]] and [[command|CancelOrderCommand]] are published only when both recipient name and email are present.

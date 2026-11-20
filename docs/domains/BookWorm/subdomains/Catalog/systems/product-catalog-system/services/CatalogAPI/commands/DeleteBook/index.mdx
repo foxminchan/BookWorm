@@ -18,22 +18,40 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Deletes the [[entity|book]] identified by the UUID path parameter. This is a permanent catalog mutation.
+As a digital bookstore evolves, some titles must be permanently removed from the active catalog—for example, when duplicate entries are created by mistake, test records need cleanup, or a book is permanently withdrawn from sale. Without a dedicated, controlled way to delete a [[entity|book]], outdated or erroneous listings would remain visible to customers and staff, cluttering search results and catalog reports.
+
+## 2. Business Value
+
+- **Catalog accuracy:** Keeps the product catalog clean by removing duplicate, invalid, or retired titles so shoppers only see relevant offerings.
+- **Operational control:** Gives catalog managers and automated tools a direct, single-step action to remove a specific title using its unique identifier.
+- **Clear outcomes:** Confirms immediately whether the removal succeeded or whether the requested title was not present in the catalog, preventing silent mistakes.
+
+## 3. How It Works
+
+1. A caller or back-office user selects the specific [[entity|book]] to remove by supplying its unique identifier. No additional descriptive details are needed.
+2. The catalog service looks up the matching book record.
+3. If the book exists, it is permanently removed from the catalog and the caller receives an empty confirmation indicating the deletion is complete.
+4. If no book matches the supplied identifier, the catalog service makes no changes and notifies the caller that the book could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Permanent removal vs. soft archival:** Deleting a book is a permanent catalog change rather than a reversible hide or archive step. Teams should verify that a title is truly meant to be erased before invoking this capability.
+- **Handling already-missing titles:** When a requested book is not found, the service reports it as missing rather than treating the request as a completed deletion. Downstream workflows should only treat a missing-book outcome as equivalent to deletion when that behavior is explicitly safe for their business process.
+
+## 5. Technical Reference
 
 <NodeGraph />
 
-## Contract
+### Endpoint & Contract
 
-Provide the resource UUID in the `{id}` path parameter. The operation has no request body.
+- **Operation:** `DELETE /api/v1/books/{id}`
+- **Path parameter:** `{id}` — UUID of the book resource to delete.
+- **Request body:** None.
+- **Success response:** `204 No Content` with an empty body.
+- **Missing resource response:** `404` when no book exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
 
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`404` indicates that no book exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

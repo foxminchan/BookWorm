@@ -11,11 +11,36 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
+## 1. Context & Problem
+
+In BookWorm, individual customer reviews and ratings are owned by the Rating capability, while book discovery and product summaries live in the Catalog capability. When customers browse or filter books, Catalog needs immediate access to each book's rating summary without synchronously querying the Rating service on every request. At the same time, if a review is submitted for a book that no longer exists in Catalog, the two services need a reliable way to detect and reconcile that mismatch.
+
+## 2. Business Value
+
+- **Fast storefront browsing**: Keeping a local rating summary alongside each book avoids cross-service delays during search and catalog listing.
+- **Clear domain boundaries**: Rating owns individual feedback records while Catalog owns product metadata, allowing each team and service to evolve independently.
+- **Automatic data reconciliation**: Missing-book conflicts trigger a compensation signal instead of silently leaving orphaned ratings in the system.
+
+## 3. How It Works
+
+1. When a customer submits new feedback, the Rating service publishes a notification containing the book identifier, the rating score, and the feedback identifier.
+2. The Catalog service receives the notification and looks up the referenced book in its catalog store.
+3. If the book exists, Catalog adds the new rating score to the book's denormalized rating summary and saves the updated summary.
+4. If the book does not exist, Catalog emits a failure notification ([[event|BookUpdatedRatingFailedIntegrationEvent]]) carrying the feedback identifier so the Rating service can compensate or reconcile the orphaned feedback.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency**: Because rating summaries are updated asynchronously, there is a brief delay between a customer submitting feedback and the new score appearing in Catalog.
+- **Compensation instead of distributed locking**: Accepting feedback first and compensating on missing books avoids tight synchronous coupling, at the cost of handling rare rollback scenarios asynchronously.
+- **Denormalized summary only**: Storing only summary figures in Catalog keeps storage lean and avoids duplicating review text, while relying on reliable message delivery to stay accurate.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish a new feedback rating
+### Publish a new feedback rating
 
 Rating maps its `FeedbackCreatedEvent` domain event to the shared integration
 contract. Wolverine uses the chassis metadata to publish it to
@@ -57,7 +82,7 @@ FeedbackCreatedEvent feedbackCreatedEvent => new FeedbackCreatedIntegrationEvent
 
 ---
 
-## Apply the rating in Catalog
+### Apply the rating in Catalog
 
 Catalog reads the book and adds the rating. When the book does not exist, it
 publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] using the feedback ID.

@@ -14,7 +14,33 @@ owners:
   - contributor-team
 ---
 
-## Overview
+## 1. Context & Problem
+
+Once a customer checks out and an order is placed, multiple business capabilities need to act on that milestone—such as sending a confirmation email to the customer and cleaning up the shopping basket. Without a shared, standardized order-placement instruction, Finance would have to maintain separate point-to-point integrations for every downstream consumer.
+
+## 2. Business Value
+
+- **Decoupled collaboration**: Multiple downstream teams can react independently to the same business milestone without coupling Finance to each consumer's internal workflow.
+- **Consistent customer communication**: Delivers standardized customer contact details, order reference, and order total for timely new-order confirmation emails.
+- **Graceful handling of missing details**: Blank email addresses are safely skipped, and missing customer names fall back to a generic customer greeting instead of failing the flow.
+
+## 3. How It Works
+
+1. Finance publishes the place-order instruction to a shared order-placement channel after checkout and may send it again if placement coordination times out.
+2. Notification receives the instruction and treats it strictly as a trigger to prepare a "new order" email—never as an instruction to create or modify the order itself.
+3. Before generating an email, Notification checks the recipient address; if it is missing or blank, email processing is skipped cleanly.
+4. When a valid address is present, Notification prepares the order email using the customer's name (or a generic customer greeting if missing), order reference, and total amount, saves a record of the outbound email, submits it to the mail delivery server, and marks the record as sent upon handoff.
+5. Any preparation or submission error is surfaced back for retry handling rather than publishing a separate delivery-result message to Finance.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Shared contract vs. tailored payloads**: Keeping one shared command for multiple consumers simplifies upstream publishing, even though Notification ignores the basket reference field carried in the message.
+- **Duplicate emails on timeout retries**: Because Finance may reissue the instruction on timeout and Notification processes each valid delivery, repeated deliveries can produce another confirmation email.
+- **No end-to-end delivery confirmation**: Mail-server acceptance confirms handoff rather than inbox arrival, and no notification-result event is returned to upstream workflows.
+
+## 5. Technical Reference
+
+### Overview
 
 Finance's order saga publishes this command through
 [[channel|bookworm.&#123;env&#125;.finance.place-order]] and may reissue it on
@@ -34,6 +60,6 @@ through SMTP, and marks the record sent on success. Failures propagate; there
 is no notification result event. Reissued commands can produce another email,
 and SMTP acceptance is not proof of final recipient delivery.
 
-## Architecture
+### Architecture
 
 <NodeGraph />

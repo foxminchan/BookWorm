@@ -12,34 +12,43 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Handle straightforward requests
+## 1. Context & Problem
 
-The [[agent\|book-agent]] can respond directly to simple searches and book
-questions. Ask for missing preferences when they materially affect a
-recommendation. Keep factual answers grounded in available Catalog information;
-do not invent titles, authors, availability, ratings, or prices.
+Book discovery requests vary widely—from quick factual lookups on a known title to open-ended, multi-criteria recommendation inquiries. Treating every inquiry identically creates two risks: simple questions become unnecessarily slow if heavy research runs every time, while complex questions produce shallow or inaccurate results if answered without thorough catalog verification and preference matching. Most importantly, guessing missing titles, prices, or availability damages customer trust.
 
-## Delegate complex research
+## 2. Business Value
 
-For a complex request with independent book fact-finding and recommendation
-work, Book Agent can delegate to both
-[[agent\|book-catalog-researcher]] and
-[[agent\|book-recommendation-researcher]] concurrently. The catalog researcher
-returns factual findings, while the recommendation researcher prepares a
-preference-matched shortlist. Book Agent combines the results and removes
-duplicates before responding.
+- **Fast answers for simple queries**: Direct lookups resolve immediately without unnecessary multi-step overhead.
+- **Higher-quality recommendations**: Complex requests combine verified catalog facts with tailored preference matching for relevant, deduplicated shortlists.
+- **Grounded accuracy**: Refusing to invent titles, authors, prices, availability, or ratings builds lasting customer confidence.
 
-In Plan Mode, present a plan and wait for customer approval before starting
-multi-step research. A simple, single-step lookup does not need that planning
-cycle.
+## 3. How It Works
 
-## Present the result
+1. **Direct Handling and Clarification**: Straightforward searches and simple book questions are answered directly. When a customer's preferences would materially change a recommendation, the assistant asks clarifying questions before suggesting titles.
+2. **Parallel Research for Complex Inquiries**: When a request involves both independent factual verification and preference-based curation, the lead book specialist delegates both tracks concurrently—one researcher gathers confirmed catalog facts while a second researcher prepares a preference-matched shortlist. The lead specialist combines the findings and removes duplicates before replying.
+3. **Plan Approval for Multi-Step Research**: When operating in planning mode for multi-step discovery, the assistant presents its proposed research plan and waits for customer approval before starting. Simple, single-step lookups skip this planning cycle.
+4. **Transparent Result Presentation**: Recommendations are explained in relation to the customer's stated preferences. Confirmed catalog facts are clearly separated from unavailable details, and any gaps in research evidence are stated openly rather than filled with assumptions.
 
-- Explain recommendations in relation to the customer's stated preferences.
-- Distinguish confirmed Catalog facts from unavailable details.
-- If research returns incomplete evidence, say what could not be confirmed
-  rather than filling gaps with assumptions.
-- A direct answer or clarification is a valid outcome; delegation is not
-  required for every book request.
+## 4. Trade-offs & Lessons Learned
+
+- **Responsiveness vs. research depth**: Delegation is reserved for complex multi-part requests; a direct answer or clarifying question is treated as a valid, preferred outcome for simpler queries.
+- **Honesty over false completeness**: Explicitly calling out what could not be confirmed prevents fabricated prices, availability, or ratings, even if it leaves a response partial.
+- **Approval friction vs. alignment**: Pausing for customer sign-off in planning mode adds a conversational turn, but prevents wasted research effort when requirements are ambiguous.
+
+## 5. Technical Reference
+
+### Primary and delegated agents
+
+- Primary handler: [[agent\|book-agent]]
+- Concurrent research specialists (when delegated):
+  - [[agent\|book-catalog-researcher]] — returns factual Catalog findings.
+  - [[agent\|book-recommendation-researcher]] — prepares a preference-matched shortlist.
+
+### Operational rules
+
+- `Book Agent` synthesizes concurrent outputs from both researchers and deduplicates results before responding.
+- **Plan Mode**: Present a plan and wait for customer approval before starting multi-step research; single-step lookups do not require this cycle.
+- **Grounding**: Keep factual answers grounded in available Catalog information; never invent titles, authors, availability, ratings, or prices.
+- **Presentation**: Relate recommendations to stated preferences, distinguish confirmed Catalog facts from unavailable details, and state explicitly what could not be confirmed when evidence is incomplete.
 
 <Footer />

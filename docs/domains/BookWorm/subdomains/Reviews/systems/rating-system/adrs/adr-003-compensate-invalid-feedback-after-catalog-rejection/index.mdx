@@ -28,67 +28,47 @@ badges:
     textColor: green
 ---
 
-## Context
+## 1. Context & Problem
 
-[[entity|feedback]] references a Catalog [[entity|book]], but asynchronous processing means a book
-can be absent when Catalog receives the created-feedback event. Leaving the
-feedback in [[domain|reviews]] would retain a record that cannot be represented in
-Catalog's rating projection. Since Rating and Catalog own separate databases
-and communicate asynchronously, creation cannot rely on a cross-domain
-foreign-key check or a distributed transaction to prevent this case.
+Every [[entity|feedback]] entry references a [[entity|book]] owned by Catalog. Because [[domain|reviews]] and Catalog maintain separate data stores and communicate asynchronously, there is no shared database check or distributed transaction to guarantee that a referenced book still exists in Catalog at the exact moment feedback is created.
 
-## Decision
+If Catalog receives a newly created feedback notice for a book it cannot find, leaving that feedback stored in Reviews would retain orphaned data that can never appear in Catalog's rating summary.
 
-When Catalog cannot find the referenced book, it publishes
-[[event|BookUpdatedRatingFailedIntegrationEvent]]. [[service|rating-api]]
-uses its `feedbackId` to locate and delete the feedback as a compensating
-action. If the feedback is already absent, the consumer completes without
-changing another record.
+## 2. Business Value
 
-This compensation applies only to a missing book for a created-feedback event;
-it is not a general-purpose failure protocol for the Rating service.
-It is safe to process repeatedly: the feedback ID identifies the specific
-record to compensate, and an already-absent record is an idempotent no-op.
+- **Clean, accurate data:** Reviews does not retain orphaned feedback for nonexistent books indefinitely.
+- **Resilient asynchronous design:** Both domains preserve full independence without brittle cross-system locks or distributed transactions.
+- **Targeted, safe recovery:** Cleanup is tightly scoped to the exact rejected feedback record, preventing accidental removal of valid customer reviews.
+- **Retry resilience:** Repeated rejection notices are handled harmlessly, avoiding error loops or dead-letter noise.
 
-## Consequences
+## 3. How It Works
 
-- Reviews does not retain feedback for an invalid Catalog reference
-  indefinitely.
-- The Catalog boundary remains asynchronous and does not require distributed
-  transactions or shared persistence.
-- The compensation consumer is safe when the failure signal is retried.
-- Operations must distinguish this business compensation from customer- or
-  administrator-initiated feedback deletion.
-- A feedback record can exist temporarily before Catalog validates its book
-  reference; the compensation signal closes that inconsistency after the
-  asynchronous check.
-- Compensation is scoped by `feedbackId`; it must not delete other feedback
-  for the same book or reviewer.
-- Missing feedback is an expected replay-safe outcome, not evidence that an
-  unrelated record should be changed or that Rating should retry indefinitely.
-- The event is specific to Catalog rejecting a created-feedback reference.
-  Other message delivery, validation, or Catalog failures require their own
-  handling and must not be interpreted as this compensation case.
-- Operators should correlate the created-feedback event, Catalog's
-  rating-update-failed event, and the targeted feedback record when
-  diagnosing compensation.
+When Catalog rejects a newly created feedback notice because the referenced book does not exist, a targeted compensation flow cleans up the invalid record:
 
-## Alternatives considered
+1. **Catalog signals the missing book:** Catalog cannot apply the rating update, so it sends a specific failure notice identifying the rejected feedback entry.
+2. **Reviews removes only that record:** The Rating service looks up the specific feedback record using the identifier in the notice and deletes it.
+3. **Repeated notices are harmless:** If that feedback entry has already been removed, the service simply finishes without modifying any other feedback for the same book or reviewer and without retrying endlessly.
+4. **Strictly scoped to missing books:** This cleanup runs only for missing-book rejections on newly created feedback—not for temporary outages, network glitches, or other processing errors.
 
-### Share a database or enforce a cross-system foreign key
+## 4. Trade-offs & Lessons Learned
 
-This would couple Rating persistence to Catalog storage and still cross
-independently owned database boundaries. The event-driven compensation keeps
-each system's data private.
+- **Temporary inconsistency window:** A feedback record referencing a missing book can exist briefly in Reviews until Catalog processes the creation notice and sends back the rejection signal.
+- **Operational distinction required:** Support and operations teams must distinguish automated missing-book compensation from customer- or administrator-initiated deletions when auditing feedback history.
+- **Correlation is essential for diagnostics:** Investigating why a review disappeared requires tracing the original creation notice, Catalog's rejection notice, and the targeted feedback identifier together.
+- **Narrow scope prevents data loss:** Limiting compensation strictly to missing-book rejections ensures valid customer feedback is never deleted due to transient consumer or infrastructure failures.
 
-### Keep the invalid feedback and retry the projection forever
+### Alternatives Considered
 
-If Catalog cannot find the book, repeated projection attempts cannot make the
-missing reference valid. Rating removes the specific feedback record rather
-than retaining unprojectable data indefinitely.
+- **Share a database or enforce a cross-system foreign key:** Rejected because it would couple Reviews persistence to Catalog storage and violate independent domain boundaries.
+- **Keep the invalid feedback and retry the projection forever:** Rejected because repeated retries cannot make a nonexistent book appear, leaving unprojectable data indefinitely.
+- **Delete feedback for any Catalog processing error:** Rejected because treating every error as a business rejection could delete legitimate customer reviews during a transient outage.
 
-### Delete feedback for any Catalog processing error
+## 5. Technical Reference
 
-Only a missing book is the defined business rejection for this flow. Treating
-every processing failure as rejection could delete valid feedback during a
-transient outage or unrelated consumer failure.
+- **Triggering flow:** [[service|rating-api]] emits [[event|FeedbackCreatedIntegrationEvent]] on `bookworm.{env}.rating.feedback-create`.
+- **Compensation event & channel:** Catalog publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] on `bookworm.{env}.catalog.book-update-rating-failed` when the referenced book is missing.
+- **Consumer behavior in `rating-api`:**
+  - Extracts `feedbackId` from `BookUpdatedRatingFailedIntegrationEvent` and deletes only that matching `Feedback` record.
+  - **Idempotency:** If the record for `feedbackId` is already absent, the handler completes as an idempotent no-op without modifying other records for the same book or reviewer or triggering endless retries.
+  - **Scope guard:** Strictly limited to missing-book rejection of a created-feedback event; other delivery, validation, or transient Catalog failures use separate error-handling paths.
+- **Diagnostic correlation:** Correlate `FeedbackCreatedIntegrationEvent`, `BookUpdatedRatingFailedIntegrationEvent`, and `feedbackId` across logs and traces.

@@ -22,88 +22,55 @@ badges:
     textColor: green
 ---
 
-## Context
+## 1. Context & Problem
 
-[[system|sendgrid]] may be unavailable, reject a request, or apply a rate limit after a
-notification has been created. Sending directly from the business operation
-would risk losing notifications when the provider is unavailable, while
-retrying every failure indefinitely could create duplicate messages and hide a
-permanent configuration error. The design must distinguish work durably
-accepted by BookWorm from attempts to submit it externally, and make the
-retry outcome observable without claiming an exactly-once transaction with
-the provider.
+External email providers such as [[system|sendgrid]] can experience temporary outages, reject malformed requests, or enforce rate limits after BookWorm has already decided to notify a customer.
 
-## Decision
+If BookWorm attempted to send emails directly inside a business transaction, a provider outage would cause lost notifications or fail the customer's primary action. Conversely, retrying every failed delivery forever would flood the provider during an incident, generate duplicate emails, and mask permanent configuration or data errors. The architecture must separate durable internal acceptance of a notification from external delivery attempts, while remaining honest that no distributed integration can guarantee strictly single delivery without trade-offs.
 
-The [[system|notification-system]] persists each notification as a durable
-[[entity|outbox]] item
-before attempting provider delivery. A delivery worker selects eligible items,
-submits them through the [[service|sendgrid-api]], and records the provider outcome.
+## 2. Business Value
 
-Transient failures and rate limits use a bounded, observable retry schedule.
-Invalid requests and other permanent failures are recorded as terminal failures
-and are not retried indefinitely. A successful provider response advances the
-[[entity|outbox]] item exactly once from the Notification System's perspective. Delivery
-attempts must carry a stable notification identifier so retries can be
-correlated and duplicate-send risk can be diagnosed.
+- **Zero silent loss during provider outages**: Customer notifications remain safely queued inside BookWorm even when the external email service is unreachable.
+- **Controlled recovery and cost protection**: Bounded retries smooth over temporary network blips and rate limits without creating runaway retry storms.
+- **Faster issue diagnosis**: Distinguishing temporary delivery delays from permanent failures gives operations teams clear visibility into stuck queues, retry volume, and configuration errors.
+- **Realistic operational expectations**: Acknowledging the narrow window where duplicate sends can occur prepares support teams and downstream processes to handle ambiguity safely.
 
-This is the intended outbox and retry policy, not a guarantee of exactly-once
-delivery. PostgreSQL and the external email provider do not share an atomic
-transaction. If a provider accepts a message but the response or subsequent
-database update is lost, the item may be eligible for another submission.
-Stable identifiers and recorded outcomes improve correlation but do not by
-themselves prevent duplicate delivery.
+## 3. How It Works
 
-## Implementation alignment
+The [[system|notification-system]] uses a durable [[entity|outbox]] paired with a bounded retry policy:
 
-The current Notification implementation does not fully realize this ADR's
-bounded-lifetime retry and terminal-failure behavior. Its email outbox has no
-persisted attempt count or terminal-failure classification; hourly resend
-selects unsent rows again, and the resend path can create a new outbox row for
-each attempt. It also uses MailKit over SMTP and does not persist provider
-responses. See [[adr|adr-002-notification-postgresql-email-outbox]] and
-[[adr|adr-003-notification-smtp-provider-boundary]] for the current
-implementation details. These accepted design statements must not be used as
-evidence that the implementation already provides those guarantees.
+1. **Durable staging**: Before contacting the external provider, the [[system|notification-system]] saves each notification as a durable [[entity|outbox]] record.
+2. **Background dispatch**: A background delivery worker picks up eligible items, submits them through [[service|sendgrid-api]], and records the provider's response.
+3. **Bounded retry for temporary issues**: When the provider is temporarily unavailable or throttles traffic, the item is retried on a bounded, observable schedule.
+4. **Terminal failure for permanent issues**: Invalid requests or permanent rejections are marked as terminal failures and stopped rather than retried indefinitely.
+5. **Single advancement on success**: When the provider confirms receipt, the [[entity|outbox]] item is marked complete from BookWorm's perspective, carrying a stable identifier across attempts so operators can trace retries and spot potential duplicates.
 
-## Consequences
+Because BookWorm's internal storage and the external email service cannot confirm work in a single shared transaction, a response lost right after the provider accepts a message can make an item eligible for another attempt. Stable identifiers and recorded outcomes make that risk observable rather than hiding it.
 
-- Provider outages do not discard accepted notification work.
-- Delivery is eventually consistent and requires monitoring of pending age,
-  retry count, and terminal failures.
-- A retry policy and failure classification must be maintained as part of the
-  integration.
-- The provider may still receive a duplicate if a response is lost after
-  acceptance; downstream handling and support tooling must account for that
-  ambiguity.
-- Notification storage and the delivery worker become operational
-  dependencies of the integration.
-- Bounded retry requires an explicit persisted attempt policy and a defined
-  terminal-failure path; batch size or sender-level retries alone do not
-  establish a lifetime limit.
-- Durable local state does not eliminate the ambiguous-outcome window between
-  external submission and recording the provider result.
-- Before relying on the proposed guarantees operationally, implement and test
-  attempt accounting, failure classification, correlation, and recovery
-  behavior against duplicate, timeout, rate-limit, and provider-outage cases.
+## 4. Trade-offs & Lessons Learned
 
-## Alternatives considered
+- **Eventual consistency and operational dependencies**: Notification delivery is asynchronous, meaning teams must monitor queue age, retry counts, and terminal failures, and operate the notification store and worker reliably.
+- **Ambiguous-outcome window**: Even with durable local tracking, a failure between external acceptance and local confirmation can still cause a duplicate email; support workflows must account for that possibility.
+- **Policy requires persisted state**: Limiting batch sizes or short-term sender retries alone does not establish a true lifetime limit—bounded retries require stored attempt counts and an explicit terminal-failure state.
+- **Target design vs. current gap**: An accepted architecture decision sets the target contract, not automatic proof that current code satisfies every guarantee. Until attempt tracking, failure classification, and recovery tests are fully implemented, operations teams must not assume those safeguards are active.
+- **Alternatives rejected**:
+  - _Sending without an outbox_: Risks losing notifications whenever the provider or network fails.
+  - _Retrying indefinitely_: Amplifies outages and conceals permanent errors.
+  - _Claiming exactly-once delivery_: Physically impossible across independent systems without an atomic distributed transaction.
 
-### Send without a durable outbox
+## 5. Technical Reference
 
-This would reduce local storage, but a provider outage or process failure
-could lose the notification request after the originating operation
-completed.
+### Target Outbox & Retry Contract
 
-### Retry indefinitely
+- **Components**: [[system|notification-system]], [[entity|outbox]], [[service|sendgrid-api]], [[system|sendgrid]].
+- **Storage boundary**: PostgreSQL (local outbox persistence) and the external email provider do not share an atomic transaction; durable local state does not eliminate the ambiguous-outcome window between external submission and recording the provider result.
+- **Required controls before relying on guarantees**: Persisted attempt count, explicit terminal-failure classification, stable notification correlation identifiers, and automated recovery testing covering duplicates, timeouts, rate limits, and provider outages.
 
-Unbounded retries can amplify provider or configuration failures and obscure
-permanent errors. A bounded policy with an observable terminal state is the
-intended design.
+### Implementation Alignment Gap
 
-### Claim exactly-once delivery from the local outbox
+The current Notification implementation does **not** yet fully realize this ADR's bounded-lifetime retry and terminal-failure behavior:
 
-The database and external provider cannot commit one atomic transaction.
-Retries may still duplicate a message when provider acceptance is ambiguous;
-the architecture records and manages that risk rather than claiming it can be
-eliminated.
+- The existing email outbox has **no persisted attempt count** and **no terminal-failure classification**.
+- An **hourly resend** job re-selects unsent rows, and the resend path can **create a new outbox row for each attempt**.
+- Delivery currently uses **MailKit over SMTP** and does **not** persist provider responses.
+- Related implementation ADRs: [[adr|adr-002-notification-postgresql-email-outbox]] and [[adr|adr-003-notification-smtp-provider-boundary]].

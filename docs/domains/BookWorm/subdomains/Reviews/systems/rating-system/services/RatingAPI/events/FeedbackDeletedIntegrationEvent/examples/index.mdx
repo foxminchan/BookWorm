@@ -2,11 +2,34 @@
 summary: Publish a feedback-deleted event and remove the rating in Catalog.
 ---
 
+## 1. Context & Problem
+
+When a feedback record is removed in Reviews, Catalog must subtract that specific rating from the book's summary without querying the Reviews database or failing if the book itself has already been removed from the catalog.
+
+## 2. Business Value
+
+- **End-to-end alignment**: Gives architects, analysts, and developers a clear example of how deletion flows across service boundaries.
+- **Graceful edge-case handling**: Shows that missing books are handled safely without generating spurious errors or retries.
+- **Minimal cross-service coupling**: Demonstrates how passing the removed rating value avoids extra lookup calls between services.
+
+## 3. How It Works
+
+1. **Publish the deletion notification**: After committing a feedback deletion, the Reviews service maps its internal deletion event into a public notification carrying the book identifier, the deleted rating value, and the feedback identifier, and publishes it on the feedback-delete channel.
+2. **Deliver the message payload**: The messaging channel delivers those three fields to subscribers.
+3. **Subtract the rating in Catalog**: Catalog looks up the book; if present, it subtracts the rating from the book's summary. If the book does not exist, Catalog finishes cleanly without making any changes.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Carrying the rating value in the deletion event**: Because the feedback record is already deleted in Reviews, including the rating score in the event ensures Catalog can adjust its totals without needing a reverse lookup.
+- **Silent no-op on missing books**: Treating a missing book as a safe no-op prevents dead-letter buildup when a book has already been removed from Catalog.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish a deleted feedback rating
+### Publish a deleted feedback rating
 
 Rating API maps the committed feedback-deleted domain event to the integration
 contract and publishes it to
@@ -48,7 +71,7 @@ FeedbackDeletedEvent feedbackDeletedEvent => new FeedbackDeletedIntegrationEvent
 
 ---
 
-## Payload
+### Payload
 
 <CodeGroup dropdown>
 
@@ -62,7 +85,7 @@ FeedbackDeletedEvent feedbackDeletedEvent => new FeedbackDeletedIntegrationEvent
 
 </CodeGroup>
 
-## Consume the rating update
+### Consume the rating update
 
 Catalog removes the rating when the book exists. A missing book is a no-op
 because there is no local projection to correct.

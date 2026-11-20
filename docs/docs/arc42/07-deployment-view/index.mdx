@@ -9,24 +9,57 @@ badges:
     textColor: blue
 ---
 
-This chapter maps the independently deployable services of [[domain|BookWorm]] and their stateful or external dependencies to Azure infrastructure. It follows arc42's deployment view: where software runs, how data is stored, and which external systems the platform depends on.
+## 1. Context & Problem
 
-The deployment architecture runs 15 container apps inside a single Azure Container Apps environment (supported by Azure Container Registry, Log Analytics, and the Aspire Dashboard), backed by Azure-managed databases, caching, storage, and AI services:
+Understanding BookWorm's static business capabilities or runtime message flows is not enough when planning cloud operations, security reviews, or environment provisioning. Solution architects, project managers, and operations teams also need a dedicated deployment view that maps each independently deployable service to where it executes, where its data lives, and which external platforms it relies on.
 
+This chapter defines that mapping across [[domain|BookWorm]]'s customer-facing applications, backend services, managed cloud resources, and external dependencies.
+
+## 2. Business Value
+
+- **Clear infrastructure accountability:** Connects every business service to its runtime environment, data storage, and external dependencies so teams understand operational ownership and change impact.
+- **Security and resilience by default:** Establishes a baseline with a single public entry point, passwordless identity-based access between cloud resources, minimum active capacity for core services, high-availability tiers, and backup retention.
+- **Transparent scope for planning:** Distinguishes what is already standardized in the deployment specification from environment-specific production decisions (such as regions, custom domains, private networking, and upper scaling limits) that operations teams still need to finalize.
+
+## 3. How It Works
+
+The deployment view is structured in two progressive levels of detail:
+
+- **Logical overview and mapping** ([[doc|arc42/07-deployment-view/001-infrastructure-level-1]]): Introduces the overall cloud layout, explains the architectural motivation, and maps each software building block to its infrastructure counterpart.
+- **Service and operational boundaries** ([[doc|arc42/07-deployment-view/002-infrastructure-level-2]]): Zooms into individual service dependencies, persistence and messaging boundaries, external systems, and the open operational details requiring confirmation.
+
+At a high level, BookWorm groups its deployed footprint into four areas:
+
+1. **Managed application compute:** All 15 web and service applications run inside a single managed container environment supported by a container registry and centralized observability dashboards, with only the API gateway exposed publicly.
+2. **Managed data and orchestration:** Relational records, document feedback, fast caching, workflow coordination, file storage, and AI model hosting run on dedicated cloud-managed services.
+3. **Centralized identity:** User and AI agent access is managed through a unified identity provider using passwordless service identities.
+4. **External services:** Asynchronous event messaging, vector search, and outbound email delivery connect as external services.
+
+This view focuses on the customer-facing clients, the BookWorm application boundary, service-owned persistence and integration infrastructure, and external systems. It complements [[doc|arc42/03-context-and-scope/003-technical-context]] (technical neighbors) and [[doc|arc42/05-building-block-view]] (static responsibilities), while leaving runtime behavior—such as message ordering, retries, and business outcomes—to [[doc|arc42/06-runtime-view]].
+
+## 4. Trade-offs & Lessons Learned
+
+- **Published component placement vs. production runbook:** The specification locks in public exposure rules, minimum one-replica availability, service tiers, high availability, backup retention, and passwordless authentication, while intentionally deferring target cloud regions, custom domains, private virtual networking, and upper autoscaling limits. As a result, the diagrams represent logical placement rather than a complete production runbook.
+- **Separation of deployment topology from runtime semantics:** Keeping infrastructure placement distinct from [[doc|arc42/06-runtime-view]] ensures teams do not confuse where components live with guarantees around message ordering, retries, or end-to-end business completion.
+
+## 5. Technical Reference
+
+### Chapter Contents
+
+- [[doc|arc42/07-deployment-view/001-infrastructure-level-1]] — Logical deployment overview, motivation, and building-block-to-infrastructure mapping.
+- [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] — Service, persistence, messaging, and external-system boundaries, plus deployment details to confirm.
+
+### Infrastructure Summary
+
+- **Compute & Observability:** 15 container apps inside a single Azure Container Apps environment (minimum 1 replica per app; only the API gateway is externally exposed), supported by Azure Container Registry, Log Analytics, and the Aspire Dashboard.
 - **Relational & NoSQL data:** Azure PostgreSQL Flexible Server ([[container|catalog-database]], [[container|order-database]], and [[container|sheduler-database]]) and Azure Cosmos DB ([[container|rating-database]]).
 - **Caching & orchestration:** Azure Managed Redis ([[container|basket-database]], [[container|catalog-cache]], [[container|order-cache]], and [[container|rating-cache]]) and Azure Durable Task Scheduler for [[service|order-orchestration]].
-- **Files, AI & identity:** Azure Storage ([[container|catalog-blob]], [[container|chat-session-blob]], and function host storage), Microsoft Foundry with Application Insights, and [[system|identity-provider]] (Microsoft Entra ID with managed identities and Entra Agent Identities).
+- **Files, AI & identity:** Azure Storage ([[container|catalog-blob]], [[container|chat-session-blob]], and function host storage), Microsoft Foundry with Application Insights, and [[system|identity-provider]] (Microsoft Entra ID with managed identities and Entra Agent Identities), using passwordless managed-identity authentication.
 - **External services:** Kafka for asynchronous messaging, Qdrant Cloud ([[container|catalog-vector]]) for vector search, and [[system|sendgrid]] (SMTP) for email delivery.
+- **Explicitly out of scope in this specification:** Target Azure regions, custom domains, private virtual networking, and upper autoscaling limits.
 
-The infrastructure specification defines public access (only the API gateway is externally exposed), a minimum of one replica per app, service tiers, high availability, backup retention, and passwordless managed-identity authentication. It does **not** define target Azure regions, custom domains, private virtual networking, or upper autoscaling limits. The diagrams therefore show published component placement rather than a complete production runbook.
+### Related Documentation
 
-## Chapter contents
-
-- [[doc|arc42/07-deployment-view/001-infrastructure-level-1]] gives the logical deployment overview, its motivation, and the mapping of software building blocks to infrastructure.
-- [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] zooms into service, persistence, messaging, and external-system boundaries and records deployment details that still need confirmation.
-
-## Deployment scope
-
-The view covers the customer-facing client, the BookWorm application boundary, service-owned persistence and integration infrastructure, and the external systems those services depend on. It complements the [[doc|arc42/03-context-and-scope/003-technical-context]], which describes technical neighbors, and the [[doc|arc42/05-building-block-view]], which describes static responsibilities.
-
-The deployment view is intentionally not a substitute for the runtime scenarios in [[doc|arc42/06-runtime-view]]. Those scenarios explain message ordering, retries, and business outcomes; this chapter focuses on where the software and its supporting infrastructure execute.
+- [[doc|arc42/03-context-and-scope/003-technical-context]]
+- [[doc|arc42/05-building-block-view]]
+- [[doc|arc42/06-runtime-view]]

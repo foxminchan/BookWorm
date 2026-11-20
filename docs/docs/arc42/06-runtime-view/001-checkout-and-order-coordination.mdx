@@ -9,25 +9,58 @@ badges:
     textColor: purple
 ---
 
-## 6.1 Checkout and Order coordination
+## 1. Context & Problem
 
-Checkout turns a customer's mutable [[entity|basket]] into an [[entity|order]] owned by [[domain|ordering]]. The [[service|order-api]] reads the persisted Basket and current [[domain|catalog]] facts, stores the accepted purchase and its item-price snapshot, and returns the Order ID. It then publishes a checkout event ([[event|UserCheckedOutIntegrationEvent]]) for [[system|finance-system]]'s asynchronous coordination workflow.
+When a customer clicks "checkout," the platform must turn a temporary shopping [[entity|basket]] into a permanent [[entity|order]] without losing item quantities or letting catalog price changes alter what the customer just agreed to pay. At the same time, checkout involves follow-up work—clearing the customer's basket and sending confirmation emails—that should not force the customer to wait on a slow or momentarily unavailable downstream step.
+
+This runtime scenario establishes clear ownership between [[domain|shopping]], [[domain|catalog]], [[domain|ordering]], and [[system|finance-system]] so that order capture stays fast and authoritative while post-checkout cleanup and communication run reliably in the background.
+
+## 2. Business Value
+
+- **Fast, predictable checkout**: Customers receive an immediate order confirmation number as soon as the purchase is recorded, rather than waiting on basket cleanup or email delivery.
+- **Price and inventory accuracy**: Locking in a purchase-time snapshot of book details and prices protects both the customer and the business from mid-checkout price drift.
+- **Clear accountability**: Each business area keeps control of its own data—Shopping owns active baskets, Catalog owns book facts, and Ordering owns confirmed orders—preventing tangled dependencies.
+- **Graceful recovery from delays**: Background coordination automatically retries stalled cleanup tasks within a bounded window instead of silently dropping post-checkout steps.
+
+## 3. How It Works
+
+1. **Checkout submission**: The storefront sends the customer's checkout request to [[domain|ordering]].
+2. **Gathering authoritative facts**: Ordering retrieves the saved item quantities from Shopping and looks up the latest book details and prices from Catalog. Shopping and Catalog remain the single sources of truth for those records.
+3. **Recording the purchase**: Ordering saves the new [[entity|order]] along with a purchase-time snapshot of its items and prices, then immediately returns the new Order ID to the storefront.
+4. **Starting background coordination**: Once the order is saved, Ordering notifies [[system|finance-system]] that a checkout occurred. Finance starts a coordination workflow tracked by that Order ID and asks Shopping to remove the submitted basket while independently asking Notifications to send order confirmation communication.
+5. **Handling basket cleanup outcomes**: Shopping deletes the submitted basket and reports back whether cleanup succeeded or failed. Finance forwards that outcome to Ordering. Removing the basket does not mean the entire order lifecycle is finished; if cleanup fails, Ordering may hide the order record from active views, though this does not change its business status or count as an official cancellation.
+6. **Timeouts and retries**: Finance allows up to three attempts across a 30-minute coordination window. If basket cleanup remains unresolved, Finance reissues the coordination request, which can cause basket removal and notification steps to run more than once. If the 30-minute limit expires, Finance closes the coordination workflow and may trigger a cancellation notice when customer contact details are available—without directly cancelling the order in Ordering.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Responsiveness vs. eventual consistency**: Confirming the order before cleaning up the basket keeps checkout fast, but creates a short window where a customer's basket may still appear populated until background cleanup completes.
+- **Duplicate downstream actions are possible**: Because Finance can reissue the coordination request up to two additional times when cleanup is unresolved, Shopping and Notifications operate independently and may repeat cleanup or email work.
+- **Do not infer order status from side effects**: A missing basket, an expired Finance coordination workflow, or even a cancellation email does not guarantee an order's actual business state. Support teams, dashboards, and integrations must always verify order status directly with Ordering.
+- **Soft-deletion is not cancellation**: When cleanup fails and Ordering removes an order record from active view, it does not publish a business cancellation event—teams must distinguish technical cleanup compensation from customer-initiated cancellations.
+
+## 5. Technical Reference
 
 <MermaidFileLoader file="mermaids/checkout-and-order-coordination.mmd" />
 
-### Interaction and ownership
+### Service & Message Flow
 
-1. The storefront submits checkout to [[domain|ordering]].
-2. [[domain|ordering]] reads the customer's persisted quantities from [[service|basket-api]] and resolves current book details and prices from [[service|catalog-api]]. [[domain|shopping]] and [[domain|catalog]] remain the sources of truth for those respective records.
-3. [[service|order-api]] persists the new [[entity|order]] and purchase-time item snapshot before returning `201 Created` with the Order ID.
-4. The checkout event starts a [[service|order-orchestration]] saga correlated by Order ID. Finance persists coordination state and publishes [[command|PlaceOrderCommand]], which is consumed independently by [[service|basket-api]] and [[service|notification-api]].
-5. [[service|basket-api]] deletes the submitted Basket and reports an explicit success or failure outcome ([[event|BasketDeletedCompleteIntegrationEvent]] or [[event|BasketDeletedFailedIntegrationEvent]]). Finance forwards that cleanup outcome to Ordering; cleanup success is not Order completion.
-6. On cleanup failure, Ordering may soft-delete the Order if it is still present. This does not change its business status or mean Ordering published a cancellation event.
+| Step | Component / Domain                                         | Responsibility & Technical Details                                                                                                                                                                           |
+| :--- | :--------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–2  | [[domain\|ordering]] / [[service\|order-api]]              | Receives checkout request, reads persisted quantities from [[service\|basket-api]] ([[domain\|shopping]]), and resolves current book details and prices from [[service\|catalog-api]] ([[domain\|catalog]]). |
+| 3    | [[service\|order-api]]                                     | Persists the new [[entity\|order]] and its purchase-time item-price snapshot before returning `201 Created` with the Order ID.                                                                               |
+| 4    | [[service\|order-api]] → [[system\|finance-system]]        | Publishes [[event\|UserCheckedOutIntegrationEvent]] to start the [[service\|order-orchestration]] saga correlated by Order ID.                                                                               |
+| 5    | [[service\|order-orchestration]]                           | Persists saga coordination state and publishes [[command\|PlaceOrderCommand]], consumed independently by [[service\|basket-api]] and [[service\|notification-api]].                                          |
+| 6    | [[service\|basket-api]] → [[service\|order-orchestration]] | Deletes the submitted [[entity\|basket]] and emits [[event\|BasketDeletedCompleteIntegrationEvent]] or [[event\|BasketDeletedFailedIntegrationEvent]], which Finance forwards to Ordering.                   |
+| 7    | [[service\|order-api]]                                     | On cleanup failure, may soft-delete the Order if still present; does not alter business status or publish a cancellation event.                                                                              |
 
-### Timeout and failure behavior
+### Timeout, Retry, and Operational Rules
 
-Finance schedules a 30-minute timeout and allows a maximum of three attempts (the initial command and up to two reissues). An unresolved cleanup outcome can therefore cause [[command|PlaceOrderCommand]] to be published again. Because [[service|basket-api]] and [[service|notification-api]] consume that command independently, repeated processing can repeat cleanup and email work.
+- **Saga window & retries**: Finance schedules a **30-minute timeout** and permits a **maximum of 3 attempts** (1 initial [[command|PlaceOrderCommand]] publication plus up to 2 reissues).
+- **Idempotency consideration**: Because [[service|basket-api]] and [[service|notification-api]] consume [[command|PlaceOrderCommand]] independently, reissues can repeat basket cleanup and email dispatch.
+- **Authoritative status rule**: Exhausting the 30-minute timeout cancels the [[service|order-orchestration]] saga and may request a cancellation email if recipient details exist, without calling Ordering to cancel the Order.
 
-Finance timeout exhaustion cancels the saga and may request a cancellation email when recipient details are available. It does **not** call Ordering to cancel the Order. Confirm the Order's actual status through Ordering rather than inferring it from the Basket, saga state, or an email.
+### Related Documentation
 
-See the [[flow|order-lifecycle]], [[service|order-orchestration]], and [[doc|arc42/05-building-block-view/002-level-2]] for message and ownership details.
+- [[flow|order-lifecycle]]
+- [[service|order-orchestration]]
+- [[doc|arc42/05-building-block-view/002-level-2]]

@@ -18,22 +18,49 @@ sidebar:
   badge: "PUT"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Updates the [[entity|book]] identified by `id` using a `multipart/form-data` request. Only supplied fields are changed; `isRemoveImage` can remove the current cover.
+Book listings evolve over time: prices change for promotions, descriptions are refined, cover artwork is refreshed or retired, and relationships to authors, categories, or publishers may need correction. Requiring callers to re-submit every single detail of a [[entity|book]] just to adjust a price or swap a cover image would be error-prone and cumbersome.
+
+## 2. Business Value
+
+- **Faster merchandising updates**: Enables rapid price adjustments, promotional sale pricing, and metadata corrections without rebuilding the listing.
+- **Unified asset and data handling**: Allows text details, catalog relationships, and cover artwork to be updated together in a single action.
+- **Lower risk of accidental overwrites**: Because only the supplied details are changed, omitted attributes remain intact.
+
+## 3. How It Works
+
+The caller supplies the book's unique identifier along with only the details that need to change—such as title, description, regular price, sale price, category, publisher, assigned authors, or cover artwork.
+
+1. Any attributes omitted from the request remain unchanged on the existing listing.
+2. Cover artwork can be replaced with a newly uploaded image or cleared entirely using an explicit image-removal option.
+3. The catalog validates the submitted values and verifies that the book exists before applying the update and returning an empty confirmation.
+4. If the submission is invalid or the specified book cannot be found, the change is rejected without modifying the listing.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Partial updates over full replacement**: Allowing callers to send only changed fields avoids accidental data loss, though it requires an explicit flag to remove an existing cover image rather than relying on an omitted field.
+- **Combined metadata and media upload**: Accepting form uploads with optional file data simplifies client workflows for cover updates, at the cost of slightly more involved request construction compared to text-only updates.
+- **Relationship replacement**: When relationship fields such as assigned authors are provided, the supplied values replace the previous set, so callers must pass the full intended list rather than a single addition.
+
+## 5. Technical Reference
+
+- **Endpoint**: `PUT /api/v1/books`
+- **Command**: `UpdateBook` (updates [[entity|book]])
+- **Content type**: `multipart/form-data`
+- **Request fields**:
+  - Required: `id` (UUID identifying the book).
+  - Optional metadata and pricing: `name` (`minLength: 1`), `description`, `price` (`>= 0`), `priceSale` (`>= 0` or `null`).
+  - Optional relationships (UUIDs): `categoryId`, `publisherId`, `authorIds` (array of UUIDs).
+  - Optional cover controls: `image` (base64-encoded cover image or `null`) to replace the cover, or `isRemoveImage=true` to remove the existing cover.
+  - Omitted fields remain unchanged.
+- **Responses**:
+  - `204 No Content`: Book updated successfully; response body is empty.
+  - `400`: Invalid form data or validation failure.
+  - `404`: The book identified by `id` does not exist.
 
 <NodeGraph />
 
-## Contract
-
-Send `id` plus any fields to change. Use `image` to replace the cover, or `isRemoveImage=true` to remove it. Relationship fields accept UUIDs.
-
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`400` indicates invalid form data. `404` indicates that the book identified by `id` does not exist.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

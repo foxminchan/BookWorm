@@ -44,3 +44,48 @@ dictionary:
       individual Feedback submission.
     icon: Star
 ---
+
+## 1. Context & Problem
+
+In an online bookstore, teams across product management, shopping baskets, order fulfillment, and customer reviews frequently use everyday words like "book," "price," "availability," and "rating." Without shared definitions, those words quietly take on conflicting meanings—for example, treating a catalog listing's availability as a basket stock reservation, modeling a discount as a separate item, or confusing an aggregate rating summary with an individual customer review.
+
+The Catalog ubiquitous language establishes a single, unambiguous vocabulary for Catalog concepts so business stakeholders, analysts, architects, and engineers communicate using the exact same terms and boundaries.
+
+## 2. Business Value
+
+- **Cross-functional clarity:** Product managers, business analysts, architects, and developers align on one shared meaning when writing requirements, designing journeys, and reviewing domain boundaries.
+- **Fewer domain misunderstandings:** Explicit distinctions prevent costly defects such as invalid discount pricing, conflating browsing availability with checkout holds, or duplicating review ownership.
+- **Safer team autonomy:** Neighboring domains can rely on Catalog concepts confidently without leaking internal assumptions across domain borders.
+- **Faster onboarding:** New contributors can immediately see what Catalog owns and how its terms relate to adjacent business areas.
+
+## 3. How It Works
+
+The Catalog vocabulary groups its core terms around three business responsibilities:
+
+- **Product identity and classification:** A **Book** is the listed title available for discovery, described by its name, description, image, and associations with **Author** (a named contributor who may be linked to multiple books), **Publisher** (the publishing organization), and **Category** (classifications used for browsing and discovery).
+- **Commercial proposition:** **Price** represents a book's original price alongside an optional discount price—never as a separate product, and always constrained so a discount cannot be negative or exceed the original price. **Availability** indicates whether a catalog listing is in stock or out of stock, explicitly separate from any reservation held in a customer's shopping basket.
+- **Reputation display:** **Rating Summary** captures the average rating and review count shown for a book. It is an aggregated summary derived from customer reviews rather than an individual feedback submission.
+
+Teams apply these exact definitions in workshops, acceptance criteria, and cross-domain conversations whenever Catalog concepts are referenced.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Precision over informal shorthand:** Separating **Availability** from basket reservations and **Rating Summary** from individual feedback introduces stricter wording, but eliminates subtle ambiguities during checkout and review integrations.
+- **Discounts as part of Price:** Keeping an optional discount price inside **Price** rather than creating separate promotional products simplifies catalog browsing, while requiring strict validation to block negative or inflated discount values.
+- **Ongoing glossary stewardship:** Domain terms only stay useful when kept current; whenever a Catalog business rule evolves, the shared dictionary must be updated alongside it.
+
+## 5. Technical Reference
+
+### Catalog Dictionary Terms
+
+The YAML `dictionary` frontmatter above defines the authoritative Catalog glossary entries rendered by EventCatalog:
+
+| Term (`id`)      | Summary                                                | Domain Rules & Boundaries                                                                               | Icon              |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ----------------- |
+| `Book`           | A listed title available for discovery.                | Has name, description, image, price, availability status, category, publisher, and author associations. | `BookOpen`        |
+| `Author`         | A named contributor associated with one or more Books. | An Author can be associated with multiple Catalog Books.                                                | `UserPen`         |
+| `Publisher`      | The publishing organization associated with a Book.    | Catalog metadata for a Book.                                                                            | `Building2`       |
+| `Category`       | A classification used to group Books.                  | Supports browsing and book discovery.                                                                   | `Tags`            |
+| `Price`          | A Book's original price and optional discount price.   | Discount price cannot be negative or exceed the original price; not a separate product.                 | `BadgeDollarSign` |
+| `Availability`   | Whether a Book is in stock or out of stock.            | Describes the Catalog listing; not a reservation held by a Basket.                                      | `PackageCheck`    |
+| `Rating Summary` | The average rating and review count shown for a Book.  | Aggregate projection of Reviews feedback, not an individual Feedback submission.                        | `Star`            |

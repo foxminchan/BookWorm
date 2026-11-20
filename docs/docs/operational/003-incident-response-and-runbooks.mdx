@@ -11,7 +11,37 @@ badges:
 
 Use these runbooks when triaging production incidents across BookWorm's Azure Container Apps and managed dependencies.
 
-## 1. Container App Startup or Image Pull Failures
+## 1. Context & Problem
+
+BookWorm operates across fifteen containerized applications, passwordless cloud identity roles, durable checkout workflows, scheduled search indexing, and AI-assisted chat and review pipelines. When a customer-facing symptom appears—such as failed deployments, stalled orders, missing search results, or unavailable chat—improvised troubleshooting slows recovery and increases the risk of misdiagnosing cross-service dependencies. On-call teams need structured, symptom-first runbooks to restore service quickly and safely.
+
+## 2. Business Value
+
+- **Reduced Downtime on Critical Journeys:** Standardized triage paths protect revenue-critical flows like checkout orchestration and catalog search.
+- **Consistent On-Call Execution:** Clear symptom-to-resolution playbooks help engineers and operations responders act decisively without hunting across disparate configuration files.
+- **Safer Passwordless Operations:** Explicit permission checks prevent responders from weakening security controls (such as re-enabling static access keys) when diagnosing access errors.
+- **Faster AI & Search Recovery:** Dedicated diagnostics for rate limits, vector stores, and privacy sidecars keep AI features resilient under load.
+
+## 3. How It Works
+
+Each operational runbook maps observable business or platform symptoms to targeted checks across BookWorm's five main failure domains:
+
+1. **Container Startup & Rollout Failures:** When a service fails to activate or pull its software image, responders verify that the hosting environment still holds registry pull permissions, confirm the target image tag exists in the registry, and inspect startup logs for missing external connection settings. Because services run in single-active-revision mode, publishing a corrected image or secret replaces the broken instance right away.
+2. **Passwordless Access & Permission Errors:** Because BookWorm disables static access keys and uses managed identities across databases, caches, document stores, and blob storage, authorization errors usually indicate a missing role assignment—or a newly applied role that has not yet finished propagating across the identity directory, which typically takes five to ten minutes before a service restart takes effect.
+3. **Order Orchestration Stalls:** When customer orders pause after creation, teams verify that the durable workflow scheduler and its task hub are intact, confirm that the orchestration worker holds full storage ownership permissions, check event-streaming connectivity across ordering and notification services, and ensure any network allowlists include the hosting environment's outbound addresses.
+4. **Vector Search & Catalog Indexing Lag:** When newly added or updated books do not appear in semantic search, responders check the scheduler dashboard and database to confirm batch jobs are triggering ingestion events, then inspect the ingestion worker for AI embedding throttling, external vector store connectivity, or database and storage access errors.
+5. **AI Chat & Personal-Data Redaction Degradation:** When chat or rating assistance slows down or stops responding, teams verify the health of the personal-data analysis and anonymization containers, check AI model quota availability, and validate delegated agent credentials used when invoking shared model tools.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Single-Revision Simplicity vs. Instant Rollback:** Using single active revision mode makes applying fixes straightforward because the corrected revision immediately takes over, but it leaves no warm standby revision for instant traffic splitting if a bad release slips through.
+- **Passwordless Security vs. Propagation Delay:** Eliminating static keys and connection passwords removes credential-leak risk, at the cost of waiting five to ten minutes for cloud role assignments to propagate during initial provisioning or permission repairs.
+- **Baseline AI Quotas Under Load:** Starting with minimal embedding and model throughput capacity keeps baseline costs low, but makes capacity throttling a primary suspect whenever bulk catalog updates or chat spikes occur.
+- **Shared Network Allowlist Coupling:** Tightening IP allowlists on the durable workflow scheduler improves security, yet requires careful synchronization with the container environment's outbound IP addresses to avoid silently stalling order sagas.
+
+## 5. Technical Reference
+
+### Runbook 1: Container App Startup or Image Pull Failures
 
 **Symptoms:** Revision stuck in `Activating` or `Failed`; `ImagePullFailed` or `ContainerTerminated` in `ContainerAppSystemLogs_CL`.
 
@@ -27,7 +57,7 @@ Use these runbooks when triaging production incidents across BookWorm's Azure Co
 
 ---
 
-## 2. Passwordless Auth & RBAC Failures (401 / 403)
+### Runbook 2: Passwordless Auth & RBAC Failures (401 / 403)
 
 **Symptoms:** `Login failed for token-identified principal` (PostgreSQL), `NOAUTH` / `NOPERM` (Redis), `403 Forbidden` (Cosmos DB / Storage / Foundry).
 
@@ -41,7 +71,7 @@ Use these runbooks when triaging production incidents across BookWorm's Azure Co
 
 ---
 
-## 3. Order Orchestration Stalls (`finance` / Durable Task Scheduler)
+### Runbook 3: Order Orchestration Stalls (`finance` / Durable Task Scheduler)
 
 **Symptoms:** Checkout sagas stall after order creation; [[service|order-orchestration]] logs connection errors to `finance-taskhub`.
 
@@ -56,7 +86,7 @@ Use these runbooks when triaging production incidents across BookWorm's Azure Co
 
 ---
 
-## 4. Vector Search & Catalog Ingestion Lag
+### Runbook 4: Vector Search & Catalog Ingestion Lag
 
 **Symptoms:** Newly added or updated books do not appear in semantic search; [[service|catalog-ingestion]] fails during batch processing.
 
@@ -72,7 +102,7 @@ Use these runbooks when triaging production incidents across BookWorm's Azure Co
 
 ---
 
-## 5. AI Chat & PII Redaction Degradation
+### Runbook 5: AI Chat & PII Redaction Degradation
 
 **Symptoms:** [[service|chat-api]] or [[service|rating-api]] returns 502/503 or slow responses.
 

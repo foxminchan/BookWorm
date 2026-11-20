@@ -18,20 +18,38 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Creates an [[entity|order]] for the authenticated Buyer. Order API obtains the
-Buyer's current basket and resolves its book details and prices through
-Shopping and Catalog.
+When a buyer is ready to check out, the platform must convert their active shopping basket into a formal [[entity|order]]. Accepting product lists or prices directly from a customer's device would risk stale catalog data and price manipulation, and transient network failures during checkout could cause accidental duplicate submissions.
+
+## 2. Business Value
+
+- **Pricing integrity:** Resolves book details and prices directly from authoritative Shopping and Catalog sources rather than client input.
+- **Safe checkout retries:** Uses a required request tracking key so retried submissions do not produce duplicate orders.
+- **Streamlined checkout flow:** Reduces client complexity by avoiding redundant order-item submission at checkout.
+
+## 3. How It Works
+
+1. An authenticated buyer initiates order creation and provides a unique request tracking key to guard against duplicate submissions.
+2. No itemized purchase body is sent by the caller.
+3. The ordering service retrieves the buyer's current basket from Shopping and resolves current book details and prices from Catalog.
+4. The service creates the [[entity|order]] and returns its newly assigned order identifier.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Server-side basket and price resolution:** Pulling basket contents and catalog prices at order creation guarantees authoritative pricing, at the cost of depending on Shopping and Catalog availability during checkout.
+- **Mandatory duplicate-submission protection:** Requiring a unique request tracking key adds a small responsibility for callers, but protects customers and operations from duplicate orders on unstable networks.
+
+## 5. Technical Reference
+
+- **Operation:** `POST /api/v1/orders`
+- **Required header:** `x-request-id` (idempotency key)
+- **Request body:** None
+- **Service dependencies:** Order API obtains the authenticated Buyer's current basket and resolves its book details and prices through Shopping and Catalog.
+- **Response:** `201 Created` returns the Order ID as a JSON UUID.
 
 <NodeGraph />
 
-## Contract
-
-Send the required `x-request-id` header as the idempotency key. The operation
-has no request body. A successful `201 Created` response returns the Order ID
-as a JSON UUID.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="Request header JSON Schema" maxHeight="500" search="true" />

@@ -109,6 +109,32 @@ properties:
     required: false
 ---
 
+## 1. Context & Problem
+
+Defining _what_ background work a job executes is separate from defining _when_ and _under what operational rules_ that work should run. A single job definition may need multiple schedules, priority ordering, retry policies, node affinity, overlap controls, and pause audit trails. The platform needs a central trigger registry to coordinate scheduling state, timing, and execution metadata durably across cluster nodes.
+
+## 2. Business Value
+
+- **Decoupled Scheduling and Job Logic:** Allows teams to adjust schedules, pause runs, set priorities, or retire triggers without modifying the underlying job implementation.
+- **Predictable Recovery & Resilience:** Tracks missed-run rules, retry policies, attempt counts, overlap policies, and trigger continuations so outages or transient failures are handled consistently.
+- **End-to-End Operational Traceability:** Records lifecycle state, previous and next fire times, execution routing preferences, and pause audit details for rapid troubleshooting.
+
+## 3. How It Works
+
+Every trigger is linked to a specific job definition and is uniquely identified within a scheduler by its trigger name and trigger group. The core trigger record tracks shared scheduling state: its current lifecycle status, trigger type, active start and end window, previous and next calculated fire times, priority, and optional calendar exclusion reference.
+
+It also governs runtime execution behavior—including how missed runs (misfires) and misfire thresholds are evaluated, whether retries or fixed delays apply, how overlapping runs are handled, whether execution prefers a specific cluster node or execution group, and whether a follow-on continuation trigger should run afterward.
+
+Schedule-specific parameters (such as cron rules, repeat counts, or typed properties) live in dedicated extension records linked to this core trigger, while pause metadata captures why, when, and by whom an individual trigger was paused.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Central Hub Complexity:** Consolidating timing, routing, retry, continuation, and pause metadata in one entity enables unified cluster-wide queries and state transitions, but creates a wide record closely tied to scheduler internals.
+- **Misfire and Overlap Alignment:** Default missed-run and overlap settings can cause unexpected catch-up bursts or skipped executions after downtime if they are not aligned with the target job's idempotency guarantees.
+- **Opaque Trigger Payload:** Optional trigger-level job data stored as a binary payload provides flexibility for passing execution parameters, but cannot be read or queried directly as plain text.
+
+## 5. Technical Reference
+
 ### Entity Properties
 
 <EntityPropertiesTable />

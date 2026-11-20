@@ -9,9 +9,23 @@ badges:
     textColor: blue
 ---
 
-This page summarizes BookWorm's quality requirements and connects each concern to the detailed scenarios in [[doc|arc42/10-quality-requirements/002-quality-scenarios]]. See [[doc|arc42/10-quality-requirements]] for chapter scope, requirement status, and references.
+## 1. Context & Problem
 
-## 10.1 Quality requirements overview
+High-level architectural goals can easily remain abstract unless they are mapped to specific stakeholder concerns and concrete verification scenarios. Across BookWorm, teams need a shared way to decide which qualities are non-negotiable—such as order accuracy and access control—versus which qualities can be balanced against delivery speed or infrastructure cost.
+
+This page bridges the chapter introduction in [[doc|arc42/10-quality-requirements]] and the detailed measurable tests in [[doc|arc42/10-quality-requirements/002-quality-scenarios]].
+
+## 2. Business Value
+
+A structured quality overview helps business, product, operations, and engineering stakeholders make aligned decisions:
+
+- **Clear non-negotiables:** Separates essential correctness, privacy, and durability rules from nice-to-have improvements.
+- **Faster architecture reviews:** Connects each business concern to named reviewer groups and specific scenarios so nothing falls through the cracks.
+- **Shared vocabulary:** Gives technical and non-technical stakeholders a common map from customer impact to system design choices.
+
+## 3. How It Works
+
+BookWorm evaluates quality concerns using three priority tiers and nine concern areas that feed directly into detailed scenarios.
 
 ### Priority convention
 
@@ -23,11 +37,33 @@ These tiers are a proposed way to evaluate the detailed scenarios. They do not r
 | **P2 - Important** | Protect independent change, diagnosis, responsiveness, and the customer journey. | Trade-offs require evidence and must not weaken a P1 requirement.                                    |
 | **P3 - Desirable** | Improve engineering effectiveness after essential and important requirements.    | May be deferred with an owner and a review condition.                                                |
 
-### Quality tree
+### Nine quality concern areas
 
-The tree connects stakeholder concerns to scenario identifiers. It is a coverage map, not a compliance score or a claim that every ISO quality characteristic applies. Labels use the pragmatic [arc42 Q42 model](https://quality.arc42.org/); one scenario may contribute to several qualities.
+1. **Correctness:** Base purchases on authoritative facts and keep order status distinct from background coordination outcomes.
+2. **Interoperability:** Keep service interfaces explicit, owned, and compatible with supported consumers.
+3. **Deployability:** Release compatible changes in one service without forcing unrelated services to redeploy.
+4. **Modifiability:** Change business rules inside their owning capability without cross-service database edits or hidden coupling.
+5. **Operability:** Identify the owning capability and actual stored state of any failed or delayed operation.
+6. **Reliability and recoverability:** Preserve queued work, surface uncertain external deliveries, and validate availability and restoration objectives.
+7. **Security and privacy:** Enforce service-specific access rules and prevent sensitive-data disclosure across user interfaces, AI models, and operational logs.
+8. **Performance efficiency:** Bound interactive customer response times under reproducible load, separately from background freshness.
+9. **Usability and accessibility:** Provide clear validation and failure feedback and keep the core purchase journey accessible to all users.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Coverage map, not a compliance score:** The quality tree organizes BookWorm's actual concerns rather than claiming every generic industry quality characteristic applies.
+- **Strict hierarchy of compromise:** P2 and P3 goals (such as speed or developer convenience) must never silently weaken P1 essentials (such as authoritative pricing, access control, or durable work).
+- **Proposed reviewers, not final sign-off:** Reviewer roles listed for each concern are starting proposals; named approvers and agreed budgets still require formal stakeholder sign-off.
+
+## 5. Technical Reference
+
+### Quality tree diagram
+
+Labels use the pragmatic [arc42 Q42 model](https://quality.arc42.org/); one scenario may contribute to several qualities.
 
 <MermaidFileLoader file="mermaids/bookworm-quality-tree.mmd" />
+
+### Quality concern and scenario mapping
 
 | Quality concern                    | Q42 labels               | BookWorm-specific requirement                                                                                               | Scenarios                  | Proposed reviewers                                         |
 | ---------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------- |

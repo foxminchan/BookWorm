@@ -9,25 +9,57 @@ badges:
     textColor: purple
 ---
 
-## 6.2 Catalog search-index maintenance
+## 1. Context & Problem
 
-[[domain|catalog]] book data is authoritative; its vector search index ([[container|catalog-vector]]) is derived and updated asynchronously. A Catalog write does not wait for embedding generation or Qdrant. Database triggers durably queue affected books, and [[service|sheduler-dashboard]] invokes a bounded ingestion batch every five minutes.
+BookWorm offers semantic book search alongside standard catalog browsing so customers can discover titles by meaning, topic, or description rather than exact keyword matches alone. Maintaining that smart search index requires generating mathematical text representations for each book—work that is slower and more failure-prone than saving a routine catalog update.
+
+If catalog updates waited on search indexing to finish before completing, merchandising edits and inventory updates would feel sluggish or fail whenever the search indexing service experienced a hiccup. Instead, [[domain|catalog]] treats its core catalog records as the authoritative source of truth and updates the derived search index asynchronously in safe, scheduled batches.
+
+## 2. Business Value
+
+- **Fast catalog administration**: Merchandisers and upstream catalog workflows commit book additions, edits, and removals immediately without waiting for search index processing.
+- **No lost updates**: Every catalog change is recorded durably in a work queue at the exact moment the book record changes, ensuring updates are never forgotten even if indexing is temporarily unavailable.
+- **Predictable resource usage**: Processing changes in scheduled, size-limited batches prevents sudden bursts of catalog edits from overwhelming AI indexing or search infrastructure.
+- **Automatic cleanup**: Removed or archived books are automatically cleared from search results so customers do not discover unavailable titles.
+
+## 3. How It Works
+
+1. **Capturing catalog changes**: Whenever a book is created, updated, or removed in the catalog, the catalog database automatically records a pending search-index task for that book in the same transaction. If the same book is edited multiple times before the next batch runs, its pending task simply reflects the latest revision.
+2. **Scheduled batch trigger**: Every five minutes, the platform's scheduler securely authenticates with the identity service and triggers a catalog indexing run.
+3. **Exclusive batch processing**: The indexing worker verifies that the request genuinely came from the scheduler, ensures no other indexing batch is currently running, and picks up to 200 pending book updates.
+4. **Updating or removing search entries**: For each active book, the worker builds searchable text, generates its semantic search entry, and saves it to the search index. For missing or removed books, it deletes the corresponding entry from the search index.
+5. **Safe completion tracking**: The worker marks a pending task complete only if the book has not been edited again while the batch was running. If a newer edit arrived concurrently, the task stays queued for the next five-minute cycle.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Freshness lag vs. write performance**: Because batches run every five minutes and process up to 200 items at a time, newly published or edited books are not instantly reflected in semantic search. Business teams should plan for a short indexing delay during large catalog imports.
+- **Scheduler success does not equal index health**: A completed five-minute schedule run only confirms the trigger ran—not that every book is up to date. Operations teams must monitor the age and volume of pending queue items alongside search-index health.
+- **Resilient failure handling**: If search-index generation or storage fails for an item, the task remains unacknowledged in the queue and is automatically retried on a subsequent run without manual intervention.
+- **Concurrency protection**: Exclusive locking ensures overlapping runs do not waste compute or overwrite newer search entries with stale data.
+
+## 5. Technical Reference
 
 <MermaidFileLoader file="mermaids/catalog-search-index-maintenance.mmd" />
 
-### Batch interaction
+### Components & Runtime Sequence
 
-1. [[service|catalog-api]] commits a product change to [[container|catalog-database]]. Database triggers atomically add or replace the affected book's pending vector revision.
-2. The Scheduler's `ProcessVectorBatchJob` obtains a client-credentials access token through the configured [[system|identity-provider]] token exchange and calls the [[service|catalog-ingestion]] endpoint with the bearer token.
-3. [[service|catalog-ingestion]] verifies that the token identifies Scheduler, acquires a PostgreSQL advisory lock, and reads up to 200 pending records.
-4. For each record, the worker builds searchable content, generates an embedding for an active book, and upserts it to [[container|catalog-vector]]. Missing or soft-deleted books have their vector record removed.
-5. A queue item is acknowledged only if its revision is still the one processed. A newer concurrent change remains pending for a later batch.
+| Step | Component                                                       | Technical Behavior                                                                                                                                                                            |
+| :--- | :-------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [[service\|catalog-api]] / [[container\|catalog-database]]      | Commits a product change; database triggers atomically add or replace the affected book's pending vector revision.                                                                            |
+| 2    | [[service\|sheduler-dashboard]] / [[system\|identity-provider]] | Every 5 minutes, `ProcessVectorBatchJob` obtains a client-credentials access token via token exchange and calls [[service\|catalog-ingestion]] with the bearer token.                         |
+| 3    | [[service\|catalog-ingestion]]                                  | Verifies the token identifies Scheduler, acquires a PostgreSQL advisory lock, and reads up to **200** pending records.                                                                        |
+| 4    | [[service\|catalog-ingestion]] / [[container\|catalog-vector]]  | Builds searchable content, generates an embedding for active books, and upserts it to Qdrant ([[container\|catalog-vector]]); missing or soft-deleted books have their vector record removed. |
+| 5    | [[container\|catalog-database]]                                 | Acknowledges a queue item only if its revision still matches the processed revision; newer concurrent changes remain pending for a later batch.                                               |
 
-### Failure and recovery
+### Failure & Recovery Semantics
 
-- A rejected credential prevents processing; the endpoint returns `401` or `403`, and the Scheduler invocation is reported as failed.
-- A busy lock or empty queue produces no batch work. The advisory lock prevents overlapping ingestion workers.
-- If embedding generation or a Qdrant operation fails, the affected queue item is not acknowledged, so durable work remains available to a later invocation.
-- A completed Scheduler invocation alone does not establish that the index is current. Check pending-update age and count alongside vector-index health.
+- **Authentication / Authorization failure**: Rejected credentials return HTTP `401` or `403`, and the Scheduler invocation is reported as failed.
+- **Lock contention or empty queue**: A busy PostgreSQL advisory lock or empty queue produces no batch work and prevents overlapping ingestion workers.
+- **Transient downstream failure**: If embedding generation or a Qdrant operation fails, the affected queue item is left unacknowledged so durable work remains available to a later invocation.
+- **Observability**: Monitor pending-update age and count in [[container|catalog-database]] alongside [[container|catalog-vector]] health rather than relying solely on Scheduler job status.
 
-See the [[flow|product-ingestion]], [[service|catalog-ingestion]], and [[system|product-catalog-system]] for the processing contract and operational ownership.
+### Related Documentation
+
+- [[flow|product-ingestion]]
+- [[service|catalog-ingestion]]
+- [[system|product-catalog-system]]

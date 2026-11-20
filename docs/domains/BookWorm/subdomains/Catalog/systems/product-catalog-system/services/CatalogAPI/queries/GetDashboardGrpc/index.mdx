@@ -14,30 +14,45 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `GetDashboard` RPC returns the total number of [[entity|book]]s and the aggregated
-[[entity|category]] counts used by the Catalog dashboard. This is a read-only query, but
-it requires the admin authorization policy.
+Operations and business teams viewing the administrative dashboard need an at-a-glance summary of catalog inventory—specifically total [[entity|book]] counts and breakdowns by [[entity|category]]. Because that summary powers an administrative dashboard hosted alongside order metrics in [[service|order-api]], [[service|order-api]] needs a secure, efficient way to pull aggregated catalog counts from [[service|catalog-api]] without scanning individual product records or exposing internal inventory metrics publicly.
 
-[[service|order-api]] produces this query when refreshing its cached
-administrative dashboard, using the named `dashboard-catalog` gRPC client
-with a token exchanged for Catalog. [[service|catalog-api]] consumes the
-synchronous service-to-service query.
+## 2. Business Value
+
+- **Clear operational visibility**: Gives administrators immediate insight into overall catalog size and how books are distributed across categories.
+- **Protected business metrics**: Restricts access to authorized administrative contexts so internal catalog statistics are not exposed to unauthenticated callers.
+- **Responsive dashboard experience**: Pre-aggregated counts combined with dashboard caching in [[service|order-api]] keep administrative reporting fast.
+
+## 3. How It Works
+
+1. When [[service|order-api]] refreshes its cached administrative dashboard, it obtains an administrative access token scoped for [[service|catalog-api]] and submits an empty dashboard summary request.
+2. [[service|catalog-api]] verifies that the caller satisfies the administrative authorization policy.
+3. Once authorized, [[service|catalog-api]] computes and returns the total number of [[entity|book]]s alongside the count of books per [[entity|category]].
+4. [[service|order-api]] caches the aggregated results so administrative users see fast dashboard updates without repeatedly recalculating catalog totals.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Authorized service-to-service exchange vs. open internal read**: Unlike standard public catalog lookups, dashboard totals require explicit administrative authorization and token exchange, adding security configuration complexity in exchange for strict access control.
+- **Cached summary vs. live count**: Refreshing a cached administrative dashboard reduces load on [[service|catalog-api]], meaning dashboard counts reflect the most recent refresh rather than every instantaneous catalog change.
+- **Synchronous aggregation**: Computing totals directly on [[service|catalog-api]] keeps ownership clean inside the catalog boundary, though dashboard refreshes depend on [[service|catalog-api]] availability.
+
+## 5. Technical Reference
+
+`GetDashboard` is an admin-protected, read-only RPC defined in the `book.v1` gRPC contract (`BookGrpcService`). It returns the total number of [[entity|book]]s and aggregated [[entity|category]] counts for the Catalog dashboard.
+
+- **Producer / Caller**: [[service|order-api]] produces this query when refreshing its cached administrative dashboard, using the named `dashboard-catalog` gRPC client with a token exchanged for Catalog.
+- **Consumer**: [[service|catalog-api]] consumes this synchronous service-to-service query and enforces the admin authorization policy.
+- **Request**: Empty `GetDashboardRequest`.
+- **Response**: `GetDashboardResponse` containing `total_books` and repeated `DashboardCategory` values (`Name`, `Value`).
 
 <NodeGraph />
 
-## Contract
-
-Send an empty `GetDashboardRequest`. The response is
-`GetDashboardResponse`, containing `total_books` and repeated
-`DashboardCategory` values.
-
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="GetDashboard gRPC schema" />
 
-## Examples
+### Examples
 
 <CodeGroup dropdown>
 

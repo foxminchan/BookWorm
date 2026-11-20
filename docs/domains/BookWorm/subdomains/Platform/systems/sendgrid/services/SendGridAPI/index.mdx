@@ -33,38 +33,27 @@ specifications:
     name: OpenAPI V3
 ---
 
-## Overview
+## 1. Context & Problem
 
-The SendGrid API is the integration service for [[system|sendgrid]], the
-external email delivery system used by BookWorm. The [[system|notification-system]]
-prepares a provider request from a durable [[entity|outbox]] item and calls this API
-without transferring ownership of notification state to SendGrid.
+BookWorm relies on an external email provider to deliver customer notifications rather than operating its own global mail infrastructure. Without a clearly defined integration boundary between BookWorm and [[system|sendgrid]], teams risk blurring where notification state lives, misinterpreting email handoff outcomes as business-process completion, or mishandling sensitive customer data and provider outages.
 
-The API is a delivery boundary, not a BookWorm business API. Its response tells
-BookWorm how the provider accepted or rejected a request; it does not determine
-whether the business operation that caused the notification succeeded.
+## 2. Business Value
 
-### Notification connection
+- **Clear ownership boundaries:** Keeps notification state, retry governance, and business meaning inside BookWorm while delegating external mail routing to a specialized provider.
+- **Resilient customer communication:** Durable [[entity|outbox]] tracking ensures temporary provider outages or rate limits do not silently drop important customer emails.
+- **Stronger privacy and security posture:** Establishes clear expectations for protecting provider credentials, limiting sensitive personal data in operational logs, and preserving audit correlation.
+- **Predictable operations and support:** Gives delivery and support teams a shared model for diagnosing rejected emails versus temporary delivery delays.
 
-The catalog connects [[service|notification-api]] to this service through
-[[command|SendMail]]. This edge represents logical mail submission. Notification
-currently uses MailKit over SMTP, not the HTTP Mail Send API documented below;
-SendGrid is the recipient provider when configured, while development uses MailPit.
+## 3. How It Works
 
-## Request lifecycle
+1. **Select pending work:** The [[system|notification-system]] picks up an eligible record from its durable [[entity|outbox]].
+2. **Prepare the submission:** It maps the recipient, sender, subject, and message content into the format expected by the external email provider.
+3. **Submit and validate:** The external provider validates the sender, recipient, message structure, authentication, and usage limits, then returns an acceptance or error outcome.
+4. **Record and govern retries:** BookWorm records the provider's outcome against the outbox record. Temporary outages or rate limits trigger a bounded retry policy, whereas invalid requests are flagged for diagnosis rather than retried endlessly.
 
-1. The Notification System selects an eligible outbox item.
-2. It maps the recipient, sender, subject, and message content to the SendGrid
-   Mail Send request.
-3. SendGrid validates the request and returns an acceptance or error response.
-4. The Notification System records the provider outcome against the outbox
-   item and applies the configured retry policy.
+Throughout this flow, BookWorm remains responsible for durable outbox state, duplicate-prevention decisions, retry scheduling, and correlating provider responses back to the originating notification. Meanwhile, the external provider acts strictly as a delivery boundary—not a BookWorm business service—so its outcome never determines whether the business operation that triggered the email succeeded.
 
-The caller should use a bounded retry strategy for transient failures and rate
-limits. Invalid requests should be diagnosed and corrected rather than retried
-indefinitely.
-
-## API responsibilities
+### Responsibility Split
 
 | Area                | Responsibility                                               |
 | ------------------- | ------------------------------------------------------------ |
@@ -74,25 +63,46 @@ indefinitely.
 | Error reporting     | Return actionable status and error information to the caller |
 | Provider limits     | Enforce authentication, quotas, and rate limits              |
 
-BookWorm remains responsible for durable outbox state, idempotency decisions,
-retry scheduling, and operational correlation between a provider response and
-the originating notification.
+## 4. Trade-offs & Lessons Learned
 
-## Contract and integration notes
+- **External delivery vs. internal state ownership:** Offloading email routing to an external network avoids managing mail deliverability infrastructure in-house, but requires BookWorm to retain durable outbox state, duplicate protection, and retry scheduling locally.
+- **Delivery outcome is not business completion:** An accepted or failed email submission only reflects communication status—it must never determine whether the originating business action succeeded.
+- **Logical model vs. active transport:** The catalog documents the provider's full web-service capabilities alongside the logical connection from [[service|notification-api]], even though runtime delivery currently routes over standard mail transport (to a local test inbox in development, and to the configured provider in production). Keeping both perspectives explicit prevents architectural confusion.
+- **Privacy vs. diagnostics:** Support teams need correlation identifiers and provider outcomes to troubleshoot failed emails, but logging full message bodies or credentials creates security and privacy exposure.
 
-The provider contract is documented by the OpenAPI specification linked in this
-service's metadata. Consumers should treat the specification as the source of
-truth for request and response shapes, required headers, authentication, and
-provider error formats.
+## 5. Technical Reference
+
+The SendGrid API (`sendgrid-api`) is the external integration service for [[system|sendgrid]]. The [[system|notification-system]] prepares a provider request from a durable [[entity|outbox]] item and interacts with this service without transferring ownership of notification state to SendGrid.
+
+### Notification connection
+
+The catalog connects [[service|notification-api]] to this service through
+[[command|SendMail]]. This edge represents logical mail submission. Notification
+currently uses MailKit over SMTP, not the HTTP Mail Send API documented in the
+OpenAPI specification; SendGrid is the recipient provider when configured, while
+development uses MailPit.
+
+### Supported Operations
+
+- [[command|CreateMailBatch]]: Create a SendGrid mail batch identifier.
+- [[query|GetMailBatch]]: Validate an existing SendGrid mail batch identifier.
+- [[command|SendMail]]: Submit email messages (`POST /v3/mail/send`).
+
+### Contract and integration notes
+
+The provider contract is documented by the OpenAPI V3 specification linked in
+this service's metadata (`https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml`).
+Consumers should treat the specification as the source of truth for request and
+response shapes, required headers, authentication, and provider error formats.
 
 The integration should:
 
 - Keep SendGrid credentials in runtime secret configuration.
 - Avoid logging API keys, full message bodies, or unnecessary personal data.
 - Capture provider status and correlation identifiers needed for support.
-- Preserve the outbox item when the provider is unavailable.
+- Preserve the outbox item when the provider is unavailable and apply a bounded retry strategy for transient failures and rate limits (diagnosing invalid requests rather than retrying indefinitely).
 - Avoid treating an accepted API request as a domain-level completion event.
 
-## Architecture
+### Architecture
 
 <NodeGraph />

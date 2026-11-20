@@ -22,86 +22,45 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-Notification needs an email submission mechanism that supports local
-development without coupling order handlers to a particular provider's HTTP
-contract. Provider submission can time out or fail independently of the
-application's persisted email state.
+BookWorm needs a practical way to send emails across different environments—allowing developers to test email formatting and flows locally without sending real messages to customers, while using a production mail service in live environments. Coupling order workflows directly to a specific vendor's proprietary web API would make switching providers harder and complicate local testing. In addition, external mail submission can time out or fail independently of BookWorm's internal saved notification state.
 
-## Decision
+## 2. Business Value
 
-Keep order rendering and durable work in [[system|notification-system]].
-`ISender` resolves to the email outbox wrapper, while `IEmailSender` performs
-MailKit SMTP submission of the resulting MIME message.
+- **Safe, realistic local testing:** Engineers can verify full email rendering and sending workflows in development using a local test inbox without risking accidental customer emails or incurring provider costs.
+- **Vendor flexibility:** Using a standard email transport protocol keeps order commands and message rendering isolated from any single provider's proprietary API.
+- **Controlled resilience:** Built-in timeouts, retries, and circuit breaking protect the service from hanging indefinitely when an external mail server becomes slow or unresponsive.
+- **Clear accountability:** Finance owns order meaning, Notification owns formatting and submission policy, and the external provider owns its mail delivery network.
 
-Use MailPit in development and the configured email provider outside
-development. [[system|sendgrid]] can supply that external SMTP endpoint; the
-current implementation does not invoke its HTTP Mail Send API or the
-cataloged SendGrid API service.
+## 3. How It Works
 
-The SMTP sender uses a resilience pipeline with a circuit breaker, exponential
-retry backoff with jitter, and a 30-second timeout around submission attempts.
-Connection and optional authentication occur before that pipeline; disconnect
-occurs afterward. These operations can fail independently of `SendAsync`.
-Failures are logged and propagated, not converted into successful sent state.
+1. **Environment-aware routing:** In development environments, emails are routed to a local test mail catcher; outside development, they are sent to the configured external mail provider.
+2. **Standardized handoff:** Notification prepares the formatted message and passes it through a standard mail-transport boundary rather than calling vendor-specific web endpoints.
+3. **Protected submission attempt:** The actual message send is wrapped in a resilience policy with timeouts, jittered retries, and a circuit breaker. Connection setup and optional login occur before the send step, and disconnection occurs afterward.
+4. **Honest failure reporting:** Any error during connection, sending, or disconnection is logged and propagated rather than falsely marking the email as sent. If a failure leaves the outcome uncertain, the record remains eligible for a later retry attempt.
 
-The sender does not persist a provider response or final delivery status.
-Finance owns order meaning; Notification owns rendering, email state, and
-submission policy; the provider owns its delivery network.
+## 4. Trade-offs & Lessons Learned
 
-The resilience policy bounds retries within a sender operation only. It does
-not cap how many later maintenance batches can select an unsent outbox record.
-A failure during connection, authentication, disconnect, or sent-state
-persistence can leave an ambiguous or unsent record for a later attempt.
-Provider acceptance remains a submission outcome, not a delivery receipt.
+- **Per-attempt resilience is not a lifetime cap:** The retry and circuit-breaker safeguards bound retries within a single send attempt only; they do not limit how many times future scheduled maintenance runs can re-attempt an unsent record.
+- **Broad exception handling without permanent failure classification:** Current retry and circuit-breaker rules treat exceptions broadly and do not automatically move permanently undeliverable addresses into a separate terminal failure state.
+- **Connection lifecycle sits outside the send pipeline:** Because connecting, authenticating, and disconnecting occur outside the wrapped send step, timeouts and retries do not cover the entire connection lifecycle equally.
+- **Ambiguous failures can still cause duplicates:** If a provider accepts a message right before a disconnect error or a failed status update, a subsequent retry may submit the email again. Provider acceptance remains a submission result, not a delivery receipt.
+- **Provider switches still require operational validation:** Although order contracts stay unchanged when switching providers, teams must still validate endpoint details, authentication credentials, encryption settings, and provider capabilities.
+- **Alternatives rejected:**
+  - _Calling a provider's proprietary HTTP mail API:_ Rejected to avoid vendor-specific HTTP contract coupling; the active path uses standard mail transport rather than SendGrid's HTTP API.
+  - _Hard-coding a production provider into order handlers:_ Rejected because it couples Finance workflows directly to provider configuration.
+  - _Marking an email sent upon provider connection:_ Rejected because opening a connection does not confirm a message was submitted.
 
-## Consequences
+## 5. Technical Reference
 
-- Provider configuration can change without changing Finance's order-command
-  contracts, but SMTP capabilities and authentication still require validation.
-- Local email testing can use MailPit without submitting to a production provider.
-- Resilience bounds retries within a submission operation, not the total
-  lifetime attempts for an unsent outbox record.
-- Retry and circuit-breaker predicates currently handle exceptions broadly;
-  the implementation does not classify permanent failures into persisted
-  terminal states.
-- SMTP acceptance is not proof of recipient delivery. An ambiguous submission
-  or disconnect failure can cause a later retry to submit the message again.
-- The SMTP dependency is operationally separate from the durable email
-  outbox: outbox persistence can succeed while the provider is unavailable,
-  and a later submission can still be duplicated after an ambiguous result.
-- Connection and optional authentication happen outside the submission
-  resilience pipeline, so its retry and timeout behavior should not be
-  interpreted as covering the complete SMTP connection lifecycle.
-- Provider changes require validating endpoint, authentication, TLS behavior,
-  and delivery configuration even though the Finance message contract remains
-  unchanged.
-
-## Alternatives considered
-
-### Call the provider's HTTP Mail Send API
-
-This would couple the sender to a provider-specific HTTP contract. The current
-implementation uses MailKit over SMTP and does not invoke the cataloged
-SendGrid HTTP API service.
-
-### Hard-code a production provider into order handlers
-
-This would couple Finance's business workflow to provider configuration and
-delivery behavior. The SMTP abstraction keeps rendering and provider
-submission within Notification.
-
-### Mark an email sent when the provider accepts the connection
-
-A connection does not establish that the message was submitted. The outbox
-marks the sender successful only after the send operation returns; even that
-does not prove final delivery to the recipient.
-
-### Relationship to existing provider documentation
-
-The older [[adr|adr-001-provider-boundary-and-ownership]]
-describes a SendGrid API integration and provider-response recording. This
-record preserves the external-provider boundary but documents the current
-MailKit SMTP path and the absence of persisted provider responses. The older
-record is unchanged.
+- **Status & Context:** `accepted` (`2026-11-01`). Preserves the external-provider boundary from [[adr|adr-001-provider-boundary-and-ownership]], while documenting the active MailKit SMTP path and the absence of persisted provider responses (the older record remains unchanged).
+- **Boundaries & Abstractions:**
+  - [[system|notification-system]] owns rendering, email outbox state, and submission policy.
+  - `ISender` resolves to the email outbox wrapper; `IEmailSender` performs MailKit SMTP submission of the rendered MIME message.
+  - Uses **MailPit** in development and a configured SMTP provider elsewhere (e.g., [[system|sendgrid]] as an external SMTP endpoint; does **not** invoke SendGrid's HTTP Mail Send API or the cataloged SendGrid API service).
+- **Resilience Pipeline (`SendAsync`):**
+  - Wraps `SendAsync` with a circuit breaker, exponential retry backoff with jitter, and a **30-second** timeout.
+  - Connection and optional authentication occur before the pipeline; disconnect occurs afterward and can fail independently of `SendAsync`.
+  - Failures are logged and propagated, not converted into sent state; provider responses and final delivery statuses are not persisted.
+- **Operational Validation on Provider Change:** Validate SMTP endpoint, authentication, TLS behavior, and delivery configuration even though Finance's message contracts remain unchanged.

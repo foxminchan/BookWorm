@@ -9,7 +9,38 @@ badges:
     textColor: teal
 ---
 
-# Set up your development environment
+## 1. Context & Problem
+
+Multi-service applications typically rely on a combination of backend runtimes, container orchestration, frontend toolchains, and documentation generators. When contributors install these tools manually, version mismatches and missing local hooks frequently cause setup errors or inconsistent behavior between developer machines and automated build pipelines.
+
+Getting Started addresses this friction by standardizing how contributors copy the repository, install exact project tool versions, and prepare only the local components needed for their specific task.
+
+## 2. Business Value
+
+A predictable environment setup lowers onboarding costs and keeps teams productive:
+
+- **Eliminates environment drift**: Automated version management ensures every contributor and automated check uses matching tool versions.
+- **Reduces unnecessary local overhead**: Contributors editing documentation, running isolated checks, or working on the user interface do not have to run the full containerized application stack.
+- **Protects code quality early**: Pre-configured repository hooks and centralized task commands catch formatting or consistency issues before work leaves a developer's machine.
+
+## 3. How It Works
+
+Preparing a local BookWorm workspace follows a clean, staged sequence:
+
+1. **Create a personal working copy**: Fork and clone the repository locally, and connect it back to the main upstream project so updates stay synchronized.
+2. **Install standardized project tools**: Use the repository's toolchain manager to install the exact platform, runtime, and cloud tools required, along with optional helpers if working on interface contracts or AI-assisted workflows.
+3. **Prepare dependencies and workspace hooks**: Restore project dependencies and activate local quality hooks, adding frontend or documentation workspace packages only if working in those areas.
+4. **Run only what the task requires**: Documentation edits, architecture checks, unit checks, and isolated frontend work run directly without containers. Full container-based orchestration is started only when end-to-end runtime validation is needed, with environment parameters prompted interactively on first launch.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Centralized toolchain manager vs. ad-hoc local installs**: Requiring a single toolchain and task runner adds one lightweight prerequisite upfront, but avoids debugging subtle runtime and package mismatches across teams.
+- **Selective runtime execution vs. always-on full stack**: Separating documentation and isolated unit work from full containerized runs speeds up everyday feedback loops while keeping full-stack validation available when needed.
+- **Deferred first-run configuration**: Prompting for required environment parameters on first application launch keeps initial setup fast and keeps sensitive configuration out of source control.
+
+## 5. Technical Reference
+
+### Set Up Your Development Environment
 
 <Steps title="Set up your repository">
   <Step title="Fork BookWorm">
@@ -30,32 +61,50 @@ badges:
 
   </Step>
   <Step title="Install the project tools">
-    Install [mise](https://mise.jdx.dev/) and the project tools:
+    Install [mise](https://mise.jdx.dev/) and the repository toolchain (Node, Aspire, Bun via `.bun-version`, .NET 11 via `global.json`, Azure CLI, and GitHub CLI):
 
     ```bash
     mise install
     ```
 
+    If you will modify `.proto` files or want Copilot CLI assistance, you can also install the optional tools defined in `mise.toml`:
+
+    ```bash
+    mise run setup:buf
+    mise run setup:copilot
+    ```
+
   </Step>
   <Step title="Prepare the repository">
-    Restore dependencies and configure the repository's Git hooks:
+    Restore .NET dependencies and tools, and configure the repository's Git hooks:
 
     ```bash
     mise run prepare
     ```
 
+    If you are working on the frontend or documentation workspaces, install their Bun dependencies as well:
+
+    ```bash
+    cd src/Clients && bun install
+    cd ../../docs && bun install
+    ```
+
   </Step>
 </Steps>
 
-## Understand the setup
+### Understand the Setup
 
 Read [AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) for the current toolchain, setup commands, and repository conventions. The [README](https://github.com/foxminchan/BookWorm/blob/main/README.md) explains prerequisites and how to run the application.
 
-Docker must be running to start the application, but is not required just to edit documentation or code. Start the app only when your task requires it:
+Docker must be running to start the application, but is not required just to edit documentation, run unit/architecture tests, or work on the frontend in isolation. Start the app only when your task requires it:
 
 ```bash
 mise run run
 ```
+
+On the first run, Aspire will prompt you for any required environment variables and parameters.
+
+To preview this EventCatalog documentation site locally, run `bun run dev` from `docs/` and open `http://localhost:3000`.
 
 The task runner is defined in [`mise.toml`](https://github.com/foxminchan/BookWorm/blob/main/mise.toml). Use `mise tasks ls` to see available tasks.
 

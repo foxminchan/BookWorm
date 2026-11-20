@@ -2,21 +2,45 @@
 summary: Delete a category from the Catalog API and handle missing-resource responses.
 ---
 
+## 1. Context & Problem
+
+Integrating applications—such as admin dashboards, catalog synchronization scripts, and back-office tools—need a reliable pattern to remove obsolete book categories and react accurately when something goes wrong. If an integration ignores missing-record notices or assumes a removal worked without verifying the outcome, local screens and external systems can drift out of sync with the master catalog.
+
+## 2. Business Value
+
+- **Consistent user experience:** Ensures admin tools update their local views only after the catalog confirms the category was actually removed.
+- **Safer error handling:** Prevents teams from blindly retrying removals against mistyped identifiers by clearly distinguishing a missing category from a successful deletion.
+- **Faster onboarding:** Provides developers and integration partners with a ready-to-follow walkthrough for both normal removal and missing-resource edge cases.
+
+## 3. How It Works
+
+1. Before requesting a deletion, the operator or workflow confirms that no books still depend on the category.
+2. The client submits a removal request using the category's unique identifier.
+3. When the catalog confirms the deletion succeeded, the client removes that category from its local screen or cached list.
+4. If the catalog reports that no category exists for the supplied identifier, the client treats the outcome as a missing resource rather than a successful deletion, and verifies the identifier before making any further attempts.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit failure on missing records:** Treating a missing category as an error rather than silent success forces callers to surface bad identifiers or stale views early, though workflows that expect idempotent cleanup must handle that signal deliberately.
+- **Dependency awareness:** Checking that books no longer rely on a category beforehand avoids broken catalog classifications and unexpected failures during cleanup.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Delete an existing category
+### 1. Delete an existing category
 
 Delete by UUID. A successful deletion returns `204 No Content` and has no response body.
 
-### Operational notes
+#### Operational notes
 
 - Confirm that books no longer depend on the category before deleting it.
 - Treat `404` as a missing resource, not as a successful deletion.
 - Retry only after checking that the UUID is correct.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +50,7 @@ const response = { status: 204, body: null };
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Remove the category from local state after receiving `204 No Content`.
 
@@ -58,6 +82,6 @@ if (!response.ok) {
 
 ---
 
-## 2. Handle a missing category
+### 2. Handle a missing category
 
 An unknown UUID returns `404` with problem details. Confirm the identifier before retrying.

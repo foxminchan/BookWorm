@@ -21,53 +21,43 @@ styles:
   icon: /icons/database/blob.svg
 ---
 
+## 1. Context & Problem
+
+Catalog needs dedicated storage for binary [[entity|book]] cover images and related media assets. Placing large image files inside [[container|catalog-database]] would bloat relational storage and backups, whereas persisting short-lived download links in the database would cause broken images once those links expire.
+
+## 2. Business Value
+
+- **Purpose-built media durability:** Acts as the authoritative system of record for Catalog binary assets with long-term retention, keeping the product database lean and fast.
+- **Secure, time-limited delivery:** Readers receive fresh, read-only access links generated on demand instead of exposing permanent storage credentials.
+- **Clean lifecycle management:** Creating, replacing, or removing book imagery is centrally orchestrated without leaving stale media rules in client applications.
+
+## 3. How It Works
+
+[[service|catalog-api]] owns all uploads, access-link generation, and deletions for Catalog Blob Storage, while [[container|catalog-database]] remains authoritative for the book record and stores only the permanent asset reference.
+
+| Operation        | Behavior                                                                                                                                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create or update | When a request includes a cover image, Catalog API uploads the file under a unique generated name (preserving a safe version of the original filename and file type) and links the permanent reference to the book record. |
+| Read             | When a book is requested, Catalog API checks that the book's asset reference points to the configured storage location and generates a fresh, read-only, time-limited download link.                                       |
+| Remove           | An explicit image-removal request deletes the stored file and its snapshots. Deleting a book also removes its linked image.                                                                                                |
+
+## 4. Trade-offs & Lessons Learned
+
+- **Orphaned asset risk:** Because object storage and the product database do not participate in a single shared transaction, an upload can succeed right before a book update fails, leaving an unreferenced file in storage that requires periodic operational reconciliation.
+- **Never store temporary access links:** Time-limited download links are meant for immediate client use and must never be saved as permanent identifiers. An expired link does not mean the image file is lost—re-fetching the book resolves a new link.
+- **Consistent restoration and edits:** Access errors can indicate an expired link, a reference pointing to the wrong storage account or container, or an unavailable file. During migrations or restores, teams must preserve the book's stored reference and restore the file under the same object name in the configured container. If an object cannot be restored, replace or remove it through [[service|catalog-api]] rather than editing database columns directly.
+
+## 5. Technical Reference
+
 <NodeGraph />
 
-## Overview
-
-Catalog Blob Storage holds the binary [[entity|book]] images used by Catalog.
-[[container|catalog-database]] remains authoritative for the book record and
-stores its image URN; the image bytes live here rather than in PostgreSQL.
-[[service|catalog-api]] owns uploads, URL resolution, and deletion.
-
-## Object identity and content
-
-Each upload creates a uniquely named blob using a UUIDv7 and a sanitized
-version of the original filename. The uploaded content type is stored with the
-object. The database reference has this form:
-
-`urn:{account}:{container}:{blobName}`
-
-The URN is the stable reference used by Catalog. Before reading or deleting an
-object, Catalog API validates that the URN identifies the configured storage
-account and container.
-
-## Image lifecycle
-
-| Operation        | Behavior                                                                                                                            |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Create or update | The multipart request may include an image. Catalog API uploads the bytes and associates the resulting URN with the book record.    |
-| Read             | Catalog API resolves the stored URN to a read-only, time-limited SAS URL. The URL lifetime is controlled by `SasExpiryHours`.       |
-| Remove           | An explicit image-removal request deletes the referenced blob and its snapshots. Deleting a book also removes its referenced image. |
-
-Blob Storage and PostgreSQL do not participate in one transaction. If an
-operation fails after the upload but before the book record is updated, the
-uploaded object can be left without a database reference; account for this
-orphan risk during operational reconciliation.
-
-## Consistency and recovery
-
-- Treat the URN in `books.image` as the link between the book and its object.
-  Preserve it when moving or restoring book records, and restore the object
-  under the same name in the configured container.
-- An expired SAS URL is not evidence that the object is missing. Fetch the
-  book again to get a fresh URL; `403` or `404` responses can also indicate a
-  URN for the wrong account/container or an unavailable blob.
-- If an object cannot be restored, replace the image or remove it through
-  [[service|catalog-api]] rather than editing `books.image` directly.
-
-## Operational guidance
-
-- Keep binary image content out of book rows; PostgreSQL stores only the URN.
-- Do not persist generated SAS URLs as identifiers because they expire.
-- Resolve a fresh URL from the stored URN when returning a book.
+- **Container configuration:** `azure-storage-account` (`catalog-blob`), `readWrite`, `authoritative: true`, `classification: internal`, `retention: 10y`, `residency: eastasia`.
+- **Object naming & URN contract:**
+  - Each upload creates a unique blob using a `UUIDv7` and a sanitized version of the original filename, storing the uploaded content type with the object.
+  - The URN persisted in `books.image` follows `urn:{account}:{container}:{blobName}`.
+  - Before reading or deleting an object, `catalog-api` validates that the URN identifies the configured storage account and container.
+- **API & configuration details:**
+  - Create or update requests accept a multipart payload containing the image.
+  - Read resolution generates a read-only SAS URL whose lifetime is controlled by `SasExpiryHours` (never persisted).
+  - Removal deletes the blob and its snapshots.
+  - On image fetch, `403` or `404` responses can indicate an expired SAS URL (re-fetch the book to resolve a fresh URL), a URN targeting the wrong account/container, or an unavailable blob.

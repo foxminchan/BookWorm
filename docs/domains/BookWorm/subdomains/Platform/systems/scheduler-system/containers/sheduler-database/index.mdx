@@ -20,87 +20,50 @@ styles:
   icon: /icons/database/postgresql.svg
 ---
 
+## 1. Context & Problem
+
+Recurring background jobs in the [[system|scheduler-system]] cannot rely on temporary in-memory timers. If the scheduling service restarts, scales across multiple instances, or recovers from an unexpected outage, the platform must remember every registered schedule, coordinate active instances so work does not collide, and keep a diagnostic trail of delayed or failed runs. At the same time, this scheduling store must remain strictly separate from business data owned by Catalog, Notification, or other domain systems.
+
+## 2. Business Value
+
+- **Schedule continuity**: Saved jobs and timing rules survive process restarts and deployments without manual intervention.
+- **Safe multi-instance coordination**: Prevents overlapping triggers and split-brain execution when multiple scheduler instances are running.
+- **Faster operational triage**: Gives support teams a durable history of executions and missed schedules to diagnose delays and failures quickly.
+- **Clean domain isolation**: Keeps scheduling mechanics decoupled from customer, catalog, and notification data so domain teams retain full ownership of their business state.
+
+## 3. How It Works
+
+- **System of record for schedules**: Scheduler Database stores what background jobs are registered, when each trigger is eligible to fire, whether any schedule groups are paused, and how missed schedules should recover.
+- **Runtime coordination**: As the scheduler runs, it records active firings, instance health check-ins, and coordination locks so eligible work is picked up reliably without collisions.
+- **Execution diagnostics**: Each completed, failed, or missed run is recorded with timing and outcome details so operators can trace what happened during an incident.
+- **Strict ownership boundaries**: [[service|sheduler-dashboard]] is the sole application owner of this database. Downstream services such as Catalog and Notification never query it directly, and operators always manage schedules through the supported dashboard rather than editing stored records directly.
+- **Invocation vs. business completion**: A successful execution record here proves only that the scheduler completed its call to the target service; downstream systems remain responsible for their own durable queues, retries, and business outcomes.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Scheduler status does not equal business completion**: Operators must verify downstream queues or outboxes when confirming whether catalog indexing or email delivery actually finished, because scheduler history only tracks the trigger attempt.
+- **Bounded diagnostic retention**: Keeping 30 days of execution history (capped at 100,000 entries per scheduler) prevents unbounded storage growth while preserving enough context for routine operational triage; longer-term auditing belongs in platform observability or downstream systems.
+- **No cross-service database reads**: Prohibiting direct queries from Catalog or Notification prevents fragile coupling, even though investigators must use shared correlation identifiers when tracing issues across systems.
+- **No sensitive payloads in job state**: Because operational tables are queried during diagnostics, secrets, authorization headers, notification content, and personal data must never be stored in job data.
+
+## 5. Technical Reference
+
+- **Application owner & provisioning**: Owned by [[service|sheduler-dashboard]] and provisioned as the `schedulerdb` PostgreSQL resource (`technology: postgresql`, `access_mode: readWrite`, `classification: internal`). The Scheduler service waits for `schedulerdb` readiness before starting and uses Quartz's persistent store.
+- **Catalogued Quartz entities**:
+  - Job & trigger definitions: [[entity|qrtz-job-details]], [[entity|qrtz-triggers]], [[entity|qrtz-cron-triggers]], [[entity|qrtz-simple-triggers]], and [[entity|qrtz-blob-triggers]].
+  - Schedule constraints & pauses: [[entity|qrtz-calendars]] and paused group entities.
+  - Active coordination & instance liveness: [[entity|qrtz-fired-triggers]], [[entity|qrtz-scheduler-state]], [[entity|qrtz-locks]], and [[entity|qrtz-job-status]].
+  - Execution & misfire diagnostics: [[entity|qrtz-execution-history]] and [[entity|qrtz-misfire-history]].
+- **Retention & operational rules**:
+  - Execution history is enabled and retained for `30 days`, with a maximum of `100,000` entries per scheduler.
+  - Direct edits to Quartz tables are unsafe; use the Quartz dashboard or supported HTTP management API.
+  - Operational queries should filter by job, trigger, and fire-instance identifiers. Connection strings, credentials, authorization headers, notification content, and personal data must not be stored in job data or copied into routine logs.
+- **Architecture & Schema**:
+
 <NodeGraph />
-
-## Overview
-
-Scheduler Database is the operational system of record for the
-[[system|scheduler-system]]. It stores Quartz definitions and runtime state so
-scheduled work can survive process restarts, coordinate scheduler instances,
-and remain diagnosable after a failed or delayed firing.
-
-It is authoritative for scheduling state, but it is not authoritative for
-Catalog, Notification, or any other business data touched by a job. Downstream
-systems own the work requested by the Scheduler and must expose their own
-durable queues, outboxes, or processing state.
-
-## What it stores
-
-- **Job definitions** — registered job types, groups, durability, and job data.
-- **Trigger definitions** — cron, simple, and blob trigger schedules,
-  calendars, pause state, and misfire configuration.
-- **Runtime coordination** — fired triggers, scheduler-instance check-ins,
-  locks, and job status.
-- **Execution diagnostics** — execution history and misfire history used to
-  investigate duration, completion, failure, and recovery behavior.
-
-The catalogued Quartz entities describe the principal tables and their
-relationships:
-
-- [[entity|qrtz-job-details]] and [[entity|qrtz-triggers]] define what can run
-  and when it is eligible.
-- [[entity|qrtz-cron-triggers]], [[entity|qrtz-simple-triggers]], and
-  [[entity|qrtz-blob-triggers]] store trigger-specific scheduling data.
-- [[entity|qrtz-calendars]] and paused group entities constrain or suspend
-  eligible schedules.
-- [[entity|qrtz-fired-triggers]] and [[entity|qrtz-scheduler-state]] represent
-  active firings and scheduler-instance liveness.
-- [[entity|qrtz-locks]], [[entity|qrtz-job-status]],
-  [[entity|qrtz-execution-history]], and [[entity|qrtz-misfire-history]] support
-  coordination and operations.
-
-## Access patterns
-
-[[service|sheduler-dashboard]] is the Scheduler Database's application owner.
-The Scheduler service uses Quartz's persistent store to read and write job,
-trigger, coordination, and execution records. Its dashboard and HTTP API
-present selected operational state to authorized operators.
-
-No Catalog or Notification service should query this database directly.
-Scheduler jobs invoke versioned service contracts or publish integration work;
-the receiving system owns authorization, processing, retries, and business
-outcomes.
-
-### Schema
 
 <AccordionGroup>
 	<Accordion title="Scheduler Database schema">
 		<Schema file="schema.sql" lang="sql" title="schema.sql" />
 	</Accordion>
 </AccordionGroup>
-
-## Retention and operational behavior
-
-- Quartz scheduling state is durable and must remain available across Scheduler
-  restarts.
-- Execution history is enabled for the Scheduler and retained for 30 days,
-  with a maximum of 100,000 entries per scheduler.
-- Misfire records and failed executions must remain observable long enough to
-  diagnose missed schedules and downstream failures.
-- A successful row in execution history means the Scheduler completed its
-  invocation path. It does not confirm that Catalog indexing or Notification
-  delivery completed successfully.
-- Direct edits to Quartz tables are unsafe. Use the dashboard or the
-  Scheduler's supported management surface for schedule changes.
-
-## Reliability and security
-
-The database is provisioned as the `schedulerdb` PostgreSQL resource and the
-Scheduler waits for it before starting. Persistent state allows the Scheduler
-to recover trigger definitions and continue eligible work after a restart.
-
-Access is restricted to the Scheduler service and authorized operators.
-Connection strings, credentials, authorization headers, notification content,
-and personal data must not be stored in job data or copied into routine logs.
-Operational queries should use job, trigger, and fire-instance identifiers to
-keep diagnosis precise and avoid exposing unrelated scheduler data.

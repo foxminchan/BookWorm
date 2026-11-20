@@ -11,19 +11,48 @@ badges:
 
 # Submit a pull request
 
-## Pull request checklist
+## 1. Context & Problem
 
-1. **Title:** Use `<type>: <description>` with a Conventional Commit type: `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`.
-2. **Description:** Complete the [pull request template](https://github.com/foxminchan/BookWorm/blob/main/.github/pull_request_template.md), summarize the proposed changes, select the type of change, and complete the checklist. Link related issues when applicable.
-3. **Quality:** Follow [[doc|development/004-engineering-standards]] and run the relevant [[doc|development/005-testing]].
-4. **Documentation:** Update documentation when functionality changes; include clear examples for API changes.
-5. **CI/CD:** Ensure all required checks for the changed files pass. Backend and frontend checks are path-filtered; dependency review runs when the PR validation workflow is triggered, and SonarQube analysis applies to relevant source changes.
-6. **Review:** Request maintainer reviews and address feedback promptly.
-7. **Merge:** At least one maintainer approval, passing automated checks, and no merge conflicts are required.
+Integrating changes into a shared multi-service codebase requires consistent standards for clarity, automated verification, security, and peer review. Without a defined pull request process, maintainers spend unnecessary time interpreting ambiguous changes, tracking down missing tests or documentation updates, and resolving failing integration checks or merge conflicts.
+
+## 2. Business Value
+
+- **Consistent quality and security**: Automated checks, code quality analysis, and peer review protect the main branch from regressions and unreviewed changes.
+- **Clear change traceability**: Standardized titles and structured summaries make it easy for project managers, architects, and developers to understand the scope and intent of every change.
+- **Safe vulnerability handling**: Directing security disclosures to private channels prevents premature exposure of potential risks.
+
+## 3. How It Works
+
+Every proposed change follows a structured journey from contributor preparation through automated verification and maintainer review before merging.
 
 <MermaidFileLoader file="mermaids/pull-request-process.mmd" />
 
-## Get help
+1. **Describe the change clearly**: Use a concise, categorized title and complete the pull request template summarizing what changed, the category of work, and any linked tracking items.
+2. **Meet quality and documentation expectations**: Ensure the change follows [[doc|development/004-engineering-standards]] and passes the relevant validations in [[doc|development/005-testing]]. Update documentation and usage examples whenever behavior or APIs change.
+3. **Pass automated validation**: Continuous integration pipelines inspect which areas of the repository changed and run the corresponding backend, frontend, or documentation checks, along with dependency reviews and static code quality analysis where applicable.
+4. **Complete peer review and merge**: Request review from maintainers, address feedback promptly, and ensure no merge conflicts exist. Merging requires at least one maintainer approval and all required automated checks passing.
+
+For questions, defect reports, or feature ideas, contributors rely on the repository's structured templates and guides—while keeping potential security vulnerabilities strictly in private reporting channels.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Path-filtered automation vs. running all suites**: Triggering backend, frontend, or documentation checks based on modified paths keeps feedback fast and avoids wasted compute, while cross-cutting changes still trigger multiple pipelines.
+- **Mandatory maintainer sign-off**: Requiring maintainer approval alongside automated checks preserves architectural consistency and quality, though review turnaround depends on volunteer maintainer availability.
+- **Separate private channel for security issues**: Keeping security reports out of public issue trackers protects users and systems, requiring contributors to follow a dedicated disclosure process rather than standard bug templates.
+
+## 5. Technical Reference
+
+### Pull request checklist
+
+1. **Title:** Use `<type>: <description>` with a Conventional Commit type: `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`.
+2. **Description:** Complete the [pull request template](https://github.com/foxminchan/BookWorm/blob/main/.github/pull_request_template.md), summarize the proposed changes, select the type of change, and complete the checklist. Link related issues when applicable.
+3. **Quality:** Follow [[doc|development/004-engineering-standards]], run `mise run format`, and run the relevant checks in [[doc|development/005-testing]].
+4. **Documentation:** Update documentation when functionality changes; include clear examples for API changes, and validate `docs/` changes with `bun run check` and `bun run fitness`.
+5. **CI/CD:** Ensure all required checks for the changed files pass. Backend and frontend checks are path-filtered, documentation changes are validated by the docs workflow, dependency review runs when the PR validation workflow is triggered, and SonarQube analysis applies to relevant source changes.
+6. **Review:** Request maintainer reviews and address feedback promptly.
+7. **Merge:** At least one maintainer approval, passing automated checks, and no merge conflicts are required.
+
+### Get help
 
 - Start with the repository [AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) and [README](https://github.com/foxminchan/BookWorm/blob/main/README.md).
 - Report bugs using the [bug report form](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml).

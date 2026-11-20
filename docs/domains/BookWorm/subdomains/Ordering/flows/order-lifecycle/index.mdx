@@ -88,39 +88,44 @@ steps:
       version: 1.0.0
 ---
 
-## Purpose and scope
+## 1. Context & Problem
 
-This flow explains the lifecycle of an accepted BookWorm purchase. It begins at
-checkout, continues through the handoff into Finance, and focuses on the point at
-which [[domain|ordering]] changes an Order from **New** to a terminal status.
+Checkout is the backbone of BookWorm's commerce journey, bridging a customer's temporary shopping experience with a permanent purchase record. Because basket cleanup, order tracking, and customer emails happen across separate capabilities, chaining everything into one tightly coupled step—or letting multiple teams modify order status—would create fragile checkouts and conflicting records.
 
-The key distinction is that Shopping owns the basket and Finance owns the saga
-around cleanup and notification work, while Ordering remains the owner of the
-business state that represents the accepted purchase.
+[[domain|ordering]] solves this by separating the authoritative purchase record from the operational follow-up work triggered after checkout.
 
-## Business context
+## 2. Business Value
 
-The order lifecycle is the backbone of the commerce flow. A checkout is not just
-an API call; it is a handoff from the ephemeral shopping experience into a
-business record that must remain valid even after the basket is no longer active.
+- **Auditability and trust:** Preserves a single, authoritative record of what the customer bought and its final business outcome.
+- **Clear team accountability:** Separates shopping intent, order ownership, post-checkout coordination, and customer communication so each capability operates safely.
+- **Isolated failure recovery:** If a confirmation email fails to send, the underlying order remains valid—support and operations teams immediately know the issue is in delivery rather than the purchase record itself.
 
-BookWorm intentionally separates the order's business state from the operational
-work triggered after checkout. The Basket is a temporary, user-facing collection
-of desired items; the Order is the contractual, traceable record of what was
-accepted and what happened afterward. This distinction is what allows Finance,
-notifications, and downstream systems to react without rewriting the source of
-truth.
+## 3. How It Works
+
+The lifecycle of an accepted purchase follows a clear sequence across well-defined boundaries:
+
+1. **Checkout submission:** A customer submits their shopping basket at checkout.
+2. **Order creation:** [[domain|ordering]] verifies the buyer, resolves current catalog prices for the basket items, and records a **New** order snapshot.
+3. **Post-checkout coordination:** Once the purchase is recorded, Finance begins coordinating follow-up work—such as cleaning up the old basket—while waiting for explicit order status updates.
+4. **Explicit business outcome:** According to business rules and process outcomes, Ordering transitions the order from **New** to a final **Completed** or **Cancelled** status.
+5. **Customer notification:** When Ordering announces completion or cancellation, the notification capability sends the corresponding customer email.
 
 ### Boundary rules
 
 - Shopping creates the purchase intent and hands it to Ordering.
-- Ordering owns the Order record and its lifecycle transitions.
-- Finance can trigger cleanup and notification work, but it does not own Order
-  state.
-- Notification delivery is a downstream effect, not the source of truth for the
-  actual Order outcome.
+- Ordering owns the order record and its lifecycle transitions.
+- Finance triggers cleanup and notification work, but does not own order state.
+- Notification delivery is a downstream effect, never the source of truth for the actual order outcome.
 
-## Participants and responsibilities
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit transitions over inferred outcomes:** Requiring Ordering to explicitly move orders to **Completed** or **Cancelled** eliminates ambiguity during reconciliation, though downstream participants must wait for Ordering's status updates rather than assuming completion from cleanup steps.
+- **Decoupled side effects:** Running basket cleanup and email delivery asynchronously keeps checkout responsive and resilient, at the trade-off of eventual consistency between the purchase record and customer notifications.
+- **Localized troubleshooting:** Keeping notification delivery outside order state ensures delivery errors do not corrupt purchase history, provided operational monitoring tracks both order outcomes and notification delivery.
+
+## 5. Technical Reference
+
+### Participants and responsibilities
 
 | Participant                      | Responsibility                                                                                                     |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -130,26 +135,9 @@ truth.
 | [[service\|order-orchestration]] | Coordinates Finance-side follow-up work such as cleanup and order notifications.                                   |
 | [[service\|notification-api]]    | Sends customer-facing completion or cancellation notifications when Ordering publishes the relevant status change. |
 
-## State and recovery model
+### Flow messages and visualization
 
-The Order is the source of truth, while terminal status changes are the durable
-business events that other systems respond to. The intended lifecycle is simple:
-
-- Creation produces a new order backed by the accepted cart snapshot.
-- Ordering may complete or cancel it according to business rules and process
-  outcomes.
-- Finance can act on the resulting status change without owning the order itself.
-
-Because status changes are explicit rather than inferred from downstream actions,
-operators can reconcile with less ambiguity. If a notification fails, the order
-state remains valid; the error is in the delivery path, not the purchase record.
-
-## Why this flow matters
-
-This flow captures the difference between a transaction in progress and a
-committed business outcome. It ensures that Ordering remains accountable for the
-purchase record, while Finance and notification systems remain downstream
-participants that handle side effects. That separation is critical for auditability,
-customer trust, and operational troubleshooting.
+- **Inbound command:** `CreateOrder` triggers `order-api` to authenticate the buyer, resolve basket and Catalog prices, and persist the `New` Order in `order-database`.
+- **Outcome events:** `OrderStatusChangedToCompleteIntegrationEvent` and `OrderStatusChangedToCancelIntegrationEvent` trigger `notification-api` to render and send completion or cancellation messages.
 
 <NodeGraph />

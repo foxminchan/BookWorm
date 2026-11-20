@@ -11,11 +11,36 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
+## 1. Context & Problem
+
+Because Catalog maintains a denormalized rating summary on each book for fast storefront discovery, removing a review or rating in the Rating capability would leave Catalog's displayed score and review count inaccurate unless Catalog is notified. Catalog needs an asynchronous contract to reflect deleted feedback without coupling review deletion directly to the catalog database.
+
+## 2. Business Value
+
+- **Trustworthy product ratings**: Ensures deleted or moderated reviews no longer skew a book's displayed rating summary.
+- **Resilient moderation and cleanup**: Rating deletions succeed independently even if Catalog processes the summary update later.
+- **Graceful handling of retired books**: If a book has already been removed from Catalog, the deletion notification completes without errors or unnecessary rollback traffic.
+
+## 3. How It Works
+
+1. When feedback is removed in the Rating service, it publishes a deletion notification containing the book identifier, the removed rating score, and the feedback identifier.
+2. The Catalog service receives this notification and looks up the referenced book.
+3. If the book exists, Catalog removes that rating score from the book's denormalized rating summary and persists the updated summary.
+4. If the book no longer exists in Catalog, no action is taken because there is no local rating summary left to adjust.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Silent no-op on missing books**: Unlike feedback creation—where a missing book requires compensating the new review—a missing book during deletion is safely ignored because no local projection remains to correct.
+- **Eventual consistency**: A short delay exists between deleting feedback and seeing the adjusted rating summary in Catalog.
+- **Delta adjustment reliance**: Updating the summary using the deleted rating value avoids recalculating from all historical reviews on every deletion, which assumes creation and deletion messages are not duplicated or permanently lost.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish a deleted feedback rating
+### Publish a deleted feedback rating
 
 Rating maps its `FeedbackDeletedEvent` domain event to the shared integration
 contract. Wolverine uses the chassis metadata to publish it to
@@ -57,7 +82,7 @@ FeedbackDeletedEvent feedbackDeletedEvent => new FeedbackDeletedIntegrationEvent
 
 ---
 
-## Apply the deletion in Catalog
+### Apply the deletion in Catalog
 
 Catalog removes the rating when the book exists. A missing book is a no-op
 because there is no local projection to correct.

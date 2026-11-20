@@ -9,21 +9,53 @@ badges:
     textColor: blue
 ---
 
-This chapter is the **aggregate decision register for the complete BookWorm system**. It links to first-class EventCatalog ADR resources; it does not embed copies of their Context, Decision, or Consequences sections.
+## 1. Context & Problem
 
-The [[doc|arc42/04-solution-strategy]] summarizes the architectural direction. This register makes the significant choices behind that direction traceable, including alternatives, quality drivers, and negative consequences. Implementation mechanisms remain in the [[doc|arc42/08-crosscutting-concepts]] and the relevant catalog resources.
+As [[domain|BookWorm]] grows across multiple business capabilities and supporting systems, teams make dozens of structural choices—ranging from how services are split and how they communicate, to how data is stored and how AI workflows are governed.
 
-## 9.1 Scope and record conventions
+Without a central register, those choices become scattered, duplicated, or forgotten, making it hard for architects, project managers, analysts, and developers to understand why the platform is shaped the way it is. While [[doc|arc42/04-solution-strategy]] summarizes the overall architectural direction and [[doc|arc42/08-crosscutting-concepts]] documents shared implementation mechanisms, this chapter serves as the **aggregate decision register for the complete BookWorm system**.
 
-- **Whole-system decisions** live in the catalog-root `adrs/` collection. They apply to [[domain|BookWorm]], which represents the complete platform, and to particular systems where their scope is narrower.
-- **System-specific decisions** stay in their existing system-owned ADR collections. The register below references all 54 existing records; none is copied, moved, renumbered, or replaced.
-- The `adr-bw-001` through `adr-bw-018` identifiers distinguish the 18 whole-system records from existing locally numbered ADRs. The sequence groups architectural concerns; it is not a claim about historical decision order.
-- Each ADR contains Context, Decision, Decision drivers, Alternatives considered, Consequences, and Evidence sections. Evidence points to the catalog's existing architecture documentation; alternatives and rationale are reconstructed for review, not presented as minutes of a historical evaluation.
-- The new records are **proposed** because approval and original decision dates are not established by the available sources. Their date, **2026-11-07**, is the recording date. This status applies to the ADR draft, not a claim that the described mechanisms are absent from the current system. Decision makers should be added when confirmed.
+## 2. Business Value
 
-## 9.2 Whole-system decision register
+A single, structured architecture decision register delivers measurable organizational clarity:
 
-All entries below are proposed records, version 1.0.0. Open the linked resource for its authoritative status and rationale.
+- **Traceable accountability:** Links each significant choice to its quality drivers, alternatives considered, and expected consequences so stakeholders understand the "why" behind system constraints.
+- **No duplicated maintenance:** Points directly to authoritative decision records instead of copying rationale into multiple documents that quickly drift out of sync.
+- **Clear separation of concerns:** Keeps platform-wide principles distinct from local system choices, helping teams act autonomously within well-defined guardrails.
+- **Honest governance:** Makes clear which decisions are still proposed for review and which operational targets remain open.
+
+## 3. How It Works
+
+BookWorm organizes architectural decisions into two complementary layers, governed by a single-source maintenance workflow:
+
+1. **Whole-system decisions** apply across the entire [[domain|BookWorm]] platform (or multiple systems within it). They cover 18 foundational areas: capability boundaries, core technology foundation, shared hosting conventions, request-response and asynchronous integration, capability-owned data, eventually consistent derived views, durable message handoffs, internal request handling, cross-service request tracking, shared validation and errors, operation-aware retries, observability, composable AI governance, environment configuration separation, layered verification, safe contract evolution, and single-source documentation.
+2. **System-specific decisions** stay owned by their respective systems (across Catalog, Shopping, Ordering, Reviews, Conversational, Platform, and shared external boundaries). All 54 existing system-level records remain in place—none are copied, moved, renumbered, or replaced by the whole-system register.
+3. **Maintenance rules:** Before adding a new decision, teams check both this register and the affected system's records to avoid duplicates. Each record captures the driving forces, selection criteria, alternatives, and positive and negative consequences tied to [[doc|arc42/01-introduction-and-goals/003-quality-goals]] without inventing numerical targets. Teams update this index only when scope or membership changes, not to mirror evolving approval statuses.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Reconstructed rationale vs. historical minutes:** The 18 whole-system records are marked **proposed** (recorded on **2026-11-07**) because original approval dates and decision makers are not established in the available source history. Their alternatives and rationale are reconstructed for stakeholder review rather than presented as historical meeting minutes.
+- **Traceability without duplication:** Keeping status and rationale only inside each individual decision record avoids stale summaries here, at the cost of requiring readers to open the linked record for full context.
+- **Scope boundaries remain explicit:** Storing a decision at the catalog root does not automatically bind every service unless its scope explicitly says so, and the 18 whole-system records do not supersede existing system-level decisions.
+- **Open operational decisions:** Production deployment topology, concrete service-level objectives, data retention, and recovery targets remain open in [[doc|arc42/07-deployment-view]] and the quality goals; this register is not evidence that those unresolved choices have been approved.
+
+## 5. Technical Reference
+
+### 9.1 Scope and record conventions
+
+- **Whole-system decisions** live in the catalog-root `adrs/` collection. They apply to [[domain|BookWorm]] and to particular systems where their scope is narrower.
+- **System-specific decisions** remain in their existing system-owned ADR collections (54 records referenced below).
+- Identifiers `adr-bw-001` through `adr-bw-018` distinguish the 18 whole-system records from locally numbered system ADRs. The sequence groups architectural concerns rather than historical decision order.
+- Each ADR includes Context, Decision, Decision drivers, Alternatives considered, Consequences, and Evidence sections pointing to existing catalog architecture documentation.
+- Metadata and lifecycle rules:
+  - Use `appliesTo` for affected catalog resources and `related` for complementary decisions.
+  - Confirm decision makers and acceptance explicitly using supported statuses: `proposed`, `accepted`, `rejected`, `deprecated`, and `superseded`.
+  - Use `amends` for partial changes or `supersedes` for replacements (updating reverse relationships).
+  - Keep stable IDs and archive earlier versions when revising the same record.
+
+### 9.2 Whole-system decision register
+
+All entries below are `proposed` records, version `1.0.0`, dated `2026-11-07`. Open each linked ADR resource for its authoritative status and rationale.
 
 | Record                                                    | Architectural choice                                                          | Principal quality driver / trade-off                                |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -46,11 +78,11 @@ All entries below are proposed records, version 1.0.0. Open the linked resource 
 | [[adr\|adr-bw-017-compatible-contract-evolution]]         | Evolve contracts with consumer-impact review and compatibility evidence       | Independent release, with coordinated breaking-change migration     |
 | [[adr\|adr-bw-018-single-source-decision-documentation]]  | Maintain one authoritative ADR resource per decision                          | Traceability without redundant architecture text                    |
 
-## 9.3 Existing system-specific decision register
+### 9.3 Existing system-specific decision register
 
-These records remain authoritative for the detailed choices within each system. A whole-system ADR may relate to them, but does not restate or override their implementation decisions. Status and date remain on the linked ADR resources rather than being copied into this index.
+These 54 records remain authoritative for detailed choices within each system. Status and date remain on the linked ADR resources.
 
-### Catalog
+#### Catalog
 
 [[system|product-catalog-system]]:
 
@@ -61,7 +93,7 @@ These records remain authoritative for the detailed choices within each system. 
 - [[adr|adr-005-blob-storage-for-book-images]]
 - [[adr|adr-006-reviews-rating-projection-on-book]]
 
-### Shopping
+#### Shopping
 
 [[system|cart-system]]:
 
@@ -71,7 +103,7 @@ These records remain authoritative for the detailed choices within each system. 
 - [[adr|adr-004-catalog-enrichment-at-read-time]]
 - [[adr|adr-005-explicit-checkout-cleanup-outcomes]]
 
-### Ordering
+#### Ordering
 
 [[system|order-system]]:
 
@@ -89,7 +121,7 @@ These records remain authoritative for the detailed choices within each system. 
 - [[adr|adr-005-finance-separate-workflow-and-order-status]]
 - [[adr|adr-006-finance-delegate-notification-delivery]]
 
-### Reviews
+#### Reviews
 
 [[system|rating-system]]:
 
@@ -98,7 +130,7 @@ These records remain authoritative for the detailed choices within each system. 
 - [[adr|adr-003-compensate-invalid-feedback-after-catalog-rejection]]
 - [[adr|adr-004-read-only-governed-feedback-summarization]]
 
-### Conversational
+#### Conversational
 
 [[system|chat-system]]:
 
@@ -118,7 +150,7 @@ These records remain authoritative for the detailed choices within each system. 
 - [[adr|adr-004-use-domain-apis-as-mcp-backends]]
 - [[adr|adr-005-authenticate-and-govern-mcp-calls]]
 
-### Platform
+#### Platform
 
 [[system|notification-system]]:
 
@@ -141,7 +173,7 @@ These records remain authoritative for the detailed choices within each system. 
 - [[adr|adr-002-durable-outbox-and-bounded-retries]]
 - [[adr|adr-003-secret-and-sensitive-data-boundary]]
 
-### Shared external boundaries
+#### Shared external boundaries
 
 [[system|identity-provider]]:
 
@@ -154,14 +186,3 @@ These records remain authoritative for the detailed choices within each system. 
 
 - [[adr|adr-001-use-presidio-analyze-for-pii-detection]]
 - [[adr|adr-002-anonymize-detected-pii]]
-
-## 9.4 Decision maintenance
-
-1. Check this register and the affected system's ADRs before creating a decision. Extend the explanation in its authoritative record rather than creating another record with the same scope and choice.
-2. Record the forces, selection criteria, alternatives, and positive and negative consequences. Relate them to [[doc|arc42/01-introduction-and-goals/003-quality-goals]] without inventing numerical targets.
-3. Use `appliesTo` for affected catalog resources and `related` for complementary decisions. Root location does not automatically associate an ADR with every service.
-4. Confirm decision makers and acceptance explicitly. Use the supported statuses `proposed`, `accepted`, `rejected`, `deprecated`, and `superseded`.
-5. Use `amends` for a partial change or a new ADR with `supersedes` for a replacement; update the corresponding reverse relationship. These 18 records do not supersede existing system ADRs.
-6. Keep stable IDs and archive earlier versions when revising the same record. Update this register when its scope or membership changes, not to duplicate changing status or rationale.
-
-Production topology, concrete service-level objectives, retention, and recovery targets remain open in [[doc|arc42/07-deployment-view]] and the quality goals. The register is not evidence that those unresolved choices have been approved.

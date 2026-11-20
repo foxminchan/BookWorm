@@ -2,11 +2,36 @@
 summary: Report an Order transition from New to Completed to Finance.
 ---
 
+## 1. Context & Problem
+
+Once an order completes its lifecycle and moves from New to Completed, Finance must be notified so it can finalize its internal tracking and trigger customer completion communications when contact details are present. Conflating this status report with a command to complete the order—or with confirmation that an email was delivered—would blur ownership boundaries between Ordering and Finance.
+
+## 2. Business Value
+
+- **End-to-End Traceability**: Provides a distinct completion event identifier alongside the order identifier so teams can correlate completion directly with the original checkout.
+- **Financial Accuracy**: Preserves the accepted purchase total from the completed order for consistent Finance reconciliation.
+- **Controlled Customer Notifications**: Allows Finance to finalize its workflow reliably while emitting a completion notification only when both customer name and email are available.
+
+## 3. How It Works
+
+1. After an [[entity|order]] transitions from New to Completed, [[service|order-api]] publishes a completion status event containing its own event identifier, timestamp, order identifier, customer reference, optional customer name and email, and the accepted purchase amount.
+2. This event reports an already completed order to Finance; it does not ask Finance to complete the order or confirm that an email has been delivered.
+3. Finance copies the event details into its tracking workflow, updates its state to Completed, and finalizes.
+4. Finance issues a separate completion notification command only when both the customer's full name and email address are non-blank.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Status fact vs. orchestration command**: Reporting completion as a past-tense business fact allows Ordering to own order state transitions while Finance independently controls workflow closure and notification dispatch.
+- **Required fields with optional contact values**: Keeping customer name and email in the message structure even when empty simplifies contract validation, while requiring Finance to guard notification triggers on non-blank values.
+- **Buyer identifier in the basket field**: Because the current mapper supplies the order's buyer identifier in the basket reference field, consumers must not treat it as independently resolved basket information.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish Order completion
+### Publish Order completion
 
 [[service|order-api]] publishes this event after an Order transitions from
 New to Completed, through
@@ -14,8 +39,8 @@ New to Completed, through
 
 - `id` identifies this event, separately from the earlier checkout event.
 - `orderId` correlates the completed Order with its checkout.
-- `basketId` currently contains the Order's Buyer ID, supplied by EventMapper.
-- `fullName` and `email` remain required even when their values are null.
+- `basketId` currently contains the Order's Buyer ID, supplied by `EventMapper`.
+- `fullName` and `email` remain required even when their values are `null`.
 - `totalMoney` preserves the accepted purchase amount.
 
 </Column>
@@ -57,7 +82,7 @@ OrderCompletedEvent completedEvent => new OrderStatusChangedToCompleteIntegratio
 
 ---
 
-## Payload
+### Payload
 
 <CodeGroup dropdown>
 
@@ -75,7 +100,7 @@ OrderCompletedEvent completedEvent => new OrderStatusChangedToCompleteIntegratio
 
 </CodeGroup>
 
-## Report business status
+### Report business status
 
 The example shows the camelCase JSON data inside the BookWorm
 CloudEvents-compatible envelope. It reports an already completed Order to

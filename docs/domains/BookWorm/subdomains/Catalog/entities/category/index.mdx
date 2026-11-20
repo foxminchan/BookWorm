@@ -19,9 +19,36 @@ owners:
   - contributor-team
 ---
 
-## Overview
+## 1. Context & Problem
 
-The category entity represents a category in the catalog. It encapsulates category information and business rules such as a unique identifier, a name, and a collection of books categorized under the category. The category entity also enforces rules such as requiring a non-empty name and ensuring that the category is not deleted.
+As a bookstore catalog grows, shoppers need a clear taxonomy of genres and subjects to browse and filter titles. If category labels were entered as unvalidated text on each [[entity|book]], typos and duplicate labels would fracture storefront navigation and reporting.
+
+## 2. Business Value
+
+- **Better discoverability:** Gives customers clean, predictable subject groupings for browsing and filtering the catalog.
+- **Centralized taxonomy management:** Allows merchandising teams to rename a category once and have the change apply across all grouped titles.
+- **Catalog hygiene:** Prevents blank or retired categories from polluting active storefront menus.
+
+## 3. How It Works
+
+A Category represents a distinct classification used to group [[entity|book]]s in the catalog:
+
+- Each category has a unique identity, a required display name, and an associated collection of books categorized under it.
+- **Validation rules:** The catalog requires every category to have a non-empty name and enforces that operations cannot proceed against a category marked as deleted.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Flat vs. hierarchical taxonomy:** Modeling Category as a simple, single-level grouping keeps navigation and maintenance straightforward, though supporting nested subcategories (parent/child genres) or assigning a book to multiple categories would require extending the model later.
+- **Deletion guard:** Blocking use of deleted categories protects catalog integrity so active books cannot remain tied to retired classifications.
+
+## 5. Technical Reference
+
+### Entity Overview
+
+- **Entity ID:** `category` (`Category`)
+- **Aggregate Root:** `true`
+- **Rules:** Requires a non-empty `name` and ensures the category is not deleted. Maintains a collection of [[entity|book]]s categorized under the category.
+- **Owners:** `contributor-team`
 
 ### Entity Properties
 

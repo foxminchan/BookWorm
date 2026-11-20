@@ -2,21 +2,43 @@
 summary: Delete an author from the Catalog API and handle missing-resource responses.
 ---
 
+## 1. Context & Problem
+
+Admin tools and catalog maintenance workflows that delete author records must handle both successful removals and situations where an author cannot be found. Without clear guidance, client applications risk treating missing-record errors as successful deletions, leaving local views out of sync, or blindly retrying invalid identifiers.
+
+## 2. Business Value
+
+- **Accurate user interfaces**: Ensures client state is updated only when a deletion is genuinely confirmed.
+- **Safer catalog maintenance**: Encourages verification of existing book-to-author relationships before removing an author.
+- **Predictable error handling**: Prevents silent failures when stale or mistyped identifiers are submitted.
+
+## 3. How It Works
+
+- **Deleting an existing author**: Before requesting removal, confirm that no remaining book relationships should reference the author. Submit the author's unique identifier for deletion; once confirmed, remove the author from the application's local state.
+- **Handling a missing author**: If no author matches the provided unique identifier, treat the outcome as a missing resource rather than a successful deletion. Verify the identifier is accurate before attempting the request again.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit missing-resource signaling**: Distinguishing an actual deletion from an unknown identifier prevents typos or stale references from going unnoticed, though callers must explicitly handle the "not found" case in their UI or workflow.
+- **Pre-deletion dependency checks**: Verifying that no books still depend on the author before deleting helps avoid unintended catalog gaps.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Delete an existing author
+### 1. Delete an existing author
 
 Delete by UUID. A successful deletion returns `204 No Content` and has no response body.
 
-### Operational notes
+#### Operational notes
 
 - Confirm that no remaining book relationship should reference the author.
 - Treat `404` as a missing resource, not as a successful deletion.
 - Retry only after checking that the UUID is correct.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +48,7 @@ const response = { status: 204, body: null };
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Remove the author from local state after receiving `204 No Content`.
 
@@ -58,6 +80,6 @@ if (!response.ok) {
 
 ---
 
-## 2. Handle a missing author
+### 2. Handle a missing author
 
 An unknown UUID returns `404` with problem details. Confirm the identifier before retrying.

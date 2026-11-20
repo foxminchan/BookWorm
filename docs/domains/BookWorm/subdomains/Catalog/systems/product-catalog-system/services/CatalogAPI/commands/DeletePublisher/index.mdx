@@ -18,22 +18,40 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Deletes the [[entity|publisher]] identified by the UUID path parameter. This is a permanent catalog mutation.
+Publisher records identify who issues the books sold in BookWorm. When duplicate publisher entries are created, test data is cleaned up, or a publisher is no longer part of the catalog, teams need a controlled way to remove the record so staff and automated workflows do not select obsolete publishers.
+
+## 2. Business Value
+
+- **Data hygiene:** Prevents duplicate or retired publishers from cluttering catalog management screens and picklists.
+- **Simple execution:** Removes a target publisher in a single step using only its unique identifier.
+- **Clear feedback:** Explicitly distinguishes between a completed deletion and a lookup that found no matching publisher.
+
+## 3. How It Works
+
+1. A caller specifies the [[entity|publisher]] to remove using its unique identifier, with no extra details required.
+2. The catalog service searches for a publisher matching that identifier.
+3. If the publisher exists, it is permanently removed from the catalog and the caller receives an empty confirmation.
+4. If no publisher matches the identifier, the catalog remains unchanged and the caller is notified that the publisher could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Irreversible action:** Deleting a publisher is a permanent catalog mutation rather than a soft disable. Teams should confirm the publisher is no longer needed by existing books before removing it.
+- **Explicit not-found handling:** Returning a missing-resource notice rather than silently succeeding helps catch stale references early; callers should treat an already-absent publisher as deleted only when explicitly appropriate for their workflow.
+
+## 5. Technical Reference
 
 <NodeGraph />
 
-## Contract
+### Endpoint & Contract
 
-Provide the resource UUID in the `{id}` path parameter. The operation has no request body.
+- **Operation:** `DELETE /api/v1/publishers/{id}`
+- **Path parameter:** `{id}` — UUID of the publisher resource to delete.
+- **Request body:** None.
+- **Success response:** `204 No Content` with an empty body.
+- **Missing resource response:** `404` when no publisher exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
 
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`404` indicates that no publisher exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

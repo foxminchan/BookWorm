@@ -12,7 +12,44 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Two independent states
+## 1. Context & Problem
+
+Following checkout, BookWorm coordinates work across multiple independent subdomains: Ordering tracks the commercial status of the Order, Finance manages background checkout coordination (such as clearing the basket and retrying failed steps), and Notification sends customer emails. When basket cleanup fails, retries run out, or a notification email arrives unexpectedly, support teams and stakeholders can easily mistake those signals for changes in the Order itself. Teams need a clear distinction between the Order's authoritative business status and Finance's coordination progress.
+
+## 2. Business Value
+
+- **Accurate reporting & customer support:** Prevents support agents and business stakeholders from misinterpreting email deliveries or basket-cleanup glitches as cancelled or completed orders.
+- **Faster issue isolation:** Clarifies whether an incident belongs to Ordering's lifecycle rules or Finance's background coordination workflow.
+- **Clean service boundaries:** Lets Ordering remain the single source of truth for commercial status while Finance manages retries, cleanup, and notification requests independently.
+
+## 3. How It Works
+
+BookWorm separates every checkout into **two independent states**:
+
+- **Order business status (owned by Ordering):**
+  - **New:** Checkout created the Order. This does not confirm basket deletion or payment settlement.
+  - **Completed:** Ordering accepted an explicit completion action.
+  - **Cancelled:** Ordering accepted an explicit cancellation action.
+- **Checkout coordination progress (owned by Finance):**
+  Finance tracks its own workflow for each checkout—covering basket cleanup and notification requests—but never owns or updates the Order's business status.
+
+**How common outcomes behave:**
+
+- **Basket deletion succeeds:** Finance reports success to Ordering, and the Order stays **New** until Ordering accepts an explicit completion or cancellation.
+- **Basket deletion fails:** Finance reports the failure to Ordering. Ordering hides the matching Order from active view (if it still exists) without recording a status change to Cancelled.
+- **Finance retries run out:** Finance cancels its own coordination workflow and may request a cancellation notification, but it never calls Ordering to cancel the Order.
+- **Order status changes:** When Ordering explicitly completes or cancels an Order, Finance updates its workflow to match and may ask Notification to send an email.
+- **Email requested or delivered:** Sending or delivering an email is never proof that the Order status changed; always confirm the current status directly from Ordering.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Independent workflows vs. a single coupled state:** Separating Finance coordination from Ordering status avoids cascading failures and keeps service boundaries clean, at the cost of allowing temporary divergence (for example, Finance cancelling its workflow after retry exhaustion while the Order remains **New**).
+- **Administrative hiding vs. business cancellation:** Hiding an Order after an explicit basket-deletion failure removes broken checkouts from normal view without falsifying a customer-initiated cancellation, though investigators must look at both Ordering visibility and Finance workflow logs to see the full picture.
+- **Authoritative lookup rule:** Never infer Order status from basket contents, Finance progress, or email notifications; always query Ordering directly.
+
+## 5. Technical Reference
+
+### Two independent states
 
 Ordering is authoritative for the business status of an [[entity\|order]]:
 
@@ -26,7 +63,7 @@ Finance tracks a separate saga for each checkout. Its state describes
 coordination progress, including basket cleanup and notification requests; it
 does not own or update the Order aggregate's status.
 
-## Interpret common outcomes
+### Interpret common outcomes
 
 - **Basket deletion succeeded:** Finance reports success to Ordering. The
   Order remains New until Ordering accepts an explicit completion or

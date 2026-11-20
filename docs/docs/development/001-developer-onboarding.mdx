@@ -9,11 +9,45 @@ badges:
     textColor: teal
 ---
 
-# Welcome to BookWorm development
+## 1. Context & Problem
+
+BookWorm brings together multiple independent business services, frontend experiences, and AI-enabled capabilities under shared architectural boundaries. For new contributors—and for teams coordinating cross-cutting work—diving directly into code without understanding how environments are prepared, where service boundaries lie, and how changes are verified leads to slow ramp-up, accidental coupling across capabilities, and avoidable review delays.
+
+This guide serves as the single starting point for onboarding onto BookWorm development and understanding the end-to-end contribution path.
+
+## 2. Business Value
+
+A clear, repeatable onboarding path benefits both delivery teams and the broader organization:
+
+- **Faster ramp-up (PM & Engineering)**: Moves new contributors smoothly from initial workspace setup to productive, confident delivery.
+- **Protected architectural integrity (SA & BA)**: Encourages contributors to identify the owning business capability and respect service boundaries before making changes.
+- **Consistent quality and compliance**: Aligns documentation updates, automated checks, and peer review habits across all contributors from day one.
+
+## 3. How It Works
+
+Onboarding follows a structured, five-stage progression that builds context step by step:
+
+1. **Workspace preparation**: Create a personal copy of the project, configure version control, and review the core project guide.
+2. **Daily workflow**: Learn how to isolate work into focused change sets and make effective use of the repository's built-in helper guides.
+3. **Shared standards**: Understand the conventions that keep communication contracts, domain boundaries, and implementation styles consistent across the platform.
+4. **Verification**: Choose the right level of automated checks to confirm that changes work as intended without breaking neighboring capabilities.
+5. **Review and integration**: Package focused changes—together with matching test and documentation updates—for team review.
+
+Before starting any change, contributors follow four core habits: confirm which capability owns the target behavior, review relevant instructions, keep work tightly scoped with matching documentation and verification updates, and run covering checks prior to requesting review.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Guided sequence vs. trial-and-error**: Investing a short amount of time upfront to follow the five-stage path prevents expensive rework caused by crossing capability boundaries or missing required checks.
+- **Explicit ownership checks before editing**: Pausing to confirm which domain or service owns a rule avoids duplicating logic in the wrong layer—a common pitfall in distributed systems.
+- **Documentation and verification as part of "done"**: Requiring updated tests and docs alongside code changes keeps the architecture catalog accurate rather than letting documentation drift behind implementation.
+
+## 5. Technical Reference
+
+### Welcome to BookWorm Development
 
 [[domain|BookWorm]] is a cloud-native microservices application built with .NET Aspire, Domain-Driven Design, and AI integration. This guide helps you set up your environment, understand the development workflow, and contribute changes confidently.
 
-## Onboarding path
+### Onboarding Path
 
 1. [[doc|development/002-getting-started]]: Fork and clone BookWorm, configure Git, and review the project guide.
 2. [[doc|development/003-development-workflow]]: Create branches, make changes, and use the repository's agent skills.
@@ -23,7 +57,7 @@ badges:
 
 For detailed project prerequisites, setup instructions, and architecture context, start with the [repository's AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) and [README](https://github.com/foxminchan/BookWorm/blob/main/README.md).
 
-## Before making a change
+### Before Making a Change
 
 - Find the owning service or domain and understand its boundaries.
 - Read the relevant repository instructions and load the skills for your task.

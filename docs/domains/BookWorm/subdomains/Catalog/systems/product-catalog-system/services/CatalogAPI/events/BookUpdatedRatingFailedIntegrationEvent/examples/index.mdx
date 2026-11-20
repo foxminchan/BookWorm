@@ -2,11 +2,36 @@
 summary: Publish a missing-book rating failure and compensate the Rating feedback record.
 ---
 
+## 1. Context & Problem
+
+Because Rating and Catalog operate independently without shared database locks, a customer might submit a rating for a book just as that book is removed from Catalog, or reference a book identifier that no longer exists. Without a compensating workflow, the orphaned feedback would remain in Rating even though Catalog cannot display or aggregate it.
+
+## 2. Business Value
+
+- **Eliminates orphaned data**: Automatically removes feedback records tied to missing books instead of requiring manual administrative cleanup.
+- **Reliable cross-service consistency**: Keeps Catalog and Rating aligned over time without blocking customer submissions on synchronous cross-service transactions.
+- **Safe duplicate handling**: Ensures repeated failure notifications do not cause errors when the feedback has already been cleaned up.
+
+## 3. How It Works
+
+1. When Catalog processes a newly created feedback notification and discovers the referenced book no longer exists, it publishes a missing-book failure event carrying the feedback identifier.
+2. The Rating service receives the failure event and searches for the matching feedback record using that identifier.
+3. If the feedback record is still present, Rating deletes it to undo the unprojected submission and saves the change.
+4. If the feedback record has already been removed, Rating finishes without making any changes.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Compensate instead of endless retries**: A missing book is usually a permanent state rather than a temporary outage, so deleting the orphaned feedback avoids stuck queues and manual dead-letter triage.
+- **Asynchronous reconciliation**: Users may experience eventual removal of invalid feedback after submission rather than an immediate synchronous rejection.
+- **Idempotent compensation**: Checking whether the feedback still exists before deleting makes duplicate failure events harmless.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish a missing-book failure
+### Publish a missing-book failure
 
 Catalog publishes this event when it receives a feedback-created event for a
 book that no longer exists. The `feedbackId` lets Rating locate the record
@@ -42,7 +67,7 @@ await bus.PublishAsync(
 
 ---
 
-## Compensate in Rating
+### Compensate in Rating
 
 Rating consumes the failure event and deletes the corresponding feedback. If
 the feedback has already been removed, the handler completes without changes.

@@ -85,6 +85,33 @@ properties:
     required: false
 ---
 
+## 1. Context & Problem
+
+Automated background jobs run across the platform without direct user interaction. When a recurring task fails, takes longer than expected, or triggers automatic retries, operations and support teams need a reliable historical record of what happened. Without persistent execution history, diagnosing intermittent failures, auditing manual interventions, or spotting gradual performance degradation becomes slow and error-prone.
+
+## 2. Business Value
+
+- **Faster incident resolution**: Centralizes run outcomes, failure messages, and execution logs so teams can investigate issues without reproducing them blindly.
+- **Operational accountability**: Distinguishes scheduled runs from manual runs and tracks which worker instance handled each execution.
+- **Retry transparency**: Records retry attempt counts and whether another retry was scheduled, helping teams see transient glitches versus persistent failures.
+- **Performance visibility**: Captures run durations, summaries, and metrics to support capacity planning and bottleneck analysis.
+
+## 3. How It Works
+
+Whenever a tracked background job finishes running, the scheduler can optionally write an execution history entry linked to the scheduler, worker instance, job definition, and trigger.
+
+- **Timing and outcome**: Each entry records when the run fired, how long it took, whether it succeeded, and an optional outcome code and summary.
+- **Failure and retry tracking**: If an execution fails, the record stores the error message, the retry attempt number, and whether a follow-up retry was scheduled.
+- **Diagnostic context**: Optional fields capture detailed execution logs, performance metrics, whether the run was triggered manually, and the job input payload—along with an indicator if that input exceeded the maximum storable size.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Storage growth vs. diagnostic depth**: Capturing logs, metrics, and job inputs for high-frequency jobs can grow storage quickly; because this entity is optional, teams should pair it with clear retention and pruning policies.
+- **Oversized input protection**: Large job inputs are flagged rather than stored unconditionally so a single large payload does not degrade database performance or block history recording.
+- **Historical log vs. current health**: Execution history provides a per-run audit trail, whereas quick current-health checks are better served by summary status records so dashboards avoid scanning every past run.
+
+## 5. Technical Reference
+
 ### Entity Properties
 
 <EntityPropertiesTable />
@@ -94,3 +121,5 @@ properties:
 - The composite key is `sched_name` and `entry_id`.
 - Execution history records executions of [[entity|qrtz-job-details]] and
   [[entity|qrtz-triggers]].
+- Foreign key references map (`job_name`, `job_group`) to `qrtz-job-details` and (`trigger_name`, `trigger_group`) to `qrtz-triggers`.
+- Diagnostic and tracing fields include `instance_name`, `fire_instance_id`, `fired_time`, `run_time`, `succeeded`, `error_message`, `retry_attempt`, `retry_scheduled`, `execution_log`, `result`, `summary`, `metrics`, `manual`, `job_input`, and `job_input_too_large`.

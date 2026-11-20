@@ -2,11 +2,34 @@
 summary: Publish a feedback-created event and apply the rating in Catalog.
 ---
 
+## 1. Context & Problem
+
+After a customer submits a book rating in the Reviews service, that rating needs to be reflected in the Catalog service's book summary without coupling the two services to a shared database or synchronous transaction. Teams also need a clear pattern for handling the edge case where the target book does not exist in Catalog.
+
+## 2. Business Value
+
+- **Shared end-to-end clarity**: Gives architects, analysts, and developers a concrete view of how a single rating flows from Reviews into Catalog.
+- **Built-in data integrity**: Demonstrates not only the normal rating update path, but also how orphaned feedback is detected and rolled back via compensation when a book is missing.
+- **Consistent contract alignment**: Shows the exact message fields shared between producer and consumer, reducing integration misunderstandings.
+
+## 3. How It Works
+
+1. **Publish the creation notification**: After saving a new feedback entry, the Reviews service translates its internal creation event into a public notification containing the book identifier, the rating value, and the feedback identifier, then sends it on the feedback-created channel.
+2. **Deliver the message payload**: The messaging channel carries the three fields to subscribers in a lightweight structured payload.
+3. **Update Catalog or trigger compensation**: Catalog looks up the matching book and adds the rating to its summary. If the book cannot be found, Catalog publishes a rating-update-failed notification carrying the feedback identifier so Reviews can remove the orphaned entry.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Including the feedback identifier up front**: Adding the feedback identifier alongside the book identifier and rating allows Catalog to trigger failure compensation without needing to query Reviews back.
+- **Explicit missing-book compensation**: Rather than failing silently or stalling the message queue when a book is absent, Catalog emits a compensating event so both services stay consistent.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## Publish a new feedback rating
+### Publish a new feedback rating
 
 Rating API maps the committed feedback-created domain event to the integration
 contract and publishes it to
@@ -48,7 +71,7 @@ FeedbackCreatedEvent feedbackCreatedEvent => new FeedbackCreatedIntegrationEvent
 
 ---
 
-## Payload
+### Payload
 
 <CodeGroup dropdown>
 
@@ -62,7 +85,7 @@ FeedbackCreatedEvent feedbackCreatedEvent => new FeedbackCreatedIntegrationEvent
 
 </CodeGroup>
 
-## Consume the rating update
+### Consume the rating update
 
 Catalog reads the book and adds the rating. When the book does not exist, it
 publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] using the feedback ID.

@@ -18,22 +18,42 @@ sidebar:
   badge: "PUT"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Updates the [[entity|category]] identified by `id`. The operation is idempotent when the same name is submitted.
+Storefront navigation and browsing depend on clear, well-named book categories. Over time, merchandising teams may rename a [[entity|category]] to improve customer clarity, fix typos, or align with taxonomy updates without breaking existing links to books.
+
+## 2. Business Value
+
+- **Improved discoverability**: Clear category labels help shoppers browse and filter the catalog more effectively.
+- **Seamless taxonomy maintenance**: Renaming a category updates its display label in place without needing to reassign every book in that category.
+- **Safe retries**: Submitting the same rename request more than once yields the same result without side effects.
+
+## 3. How It Works
+
+An authorized user or system supplies the category's unique identifier along with the new display name.
+
+1. The catalog checks that both the unique identifier and a non-empty display name are provided and valid.
+2. When the category exists, its display name is updated and the system returns an empty confirmation. Submitting the exact same name again leaves the record unchanged.
+3. If the input is invalid or no category matches the provided identifier, the system rejects the request and leaves catalog data untouched.
+
+## 4. Trade-offs & Lessons Learned
+
+- **In-place rename vs. category migration**: Renaming an existing category preserves all book associations automatically, though it assumes the category's meaning remains consistent rather than splitting into separate genres.
+- **Empty confirmation on success**: Returning no body content keeps responses lightweight, requiring clients to treat the acknowledgement as completion or refresh cached category lists separately.
+
+## 5. Technical Reference
+
+- **Endpoint**: `PUT /api/v1/categories`
+- **Command**: `UpdateCategory` (updates [[entity|category]])
+- **Request contract**: JSON payload requiring `id` (UUID) and a non-empty `name` (`minLength: 1`, `additionalProperties: false`).
+- **Idempotency**: Submitting the same `name` for an existing `id` is idempotent.
+- **Responses**:
+  - `204 No Content`: Category updated successfully; response body is empty.
+  - `400`: Validation failure (e.g., invalid UUID or empty `name`).
+  - `404`: No category exists with the supplied UUID.
 
 <NodeGraph />
 
-## Contract
-
-The request is JSON and requires both `id` and a non-empty `name`.
-
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`400` indicates validation failure. `404` indicates that no category exists with the supplied UUID.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

@@ -18,23 +18,39 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Creates a [[entity|feedback]] record for a [[entity|book]]. The request includes the book UUID,
-reviewer name, optional comment, and an integer rating from 0 through 5.
+Customers need a reliable way to rate and review books in the BookWorm catalog. Without a dedicated creation command that validates inputs before saving, missing reviewer details or invalid scores could corrupt book ratings and erode customer trust.
+
+## 2. Business Value
+
+- **Reliable rating quality**: Input rules ensure every saved review includes a valid book reference, reviewer name, and a rating within the 0-through-5 scale.
+- **Clear submission tracking**: Returning the newly created review's unique identifier lets storefronts and downstream workflows reference the submission immediately.
+- **Consistent error handling**: Standardized validation feedback helps client applications surface actionable guidance to users on the first attempt.
+
+## 3. How It Works
+
+This operation creates a [[entity|feedback]] record for a Catalog [[entity|book]]. The caller supplies the book's unique identifier, the reviewer's first and last name, an optional written comment, and a whole-number rating from 0 through 5.
+
+The service checks that all required information is present and valid. If the submission passes validation, the review is stored and its newly generated identifier is returned to the caller. If any field is missing or invalid, the submission is rejected with structured validation details explaining what failed.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Strict upfront validation**: Rejecting incomplete or out-of-range submissions at the entry point protects stored feedback integrity, while requiring client interfaces to preserve user input and display field-level errors clearly.
+- **Minimal success response**: Returning only the generated feedback identifier keeps creation responses compact; callers that need the full saved record afterward retrieve it separately.
+
+## 5. Technical Reference
 
 <NodeGraph />
 
-## Request and response
+### Request & Response Contract
 
-Send `application/json` with the required fields from the
-`CreateFeedbackCommand` contract. A successful `200` response returns the
-generated feedback UUID as a JSON string.
+- **Endpoint**: `POST /api/v1/feedbacks`
+- **Request**: Send `application/json` with the required fields from the `CreateFeedbackCommand` contract (book UUID, reviewer name, optional comment, and integer rating from `0` through `5`).
+- **Success (`200`)**: Returns the generated feedback UUID as a JSON string.
+- **Validation Error (`400`)**: Returns `application/problem+json` with `HttpValidationProblemDetails`.
 
-`400` returns `application/problem+json` with
-`HttpValidationProblemDetails`.
-
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

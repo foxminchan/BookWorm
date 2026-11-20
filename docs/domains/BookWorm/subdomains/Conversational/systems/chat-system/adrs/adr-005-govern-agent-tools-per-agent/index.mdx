@@ -28,72 +28,41 @@ badges:
     textColor: red
 ---
 
-## Context
+## 1. Context & Problem
 
-The Chat host connects to a shared MCP server that exposes capabilities for
-multiple consumers. Giving every agent every available tool would blur agent
-responsibilities and unnecessarily widen the consequences of an invocation.
-Local delegation between agents also creates capabilities that are distinct
-from the MCP tools, so both types of access need an explicit owner and policy.
+The chat host connects to a shared tool server that exposes capabilities for multiple consumers across the platform. Giving every conversational agent access to every available tool would blur agent responsibilities and unnecessarily widen the impact of any single invocation.
 
-## Decision
+In addition, local delegation between agents—where one specialist asks research subagents to gather information—creates a distinct capability boundary from calling external tools directly. Both direct tool access and agent-to-agent delegation require explicit ownership and governance policies.
 
-Chat configures tools per agent definition and applies an explicit
-per-agent governance policy. QA has no Catalog MCP tools. Book
-Agent and its Catalog and recommendation researchers receive only the four
-declared Catalog read tools: `search_catalog`, `get_book`, `list_categories`,
-and `list_authors`. Those server tools do not create or update records.
-Book Agent's researcher delegation is configured separately from its direct
-MCP tools.
+## 2. Business Value
 
-The client-side tool list is not the only authorization boundary. MCP
-requests remain subject to server authentication, authorization filters, and
-server-side governance, as described in the MCP system's
-[[adr|adr-005-authenticate-and-govern-mcp-calls]]. Registering a tool for an
-agent does not bypass those checks.
+- **Least-privilege safety:** Each agent only receives the minimum read-only capabilities needed for its role, limiting potential misuse or unintended side effects.
+- **Clear accountability:** Architects, security reviewers, and product teams can easily trace which agents can look up live catalog data and which rely solely on provided context.
+- **Defense in depth:** Per-agent capability restrictions on the client side reinforce authentication and authorization controls enforced by the tool server.
 
-## Consequences
+## 3. How It Works
 
-- Tool availability reflects the agent's documented responsibility rather
-  than the full server capability list.
-- Adding a tool requires updating the agent definition and its governance
-  policy together, and confirming that the MCP server still authorizes the
-  intended operation.
-- Delegated subagents remain explicit capabilities and must be governed
-  independently from direct tool invocation; the researchers inherit
-  Book Agent's approved read capabilities, not a broader server tool set.
-- QA can answer only from its supplied context and instructions;
-  it does not have live Catalog MCP lookup capability.
-- Per-agent policy and tool declarations add configuration to maintain and
-  test as agents or server capabilities change.
+Capabilities are assigned per agent role and paired with an explicit governance policy:
 
-## Alternatives considered
+- **Question-and-answer specialist:** Operates with no live catalog lookup tools; it answers strictly from the context and instructions supplied to it.
+- **Book specialist and its research helpers:** Receive only four declared read-only catalog lookup capabilities—searching the catalog, retrieving a book's details, listing categories, and listing authors. None of these can create or update records.
+- **Separated delegation governance:** Delegating work from the book specialist to its catalog and recommendation researchers is configured and governed separately from direct tool calls. The researchers inherit only the book specialist's approved read-only scope, never a broader server capability set.
+- **Dual enforcement:** Having a capability registered for an agent never bypasses server-side security. Every tool request remains subject to server authentication, authorization filters, and server-side governance.
 
-### Give every agent every MCP tool
+## 4. Trade-offs & Lessons Learned
 
-This would reduce per-agent configuration, but unnecessarily expand the
-capability of agents that do not need catalog access and make it harder to
-reason about the consequences of a tool invocation.
+- **Configuration and testing overhead:** Maintaining per-agent tool lists and governance policies adds configuration that must be updated and tested whenever agent roles or server capabilities change.
+- **Mandatory change-review discipline:** When adding or removing a capability, teams must jointly review five elements: the agent's documented responsibility, its direct capability declarations, its governance policy, server-side authorization rules, and any delegation path. Reviewers must verify that agents without a business need cannot invoke the capability and that tool results are always treated as informational data rather than authorization to change owning-system records.
+- **Alternatives considered:**
+  - _Give every agent every tool:_ Would reduce configuration effort, but unnecessarily expands capabilities for agents that do not need catalog access and makes impact analysis harder.
+  - _Rely only on server-side authorization:_ Server authorization is mandatory, but alone cannot differentiate the narrower responsibilities of individual agents sharing one authorized chat client.
+  - _Treat delegated researchers as ordinary tools:_ Researchers are agent capabilities that can themselves invoke approved tools; governing only underlying tool calls would overlook the separate delegation decision.
 
-### Rely only on the MCP server's authorization
+## 5. Technical Reference
 
-Server-side authorization remains required, but by itself it would not
-express the different responsibilities of agents within one authorized Chat
-client. Client-side per-agent allow-lists provide a narrower capability
-boundary in addition to server enforcement.
-
-### Treat delegated researchers as ordinary MCP tools
-
-Researchers are agent capabilities that can themselves use approved MCP
-tools. Governing only their underlying MCP calls would omit the separate
-delegation decision made by Book Agent, so delegation is configured and
-reviewed explicitly.
-
-## Change review
-
-When adding or removing a capability, review the agent's documented
-responsibility, its direct tool declarations, the relevant governance policy,
-the server-side authorization rules, and any delegation path together. Verify
-that agents without a business need cannot invoke the new capability and that
-tool results continue to be treated as data from the owning system rather
-than as authorization to change its records.
+- **Target scope:** [[system|chat-system]] / [[service|chat-api]] covering `book-agent`, `qa-agent`, `book-catalog-researcher`, and `book-recommendation-researcher`.
+- **Per-agent MCP tool assignments:**
+  - `qa-agent`: No Catalog MCP tools; answers only from supplied context and instructions.
+  - `book-agent`, `book-catalog-researcher`, and `book-recommendation-researcher`: Restricted to four read-only Catalog MCP tools: `search_catalog`, `get_book`, `list_categories`, and `list_authors`.
+- **Delegation configuration:** `book-agent`'s researcher delegation is configured separately from its direct MCP tools; researchers inherit `book-agent`'s approved read capabilities.
+- **Server-side governance:** Client-side allow-lists complement server authentication, authorization filters, and server-side governance documented in [[adr|adr-005-authenticate-and-govern-mcp-calls]].

@@ -11,7 +11,40 @@ badges:
 
 # Make and validate a change
 
-## Branch naming
+## 1. Context & Problem
+
+BookWorm brings together multiple backend services, customer and back-office web applications, and living architecture documentation. Without a shared change workflow, contributors can accidentally introduce inconsistent formatting, broken builds, or conflicting edits across teams. Both human contributors and AI coding assistants also need a predictable path from starting a task to submitting a verified, reviewable change.
+
+## 2. Business Value
+
+- **Predictable delivery**: Standardized branching and commit practices keep the change history clear and traceable to features, fixes, and documentation updates.
+- **Fewer integration surprises**: Local validation and formatting catch build or style issues before changes reach shared integration pipelines.
+- **Faster onboarding**: Clear, shared guidance reduces ramp-up time for new team members and ensures AI assistants follow the same repository guardrails as human contributors.
+
+## 3. How It Works
+
+Every change follows a short-lived branch lifecycle starting from an up-to-date main line, moving through implementation and validation, and concluding with a peer-reviewed pull request.
+
+<MermaidFileLoader file="mermaids/git-flow.mmd" />
+
+1. **Create a focused branch**: Start from an up-to-date main branch and create a short-lived branch named after the type of change (feature, bug fix, or documentation) and a concise summary of the work.
+2. **Review project guidance**: Read the relevant service documentation and repository instructions before making edits.
+3. **Implement within boundaries**: Build the change according to [[doc|development/004-engineering-standards]], keeping service boundaries and established patterns intact.
+4. **Test and format**: Add or update automated tests to verify behavior, run the relevant checks described in [[doc|development/005-testing]], and apply automated formatting across code and documentation.
+5. **Commit with clear intent**: Record completed work with a standardized commit message indicating whether the change is a feature, fix, documentation update, refactoring, test, or maintenance task, while automated pre-commit checks verify compilation and style.
+6. **Open a pull request**: Share the branch for review and validation using [[doc|development/006-pull-request-process]].
+
+To support both human contributors and AI assistants consistently, BookWorm separates repository-wide instructions, file-scoped rules, and reusable task guides so guidance stays aligned without duplicating procedures.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Short-lived branches vs. long-running branches**: Keeping branches small and focused speeds up peer reviews and reduces merge conflicts, at the cost of breaking larger initiatives into smaller, incremental deliverables.
+- **Automated pre-commit quality gates vs. commit speed**: Verifying style and compilation locally before every commit prevents broken changes from entering history, though it adds a brief check pause when committing.
+- **Layered guidance over a single monolithic manual**: Separating repository-wide rules from file-specific rules and reusable skills keeps instructions maintainable, while requiring contributors to consult all applicable layers before editing.
+
+## 5. Technical Reference
+
+### Branch naming
 
 Use a type prefix followed by a short, lowercase, kebab-case description:
 
@@ -20,6 +53,8 @@ Use a type prefix followed by a short, lowercase, kebab-case description:
 ```
 
 Use `feature/` for new features, `fix/` for bug fixes, and `docs/` for documentation changes. For example, `docs/update-development-onboarding`. Keep branch names concise and focused on one change.
+
+### Step-by-step developer workflow
 
 <Steps title="Make and validate a change">
   <Step title="Create a branch">
@@ -36,10 +71,21 @@ Use `feature/` for new features, `fix/` for bug fixes, and `docs/` for documenta
   <Step title="Implement the change">
     Follow the conventions in [[doc|development/004-engineering-standards]] and preserve existing service boundaries and patterns.
   </Step>
-  <Step title="Test the change">
+  <Step title="Test and format the change">
     Add or update tests, then run the relevant checks described in [[doc|development/005-testing]]. Prefer the repository's `mise` tasks over raw tool commands.
+
+    Format your changes before committing:
+
+    ```bash
+    mise run format
+    ```
+
+    This runs C# (`format:cs`), frontend (`format:fe`), and documentation (`format:docs`) formatters. If you are editing documentation, you can also preview the catalog locally with `bun run dev` from `docs/`.
+
   </Step>
   <Step title="Commit your work">
+    The pre-commit hook configured by `mise run prepare` runs CSharpier formatting/style checks, `dotnet format analyzers --verify-no-changes`, and a `Release` build via Husky.Net.
+
     Use a descriptive [Conventional Commit](https://www.conventionalcommits.org/) message:
 
     - `feat:` for features
@@ -55,13 +101,7 @@ Use `feature/` for new features, `fix/` for bug fixes, and `docs/` for documenta
   </Step>
 </Steps>
 
-## Branch flow
-
-The diagram shows a short-lived change branch from `main` through implementation, validation, and an approved pull request. Use the same flow with `fix/` or `docs/` branch prefixes when appropriate.
-
-<MermaidFileLoader file="mermaids/git-flow.mmd" />
-
-## Use agent skills
+### Use agent skills
 
 <Visibility for="humans">
 	Browse BookWorm's repository skills in
@@ -76,7 +116,7 @@ The diagram shows a short-lived change branch from `main` through implementation
 	not rely on a remembered or copied list of skills because their coverage can change.
 </Visibility>
 
-## Where instructions belong
+### Where instructions belong
 
 [AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) is the repository-wide source of agent guidance. File-scoped rules live under [`.github/instructions`](https://github.com/foxminchan/BookWorm/tree/main/.github/instructions); reusable task procedures belong in `.agents/skills/<skill-name>/SKILL.md`.
 

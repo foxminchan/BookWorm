@@ -18,22 +18,47 @@ sidebar:
   badge: "QUERY"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Returns [[entity|book]] representations with pagination, sorting, text search, price bounds, and [[entity|category]], [[entity|publisher]], and [[entity|author]] filters.
+Customers browsing a bookstore expect to narrow down the catalog by keyword, price range, [[entity|category]], [[entity|publisher]], or [[entity|author]], as well as sort and page through results. Encoding many multi-value filter criteria into simple address-bar links quickly becomes unwieldy and error-prone, so the Catalog needs a structured way to accept rich search criteria.
+
+## 2. Business Value
+
+- **Higher storefront discovery**: Rich filtering, sorting, and price bounds help shoppers quickly locate books that match their budget and interests.
+- **Scalable browsing performance**: Built-in paging keeps response sizes manageable as the catalog grows.
+- **Clear input validation**: Invalid price bounds, paging values, or malformed identifiers are rejected immediately with clear feedback instead of returning misleading results.
+
+## 3. How It Works
+
+1. A client submits a structured search request specifying optional paging controls (which page to view and how many items per page), sorting preferences (which attribute to sort by and in ascending or descending order), and optional filters.
+2. Filters can combine free-text search, minimum and maximum price bounds, and one or more [[entity|category]], [[entity|publisher]], or [[entity|author]] selections.
+3. If no criteria are provided, the catalog applies default paging and sorting settings.
+4. The catalog validates the criteria; if any paging, price, or identifier value is invalid, the request is rejected. Otherwise, it returns the matching page of [[entity|book]] entries along with pricing, availability, relationships, and rating summaries.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Flat page response without a wrapper**: Returning only the selected page of books as a list keeps the payload compact, but means callers do not receive total item counts or total page numbers in the same response and must infer whether more pages exist from the returned page size.
+- **Structured request body for queries**: Passing filter criteria in a structured request payload avoids link length limits when filtering by multiple categories, publishers, or authors, though some caches and intermediaries handle body-based read requests differently from standard link requests.
+- **Strict upfront validation**: Rejecting invalid filter values immediately prevents silent query mistakes, requiring clients to validate user inputs (such as price bounds and selected identifiers) before submitting.
+
+## 5. Technical Reference
+
+- **Endpoint**: `QUERY /api/v1/books`
+- **Status codes**: `200`, `400`
+- **Entities**: [[entity|book]], [[entity|category]], [[entity|publisher]], [[entity|author]]
 
 <NodeGraph />
 
-## Contract
+### Contract
 
 Send a JSON request body (optional; defaults apply when omitted) with `pageIndex`, `pageSize`, `orderBy`, and `isDescending` for paging and sorting. Optional filters are `search`, `minPrice`, `maxPrice`, `categoryId`, `publisherId`, and `authorIds` arrays.
 
 The response is a JSON array of `BookDto` objects. The endpoint currently returns the selected page as an array rather than a wrapper object.
 
-## Operational notes
+### Operational notes
 
 `400` indicates an invalid page, price, UUID, or filter value.
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

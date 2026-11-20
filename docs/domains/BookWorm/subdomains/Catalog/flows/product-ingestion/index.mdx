@@ -174,54 +174,60 @@ steps:
       label: Pending work is retried on a later scheduled invocation
 ---
 
-## Purpose and scope
+## 1. Context & Problem
 
-Product ingestion turns committed Catalog changes into searchable [[entity|book]] text and
-embeddings. It keeps product discovery aligned with the authoritative catalog
-without making administrators wait for embedding generation when maintaining
-books.
+Product ingestion turns committed Catalog changes into searchable [[entity|book]] text and semantic search representations so customers can discover new, updated, or retired titles.
 
-There are two separate execution paths: [[service|catalog-api]] commits product
-changes, while Scheduler independently invokes [[service|catalog-ingestion]] to
-process durable work. The API does **not** call Scheduler or write vectors
-directly. The queue-to-Scheduler edge below represents waiting for the next
-scheduled invocation, not a database notification.
+Updating search indexes requires generating AI embeddings and writing to a separate search store—steps that are relatively slow and depend on external services. If [[service|catalog-api]] waited for search indexing during every administrator edit, saving a book would feel sluggish, and any temporary hiccup in the AI or search service could block catalog updates altogether.
 
-### System boundaries
+To avoid this coupling, BookWorm separates catalog editing from search indexing across three systems:
 
-This flow crosses three systems:
+- [[system|product-catalog-system]] owns [[service|catalog-api]], [[service|catalog-ingestion]], [[container|catalog-database]], and [[container|catalog-vector]], including queue processing and search projection consistency.
+- [[system|scheduler-system]] owns the recurring background schedule (surfaced operationally through [[service|sheduler-dashboard]], though the dashboard itself does not initiate ingestion).
+- [[system|identity-provider]] provides the security credentials used to authenticate scheduled ingestion calls.
 
-- [[system|product-catalog-system]] owns Catalog API, Catalog Ingestion,
-  Catalog Database, and Catalog Vector, including queue processing and
-  projection consistency.
-- [[system|scheduler-system]] owns the scheduled invocation. The Scheduler
-  step references [[service|sheduler-dashboard]], the existing catalog resource
-  for the Scheduler-hosted Quartz surface and its documented jobs; the dashboard
-  UI itself does not initiate ingestion.
-- [[system|identity-provider]] owns the external OAuth API that issues the
-  Scheduler access token before the ingestion request.
+This flow covers book creation, updates, soft deletion, and changes to related [[entity|author]]s, [[entity|category]]s, [[entity|publisher]]s, and [[entity|book-author]] relationships. Image storage, customer search requests, and initial infrastructure provisioning are outside its scope.
 
-When grouping by **System**, the Scheduler step belongs to Scheduler System,
-the OAuth API belongs to Identity Provider, and catalog processing and storage
-belong to Product Catalog System. The command inherits its sending Scheduler
-step's group and crosses the boundary into Catalog Ingestion. The administrator
-and Identity Provider remain in **External**.
+## 2. Business Value
 
-This flow covers book creation, updates, soft deletion, and changes to related
-[[entity|author]]s, [[entity|category]]s, [[entity|publisher]]s, and
-[[entity|book-author]] relationships. Image storage,
-customer search requests, and initial infrastructure provisioning are outside
-its scope.
+- **Responsive catalog management:** Administrators can create, update, and retire books immediately without waiting for AI embedding generation or search indexing.
+- **Resilience and fault isolation:** Temporary slowdowns or outages in the embedding service or search store never prevent catalog saves or lose pending search updates.
+- **Complete, automatic search coverage:** Changes to a book's author, category, or publisher automatically trigger a search refresh for every affected book—no manual reindexing steps required.
+- **Lower processing cost and noise:** Repeated edits to the same book between scheduled runs are collapsed into a single pending refresh, avoiding wasted work on intermediate drafts.
+- **No lost updates during concurrent edits:** If an administrator edits a book while a search batch is already running, the newer edit is automatically preserved for the next cycle.
 
-## Flow visualization
+## 3. How It Works
+
+Product ingestion runs across two independent paths: administrators save product changes through [[service|catalog-api]], while [[system|scheduler-system]] periodically triggers [[service|catalog-ingestion]] to refresh [[container|catalog-vector]]. The API never calls the scheduler or updates the search store directly; pending work simply waits in the database for the next scheduled run.
+
+1. **Save product changes and record pending work:** When an administrator adds, updates, or soft-deletes a book—or updates an [[entity|author]], [[entity|category]], [[entity|publisher]], or [[entity|book-author]] link—[[service|catalog-api]] saves the change in [[container|catalog-database]]. In the exact same save operation, the database records or refreshes a single waiting item for each affected book. Multiple edits to the same book simply overwrite its waiting marker so only the latest version is processed.
+2. **Trigger ingestion on a five-minute schedule:** Every five minutes, [[system|scheduler-system]] requests an access credential from [[system|identity-provider]] and sends an authenticated trigger to [[service|catalog-ingestion]] to check for pending work. Only one scheduled run is allowed at a time, and missed runs catch up with a single run rather than replaying every missed interval.
+3. **Claim an exclusive turn and read a bounded batch:** [[service|catalog-ingestion]] acquires an exclusive lock so two batches cannot run simultaneously. If the lock is busy or nothing is waiting, the run finishes cleanly without making changes. Otherwise, it reads up to 200 waiting books in order, along with each book's current title, description, authors, category, and publisher.
+4. **Refresh or remove search entries:** For active books, the worker builds searchable text (title, description, authors, category, and publisher—excluding prices, images, and rating summaries), generates search embeddings, and updates [[container|catalog-vector]]. If any embedding fails to generate, the whole batch stops before modifying the search store. For missing or soft-deleted books, the worker deletes their entry from [[container|catalog-vector]].
+5. **Confirm only unchanged items:** Only after every search update in the batch succeeds does the worker clear the waiting items—and only if each book's waiting marker still matches what was read at the start. If a book was edited again while the batch was running, its newer marker stays in the queue so the next scheduled run picks up the latest details.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency vs. write availability:** [[container|catalog-database]] remains the single source of truth, while [[container|catalog-vector]] is a derived projection that can lag behind catalog edits. A successful product save confirms persistence, not that customer search already reflects the change.
+- **Schedule cadence is not a freshness SLA:** Firing every five minutes does not guarantee search updates within five minutes. Large backlogs (beyond the 200-item batch cap), processing duration, lock contention, missed triggers, or downstream outages can extend lag.
+- **Coalescing queue vs. full edit history:** Storing one pending entry per book keeps processing lean and avoids indexing superseded drafts, but means queue age measures the latest edit rather than when a frequently edited book first entered the queue.
+- **Safe retries instead of distributed transactions:** Because the database and search store do not share an all-or-nothing transaction, a partial failure can leave some search writes applied while keeping the waiting items intact. Using stable book identifiers ensures repeated updates or deletions on the next scheduled cycle are safe.
+- **Scheduled recovery over immediate retry loops:** Failures wait for a subsequent scheduled firing rather than retrying immediately in a tight loop, preventing cascading load during external outages.
+- **Operational visibility lesson:** A completed run alone does not prove the backlog is clear (an empty queue or busy lock also finishes cleanly), so operations teams must monitor actual pending queue count and oldest pending age—and must never manually delete queue rows to hide a backlog.
+
+## 5. Technical Reference
+
+### Flow visualization
 
 <NodeGraph />
 
-The active-book and deleted-book branches apply to individual records within
-the same batch. A mixed batch can take both branches; acknowledgement starts
-only after **all** its vector operations succeed.
+The active-book and deleted-book branches apply to individual records within the same batch. A mixed batch can take both branches; acknowledgement starts only after **all** its vector operations succeed.
 
-## Participants and responsibilities
+### System boundaries & grouping
+
+When grouping by **System**, the Scheduler step belongs to [[system|scheduler-system]], the OAuth API belongs to [[system|identity-provider]], and catalog processing and storage belong to [[system|product-catalog-system]]. The command inherits its sending Scheduler step's group and crosses the boundary into [[service|catalog-ingestion]]. The administrator and Identity Provider remain in **External**.
+
+### Participants and responsibilities
 
 | Participant                            | Responsibility                                                                                                                                                  |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -233,68 +239,13 @@ only after **all** its vector operations succeed.
 | [[service\|catalog-ingestion]]         | Lock and read queued work, generate embeddings, apply vector changes, and acknowledge processed revisions.                                                      |
 | [[container\|catalog-vector]]          | Hold the derived Qdrant search projection, keyed by book UUID.                                                                                                  |
 
-## Processing walkthrough
+### Implementation mechanics
 
-### 1. Commit product changes and queue work
-
-Catalog API saves the book or metadata change in PostgreSQL. Database triggers
-maintain `pending_vector_updates` in the same transaction, so a committed change
-has durable indexing work without a separate broker publication.
-
-The queue has one row per `book_id`. Its `revision` and `updated_at` are replaced
-when that book changes again. It is therefore a coalescing work queue, not an
-event history: ingestion reads the current book representation rather than
-replaying every intermediate edit.
-
-Book and book-author inserts, updates, and deletes enqueue work. Author,
-category, and publisher updates or deletes enqueue related books. The migration
-also queues existing books for initial indexing.
-
-### 2. Invoke ingestion on the schedule
-
-Quartz uses cron expression `0 0/5 * * * ?` in UTC. A misfire uses `FireOnceNow`,
-making one immediate execution eligible rather than replaying every missed
-interval. The job disallows overlapping executions.
-
-Before calling the ingestion endpoint, Scheduler obtains an OAuth access token
-from the external Identity Provider's [[service|oauthapi]]. Scheduler sends that
-bearer token with the request. Catalog Ingestion validates it and requires the
-`azp` claim to identify Scheduler; the provider issues identity credentials but
-does not authorize the ingestion operation. The request contains no product
-payload and cannot choose the batch size.
-
-### 3. Read a bounded, protected batch
-
-Catalog Ingestion opens a PostgreSQL connection and attempts advisory lock
-`740031001`. If another processor holds it, this invocation does no work.
-Otherwise, it reads at most **200** pending rows ordered by `updated_at` and
-`book_id`, retaining each row's revision for acknowledgement.
-
-Current book and relationship data are joined to the queue. A missing or
-soft-deleted book produces null content, indicating that its vector must be
-removed. An empty queue finishes without vector processing.
-
-### 4. Refresh or remove the search projection
-
-The worker ensures that the Qdrant collection exists, then generates embeddings
-for all active books in the batch. A mismatch between the number of active
-books and returned embeddings fails the batch before vector writes.
-
-Searchable text includes:
-
-- Book title and description.
-- Author names, ordered by name and ID.
-- Category and publisher names.
-
-For each active book, ingestion upserts its UUID, text, and embedding into
-`data-bookworm-snippets`. For each missing or soft-deleted book, it deletes the
-record with that UUID. Images, prices, and rating summaries are not included in
-this vector content.
-
-### 5. Acknowledge only processed revisions
-
-After every vector operation succeeds, ingestion deletes queue rows using both
-their book ID and the revision read at the start:
+- **Database queue (`pending_vector_updates`):** PostgreSQL triggers on book and book-author inserts/updates/deletes, plus author, category, and publisher updates/deletes (and migration seeding), maintain one row per `book_id` with `revision` and `updated_at` replaced on subsequent changes.
+- **Schedule & authentication:** Quartz runs `ProcessVectorBatchJob` with cron expression `0 0/5 * * * ?` (UTC), misfire policy `FireOnceNow`, and concurrent execution disallowed, publishing `ProcessVectorBatchIntegrationEvent` to `scheduler.process-vector-batch` to trigger the Kafka-bound Azure Function in [[service|catalog-ingestion]]. Scheduler obtains an OAuth bearer token from [[service|oauthapi]]; Catalog Ingestion validates the token and requires the `azp` claim to identify Scheduler. The bodyless `POST /api/vectors/batch` request cannot override the batch size.
+- **Locking & batching:** Catalog Ingestion acquires PostgreSQL advisory lock `740031001` (released in `finally`) and reads up to **200** rows ordered by `updated_at` and `book_id`, retaining each row's `revision`. Missing or soft-deleted books yield null content.
+- **Vector projection (`data-bookworm-snippets`):** Ensures the Qdrant collection exists, generates embeddings for all active books in the batch (an incomplete embedding batch fails processing before vector writes), and builds searchable text from title, description, author names (ordered by name and ID), category name, and publisher name. Active books are upserted by book UUID; missing/soft-deleted books are deleted by UUID.
+- **Revision-checked acknowledgement:** After every vector operation succeeds, queue rows are deleted only if both `book_id` and `revision` match, returning `204 No Content`:
 
 <CodeGroup>
 
@@ -305,65 +256,30 @@ WHERE book_id = $1 AND revision = $2;
 
 </CodeGroup>
 
-If a book was edited during processing, its new revision does not match and
-the row remains pending. The next batch reads the latest product content.
-The worker releases its acquired advisory lock in `finally` and returns
-`204 No Content` on successful completion.
+For example, if ingestion reads revision A and an administrator commits another edit creating revision B, the worker may temporarily write A's content to Qdrant; acknowledgement cannot delete B, so a later invocation refreshes the vector with current data.
 
-## Consistency and delivery guarantees
+### Outcomes and recovery
 
-- **PostgreSQL remains authoritative.** Qdrant is a derived projection that can
-  temporarily lag behind catalog edits.
-- **API success is not indexing success.** A successful product write confirms
-  persistence, not that the next search already reflects it.
-- **Retries can repeat vector writes.** Processing is not an exactly-once
-  transaction across PostgreSQL and Qdrant. Stable book UUIDs make repeated
-  upserts and deletes target the same records.
-- **Concurrent edits survive acknowledgement.** Revision checks preserve newer
-  work even when an older vector representation was just written.
-- **A schedule is not a freshness SLA.** The five-minute cadence does not
-  guarantee indexing within five minutes: backlog, processing duration,
-  lock contention, missed firings, and dependency failures can increase lag.
+| Outcome                                          | Queue and index behavior                                                                                                        | Operational interpretation                                                                                                                            |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Successful batch                                 | Vector operations complete; matching queue revisions are removed. New revisions and rows beyond the batch limit remain pending. | `204` confirms invocation completion, not that the entire backlog is empty.                                                                           |
+| Empty queue or busy advisory lock                | No vector operations occur; a busy lock leaves queued work untouched.                                                           | Also returns `204`; this response alone does not prove that any records were indexed.                                                                 |
+| Token acquisition fails                          | No ingestion request is made and no batch is processed.                                                                         | Scheduler reports the failed invocation to Quartz; pending work remains queued.                                                                       |
+| Authentication rejected                          | No batch is processed.                                                                                                          | `401` indicates missing or invalid credentials; `403` indicates a client other than Scheduler.                                                        |
+| Collection, embedding, or vector operation fails | No batch acknowledgements have started. All its queue rows remain; some vector writes may already have succeeded.               | The error propagates; Scheduler logs it and reports a failed Quartz execution (`JobExecutionException`). Pending work is eligible for a later firing. |
+| Acknowledgement fails partway through            | Earlier acknowledgements may have completed; remaining rows survive. Vector operations have already succeeded.                  | A later invocation may repeat vector operations for the remaining records.                                                                            |
 
-For example, if ingestion reads revision A and an administrator commits another
-edit creating revision B, the worker may temporarily write A's content to
-Qdrant. Its acknowledgement cannot delete B, so a later invocation refreshes
-the vector using current data.
-
-## Outcomes and recovery
-
-| Outcome                                          | Queue and index behavior                                                                                                        | Operational interpretation                                                                                                  |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Successful batch                                 | Vector operations complete; matching queue revisions are removed. New revisions and rows beyond the batch limit remain pending. | `204` confirms invocation completion, not that the entire backlog is empty.                                                 |
-| Empty queue or busy advisory lock                | No vector operations occur; a busy lock leaves queued work untouched.                                                           | Also returns `204`; this response alone does not prove that any records were indexed.                                       |
-| Token acquisition fails                          | No ingestion request is made and no batch is processed.                                                                         | Scheduler reports the failed invocation to Quartz; pending work remains queued.                                             |
-| Authentication rejected                          | No batch is processed.                                                                                                          | `401` indicates missing or invalid credentials; `403` indicates a client other than Scheduler.                              |
-| Collection, embedding, or vector operation fails | No batch acknowledgements have started. All its queue rows remain; some vector writes may already have succeeded.               | The error propagates; Scheduler logs it and reports a failed Quartz execution. Pending work is eligible for a later firing. |
-| Acknowledgement fails partway through            | Earlier acknowledgements may have completed; remaining rows survive. Vector operations have already succeeded.                  | A later invocation may repeat vector operations for the remaining records.                                                  |
-
-The retry arrow represents a **later scheduled invocation**, not an immediate
-retry loop within the function. Operators should inspect subsequent Quartz
-firings rather than assume a failed job immediately runs again.
-
-## Operational checks
+### Operational checks
 
 When search results are stale or ingestion appears stalled:
 
-1. Check Scheduler's trigger state, next fire time, and
-   `ProcessVectorBatchJob` execution history in [[service|sheduler-dashboard]].
-2. For token acquisition failures, `401`, or `403`, verify Identity Provider
-   availability, token validation, and the Scheduler client identity before
-   investigating database or vector processing.
-3. Check pending queue count and the oldest `updated_at` in
-   [[container|catalog-database]]. A growing count or age indicates work is not
-   keeping pace with catalog changes.
-4. Correlate ingestion errors with PostgreSQL connectivity, advisory-lock
-   contention, embedding-service availability, and Qdrant health.
-5. After recovery, verify that pending work drains and the expected book UUIDs
-   are refreshed or removed in [[container|catalog-vector]]. Do not treat a
-   successful HTTP response as proof of an up-to-date index.
+1. Check Scheduler's trigger state, next fire time, and `ProcessVectorBatchJob` execution history in [[service|sheduler-dashboard]].
+2. For token acquisition failures, `401`, or `403`, verify Identity Provider availability, token validation, and the Scheduler client identity before investigating database or vector processing.
+3. Check pending queue count and the oldest `updated_at` in [[container|catalog-database]]. A growing count or age indicates work is not keeping pace with catalog changes.
+4. Correlate ingestion errors with PostgreSQL connectivity, advisory-lock contention, embedding-service availability, and Qdrant health.
+5. After recovery, verify that pending work drains and the expected book UUIDs are refreshed or removed in [[container|catalog-vector]]. Do not treat a successful HTTP response as proof of an up-to-date index.
 
-The following read-only query summarizes the current queue:
+The following read-only query summarizes the current queue (an empty queue returns zero and null age/timestamp values; do not manually remove rows to hide a backlog):
 
 <CodeGroup>
 
@@ -376,9 +292,3 @@ FROM pending_vector_updates;
 ```
 
 </CodeGroup>
-
-An empty queue returns a count of zero and null age/timestamp values. Because
-repeated edits replace `updated_at`, this age measures the oldest **current
-queued revision**, not how long a frequently edited book has awaited indexing.
-Do not manually remove queue rows to hide a backlog; doing so can discard
-required projection updates.

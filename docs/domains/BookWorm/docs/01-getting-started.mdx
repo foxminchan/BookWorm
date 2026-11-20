@@ -12,34 +12,33 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Welcome to BookWorm
+## 1. Context & Problem
 
-BookWorm is an online bookstore. This domain covers the customer experience
-around discovering books, managing a basket, checking out, tracking orders,
-leaving feedback, and getting conversational assistance.
+BookWorm is an online bookstore covering book discovery, basket management, checkout, order tracking, customer feedback, and conversational assistance. Without a clear map of how these areas fit together and which team owns each decision, newcomers—whether architects, project managers, analysts, or developers—can easily misunderstand boundaries, route questions to the wrong group, or introduce changes in the wrong part of the platform.
 
-This page is an entry point to [[domain|BookWorm]]. Use the domain and system
-pages linked below as the source of truth for detailed boundaries, contracts,
-and implementation behavior.
+This guide serves as the entry point to [[domain|BookWorm]], explaining the platform's business scope, how documentation is organized, and where accountability lives.
 
-## Documentation map
+## 2. Business Value
 
-Use the catalog in this order when learning the system:
+- **Faster onboarding**: Gives any new contributor a structured path from high-level business strategy down to system behavior and operational guides.
+- **Clear team accountability**: Removes ambiguity over who owns business rules, system operations, and domain decisions.
+- **Safer change delivery**: Reduces the risk of cross-team conflicts and accidental coupling by clarifying ownership boundaries up front.
 
-1. Start with [[domain|BookWorm]] for the strategic direction and context map.
-2. Read the subdomain pages to understand the business responsibilities and ownership boundaries.
-3. Review the concrete system pages for service and container boundaries.
-4. Follow the guide and runbook pages when handling operational issues or repeated change patterns.
-5. Check message definitions, commands, and flows before changing a contract or behavior.
+## 3. How It Works
 
-This sequence helps new contributors understand not only what the system does,
-but also why it is organized this way and which team owns each decision.
+### Recommended reading order
 
-## Subdomains and ownership
+Navigate the documentation in five steps so you understand both what BookWorm does and why it is structured this way:
 
-The owner shown here is the team listed in that subdomain's EventCatalog
-`owners` metadata. It describes domain-level accountability, not necessarily
-the team implementing every system within the subdomain.
+1. Start with [[domain|BookWorm]] for strategic direction and the overall landscape map.
+2. Read the subdomain pages to understand business responsibilities and ownership boundaries.
+3. Review the system pages for concrete boundaries between major components.
+4. Consult guides and runbooks when handling operational issues or recurring change patterns.
+5. Check interaction agreements and flows before altering any cross-area behavior.
+
+### Subdomains and ownership
+
+Each business area has a designated domain owner accountable for its scope and business decisions:
 
 | Subdomain                  | Responsibility                                            | Domain owner                |
 | -------------------------- | --------------------------------------------------------- | --------------------------- |
@@ -58,43 +57,39 @@ the team implementing every system within the subdomain.
 | [[team\|contributor-team]]  | Develops and maintains the platform; it is the recorded owner of Conversational and implements systems and services across multiple subdomains.        |
 | [[team\|platform-team]]     | Maintains shared infrastructure and is the recorded owner of the Platform subdomain. It also co-owns the Product Catalog System with Contributor Team. |
 
-For exact system and service ownership, check the `owners` field on the
-resource itself. For example, the [[system\|product-catalog-system]] is owned
-by both Platform Team and Contributor Team even though the Catalog subdomain
-is owned by Business Strategy.
+### Ownership boundaries to keep in mind
 
-## Ownership boundaries to keep in mind
+- **Catalog** owns book details, prices, and availability. Other areas consume that information through their own agreed models.
+- **Shopping** owns the active basket before purchase. Clearing a basket does not prove an order was completed.
+- **Ordering** owns the accepted order and its official business status. Financial workflow progress or email delivery does not alter that status.
+- **Reviews** owns customer feedback. Displaying a rating summary in Catalog does not transfer ownership of the underlying reviews.
+- **Conversational** can answer questions and research options, but Catalog remains the source of book facts; conversational assistance does not directly view or modify live basket or order state.
+- **Platform** runs scheduled tasks and delivers notifications, without owning the business records of the areas it supports.
 
-- **Catalog** owns book details, prices, and availability. Other contexts
-  consume those concepts through their own contracts and models.
-- **Shopping** owns the mutable basket before checkout. Basket cleanup is not
-  proof that an order was completed.
-- **Ordering** owns the accepted Order and its business status. Finance
-  workflow progress and notification delivery do not change that status.
-- **Reviews** owns customer feedback. A rating summary projected into Catalog
-  does not transfer ownership of the original feedback.
-- **Conversational** can answer and research, but Catalog remains the source
-  for book facts; conversational guidance does not read or change live order
-  or basket state.
-- **Platform** schedules work and delivers notifications. It does not own the
-  business data or state of the domains it supports.
+## 4. Trade-offs & Lessons Learned
 
-When changing data or behavior, make the change in its owning context and
-communicate across boundaries through documented APIs, events, commands, or
-queries. Avoid direct access to another context's database.
+- **Domain ownership vs. system co-ownership**: A single team may own business direction for a subdomain while different teams build or co-own the underlying systems (for example, [[system|product-catalog-system]] is co-owned by Platform Team and Contributor Team even though Business Strategy owns the Catalog subdomain). Separating business accountability from implementation ownership scales better, provided teams check resource-level ownership before acting.
+- **Discipline at boundaries**: Requiring changes to happen inside the owning context and cross boundaries only through explicit agreements adds upfront coordination, but prevents fragile hidden dependencies across teams.
 
-## Where to go next
+## 5. Technical Reference
 
-1. Read [[domain|BookWorm]] for strategic classification,
-   business invariants, and the full context map.
-2. Open the relevant subdomain page above and review its scope and systems.
-3. Before changing a service or contract, read that resource's engineering
-   docs, architecture decisions, and messages.
-4. For common tasks and operational issues, use the subdomain's guides and
-   runbooks.
+### Metadata and ownership conventions
 
-Before submitting a change, confirm that it belongs to the right owner, keeps
-the context boundary intact, and updates the relevant contract and
-documentation alongside the implementation.
+- Domain-level accountability is recorded in each subdomain's EventCatalog `owners` metadata field.
+- Exact system and service ownership should always be verified in the `owners` field on the resource itself (such as [[system|product-catalog-system]], co-owned by [[team|platform-team]] and [[team|contributor-team]]).
+
+### Cross-boundary integration rules
+
+- Make data and behavior changes inside the owning bounded context.
+- Communicate across bounded contexts only through documented APIs, events, commands, or queries.
+- Never access another context's database directly.
+
+### Pre-change checklist
+
+1. Read [[domain|BookWorm]] for strategic classification, business invariants, and the full context map.
+2. Open the relevant subdomain page and review its scope and systems.
+3. Read the target resource's engineering docs, architecture decisions, and message definitions before modifying a service or contract.
+4. Use subdomain guides and runbooks for common tasks and operational troubleshooting.
+5. Confirm every change belongs to the right owner, preserves context boundaries, and updates contracts alongside documentation.
 
 <Footer />

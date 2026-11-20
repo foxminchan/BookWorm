@@ -71,27 +71,40 @@ badges:
     icon: LockClosedIcon
 ---
 
-## Context Diagram
+## 1. Context & Problem
 
-The Scheduler System coordinates recurring work for BookWorm platform and
-domain systems. It starts jobs and records execution state; the receiving
-system remains responsible for authorization, processing, and business data.
+BookWorm depends on recurring background maintenance—such as updating product search embeddings and retrying or archiving email notifications—that must run reliably without waiting for customer traffic. Scattering independent timers across every business service would fragment operational visibility, risk duplicate runs across scaled instances, and tangle scheduling rules with domain logic. The Scheduler System provides a dedicated platform coordination boundary that manages when recurring work runs while leaving business rules, authorization, and data ownership with each receiving system.
+
+## 2. Business Value
+
+- **Centralized visibility and control**: Administrators gain a single place to inspect recurring schedules, pause jobs during maintenance, and investigate failures.
+- **Reliable background operations**: Durable schedules ensure catalog search updates and notification maintenance resume automatically after restarts rather than being silently skipped.
+- **Stronger service boundaries**: Keeping scheduling separate from business data allows Catalog and Notification teams to change their internal rules and data models without breaking the scheduler.
+- **Protected credentials and data**: Separating authentication secrets and business payloads from schedule records reduces security risk during daily operations.
+
+## 3. How It Works
+
+1. **Schedule evaluation**: The system persists job definitions and timing rules, evaluating calendars, pause states, and missed-run policies to decide when work is eligible to start.
+2. **Authenticated dispatch**: When a run is due, the active scheduler instance records the firing, retrieves service-to-service credentials from secure runtime configuration, and invokes the target system through its supported contract.
+3. **Downstream execution**: The receiving system validates the caller, applies its own concurrency locks, and updates its own data:
+   - **Catalog search maintenance**: [[service|catalog-ingestion]] processes a bounded batch of pending [[entity|book]] updates in [[container|catalog-vector]] and confirms only items that have not changed concurrently.
+   - **Notification maintenance**: [[system|notification-system]] evaluates its durable [[entity|outbox]] to make failed deliveries eligible for retry, clean up expired records, or emit a health signal.
+4. **Outcome recording**: The scheduler records completion, duration, or failure details so operators can monitor execution health and diagnose issues.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Dispatch success vs. business completion**: A completed run in the scheduler only confirms that the target service was called—operators must check Catalog's pending updates or Notification's outbox and provider health to verify business completion.
+- **Targets must tolerate duplicate runs**: Because timeouts or restarts can leave uncertainty about whether a call finished, receiving services must be idempotent or backed by durable work queues so repeated triggers are harmless.
+- **No direct domain table access**: Prohibiting the scheduler from reading or writing Catalog or Notification tables keeps boundaries clean, though diagnosing a backlog requires correlating scheduler outcomes with target-side metrics.
+- **Visibility without secret exposure**: Retaining correlation identifiers and sanitized error categories allows operators to trace issues end to end without copying credentials, notification text, or personal data into schedule metadata or routine logs.
+
+## 5. Technical Reference
+
+### Context Diagram
 
 <ContextDiagram />
 
-## Overview
-
-The Scheduler System is the platform coordination boundary for recurring
-background work. It runs durable Quartz jobs, persists trigger and execution
-state, and publishes authenticated service-to-service requests for Catalog and
-Notification.
-
-The Scheduler is not a general-purpose business workflow owner. A scheduled
-job may start processing, but the target system owns validation, concurrency,
-data changes, and the final business outcome. This separation keeps scheduling
-reliable without coupling Quartz to another system's database or domain rules.
-
-## Responsibilities and boundaries
+### Responsibilities and boundaries
 
 | Responsibility         | Scheduler owns                                                                 | Target system owns                                                 |
 | ---------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
@@ -101,111 +114,23 @@ reliable without coupling Quartz to another system's database or domain rules.
 | Failure handling       | Recording execution failures and making eligible work runnable again           | Retrying or preserving the business work requested by the job      |
 | Observability          | Scheduler health, trigger state, and execution history                         | Processing metrics, data quality, and downstream business outcomes |
 
-The Scheduler must not read or write Catalog, Notification, or other domain
-tables directly. It should use the receiving service's versioned command or
-HTTP contract.
+The Scheduler must not read or write Catalog, Notification, or other domain tables directly; it invokes versioned commands or HTTP contracts instead.
 
-## Scheduled work
+### Scheduled work and contracts
 
-### Catalog vector maintenance
+- **Catalog vector maintenance**: Invokes [[command|ProcessCatalogVectorBatch]] on [[service|catalog-ingestion]] as an authenticated Quartz job. Catalog Ingestion uses [[container|catalog-vector]], acquires its own database advisory lock, processes a bounded batch, and acknowledges only revisions that remain current. Target endpoints reject missing or invalid credentials and distinguish unauthorized callers from callers using the wrong client identity.
+- **Notification maintenance**: Coordinates resend (making failed/eligible work runnable), cleanup (removing or archiving records no longer eligible for retry or audit), and heartbeat/health jobs against [[system|notification-system]], which owns the durable [[entity|outbox]] state and delivery eligibility.
 
-The Scheduler invokes [[command|ProcessCatalogVectorBatch]] on
-[[service|catalog-ingestion]] as an authenticated Quartz job. Catalog Ingestion
-uses [[container|catalog-vector]] for vector storage, then acquires its own
-database advisory lock, processes a bounded batch, and
-acknowledges only revisions that remain current. A successful scheduler
-invocation therefore means that the worker was called, not that every pending
-[[entity|book]] update has been indexed.
+### Persistence, reliability, and security
 
-The target endpoint rejects missing or invalid credentials and distinguishes
-unauthorized callers from callers using the wrong client identity. Scheduler
-credentials belong in runtime secret configuration and must never be embedded
-in job definitions or documentation.
+- **Quartz persistence**: Operational state resides in `sheduler-database` across [[entity|qrtz-job-details]], [[entity|qrtz-triggers]], cron/simple/blob/calendar tables, paused trigger/job-group tables, [[entity|qrtz-fired-triggers]], [[entity|qrtz-scheduler-state]], locks, job-status, execution-history, and misfire-history entities. Consumers must not query Quartz tables as a job API or infer Catalog/Notification business state from scheduler rows.
+- **Reliability**: Durable trigger state survives restarts; misfires must remain visible and follow configured recovery policies (never silently skipped); non-concurrent jobs and target-side locks prevent overlapping work; failed invocations remain observable with job, trigger, target, and execution context; retries must be bounded and idempotent.
+- **Monitoring & secrets**: Operators monitor scheduler-instance check-ins, fired-trigger age, misfire/failure counts, execution duration, and last successful run, comparing them against pending vector updates (Catalog) or outbox state and provider health (Notification). Outbound credentials belong in runtime secret configuration; authorization headers, notification content, and personal data must never appear in Quartz metadata or routine logs.
 
-### Notification maintenance
-
-The Scheduler also coordinates Notification jobs for resend, cleanup, and
-health-oriented processing. [[system|notification-system]] owns the durable
-[[entity|outbox]] state and decides whether an email is eligible for delivery;
-the Scheduler owns when the maintenance job is attempted.
-
-- A resend job makes failed or still-eligible delivery work available for
-  another controlled attempt.
-- A cleanup job removes or archives only records that are no longer eligible
-  for retry or audit.
-- A heartbeat or health job provides a liveness signal for operators and
-  should not be interpreted as proof that downstream notification delivery
-  succeeded.
-
-## Execution lifecycle
-
-1. A Quartz job definition is persisted with its trigger and schedule.
-2. The scheduler evaluates the trigger, calendar, pause state, and misfire
-   policy.
-3. An eligible firing is recorded for the active scheduler instance.
-4. The Scheduler invokes the target contract with service-to-service
-   authentication.
-5. The target system validates the request, applies its own concurrency
-   controls, and processes its owned data.
-6. Quartz records completion, failure, status, and execution history for
-   operations and later diagnosis.
-
-Jobs should be safe to run more than once. A timeout or process interruption
-can leave the caller uncertain whether the target completed, so the receiving
-system must provide idempotency or a durable work queue where duplicate
-invocations are harmless.
-
-## Persistence model
-
-Quartz tables are the Scheduler's operational state, not business entities.
-They provide distinct responsibilities:
-
-- [[entity|qrtz-job-details]] and [[entity|qrtz-triggers]] define what can run
-  and when it is eligible.
-- Cron, simple, blob, and calendar entities describe trigger timing and
-  scheduling constraints.
-- Paused trigger and job-group entities represent operator-controlled
-  suspension.
-- [[entity|qrtz-fired-triggers]] and [[entity|qrtz-scheduler-state]] record
-  active firings and scheduler-instance check-ins.
-- Lock, job-status, execution-history, and misfire-history entities support
-  coordination, diagnosis, and recovery.
-
-Quartz persistence should be treated as implementation-owned infrastructure.
-Consumers must not use these tables as a substitute for a job API or infer
-Catalog and Notification business state from scheduler rows.
-
-## Reliability and failure handling
-
-- Durable trigger state allows scheduled work to resume after a process restart.
-- Misfires must be visible and handled according to the job's recovery policy;
-  silently skipping a missed execution is not acceptable for durable work.
-- Non-concurrent jobs and target-side locks prevent overlapping processing where
-  the receiving contract requires it.
-- A failed invocation must remain observable with its job, trigger, target, and
-  execution context; it must not be reported as a successful business outcome.
-- Retries must be bounded and compatible with the target's idempotency model.
-- Backlogs should be diagnosed from both Scheduler execution state and the
-  target system's durable queue or processing metrics.
-
-## Operations and security
-
-Operators should monitor scheduler-instance check-ins, fired-trigger age,
-misfire and failure counts, execution duration, and the last successful run for
-each critical job. For Catalog vector maintenance, compare Scheduler outcomes
-with the age and count of pending vector updates. For Notification jobs,
-compare execution outcomes with outbox delivery state and provider health.
-
-All outbound job calls require restricted service-to-service credentials.
-Credentials, authorization headers, notification contents, and personal data
-must not be written to Quartz job metadata or routine logs. Correlation
-identifiers and sanitized failure details should be retained so an operator can
-trace a firing to the target system without exposing secrets.
-
-## Architecture decisions
+### Architecture decisions
 
 <ADRTable />
 
-## Architecture
+### Architecture
 
 <NodeGraph mode="full" search="false" legend="false" />

@@ -17,6 +17,9 @@ entities:
 services:
   - id: rating-api
     version: 1.0.0
+flows:
+  - id: feedback-publication
+    version: 1.0.0
 relationships:
   - id: product-catalog-system
     version: 1.0.0
@@ -52,54 +55,68 @@ badges:
     icon: LockClosedIcon
 ---
 
-## Context Diagram
+## 1. Context & Problem
 
-The Rating System owns individual customer feedback and exchanges integration
-messages with Catalog. Its summarization workflow also calls the shared
-[[system|mcp-tools]] server for current book details and reusable analysis
-prompts, and uses the external [[system|data-privacy]] system for PII
-processing. Catalog does not read the Rating Database directly; it maintains
-its own denormalized rating summary from the published events.
+BookWorm needs a dedicated Reviews boundary for collecting, storing, moderating, and summarizing customer feedback on Catalog [[entity|book]]s. Mixing individual review records into the product catalog would create tight coupling between domains, complicate moderation and privacy controls, and make it harder to scale review retrieval and AI-assisted summarization independently.
+
+The Rating System addresses this by owning the [[entity|feedback]] lifecycle inside Reviews while coordinating with Catalog for book rating summaries, shared tooling for book context, and [[system|data-privacy]] for personal-information redaction.
 
 <ContextDiagram />
 
-## System Context
-
 <LikeC4View viewId="ratingContext" project="reviews" />
 
-## Purpose and boundary
+## 2. Business Value
 
-The Rating System is the Reviews domain boundary for collecting, storing, and
-retrieving feedback about Catalog [[entity|book]]s. It owns the [[entity|feedback]]
-aggregate and the lifecycle of its rating and optional comment.
+- **Clean domain separation**: Reviews owns individual customer reviews and comments, while Catalog owns book details and derived rating summaries—preventing cross-domain database coupling.
+- **Controlled moderation & access**: Authenticated customers can submit reviews and request summaries, while only administrators are permitted to delete feedback.
+- **Self-healing consistency**: If a review is submitted for a book that no longer exists in Catalog, a compensating workflow automatically removes the orphaned review.
+- **Privacy-aware insights**: On-demand summarization turns raw reviews into clear business classifications (**Best Seller**, **Good**, **Bad**, or **No Data**) while automatically redacting sensitive personal data before and after analysis.
 
-The system deliberately separates individual feedback from Catalog's
-projection:
+## 3. How It Works
 
-- Reviews owns the feedback record, reviewer fields, rating, and comment.
-- Catalog owns the book and its average-rating and review-count projection.
-- The [[container|rating-database]] is authoritative for individual feedback.
-- The [[agent|rating-agent]] produces an on-demand insight; it does not modify
-  feedback or persist its classification.
-- The [[system|mcp-tools]] server supplies Catalog-backed book details and
-  review-analysis prompts; Reviews retains ownership of feedback and
-  summarization orchestration.
+### Core Capabilities
 
-## Core capabilities
+| Capability                    | Responsibility                                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| Feedback creation             | Validate and persist a customer's rating and optional comment for a book.                      |
+| Feedback retrieval            | List a book's feedback with pagination, ordering, and filtering.                               |
+| Feedback deletion             | Remove feedback through the administrator-authorized workflow.                                 |
+| Rating projection integration | Publish feedback-created and feedback-deleted notifications for Catalog to update its summary. |
+| Feedback summarization        | Combine Catalog book context and raw reviews into a read-time classification and explanation.  |
 
-| Capability                    | Responsibility                                                                                |
-| ----------------------------- | --------------------------------------------------------------------------------------------- |
-| Feedback creation             | Validate and persist a customer's rating and optional comment for a book.                     |
-| Feedback retrieval            | List a book's feedback with pagination, ordering, and filtering.                              |
-| Feedback deletion             | Remove feedback through the administrator-authorized endpoint.                                |
-| Rating projection integration | Publish feedback-created and feedback-deleted events for Catalog to update its summary.       |
-| Feedback summarization        | Combine Catalog book context and raw reviews into a read-time classification and explanation. |
+### Feedback Lifecycle & Compensation
 
-## HTTP API
+1. An authenticated customer submits a book reference, reviewer name, optional comment, and a whole-number rating from 0 through 5.
+2. The Rating System validates and saves the [[entity|feedback]] in [[container|rating-database]] and publishes a creation notification containing the book reference, feedback identifier, and rating.
+3. Catalog consumes that notification to update the book's average rating and total review count.
+4. If Catalog cannot update the book (for instance, the book does not exist), Catalog emits a failure notification. The Rating System handles that signal by deleting the newly created feedback as a compensating action—or safely ignoring it if the record is already gone.
+5. When an administrator deletes feedback, the Rating System removes the record and publishes a deletion notification so Catalog can subtract the rating from its book summary.
 
-The Rating service exposes the version 1 contract at `/api/v1/feedbacks`.
-Endpoints use the `Feedback` tag and return problem details for validation or
-not-found failures.
+### On-Demand Feedback Summarization
+
+Authenticated callers can request an on-demand summary for a book. A read-only assistant gathers current book details and stored customer reviews, classifies the book as **Best Seller**, **Good**, **Bad**, or **No Data**, and returns supporting metrics, a short justification, and a confidence level.
+
+Before review text reaches the AI model—and before output is returned—a privacy check powered by [[system|data-privacy]] detects and redacts sensitive personal information such as email addresses, phone numbers, and credit-card details. Summarization never alters stored feedback or Catalog's rating totals.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency over distributed transactions**: Updating Catalog's average rating and review count asynchronously via notifications avoids cross-service locking, at the cost of a brief lag between a review change and the updated Catalog summary.
+- **Idempotency under at-least-once delivery**: Because notifications may be retried or delivered more than once, consumers and the compensating deletion flow must handle duplicate messages safely without skewing counts or removing unrelated feedback.
+- **Targeted failure compensation**: The rating-update failure signal is strictly a compensating path for a missing Catalog book during creation and should not be interpreted as a general Rating System outage.
+- **Read-time summarization vs. persisted scores**: Generating summaries on demand (governed by authentication and rate limits) avoids stale cached classifications and keeps [[container|rating-database]] focused on raw customer submissions, though it depends on external book-context and privacy services at read time.
+
+## 5. Technical Reference
+
+### Ownership & Architecture Boundaries
+
+- Reviews owns the [[entity|feedback]] aggregate and [[container|rating-database]]; other domains must use integration contracts rather than reading or writing the database directly.
+- [[system|mcp-tools]] supplies Catalog-backed book details (`get_book` MCP tool) and reusable review-analysis prompts to [[agent|rating-agent]]; Reviews retains ownership of feedback and summarization orchestration.
+- [[service|PresidioAPI]] in [[system|data-privacy]] is invoked by the chat pipeline's PII middleware to detect and redact email addresses, phone numbers, and credit-card data; Presidio does not own feedback storage or determine classifications.
+- [[agent|rating-agent]] reads raw reviews through `GetCustomerReviews` under a read-only agent governance policy.
+
+### HTTP API (`v1`)
+
+The Rating service exposes version 1 endpoints at `/api/v1/feedbacks` using the `Feedback` tag and returning problem details for validation or not-found failures. Create and delete commands dispatch domain events within the same persistence workflow so integration messages reflect committed aggregate changes.
 
 | Operation                              | Purpose                                                                   | Successful response                    | Access                 |
 | -------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------- | ---------------------- |
@@ -108,73 +125,15 @@ not-found failures.
 | `DELETE /api/v1/feedbacks/{id}`        | [[command\|DeleteFeedback]] an existing feedback record.                  | `204 No Content`.                      | Administrator policy   |
 | `GET /api/v1/feedbacks/{id}/summarize` | [[query\|SummarizeFeedback]] for a book ID.                               | `200 OK` with `SummarizeResult`.       | Authenticated caller   |
 
-All endpoints are versioned as `v1`. The create and delete commands dispatch
-domain events in the same persistence workflow, so the integration messages
-represent committed aggregate changes rather than an unrelated read-side
-notification.
+### Messaging & Kafka Channels
 
-## Feedback lifecycle
+All three Kafka channels use at-least-once delivery and carry `bookId`, `rating`, and `feedbackId` deltas:
 
-1. A customer submits a book ID, reviewer name, optional comment, and an
-   integer rating from 0 through 5.
-2. Rating persists the [[entity|feedback]] aggregate in
-   [[container|rating-database]]. The aggregate emits a feedback-created
-   domain event.
-3. The event is mapped to
-   [[event|FeedbackCreatedIntegrationEvent]] and published on
-   [[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
-4. Catalog consumes the event and updates its denormalized average rating and
-   review count. If the referenced book cannot be updated, Catalog publishes
-   [[event|BookUpdatedRatingFailedIntegrationEvent]] on
-   [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]].
-5. Rating consumes that failure signal, finds the feedback by `feedbackId`, and
-   deletes it as a compensating action. A missing feedback record is treated as
-   an idempotent no-op.
+- **Create**: Domain event mapped to [[event|FeedbackCreatedIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
+- **Create compensation**: Catalog publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]; Rating deletes by `feedbackId` (missing record treated as an idempotent no-op).
+- **Delete**: [[event|FeedbackDeletedIntegrationEvent]] published on [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]].
 
-Deletion follows the same boundary in the opposite direction: Rating removes
-the aggregate, then publishes
-[[event|FeedbackDeletedIntegrationEvent]] on
-[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]. Catalog subtracts the
-rating from its projection when the book is available.
-
-All three Kafka channels use at-least-once delivery. Consumers must therefore
-remain safe under duplicate delivery and retries.
-
-## Feedback summarization
-
-The summarize endpoint is a read-time workflow hosted by the Rating service.
-It delegates to the [[agent|rating-agent]], which:
-
-1. Retrieves current book context through the `get_book` MCP tool.
-2. Reads the raw reviews for the book through `GetCustomerReviews`.
-3. Classifies the result as **Best Seller**, **Good**, **Bad**, or **No Data**.
-4. Returns metrics, a brief justification, and a confidence level.
-
-The workflow does not change the feedback aggregate, Catalog's rating
-projection, or the Rating Database. Tool access is read-only and governed by
-the agent policy.
-
-The chat pipeline's PII middleware uses [[service|PresidioAPI]] in
-[[system|data-privacy]] to detect and redact email addresses, phone numbers,
-and credit-card information before content reaches the model or the output.
-Presidio does not own feedback storage or decide the book's classification.
-
-## Ownership and consistency
-
-- Reviews owns individual feedback; other domains must use the integration
-  contracts rather than reading or writing the Rating Database.
-- Catalog's rating summary is derived and eventually consistent with feedback
-  changes while Kafka delivery or consumer processing is pending.
-- Feedback creation and deletion events carry `bookId`, `rating`, and
-  `feedbackId`, allowing Catalog to apply a delta without receiving the full
-  review.
-- The failure channel is a compensating path for a create event that refers to
-  a missing Catalog book. It must not be interpreted as a generic Rating
-  service failure.
-- Deleting feedback requires the administrator authorization policy, while
-  summarization is rate-limited and requires authentication.
-
-## Operational considerations
+### Operational Considerations
 
 | Concern       | Expectation                                                                             |
 | ------------- | --------------------------------------------------------------------------------------- |
@@ -185,10 +144,10 @@ Presidio does not own feedback storage or decide the book's classification.
 | Privacy       | Apply the service's PII and agent governance middleware to summarization flows.         |
 | Observability | Preserve Kafka trace context and inspect dead-lettered messages after retry exhaustion. |
 
-## Architecture decisions
+### Architecture Decisions
 
 <ADRTable />
 
-## Resource Diagram
+### Resource Diagram
 
 <NodeGraph mode="full" search="false" legend="false" />

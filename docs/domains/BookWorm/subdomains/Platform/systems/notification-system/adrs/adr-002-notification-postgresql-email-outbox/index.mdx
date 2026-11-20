@@ -20,95 +20,45 @@ badges:
     textColor: blue
 ---
 
-## Context
+> [!NOTE]
+> This architectural decision record has status **superseded** and documents the Notification persistence model as implemented at the time of recording. See [[adr|adr-002-durable-outbox-and-bounded-retries]] for the relationship to earlier stronger outbox guarantees.
 
-SMTP can fail after email content has been rendered. Sending without a durable
-record would leave Notification with no persisted work to inspect or retry.
-The external provider cannot be the system of record for BookWorm's
-notification-processing state.
+## 1. Context & Problem
 
-## Decision
+External email providers can fail or time out after an email has already been formatted. If Notification attempted to send emails directly in memory without saving them first, any crash, restart, or network drop would permanently lose the communication with no record left for operations teams to inspect or retry. Furthermore, BookWorm cannot rely on an external email provider as its own system of record for what notifications were requested or pending.
 
-Use [[container|notification-database]] as the authoritative PostgreSQL store
-for application email [[entity|outbox]] records. `EmailOutboxService` saves
-recipient details, subject, and rendered body before calling `IEmailSender`.
-After the sender returns successfully, it marks the record sent, sets the
-submission timestamp, and saves again.
+## 2. Business Value
 
-The email table records identity, sequence ordering, creation time, and sent
-state. It is separate from Wolverine's durable incoming and outgoing message
-envelopes, even though both use the Notification database.
+- **Protects pending communications:** Saving email details before contacting the external provider ensures work is not lost during service restarts or pre-send crashes.
+- **Enables inspection and recovery:** Unsent records remain visible in Notification's own storage so scheduled maintenance or operators can inspect backlogs and retry failed sends.
+- **Preserves ownership:** BookWorm retains an explicit local record of pending and submitted work rather than depending on third-party provider logs alone.
 
-Treat `is_sent` as successful completion of the sender, not a provider receipt,
-final recipient delivery, or a business-operation outcome. SMTP submission and
-database state changes are separate operations; this design does not make
-them atomic.
+## 3. How It Works
 
-The current resend handler resolves the same `ISender` outbox wrapper.
-Consequently, resending an existing record inserts a new record before
-submission, then marks the original sent on success. A failed resend can leave
-both records unsent. This ADR records that implementation behavior rather than
-asserting one row per logical notification.
+1. **Save before sending:** When a notification is ready, Notification writes the recipient details, subject, and rendered message body to its own database as an unsent record before calling the external mail sender.
+2. **Submit to the external provider:** Notification then invokes the mail sender to deliver the message externally.
+3. **Update sent status:** Once the sender returns without error, Notification updates the record's sent status flag and records the submission timestamp.
+4. **Resend behavior:** When an existing unsent record is retried through the shared sender flow, the system creates a new record for that attempt before trying delivery, and marks the original record as sent only if the retry succeeds.
 
-## Failure windows and retry semantics
+## 4. Trade-offs & Lessons Learned
 
-Persisting before SMTP protects the request from being lost when the process
-fails before submission, but the provider call and the sent-state update are
-not one transaction. If SMTP accepts a message and the response is lost, or
-the subsequent database save fails, the record can remain eligible for
-resend even though the provider may already have the message.
+- **Sent status is not a delivery receipt:** Marking a record as sent confirms only that the local mail sender completed without error—not that the provider delivered the email to the customer's inbox or that the underlying business action succeeded.
+- **No atomic guarantee across database and mail provider:** Saving to the database and submitting to an external mail provider are separate steps. If the provider accepts an email but the response is lost or the subsequent database update fails, the record stays marked unsent and can be retried, causing a duplicate delivery.
+- **Row counts do not equal unique customer emails:** Because resends insert new rows through the shared sender wrapper (and a failed resend can leave both old and new rows unsent), backlog counts reflect database rows rather than distinct logical notifications. Monitoring must consider row age and outcomes alongside raw counts.
+- **Limited failure metadata:** The current outbox table does not store attempt counters, next-attempt schedules, permanent vs. transient failure categories, full provider responses, or uniqueness constraints per business message. Operators should check for ambiguous outcomes before manually retrying items.
+- **Data sensitivity at rest:** Because full rendered email content is saved before delivery, database access controls, backup/recovery, and retention policies apply even to pending messages.
+- **Alternatives rejected:**
+  - _Sending without persisting first:_ Rejected because crashes before or during submission would lose messages completely.
+  - _Updating a single row in place for every retry:_ Would avoid row growth, but requires changing the shared sender wrapper and designing explicit retry-history storage.
+  - _Treating database persistence and external mail delivery as one atomic transaction:_ Not possible because external mail providers do not participate in internal database transactions.
 
-Resend operates on persisted rows, but uses the same sender wrapper that
-creates a new row for a send. Consequently, row counts are not counts of
-distinct logical notifications, and neither an unsent record nor an `is_sent`
-flag proves final recipient delivery. The current model does not persist
-attempt history or distinguish transient from permanent submission failures.
+## 5. Technical Reference
 
-## Consequences
-
-- Persisted unsent work remains available for inspection and scheduled retries.
-- Provider acceptance followed by a lost response, disconnect failure, or failed
-  state save can leave an already-submitted email eligible for another attempt.
-- Repeated commands and resend-created records can cause duplicate delivery;
-  backlog counts represent rows, not necessarily distinct logical emails.
-- PostgreSQL availability, migrations, and recovery are part of the delivery
-  workflow's operational requirements.
-- The table has no persisted attempt counter, next-attempt time, terminal-failure
-  category, full provider response, or business-message uniqueness constraint.
-- Email content is present in the database before submission, so database
-  access and retention controls apply even while delivery is pending.
-- A successful SMTP submission followed by failure to persist the sent state
-  can cause duplicate submissions during maintenance; operators must consider
-  ambiguous outcomes before manually retrying an item.
-- Resend can grow the number of rows by creating a new outbox entry per
-  attempt. Backlog monitoring should include both row age and delivery
-  outcomes rather than interpreting raw row counts as logical message counts.
-
-## Alternatives considered
-
-### Send through SMTP without persisting first
-
-This would avoid storing rendered content, but a process failure before or
-during submission could leave no durable record to inspect or retry.
-
-### Persist and update one row for every retry
-
-Updating an existing row could avoid additional records, but it would require
-changing the current sender-wrapper behavior and deciding how to retain retry
-history. This ADR documents the current new-row resend behavior rather than
-claiming that it maintains one row per notification.
-
-### Treat the database and SMTP submission as one atomic transaction
-
-The external SMTP provider does not participate in the PostgreSQL
-transaction. The current design cannot guarantee exactly-once delivery across
-the database and provider boundary.
-
-### Relationship to existing provider documentation
-
-The older [[adr|adr-002-durable-outbox-and-bounded-retries]]
-describes bounded lifetime retries, terminal failures, provider-outcome
-recording, and an exactly-once local transition. Those expectations are not
-fully implemented by the current email outbox. That record remains unchanged;
-this accepted record describes the current Notification persistence model,
-not fulfillment of those stronger guarantees.
+- **Status & Context:** `superseded` (`2026-11-01`). Complements/contrasts with [[adr|adr-002-durable-outbox-and-bounded-retries]], which described bounded lifetime retries, terminal failures, provider-outcome recording, and an exactly-once local transition that are not fully implemented by this persistence model.
+- **Authoritative Store:** [[container|notification-database]] (PostgreSQL) stores application email [[entity|outbox]] records separately from Wolverine's durable incoming and outgoing message envelopes, even though both reside in the Notification database.
+- **Outbox & Sender Symbols:**
+  - `EmailOutboxService` saves recipient details, subject, and rendered body before calling `IEmailSender`.
+  - On `IEmailSender` success, it sets `is_sent`, updates the submission timestamp, and saves again.
+  - The email table records identity, sequence ordering, creation time, and sent state (`is_sent`).
+  - The resend handler resolves the same `ISender` outbox wrapper, inserting a new row before submission and marking the original row sent on success (a failed resend can leave both rows unsent).
+- **Operational Dependencies:** PostgreSQL availability, schema migrations, retention controls, and database recovery are direct operational dependencies of the notification delivery workflow.

@@ -12,41 +12,60 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Symptoms
+## 1. Context & Problem
 
-- A request is rejected when the customer expected an answer.
-- The Decision Router selects a different specialist than expected.
-- A request receives a boundary response or an English-only response.
-- A mixed support and book request is only partially handled.
+In BookWorm's conversational experience, every customer message passes through multiple decision gates—input screening, language and scope classification, and specialist routing—before a reply is produced. When a customer receives an unexpected rejection, a generic boundary reply, a partial answer, or a response from the wrong specialist, support and operations teams need a reliable way to determine which stage caused the outcome and whether it reflects an intentional guardrail or a routing defect.
 
-## Diagnose
+## 2. Business Value
 
-1. Confirm the request entered the composed `/ag-ui` workflow.
-2. Check input validation first: empty text, detected suspicious patterns, or
-   truncation may affect what reaches `DecisionRouterExecutor`.
-3. For accepted input, compare the request's language and intent with the
-   `ChatRoutingDecisionService` questions (`is_english`, `is_in_scope`, `route`)
-   documented in [[doc|guides/route-customer-requests]].
-4. For a mixed question, check whether QA handed the book-specific part to
-   Book Agent or whether Book Agent handed review/rating analysis to Rating Agent.
-5. Distinguish a routing outcome from a failure: unrelated requests and
-   unsupported languages can receive intentional boundary responses.
+- **Faster triage and resolution**: Separates input-screening blocks, intentional policy boundaries, and true routing mismatches so teams investigate the right stage immediately.
+- **Clearer customer guidance**: Helps support staff explain scope and input constraints instead of asking customers to resubmit identical messages that will fail the same check.
+- **Actionable escalations**: Captures sanitized diagnostic evidence so engineering teams can diagnose and refine routing behavior without exposing raw customer data.
 
-## Recover
+## 3. How It Works
 
-- If validation rejected the message, ask the customer to rephrase within the
-  supported input constraints.
-- If the request is outside BookWorm's scope or unsupported by the current
-  language handling, explain the boundary instead of repeatedly resubmitting
-  unchanged text.
-- If the route does not match the documented intent, record the sanitized
-  request category, validation result, chosen agent, and expected destination.
-- For mixed requests, make the supported portion and any limitation explicit.
+### Symptoms to Watch For
 
-## Escalation
+- A request is rejected even though the customer expected an answer.
+- The routing step sends the request to a different specialist than expected.
+- A request receives a scope-boundary response or an English-only response.
+- A mixed customer-support and book request is only partially answered.
 
-Contact [[team\|contributor-team]] when accepted requests consistently select
-an unintended route. Include the environment, approximate time, request
-category, validation outcome, and observed handoff.
+### Diagnosis Steps
+
+1. Confirm the request entered the main interactive chat workflow rather than a direct specialist channel.
+2. Check initial input screening first: empty messages, detected suspicious patterns, or message-length trimming can change or block what reaches the routing step.
+3. For accepted messages, compare the request's language and intent against the documented customer-routing rules (whether the request is in English, within BookWorm's scope, and which specialist topic it matches).
+4. For mixed questions (combining support and book topics, or book discovery and review analysis), check whether the customer-support specialist handed off the book-specific part to the book specialist, or whether the book specialist handed off review and rating analysis to the rating specialist.
+5. Separate an intentional routing boundary from a system failure: off-topic requests and unsupported languages are designed to receive brief boundary replies.
+
+### Recovery Actions
+
+- If input screening rejected the message, ask the customer to rephrase within supported input guidelines.
+- If the request falls outside BookWorm's scope or uses an unsupported language, explain that boundary clearly rather than repeatedly resubmitting unchanged text.
+- If the selected route does not match documented intent, record the sanitized request category, screening result, chosen specialist, and expected destination.
+- For mixed requests, state clearly what the assistant can address directly and note any remaining limitation.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Early screening vs. conversational flexibility**: Blocking empty or suspicious inputs and non-English or off-topic requests early protects safety and keeps specialist responses focused, but can seem abrupt if customers are not told why a message stopped.
+- **Multi-stage gating can obscure root causes**: Because screening, routing, and specialist handoffs occur sequentially, an unexpected answer may stem from early text trimming or a missed handoff rather than the final specialist.
+- **Mixed-intent coordination**: Questions spanning both store policies and book details depend on specialist-to-specialist handoffs, so partial responses often point to a handoff boundary rather than an outage.
+- **Privacy-first reporting**: Escalations should always carry sanitized request categories and stage outcomes rather than raw customer prompts.
+
+## 5. Technical Reference
+
+- **Entry point**: Composed `/ag-ui` workflow.
+- **Validation & routing pipeline**:
+  - Input validation checks for empty text, detected suspicious patterns, or truncation before input reaches `DecisionRouterExecutor`.
+  - Accepted input is evaluated by `ChatRoutingDecisionService` using the `is_english`, `is_in_scope`, and `route` questions documented in [[doc|guides/route-customer-requests]].
+- **Specialist handoffs**:
+  - QA Agent hands book-specific portions of mixed requests to Book Agent.
+  - Book Agent hands review and rating analysis to Rating Agent.
+- **Escalation**: Contact [[team\|contributor-team]] when accepted requests consistently select an unintended route. Include:
+  - Environment and approximate time
+  - Sanitized request category
+  - Validation outcome
+  - Chosen agent, expected destination, and observed handoff
 
 <Footer />

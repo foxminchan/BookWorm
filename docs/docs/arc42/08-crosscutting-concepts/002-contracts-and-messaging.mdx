@@ -9,32 +9,59 @@ badges:
     textColor: purple
 ---
 
-BookWorm's services coordinate through explicit interfaces and integration messages. The producing capability owns the meaning and lifecycle of its data, consumers use the published contract rather than reaching into another service's database. This keeps changes reviewable and business rules with their owners.
+## 1. Context & Problem
 
-## Contract forms
+In a modular platform like BookWorm, different business capabilities—such as catalog management, shopping baskets, ratings, and ordering—evolve at different speeds. If one capability reads or writes directly inside another capability's internal database, small internal changes can unexpectedly break other parts of the business, blur ownership of business rules, and make releases risky.
 
-- **HTTP APIs** expose service-owned operations, with OpenAPI documents defining the REST contracts where provided. Use the owning service's contract rather than coupling a client to its internal handlers or persistence model.
-- **gRPC APIs** use Protocol Buffer definitions for the documented [[service|basket-api]] and [[service|catalog-api]] interfaces. Schema changes must be checked for compatibility before consumers adopt them.
-- **Integration events** use shared contract types and explicit message metadata. The engineering standards prescribe the `IntegrationEvent` naming pattern and the ownership and identity metadata used for routing.
+BookWorm solves this by requiring capabilities to interact exclusively through explicit, published contracts and asynchronous business announcements. Each capability owns both the meaning and the lifecycle of its data.
 
-Contracts describe the boundary, not the implementation's persistence model. For example, [[event|FeedbackCreatedIntegrationEvent]] communicates a feedback change without making Catalog authoritative for the source feedback data.
+## 2. Business Value
 
-## Event transport and correlation
+- **Clear business ownership:** Each team controls its own business rules and internal data without external consumers coupling to private storage details.
+- **Safer, faster delivery:** Teams can evolve internal implementations independently as long as published contracts remain compatible.
+- **Resilient cross-capability workflows:** Asynchronous event delivery allows downstream capabilities to react to business changes without requiring every downstream system to be online at the exact same moment.
+- **End-to-end traceability:** Correlating originating request and user context across asynchronous steps helps support and operations teams trace a business flow from start to finish.
 
-Where a broker connection is configured, the shared Wolverine integration sets up Kafka transport with CloudEvents-compatible mapping and per-service PostgreSQL durable outbox and inbox policies. The [[system|product-catalog-system]] and [[system|rating-system]] use this path for their documented feedback projection. The event framework returns without configuring a transport when no broker connection string is present, so the durable messaging path is conditional on host configuration.
+## 3. How It Works
 
-The envelope policy supplies message type, destination, response address, and source metadata when available. It also propagates request and user identifiers from an originating message, helping relate downstream processing to its initiating request. These identifiers are correlation context, not authorization credentials.
+BookWorm connects capabilities using two main styles of interaction:
 
-Durable storage helps preserve message work across process interruptions, but it does not establish exactly-once business effects. Consumers must tolerate repeated delivery and use owned state to determine whether work is already complete.
+1. **Direct service contracts (request/response):** When one capability needs an immediate answer or action from another, it calls a published service interface rather than accessing internal logic or data storage directly.
+2. **Asynchronous business events (publish/subscribe):** When something meaningful happens in one capability—such as new customer feedback being created—the owning capability publishes an event announcement. Interested capabilities listen to that announcement and update their own local view without taking ownership of the source data.
 
-## Compatibility and change
+To keep asynchronous announcements reliable and traceable:
 
-Treat a contract change as a producer-and-consumer change:
+- **Durable message handling:** When a message broker is active for a host, outgoing announcements and incoming receipts are durably recorded alongside local state changes so work is not silently lost during process restarts.
+- **Correlation context:** Message envelopes carry routing metadata along with the originating request and user identifiers where available, linking downstream work back to the initiating user action.
+- **Coordinated contract changes:** Updating any shared contract follows a disciplined five-step process:
+  1. Identify the owning capability and all known consumers.
+  2. Prefer additive changes that preserve existing consumer behavior.
+  3. Verify asynchronous contract compatibility between consumers and providers before release.
+  4. Run schema linting and breaking-change checks against the committed baseline for binary service interfaces.
+  5. Update service and flow documentation whenever business meaning—not just field structure—changes.
 
-1. Identify the owning service and all known consumers.
-2. Prefer additive changes when they preserve existing consumer behavior.
-3. Run consumer-driven message contract tests and provider verification for asynchronous contracts.
-4. Run Protocol Buffer lint and breaking-change checks against the committed baseline when changing a `.proto` schema.
-5. Update the service and flow documentation when semantics, not just field shape, change.
+## 4. Trade-offs & Lessons Learned
 
-See [[doc|arc42/05-building-block-view]] for ownership boundaries, [[doc|arc42/06-runtime-view]] for representative message flows, and [[doc|development/004-engineering-standards]] for the repository's contract conventions.
+- **Eventual consistency over shared databases:** Downstream views (such as catalog feedback projections) may lag slightly behind the source capability. This is an intentional trade-off to preserve service independence and resilience.
+- **At-least-once delivery requires duplicate safety:** Durable storage protects work across restarts, but it does not guarantee that a business effect happens only once. Consumers must tolerate repeated delivery and rely on their own owned state to detect whether work is already complete.
+- **Host-dependent messaging activation:** The durable messaging transport is only enabled when a broker connection is configured; hosts without a broker configuration skip transport setup rather than failing to start, so deployment configuration determines whether asynchronous paths are active.
+- **Correlation is not authorization:** Propagated request and user identifiers exist strictly for tracing and diagnosis—they must never be treated as security credentials or proof of permission.
+
+## 5. Technical Reference
+
+### Contract Forms
+
+- **HTTP APIs:** Expose service-owned REST operations, with OpenAPI documents defining the REST contracts where provided. Clients must use the owning service's contract rather than coupling to internal handlers or persistence models.
+- **gRPC APIs:** Use Protocol Buffer (`.proto`) definitions for the documented [[service|basket-api]] and [[service|catalog-api]] interfaces. Schema changes must pass Protocol Buffer lint and breaking-change checks against the committed baseline before consumers adopt them or update the baseline.
+- **Integration events:** Use shared contract types following the `IntegrationEvent` naming pattern with explicit ownership and identity metadata for routing. Contracts describe the boundary, not the implementation's persistence model—for example, [[event|FeedbackCreatedIntegrationEvent]] communicates a feedback change without making Catalog authoritative for the source feedback data.
+
+### Event Transport, Durability, and Correlation
+
+- **Broker & outbox/inbox:** Where a broker connection string is configured, the shared Wolverine integration configures Kafka transport with CloudEvents-compatible mapping and per-service PostgreSQL durable outbox and inbox policies. The [[system|product-catalog-system]] and [[system|rating-system]] use this path for their documented feedback projection. When no broker connection string is present, the event framework returns without configuring a transport.
+- **Envelope metadata:** The envelope policy supplies message type, destination, response address, and source metadata when available, and propagates request and user identifiers from an originating message as correlation context.
+
+### Related Documentation
+
+- [[doc|arc42/05-building-block-view]] — service ownership boundaries
+- [[doc|arc42/06-runtime-view]] — representative runtime message flows
+- [[doc|development/004-engineering-standards]] — repository contract conventions and `IntegrationEvent` standards

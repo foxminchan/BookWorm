@@ -14,6 +14,17 @@ readsFrom:
   - id: catalog-cache
   - id: catalog-blob
   - id: catalog-vector
+entities:
+  - id: book
+    version: 1.0.0
+  - id: author
+    version: 1.0.0
+  - id: book-author
+    version: 1.0.0
+  - id: category
+    version: 1.0.0
+  - id: publisher
+    version: 1.0.0
 owners:
   - contributor-team
 badges:
@@ -131,18 +142,9 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Catalog API is the internal application surface for maintaining and
-discovering Catalog [[entity|book]]s and their descriptive metadata. It reads
-and writes the authoritative records in [[container|catalog-database]], uses
-[[container|catalog-cache]] for selected read paths, stores book image files
-in [[container|catalog-blob]], and registers the [[container|catalog-vector]]
-integration for vector and hybrid-search capabilities.
-
-The API also maintains the rating summary stored with each book. Individual
-[[entity|feedback]] remains owned by [[domain|reviews]]; Catalog stores only
-the derived average rating and review count used by product discovery.
+BookWorm's storefront, administrative tools, ordering flows, and AI-assisted discovery all rely on accurate, fast-to-query product information. Without a dedicated catalog boundary, product details, cover images, search indexes, and rating summaries would be scattered across multiple services. Catalog API serves as the single internal authority for maintaining and discovering [[entity|book]]s and their descriptive metadata, while keeping individual customer [[entity|feedback]] owned by [[domain|reviews]].
 
 <Visibility for="humans">
 	<Tiles>
@@ -167,7 +169,31 @@ the derived average rating and review count used by product discovery.
 	semantics; the Visualiser tiles above are browser navigation only.
 </Visibility>
 
-## Core capabilities
+## 2. Business Value
+
+- **Single source of product truth**: Centralizes creation, updates, and retirement of books, authors, categories, and publishers for consistent storefront and back-office operations.
+- **Responsive customer discovery**: Combines caching, image storage, and search-ready data so shoppers can filter by price, text, category, publisher, and author quickly.
+- **Up-to-date social proof**: Displays derived rating summaries alongside every book without slowing down product queries with calls to the reviews system.
+- **Reusable internal access**: Serves both user-facing catalog operations and internal service lookups (including AI tool integrations and admin reporting) from one consistent domain boundary.
+
+## 3. How It Works
+
+1. **Authoritative catalog management**: Catalog API maintains books, authors, categories, and publishers in [[container|catalog-database]], using [[container|catalog-cache]] to speed up selected read paths.
+2. **Media handling**: When book cover images are uploaded or removed, the service stores or cleans up the image files in [[container|catalog-blob]] and keeps only references on the book record.
+3. **Search & semantic readiness**: Catalog API connects to [[container|catalog-vector]] for vector and hybrid search, while changes to books automatically queue asynchronous indexing work handled by [[service|catalog-ingestion]].
+4. **Rating summary synchronization**: Catalog listens for feedback creation and deletion notifications from [[domain|reviews]] and updates each book's derived average rating and review count. If new feedback arrives for a missing book, Catalog emits a failure notification so Reviews can reconcile it.
+5. **Internal service & dashboard lookups**: Beyond standard catalog browsing and management, Catalog API exposes fast internal lookup operations consumed by [[service|mcp-server]] for book, category, and author discovery, plus an admin-restricted dashboard summary showing overall book and category counts.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Denormalized rating summaries**: Storing derived rating totals on the book record makes browsing fast and resilient to Reviews outages, at the cost of brief eventual consistency when reviews are added or removed.
+- **Asynchronous search indexing**: Offloading vector refreshes to [[service|catalog-ingestion]] keeps book writes responsive, though newly added or edited books take a short moment to appear in semantic search results.
+- **Dual interaction surfaces**: Supporting both standard web requests for management/browsing and high-efficiency internal service lookups maximizes consumer flexibility, while requiring explicit contract versioning and clear access policies (anonymous read lookups versus admin-only dashboard summaries).
+- **Internal service boundary**: Exposing Catalog API strictly as an internal service relies on upstream gateway routing, rate limiting, and identity validation to protect write and administrative operations.
+
+## 5. Technical Reference
+
+### Core capabilities
 
 | Capability                | Behavior                                                                                                                                                                                                          |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -177,7 +203,7 @@ the derived average rating and review count used by product discovery.
 | Rating summary            | Process feedback-created and feedback-deleted integration messages and update the book's denormalized `average_rating` and `total_reviews`.                                                                       |
 | Service-to-service lookup | Expose gRPC methods to retrieve compact or full book details, search books, list categories and authors, and return an admin-protected catalog dashboard summary.                                                 |
 
-## HTTP API
+### HTTP API
 
 The version 1 REST contract is documented in the accompanying OpenAPI specification, `openapi-v1.yml`.
 
@@ -186,7 +212,7 @@ The version 1 REST contract is documented in the accompanying OpenAPI specificat
 - `/api/v1/authors`, `/api/v1/categories`, and `/api/v1/publishers` support create, update, and list operations. Their `{id}` routes support deletion.
 - Book create and update requests accept multipart form data to support image uploads.
 
-## gRPC and integration behavior
+### gRPC and integration behavior
 
 The version 1 `Catalog gRPC` service provides [[query|GetBookGrpc]] and
 [[query|GetBooksGrpc]] for book identity, price, and availability, as well as
@@ -198,7 +224,7 @@ policy and returns the total book count with category counts.
 
 Wolverine integration handlers process feedback-created and feedback-deleted messages from Reviews and update the corresponding book's rating summary. If a created feedback message refers to a missing book, Catalog publishes a rating-update-failed integration event. Database triggers enqueue changed books for asynchronous vector refresh by [[service|catalog-ingestion]].
 
-### gRPC schema
+#### gRPC schema
 
 The copied Protobuf contract defines the `book.v1` package and the
 `BookGrpcService` methods exposed by Catalog. It is also registered as the
@@ -207,11 +233,11 @@ integration surface.
 
 <Schema file="book-v1.proto" lang="protobuf" title="book/v1 Catalog gRPC schema" />
 
-## Runtime and access
+### Runtime and access
 
 The service configures Entra ID token introspection, rate limiting, CORS, centralized exception and status-code handling, and HSTS outside development. The application is versioned around the v1 HTTP and gRPC contracts; see `openapi-v1.yml` for the REST request and response schemas.
 
-## Architecture diagram
+### Architecture diagram
 
 <NodeGraph />
 

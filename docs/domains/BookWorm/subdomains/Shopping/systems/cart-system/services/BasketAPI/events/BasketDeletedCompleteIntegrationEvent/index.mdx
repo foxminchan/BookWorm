@@ -14,22 +14,37 @@ badges:
     textColor: blue
 ---
 
-## Overview
+## 1. Context & Problem
 
-[[service|basket-api]] publishes this event after the submitted
-[[entity|basket]] is
-deleted successfully. Downstream consumers can use it to continue checkout
-coordination, but it does not indicate payment settlement or order completion.
+Once a customer submits an order at checkout, their temporary shopping [[entity|basket]] needs to be cleared so purchased items do not linger in the cart. Downstream checkout workflows also need an explicit confirmation that cleanup succeeded before advancing coordination steps, rather than assuming the basket was removed.
+
+## 2. Business Value
+
+- **Clean post-checkout experience**: Shoppers start their next visit with a fresh, empty cart instead of seeing items from an order they already placed.
+- **Reliable workflow coordination**: Downstream order processes receive clear confirmation that basket cleanup succeeded.
+- **Clear milestone boundaries**: Keeps cart cleanup distinct from payment settlement and order completion so workflows do not advance on false assumptions.
+
+## 3. How It Works
+
+1. During checkout cleanup, the basket service removes the customer's submitted [[entity|basket]].
+2. Once removal succeeds, the service broadcasts a completion notification carrying the order reference, the deleted basket reference, and the purchase total.
+3. Downstream checkout processes listen for this confirmation to continue coordination for that order.
+4. This confirmation only means the basket was cleared—it does not indicate that payment has settled or that the order itself is complete.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit confirmation vs. silent cleanup**: Emitting a dedicated completion notification adds a messaging step to checkout, but gives downstream workflows visibility into cleanup outcomes.
+- **Duplicate delivery tolerance**: Because messaging channels can deliver notifications more than once, consumers must handle repeated confirmations safely without applying coordination updates twice.
+- **Narrow meaning**: Treating this event strictly as a basket-cleanup milestone avoids coupling cart removal to payment or fulfillment guarantees.
+
+## 5. Technical Reference
+
+- **Publisher**: [[service|basket-api]]
+- **Channel**: [[channel|bookworm.&#123;env&#125;.basket.delete-complete]]
+- **Envelope & Payload**: The event is carried in a CloudEvents envelope. The schema below describes the JSON data payload.
 
 <NodeGraph />
 
-## Channel
-
-[[channel|bookworm.&#123;env&#125;.basket.delete-complete]]
-
-## Schema
-
-The event is carried in a CloudEvents envelope. The schema below describes the
-JSON data payload.
+### Schema
 
 <SchemaViewer file="schema.json" title="Basket deletion completed schema" maxHeight="500" />

@@ -9,29 +9,53 @@ badges:
     textColor: purple
 ---
 
-BookWorm service hosts use shared Aspire service defaults to produce operational signals consistently. These signals help identify where work is executing and which capability owns a failure, they do not replace business-state queries or establish a service-level objective.
+## 1. Context & Problem
 
-## Logs, traces, and metrics
+When a customer action travels across multiple services and asynchronous events, troubleshooting failures with isolated plain-text logs becomes slow and unreliable. At the same time, overly verbose logging can overwhelm monitoring tools with routine noise or accidentally capture sensitive customer information.
 
-The shared service defaults configure structured logging, log enrichment, and OpenTelemetry. Instrumentation covers ASP.NET Core requests, outgoing HTTP clients, runtime metrics, and gRPC/HTTP client traces. Distributed traces use W3C activity identifiers, and health-check requests are excluded from request tracing to reduce noise.
+BookWorm establishes a consistent baseline of operational signals—structured logs, distributed traces, performance metrics, and process health checks—so teams can see where work ran and which capability owns a failure without compromising privacy.
 
-Sampling is environment-sensitive: development traces are sampled fully, while other environments use a configurable probabilistic sampler. OpenTelemetry data is sent through OTLP when an exporter endpoint is configured, the repository does not prescribe a universal production backend or dashboard.
+## 2. Business Value
 
-When the shared Wolverine event framework is enabled, it adds Wolverine and Kafka trace sources and logs message starts at Debug level. Envelope correlation carries request and user identifiers where available, connecting asynchronous work to its origin without making the message payload part of the trace.
+- **Faster incident resolution:** Shared trace references connect customer-reported errors directly to the exact cross-service execution path.
+- **Consistent operational visibility:** Every service built on shared defaults emits structured logs, traces, and metrics in a uniform format without extra per-team boilerplate.
+- **Built-in privacy hygiene:** Default command and event logging captures operation names, timing, and structure rather than raw customer payloads.
+- **Cleaner monitoring signals:** Routine health checks are filtered out of request traces, keeping diagnostics focused on real business traffic.
 
-The CQRS logging behavior records message and response type names, elapsed time, and property names without logging the values of request or response objects. Hosts that handle classified data should also enable the applicable redaction configuration, see [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]].
+## 3. How It Works
 
-## Health and diagnosis
+Every BookWorm service host built on the shared service defaults follows a consistent observability flow:
 
-Shared defaults register a liveness health check. The default readiness and liveness HTTP endpoints are mapped only in development in the shared service-defaults extension, production probes must be verified against the deployed host configuration rather than assumed from the local setup.
+1. **Unified signal collection:** Incoming requests, outgoing service calls, asynchronous message handling, and runtime health metrics are instrumented automatically and linked with shared correlation identifiers.
+2. **Environment-aware detail:** During local development, all traces are captured to aid debugging. In deployed environments, trace sampling can be tuned probabilistically and exported to the organization's chosen monitoring backend when configured.
+3. **Privacy-conscious logging:** Command and query logging records which operation ran, how long it took, and what fields were present—without recording the actual customer-supplied values. Services handling classified information also apply dedicated redaction rules.
+4. **Correlating customer errors and async flows:** When an unexpected failure occurs at an API boundary, the caller receives a generic error containing a trace identifier. Support or engineering teams use that identifier—and propagated request or user identifiers for background events—to locate the failing step and then inspect the owning service's business state.
+5. **Process health checks:** Services expose liveness and readiness checks to indicate whether a running process is healthy and able to accept traffic.
 
-Unhandled HTTP exceptions are logged with a trace identifier, and the generic error response returns that identifier so an operator can correlate a client report with telemetry. For asynchronous processing, correlate the request or message identifier and then inspect the owning service's state, a trace shows execution, not whether the business operation is complete.
+## 4. Trade-offs & Lessons Learned
 
-## Operational discipline
+- **Telemetry proves execution, not business completion:** A trace or log entry shows that code ran or a message was picked up, not that a business outcome succeeded or satisfied a service-level objective. Teams must check the owning service's state to confirm business completion.
+- **No universal production backend or SLA targets assumed:** The codebase standardizes signal generation and export hooks, leaving dashboarding, retention, alert thresholds, latency targets, and recovery objectives to be agreed with stakeholders for each deployment.
+- **Health endpoints differ between local and deployed setups:** Default readiness and liveness endpoints are mapped automatically in local development only; production probe paths and behavior must be explicitly verified against the deployed host configuration.
+- **Sampling trades completeness for cost:** Full tracing works well in development, while probabilistic sampling in production balances diagnostic coverage against telemetry volume and cost.
+- **Discipline at service boundaries:** Teams must actively avoid logging tokens, secrets, or raw user content and enable redaction wherever classified data is processed.
 
-- Add useful structured context at service boundaries, but avoid logging secrets, access tokens, or raw user content.
-- Preserve request and message correlation across service calls.
-- Use health status to determine process readiness and liveness, not business completion.
-- Agree latency, availability, alert thresholds, retention, and recovery objectives with stakeholders before treating them as system guarantees.
+## 5. Technical Reference
 
-The shared observability approach is recorded in [[adr|adr-bw-013-opentelemetry-observability]]. See [[doc|arc42/01-introduction-and-goals/003-quality-goals]] for the current operability scenario and its unresolved measurable targets.
+### Telemetry, Tracing, and Logging Defaults
+
+- **Shared Aspire service defaults:** Configure structured logging, log enrichment, and OpenTelemetry covering ASP.NET Core requests, outgoing HTTP clients, runtime metrics, and gRPC/HTTP client traces.
+- **Distributed tracing & filtering:** Uses W3C activity identifiers; health-check requests are excluded from request tracing to reduce noise. Development environments sample traces at 100%, while non-development environments use a configurable probabilistic sampler. Telemetry exports via OTLP when an exporter endpoint is configured.
+- **Messaging instrumentation:** When the shared Wolverine event framework is enabled, it adds Wolverine and Kafka trace sources, logs message starts at `Debug` level, and propagates request and user identifiers in envelope correlation without including message payloads in traces.
+- **CQRS logging behavior:** Records message and response type names, elapsed time, and property names without serializing request or response object values. Hosts handling classified data must enable the applicable redaction configuration (see [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]]).
+
+### Health Endpoints & Diagnostics
+
+- **Health checks:** Shared defaults register a liveness health check. Default readiness and liveness HTTP endpoints are mapped only in development within the shared service-defaults extension; verify deployed host configuration for production probes.
+- **Exception correlation:** Unhandled HTTP exceptions are logged with a trace identifier and returned in the generic error response so operators can correlate client reports with telemetry.
+
+### Related Documentation
+
+- [[adr|adr-bw-013-opentelemetry-observability]] — OpenTelemetry observability decision record
+- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] — logging redaction and privacy boundaries
+- [[doc|arc42/01-introduction-and-goals/003-quality-goals]] — operability scenarios and unresolved measurable targets

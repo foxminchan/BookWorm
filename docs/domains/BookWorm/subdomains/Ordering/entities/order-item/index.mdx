@@ -36,20 +36,42 @@ properties:
     description: Non-negative per-book price selected when the Order was created.
 ---
 
-## Overview
+## 1. Context & Problem
 
-An Order Item belongs to one [[entity|order]] and preserves the [[entity|book]]
-identifier, positive quantity, and non-negative price used at checkout. Its line
-total is the price multiplied by quantity.
+A single customer purchase often includes multiple titles and varying copy counts. At the same time, book prices in the storefront change regularly due to promotions, discounts, or catalog updates. If an [[entity|order]] only referenced live catalog entries without recording purchase-time details, later price changes would alter past order totals, and fulfillment or support teams would lack an accurate breakdown of what was bought.
 
-Order Items are children of the Order aggregate, not independently managed
-products. Catalog remains the owner of current book information and pricing.
+BookWorm solves this by capturing each line of an order as an Order Item—preserving the exact [[entity|book]], quantity, and agreed unit price from the moment of checkout.
 
-## Entity Properties
+## 2. Business Value
+
+- **Accurate receipts and financials:** Locks in the purchase-time unit price and copy count so historical order totals remain trustworthy even when catalog prices change later.
+- **Clear fulfillment and support visibility:** Gives operations and customer support an exact line-by-line record of every [[entity|book]] and quantity in a customer's purchase.
+- **Clean domain ownership:** Separates historical purchase records from ongoing merchandising, letting catalog managers update prices and descriptions without risking side effects on past orders.
+
+## 3. How It Works
+
+An Order Item represents one book line within a parent [[entity|order]] and records three core business facts at checkout:
+
+- **Book reference:** Identifies which [[entity|book]] the customer selected.
+- **Quantity:** Records how many copies were purchased (always greater than zero).
+- **Purchase-time price:** Captures the non-negative unit price selected when the order was created.
+
+The line total for an Order Item is calculated by multiplying its recorded unit price by its quantity. Order Items are not independently managed products; they exist only as part of their parent order, while the catalog remains the owner of current book information and live pricing for future shoppers.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Price snapshot over live lookup:** Recording the price at checkout guarantees financial consistency for historical orders, at the cost of storing a purchase-time price snapshot rather than pulling prices dynamically later.
+- **Parent-owned lifecycle:** Keeping Order Items strictly attached to an [[entity|order]] prevents orphaned line items and keeps order totals consistent, meaning individual items cannot be created or managed independently outside an order.
+- **Minimal catalog coupling:** Storing only the book reference, quantity, and price keeps order records lean and decoupled from catalog descriptions, which means order views that display book titles or cover details must look them up from the catalog.
+
+## 5. Technical Reference
+
+- **Domain role:** Child entity (`aggregateRoot: false`) of the `Order` aggregate in the `Ordering` domain.
+- **Line total calculation:** `price * quantity`.
+- **Relationships:**
+  - Belongs to one [[entity|order]] (`orderId` → `order.id`, `relationType: belongsTo`).
+  - References one [[entity|book]] (`bookId` → `book.id`, `relationType: references`).
+
+### Entity Properties
 
 <EntityPropertiesTable />
-
-## Relationships
-
-- An Order Item belongs to one [[entity|order]].
-- An Order Item references one [[entity|book]].

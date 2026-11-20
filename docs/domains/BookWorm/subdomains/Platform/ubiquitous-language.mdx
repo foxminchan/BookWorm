@@ -38,3 +38,52 @@ dictionary:
     description: The Heartbeat job supports operational monitoring of the platform.
     icon: HeartPulse
 ---
+
+## 1. Context & Problem
+
+Platform provides shared background scheduling and email notification capabilities used across BookWorm without owning customer orders, books, baskets, or reviews. Without a shared vocabulary, everyday operational terms like "email," "retry," "cleanup," or "batch job" can take on conflicting meanings across product managers, analysts, architects, and engineers—for instance, assuming a scheduled job owns the business data it triggers, or assuming a marked-as-sent email record remains in active storage indefinitely.
+
+The Platform ubiquitous language establishes one consistent set of definitions for email delivery records and scheduled operational jobs across the subdomain.
+
+## 2. Business Value
+
+- **Shared operational clarity:** Gives product, operations, architecture, and engineering teams a single language for email delivery states and recurring platform jobs.
+- **Clear domain boundaries:** Makes explicit that scheduled jobs coordinate work (such as catalog vector ingestion) without taking ownership of business data like books or orders.
+- **Predictable reliability and retention:** Defines how unsent emails, retries, and post-delivery cleanup work together so messages are neither silently dropped nor retained indefinitely without policy.
+- **Faster troubleshooting and onboarding:** Helps new contributors and support staff immediately understand what each outbox state and background job represents.
+
+## 3. How It Works
+
+The Platform vocabulary is organized into two closely linked areas:
+
+- **Email Delivery Lifecycle:**
+  - **Outbox Item:** A stored email record capturing the recipient, subject, body, creation time, and delivery state so email processing remains reliable across failures.
+  - **Unsent Email:** An outbox item that has not yet been delivered and can be selected for initial delivery or retry.
+  - **Sent Email:** An outbox item marked as successfully sent, recording the time at which delivery was marked complete.
+- **Scheduled Platform Jobs:**
+  - **Resend Job:** Scheduled work that requests another processing attempt for error emails so failed deliveries can be retried.
+  - **Cleanup Job:** Scheduled work that removes or archives sent email records according to operational policy.
+  - **Vector Batch Job:** Scheduled work that asks catalog ingestion to process vector data, supporting search ingestion without owning book information.
+  - **Heartbeat Job:** A scheduled liveness or health task supporting operational monitoring of the platform.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit outbox state over fire-and-forget:** Separating **Unsent Email** and **Sent Email** states within **Outbox Item** adds lifecycle management overhead, but guarantees failed deliveries can be identified and retried by the **Resend Job**.
+- **Policy-driven cleanup:** Relying on a scheduled **Cleanup Job** to archive or remove **Sent Email** records keeps operational storage bounded, while requiring teams to align retention policies with audit and troubleshooting needs.
+- **Coordination without data ownership:** Defining **Vector Batch Job** strictly as a trigger for catalog ingestion preserves clean domain boundaries, requiring downstream systems to remain responsible for validating and maintaining their own data.
+
+## 5. Technical Reference
+
+### Platform Dictionary Terms
+
+The YAML `dictionary` frontmatter above defines the authoritative Platform glossary entries rendered by EventCatalog:
+
+| Dictionary ID      | Summary                                                            | Operational & Boundary Notes                                        | Icon         |
+| ------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------- | ------------ |
+| `Outbox Item`      | A stored email record pending delivery or already sent.            | Stores recipient, subject, body, creation time, and delivery state. | `Mailbox`    |
+| `Unsent Email`     | An Outbox item that has not yet been delivered.                    | Eligible to be selected for delivery or retry.                      | `Mail`       |
+| `Sent Email`       | An Outbox item marked as successfully sent.                        | Records the time at which delivery was marked complete.             | `MailCheck`  |
+| `Resend Job`       | Scheduled work that requests another email processing attempt.     | Publishes work for error emails to be retried.                      | `RotateCcw`  |
+| `Cleanup Job`      | Scheduled work that requests cleanup of sent email records.        | Removes or archives email records according to operational policy.  | `Trash2`     |
+| `Vector Batch Job` | Scheduled work that asks Catalog ingestion to process vector data. | Supports Catalog ingestion and does not own book information.       | `Database`   |
+| `Heartbeat Job`    | A scheduled liveness or health task.                               | Supports operational monitoring of the platform.                    | `HeartPulse` |

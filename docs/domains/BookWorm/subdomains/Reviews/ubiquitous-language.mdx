@@ -39,3 +39,38 @@ dictionary:
       changes for use in Catalog discovery.
     icon: BarChart3
 ---
+
+## 1. Context & Problem
+
+Across product discussions, storefront design, and service implementation, teams often use words like "review," "feedback," "rating," and "rating summary" interchangeably. Without shared definitions, stakeholders can confuse an individual customer submission with a book's overall star summary, or assume Reviews owns book details that actually belong to Catalog. This glossary establishes one unambiguous vocabulary for the Reviews subdomain.
+
+## 2. Business Value
+
+- **Shared cross-role alignment**: Business analysts, product managers, architects, and developers speak the same language when writing requirements, designing UI screens, and reviewing domain behavior.
+- **Clear domain boundaries**: Explicitly distinguishing individual submissions from Catalog-owned book definitions and rating aggregates prevents accidental cross-domain coupling.
+- **Fewer requirement ambiguities**: Documenting rules up front—such as the allowed rating scale and which fields are optional—prevents costly rework later.
+
+## 3. How It Works
+
+The Reviews vocabulary organizes customer opinions into six connected concepts:
+
+- **Feedback and Review**: Both terms refer to the same individual customer submission about a book. Storefront experiences typically present this to shoppers as a "Review," while the underlying Reviews domain model calls it "Feedback."
+- **Rating and Comment**: Each Feedback submission contains a numeric Rating from 0 through 5 and may optionally include a reviewer name and a written Comment expressing the customer's thoughts.
+- **Book Reference**: Instead of copying title, author, or price details, each Feedback entry holds only a reference to the Book managed by Catalog.
+- **Rating Summary**: Separate from any individual Review, a Rating Summary is Catalog's aggregated average rating and total review count for a book, updated as feedback changes so shoppers can filter and discover titles in Catalog.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Bridging UI and domain naming**: Rather than forcing customer-facing copy to adopt internal naming or renaming existing domain models, the glossary explicitly maps "Review" and "Feedback" as synonyms for the same concept.
+- **Reference-by-identifier boundary**: Storing only a Book Reference keeps Reviews decoupled from Catalog metadata changes, though storefront displays and Catalog discovery aggregates must coordinate across service boundaries.
+
+## 5. Technical Reference
+
+| Term ID          | Domain Owner | Required / Value Rules                   | Domain Notes                                                            |
+| ---------------- | ------------ | ---------------------------------------- | ----------------------------------------------------------------------- |
+| `Feedback`       | Reviews      | Individual submission record             | Contains `Book Reference`, `Rating`, optional name, optional `Comment`. |
+| `Review`         | Reviews      | Synonym for `Feedback`                   | Customer-facing name; service model uses `Feedback`.                    |
+| `Rating`         | Reviews      | Integer from `0` through `5`             | Belongs to one `Feedback` submission.                                   |
+| `Comment`        | Reviews      | Optional written text                    | Records the customer's written response about a `Book`.                 |
+| `Book Reference` | Reviews      | Book identifier referencing Catalog      | Reviews references a `Book` by ID; Catalog owns and defines `Book`.     |
+| `Rating Summary` | Catalog      | Aggregate average score and review count | Updated from feedback changes for Catalog discovery; not a `Review`.    |

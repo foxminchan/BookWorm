@@ -1,7 +1,26 @@
-## 1. Delete a basket
+## 1. Context & Problem
 
-Delete the basket with no request body. A successful deletion returns `204 No
-Content`.
+Storefront and integration developers need practical examples showing how to clear a customer's basket cleanly and how to handle the scenario where no active basket exists. Without clear examples, clients might send unnecessary payload data or fail unexpectedly when attempting to delete a basket that has already been removed.
+
+## 2. Business Value
+
+- **Minimal integration effort**: Shows that deleting a basket requires no request payload, keeping client logic simple.
+- **Resilient storefront behavior**: Demonstrates how clients can recognize a missing-basket outcome and respond cleanly instead of crashing.
+
+## 3. How It Works
+
+1. **Deleting an active basket**: The client issues a deletion request with no input payload. When a basket exists, it is removed and the service confirms completion without returning any additional data.
+2. **Handling a missing basket**: If no basket exists to remove, the service notifies the client that the basket was not found so the caller can update its state or report the condition appropriately.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Treating missing baskets as explicit errors**: Because the service explicitly reports when no basket exists rather than silently succeeding, client applications must decide whether a missing basket during cleanup should raise an alert or simply be treated as already cleared.
+
+## 5. Technical Reference
+
+### 1. Delete a basket
+
+Delete the basket with no request body. A successful deletion returns `204 No Content`.
 
 <CodeGroup dropdown>
 
@@ -33,10 +52,9 @@ if (!response.ok) {
 
 The successful response has no payload.
 
-## 2. Handle a missing basket
+### 2. Handle a missing basket
 
-If no basket can be found, the service returns `404 Not Found` with
-`application/problem+json`.
+If no basket can be found, the service returns `404 Not Found` with `application/problem+json`.
 
 <CodeGroup dropdown>
 

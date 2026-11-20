@@ -35,16 +35,40 @@ properties:
         description: Province or state.
 ---
 
-## Overview
+## 1. Context & Problem
 
-The Buyer aggregate stores the customer's name and address used by Ordering.
+To fulfill purchases accurately, Ordering needs a dedicated customer profile—capturing who is placing the order and where books must be delivered—without tightly coupling Order processing to external authentication systems. At the same time, storing order-by-order fulfillment state on the customer record would blur ownership boundaries and complicate multi-order history. The **Buyer** entity provides a clean, self-contained Ordering profile for each customer.
+
+## 2. Business Value
+
+- **Clear customer & order separation:** Allows a customer to place many Orders over time while keeping their core Ordering identity and delivery address organized in one place.
+- **Reliable delivery details:** Guarantees every Buyer record carries a required name and structured delivery address (street, city, and province or state).
+- **Focused domain ownership:** Keeps customer Ordering profiles under Business Strategy ownership without entangling profile data with individual Order lifecycle transitions.
+
+## 3. How It Works
+
+- Each **Buyer** represents the Ordering profile linked to an authenticated customer.
+- The profile stores the customer's unique identifier, name, and required delivery address (street, city, and province or state).
+- A single Buyer can place multiple Orders over time, with each Order referencing its Buyer by identifier.
+- The Buyer holds only customer profile and delivery details—it does not own or control an Order's lifecycle status, which each Order manages independently.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Identifier reference vs. duplicating profile data:** Having Orders reference Buyer by identifier keeps multi-order customer history normalized and clean, though teams must take care not to expose Buyer address or contact details unnecessarily in logs, events, or incident reports.
+- **Dedicated Ordering profile vs. direct auth coupling:** Keeping a Buyer profile inside Ordering isolates Ordering from external identity-system changes, at the trade-off that a customer must have a Buyer profile established before checking out.
+
+## 5. Technical Reference
+
+### Overview
+
+The Buyer aggregate (`id: buyer`, `aggregateRoot: true`, `identifier: id`, owned by `business-strategy`) stores the customer's name and address used by Ordering.
 An Order refers to its Buyer by ID; the Buyer profile does not own Order
 lifecycle state.
 
-## Entity Properties
+### Entity Properties
 
 <EntityPropertiesTable />
 
-## Relationships
+### Relationships
 
 - A Buyer can place multiple [[entity|order]]s.

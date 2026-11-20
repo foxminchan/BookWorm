@@ -1,7 +1,28 @@
-## 1. Delete feedback
+## 1. Context & Problem
 
-Send the feedback UUID in the path. A successful deletion returns `204 No
-Content` and has no response body.
+Administrative and moderation workflows need clear examples demonstrating how to remove an existing feedback entry and how to handle requests targeting a review that does not exist. Consistent error handling prevents confusing UI states when moderators act on stale or already-deleted records.
+
+## 2. Business Value
+
+- **Faster moderation integration**: Engineering teams building admin portals have verified request and error-handling patterns out of the box.
+- **Accurate operator feedback**: Distinguishing between a completed removal and a missing record helps admin tools inform staff accurately instead of failing silently or showing generic errors.
+
+## 3. How It Works
+
+To delete feedback, an authorized caller identifies the specific review using its unique identifier.
+
+- **Existing record**: The service removes the review and returns an empty success confirmation.
+- **Missing record**: If the provided identifier does not match any existing feedback, the service notifies the caller that the record was not found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit missing-record response vs. silent success**: Reporting when a feedback identifier does not exist helps interactive admin tools detect stale views or mistyped identifiers, though automated cleanup scripts must explicitly handle missing-record responses as non-fatal if desired.
+
+## 5. Technical Reference
+
+### 1. Delete feedback
+
+Send the feedback UUID in the path to `DELETE /api/v1/feedbacks/{id}`. A successful deletion returns `204 No Content` and has no response body.
 
 <CodeGroup dropdown>
 
@@ -33,10 +54,9 @@ if (!response.ok) {
 
 </CodeGroup>
 
-## 2. Handle a missing feedback record
+### 2. Handle a missing feedback record
 
-If the UUID does not identify an existing feedback record, the service returns
-`404 Not Found`.
+If the UUID does not identify an existing feedback record, the service returns `404 Not Found`.
 
 <CodeGroup dropdown>
 

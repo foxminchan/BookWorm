@@ -28,60 +28,46 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-[[domain|catalog]] owns book metadata and [[domain|reviews]] owns individual feedback. Direct MCP
-database access would bypass those systems' service contracts and couple the
-shared integration to their storage schemas. The adapter needs to combine
-data from multiple domains without becoming responsible for domain-specific
-query behavior, authorization, or persistence.
+To answer customer questions and support recommendations, the shared AI integration adapter must combine book information owned by [[domain|catalog]] with reader feedback owned by [[domain|reviews]]. Reading directly from those services' underlying databases would bypass established service boundaries, couple the AI adapter to internal storage schemas, and force the adapter to duplicate domain query and authorization logic.
 
-## Decision
+BookWorm needed a clear rule for how the AI integration layer sources domain data while letting Catalog and Reviews evolve independently.
 
-[[service|mcp-server]] retrieves Catalog data through [[service|catalog-api]] and review data through
-[[service|rating-api]]. It does not access [[container|catalog-database]] or [[container|rating-database]] directly.
-Domain APIs remain responsible for their own data access and behavior. MCP
-serializes the results for its tools and resources and reports upstream
-failures explicitly rather than treating an unavailable API as an empty
-successful lookup.
+## 2. Business Value
 
-The MCP service does not maintain its own application data store or cache
-these responses. Domain services remain the source systems, and MCP requests
-depend on their availability and authorization behavior.
+- **Independent domain evolution**: Catalog and Reviews teams can redesign or optimize their internal databases without breaking AI integrations.
+- **Consistent business rules and security**: Reusing domain service interfaces ensures AI lookups respect the exact same query semantics and authorization checks as every other consumer.
+- **Transparent reliability**: When an upstream domain service is unavailable, the failure is surfaced honestly rather than disguised as missing or empty data, preventing misleading AI answers.
+- **Zero data-sync overhead**: Avoiding a separate copy of catalog or review data removes synchronization pipelines, stale-cache repair jobs, and storage duplication costs.
 
-## Consequences
+## 3. How It Works
 
-- MCP data access follows the service contracts of the owning domains.
-- Upstream API availability, authorization, and response semantics affect MCP
-  requests.
-- Changes to domain APIs may require corresponding MCP adapter updates.
-- Catalog and Reviews can evolve their storage implementations without
-  exposing those details through MCP.
-- API failures remain visible to MCP clients and can prevent a lookup or
-  resource read from completing; the adapter must not present a failure as
-  valid empty data.
-- Multiple upstream service calls may have different latency and freshness;
-  MCP does not create an atomic cross-domain snapshot.
-- The MCP server's infrastructure and policies must allow it to discover and
-  authenticate to the required upstream APIs.
+The shared AI integration server acts purely as a live pass-through adapter to the owning domain services:
 
-## Alternatives considered
+1. When an AI client requests book details or catalog searches, the adapter forwards the request to the Catalog service.
+2. When an AI client requests reviews or ratings, the adapter forwards the request to the Rating service.
+3. The adapter never connects directly to the Catalog or Rating databases, and it does not store or cache its own copy of domain records.
+4. Results returned by the domain services are packaged into the AI integration format and returned to the caller. If an upstream service fails or denies access, the adapter reports the error clearly instead of pretending no books or reviews exist.
 
-### Query Catalog and Rating databases directly
+## 4. Trade-offs & Lessons Learned
 
-This could avoid API hops, but would couple MCP to private schemas and database
-credentials and bypass the service boundaries maintained by the owning
-domains.
+- **Upstream dependency vs. schema coupling**: Routing through domain APIs adds a network hop and makes AI lookups depend on upstream API availability, latency, and authorization policies—an intentional trade-off to avoid brittle direct database coupling.
+- **Adapter maintenance on API changes**: Because the adapter consumes domain service contracts, changes to Catalog or Rating APIs may require corresponding updates to the adapter.
+- **No atomic cross-domain snapshot**: Combining data from multiple domain APIs means each source may reflect slightly different latency and freshness; the adapter does not provide a single point-in-time snapshot across domains.
+- **Infrastructure alignment required**: Network policies, service discovery, and identity permissions must explicitly allow the integration server to reach and authenticate with each upstream domain API.
 
-### Copy domain data into an MCP-owned store
+### Alternatives Evaluated
 
-This could reduce upstream request latency, but would create a second
-replicated data set and require synchronization, freshness, and repair
-policies. The MCP service remains a live adapter rather than an additional
-system of record.
+- **Query Catalog and Rating databases directly**: Rejected because it saves a service hop at the cost of coupling to private schemas, sharing database credentials, and bypassing domain boundaries.
+- **Replicate domain data into an adapter-owned store**: Rejected because it creates a second data set requiring synchronization, freshness guarantees, and repair workflows.
+- **Duplicate domain rules inside the adapter**: Rejected because business logic in the adapter would inevitably drift from the authoritative Catalog and Rating services.
 
-### Implement domain rules in MCP handlers
+## 5. Technical Reference
 
-Duplicating domain behavior in the adapter would risk diverging from the
-Catalog and Rating APIs. The adapter maps protocol requests to existing
-service operations and leaves domain decisions with their owners.
+- **Decision status**: Accepted (`2026-11-04`)
+- **Affected systems, services & containers**: [[service|mcp-server]], [[service|catalog-api]], [[service|rating-api]], [[container|catalog-database]], [[container|rating-database]], `mcp-tools`, `product-catalog-system`, `rating-system`
+- **Data access path**: [[service|mcp-server]] retrieves Catalog data exclusively through [[service|catalog-api]] and review data exclusively through [[service|rating-api]]. Direct connections to [[container|catalog-database]] and [[container|rating-database]] are prohibited.
+- **Caching & state**: [[service|mcp-server]] maintains no application data store and does not cache upstream responses.
+- **Failure semantics**: Upstream API failures remain visible to MCP clients and prevent the lookup or resource read from completing; [[service|mcp-server]] must not mask an unavailable API as valid empty data.
+- **Security & discovery**: Infrastructure and authorization policies must permit [[service|mcp-server]] to discover and authenticate to [[service|catalog-api]] and [[service|rating-api]].

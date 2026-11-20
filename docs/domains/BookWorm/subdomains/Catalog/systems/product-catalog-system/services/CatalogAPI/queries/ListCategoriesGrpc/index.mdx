@@ -14,29 +14,48 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `ListCategories` RPC returns all available [[entity|category]] records in
-the Catalog. It is an anonymous read operation exposed for internal
-service-to-service clients.
+Internal services and assistant integrations across BookWorm often need to discover every book [[entity|category]] available in the catalog. For example, [[service|mcp-server]] needs the full list of categories so AI assistants and automated tools can guide users or filter book searches without keeping a separate copy of catalog taxonomy data.
 
-[[service|mcp-server]] produces this query in its
-`BookService.ListCategoriesAsync` client to power the `list_categories` MCP
-tool; [[service|catalog-api]] consumes it by dispatching
-`ListCategoriesQuery`.
+Providing a dedicated internal read operation from [[service|catalog-api]] gives downstream services a single, authoritative source for category choices without forcing them through public web-facing endpoints.
+
+## 2. Business Value
+
+- **Consistent catalog taxonomy**: Internal services and assistant tools always present the same up-to-date set of categories managed in the catalog.
+- **Fast service-to-service integration**: Lightweight internal communication keeps category lookups responsive when supporting interactive tools or automated workflows.
+- **Frictionless access to reference data**: Because category names are non-sensitive catalog metadata, internal consumers can fetch them without managing user credentials.
+
+## 3. How It Works
+
+1. An internal consumer—such as [[service|mcp-server]] powering its category discovery tool—sends a simple read request to [[service|catalog-api]] with no filtering parameters required.
+2. [[service|catalog-api]] retrieves all currently available [[entity|category]] records from the catalog.
+3. The service returns the full collection of categories, providing each category's unique identifier and display name.
+4. No user authentication is required because the operation exposes only read-only public reference data for internal callers.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Unpaginated full collection**: Returning every category in a single response keeps internal callers simple and works well for a compact, slowly changing taxonomy, though pagination would be needed if the number of categories grew substantially.
+- **Strict internal contract**: Dedicated service-to-service communication improves efficiency between BookWorm services, but requires internal consumers and providers to stay aligned when the message structure evolves.
+- **Anonymous internal access**: Omitting user authorization streamlines integration for reference lookups, so this operation must remain strictly limited to non-sensitive category identifiers and names.
+
+## 5. Technical Reference
+
+The `ListCategories` RPC returns all available [[entity|category]] records in the Catalog through the `book.v1` gRPC contract. It is an anonymous read operation exposed for internal service-to-service clients.
+
+- **Producer**: [[service|mcp-server]] invokes this query in its `BookService.ListCategoriesAsync` client to power the `list_categories` MCP tool.
+- **Consumer**: [[service|catalog-api]] handles the call by dispatching `ListCategoriesQuery`.
+- **Contract**: Send an empty `ListCategoriesRequest`. The response is `ListCategoriesResponse`, containing a repeated collection of `CategoryItem` values (`id` and `name`).
+
+### Architecture
 
 <NodeGraph />
 
-## Contract
-
-Send an empty `ListCategoriesRequest`. The response is `ListCategoriesResponse`,
-containing a repeated collection of `CategoryItem` values (`id` and `name`).
-
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="ListCategories gRPC schema" />
 
-## Examples
+### Examples
 
 <CodeGroup dropdown>
 

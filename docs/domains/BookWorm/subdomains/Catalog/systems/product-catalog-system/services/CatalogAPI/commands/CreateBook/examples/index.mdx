@@ -2,22 +2,56 @@
 summary: Create a book with catalog relationships and an optional cover image.
 ---
 
+## 1. Context & Problem
+
+Adding a new book to the storefront involves more than saving a title and price: each listing must also carry a description, pricing rules, links to its category, publisher, and authors, and optionally a cover image. Integrators need a concrete example showing how to submit both structured book details and an optional image together, as well as how to handle rejected submissions when required details or relationships are invalid.
+
+## 2. Business Value
+
+- **Complete, storefront-ready listings in one step:** Combining book metadata, catalog relationships, and cover art in a single submission prevents half-finished listings from appearing without categories, authors, or cover images.
+- **Pricing accuracy:** Enforcing that any promotional sale price does not exceed the regular price protects customer trust and prevents pricing mistakes at entry time.
+- **Predictable integration behavior:** Explicit validation examples help delivery teams catch missing fields or bad relationship references early before retrying requests.
+
+## 3. How It Works
+
+Creating a book listing covers two primary scenarios:
+
+1. **Submitting a complete book listing:** The caller gathers the book's title, description, regular price, an optional sale price (which must not be higher than the regular price), and the unique identifiers for its existing category, publisher, and at least one author. An optional cover image file can be included in the same submission. When accepted, the catalog saves the book, stores the cover image in file storage if provided, and returns the new book's unique identifier so callers can retrieve, update, or reference the listing later.
+2. **Handling invalid submissions:** If any required details are missing, pricing rules are broken, or any linked category, publisher, or author identifiers are malformed, the catalog rejects the submission and returns validation details. The caller should fix the form inputs before submitting again.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Single submission for text and cover art:** Bundling the cover image with the book metadata simplifies client workflows into one step, though it requires callers to submit form-encoded uploads rather than plain text payloads.
+- **Upfront relationship dependencies:** Requiring valid identifiers for category, publisher, and authors guarantees clean catalog links from day one, meaning callers must ensure those reference records already exist before creating a book.
+
+## 5. Technical Reference
+
+- **Endpoint:** `POST https://api.example.com/api/v1/books`
+- **Content type:** `multipart/form-data` (required because the optional cover `image` is uploaded alongside book metadata).
+- **Fields:**
+  - `name`, `description`, and `price` (required)
+  - `priceSale` (optional; must not exceed `price`)
+  - `categoryId`, `publisherId`, and `authorIds` (required relationship UUIDs)
+  - `image` (optional binary cover file; stored in blob storage)
+- **Success response:** `201 Created` returning the generated book UUID as a JSON string.
+- **Validation failure:** Missing required fields or malformed relationship UUIDs return `400` with validation problem details.
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Create a book with relationships
+### 1. Create a book with relationships
 
 The command uses `multipart/form-data` because the cover image is uploaded with the book metadata. A successful request returns `201 Created` with the generated book UUID.
 
-### Payload details
+#### Payload details
 
 - `name`, `description`, and `price` describe the listing.
 - `priceSale` is optional and must not exceed the regular price.
 - `categoryId`, `publisherId`, and `authorIds` link the book to catalog metadata.
 - `image` is optional and is stored in blob storage.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -27,7 +61,7 @@ const bookId = "44444444-4444-4444-4444-444444444444";
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Persist the returned UUID so the new book can be retrieved, updated, or linked to other catalog workflows.
 
@@ -71,6 +105,6 @@ console.log(`Created book ${bookId}`);
 
 ---
 
-## 2. Reject an invalid multipart request
+### 2. Reject an invalid multipart request
 
 Missing required fields or malformed relationship UUIDs return `400` with validation problem details. Correct the form before retrying.

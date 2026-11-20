@@ -28,61 +28,42 @@ badges:
     textColor: red
 ---
 
-## Context
+## 1. Context & Problem
 
-Customer conversations can contain personally identifiable information.
-Sending unfiltered input to an AI model or returning unfiltered output can
-expose sensitive values beyond the intended processing boundary. Applying
-privacy filtering only to requests would leave generated responses unfiltered;
-applying it only to the final answer would still send the original input to the
-model.
+Customer conversations can contain personally identifiable information (PII). Sending unfiltered customer text to an AI model—or returning unfiltered model output to a caller—risks exposing sensitive values beyond the intended processing boundary.
 
-## Decision
+Filtering only incoming requests would still leave sensitive content generated in responses unprotected, while filtering only final answers would still send the original unredacted input to the AI model. BookWorm needed a consistent, bidirectional privacy boundary applied across all conversational assistants.
 
-All five Chat agents use the shared PII middleware, directly or through the
-Book Agent's wrapped client inherited by its researchers. For non-empty text,
-the middleware calls [[service|PresidioAPI]] in [[system|data-privacy]] to
-analyze content using [[command|AnalyzeText]] and, when PII is detected,
-anonymize it using [[command|AnonymizeText]]. The middleware applies to both
-input and output. Streaming output is buffered until filtering is complete,
-then emitted after processing. If privacy processing fails, the request fails
-rather than allowing unfiltered text through.
+## 2. Business Value
 
-This policy describes the shared model-call middleware. It does not imply
-that every kind of data is detected or that anonymized text can never be
-reidentified.
+- **Bidirectional data protection**: Screens and anonymizes personal information both before text reaches an AI model and before replies return to the customer.
+- **Uniform enforcement across all assistants**: Ensures primary specialists and delegated research assistants all follow the same application-level privacy control without relying on prompt instructions alone.
+- **Fail-safe privacy posture**: Guarantees that privacy screening is never silently skipped if the privacy service experiences an outage or configuration error.
 
-## Consequences
+## 3. How It Works
 
-- Agent input and output receive consistent privacy processing.
-- Input and output processing add calls to Presidio; streaming responses are
-  delayed until output filtering completes.
-- Presidio availability and correct configuration are dependencies for agent
-  requests using this middleware. A processing failure prevents the affected
-  request from completing.
-- PII detection and anonymization are not a guarantee that every sensitive
-  value will be recognized or that transformed text contains no sensitive
-  information. Agents and callers must not treat the middleware as a
-  substitute for data minimization.
-- Researchers must continue to use Book Agent's wrapped client so delegated
-  model calls receive the same input and output processing.
+1. **Universal coverage**: All five Chat assistants—primary specialists and delegated researchers alike—route every non-empty interaction through a shared privacy screening step.
+2. **Analyze and anonymize**: Before text goes to an AI model, and again before generated output is returned, the screening step analyzes the text for personal information and anonymizes any sensitive values found.
+3. **Hold streamed replies until checked**: When an assistant generates a streamed reply, the output is held until privacy screening finishes, then released together.
+4. **Fail closed on errors**: If privacy screening fails for any reason, the request is stopped rather than allowing unfiltered text through.
 
-## Alternatives considered
+## 4. Trade-offs & Lessons Learned
 
-### Fail open when privacy processing is unavailable
+- **Privacy assurance vs. availability (Fail-closed)**: Because requests stop when privacy processing fails, the availability and proper configuration of the privacy service directly govern whether chat requests can complete. Failing open would preserve uptime during an outage, but would defeat the privacy boundary precisely when its dependency is unhealthy.
+- **Bidirectional filtering vs. latency and streaming**: Screening both inputs and outputs adds processing calls, and holding streamed responses until output screening finishes delays delivery to the caller.
+- **Defense in depth, not a silver bullet**: Automated detection and anonymization cannot guarantee that every sensitive value is recognized or that transformed text can never be reidentified; callers and agents must still practice data minimization.
+- **Delegated assistant discipline**: Future or modified delegated researchers must continue using the shared wrapped client path so subagent model calls never bypass input and output filtering.
 
-This would preserve response availability during a Presidio outage, but could
-send unfiltered input to the model or unfiltered output to the caller. It
-would defeat the privacy boundary precisely when its dependency is unhealthy.
+### Alternatives Considered
 
-### Filter only input or only output
+- **Fail open when privacy processing is unavailable**: Preserves response availability during an outage, but exposes unfiltered input to the model or unfiltered output to the caller.
+- **Filter only input or only output**: Leaves either the AI model or the caller exposed to unprotected sensitive text.
+- **Rely only on agent instructions**: Prompt guidance cannot enforce a consistent application-level processing boundary across registered assistants.
 
-Filtering only input would not protect sensitive content generated in an
-answer; filtering only output would not protect the content sent to a model.
-Both directions are therefore covered.
+## 5. Technical Reference
 
-### Rely only on agent instructions
-
-Instructions can guide agent behavior but do not provide a consistent
-application-level processing boundary. Shared middleware applies the same
-behavior across the registered Chat agents.
+- **Decision status**: `accepted` (`2026-11-04`)
+- **Coverage**: All five Chat agents use the shared PII middleware, either registered directly or through the Book Agent's wrapped client inherited by its delegated researchers.
+- **Privacy service integration**: For non-empty text, the middleware calls [[service|PresidioAPI]] in [[system|data-privacy]] to analyze content via [[command|AnalyzeText]] and, when PII is detected, anonymize it via [[command|AnonymizeText]].
+- **Execution behavior**: Applies symmetrically to model input and output; streaming output is buffered until output filtering completes, then emitted; failures propagate (fail-closed) rather than bypassing privacy processing.
+- **Scope note**: Governs the shared model-call middleware; does not imply 100% detection recall or irreversibility of anonymized text.

@@ -18,14 +18,37 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Lists [[entity|buyer]] profiles. This endpoint is available to authorized
-callers and provides pagination controls.
+Support teams, administrators, and downstream integrations need a reliable way to browse customer [[entity|buyer]] profiles registered in the Ordering domain without loading the entire customer directory at once.
+
+## 2. Business Value
+
+- **Scalable directory browsing**: Controlled paging keeps customer lookups fast and responsive as the buyer base grows.
+- **Controlled access**: Restricting access to authorized callers protects customer profile details such as names and delivery addresses.
+- **Consistent profile view**: Provides a single, predictable summary of each buyer's identifier, name, and address.
+
+## 3. How It Works
+
+1. An authorized caller requests a page of [[entity|buyer]] profiles by specifying which page to view and how many profiles to include per page.
+2. If paging preferences are omitted, the service applies standard default page settings.
+3. Ordering retrieves the matching slice of [[entity|buyer]] records and returns each buyer's identifier, name, and address.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Flat list without paging metadata**: Returning only the requested page of profiles keeps the response lightweight, though callers must inspect the number of returned items rather than relying on a total-count wrapper to determine whether more pages exist.
+- **No search or filter parameters**: Keeping the query focused on simple paged listing simplifies behavior and performance, while requiring callers to browse pages sequentially rather than filtering by name or address directly.
+- **Nullable profile fields**: Buyer names and addresses may be absent on some profiles, so consumers must handle missing text values gracefully in user interfaces and reports.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/buyers`
+- **Status codes**: `200`
+- **Entities**: [[entity|buyer]]
 
 <NodeGraph />
 
-## Query parameters and response
+### Query parameters and response
 
 | Parameter   | Description                 | Default |
 | ----------- | --------------------------- | ------- |
@@ -35,7 +58,7 @@ callers and provides pagination controls.
 The OpenAPI contract documents the `200 OK` response as a JSON array of
 `BuyerDto` values containing ID, name, and address.
 
-## Query using CURL
+### Query using CURL
 
 <CodeGroup dropdown>
 
@@ -46,6 +69,6 @@ curl -H "Authorization: Bearer <access-token>" \
 
 </CodeGroup>
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="BuyerDto array JSON Schema" maxHeight="500" search="true" />

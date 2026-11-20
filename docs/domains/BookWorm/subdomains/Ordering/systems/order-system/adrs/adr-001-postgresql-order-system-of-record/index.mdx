@@ -22,65 +22,48 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-The Order System uses PostgreSQL for Buyer profiles, accepted Orders, Order
-Items, and Order event streams. It also uses Redis for locks, idempotency
-markers, and cached responses, so the boundary between authoritative business
-data and transient coordination data must remain explicit. Order history and
-current lifecycle state must also be distinguishable from read-optimized
-projections that can be rebuilt or lag behind the persisted aggregate.
+The Ordering system manages two very different kinds of information: permanent business records (customer profiles, accepted orders, purchased line items, and order history) and short-lived operational data (temporary locks to stop duplicate checkouts, repeat-request markers, and cached responses for faster reading). It also produces read-optimized summaries that can be rebuilt or lag slightly behind live updates.
 
-## Decision
+Without an explicit boundary between permanent records and temporary or derived data, teams risk treating a fast cache or a delayed summary view as the official truth. If temporary storage is cleared or a summary view is still catching up, customer orders or their true status could appear lost or inconsistent.
 
-[[container|order-database]] is the system of record for Buyer profiles and
-accepted Order data, including purchase-time Order Items and persisted Order
-events. EF Core persists the domain records, Marten stores Order event streams
-and maintains read projections, and Wolverine persists message envelopes
-against the Ordering database. The EF Core Order aggregate remains
-authoritative for current Order status; derived projections do not replace it.
+## 2. Business Value
 
-[[container|order-cache]] is non-authoritative. Redis supports coordination
-such as Buyer-scoped Order creation locks and idempotency markers, as well as
-cached responses, but must not be treated as the source of truth for an Order
-or Buyer. Loss of cache data must not remove persisted business records.
+- **Financial and audit reliability:** Accepted customer purchases and buyer profiles live in durable storage, ensuring business records survive temporary cache restarts or operational resets.
+- **Single source of truth:** Customer service, downstream workflows, and reporting always have one authoritative place to verify an order's real status.
+- **Clear service ownership:** Ordering maintains its own dedicated data boundary, preventing schema changes or outages in other domains from corrupting order records.
+- **Predictable operations:** Operations teams know exactly which store requires strict backup, availability, and recovery guarantees versus which store is safe to flush or rebuild.
 
-## Consequences
+## 3. How It Works
 
-- Order and Buyer reads rely on PostgreSQL for authoritative state.
-- Redis loss can affect coordination, duplicate-request detection, or cached
-  responses, but does not remove persisted Orders or Buyer profiles.
-- Cached responses and read projections must not replace the persisted Order
-  aggregate as the source for business status.
-- PostgreSQL availability, schema compatibility, and the Ordering persistence
-  configuration are required to create and read authoritative Buyer and Order
-  data.
-- Marten projections are read models. Their freshness and rebuild behavior
-  must not be confused with the status or purchase snapshot stored by the
-  Order aggregate.
-- Redis is more than a disposable read cache in Ordering: its availability
-  can affect lock acquisition and request deduplication even though it does
-  not own Order data.
-- Redis idempotency markers are not an atomic exactly-once guarantee. A
-  marker may outlive a failed request, and Redis loss can remove duplicate
-  detection during the configured expiration period.
+BookWorm designates [[container|order-database]] as the single authoritative system of record for buyer profiles, accepted orders, purchase-time item snapshots, order lifecycle history, and reliable outbound messaging records. Whenever the business needs to confirm an order's true status or retrieve a customer's purchase record, the authoritative order record—not a derived summary—is the final authority.
 
-## Alternatives considered
+Meanwhile, [[container|order-cache]] serves strictly as non-authoritative support infrastructure. It holds temporary buyer-level locks during order creation, short-lived markers to spot duplicate requests, and cached responses to speed up reads. Losing or clearing the cache never deletes a persisted order or buyer profile.
 
-### Treat Redis as the Order system of record
+Read-optimized summaries are likewise treated as secondary views derived from the permanent records. Because they may update slightly after an order changes or be rebuilt from scratch, they are never allowed to override the authoritative order state.
 
-This would put accepted purchase data in transient coordination storage and
-make Order ownership dependent on cache persistence and availability. Redis
-remains an optimization and coordination dependency, not an authority.
+## 4. Trade-offs & Lessons Learned
 
-### Use read projections as the authoritative status source
+### Alternatives Considered
 
-Projections are derived from persisted records and may be updated
-asynchronously. The persisted Order aggregate remains the source for current
-business status.
+- **Treat the cache as the Order system of record:** Rejected because placing accepted purchase data in transient coordination storage ties order durability to cache memory and availability.
+- **Use read projections as the authoritative status source:** Rejected because derived summaries update asynchronously and could briefly report outdated status during high load or rebuilds.
+- **Share another system's database:** Rejected because coupling Ordering persistence to another domain's storage blurs data ownership and complicates independent releases.
 
-### Share another system's database
+### Operational Trade-offs & Risks
 
-This would couple Order persistence to another domain's storage schema and
-blur ownership of Buyer and Order records. Ordering maintains its own
-PostgreSQL boundary.
+- **Database availability dependency:** Ordering cannot create or read authoritative buyer and order data if the primary relational database is unavailable or its schema is incompatible.
+- **Cache is still operationally important:** Even though [[container|order-cache]] does not own order data, an outage there disrupts concurrency locks and repeat-request detection.
+- **Non-atomic duplicate detection:** Repeat-request markers are temporary safeguards rather than an exact-once guarantee—a marker can outlive a failed attempt, and a cache loss removes duplicate detection for that expiration window.
+- **Projection freshness discipline:** Consumers and dashboards must remember that derived read summaries can lag behind the authoritative order record.
+
+## 5. Technical Reference
+
+- **Authoritative store:** [[container|order-database]] (PostgreSQL) owned by Ordering.
+  - **EF Core:** Persists Buyer profiles, accepted Orders, purchase-time Order Items, and the authoritative `Order` aggregate for current business status.
+  - **Marten:** Stores Order event streams and maintains derived read projections; projection freshness and rebuild behavior must not be confused with the status or purchase snapshot stored by the EF Core `Order` aggregate.
+  - **Wolverine:** Persists durable message envelopes against the Ordering database.
+- **Non-authoritative coordination & cache:** [[container|order-cache]] (Redis).
+  - Supports Buyer-scoped Order creation locks, idempotency markers (subject to configured expiration), and cached responses.
+  - Redis loss can remove duplicate-request detection during the configured expiration period and affect lock acquisition, and an idempotency marker may outlive a failed request, but Redis loss does not remove persisted Orders or Buyer profiles.

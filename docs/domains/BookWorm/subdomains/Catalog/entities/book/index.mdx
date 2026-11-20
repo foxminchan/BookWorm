@@ -73,14 +73,42 @@ owners:
   - contributor-team
 ---
 
-## Overview
+## 1. Context & Problem
 
-This entity represents a book in the catalog. It encapsulates book information
-and business rules, such as a unique identifier, a title, a description, an
-image, a price, a status, an average rating, a total number of reviews, a
-[[entity|category]], a [[entity|publisher]], and a flag indicating whether the
-book is deleted or not. The entity also has a version property for optimistic
-concurrency control.
+The book is the central product in BookWorm—every customer journey from catalog browsing and pricing to reviews, shopping baskets, and order fulfillment revolves around it. Without a single authoritative Book record governing core product attributes, classifications, pricing, and lifecycle rules, product data would fragment across services and become difficult to keep consistent.
+
+## 2. Business Value
+
+- **Unified product truth:** Gives merchandising, storefront display, and commerce workflows one consistent source of book details and pricing.
+- **Promotional flexibility:** Supports both regular (original) pricing and discounted sale pricing directly on the product.
+- **Protected edits:** Prevents simultaneous updates from silently overwriting each other.
+- **Auditability & safe retirement:** Retains creation and update history and removes retired books softly so past orders and customer reviews remain intact.
+
+## 3. How It Works
+
+A Book captures all core merchandising, classification, and summary information for a title in the catalog:
+
+- **Product details & pricing:** Stores a unique identity, required title, optional description and cover image, current availability status, and pricing covering both the original price and any active sale price.
+- **Catalog classification:** Each book is assigned to one [[entity|category]] and one [[entity|publisher]], and can be credited to multiple [[entity|author]]s.
+- **Customer sentiment summary:** Holds a derived average rating and total review count based on [[entity|feedback]] records so storefront listings can display ratings immediately.
+- **Commerce connections:** Books can be placed into multiple customer [[entity|basket]]s and included in orders managed by the [[domain|ordering]] domain.
+- **Lifecycle & concurrency safety:** Books track when they were created and last modified, use a deletion marker rather than permanent removal, and carry a version stamp so concurrent updates are detected safely before saving.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Soft deletion vs. hard deletion:** Marking retired books as deleted preserves historical links for past orders and reviews, at the cost of ensuring all active storefront and search views filter out deleted titles.
+- **Derived rating summary:** Storing the average rating and review count directly on the book makes catalog browsing fast and independent of the Reviews domain, but introduces eventual consistency when feedback changes asynchronously.
+- **Single category and publisher:** Requiring exactly one category and one publisher simplifies catalog governance and filtering, though multi-category tagging would require expanding the relationship model later.
+- **Concurrency protection:** Checking a version stamp on updates prevents silent lost writes during concurrent editorial or rating updates, though conflicting updates must be retried.
+
+## 5. Technical Reference
+
+### Entity Overview
+
+- **Entity ID:** `book` (`Book`)
+- **Aggregate Root:** `true`
+- **Concurrency & Lifecycle:** Uses `version` (`UUID`) for optimistic concurrency control, `isDeleted` (`bool`) for soft deletion, and `createdAt` / `lastModifiedAt` (`DateTime`) audit timestamps.
+- **Owners:** `contributor-team`
 
 ### Entity Properties
 

@@ -12,6 +12,9 @@ systems:
     version: 1.0.0
   - id: mcp-tools
     version: 1.0.0
+flows:
+  - id: agent-orchestration
+    version: 1.0.0
 agents:
   - id: book-agent
     version: 1.0.0
@@ -32,54 +35,24 @@ badges:
     icon: ShieldCheckIcon
 ---
 
-## Business purpose
+## 1. Context & Problem
 
-Conversational provides BookWorm customers with an interactive assistance
-service. It routes bookstore questions to a customer-support agent and book
-discovery requests to catalog-backed agents, while keeping the Catalog,
-Shopping, and Ordering contexts as owners of their business data.
+BookWorm customers need an interactive assistant to help them discover books, interpret reviews, and understand store policies. However, giving an AI chat experience direct ownership over product listings, customer orders, shopping baskets, or persisted reviews would duplicate business rules and risk data integrity.
 
-Conversational is a **Core Domain** because it provides the customer-facing
-assistance experience, not because it owns the products, orders, or policies
-that agents discuss.
+Conversational exists as a **Core Domain** because it delivers BookWorm's customer-facing conversational experience—not because it owns the underlying catalog items, orders, or policies discussed. It defines a clear domain language:
 
-### Business outcomes
+- A **Customer Request** is the live interaction being routed or answered; it is not an Order, Basket, or Feedback record.
+- A **Handoff** transfers a conversation between specialist assistants; it is distinct from business workflows such as checkout or order fulfillment.
+- Catalog remains the single source of truth for factual book details, while store-policy assistance relies strictly on supplied policy context without reading or modifying customer accounts, baskets, or orders.
 
-- BookWorm-related requests are routed to the appropriate specialist; unrelated
-  requests and unsupported languages receive a brief boundary response.
-- Book searches and recommendations are grounded in current Catalog results
-  rather than invented product facts.
-- Customers receive concise guidance about store services and policies, with
-  unavailable account-specific or policy details directed to the support
-  channel.
-- Personal information in agent input and output is processed by the shared
-  privacy middleware.
+## 2. Business Value
 
-## Domain scope and language
+- **Focused, predictable routing**: In-scope BookWorm questions reach the right specialist, while off-topic inquiries and unsupported languages receive a brief boundary response.
+- **Factually grounded book discovery**: Searches and recommendations are backed by live catalog data rather than invented product claims.
+- **Safe store-policy guidance**: Customers get concise help on store services and policies, while account-specific inquiries are cleanly directed to support.
+- **Built-in personal data protection**: Sensitive personal information in both customer prompts and assistant replies is screened and anonymized automatically.
 
-- A **Customer Request** is the interaction being routed or answered. It is
-  not an Order, Basket, or Feedback record.
-- A **Handoff** transfers a request between specialist agents. It is distinct
-  from a business workflow such as checkout or order fulfillment.
-- The **Decision Router** (`DecisionRouterExecutor` backed by
-  `ChatRoutingDecisionService` and `Microsoft-Decision-1`) evaluates language,
-  scope, and target specialist without invoking an LLM agent.
-- The **Book Agent** and its researchers use Catalog results for factual book
-  details. Catalog remains the source of truth for book data.
-- The **QA Agent** answers general store questions using the supplied policy
-  context. It does not retrieve or change customer accounts, baskets, or orders.
-
-Important boundaries:
-
-- The current Chat MCP tool set is read-only and provides Catalog queries; it
-  does not create or update Catalog or Reviews records.
-- Questions that require live account, basket, or Order data are not handled by
-  a live integration from this service. The QA Agent directs customers to
-  support when the supplied information is insufficient.
-- Customer feedback discussed in a conversation is not itself a persisted
-  Reviews feedback record.
-
-## Capability map
+### Capability Map
 
 | Capability         | Responsibility                                                      | Strategic importance |
 | ------------------ | ------------------------------------------------------------------- | -------------------- |
@@ -89,47 +62,27 @@ Important boundaries:
 | Catalog research   | Delegate complex book research to specialist subagents              | Enabling             |
 | Privacy processing | Filter agent input and output through the privacy middleware        | Business critical    |
 
-## Chat service interaction
+## 3. How It Works
 
-The Chat service exposes an interactive AG-UI endpoint at `/ag-ui`. Accepted
-requests pass through input validation, agent handoff, and response formatting;
-rejected input bypasses the agent handoff.
+1. **Validate and route the request**: Incoming customer messages pass through initial input validation—rejected messages stop immediately without reaching specialist assistants. Accepted requests are evaluated for English language, BookWorm scope, and intent:
+   - Non-English or out-of-scope messages receive a short boundary response.
+   - Store policy, service, account, order, or billing questions route to [[agent|qa-agent]].
+   - Review summaries or rating analyses for an already identified book route to [[agent|rating-agent]].
+   - Book searches, recommendations, details, feedback, or unlinked review questions route to [[agent|book-agent]].
+2. **Collaborate across specialists and parallel researchers**: [[agent|qa-agent]] can hand a support inquiry to [[agent|book-agent]] when book details are also needed, and [[agent|book-agent]] can hand review analysis to [[agent|rating-agent]] once a book is identified. For complex book inquiries, [[agent|book-agent]] can delegate concurrently to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]], whereas simple lookups query catalog data directly.
+3. **Protect personal information in both directions**: Every participating specialist and delegated researcher screens both incoming prompts and outgoing replies for personally identifiable information, anonymizing sensitive values before anything reaches an AI model or returns to the customer. If privacy screening fails, the request stops rather than passing unfiltered text through.
+4. **Format and persist the session**: The selected assistant's reply is cleaned and formatted before delivery, and conversation state is saved across turns in session storage.
 
-1. `DecisionRouterExecutor` evaluates the accepted message via
-   `Microsoft-Decision-1` (`is_english`, `is_in_scope`, and `route`).
-   Non-English and out-of-scope requests short-circuit with a boundary
-   response; in-scope requests route to [[agent|qa-agent]] (store policies,
-   services, accounts, orders, billing), [[agent|rating-agent]] (review
-   summaries or rating analysis when a book catalog ID is already present), or
-   [[agent|book-agent]] (book search, recommendations, information, feedback, or
-   review/rating requests without a catalog ID).
-2. The QA Agent can hand a customer-service request to the Book Agent when it
-   also needs book information. The Book Agent can hand off review/rating
-   analysis to the Rating Agent once a book catalog ID is resolved.
-3. For complex requests with independent research tasks, the Book Agent can
-   delegate to the [[agent|book-catalog-researcher]] and
-   [[agent|book-recommendation-researcher]] concurrently. Simple lookups use
-   Catalog tools directly.
-4. The selected agent's response is formatted before it is returned. The
-   workflow persists conversation session state in [[container|chat-session-blob]].
+## 4. Trade-offs & Lessons Learned
 
-## Catalog MCP tools
+- **Read-only and guidance-only boundaries**: Keeping chat tools read-only for catalog queries and excluding live Order, Basket, or account lookups protects domain ownership and authorization boundaries, even though customers needing live order changes must be directed to support.
+- **Fail-closed privacy vs. service availability**: Halting a request whenever privacy screening fails guarantees sensitive data is never sent or returned unprotected, making the privacy service a hard runtime dependency.
+- **Buffered streaming for output safety**: Holding generated responses until output privacy screening completes trades immediate token-by-token streaming for guaranteed filtering prior to delivery.
+- **Conversation is not a system of record**: Feedback or order topics discussed in chat do not create or modify persisted Reviews, Basket, or Order records.
 
-Book Agent and both research subagents are granted the following MCP tools.
-They query the Catalog API; Catalog continues to own the underlying book data.
+## 5. Technical Reference
 
-| Tool              | Responsibility                            |
-| ----------------- | ----------------------------------------- |
-| `search_catalog`  | Find books by description or keyword      |
-| `get_book`        | Retrieve full details for a known book ID |
-| `list_categories` | List available book categories            |
-| `list_authors`    | List available book authors               |
-
-The QA Agent has no MCP tools. The list above describes the
-tool set assigned to Chat agents, not every capability exposed by the shared
-MCP server.
-
-## Context boundaries
+### Context Boundaries
 
 | Relationship                                                   | Direction          | Integration intent                                                                          |
 | -------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
@@ -138,31 +91,35 @@ MCP server.
 | Conversational → [[system\|data-privacy]]                      | Privacy processing | Analyze and, when needed, anonymize agent input and output through [[service\|PresidioAPI]] |
 | Conversational → [[domain\|ordering]] and [[domain\|shopping]] | Guidance only      | Answer general policy questions; no live Order or Basket read/write integration             |
 
-Conversational does not take ownership of another context's model. In
-particular, customer-facing guidance about Orders or Baskets does not change
-their state, and book information remains sourced from Catalog.
+### Chat Service Interaction & Routing
 
-## Privacy middleware
+- **Endpoint & workflow**: Chat exposes an interactive AG-UI endpoint at `/ag-ui`. Accepted requests flow through input validation, `DecisionRouterExecutor`, specialist handoffs, and response formatting; rejected inputs bypass the agent handoff. Conversation session state is persisted in [[container|chat-session-blob]].
+- **Decision routing**: `DecisionRouterExecutor` (backed by `ChatRoutingDecisionService` and `Microsoft-Decision-1`) evaluates `is_english`, `is_in_scope`, and `route` without invoking an LLM agent, routing to [[agent|qa-agent]], [[agent|rating-agent]], or [[agent|book-agent]].
 
-All four Chat agents use [[service|PresidioAPI]] in the external
-[[system|data-privacy]] system. QA and Book Agent register
-`UsePIIMiddleware(sp)` directly; the two Book researchers inherit Book Agent's
-middleware-wrapped chat client through `InitSubAgent`.
+### Catalog MCP Tools
 
-For non-empty text, the middleware sends [[command|AnalyzeText]] over HTTP and
-sends [[command|AnonymizeText]] when PII is detected. It filters both input and
-output; streaming responses are buffered until output filtering completes.
-Middleware failures propagate rather than bypassing privacy processing. These
-are HTTP privacy calls, not model-selected MCP tools or brokered messages.
+[[agent|book-agent]], [[agent|book-catalog-researcher]], and [[agent|book-recommendation-researcher]] are granted the following read-only MCP tools querying the Catalog API (Catalog continues to own underlying book data; [[agent|qa-agent]] has no MCP tools):
 
-## System Context
+| Tool              | Responsibility                            |
+| ----------------- | ----------------------------------------- |
+| `search_catalog`  | Find books by description or keyword      |
+| `get_book`        | Retrieve full details for a known book ID |
+| `list_categories` | List available book categories            |
+| `list_authors`    | List available book authors               |
 
-The context view shows the Conversational systems and their direct integrations.
-Ordering and Shopping are omitted because the agents do not access their live
-data or APIs.
+This list reflects the tool set assigned to Chat agents, not every capability exposed by the shared MCP server.
+
+### Privacy Middleware
+
+- **Registration**: All four Chat agents use [[service|PresidioAPI]] in the external [[system|data-privacy]] system. [[agent|qa-agent]] and [[agent|book-agent]] register `UsePIIMiddleware(sp)` directly; [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] inherit Book Agent's middleware-wrapped chat client through `InitSubAgent`.
+- **Execution**: For non-empty text, the middleware sends [[command|AnalyzeText]] over HTTP and sends [[command|AnonymizeText]] when PII is detected. It filters both input and output; streaming responses are buffered until output filtering completes. Middleware failures propagate rather than bypassing privacy processing. These are direct HTTP privacy calls, not model-selected MCP tools or brokered messages.
+
+### System Context
+
+The context view shows the Conversational systems and their direct integrations. Ordering and Shopping are omitted because the agents do not access their live data or APIs.
 
 <LikeC4View viewId="conversationalContext" project="conversational" />
 
-## Architecture
+### Architecture
 
 <NodeGraph mode="full" />

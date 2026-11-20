@@ -18,23 +18,44 @@ sidebar:
   badge: "PATCH"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Completes an [[entity|order]] through the Order API. The transition is
-available only while the Order is **New**; completion raises the corresponding
-Order lifecycle event for downstream coordination.
+Creating an order only records a customer's accepted purchase; intermediate post-checkout steps such as clearing the customer's shopping basket do not mean the order itself is finished. Ordering needs an explicit, authoritative transition to mark an order as completed once business requirements are satisfied and inform connected downstream workflows.
+
+## 2. Business Value
+
+- **Clear lifecycle closure**: Establishes a definitive point at which an order moves from active (**New**) to **Completed**, aligning customer status views with internal operations.
+- **Downstream coordination**: Automatically notifies connected workflows upon completion so follow-up actions (such as customer notifications) stay synchronized.
+- **Safe retry handling**: Requiring a unique request tracking identifier ensures network retries cannot apply completion twice.
+- **Access boundary enforcement**: Confirms the caller is permitted to act on the order before exposing or modifying its details.
+
+## 3. How It Works
+
+1. An authorized caller targets a specific [[entity|order]] and supplies a unique request tracking identifier. No extra body fields are required.
+2. Ordering verifies that the order exists within the caller's permitted scope and is currently in **New** status.
+3. The order transitions to **Completed**, Ordering raises the corresponding lifecycle notification for downstream coordination, and the updated order details are returned.
+4. If the order cannot be found within the caller's permitted scope, the request is declined as not found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit command vs. automatic completion**: Separating order completion from basket-cleanup success keeps business status accurate if downstream cleanup fails or lags, at the cost of requiring an explicit completion trigger.
+- **One-way lifecycle from New**: Allowing completion only from **New** prevents accidental resurrection of cancelled orders, requiring separate adjustment processes if an order is mistakenly cancelled.
+- **Unified not-found response**: Hiding permission mismatches behind a not-found outcome reduces information disclosure across customer accounts.
+
+## 5. Technical Reference
+
+- **Command**: `CompleteOrder`
+- **Endpoint**: `PATCH /api/v1/orders/{orderId}/complete`
+- **Path parameter**: `{orderId}` (Order UUID)
+- **Required header**: `x-request-id` (idempotency header)
+- **Request body**: None
+- **Responses**:
+  - `200 OK` — returns the updated `OrderDetailDto`
+  - `404 Not Found` — returned when the Order cannot be found within the caller's permitted scope
 
 <NodeGraph />
 
-## Contract
-
-Provide the Order UUID in the `{orderId}` path parameter and a required
-`x-request-id` idempotency header. The operation has no request body.
-
-`200 OK` returns the updated `OrderDetailDto`. `404 Not Found` is returned
-when the Order cannot be found within the caller's permitted scope.
-
-## Schema
+### Request Schema
 
 <SchemaViewer
 	file="schema.json"

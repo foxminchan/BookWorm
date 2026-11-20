@@ -11,76 +11,88 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## When to use this runbook
+## 1. Context & Problem
 
-Use this procedure when
-[[event|BasketDeletedFailedIntegrationEvent]] is published on
-[[channel|bookworm.&#123;env&#125;.basket.delete-failed]], or when monitoring reports that a
-submitted [[entity|basket]] remains available after checkout.
+After a customer submits a purchase at checkout, the shopping basket must be deleted so the same selection cannot be accidentally submitted a second time. Occasionally, transient infrastructure outages, message delivery errors, or data mismatches prevent that cleanup from completing—leaving the submitted [[entity|basket]] still active and emitting a cleanup-failure notification.
 
-## Safety rules
+Operations and engineering teams need a clear, standardized procedure to diagnose why cleanup failed and recover safely without deleting a customer's cart prematurely when an order was not actually accepted.
+
+## 2. Business Value
+
+- **Protects customer trust:** Prevents accidental deletion of a customer's cart before confirming whether their purchase was accepted by Ordering.
+- **Eliminates duplicate orders:** Ensures lingering baskets from accepted orders are cleanly removed so customers cannot inadvertently re-submit the same purchase.
+- **Faster, safer incident resolution:** Gives on-call teams a repeatable triage path that avoids risky manual database edits and preserves a complete audit trail.
+- **Clear escalation paths:** Routes ambiguous order states to the right domain owners early, reducing downtime and cross-team handoff delays.
+
+## 3. How It Works
+
+When a basket cleanup failure is detected, responders follow a cautious, verify-first workflow:
+
+1. **Gather context without modifying state:** Collect the incident identifiers—such as the customer, basket, and order identifiers, along with environment and timing details—and verify whether the failure was caused by a temporary outage or a deeper data mismatch.
+2. **Confirm the downstream order outcome first:** Before touching the basket, check whether the downstream order workflow accepted, rejected, or is still processing the purchase. A cleanup failure does **not** mean the order or payment failed.
+3. **Execute the matching recovery path:**
+   - **Temporary service or delivery issue:** Restore the unhealthy dependency or message consumer, then replay the failed cleanup request through approved recovery tooling until a completion outcome confirms the basket is gone.
+   - **Order accepted, basket still present:** Verify that the order and basket match the same checkout attempt, trigger the approved repeatable cleanup action, and confirm the basket is no longer accessible.
+   - **Order rejected or status unclear:** Stop immediately without deleting the basket and escalate to the Ordering and Finance owners until the purchase outcome is confirmed.
+4. **Verify and document:** Confirm that a completion outcome is emitted only after actual deletion, that the customer sees a consistent checkout state, and that the incident record keeps the original failure details without exposing customer secrets or credentials.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Order verification before deletion vs. immediate cleanup:** Pausing to confirm the downstream order status adds an investigation step during incidents, but prevents irreversible cart loss if checkout actually failed.
+- **Approved replay/recovery actions vs. direct database edits:** Preferring repeatable, audited recovery flows over manual database mutations keeps downstream consumers synchronized and preserves auditability.
+- **Strict data-hygiene in incident logs:** Retaining correlation identifiers while excluding credentials and sensitive customer secrets enables thorough post-incident auditing without creating security exposure.
+- **Distinguishing transient vs. contract errors:** Separating temporary availability/delivery issues from schema or data mismatches prevents endless message replays on permanently broken payloads.
+
+## 5. Technical Reference
+
+### Trigger conditions
+
+Use this procedure when [[event|BasketDeletedFailedIntegrationEvent]] is published on [[channel|bookworm.&#123;env&#125;.basket.delete-failed]], or when monitoring reports that a submitted [[entity|basket]] remains available after checkout.
+
+### Safety rules
 
 - Treat the event as a cleanup failure, not as an Order or payment failure.
 - Confirm the customer and basket identifiers before taking action.
-- Do not delete a basket manually until the downstream order workflow has
-  confirmed whether the purchase was accepted.
-- Prefer an idempotent replay or the platform's normal recovery command over a
-  direct database mutation.
+- Do not delete a basket manually until the downstream order workflow has confirmed whether the purchase was accepted.
+- Prefer an idempotent replay or the platform's normal recovery command over a direct database mutation.
 
-## Investigation
+### Investigation steps
 
-1. Record the event ID, environment, timestamp, customer identifier, basket
-   identifier, and order identifier.
-2. Check the [[service|basket-api]] logs for the delete request and the
-   underlying database error.
-3. Check the
-   [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] consumer logs for
-   delivery or processing failures.
-4. Check the downstream order workflow to establish whether the Order was
-   created, is still pending, or was rejected.
-5. Determine whether the failure is transient (availability, timeout, or
-   broker delivery) or requires engineering intervention (data or contract
-   mismatch).
+1. Record the event ID, environment, timestamp, customer identifier, basket identifier, and order identifier.
+2. Check the [[service|basket-api]] logs for the delete request and the underlying database error.
+3. Check the [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] consumer logs for delivery or processing failures.
+4. Check the downstream order workflow to establish whether the Order was created, is still pending, or was rejected.
+5. Determine whether the failure is transient (availability, timeout, or broker delivery) or requires engineering intervention (data or contract mismatch).
 
-## Recovery
+### Recovery procedures
 
-### Transient service or delivery failure
+#### Transient service or delivery failure
 
 1. Restore the affected dependency or consumer.
 2. Replay the failed integration message using the approved broker tooling.
-3. Verify that the basket deletion succeeds and that a completion event is
-   emitted.
-4. Confirm that the completion event is processed exactly once by each
-   downstream consumer.
+3. Verify that the basket deletion succeeds and that a completion event is emitted.
+4. Confirm that the completion event is processed exactly once by each downstream consumer.
 
-### Order accepted but basket still exists
+#### Order accepted but basket still exists
 
 1. Confirm the Order ID and basket ID belong to the same checkout attempt.
 2. Run the approved idempotent basket-deletion recovery action.
 3. Verify the customer-scoped basket is no longer available.
-4. Attach the recovery result to the incident and retain the original failure
-   event for auditability.
+4. Attach the recovery result to the incident and retain the original failure event for auditability.
 
-### Order not accepted or status is ambiguous
+#### Order not accepted or status is ambiguous
 
-Stop before deleting the basket. Escalate to the [[domain|ordering]]/Finance owner with
-the identifiers and evidence collected above. The basket must not be removed
-until the purchase outcome is resolved.
+Stop before deleting the basket. Escalate to the [[domain|ordering]]/Finance owner with the identifiers and evidence collected above. The basket must not be removed until the purchase outcome is resolved.
 
-## Verification
+### Verification criteria
 
 - The original failure is correlated to a recovery action.
-- A successful deletion produces
-  [[event|BasketDeletedCompleteIntegrationEvent]].
+- A successful deletion produces [[event|BasketDeletedCompleteIntegrationEvent]].
 - No completion event is emitted while the basket remains present.
-- The customer sees a consistent checkout result and cannot accidentally
-  submit the same accepted purchase again.
+- The customer sees a consistent checkout result and cannot accidentally submit the same accepted purchase again.
 
-## Escalation
+### Escalation
 
-Escalate persistent failures to the [[domain|shopping]] owner
-([[team|contributor-team]]) with the event payload, correlation IDs,
-dependency health, and the last successful cleanup timestamp. Do not include
-credentials or full customer secrets in the incident record.
+Escalate persistent failures to the [[domain|shopping]] owner ([[team|contributor-team]]) with the event payload, correlation IDs, dependency health, and the last successful cleanup timestamp. Do not include credentials or full customer secrets in the incident record.
 
 <Footer />

@@ -30,73 +30,49 @@ badges:
     textColor: orange
 ---
 
-## Context
+## 1. Context & Problem
 
-Catalog listings need average ratings and review counts without depending on
-[[domain|reviews]] availability for every read. Direct Catalog access to
-[[entity|feedback]] would
-violate ownership, while copying entire feedback records would duplicate
-Reviews data unnecessarily. The integration must therefore communicate
-enough information to update the projection without exposing review content
-or requiring a synchronous cross-domain call during a Catalog read.
+Catalog product listings need to show each book's average rating and total review count, but querying [[domain|reviews]] on every storefront page load would tie Catalog's speed and uptime directly to the Reviews service. Conversely, giving Catalog direct access to [[entity|feedback]] records or copying full reviews into Catalog would break domain ownership and duplicate customer content unnecessarily.
 
-## Decision
+The two domains therefore need an integration mechanism that communicates just enough information to keep Catalog's rating summary up to date without sharing databases, blocking storefront reads, or exposing full review text.
 
-After [[service|rating-api]] commits a feedback creation or deletion, it
-publishes [[event|FeedbackCreatedIntegrationEvent]] or
-[[event|FeedbackDeletedIntegrationEvent]] through the corresponding Kafka
-channel. Catalog consumes these events to update its local rating projection;
-it never reads [[container|rating-database]] directly.
+## 2. Business Value
 
-The integration channels provide at-least-once delivery. Event handlers must
-be safe under retries and duplicate delivery. Events carry the book ID,
-feedback ID, and rating needed to apply the change; review comments and
-reviewer details are not part of this projection contract. Messages are
-partitioned by book and feedback identifiers to preserve ordering for related
-updates where possible, but consumers still need duplicate-safe handling.
+- **Uninterrupted product discovery:** Storefront browsing stays fast and available even if Reviews experiences heavy load or temporary maintenance.
+- **Minimal data exposure:** Only the book reference, feedback reference, and numeric rating are shared—keeping reviewer details and comments private to Reviews.
+- **Independent evolution:** Reviews and Catalog can each manage and scale their own data stores independently.
+- **Clear accountability:** Reviews remains responsible for individual feedback accuracy, while Catalog owns its product-facing rating projection.
 
-Publication follows the committed feedback change. Catalog applies its own
-projection update independently, so the two systems do not share a
-transaction and the projection may temporarily lag.
+## 3. How It Works
 
-## Consequences
+Whenever the Rating service commits a new feedback entry or removes an existing one, it publishes a lightweight integration notice to the messaging bus:
 
-- Catalog reads remain independent of the Rating service at request time.
-- Catalog's average rating and review count are eventually consistent with
-  individual feedback.
-- Events carry the [[entity|book]] ID, [[entity|feedback]] ID, and rating
-  needed to apply a delta
-  without replicating review text or reviewer details.
-- Producers and consumers must monitor delivery, preserve ordering for related
-  updates where possible, and implement idempotent processing.
-- A successful feedback write does not prove that Catalog has already applied
-  its rating delta. Projection freshness depends on message delivery and
-  Catalog consumer processing.
-- At-least-once delivery means a consumer may see the same create or delete
-  event more than once. Applying a rating delta must not blindly count a
-  duplicate as another distinct review.
-- Event schemas and identifiers are compatibility contracts; changing which
-  fields are emitted or how consumers apply deltas requires coordinated
-  producer and consumer updates.
-- Rating remains responsible for individual feedback correctness and Catalog
-  remains responsible for its own projection; neither service reads the
-  other's database to reconcile normal changes.
+1. **Commit first, then notify:** The feedback change is saved in Reviews before any notice is sent, ensuring Catalog never reacts to changes that failed to save.
+2. **Minimal payload:** Each notice carries only the [[entity|book]] reference, [[entity|feedback]] reference, and rating value needed to adjust Catalog's average rating and review count. Comments and reviewer details are omitted.
+3. **Ordered and retry-safe delivery:** Related notices for the same book and feedback are grouped to preserve order where possible. Because the messaging bus guarantees delivery at least once, Catalog is designed to handle duplicate or retried notices safely without counting the same review twice.
+4. **Independent projection update:** Catalog updates its own local rating summary on its own schedule without ever reading [[container|rating-database]] directly.
 
-## Alternatives considered
+## 4. Trade-offs & Lessons Learned
 
-### Query Rating synchronously for every Catalog read
+- **Eventual consistency:** A successful feedback submission does not mean Catalog's displayed average rating updates instantaneously; a brief lag can occur while messages are delivered and processed.
+- **Duplicate-safe consumers are mandatory:** At-least-once delivery means the same creation or deletion notice can arrive more than once. Applying rating adjustments must be idempotent so duplicates never inflate or distort review counts.
+- **Contract governance:** Event structures and identifiers form a shared contract between Reviews and Catalog. Changing emitted fields or delta rules requires coordinated updates across both teams.
+- **Operational monitoring:** Teams must monitor messaging delivery and consumer lag, since projection freshness depends on healthy asynchronous processing.
 
-This could return current individual review data, but would make Catalog read
-availability and latency depend on the Reviews service and still couple its
-query path to feedback ownership.
+### Alternatives Considered
 
-### Copy complete feedback records into Catalog
+- **Query Rating synchronously for every Catalog read:** Rejected because Catalog read latency and availability would depend on Reviews, coupling storefront discovery to feedback ownership.
+- **Copy complete feedback records into Catalog:** Rejected because it would unnecessarily duplicate Reviews-owned comments and reviewer details.
+- **Update the Catalog projection through direct database access:** Rejected because direct writes bypass Catalog's domain ownership and persistence boundaries.
 
-This would expose reviewer details and comments beyond what the Catalog rating
-summary needs and create a second copy of Reviews-owned content.
+## 5. Technical Reference
 
-### Update the Catalog projection through direct database access
-
-Direct writes would bypass Catalog's ownership and persistence boundary.
-Published integration events keep the change asynchronous and let Catalog
-apply its own projection rules.
+- **Producer:** [[service|rating-api]] publishes integration events only after the local transaction commits in [[container|rating-database]].
+- **Events & channels (Kafka):**
+  - [[event|FeedbackCreatedIntegrationEvent]] on `bookworm.{env}.rating.feedback-create`
+  - [[event|FeedbackDeletedIntegrationEvent]] on `bookworm.{env}.rating.feedback-delete`
+- **Event payload scope:** Carries the book ID, feedback ID, and rating (excludes comment text and reviewer details).
+- **Messaging semantics:**
+  - **Delivery guarantee:** At-least-once; Catalog consumers must be idempotent under retries and duplicate delivery.
+  - **Partitioning:** Partitioned by book and feedback identifiers to preserve ordering for related updates where possible.
+- **Related ADR:** `adr-006-reviews-rating-projection-on-book` (Catalog side).

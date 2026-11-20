@@ -105,30 +105,42 @@ steps:
       version: 1.0.0
 ---
 
-## Purpose and scope
+## 1. Context & Problem
 
-This flow captures the exact boundary between [[domain|reviews]] and
-[[domain|catalog]]. Reviews owns the submitted feedback and its lifecycle, while
-Catalog owns the derived rating summary shown in product discovery.
+When a customer submits a book review, that feedback needs to power product discovery ratings in [[domain|catalog]] without turning Catalog into a second owner of customer comments, reviewer identities, or moderation history.
 
-The key rule is that a feedback record is never treated as a Catalog-owned
-product record. When a book reference is invalid, the system compensates rather
-than silently keeping inconsistent data.
+This flow captures the exact boundary between [[domain|reviews]] and [[domain|catalog]]. It ensures a submitted review is persisted in Reviews, reflected as an aggregated rating summary in Catalog, and automatically rolled back if the referenced book does not exist.
 
-## Business context
+## 2. Business Value
 
-This flow describes the point where a customer review becomes visible as a
-product signal. It matters because BookWorm uses ratings as a discovery, trust,
-and merchandising signal, but it still must preserve the source-of-truth
-ownership of review data in Reviews.
+- **Trusted product discovery**: Surfaces timely average ratings and review counts to shoppers browsing the catalog.
+- **Clear domain boundaries**: Keeps Catalog focused on merchandising summaries while Reviews remains the single system of record for individual customer feedback.
+- **No silent data drift**: Automatically cleans up orphaned reviews when a book reference is invalid instead of leaving mismatched records behind.
+- **Auditable and recoverable design**: Makes every stage—submission, projection update, and failure compensation—explicit and traceable for support and operations.
 
-A customer can submit a single rating and an optional note, but the catalog
-experience only needs the aggregated summary. That separation prevents Catalog
-from becoming a second source of truth for individual review text, reviewer
-identity, or moderation decisions. The system therefore treats the rating
-projection as a derived cache of the review domain, not as a replacement for it.
+## 3. How It Works
 
-## Participants and responsibilities
+The end-to-end publication and compensation flow follows two paths:
+
+1. **Happy path — submit and project**:
+   - A customer submits a rating and optional comment for a specific book.
+   - Reviews validates the book reference, rating score, reviewer names, and comment, then saves the authoritative feedback record.
+   - Once saved, Reviews broadcasts a notification that new feedback was created.
+   - Catalog receives the notification, recalculates the book's derived average rating and review count, and makes the refreshed summary visible for product discovery—without storing the individual review text.
+2. **Failure path — missing book compensation**:
+   - If Catalog cannot apply the rating update because the referenced book does not exist, it does not retain a partial score or silently ignore the error.
+   - Instead, Catalog emits a failure notice.
+   - Reviews responds to that failure notice by deleting the invalid feedback record, keeping both domains aligned without leaving orphaned rating data.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Optimistic acceptance with compensation vs. synchronous pre-check**: Accepting valid feedback immediately in Reviews and compensating only when Catalog reports a missing book avoids tight runtime coupling and keeps review submission resilient, at the cost of needing an explicit cleanup path for rare invalid-book cases.
+- **Derived projection vs. shared ownership**: Treating Catalog's rating summary as a derived cache ensures the summary can always be rebuilt from Reviews' authoritative records, while avoiding duplicated review storage.
+- **Operational clarity**: Making the failure path explicit yields three clear rules—reviews are accepted only when the review store commits them, catalog updates are derived downstream, and failed projections trigger cleanup rather than silent drift.
+
+## 5. Technical Reference
+
+### Participants and responsibilities
 
 | Participant                                          | Responsibility                                                                                            |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -139,28 +151,6 @@ projection as a derived cache of the review domain, not as a replacement for it.
 | [[service\|catalog-api]]                             | Accept the integration event, update the derived rating summary, and enforce the Catalog-side contract.   |
 | [[message\|BookUpdatedRatingFailedIntegrationEvent]] | Mark the failure path when Catalog cannot safely apply the update because the referenced book is missing. |
 
-## Failure handling and recovery
-
-The failure path is intentionally explicit. If Catalog receives a review event for
-an unknown book, it does not keep a partial projection or silently ignore the
-problem. Instead, it produces the compensation event and the Rating domain
-removes the invalid record.
-
-This pattern creates a clear operational rule:
-
-- A review is accepted only when the review store can commit it.
-- A catalog update is optional and derived.
-- A failed projection triggers cleanup, not silent data drift.
-
-This keeps the two domains aligned and makes troubleshooting easier when a bad
-book reference or stale event is involved.
-
-## Why this flow matters
-
-The flow protects both product correctness and domain boundaries. Without this
-pattern, Catalog could end up with stale or inconsistent ratings, while Reviews
-would no longer be able to treat its feedback records as a stable system of
-record. The design makes the derived summary recoverable and the review data
-auditable.
+### Flow diagram
 
 <NodeGraph />

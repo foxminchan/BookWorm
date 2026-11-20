@@ -28,42 +28,37 @@ badges:
     textColor: green
 ---
 
-## Context
+## 1. Context & Problem
 
-Checkout hands purchase intent to downstream workflows and then needs to
-remove the submitted [[entity|basket]]. Deletion can fail independently of order
-processing. Treating both outcomes as success would allow a submitted basket
-to be reused or hide a recovery requirement.
+Once checkout passes a customer's purchase intent to downstream order processing, the submitted [[entity|basket]] must be cleared so it cannot be reused by mistake. However, deleting the basket can fail on its own after the order has already started. Treating a failed cleanup as a success would leave an already-submitted cart active, while confusing a cleanup failure with a failed order would cause serious business and customer-support errors.
 
-The cleanup command is issued by the checkout workflow after it has started
-order processing. Its result is a separate integration concern: an event
-describing basket cleanup must not be mistaken for an order, payment, or
-fulfilment lifecycle event. Finance may reissue the command after a timeout,
-and Notification also consumes that command for new-order email processing.
+## 2. Business Value
 
-## Decision
+- **Prevents accidental cart reuse**: Confirms when a checked-out basket has been safely cleared.
+- **Protects order integrity**: Ensures a temporary cart cleanup issue is never misinterpreted as a failed order or failed payment.
+- **Actionable failure recovery**: Gives downstream teams and operations clear visibility when cleanup fails so they can trigger targeted recovery or follow-up steps.
 
-After checkout, [[service|basket-api]] publishes
-[[event|BasketDeletedCompleteIntegrationEvent]] only when deletion succeeds.
-When deletion fails, it publishes
-[[event|BasketDeletedFailedIntegrationEvent]] instead. The events travel on
-separate completion and failure channels and are the explicit integration
-contract for downstream coordination. The completion event carries the order
-ID, basket ID, and total; the failure event also carries the customer's email,
-which may be null. Neither event means that payment or Order processing has
-completed, and a cleanup failure must not be interpreted as a failed Order.
+## 3. How It Works
 
-## Consequences
+After checkout begins processing an order, it sends a cleanup request to delete the customer's basket. If the deletion succeeds, the cart service announces a cleanup-completed outcome. If deletion fails, it announces a separate cleanup-failed outcome instead.
 
-- Downstream consumers can distinguish successful cleanup from recovery work.
-- Cleanup failures are observable and can trigger a deliberate recovery or
-  notification path without changing the Order's ownership or outcome.
-- Consumers must be idempotent: command retries and integration delivery
-  retries can repeat work or produce repeated outcomes.
-- Because Notification also consumes the checkout command, a Finance retry
-  can repeat its work as well as Basket cleanup; command consumers must not
-  assume a single delivery.
-- Monitoring must track the completion and failure channels independently,
-  including repeated outcomes and unresolved cleanup failures.
-- The events expose the cleanup result, not a guarantee of exactly-once
-  processing or a prescribed retry schedule.
+These two outcomes travel along separate communication channels so downstream systems and monitoring tools can tell successful cleanups apart from cases that need recovery. Neither announcement means that payment or order processing is finished, and a cleanup failure never cancels or alters ownership of the confirmed order. Because Finance may resend the cleanup request after a timeout—and Notification also listens to that request to send new-order emails—every receiving system must safely handle duplicate messages.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Duplicate-safe consumers required**: Because cleanup requests and outcome messages can be retried after timeouts, every downstream consumer (including both basket cleanup and order notification emails) must safely handle receiving the same message more than once.
+- **Independent monitoring needed**: Operations teams must monitor both the completion and failure channels separately to spot repeated outcomes and unresolved cleanup failures.
+- **Outcome reporting, not delivery guarantees**: Publishing explicit outcomes tells downstream systems what happened during cleanup, but it does not guarantee single-attempt execution or prescribe a specific retry schedule.
+
+## 5. Technical Reference
+
+- **Publisher**: [[service|basket-api]]
+- **Completion event & channel**:
+  - Event: [[event|BasketDeletedCompleteIntegrationEvent]] (published only when deletion succeeds)
+  - Channel: `bookworm.{env}.basket.delete-complete`
+  - Payload: order ID, basket ID, and total
+- **Failure event & channel**:
+  - Event: [[event|BasketDeletedFailedIntegrationEvent]] (published when deletion fails)
+  - Channel: `bookworm.{env}.basket.delete-failed`
+  - Payload: order ID, basket ID, total, and customer email (may be `null`)
+- **Cross-service interaction & idempotency**: Finance may reissue the checkout cleanup command after a timeout, and Notification also consumes that command for new-order email processing. All command and integration-event consumers must be idempotent and cannot assume single delivery.

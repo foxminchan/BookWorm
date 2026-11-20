@@ -2,21 +2,51 @@
 summary: Create a category through the Catalog API and handle validation failures.
 ---
 
+## 1. Context & Problem
+
+Categories organize the BookWorm catalog so customers can browse genres and topics and business users can group related books consistently. Before a new book can be assigned to a category, that category must be registered in the catalog. Integrators need a clear reference showing how to create a category, capture its identifier, and handle invalid submissions properly.
+
+## 2. Business Value
+
+- **Structured storefront navigation:** Centralized category creation keeps taxonomy clean and avoids ad-hoc or inconsistent category labels on books.
+- **Faster integration delivery:** Concrete request, response, and error-handling guidance helps teams wire up admin interfaces and catalog import pipelines quickly.
+- **Reduced operational noise:** Distinguishing invalid requests from transient failures prevents automated workflows from repeatedly sending malformed data.
+
+## 3. How It Works
+
+Creating a category follows two main paths:
+
+1. **Successful registration:** The caller submits a non-empty category name. The catalog validates and stores the category, then returns a unique identifier. The caller saves that identifier so it can be attached when creating or updating books.
+2. **Rejected invalid input:** If the category name is omitted or blank, the catalog rejects the submission and returns a structured field error. The calling application should surface the error to the user and avoid retrying the same unchanged input.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Pre-registration before book assignment:** Requiring categories to be created before linking them to books keeps catalog taxonomy controlled, though callers must store or look up category identifiers as a prerequisite step.
+- **Fail-fast validation:** Rejecting empty category names immediately protects catalog navigation quality and shifts correction back to the caller rather than allowing placeholder entries.
+
+## 5. Technical Reference
+
+- **Endpoint:** `POST https://api.example.com/api/v1/categories`
+- **Request headers:** `Content-Type: application/json`
+- **Request body:** JSON object requiring non-empty `name` (at least one character).
+- **Success response:** `200` returning the generated category UUID as a JSON string.
+- **Validation failure:** Omitting `name` returns `400` with an RFC 7807 validation response.
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Create a category
+### 1. Create a category
 
 The command requires a non-empty category name. A successful request returns `200` and the generated category UUID.
 
-### Payload details
+#### Payload details
 
 - `name` is required and must contain at least one character.
 - Store the returned UUID before assigning the category to a book.
 - The endpoint accepts a JSON request body.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -26,7 +56,7 @@ const categoryId = "5e4a1c9b-3f72-4b8d-a605-7c2e9f1d8430";
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Use the returned UUID when assigning this category to a book.
 
@@ -59,6 +89,6 @@ console.log(`Created category ${categoryId}`);
 
 ---
 
-## 2. Reject an invalid request
+### 2. Reject an invalid request
 
 Omitting `name` returns `400` with an RFC 7807 validation response. Display the field error and do not retry unchanged input.

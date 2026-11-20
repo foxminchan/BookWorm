@@ -18,82 +18,51 @@ appliesTo:
     id: order-orchestration
 ---
 
-## Context
+## 1. Context & Problem
 
-A message handler can change saga state and emit follow-up commands. Persisting
-those operations independently would introduce failure windows between saving
-coordination progress and recording outbound work. Finance also needs its own
-storage boundary rather than direct access to Ordering or Basket persistence.
-The database must support recovery of Finance's workflow without being mistaken
-for a shared domain database or a transaction coordinator for remote systems.
+When Finance handles a checkout update, it often needs to save workflow progress and schedule follow-up instructions for other capabilities at the same time. If those two saves happened separately, a crash in between could leave workflow state updated without sending the next instruction, or vice versa.
 
-This retrospective ADR records the current implementation, not a new database
-deployment or an assertion about historical approval.
+Finance also requires its own isolated storage rather than accessing Ordering or Basket data directly. That storage must support reliable local workflow recovery without being mistaken for a shared domain store or a way to coordinate atomic transactions across external systems.
 
-## Decision
+_Note: This retrospective decision record has a **superseded** status and documents a historical implementation approach rather than a new deployment._
 
-Use [[container|finance-database]] for EF Core saga storage and Wolverine durable
-message envelopes. When the Finance connection string is available, configure
-`PersistMessagesWithPostgresql` with the `wolverine` schema and enable
-`UseEntityFrameworkCoreTransactions`.
+## 2. Business Value
 
-Map saga records through `FinanceDbContext` and `OrderSagaConfiguration`. Use
-the PostgreSQL `xmin` row-version token for optimistic concurrency and
-`numeric(18,2)` for the saga total. The AppHost provides the separate
-`financedb` database resource.
+- **Eliminated local failure gaps:** Saving workflow progress and outgoing follow-up messages together prevents partial updates during interruptions.
+- **Strong domain isolation:** Keeping Finance data in its own store avoids coupling to Ordering or Basket internals.
+- **Lower maintenance overhead:** Relying on built-in framework transaction and message persistence avoids bespoke, error-prone synchronization code.
 
-Prefer the existing EF Core and Wolverine transaction integration over custom
-dual-write code or a shared domain database.
+## 3. How It Works
 
-This persistence boundary covers Finance's local saga and Wolverine-managed
-message envelopes. It does not create an atomic transaction with Kafka
-consumers or with Basket, Ordering, Notification, or SMTP. The configured
-transaction integration is conditional on the Finance connection string and
-must remain aligned with the actual EF Core and Wolverine persistence
-configuration.
+Finance keeps both its active checkout workflow records and its durable queue of incoming and outgoing messages in its own dedicated storage:
 
-## Consequences
+- **Combined local updates:** When a workflow step runs, changes to the workflow record and any resulting follow-up messages are saved together in a single local transaction.
+- **Conflict detection:** Concurrency checks detect when two updates attempt to modify the same workflow record simultaneously, preventing silent overwrites.
+- **Clear external boundary:** While local workflow updates and queued messages stay consistent inside Finance, downstream delivery to message brokers, Basket, Ordering, Notification, or email servers happens asynchronously outside that local boundary.
 
-- Saga changes and durable message processing can participate in the
-  configured local database transaction integration.
-- Operators must manage database migrations, message persistence, and
-  concurrency failures as part of Finance availability.
-- This is not a distributed transaction across Kafka, Basket, Ordering, or
-  SMTP, and it does not provide exactly-once downstream side effects.
-- Recipient details and message payloads require confidential-data handling.
-  No retention duration or residency policy is inferred from this choice.
-- Historical inbox/outbox migrations are not a substitute for inspecting the
-  current Wolverine-managed storage and EF Core model.
-- The Finance database is a runtime dependency for handling and recovering
-  messages; database unavailability can pause saga progress.
-- Optimistic concurrency detects conflicting saga writes but requires
-  handlers and operational recovery to account for concurrency failures.
-- Schema evolution must keep saga mappings and Wolverine envelope storage
-  compatible with deployed message-processing code.
+## 4. Trade-offs & Lessons Learned
 
-## Alternatives considered
+- **Local transaction safety vs. distributed guarantees:** Combining workflow state and message storage closes internal dual-write failure windows, but cannot guarantee all-or-nothing execution or exactly-once side effects across remote services or email delivery.
+- **Storage availability & concurrency recovery:** Making Finance's store a runtime dependency means storage outages pause workflow progress, and conflict detections require handlers and operators to handle retries and recovery.
+- **Schema compatibility & inspection:** Deployed code must remain compatible with stored workflow and message structures, and historical persistence scripts should not be assumed to reflect current runtime storage without checking the active model.
+- **Confidential data handling:** Storing recipient details and message payloads requires confidential-data protection, with no specific retention or residency policy implied by the storage choice itself.
+- **Alternatives rejected:**
+  - _Saving workflow state without durable messages:_ Leaves incoming and outbound message processing exposed to failure windows.
+  - _Custom dual-write logic:_ Requires complex, bespoke recovery for partial failures.
+  - _Sharing Ordering or Basket storage:_ Couples Finance to external schemas and blurs data ownership.
+  - _Treating local storage as a distributed transaction boundary:_ Cannot atomically commit remote messaging, external service side effects, or email delivery.
 
-### Persist saga state without durable message envelopes
+## 5. Technical Reference
 
-This would retain workflow state but leave outbound and incoming message
-processing exposed to additional failure windows. The chosen configuration
-uses the local PostgreSQL persistence integration for both kinds of Finance
-state.
+_Retrospective note: This ADR (`status: superseded`, dated `2026-11-03`) records the PostgreSQL/EF Core/Wolverine implementation approach, not a new database deployment or an assertion about historical approval._
 
-### Use custom dual-write logic
-
-Writing saga state and outbound message records with separate custom steps
-would require bespoke handling for partial failure and recovery. The existing
-EF Core and Wolverine integration is preferred to that custom coordination.
-
-### Share Ordering or Basket persistence
-
-Sharing a domain database would couple Finance to another system's schema and
-blur data ownership. A dedicated Finance database keeps its coordination
-state separate.
-
-### Treat PostgreSQL as a distributed transaction boundary
-
-PostgreSQL transactions cannot atomically commit remote Kafka consumption,
-other services' side effects, or SMTP delivery. Those interactions still
-require asynchronous processing and recovery behavior.
+- **Persistence & transaction configuration:**
+  - Uses [[container|finance-database]] (`financedb` resource provided by AppHost) for EF Core saga storage and Wolverine durable message envelopes.
+  - When the Finance connection string is available, configures `PersistMessagesWithPostgresql` with the `wolverine` schema and enables `UseEntityFrameworkCoreTransactions`.
+  - Transaction integration is conditional on the Finance connection string and must remain aligned with the actual EF Core and Wolverine persistence configuration.
+- **Model mapping & concurrency:**
+  - Maps saga records through `FinanceDbContext` and `OrderSagaConfiguration`.
+  - Uses the PostgreSQL `xmin` row-version token for optimistic concurrency and `numeric(18,2)` for the saga total.
+- **Boundaries:**
+  - Covers Finance's local saga and Wolverine-managed message envelopes only; does not create an atomic transaction with Kafka consumers, Basket, Ordering, Notification, or SMTP, and does not provide exactly-once downstream side effects.
+  - Historical inbox/outbox migrations are not a substitute for inspecting the current Wolverine-managed storage and EF Core model.

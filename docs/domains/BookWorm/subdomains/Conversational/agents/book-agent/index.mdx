@@ -48,46 +48,63 @@ model:
   version: "2025-11-18"
 ---
 
-The Book Agent handles book discovery, factual book questions, recommendations,
-gift ideas, and book feedback. It uses catalog results as the source of truth
-and does not invent book details, availability, ratings, or prices.
+## 1. Context & Problem
 
-For complex requests with independent catalog and recommendation work, it can
-invoke the internal [[agent|book-catalog-researcher]] and
-[[agent|book-recommendation-researcher]] subagents concurrently, then
-synthesize their findings. These subagents are registered as delegated tools
-of Book Agent rather than as top-level handoff workflow participants. Simple
-lookups use catalog tools directly. Review and rating requests can be handed off
-to [[agent|rating-agent]] once a single book catalog ID is resolved.
+Customers shopping for books frequently ask broad or multi-part questions—such as looking up specific titles, exploring gift ideas, comparing authors, or finding books that fit a mood. Relying on a general-purpose assistant risks invented book details, inaccurate prices, or slow sequential lookups when a request requires both factual verification and tailored recommendations.
 
-The agent also receives the `book-catalog` skill and planning, mode, todo, and
-file-memory context providers. Its model provider is inherited from the shared
-chat client; no provider or model is set in the agent definition.
+The Book Agent solves this by serving as BookWorm's primary conversational book specialist: it grounds every factual answer in official catalog records and coordinates specialized researchers in parallel when requests require deeper work.
 
-## Privacy middleware
+## 2. Business Value
 
-The agent's chat client registers `UsePIIMiddleware(sp)`. It calls
-[[service|PresidioAPI]] through [[command|AnalyzeText]] for non-empty text
-and [[command|AnonymizeText]] when PII is detected, replacing detected values
-with `<PII>`. The middleware filters input and output text, buffering streaming
-responses before filtering and emitting them. Failures propagate rather than
-bypassing privacy processing. These are middleware HTTP calls, not
-model-selected tools or brokered messages.
+- **Accurate, catalog-backed answers:** Customers receive trustworthy information because the agent never invents book details, availability, ratings, or prices.
+- **Faster handling of complex requests:** Independent fact-finding and recommendation tasks run concurrently, producing one coherent answer without unnecessary waiting.
+- **Smooth escalation to review insights:** Once a specific book is identified, requests about customer reviews or ratings can be handed off cleanly to the rating specialist.
+- **Consistent privacy protection:** All customer inputs and assistant responses are automatically screened and redacted for personal information before reaching the AI model or the customer.
 
-Both researchers are initialized through `InitSubAgent` using this same
-middleware-wrapped chat client, so their model calls also use Presidio.
+## 3. How It Works
 
-## Tools
+The Book Agent handles book discovery, factual book questions, recommendations, gift ideas, and book feedback discussions:
+
+1. **Privacy screening:** Every non-empty customer message and assistant response passes through automated privacy filtering that detects and masks personal information. If privacy filtering fails, the request stops rather than bypassing protection.
+2. **Direct lookup or parallel delegation:** For simple questions, the Book Agent queries the catalog directly. For complex requests that combine independent fact-finding and recommendation needs, it delegates concurrently to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]], then synthesizes their findings into a single customer response.
+3. **Catalog as source of truth:** All claims about titles, pricing, availability, and ratings come strictly from catalog results.
+4. **Handoff for review analysis:** When a customer asks for review or rating analysis and a single book catalog identifier has been resolved, the Book Agent transfers that request to [[agent|rating-agent]].
+
+## 4. Trade-offs & Lessons Learned
+
+- **Delegated subagents vs. top-level routing:** Keeping [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] as internal delegated tools rather than top-level workflow participants lets the Book Agent synthesize one cohesive answer, at the cost of extra coordination overhead on complex prompts.
+- **Buffered privacy filtering vs. unbuffered streaming:** Holding streaming output until privacy screening completes guarantees that personal details are masked before reaching the customer, trading immediate token-by-token display for stronger data protection.
+- **Fail-closed privacy behavior:** Propagating privacy-processing errors instead of falling back to unfiltered text prioritizes compliance and safety over availability during a privacy service disruption.
+- **Centralized model configuration:** Inheriting the shared chat model avoids per-agent provider drift and simplifies upgrades, while relying on agent-level runtime settings and context providers to tune behavior.
+
+## 5. Technical Reference
+
+### Agent Configuration & Context
+
+- **Inherited model provider:** No provider or model is configured directly in the agent definition; it inherits the shared chat client (`Microsoft` `model-router`, version `2025-11-18`).
+- **Context and skills:** Receives the `book-catalog` skill along with planning, mode, todo, and file-memory context providers.
+- **Delegated subagents:** Initializes [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] via `InitSubAgent` using the same middleware-wrapped chat client, registered as delegated tools rather than top-level handoff workflow participants.
+- **Handoffs:** Transfers review and rating requests to [[agent|rating-agent]] once a single book catalog ID is resolved.
+
+### Privacy Middleware
+
+- The chat client registers `UsePIIMiddleware(sp)`.
+- Calls [[service|PresidioAPI]] via [[command|AnalyzeText]] for non-empty text and [[command|AnonymizeText]] when PII is detected, replacing detected values with `<PII>`.
+- Filters both input and output text, buffering streaming responses before filtering and emitting them; failures propagate rather than bypassing privacy processing.
+- These are middleware HTTP calls, not model-selected tools or brokered messages.
+- Both delegated researchers inherit this middleware-wrapped chat client via `InitSubAgent`, so their model calls also use Presidio.
+
+### Runtime Settings
+
+- **Temperature:** `0.7`
+- **Maximum output:** `2,000` tokens
+- **Reasoning effort:** `high`
+- **Multiple tool calls:** `enabled`
+
+### Tools
 
 <AgentTools />
 
-## Architecture
+### Architecture
 
 <NodeGraph />
-
-## Runtime settings
-
-- Temperature: 0.7
-- Maximum output: 2,000 tokens
-- Reasoning effort: high
-- Multiple tool calls: enabled

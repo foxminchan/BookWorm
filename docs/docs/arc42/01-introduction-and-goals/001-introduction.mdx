@@ -9,35 +9,35 @@ badges:
     textColor: blue
 ---
 
-BookWorm is an online bookstore and commerce platform. It helps customers discover books, build a basket, submit a purchase, and use supporting capabilities such as order lifecycle management, reviews, and conversational assistance.
+## 1. Context & Problem
 
-This architecture describes the complete platform as a portfolio of business capabilities and their interactions. It complements the detailed domain, system, service, contract, flow, and operational documentation in the catalog; it does not replace those sources of implementation detail.
+BookWorm is an online bookstore and commerce platform designed to deliver a dependable end-to-end shopping experience—not merely a static list of products. Customers need to discover books, build a basket, submit a purchase, track their orders, share reviews, and receive conversational assistance.
 
-## Business purpose and drivers
+Supporting all of those activities inside a single, undifferentiated business model creates a common architectural problem: as capabilities grow, data ownership blurs, rules overlap, and a change in one area unexpectedly breaks another. BookWorm therefore organizes its platform as a portfolio of cooperating capabilities where each area retains clear ownership of its business meaning and data—for example, book facts remain authoritative in [[domain|catalog]], while [[domain|ordering]] takes ownership of an [[entity|order]] only after checkout acceptance.
 
-The primary business goal is to provide a dependable online bookstore experience, not merely to publish a list of products. The architecture must support:
+This introduction sets the high-level business purpose, capability boundaries, and external scope for the entire platform. It complements—rather than replaces—the detailed domain, service, contract, flow, and operational entries in the catalog.
 
-- finding books and accessing authoritative product information;
-- creating a purchase from the customer's persisted basket and current catalog information;
-- handing an accepted purchase to the capability that owns the order lifecycle;
-- supporting customer feedback and book-related assistance without transferring ownership of product or order data.
+## 2. Business Value
 
-These drivers require the platform to preserve the meaning and ownership of data as it moves between independently responsible capabilities. For example, [[domain|catalog]] remains authoritative for book facts, while [[domain|ordering]] owns an [[entity|order]] after checkout acceptance.
+- **Dependable customer journey**: Shoppers browse authoritative book information and pricing, check out using their saved basket, and receive clear accountability for accepted orders, reviews, and assistance.
+- **Clear organizational ownership**: Each capability area owns its business rules and records, reducing cross-team friction and limiting the blast radius when requirements evolve.
+- **Clean external boundaries**: Relying on specialized external providers for identity, payment settlement, shipping fulfillment, email delivery, and AI model hosting keeps commodity operations outside BookWorm's core business scope.
+- **Shared alignment across roles**: Gives business stakeholders, product managers, analysts, architects, and engineers a common baseline before diving into detailed service or contract specifications.
 
-## System scope
+## 3. How It Works
 
-The system under consideration includes these [[domain|BookWorm]] capabilities:
+The [[domain|BookWorm]] platform divides responsibilities across six focused business and enabling capabilities:
 
-- **[[domain|catalog]]** owns book information, pricing, and availability.
-- **[[domain|shopping]]** owns the [[entity|basket]] and checkout experience.
-- **[[domain|ordering]]** owns an [[entity|order]]'s lifecycle after acceptance.
-- **[[domain|reviews]]** owns customer [[entity|feedback]] associated with books.
-- **[[domain|conversational]]** provides book discovery and store-assistance experiences.
-- **[[domain|platform]]** supplies shared capabilities such as scheduled processing and email notification delivery.
+- **[[domain|catalog]]**: Serves as the authoritative source for book information, pricing, and availability.
+- **[[domain|shopping]]**: Manages the customer's persisted [[entity|basket]] and guides the checkout experience using current Catalog information.
+- **[[domain|ordering]]**: Assumes ownership of an [[entity|order]]'s lifecycle and fulfillment tracking once a purchase is accepted at checkout.
+- **[[domain|reviews]]**: Captures and displays customer [[entity|feedback]] linked to books without taking over ownership of Catalog product data.
+- **[[domain|conversational]]**: Provides book discovery and store-assistance experiences grounded in Catalog information, without assuming ownership of product or order records.
+- **[[domain|platform]]**: Supplies shared supporting capabilities—such as scheduled background processing and email notification delivery—without altering or owning business state belonging to other capabilities.
 
-The platform integrates with systems and providers for identity ([[system|identity-provider]]), payment settlement, shipping execution, email delivery ([[system|sendgrid]]), and AI model hosting. Those neighbors and their interfaces matter to BookWorm, but their internal business logic and operations are outside this system's scope. Their relationships to BookWorm are described in [[doc|arc42/03-context-and-scope]] and in the relevant system documentation.
+Around this core, BookWorm integrates with external systems and providers for customer authentication, payment settlement, physical order fulfillment, email delivery, and AI response generation. Their internal business logic and operations remain outside BookWorm's system boundary.
 
-The following use case diagram summarizes BookWorm's principal customer-facing goals and external system interactions. It is a high-level view, not a workflow or interface specification:
+The following high-level use case diagram summarizes BookWorm's principal customer-facing goals and external system interactions:
 
 ```plantuml
 @startuml
@@ -80,10 +80,29 @@ AIProvider -- GenerateResponse
 @enduml
 ```
 
-## Intended audience
+## 4. Trade-offs & Lessons Learned
 
-This chapter is for customers and business stakeholders seeking to understand the platform's purpose, engineers who need to preserve context ownership and contract boundaries, and platform, operations, and architecture teams who make or support system-wide decisions. [[doc|arc42/01-introduction-and-goals/004-stakeholders]] summarizes their specific concerns.
+- **Bounded contexts over a shared business model**: Keeping capabilities separate prevents hidden data coupling and protects business invariants, at the cost of requiring explicit agreements and disciplined handoffs whenever two capabilities interact.
+- **Enabling platform vs. business owner**: Shared utilities such as scheduling and email delivery must remain strictly supporting infrastructure. Allowing shared utilities to take ownership of business rules or state creates bottlenecks and obscures accountability.
+- **External partner boundaries**: Delegating identity, payments, fulfillment, email, and AI hosting speeds delivery of core commerce features, while requiring BookWorm to treat those neighbors strictly through their external boundaries rather than relying on their internal operations.
+- **Audience and scope**: Business stakeholders use this view to align on scope, engineers use it to preserve ownership and contract boundaries, and operations and architecture teams use it to guide cross-cutting decisions (see [[doc|arc42/01-introduction-and-goals/004-stakeholders]]).
 
-## Architectural boundary
+## 5. Technical Reference
 
-BookWorm is documented as cooperating bounded contexts, not as one shared business model. Cross-context interactions must respect the owning context's contracts; shared platform infrastructure can enable business capabilities but does not take ownership of their business data. This boundary is central to the requirements in [[doc|arc42/01-introduction-and-goals/002-requirements-overview]] and the constraints in [[doc|arc42/02-architecture-constraints]].
+- **Internal BookWorm domains and core entities**:
+  - Platform root: [[domain|BookWorm]]
+  - Product truth: [[domain|catalog]]
+  - Basket & checkout: [[domain|shopping]] (owns [[entity|basket]])
+  - Order lifecycle: [[domain|ordering]] (owns [[entity|order]])
+  - Customer reviews: [[domain|reviews]] (owns [[entity|feedback]])
+  - Assistance: [[domain|conversational]]
+  - Shared platform services: [[domain|platform]]
+- **External systems referenced in the catalog**:
+  - Identity provider: [[system|identity-provider]]
+  - Email delivery provider: [[system|sendgrid]]
+  - Additional neighbors (payment settlement, fulfillment execution, and AI model hosting) are mapped at the system boundary in [[doc|arc42/03-context-and-scope]].
+- **Related arc42 documentation**:
+  - Essential requirements: [[doc|arc42/01-introduction-and-goals/002-requirements-overview]]
+  - Stakeholder roles and concerns: [[doc|arc42/01-introduction-and-goals/004-stakeholders]]
+  - Architecture constraints: [[doc|arc42/02-architecture-constraints]]
+  - System context and neighbors: [[doc|arc42/03-context-and-scope]]

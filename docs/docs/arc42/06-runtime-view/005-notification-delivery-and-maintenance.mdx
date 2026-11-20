@@ -9,24 +9,55 @@ badges:
     textColor: purple
 ---
 
-## 6.5 Notification delivery and maintenance
+## 1. Context & Problem
 
-Business services publish notification intent; [[system|notification-system]] ([[service|notification-api]]) owns email rendering, the durable outbox, SMTP submission (via [[system|sendgrid]]), and delivery-attempt state. [[service|sheduler-dashboard]] triggers bounded maintenance work but does not own email or order state.
+During checkout and order coordination, business workflows need to send customer emails without being slowed down by external email provider latency or temporary outages. At the same time, failed sends need automatic follow-up, and completed delivery records must be tidied up so notification storage does not grow without bound.
+
+In BookWorm, business services simply express the intent to notify a customer, while [[system|notification-system]] takes full ownership of formatting emails, tracking unsent and sent records, submitting messages to the email provider, and running periodic maintenance.
+
+## 2. Business Value
+
+- **Decoupled business workflows**: Order coordination does not stall or fail because an external email provider is temporarily slow.
+- **Auditability and retry tracking**: Every valid notification request is recorded before delivery is attempted, giving operations visibility into pending versus submitted emails.
+- **Automated housekeeping**: Hourly maintenance cycles automatically retry stalled emails and prune processed records in controlled batches without manual intervention.
+- **Clear separation of responsibilities**: The scheduler triggers routine maintenance on time without needing to understand email templates, recipient details, or order state.
+
+## 3. How It Works
+
+1. **Receiving notification intent**: Order coordination requests an order-related email. If the recipient email address is missing or blank, the notification service safely skips the request.
+2. **Rendering and recording before sending**: For valid requests, the notification service builds the email content and saves an unsent record in its own store before handing the message off to the external email provider.
+3. **Updating delivery status**: Once the email provider accepts the message, the record is marked as sent. If sending fails or updating the status fails, the record can remain marked unsent or in an uncertain state.
+4. **Hourly retry and cleanup cycles**: Once every hour, the scheduler asks the notification service to process maintenance work in capped batches—retrying up to 100 unsent records and cleaning up up to 100 sent records. These maintenance triggers are fire-and-forget requests that do not return a completion message to the scheduler.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Provider acceptance ≠ inbox delivery**: When the external email provider accepts a submission, it only means the handoff succeeded—not that the email landed in the customer's inbox.
+- **Potential for duplicate emails**: Retrying unsent records can create new tracking records per attempt, and repeated upstream commands or uncertain handoff failures can result in a customer receiving duplicate emails.
+- **Cleanup does not fix a delivery backlog**: Hourly cleanup targets only already-sent records and removes them without a time-based retention cutoff. If unsent emails are piling up, cleanup will not clear them.
+- **Scheduler status ≠ email health**: A green hourly scheduler run only confirms the maintenance request was published. Operations teams must monitor the notification service's pending backlog and email provider health directly.
+
+## 5. Technical Reference
 
 <MermaidFileLoader file="mermaids/notification-delivery-and-maintenance.mmd" />
 
-### Email and maintenance lifecycle
+### Lifecycle & Maintenance Components
 
-1. [[service|order-orchestration]] publishes an order-related email command. If the recipient address is blank, [[service|notification-api]] skips the email work.
-2. Otherwise, Notification renders the email and persists an unsent record in its database before submitting it over SMTP.
-3. Successful SMTP submission marks the outbox record sent. A submission or state-save failure can leave an unsent record or an uncertain outcome.
-4. Every hour, [[service|sheduler-dashboard]] publishes resend and cleanup requests. Notification selects up to 100 unsent records for resend or up to 100 sent records for cleanup. These requests do not return a downstream result event.
+| Step | Component / System                                               | Technical Behavior                                                                                                                                                                                      |
+| :--- | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | [[service\|order-orchestration]] → [[service\|notification-api]] | Publishes an order-related email command. If the recipient address is blank, [[service\|notification-api]] skips the email work.                                                                        |
+| 2    | [[service\|notification-api]]                                    | Renders the email and persists an unsent record in its outbox database before submitting over SMTP via [[system\|sendgrid]].                                                                            |
+| 3    | [[service\|notification-api]] / [[system\|sendgrid]]             | Successful SMTP submission marks the outbox record sent; submission or state-save failure can leave an unsent record or uncertain outcome.                                                              |
+| 4    | [[service\|sheduler-dashboard]] → [[service\|notification-api]]  | Every hour, publishes resend and cleanup requests. Notification selects up to **100** unsent records for resend or up to **100** sent records for cleanup, without returning a downstream result event. |
 
-### Operational semantics
+### Operational Semantics
 
-- SMTP acceptance is not proof of delivery to the recipient.
-- Resend can create a new outbox record per attempt; repeated commands or ambiguous SMTP outcomes can result in duplicate submissions.
-- Cleanup selects sent records only and has no retention cutoff. It is not a way to address an unsent delivery backlog.
-- A successful scheduler invocation means the request was published, not that Notification completed the work. Check Notification's outbox and SMTP health.
+- **SMTP vs. delivery**: SMTP acceptance is not proof of final delivery to the recipient's mailbox.
+- **Duplicate risk**: Resend can create a new outbox record per attempt; repeated commands or ambiguous SMTP outcomes can cause duplicate submissions.
+- **Retention & backlog**: Cleanup processes sent records only and has **no retention cutoff**; it does not resolve an unsent delivery backlog.
+- **Observability**: Monitor [[system|notification-system]] outbox depth and SMTP health directly rather than inferring completion from [[service|sheduler-dashboard]] execution status.
 
-See the [[flow|notification-delivery]], [[service|sheduler-dashboard]], and [[system|notification-system]] for the scheduling and delivery contracts.
+### Related Documentation
+
+- [[flow|notification-delivery]]
+- [[service|sheduler-dashboard]]
+- [[system|notification-system]]

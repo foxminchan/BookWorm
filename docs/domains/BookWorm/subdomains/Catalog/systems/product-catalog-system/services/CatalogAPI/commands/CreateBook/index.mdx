@@ -18,22 +18,39 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Creates a [[entity|book]] using a `multipart/form-data` request, including its catalog relationships and optional cover image.
+BookWorm's storefront relies on rich, accurate [[entity|book]] listings that combine core product details, pricing, visual cover art, and structured links to an existing [[entity|category]], [[entity|publisher]], and one or more [[entity|author]] records. Business users and catalog management tools need a single authoritative operation to publish a new book listing while enforcing required metadata and pricing rules.
+
+## 2. Business Value
+
+- **Consistent storefront quality:** Requiring a title, description, price, and valid catalog relationships ensures every new listing is discoverable, properly categorized, and ready for customers.
+- **Streamlined publishing:** Allowing an optional cover image to be supplied alongside the book details avoids separate manual upload steps for catalog operators.
+- **Built-in pricing safeguards:** Validating prices before saving prevents negative, malformed, or inconsistent pricing from reaching the storefront.
+
+## 3. How It Works
+
+1. A business user or integration submits the book's title, description, pricing, links to its [[entity|category]], [[entity|publisher]], and at least one [[entity|author]], along with an optional cover image.
+2. The catalog service checks that all required details are present, pricing values are valid, and relationship identifiers are properly formatted.
+3. If everything passes validation, the service saves the [[entity|book]] listing, stores any uploaded cover image, and returns the new book's unique identifier.
+4. If any required field is missing, a price is invalid, or an identifier or submission format is malformed, the service rejects the request and returns validation details so the caller can correct the submission.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Atomic metadata and cover upload:** Combining book fields and optional cover artwork into one submission keeps book creation cohesive, though it requires multipart form uploads instead of simple text requests.
+- **Strict relationship validation:** Enforcing valid links to [[entity|category]], [[entity|publisher]], and [[entity|author]] records up front prevents orphaned listings, at the expense of requiring those reference records to be created beforehand.
+
+## 5. Technical Reference
+
+- **Operation:** `POST /api/v1/books`
+- **Request format:** `multipart/form-data` containing required title, description, price, [[entity|category]], [[entity|publisher]], and at least one [[entity|author]] as multipart fields, plus an optional `image` binary cover upload.
+- **Success (`201`):** Response body is a JSON string containing the new book UUID.
+- **Validation failure (`400`):** Indicates validation failure, including malformed UUIDs, missing fields, invalid prices, or an invalid multipart payload.
+
+### Message & Service Graph
 
 <NodeGraph />
 
-## Contract
-
-Send the required title, description, price, [[entity|category]], [[entity|publisher]], and at least one [[entity|author]] as multipart fields. Use `image` for an optional binary cover upload.
-
-The response body is a JSON string containing the new book UUID.
-
-## Operational notes
-
-`400` indicates validation failure, including malformed UUIDs, missing fields, invalid prices, or an invalid multipart payload.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

@@ -20,60 +20,35 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-The conversational workflow needs session state to coordinate an interaction.
-Persisting conversation history would introduce data-retention, privacy,
-availability, and lifecycle requirements beyond the current workflow. The
-service needs to distinguish temporary workflow state from both durable
-business records and any future user-scoped memory feature.
+The conversational workflow needs short-term session state to coordinate an ongoing exchange with a customer. However, permanently storing full conversation histories would introduce significant data-retention, privacy, availability, and lifecycle management obligations beyond what the current chat workflow requires.
 
-## Decision
+The service also needs a clear boundary between temporary interaction state, authoritative business records (such as catalog, basket, or order data), and any future user-scoped personalization memory feature.
 
-The composed Chat workflow uses an in-memory session store for its interaction
-state. Conversation history is transient workflow state; it is not an
-authoritative or durable business record and is not promised to be recoverable
-across service restarts or instances.
+## 2. Business Value
 
-This decision applies to workflow sessions. It does not prevent a separately
-designed memory capability from storing approved user-scoped facts under its
-own identity, privacy, retention, inspection, and deletion rules. The
-user-scoped episodic and semantic memory described in
-[[adr|adr-006-user-scoped-episodic-and-semantic-memory]] remains a proposal and
-does not change the current session-store behavior.
+- **Reduced privacy and compliance overhead:** Avoids retaining full conversational transcripts and the associated retention, access, and deletion obligations when durable history is not required.
+- **Simpler operations and lower cost:** Eliminates the need to provision, replicate, back up, and purge a persistent transcript database for routine workflow sessions.
+- **Clear data boundaries:** Prevents temporary chat scratchpad state from being mistaken for durable business records or long-term customer profiles.
 
-## Consequences
+## 3. How It Works
 
-- The service does not provide durable conversation-history recovery or
-  cross-instance session continuity.
-- Session continuity depends on the lifetime and behavior of the in-memory
-  store and the running service instance; deployment and scaling behavior
-  must not assume a shared durable session database.
-- The service avoids introducing a persistent transcript store and its
-  associated retention and deletion obligations for the current workflow.
-- A requirement for durable history, cross-instance continuity, or retention
-  controls requires a separate storage, identity, privacy, and lifecycle
-  decision; it must not be implemented by silently changing this session
-  store.
+- During an active conversation, the chat workflow holds interaction state in temporary, in-memory storage on the running service instance.
+- Conversation history is treated purely as transient workflow state—it is not an authoritative business record and is not expected to survive service restarts or move seamlessly between service instances.
+- This rule governs workflow sessions only. It does not prevent a separately designed personalization feature from storing approved, user-scoped preferences or summaries under dedicated identity, privacy, retention, inspection, and deletion controls.
 
-## Alternatives considered
+## 4. Trade-offs & Lessons Learned
 
-### Persist full conversation history
+- **No cross-restart or cross-instance recovery:** Deployment, scaling, and failover behavior must not assume a shared, durable session database exists.
+- **Explicit design required for durable features:** Any future business requirement for persistent chat history, cross-instance continuity, or formal retention controls must go through a dedicated storage, identity, privacy, and lifecycle decision rather than silently modifying the session store.
+- **Alternatives considered:**
+  - _Persist full conversation history:_ Would enable recovery and continuity, but makes the service responsible for retaining, protecting, and deleting full transcripts outside the current workflow's needs.
+  - _Use a shared distributed session store:_ Would let session state survive instance changes, but introduces a shared persistence dependency and its operational lifecycle without a current requirement for that guarantee.
+  - _Treat session state as long-term user memory:_ Workflow session state is scoped to a single interaction and lacks verified customer ownership, explicit memory controls, and retention rules; cross-session personalization requires a separate design.
 
-This would support recovery and continuity, but would make the service
-responsible for retaining and deleting conversational content and handling
-its privacy and access requirements. Durable history is outside the current
-workflow's needs.
+## 5. Technical Reference
 
-### Use a shared distributed session store
-
-This could allow session state to survive instance changes, but would add a
-shared persistence dependency and its operational and lifecycle requirements.
-The current workflow does not require that guarantee.
-
-### Treat session state as long-term user memory
-
-Session state is scoped to the interaction and does not define verified
-customer ownership, explicit memory controls, or retention semantics.
-Cross-session personalization needs a separate design rather than a change in
-meaning for the session store.
+- **Target scope:** [[service|chat-api]] within [[system|chat-system]].
+- **Session store behavior:** The composed Chat workflow uses an in-memory session store scoped to the lifetime of the running service instance; no durable transcript store or shared distributed session database is used.
+- **Related proposal:** User-scoped episodic and semantic memory described in [[adr|adr-006-user-scoped-episodic-and-semantic-memory]] remains `proposed` and does not change the current in-memory session-store behavior.

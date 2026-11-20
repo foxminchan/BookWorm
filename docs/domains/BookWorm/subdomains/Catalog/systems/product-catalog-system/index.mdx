@@ -48,100 +48,77 @@ badges:
     icon: LockClosedIcon
 ---
 
-## Context Diagram
+## 1. Context & Problem
+
+Customers need a reliable way to browse, search, and evaluate books across the storefront, while business users need a single place to maintain accurate titles, pricing, descriptions, cover art, and reference information such as authors, categories, and publishers.
+
+Without a clearly bounded catalog system, product descriptions, cover images, search indexes, and customer reviews can easily drift out of sync or become tightly coupled to checkout and order processing. BookWorm establishes the Product Catalog System as the single internal owner of catalog management, product discovery, and catalog search indexing, while keeping customer feedback, shopping baskets, and order lifecycles in their respective domains.
+
+## 2. Business Value
+
+- **Single source of truth for product data:** Authoritative book details and relationships with each [[entity|author]], [[entity|category]], and [[entity|publisher]] are managed in one place, preventing conflicting product information across the storefront.
+- **Fast, relevant product discovery:** Combining keyword matching with semantic search helps customers find books even when their search terms do not match exact titles, while caching keeps frequently viewed pages and dashboards responsive.
+- **Resilient catalog updates:** Decoupling catalog writes from background search indexing ensures staff can create or update books immediately without waiting for search index processing or risking failed edits if the search store is temporarily busy.
+- **Clear domain boundaries and safety:** Isolating catalog updates from [[domain|shopping]], [[domain|ordering]], and [[domain|reviews]] prevents catalog edits from accidentally rewriting accepted orders or duplicating ownership of individual customer feedback.
+
+## 3. How It Works
+
+### Authoritative Data and Supporting Stores
+
+The Product Catalog System separates its source-of-record data from fast-read optimizations, media storage, and search indexes:
+
+- [[container|catalog-database]] holds the authoritative records for every [[entity|book]], [[entity|author]], [[entity|category]], and [[entity|publisher]], as well as a durable work queue tracking which books need their search entries refreshed.
+- [[container|catalog-blob]] holds book cover image files, while the database retains each image's reference link.
+- [[container|catalog-cache]] speeds up selected book reads and dashboard summaries; it is disposable and never treated as the source of truth.
+- [[container|catalog-vector]] stores a derived search index built for combined meaning-based and keyword product discovery.
+
+### Core Flows
+
+1. **Catalog maintenance:** When a business user creates or updates a [[entity|book]] through [[service|catalog-api]], the system validates the changes and saves the book and its catalog relationships in [[container|catalog-database]]. If a cover image is included, the image file is saved in [[container|catalog-blob]] and linked to the book.
+2. **Change tracking and background indexing:** Whenever a book or its related author, category, or publisher details change, the affected books are queued for indexing. [[service|catalog-ingestion]] reads pending items in batches, prepares updated searchable content, and refreshes or removes matching entries in [[container|catalog-vector]].
+3. **Product search and browsing:** When a customer searches by text, [[service|catalog-api]] finds candidate books using both semantic meaning and keywords from [[container|catalog-vector]], then retrieves the latest authoritative book details from [[container|catalog-database]] and applies requested filters and paging.
+4. **Rating summaries from reviews:** Individual customer [[entity|feedback]] remains owned by [[domain|reviews]]. When reviews change, the catalog system updates only a summary projection (average rating and review count) on the corresponding book.
+
+### Ownership Safeguards
+
+- Other domains read catalog data through published service contracts rather than altering catalog storage directly.
+- [[domain|shopping]] owns [[entity|basket]] and checkout decisions, and [[domain|ordering]] owns the order lifecycle; updating a book in Catalog never silently alters an already accepted order.
+- Purchase-time decisions and displayed product details always rely on current authoritative data rather than the search index or temporary cache.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency in search:** Because search indexing runs asynchronously in the background, newly added or edited books may take a short time to appear with updated text in search results. In exchange, catalog edits remain fast and reliable even under heavy indexing load.
+- **Canonical data over search projections:** Search results only identify candidate books; final details and filtering come from the authoritative database so stale search entries cannot leak outdated prices or deleted listings to customers.
+- **Rebuildable optimizations:** Treating [[container|catalog-cache]] and [[container|catalog-vector]] as disposable, rebuildable layers simplifies disaster recovery, though operations teams must monitor the pending indexing queue to catch indexing delays early.
+- **Strict domain boundaries for ratings and orders:** Storing only a derived rating summary on books avoids cross-domain coupling with [[domain|reviews]], while keeping [[entity|basket]] and order snapshots independent protects customers from mid-order catalog changes.
+
+## 5. Technical Reference
+
+### Services
+
+- **[[service|catalog-api]]:** Request-path service managing books, authors, categories, and publishers over versioned HTTP endpoints; provides gRPC lookups for other services; reads and writes [[container|catalog-database]]; uses [[container|catalog-cache]] for selected queries; uploads and resolves book images through [[container|catalog-blob]]; uses hybrid search to find candidate books from query text; handles Reviews feedback integration messages to update book average rating and review count projections.
+- **[[service|catalog-ingestion]]:** Azure Functions worker for asynchronous search-index maintenance. Accepts authorized scheduler requests, reads pending book updates from [[container|catalog-database]], builds searchable text and embeddings, and upserts or removes matching records in Qdrant ([[container|catalog-vector]]).
+
+### Data & Security Notes
+
+- **Database queue and triggers:** Database triggers enqueue affected books for indexing when books or their related authors, categories, publishers, or author links change; deleted or soft-deleted books are removed from [[container|catalog-vector]].
+- **Image references:** [[container|catalog-blob]] stores book image bytes, while [[container|catalog-database]] stores each image's URN.
+- **Security and access control:** `identity-provider` introspects access tokens for protected API requests. Catalog API applies authentication and rate-limiting middleware, and its dashboard gRPC operation is admin-protected. Catalog Ingestion accepts authorized scheduler requests.
+- **Operational monitoring:** Monitor the pending vector-update queue and ingestion execution to detect search indexing lag.
+
+### Context Diagram
 
 Catalog's human actors and the system boundaries it interacts with.
 
 <ContextDiagram />
 
-## Purpose and boundaries
-
-The Product Catalog System manages BookWorm's [[entity|book]] listings and
-supplies the product information used for discovery. It owns book metadata
-and its [[entity|author]], [[entity|category]], and [[entity|publisher]]
-relationships, while [[domain|reviews]] remains the owner of individual
-[[entity|feedback]] and contributes only the rating summary maintained on a
-book.
-
-The system exposes catalog operations through [[service|catalog-api]] and
-separates authoritative data from read optimizations and derived indexes:
-
-- [[container|catalog-database]] is the system of record for catalog entities
-  and the durable queue of work to refresh vector search.
-- [[container|catalog-cache]] speeds selected book and dashboard reads; it is
-  disposable and non-authoritative.
-- [[container|catalog-blob]] stores book image bytes, while the database keeps
-  each image's URN.
-- [[container|catalog-vector]] is a derived index used for semantic and keyword
-  product search.
-
-## Services
-
-### Catalog API
-
-[[service|catalog-api]] is the request-path service. It manages books,
-authors, categories, and publishers over versioned HTTP endpoints; provides
-gRPC lookups for other services; and reads and writes the database. It uses
-the cache for selected queries, uploads and resolves book images through Blob
-Storage, and uses hybrid search to find candidate books from query text.
-
-The API also handles Reviews feedback integration messages and updates the
-book's average rating and review count. This is a projection on the Catalog
-book, not ownership of the individual feedback records.
-
-### Catalog ingestion
-
-[[service|catalog-ingestion]] is an Azure Functions worker for asynchronous
-search-index maintenance. It reads pending book updates from the database,
-builds searchable text and embeddings, and upserts or removes matching records
-in Qdrant. The database queue decouples catalog writes from embedding
-generation and vector-store availability.
-
-## Data and search lifecycle
-
-1. Catalog API validates a book change and persists the book and its
-   relationships in Catalog Database. An uploaded image is stored in Blob
-   Storage and its URN is associated with the book.
-2. Database triggers enqueue affected books for indexing when books or their
-   related authors, categories, publishers, or author links change.
-3. Catalog Ingestion processes pending items in batches, then writes the latest
-   searchable representation to Catalog Vector. Deleted or soft-deleted books
-   are removed from the index.
-4. A text search generates a query embedding and combines vector and keyword
-   matching to find candidate book IDs. Catalog API fetches the corresponding
-   current book records from the database and applies the requested filters
-   and paging.
-
-The vector index is eventually consistent with the database while queued work
-is pending. Search results identify candidates; canonical book fields and
-purchase-time decisions must come from the appropriate current system data,
-not from the vector record or cache.
-
-## Ownership and safeguards
-
-- Catalog is authoritative for current book descriptions and product metadata;
-  other domains should use published service contracts rather than directly
-  changing Catalog persistence.
-- [[domain|shopping]] owns [[entity|basket]] and checkout decisions, and
-  [[domain|ordering]] owns order
-  lifecycle. A Catalog update must not silently rewrite an already accepted
-  order.
-- Reviews owns individual feedback. Catalog retains only a derived average
-  rating and count on each book.
-- Catalog API applies authentication and rate-limiting middleware. Its
-  dashboard gRPC operation is admin-protected; Catalog Ingestion accepts
-  authorized scheduler requests.
-- Treat Catalog Cache and Catalog Vector as rebuildable optimizations. Monitor
-  the pending vector-update queue and ingestion execution to detect search
-  indexing lag.
-
-## Resource Diagram
+### Resource Diagram
 
 The services, data stores and messages that make up this system.
 
 <ComponentDiagram />
 
-## Architecture decisions
+### Architecture Decisions
 
 The key decisions that shaped this system. Search, filter by status, or sort by clicking a column.
 

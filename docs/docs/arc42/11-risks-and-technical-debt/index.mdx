@@ -9,11 +9,52 @@ badges:
     textColor: blue
 ---
 
-This chapter records architecture-level exposures that need stakeholder attention. A **risk** is an uncertain event or condition that could affect BookWorm; **technical debt** is a known limitation, missing decision, or verification gap that already constrains confidence or future change.
+## 1. Context & Problem
 
-This is a working assessment of the documented architecture, not an incident history, penetration test, or approved risk acceptance. Priorities are provisional qualitative triage based on potential impact and the evidence linked below. **Open** means this chapter contains no evidence that the exposure has been closed or formally accepted; it does not assert that no mitigation exists in implementation.
+Distributed architectures introduce uncertainties that do not exist in a single, centralized application. In BookWorm, work flows across independent business capabilities—such as shopping, ordering, catalog discovery, notifications, and AI-assisted guidance—where network delays, message retries, background schedules, and evolving data contracts can create subtle failure modes.
 
-## 11.1 Risks
+At the same time, architecture documentation often captures intended designs before production infrastructure, formal service-level agreements (SLAs), or full verification evidence are finalized. Without a shared register separating **known architectural risks** from **technical debt and missing evidence**, product, architecture, and delivery teams risk treating unverified assumptions as production guarantees.
+
+This chapter serves as a working assessment of the documented BookWorm architecture. It is not an incident history, a penetration test, or a formal risk acceptance record.
+
+## 2. Business Value
+
+Maintaining an explicit, prioritized risk and technical debt register delivers clear value across stakeholders:
+
+- **Informed investment decisions (PM & Business)**: Highlights high-impact exposures—such as duplicate customer notifications, unclear recovery windows, or unguarded AI paths—so remediation and testing effort goes where customer and operational impact is highest.
+- **Expectation alignment (BA & SA)**: Distinguishes between proposed architectural targets and stakeholder-approved commitments, preventing premature promises around uptime, recovery speed, or data freshness.
+- **Safer delivery and operations (Engineering & Ops)**: Identifies exact gaps in verification evidence and environment configuration before release, reducing surprise outages and data inconsistencies in production.
+
+## 3. How It Works
+
+BookWorm evaluates architectural exposures across two complementary dimensions:
+
+1. **Architecture Risks (`R-01`–`R-05`)**: Uncertain conditions that could harm customer experience, business integrity, security, or service reliability if left unaddressed:
+   - **Repeated side effects**: When work is retried across independent services after a delay or timeout, customer-facing actions—like clearing a shopping basket or sending an email—could happen more than once unless each owning area safely absorbs repeats.
+   - **Unproven production recovery**: Local development setups do not establish how production infrastructure handles outages, backups, or queued work, creating a risk that real recovery times miss stakeholder expectations.
+   - **Uneven AI safety coverage**: Privacy protections and tool restrictions documented for specific conversational or review flows might not automatically apply to every AI integration path unless verified per path.
+   - **Stale discovery views**: Search indexes and summarized book ratings update asynchronously in the background; temporary backlogs can cause customers to see outdated discovery information while the core catalog remains authoritative.
+   - **Unnoticed contract drift**: Changes to shared messages or interfaces can break undocumented consumers or alter business meaning even when the data structure appears compatible.
+
+2. **Technical Debt & Evidence Gaps (`TD-01`–`TD-04`)**: Known limitations in the documented design or areas where operational proof is still missing—spanning concurrency edge cases in duplicate-request protection, incomplete production deployment specifications, unapproved quality targets, and missing test execution records.
+
+### Governance and Review Cadence
+
+- Priorities (`High`, `Medium`) reflect provisional qualitative triage based on potential impact and currently documented evidence.
+- **Open** status means the architecture catalog does not yet contain evidence that the exposure is closed or formally accepted—it does not mean no safeguard exists in code.
+- Risks are reviewed with product, engineering, platform, and operations stakeholders whenever data flows, interfaces, deployment setups, or operational processes change.
+- Any accepted residual risk must record its decision owner, rationale, review trigger, and date, and be reopened if underlying assumptions change.
+
+## 4. Trade-offs & Lessons Learned
+
+- **A configured mechanism is not closure evidence**: Having a retry guard, privacy policy, or health check documented in design does not prove it behaves correctly under failure in a deployed environment. Verification requires observed evidence on the actual runtime path.
+- **Proposed targets vs. approved commitments**: Quality numbers documented as architectural proposals must stay clearly labeled as provisional until business and operations owners agree on measurement rules and accept them as service levels.
+- **Local orchestration cannot predict production resilience**: Running services together locally is valuable for development, but production redundancy, retention, backups, and failure recovery must be designed and exercised separately.
+- **Provisional triage enables iteration without false certainty**: Ranking risks qualitatively lets teams act early on high-impact gaps while keeping priorities flexible until likelihood, impact, and ownership are formally confirmed.
+
+## 5. Technical Reference
+
+### 11.1 Risks
 
 The risks are ordered by provisional priority. Treatments are recommendations for the responsible stakeholders, not claims that the work is scheduled or approved.
 
@@ -25,14 +66,7 @@ The risks are ordered by provisional priority. Treatments are recommendations fo
 | **R-04** | **Medium** | **Derived Catalog search and rating views can be stale during backlog or dependency failure.** Search and rating projections are updated asynchronously; a successful source write or scheduled invocation does not prove that the correct projection is current. Stale discovery information can confuse customers if treated as authoritative. | Preserve Catalog as the source of truth for purchase decisions. Monitor pending revision count and age, exercise failure and recovery paths, and agree a freshness budget using QR-07; make projection state visible to operators.                                            | Catalog and Scheduler teams                                         |
 | **R-05** | **Medium** | **Undiscovered consumers can make an apparently compatible contract change unsafe.** Existing schema and consumer/provider checks provide evidence for known consumers, but cannot prove compatibility with an unrecorded consumer or detect every semantic change.                                                                              | Maintain producer/consumer ownership and inventories, review semantic changes as well as schema shape, and coordinate breaking migrations. Use the QR-03 compatibility evidence before release.                                                                               | Producer and consumer service teams                                 |
 
-### Risk review
-
-- Review risks with product, engineering, platform, and operations stakeholders, especially when an interface, data flow, deployment configuration, or operational process changes.
-- Keep priorities provisional until likelihood, impact, and accountable risk acceptance are agreed by the stakeholders who own the consequences.
-- Record any accepted residual risk with its decision owner, rationale, review condition, and date. Reopen it if the assumptions or mitigations change.
-- A configured mechanism is not closure evidence by itself: verify its registration and behavior on the relevant deployed path.
-
-## 11.2 Technical debt and evidence gaps
+### 11.2 Technical Debt and Evidence Gaps
 
 These are known limits in the documented design or in the evidence available in this architecture baseline. They are not all implementation defects: some require a decision, environment-specific configuration, or an observed test result.
 
@@ -43,7 +77,7 @@ These are known limits in the documented design or in the evidence available in 
 | **TD-03** | Quality targets           | Latency, availability, throughput, projection freshness, recovery time, and recovery point targets in the quality scenarios are proposals, not stakeholder-approved service levels.                                                                                          | Assign decision owners, agree measurement conditions and thresholds, and promote only approved targets to acceptance criteria. Until then, label them proposed.                                     |
 | **TD-04** | Verification evidence     | The quality-scenario chapter defines measurable checks but does not record execution results. In particular, its duplicate-effect, projection-recovery, production-recovery, and customer-path criteria cannot be treated as passed from the architecture description alone. | Keep test and exercise results in the owning team's acceptance or release record, then link the evidence and date when reviewing the relevant scenarios and risk items.                             |
 
-## 11.3 Related architecture evidence
+### 11.3 Related Architecture Evidence
 
 - [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] describes checkout retries, saga outcomes, and Order ownership.
 - [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] describes the durable vector revision queue, bounded processing, and projection recovery.

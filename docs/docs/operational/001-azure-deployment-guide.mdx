@@ -15,7 +15,36 @@ This guide explains how to publish BookWorm's Aspire-generated Azure infrastruct
 For local development setup using Aspire and containers/emulators, see [[doc|development/002-getting-started]] instead.
 :::
 
-## Prerequisites
+## 1. Context & Problem
+
+BookWorm brings together fifteen containerized services, multiple managed databases, AI capabilities, identity registrations, and external partners for messaging, vector search, and email delivery. Provisioning these pieces manually across environments is slow, inconsistent, and prone to permission mistakes. Teams need a repeatable, subscription-level deployment process that creates every resource consistently and verifies that all service boundaries and passwordless identities are wired together before traffic arrives.
+
+## 2. Business Value
+
+- **Repeatable Environment Provisioning:** Standardized cloud templates ensure staging and production environments match the tested application topology without manual configuration drift.
+- **Safer Rollouts via Pre-Flight Checks:** Previewing infrastructure changes before applying them reduces the risk of accidental deletions or misconfigurations during release windows.
+- **Zero-Password Service Security:** Automated identity and role assignments eliminate shared database passwords and storage keys between services.
+- **Clear Go-Live Confidence:** Built-in post-deployment checks confirm that the public gateway, internal services, user sign-in callbacks, and data permissions are healthy before customers access the platform.
+
+## 3. How It Works
+
+Deploying BookWorm to the cloud follows a four-stage lifecycle from readiness checks to live verification:
+
+1. **Readiness & Access Verification:** Before starting, the deployment operator or automation pipeline confirms it has cloud subscription privileges to create resource groups and assign access roles, directory permissions to register application sign-in identities, and connection details for external messaging, vector search ([[container|catalog-vector]]), and email delivery ([[system|sendgrid]]) partners.
+2. **Operator Sign-In & Ownership Capture:** The deployer signs in to the target cloud account and records their unique identity reference so the platform can grant initial management permissions on the container registry and AI workspace.
+3. **Preview & Infrastructure Creation:** Starting from the application blueprint, the deployer runs a dry-run preview to review all planned cloud resources before any changes occur. Once approved, the subscription-level deployment creates the dedicated resource group, container registry, hosting environment, databases, AI resources, and per-service managed identities.
+4. **Application Rollout & Health Confirmation:** After the shared registry and hosting environment are ready, container images for all fifteen services are built, published, and deployed. Finally, operators verify that the public gateway is reachable, all container apps are running, sign-in redirect addresses match the new environment, and each service identity has its expected data access permissions.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Elevated Initial Permissions:** Because the deployment creates a resource group, assigns role-based access controls, and registers enterprise applications, the deploying account needs broader subscription and directory privileges than routine day-to-day application updates require.
+- **External Partner Coordination:** The external messaging broker, vector search cluster, and email relay sit outside the generated cloud blueprint, so their endpoints and credentials must be provisioned and ready before deployment begins.
+- **Cloud vs. Local Separation:** Full subscription deployments mirror production topology accurately, whereas day-to-day feature development should use the lighter local container and emulator workflow described in [[doc|development/002-getting-started]].
+- **Role Propagation Timing:** Newly assigned cloud permissions can take several minutes to propagate; verifying identities immediately after rollout helps catch transient startup failures early.
+
+## 5. Technical Reference
+
+### Prerequisites
 
 Ensure you have the following before starting a deployment:
 
@@ -24,7 +53,7 @@ Ensure you have the following before starting a deployment:
 3. **Microsoft Graph Permissions:** Entra ID permissions to create application registrations, service principals, and Federated Identity Credentials (`entra` and `entra-agent-identities` modules).
 4. **External Service Endpoints:** Connection parameters for the external **Kafka** broker, **Qdrant Cloud** cluster ([[container|catalog-vector]]), and **SMTP** relay ([[system|sendgrid]]).
 
-## Step 1: Authenticate & Capture Principal ID
+### Step 1: Authenticate & Capture Principal ID
 
 Sign in to the target Azure tenant and capture the deploying user or CI/CD service principal object ID (`principalId`):
 
@@ -37,7 +66,7 @@ PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv)
 # PRINCIPAL_ID=$(az ad sp show --id "<APP_ID>" --query id -o tsv)
 ```
 
-## Step 2: Validate the Generated Bicep Template
+### Step 2: Validate the Generated Bicep Template
 
 First generate the Aspire Azure deployment artifacts from `src/Aspire/BookWorm.AppHost`, then run a subscription-scoped `what-if` preview before applying changes:
 
@@ -52,7 +81,7 @@ az deployment sub what-if \
     tenantResourceSuffix="prod"
 ```
 
-## Step 3: Deploy Infrastructure & Push Images
+### Step 3: Deploy Infrastructure & Push Images
 
 Deploy the generated `main.bicep` at subscription scope:
 
@@ -70,7 +99,7 @@ az deployment sub create \
 
 Once the shared `aca-acr` and `aca` modules complete, build and push container images to the provisioned Azure Container Registry (`aca_AZURE_CONTAINER_REGISTRY_ENDPOINT`) and deploy the 15 container app modules (or run `azd up` if orchestrating via Aspire/AZD).
 
-## Step 4: Post-Deployment Verification
+### Step 4: Post-Deployment Verification
 
 Confirm that the gateway, internal apps, and identity callbacks are healthy:
 

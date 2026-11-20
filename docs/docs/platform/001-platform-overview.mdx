@@ -11,13 +11,41 @@ badges:
 
 BookWorm's Azure infrastructure is synthesized by .NET Aspire from `BookWorm.AppHost` as a subscription-scoped deployment. It provisions a dedicated resource group containing an Azure Container Apps (ACA) environment, managed data and AI services, passwordless Microsoft Entra ID authentication, and per-service user-assigned managed identities.
 
-## Interactive Platform Topology
+## 1. Context & Problem
+
+BookWorm spans multiple storefronts, domain microservices, background orchestration workers, personal-data protection sidecars, databases, and AI capabilities. Maintaining separate hand-written cloud scripts apart from the application architecture leads to drift between what developers build locally and what runs in the cloud, while exposing individual services to the internet increases security and routing complexity. The platform needs a single, application-driven topology with a clear shared backbone and strict perimeter boundaries.
+
+## 2. Business Value
+
+- **Architecture-to-Cloud Alignment:** Cloud infrastructure is synthesized directly from the application composition model, reducing configuration drift and onboarding friction.
+- **Reduced Attack Surface:** Only a single public gateway faces external traffic, keeping all internal services, web frontends, workers, and privacy sidecars off the public internet.
+- **Idempotent, Predictable Deployments:** Deterministic resource naming within a dedicated resource group ensures repeat deployments update reliably without duplicating environments.
+- **Lower Operational Overhead:** Serverless container hosting, managed passwordless identities, and built-in 90-day observability minimize infrastructure maintenance for delivery teams.
+
+## 3. How It Works
+
+BookWorm organizes its cloud footprint into three clear layers:
+
+1. **Subscription-Scoped Provisioning:** Each deployment targets a dedicated resource group in a chosen region and derives deterministic resource names so updates are repeatable. Optional naming suffixes isolate directory identity registrations across environments such as staging and production.
+2. **Shared Platform Backbone:** Core platform modules establish a private container image registry, a shared registry-pull identity, a serverless container hosting environment, a centralized 90-day log analytics workspace, and a managed live observability dashboard.
+3. **Single-Gateway Ingress Boundary:** Only the API gateway accepts external requests from users and external clients. All fourteen remaining workloads—including customer and backoffice web storefronts, backend microservices, background workers, and privacy redaction sidecars—are reachable solely on the private internal network, with the gateway forwarding requests and user context headers to the appropriate internal service.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Single Gateway as a Critical Chokepoint:** Routing every external request through one gateway simplifies edge security, authentication callbacks, and path routing, but makes gateway availability, scaling, and edge firewall protection critical to the entire platform.
+- **Serverless Consumption vs. Dedicated Compute:** Running workloads on a consumption hosting profile keeps baseline infrastructure lean and scales automatically with demand, though teams must account for scaling thresholds and right-size latency-sensitive components.
+- **Generated Baseline vs. Production Hardening:** Synthesizing infrastructure from the application host accelerates environment creation, while production deployments still require layering on private virtual networking, upper replica limits, and backup drills as separate hardening steps.
+- **Deterministic Naming Scope:** Deriving unique suffixes from the resource group ensures idempotency inside one group, so deploying multiple isolated environments requires distinct resource groups and optional identity suffixes.
+
+## 5. Technical Reference
+
+### Interactive Platform Topology
 
 Use the interactive graph below to explore how BookWorm's domains, systems, and services connect across the platform. Switch lenses using the picker to inspect **services**, **systems**, **domains**, or **messages**.
 
 <ArchitectureGraph lens="services" lensPicker={true} maxHeight="35" />
 
-## Deployment Scope & Naming Convention
+### Deployment Scope & Naming Convention
 
 The root deployment targets `targetScope = 'subscription'` and provisions a dedicated resource group (`resourceGroupName`) in the specified `location`.
 
@@ -30,7 +58,7 @@ The root deployment targets `targetScope = 'subscription'` and provisions a dedi
 
 Most Azure resources derive a deterministic suffix using `uniqueString(resourceGroup().id)` (`resourceToken`) so deployments are idempotent within a resource group.
 
-## Shared Platform Layer
+### Shared Platform Layer
 
 The `aca-acr` and `aca` Bicep modules establish the shared compute, registry, and observability backbone:
 
@@ -42,7 +70,7 @@ The `aca-acr` and `aca` Bicep modules establish the shared compute, registry, an
 | `aca`     | Container Apps Environment (`cae-<token>`) | `Consumption` workload profile wired to Log Analytics              |
 | `aca`     | Aspire Dashboard (`aspire-dashboard`)      | Managed `dotNetComponents` (`AspireDashboard`) in ACA              |
 
-## Network & Ingress Boundary
+### Network & Ingress Boundary
 
 Only the YARP API Gateway (`gateway`) is exposed to external traffic. All other 14 container apps—including the Next.js frontends (`storefront`, `backoffice`), microservices, Azure Functions workers, and PII sidecars—use **internal-only** ACA ingress (`external: false`).
 
@@ -50,13 +78,13 @@ Only the YARP API Gateway (`gateway`) is exposed to external traffic. All other 
 - **Internal service-to-service URLs:** `https://<app>.internal.<AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN>`.
 - **Gateway routing:** YARP terminates external HTTP traffic and routes paths (`/chatting`, `/rating`, `/ordering`, `/basket`, `/catalog`, `/backoffice`, `/`) to internal container apps with `X-Forwarded-*` headers.
 
-## Domain Map
+### Domain Map
 
 For a high-level view of the [[domain|BookWorm]] domain and its subsystems, inspect the domain node graph below:
 
 <NodeGraph id="BookWorm" version="1.0.0" type="domain" mode="simple" maxHeight="30" />
 
-## Related Documentation
+### Related Documentation
 
 - [[doc|platform/002-compute-and-container-apps]] — Inventory of all 15 Container Apps, ports, and scaling settings.
 - [[doc|platform/003-data-ai-and-messaging-resources]] — Specifications for PostgreSQL, Redis, Cosmos DB, Storage, Durable Task Scheduler, and Microsoft Foundry.

@@ -14,32 +14,46 @@ sidebar:
   badge: "gRPC"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `GetBookDetails` RPC returns full [[entity|book]] metadata—including
-description, image URL, pricing, availability status, [[entity|category]],
-[[entity|publisher]], [[entity|author]]s, and rating summary—for a requested
-book identifier. It is an anonymous read operation exposed for internal
-service-to-service clients that need the full book projection rather than the
-compact `GetBook` representation.
+Internal platform capabilities—such as conversational assistants and catalog tools—often need the complete profile of a single [[entity|book]] rather than just its price and stock status. Without a dedicated internal full-detail lookup, downstream services would either have to settle for summary data that lacks descriptions and relationships or stitch together multiple requests to gather everything needed to present a book accurately.
 
-[[service|mcp-server]] produces this query in its `BookService.GetBookByIdAsync`
-client to power the `get_book` MCP tool; [[service|catalog-api]] consumes it by
-dispatching `GetBookQuery`.
+## 2. Business Value
+
+- **Richer customer and assistant experiences**: Gives internal tools immediate access to descriptions, cover images, pricing, stock availability, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and customer rating summaries in one place.
+- **Faster internal integration**: Eliminates the need for internal consumers to combine separate lookups for core product data and catalog relationships.
+- **Consistent catalog truth**: Ensures every internal channel presents the same authoritative product details owned by [[service|catalog-api]].
+- **Low-friction read access**: Allows internal services to retrieve public catalog information without requiring end-user authentication overhead.
+
+## 3. How It Works
+
+1. An internal consumer—currently [[service|mcp-server]] when handling a book lookup request from an assistant—submits the unique identifier of a [[entity|book]] to [[service|catalog-api]].
+2. [[service|catalog-api]] validates that the supplied identifier is well-formed and looks up the matching [[entity|book]] along with its descriptive metadata, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary.
+3. If the identifier is valid and the book exists, the complete book record is returned to the caller in a single response.
+4. If the identifier is malformed or does not match any book in the catalog, the request is rejected clearly so the caller can inform the user or handle the missing item gracefully.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Full payload vs. compact payload**: Returning full descriptions, images, relationships, and rating summaries makes responses heavier than the compact single-book lookup, so high-throughput transactional flows (like basket and order validation) should continue using compact batch lookups instead.
+- **Synchronous dependency**: Because this is a direct request-response lookup, callers depend on [[service|catalog-api]] availability at the moment the details are needed.
+- **Anonymous internal read scope**: Treating this lookup as an unauthenticated read simplifies internal service consumption because it only exposes public catalog information, while keeping administrative metrics isolated behind separate protected queries.
+
+## 5. Technical Reference
+
+`GetBookDetails` is an anonymous read RPC defined in the `book.v1` gRPC contract (`BookGrpcService`). It returns the full book projection (`BookItem`)—including description, image URL, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary—for internal service-to-service clients that require more detail than the compact `GetBook` RPC.
+
+- **Producer**: [[service|catalog-api]] consumes this query by dispatching `GetBookQuery`.
+- **Consumer**: [[service|mcp-server]] produces this query in its `BookService.GetBookByIdAsync` client to power the `get_book` MCP tool.
+- **Request**: `GetBookDetailsRequest` containing the book UUID in `book_id`.
+- **Response & Errors**: Returns `GetBookDetailsResponse` containing a `BookItem`. Invalid UUIDs return `InvalidArgument`, and unknown book IDs return `NotFound`.
 
 <NodeGraph />
 
-## Contract
-
-Send a `GetBookDetailsRequest` containing the book UUID in `book_id`. Invalid
-UUIDs return `InvalidArgument`, and unknown book IDs return `NotFound`. A
-successful response is `GetBookDetailsResponse` containing a `BookItem`.
-
-## Schema
+### Schema
 
 <Schema file="schema.proto" lang="protobuf" title="GetBookDetails gRPC schema" />
 
-## Examples
+### Examples
 
 <CodeGroup dropdown>
 

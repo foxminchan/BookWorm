@@ -12,57 +12,36 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Treat conversational feedback as conversation
+## 1. Context & Problem
 
-The [[agent\|book-agent]] can acknowledge book feedback and continue the
-conversation. A message shared with the agent is not, by itself, a persisted
-Reviews feedback record.
+During a chat session, customers often share opinions, praise, or complaints about a book. Without clear conversational boundaries, an assistant could accidentally imply that a casual chat comment has been saved as an official product review or has changed the book's public rating.
 
-Do not tell a customer that feedback has been submitted, saved, or associated
-with their account unless the interaction explicitly confirms that outcome.
-If the customer wants to create or manage a formal feedback record, explain
-that this conversational flow does not perform that operation and direct them
-to the supported BookWorm feedback channel.
+## 2. Business Value
 
-## What the agent should do
+Setting clear expectations preserves customer trust and keeps review data accurate:
 
-When a customer provides a reaction to a book, the assistant should:
+- Customers are not misled into thinking an informal comment was published as a verified review.
+- BookWorm maintains a clean separation between conversational assistance and authoritative review records.
+- Customers who want to submit, edit, or remove a formal review are guided directly to the proper channel.
 
-- validate the message as a general conversation signal, not a guarantee of data capture
-- acknowledge the customer's sentiment with empathy and context
-- ask clarifying questions if the interaction is likely to become a formal review
-- separate personal opinion from confirmed Catalog facts such as price, availability, or rating summary
+## 3. How It Works
 
-## When not to overstate the outcome
+When a customer shares an opinion about a book in chat:
 
-Avoid statements such as:
+1. **Acknowledge with empathy**: The assistant validates the customer's sentiment and responds helpfully in the conversation.
+2. **Do not claim a review was saved**: Unless a formal review submission was actually completed and confirmed, the assistant must never say that feedback was saved, published, or used to update a rating.
+3. **Separate opinion from store facts**: Personal comments in chat do not alter official book details such as price, availability, or average ratings.
+4. **Guide to the formal channel when needed**: If the customer wants to leave, update, or delete a rating—or report an issue with an existing review—the assistant directs them to the official Reviews or support workflow.
 
-- "Your feedback has been saved"
-- "This review is now live"
-- "We updated the book rating on your behalf"
+## 4. Trade-offs & Lessons Learned
 
-Those claims are only appropriate when a formal Reviews workflow has actually been completed and confirmed.
+- **Helpful tone vs. data authority**: Keeping the assistant empathetic without granting it implicit authority over review records avoids silent data discrepancies and prevents false customer expectations.
+- **Clear escalation**: Explicitly routing formal review actions to the Reviews domain keeps responsibilities clean and auditable.
 
-## Keep book claims grounded
+## 5. Technical Reference
 
-Feedback may help clarify what the customer likes or dislikes, but it does not
-change authoritative book details such as price, availability, or ratings.
-Use confirmed Catalog information for those facts and distinguish it from the
-customer's personal opinion.
-
-## Recommended escalation path
-
-If the customer is trying to:
-
-- leave a review
-- update or delete a prior rating
-- report an issue with a specific review
-- ask to be acknowledged as a verified buyer or user
-
-then the conversation should route to the formal Reviews or support workflow rather than implying that the agent has already performed that action.
-
-This keeps the conversational layer aligned with the domain boundary between
-[[domain|conversational]] and [[domain|reviews]]. The agent can be helpful and
-empathetic without claiming authority over review state or persistent data.
+- **Owning / Participating Domains**: [[domain|conversational]], [[domain|reviews]]
+- **Primary Agent**: [[agent\|book-agent]]
+- **Boundary Rule**: Conversational messages do not persist `Feedback` records in the Reviews domain or mutate Catalog rating projections.
 
 <Footer />

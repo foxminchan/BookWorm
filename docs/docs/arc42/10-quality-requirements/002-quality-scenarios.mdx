@@ -9,15 +9,58 @@ badges:
     textColor: blue
 ---
 
-This page refines the quality tree and priority tiers in [[doc|arc42/10-quality-requirements/001-quality-requirements-overview]]. See [[doc|arc42/10-quality-requirements]] for chapter scope, requirement status, and references.
+## 1. Context & Problem
 
-## 10.2 Quality scenarios
+Quality goals such as "accurate checkout," "fast browsing," or "safe AI assistance" cannot be verified without concrete, repeatable scenarios. Teams also need to distinguish **usage scenarios** (normal traffic and failure handling) from **change scenarios** (how safely and quickly the platform can evolve).
 
-Each scenario supplies a **context and affected artifact**, a **source and stimulus**, a **required response with a measure**, and **verification evidence**. This follows arc42's short scenario form while retaining stable identifiers for architecture reviews.
+This page refines the priority tiers and quality tree in [[doc|arc42/10-quality-requirements/001-quality-requirements-overview]] and [[doc|arc42/10-quality-requirements]]. All acceptance criteria and numerical budgets marked **proposed** are starting baselines for review—not current operational guarantees.
 
-**Usage** scenarios include normal operation and fault conditions. **Change** scenarios measure the impact of modifying the system. All acceptance criteria below are proposed requirements; numerical budgets explicitly marked **proposed** are not current operational guarantees.
+## 2. Business Value
 
-### Commerce correctness and independent evolution
+Concrete scenarios give product, business, operations, and engineering teams shared, testable guardrails:
+
+- **Revenue and order integrity:** Ensures customer purchases always reflect authoritative catalog prices and stored basket quantities rather than tampered inputs or guessed workflow states.
+- **Customer trust and safety:** Verifies access boundaries, sensitive-data minimization, AI tool controls, clear error feedback, and accessible shopping journeys.
+- **Predictable operations and recovery:** Sets concrete targets for diagnosing failed jobs, keeping search indexes fresh, surfacing uncertain email deliveries, and restoring lost data.
+- **Lower change risk:** Verifies that teams can release updates independently and change local business rules without breaking neighboring capabilities.
+
+## 3. How It Works
+
+BookWorm defines 17 scenarios across four thematic areas. Each scenario specifies a starting context, a trigger event, a required response, and the evidence needed to prove it passes.
+
+### Four scenario groups
+
+1. **Commerce correctness and independent evolution:** Covers authoritative checkout pricing and quantities, honest reporting of order vs. background workflow outcomes, compatible service contracts, independent zero-downtime releases, and localized business-rule changes.
+2. **Operability, durable work, and recovery:** Covers pinpointing failed background operations, keeping search indexes recoverable and eventually fresh, making failed or uncertain email submissions visible, measuring customer-path availability, and rehearsing data restoration.
+3. **Security, privacy, and governed AI:** Covers strict access and ownership checks, preventing raw personal data or credentials from leaking into logs or AI model boundaries, and enforcing tool permissions and failure rules on AI paths.
+4. **Responsiveness, usability, and engineering effectiveness:** Covers actionable validation messages and progress feedback, interactive responsiveness under steady load, accessible keyboard and screen-reader journeys, and realistic onboarding effort for new developers.
+
+### Measurement and evidence principles
+
+To keep evaluations honest and repeatable, teams follow six rules:
+
+1. **Freeze the test conditions** (versions, dataset, environment, and enabled safeguards) before measuring.
+2. **Measure at the real business boundary** (for example, order creation ends when the order is saved; email acceptance by a mail server is not proof of inbox delivery).
+3. **Count failures honestly** (include timeouts and wrong results; do not exclude dependency outages from availability math).
+4. **Preserve per-path results** so a healthy browsing path never masks a broken checkout path.
+5. **Verify stored outcomes, not just surface responses** (inspect saved records, queues, and outbound actions).
+6. **Use synthetic test data only** in isolated environments—never real customer records or live production fault injection.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Correctness vs. speed:** Checkout will not sacrifice authoritative pricing or persisted basket facts just to meet a latency budget; teams must agree how to fail clearly when dependencies are unavailable.
+- **Durable background work vs. immediate freshness:** Catalog updates commit immediately without waiting for search index updates, relying on queued background work that can lag during outages or large backlogs.
+- **Retry safety vs. duplicate work:** Retries and durable queues prevent lost work, but without universal exactly-once guarantees, duplicate commands or repeated notifications remain possible and must be accounted for explicitly.
+- **Partial safeguards are not blanket proof:** Documented duplicate-request guards, access helpers, and AI safety middleware operate per service or path—they do not automatically protect every endpoint or catch every possible sensitive pattern.
+- **Proposed status until verified:** All 17 scenarios begin as **proposed / not evaluated**. Unresolved budgets, production topologies, backup procedures, and browser matrices must be agreed and resolved through owning service docs and [[doc|arc42/09-architecture-decisions]] rather than silently weakening criteria.
+
+## 5. Technical Reference
+
+### 10.2 Quality scenarios
+
+All numerical budgets explicitly marked **proposed** are not current operational guarantees.
+
+#### Commerce correctness and independent evolution
 
 | ID / type / tier                                            | Context and artifact                                                                                                                          | Source and stimulus                                                             | Response and acceptance criteria                                                                                                                                                                                                                                                                                            | Verification evidence                                                                                                                                                                                        |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -31,7 +74,7 @@ Each scenario supplies a **context and affected artifact**, a **source and stimu
 
 **Known limit:** Ordering's documented Redis duplicate-request guard is not an atomic exactly-once transaction. QR-01 does not assert that concurrent duplicate checkout is already safe. Verification must separately report duplicate/concurrent requests and handler failure after key creation; adopting a stronger guarantee requires a decision and implementation evidence. Finance retries can also repeat Basket and Notification work.
 
-### Operability, durable work, and recovery
+#### Operability, durable work, and recovery
 
 | ID / type / tier                                         | Context and artifact                                                                                                                                             | Source and stimulus                                                                                                        | Response and acceptance criteria                                                                                                                                                                                                                                                                                                                                                          | Verification evidence                                                                                                                                                                            |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -45,7 +88,7 @@ Each scenario supplies a **context and affected artifact**, a **source and stimu
 
 **Known limits:** Ingestion processes up to 200 pending records per invocation; the five-minute schedule is not a freshness guarantee during backlog growth or dependency failure. Notification maintenance selects up to 100 records hourly; SMTP acceptance is not recipient delivery, and ambiguous outcomes can duplicate submissions. Production probes, redundancy, backups, retention, and restoration procedures are not established by the logical deployment view. QR-13 and QR-14 therefore need deployment decisions before their targets can be accepted.
 
-### Security, privacy, and governed AI
+#### Security, privacy, and governed AI
 
 | ID / type / tier                                            | Context and artifact                                                                                                                              | Source and stimulus                                                                                                                                     | Response and acceptance criteria                                                                                                                                                                                                                                                                                | Verification evidence                                                                                                                                                         |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -57,7 +100,7 @@ Each scenario supplies a **context and affected artifact**, a **source and stimu
 
 **Known limits:** Ordering policies and logging redaction are not evidence of universal API coverage. Its scope helper accepts any listed scope, not all of them. Chat and Rating middleware provide defense-in-depth, not complete prompt-injection or PII detection. QR-15 measures enforced boundaries and honest failure behavior, not factual accuracy of every generated answer.
 
-### Responsiveness, usability, and engineering effectiveness
+#### Responsiveness, usability, and engineering effectiveness
 
 | ID / type / tier                                                 | Context and artifact                                                                                                                        | Source and stimulus                                                                                                                                                   | Response and acceptance criteria                                                                                                                                                                                                                                                                                                                                | Verification evidence                                                                                                                                                                                                                     |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -70,9 +113,9 @@ Each scenario supplies a **context and affected artifact**, a **source and stimu
 
 **Known limits:** QR-12 is a proposed workload, not a forecast or measured capacity. No browser matrix, accessibility assessment, or onboarding benchmark is established here. These need agreement and evidence before the scenarios can be marked satisfied.
 
-## Evaluation and evidence
+### Evaluation and evidence
 
-### Measurement rules
+#### Measurement rules
 
 1. **Freeze the scenario conditions.** Record component versions, dataset, environment, dependency behavior, enabled policies, and measurement tools. Production-like does not imply an already documented production topology.
 2. **Measure the specified boundary.** A checkout response follows persisted Order creation; vector freshness ends when the correct revision is indexed; SMTP submission and recipient delivery are different outcomes.
@@ -81,7 +124,7 @@ Each scenario supplies a **context and affected artifact**, a **source and stimu
 5. **Verify side effects as well as responses.** Inspect authoritative records, queue revisions, saga/outbox state, and captured external calls. A successful HTTP response, message acknowledgement, or health check alone is insufficient.
 6. **Use safe fixtures.** Use synthetic customers, data, and sensitive markers in isolated verification environments. Do not deliberately inject production faults or expose real personal data.
 
-### Evidence record
+#### Evidence record
 
 For each scenario, maintain the following information in the owning team's existing acceptance or release record rather than duplicating test results in this chapter:
 
@@ -96,7 +139,7 @@ For each scenario, maintain the following information in the owning team's exist
 
 All scenarios start as **proposed / not evaluated** in this chapter. Documented mechanisms do not upgrade that status. Reevaluate affected scenarios when contracts, ownership, retry semantics, policy registration, infrastructure, or workloads change.
 
-## Trade-offs and open agreements
+### Detailed trade-offs and open agreements
 
 | Tension                                              | Architectural position                                                                                                                                   | Agreement or evidence still required                                                                                                     |
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |

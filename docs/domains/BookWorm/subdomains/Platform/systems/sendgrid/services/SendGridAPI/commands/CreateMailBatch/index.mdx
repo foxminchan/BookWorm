@@ -20,24 +20,42 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-The `CreateMailBatch` command requests a new batch identifier from
-[[system|sendgrid]].
-BookWorm can associate the returned identifier with a later
-[[command|SendMail]] request to group related mail submissions.
+When BookWorm needs to coordinate or schedule a group of related email notifications, individual mail submissions need a shared reference to tie them together. Without a dedicated step to generate that reference upfront, separate email requests cannot be grouped for scheduled-send management at the provider.
 
-Creating a batch does not send an email and does not indicate that a
-notification has been delivered. The [[system|notification-system]] should persist the
-identifier with the workflow that will use it and retain ownership of the
-delivery state.
+At the same time, teams must not confuse reserving a batch identifier with actually sending or delivering an email.
 
-## Request
+## 2. Business Value
 
-This operation does not define a request body. SendGrid authentication and
-optional subuser context are supplied through the API request headers.
+- **Coordinated scheduled delivery**: Enables BookWorm to group one or more email submissions under a single identifier for scheduled-send workflows.
+- **Clear operational boundaries**: Separates batch preparation from message transmission, preventing false assumptions that creating a batch means customers have been notified.
 
-## Response
+## 3. How It Works
+
+The **Create mail batch** command requests a new batch identifier from [[system|sendgrid]].
+
+1. The [[system|notification-system]] issues a batch-creation request using its configured provider credentials (and optional subuser context), with no message content attached.
+2. SendGrid returns a new batch identifier.
+3. The [[system|notification-system]] saves that identifier alongside the workflow that will use it and attaches it to subsequent [[command|SendMail]] submissions when grouping is needed.
+
+Creating a batch does not send any email and does not confirm delivery; the [[system|notification-system]] retains full ownership of delivery state.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Preparation step adds state to manage**: The workflow must persist the returned batch identifier until all associated messages are submitted, rather than sending fire-and-forget requests.
+- **Not a delivery signal**: Monitoring and business logic must treat batch creation purely as a prerequisite setup action, never as proof of notification completion.
+- **Authentication and permission sensitivity**: Failures commonly stem from missing or unauthorized provider credentials, requiring runtime secret hygiene and clear error handling.
+
+## 5. Technical Reference
+
+### Request & Operation Contract
+
+- **Operation**: `POST /v3/mail/batch`
+- **Request body**: None. SendGrid authentication and optional subuser context are supplied through the API request headers.
+- **Response schema file**: `schema.json`
+
+### Example Response
 
 <CodeGroup dropdown>
 
@@ -49,19 +67,18 @@ optional subuser context are supplied through the API request headers.
 
 </CodeGroup>
 
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
 
-## Response and failures
+### Status Codes & Failures
 
-- `201 Created` returns the new batch identifier.
-- `400 Bad Request` indicates an invalid request.
-- `401 Unauthorized` indicates missing or invalid authentication.
-- `403 Forbidden` indicates that the caller is not allowed to perform the
-  operation.
-- `404 Not Found` indicates that the requested provider resource is unavailable.
-- `405 Method Not Allowed` indicates an unsupported HTTP method.
-- `500 Internal Server Error` indicates a provider-side failure.
+- `201 Created`: Returns the new `batch_id`.
+- `400 Bad Request`: Indicates an invalid request.
+- `401 Unauthorized`: Indicates missing or invalid authentication.
+- `403 Forbidden`: Indicates that the caller is not allowed to perform the operation.
+- `404 Not Found`: Indicates that the requested provider resource is unavailable.
+- `405 Method Not Allowed`: Indicates an unsupported HTTP method.
+- `500 Internal Server Error`: Indicates a provider-side failure.
 
 <NodeGraph />

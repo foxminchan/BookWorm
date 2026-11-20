@@ -9,24 +9,57 @@ badges:
     textColor: purple
 ---
 
-## 6.4 Conversational book discovery
+## 1. Context & Problem
 
-[[domain|conversational]] handles discovery requests through a composed chat workflow. The workflow validates the incoming message, routes it to a specialist, and can delegate complex research to independent agents. [[domain|catalog]] remains the source of book facts; agent responses do not mutate Catalog or create commerce transactions.
+Customers often want conversational help finding books, checking reviews, or asking general store questions rather than manually filtering catalog pages. At the same time, an AI assistant must stay safe, stay within supported topics, provide accurate book facts from [[domain|catalog]], and never accidentally alter shopping baskets or place real orders.
+
+This scenario defines how [[domain|conversational]] validates incoming prompts, routes each request to the right specialist assistant, runs deeper parallel research when needed, and enforces strict commerce boundaries.
+
+## 2. Business Value
+
+- **Guided customer discovery**: Shoppers get tailored book recommendations, catalog facts, rating summaries, and store answers in one conversational experience.
+- **Prompt safety and focus**: Empty, unsafe, off-topic, or unsupported-language messages are stopped early before consuming specialist AI capacity.
+- **Faster answers for complex queries**: Multi-part discovery questions can research book facts and personalized recommendations at the same time before combining them into a single clear reply.
+- **Zero accidental transactions**: Strict read-only boundaries guarantee the chat assistant cannot modify customer baskets, place orders, or promise locked-in prices.
+
+## 3. How It Works
+
+1. **Receiving and screening the message**: A customer sends a question through the chat experience. An initial safety check rejects blank messages or suspected prompt-manipulation attempts right away.
+2. **Routing to the right specialist**: Validated messages enter a routing step that checks language and topic scope, then directs the request:
+   - Book discovery questions (and general review questions without a specific book identifier) go to the book specialist.
+   - Store policy or account questions go to the general Q&A specialist.
+   - Rating or review questions targeting a specific book identifier go to the rating specialist.
+   - Unsupported topics or non-English requests receive a polite boundary response without further processing.
+3. **Direct answers vs. parallel research**: The book specialist answers simple questions directly. For broader or multi-faceted discovery requests, it can dispatch two research assistants in parallel—one focused on verified catalog facts and another focused on recommendations—and then synthesize their findings.
+4. **Grounded responses**: Specialists look up authoritative book data through scoped catalog tools rather than guessing from memory, then return the formatted response to the customer.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Safety checks add upfront filtering**: Rejecting suspicious or out-of-scope prompts early protects downstream specialists and costs, though overly strict filters can occasionally block edge-case phrasing.
+- **Advisory responses, not commitments**: Assistant replies reflect the information available through catalog tools at that moment; they do not reserve inventory, guarantee prices, or create an [[entity|order]].
+- **Strict read-only commerce boundary**: Keeping chat workflows completely separated from [[entity|basket]] mutations and order-creation flows prevents conversational ambiguity from triggering unintended purchases.
+
+## 5. Technical Reference
 
 <MermaidFileLoader file="mermaids/conversational-book-discovery.mmd" />
 
-### Interaction
+### Workflow & Routing Reference
 
-1. A customer submits a request to the [[service|chat-api]]'s AG-UI endpoint.
-2. Input validation rejects empty or detected prompt-injection input. Accepted input is passed to `DecisionRouterExecutor` (`Microsoft-Decision-1`).
-3. `DecisionRouterExecutor` checks language and scope, then routes to a specialist: book requests (and review requests without a catalog ID) go to [[agent|book-agent]]; store or account questions go to [[agent|qa-agent]]; review/rating requests with a book catalog ID go to [[agent|rating-agent]]. Unsupported or non-English requests short-circuit with a boundary response.
-4. [[agent|book-agent]] handles a straightforward request directly. For a complex discovery request, it can delegate independent book-fact and recommendation research to specialist agents ([[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]) in parallel, then synthesize their results.
-5. Catalog information is accessed through the scoped [[system|mcp-tools]] ([[service|mcp-server]]). The workflow formats and returns the final assistant response.
+| Stage | Component / Agent                               | Technical Behavior                                                                                                                                                                                                                                                                                                              |
+| :---- | :---------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | [[service\|chat-api]]                           | Receives customer request on the AG-UI endpoint.                                                                                                                                                                                                                                                                                |
+| 2     | Input validation                                | Rejects empty or detected prompt-injection input with a rejection response before specialist routing; passes accepted input to `DecisionRouterExecutor` (`Microsoft-Decision-1`).                                                                                                                                               |
+| 3     | `DecisionRouterExecutor`                        | Checks language and scope, routing to [[agent\|book-agent]] (book requests and review requests without a catalog ID), [[agent\|qa-agent]] (store or account questions), or [[agent\|rating-agent]] (review/rating requests with a book catalog ID). Unsupported or non-English requests short-circuit with a boundary response. |
+| 4     | [[agent\|book-agent]]                           | Handles straightforward requests directly; for complex discovery, delegates independent research in parallel to [[agent\|book-catalog-researcher]] and [[agent\|book-recommendation-researcher]] and synthesizes their outputs.                                                                                                 |
+| 5     | [[system\|mcp-tools]] / [[service\|mcp-server]] | Provides scoped read access to [[domain\|catalog]] facts; the workflow formats and returns the final assistant response.                                                                                                                                                                                                        |
 
-### Boundaries
+### Guardrails & Boundaries
 
-- The response depends on the information available to the agents and Catalog tools; it is not a reservation, price guarantee, or [[entity|order]].
-- The Chat workflow and its agents do not place Orders, mutate [[entity|basket]]s, or publish commerce lifecycle events.
-- A request rejected during validation returns a rejection response rather than entering specialist routing.
+- Chat agents do **not** mutate [[domain|catalog]], place [[entity|order]] records, mutate [[entity|basket]] state, or publish commerce lifecycle events.
+- Responses are informational only and do not represent a reservation or price guarantee.
 
-See the [[flow|agent-orchestration]], [[service|chat-api]], and [[system|mcp-tools]] documentation for workflow and tool contracts.
+### Related Documentation
+
+- [[flow|agent-orchestration]]
+- [[service|chat-api]]
+- [[system|mcp-tools]]

@@ -18,24 +18,50 @@ sidebar:
   badge: "GET"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Returns [[entity|feedback]] records for one Catalog [[entity|book]]. The query supports paging and
-ordering so callers can retrieve a stable subset of reviews.
+Customers browsing a [[entity|book]] in the BookWorm storefront rely on individual [[entity|feedback]] entries—ratings and written comments—from other readers to decide whether a title fits their needs. Popular books can accumulate hundreds or thousands of reviews over time, making it impractical to load every review at once without slowing down the storefront or overwhelming the reader.
+
+At the same time, callers requesting reviews need predictable sorting, paging, and clear validation feedback whenever required information is missing or formatted incorrectly.
+
+## 2. Business Value
+
+- **Responsive customer browsing**: Breaking reviews into manageable pages keeps book detail pages fast regardless of how many reviews a title has accumulated.
+- **Better reader discovery**: Sorting options allow storefront experiences to highlight the highest-rated or most critical reviews first according to customer preference.
+- **Predictable integration**: Consistent defaults and clear validation errors reduce integration guesswork for frontend and partner teams.
+
+## 3. How It Works
+
+1. A caller requests feedback for a single [[entity|book]] by supplying that book's unique identifier.
+2. The caller may optionally specify which page to view, how many reviews to include per page, which field to sort by, and whether to reverse the sort order. When omitted, sensible defaults are applied (starting at the first page, returning 20 entries per page, sorted by rating in ascending order).
+3. Before retrieving reviews, the request is validated. If the book identifier or any paging or sorting option is invalid, the request is rejected immediately with clear validation details explaining what needs to be fixed.
+4. For valid requests, a stable slice of matching [[entity|feedback]] entries is returned for display.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Bounded single-book scope**: Requiring a specific book identifier prevents accidental platform-wide review scans and keeps read performance predictable as total review volume grows.
+- **Page-based navigation vs. live additions**: Standard page-and-size navigation is easy to pair with storefront page controls, though newly submitted reviews arriving mid-browse can cause minor shifts between pages.
+- **Explicit validation at the boundary**: Rejecting malformed inputs upfront prevents ambiguous empty results and helps callers distinguish bad requests from books that simply have no reviews yet.
+
+## 5. Technical Reference
+
+- **Endpoint**: `GET /api/v1/feedbacks`
+- **Success response**: `200 OK` returning a JSON array of `FeedbackDto` objects.
+- **Validation error response**: `400 Bad Request` using `application/problem+json` and `HttpValidationProblemDetails`.
 
 <NodeGraph />
 
-## Query parameters and response
+### Query parameters
 
-`BookId` is required and identifies the book whose feedback is returned.
-`PageIndex` defaults to `1`, `PageSize` defaults to `20`, `OrderBy` defaults to
-`Rating`, and `IsDescending` defaults to `false`.
+| Parameter      | Required | Default  | Description                                                |
+| -------------- | -------- | -------- | ---------------------------------------------------------- |
+| `BookId`       | Yes      | —        | Identifies the Catalog book whose feedback is returned.    |
+| `PageIndex`    | No       | `1`      | Page number to retrieve.                                   |
+| `PageSize`     | No       | `20`     | Number of feedback records per page.                       |
+| `OrderBy`      | No       | `Rating` | Field used to order the returned feedback.                 |
+| `IsDescending` | No       | `false`  | Controls ascending (`false`) or descending (`true`) order. |
 
-The `200 OK` response is a JSON array of `FeedbackDto` objects. A `400 Bad
-Request` response uses `application/problem+json` and
-`HttpValidationProblemDetails`.
-
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

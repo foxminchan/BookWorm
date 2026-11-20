@@ -9,9 +9,22 @@ badges:
     textColor: blue
 ---
 
-BookWorm is organized as independently deployable services aligned with business capabilities. Its solution strategy makes ownership explicit, integrates capabilities through owned contracts, and evolves services independently only when those contracts remain compatible. These choices prioritize the correctness, interoperability, deployability, and modifiability scenarios in [[doc|arc42/01-introduction-and-goals/003-quality-goals]].
+## 1. Context & Problem
 
-## Quality goals and solution approaches
+BookWorm brings together distinct business capabilities—product catalog management, shopping baskets, order processing, customer reviews, conversational assistance, and shared platform operations. Without a clear structural strategy, growing e-commerce platforms tend to accumulate hidden cross-domain dependencies, shared databases, and tightly coupled business rules. When that happens, changing one rule risks breaking unrelated workflows, ownership becomes unclear, and teams lose the ability to release updates safely on their own.
+
+This solution strategy establishes how BookWorm avoids those traps. It anchors architectural choices to the system's quality priorities in [[doc|arc42/01-introduction-and-goals/003-quality-goals]] and the system-wide boundaries in [[doc|arc42/02-architecture-constraints]].
+
+## 2. Business Value
+
+Aligning BookWorm's architecture to clear business boundaries delivers measurable value across product, delivery, and operations teams:
+
+- **Trusted checkout and order accuracy:** Keeping book facts, basket state, and order lifecycles with their rightful owners protects critical business rules at checkout.
+- **Safer, faster delivery:** When a change stays inside one capability and preserves existing agreements with other capabilities, teams can test and release it independently without full-platform coordination.
+- **Lower cost of change:** Business rules can evolve inside a capability without dragging unrelated capabilities or transferring data ownership.
+- **Clearer operational accountability:** When background schedules or customer notifications fail, operations teams can quickly identify which capability owns the failed step without confusing operational issues with business completion.
+
+### Quality goals and solution approaches
 
 | Quality goal         | Architectural scenario                                                                                                                                               | Solution approach                                                                                                                                                                 | Details                                                    |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -21,12 +34,36 @@ BookWorm is organized as independently deployable services aligned with business
 | **Modifiability**    | A business rule changes without transferring ownership of its data or changing unrelated contexts.                                                                   | Keep behavior and data with the responsible capability; avoid direct cross-service dependencies and shared mutable business state.                                                | [[doc\|arc42/02-architecture-constraints]]                 |
 | **Operability**      | A scheduled job or email delivery attempt fails, and an operator must identify the responsible capability and inspect its execution state.                           | Keep processing and delivery state observable, and distinguish those failures from business completion. The required operational detail and guarantees remain to be established.  | [[doc\|arc42/01-introduction-and-goals/003-quality-goals]] |
 
-## Fundamental decisions
+## 3. How It Works
 
-- **Decompose by business capability.** [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]] have distinct responsibilities. This makes ownership and change impact easier to identify than a shared business layer would.
-- **Make cross-capability dependencies explicit.** Use documented service interfaces and integration events with clear ownership. Protocol Buffers are used for defined service interfaces; do not assume that every interaction uses that protocol or that an unspecified broker or transport is in place.
-- **Adopt the repository's .NET foundation.** The documented platform targets .NET 11 and C# 15, with .NET Aspire supporting the cloud-native service model. Use this established setup rather than introducing an incompatible runtime. Production topology and external providers are not specified here.
-- **Validate boundaries and contracts as they evolve.** Combine business and integration tests, schema linting and compatibility checks for defined Protocol Buffer contracts, and architecture fitness checks. Keep documentation aligned with the implementation so drift is visible.
-- **Use shared platform capabilities without centralizing business ownership.** Common infrastructure may support cross-cutting needs such as notifications and scheduled work, while business rules and data remain with their owning capability.
+BookWorm's strategy rests on five straightforward rules that guide every design and delivery decision:
 
-The strategy trades some coordination and integration work for clearer ownership and reduced hidden coupling. It does not claim numerical latency, availability, throughput, or recovery targets; those require stakeholder agreement. See [[doc\|arc42/02-architecture-constraints]] for system-wide constraints and [[doc\|arc42/03-context-and-scope/003-technical-context]] for known technical neighbors and unresolved mechanisms.
+1. **Organize by business capability, not technical layers.** Rather than grouping the platform around a shared business-logic tier, BookWorm divides responsibilities across [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]]. Each capability owns its own rules and data, making ownership and change impact immediately visible.
+2. **Make every cross-capability dependency explicit.** Capabilities never reach directly into another capability's private data. When one capability needs information or wants to react to something that happened elsewhere, it uses documented interfaces and agreed business announcements with clear ownership.
+3. **Keep shared platform capabilities supportive, not authoritative.** Common operational capabilities—such as sending notifications and running scheduled work—handle recurring infrastructure tasks without taking ownership of commerce rules or business outcomes.
+4. **Build on a single unified platform foundation.** All teams work within the repository's established application platform rather than introducing incompatible runtimes or bespoke stacks, keeping tooling and operational practices consistent.
+5. **Verify boundaries continuously as the platform evolves.** Teams pair functional and integration verification with automated boundary and contract checks, while keeping architectural documentation aligned with the live system so drift is caught early.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Explicit integration effort vs. hidden coupling:** Separating capabilities and enforcing owned contracts requires more upfront interface design and coordination than calling across a shared layer, but it prevents cascading failures and makes long-term evolution predictable.
+- **Coordinated migrations for breaking changes:** Independent release applies only when existing contracts remain compatible; whenever a breaking change is unavoidable, producers and consumers must plan a coordinated transition.
+- **Unresolved operational targets:** This strategy intentionally avoids claiming numerical latency, availability, throughput, or recovery targets, and does not prescribe production deployment topologies or external service providers. Those commitments require explicit stakeholder agreement and are tracked alongside system constraints in [[doc|arc42/02-architecture-constraints]] and technical boundaries in [[doc|arc42/03-context-and-scope/003-technical-context]].
+
+## 5. Technical Reference
+
+### Platform & runtime decisions
+
+- **Technology foundation:** The documented platform targets `.NET 11` and `C# 15`, with `.NET Aspire` supporting the cloud-native service model. New services and modules use this established setup rather than introducing an incompatible runtime.
+- **Production topology & providers:** Production hosting topology and external providers are not specified by this strategy.
+
+### Integration & contract mechanisms
+
+- **Service contracts and integration events:** Cross-capability interactions use documented service interfaces and integration events with clear ownership.
+- **Protocol Buffers:** Protocol Buffers are used for defined service interfaces; however, do not assume that every interaction uses that protocol or that an unspecified broker or transport is in place.
+
+### Boundary & contract verification
+
+- **Testing & checks:** Boundaries and contracts are validated continuously using business and integration tests, schema linting and compatibility checks for defined Protocol Buffer contracts, and architecture fitness checks.
+- **Documentation parity:** Architecture documentation is kept aligned with the implementation so structural or contract drift remains visible.
+- **Related references:** [[doc|arc42/01-introduction-and-goals/003-quality-goals]], [[doc|arc42/02-architecture-constraints]], and [[doc|arc42/03-context-and-scope/003-technical-context]].

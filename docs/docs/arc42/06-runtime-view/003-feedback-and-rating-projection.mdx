@@ -9,23 +9,52 @@ badges:
     textColor: purple
 ---
 
-## 6.3 Feedback and Catalog rating projection
+## 1. Context & Problem
 
-[[domain|reviews]] owns individual customer [[entity|feedback]], while [[domain|catalog]] owns the average rating and review count projected onto a [[entity|book]]. The two services exchange integration events; Catalog does not read the [[container|rating-database]].
+Customers expect to see average star ratings and review counts directly alongside book listings while browsing the catalog. However, individual customer reviews and ratings belong to the [[domain|reviews]] capability, whereas book listings belong to [[domain|catalog]].
+
+Allowing Catalog to reach directly into the Reviews database would tightly couple two independent business areas, while keeping rating summaries only in Reviews would slow down every catalog page load. This scenario solves both issues by maintaining a derived rating summary in Catalog that updates automatically via events—and cleans up invalid submissions if a referenced book does not exist.
+
+## 2. Business Value
+
+- **Fast catalog browsing**: Book pages and search results display average ratings and review counts immediately without querying the Reviews store on every page view.
+- **Clean service independence**: Reviews and Catalog evolve, scale, and deploy independently without sharing a database.
+- **Data integrity across boundaries**: Automatic compensation removes feedback tied to non-existent books instead of leaving orphaned reviews or silently ignoring errors.
+
+## 3. How It Works
+
+1. **Submitting feedback**: A customer submits a rating or review for a book.
+2. **Saving the authoritative review**: Reviews validates the submission and saves the customer's [[entity|feedback]] in its own store.
+3. **Announcing new feedback**: After saving the review, Reviews publishes a notification announcing that new feedback was created.
+4. **Updating the book's rating summary**: Catalog receives that notification and recalculates the derived average rating and review count for the [[entity|book]]. The full feedback text and individual record remain owned by Reviews.
+5. **Compensating for invalid book references**: If Catalog discovers that the referenced book does not exist, it notifies Reviews that the rating update failed. Reviews responds by deleting the invalid feedback record so the system stays consistent without leaving orphaned data behind.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency for displayed ratings**: A customer's newly submitted review is saved immediately, while the aggregate rating shown on the book listing updates moments later asynchronously.
+- **Derived summary vs. source of truth**: Catalog's rating summary is strictly derived data for display convenience, not a second copy of customer reviews. Monitoring must track event processing and summary accuracy separately from the initial feedback submission.
+- **Explicit compensation over silent failure**: Rather than dropping failed updates or allowing ghost reviews for deleted/unknown books, explicit failure events keep both business areas aligned without distributed locks.
+
+## 5. Technical Reference
 
 <MermaidFileLoader file="mermaids/feedback-and-rating-projection.mmd" />
 
-### Interaction and consistency
+### Event & Ownership Flow
 
-1. The customer submits feedback for a book.
-2. [[service|rating-api]] validates the feedback and persists it in the [[container|rating-database]].
-3. After the write, Reviews publishes [[event|FeedbackCreatedIntegrationEvent]].
-4. [[service|catalog-api]] consumes the event and updates its book-level rating projection. The original feedback remains owned by Reviews.
+| Step | Component / Domain                                 | Technical Details                                                                                                                                                                                                      |
+| :--- | :------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–2  | [[domain\|reviews]] / [[service\|rating-api]]      | Validates customer [[entity\|feedback]] and persists it in [[container\|rating-database]].                                                                                                                             |
+| 3    | [[service\|rating-api]]                            | Publishes [[event\|FeedbackCreatedIntegrationEvent]] after the write completes.                                                                                                                                        |
+| 4    | [[domain\|catalog]] / [[service\|catalog-api]]     | Consumes [[event\|FeedbackCreatedIntegrationEvent]] and updates the book-level average rating and review count projection on [[entity\|book]]. Catalog does not read [[container\|rating-database]].                   |
+| 5    | [[service\|catalog-api]] → [[service\|rating-api]] | If the referenced book does not exist, [[service\|catalog-api]] publishes [[event\|BookUpdatedRatingFailedIntegrationEvent]]; [[service\|rating-api]] consumes it and deletes the invalid [[entity\|feedback]] record. |
 
-### Invalid book reference
+### Operational Notes
 
-If Catalog cannot apply the event because the referenced book does not exist, it publishes [[event|BookUpdatedRatingFailedIntegrationEvent]]. [[service|rating-api]] consumes the compensation event and deletes the invalid feedback record. This explicit compensation avoids leaving orphaned feedback or silently ignoring projection failure.
+- **Boundary enforcement**: Original feedback remains exclusively owned by [[domain|reviews]]; [[domain|catalog]] holds only the derived rating projection.
+- **Monitoring**: Track event-processing lag and projection consistency separately from [[service|rating-api]] write availability.
 
-The projection is derived data, not a second feedback store. Monitor event processing and projection consistency separately from the feedback write itself.
+### Related Documentation
 
-See the [[flow|feedback-publication]], [[service|rating-api]], and [[system|product-catalog-system]] for the detailed event contracts and ownership boundaries.
+- [[flow|feedback-publication]]
+- [[service|rating-api]]
+- [[system|product-catalog-system]]

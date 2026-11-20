@@ -24,90 +24,55 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-[[entity|book]] detail lookups and the admin dashboard summary are read far
-more often than they change, and repeating them against PostgreSQL adds
-avoidable load and latency. Moving those reads to a cache can improve response
-times, but introduces a second copy of data that may be stale or unavailable.
-The design must therefore limit caching to selected read paths and preserve
-the database as the source of truth.
+Individual [[entity|book]] detail pages and the administrative dashboard summary are viewed far more frequently than they change. Sending every repeated lookup directly to the primary database adds avoidable load and slows down response times.
 
-## Decision
+However, caching introduces a secondary copy of data that can briefly lag behind edits or become unavailable. Catalog therefore needed a targeted caching approach that speeds up the hottest reads while keeping the database as the undisputed source of truth.
 
-[[service|catalog-api]] registers FusionCache with an in-process L1 cache
-backed by a Redis distributed cache ([[container|catalog-cache]]). Values are
-JSON serialized with a default expiration from `Caching:Expiration`;
-individual entries may override it. The selected entries are:
+## 2. Business Value
+
+- **Faster customer and admin experience:** High-traffic book detail lookups and dashboard summaries respond quickly, improving browsing and operational responsiveness.
+- **Protected database capacity:** Offloads repetitive read traffic from the primary database, keeping write operations and search resolution fast under heavy load.
+- **Zero risk to data ownership:** Because cached entries are strictly disposable copies, cache loss or downtime affects speed temporarily without ever risking lost or corrupted catalog records.
+
+## 3. How It Works
+
+[[service|catalog-api]] uses a two-layer caching strategy designed strictly as a disposable performance helper:
+
+- **Fast local + shared layers:** Each service instance keeps a small in-memory cache for instant repeat reads, backed by a shared distributed cache in [[container|catalog-cache]] across all instances.
+- **Selective coverage:** Only two high-volume read paths are cached—individual [[entity|book]] lookups by identifier, and the administrative dashboard summary. Other queries go directly to the database.
+- **Clear refresh rules:** Whenever a book is updated, its individual cached entry is immediately cleared so the next lookup reloads fresh details from the database. The dashboard summary refreshes automatically after a short 15-second expiration window.
+- **Authoritative checkout safety:** Neither cache layer is ever treated as a source of truth; purchase-time price and availability decisions must rely on current authoritative data rather than cached copies.
+
+## 4. Trade-offs & Lessons Learned
+
+### Alternatives considered
+
+- **No caching:** Simplest to operate and always strictly up to date, but leaves avoidable database pressure and higher latency on frequent book and dashboard reads.
+- **Cache everything aggressively:** Maximizes database offload, but greatly increases the risk and business impact of stale prices, outdated metadata, and complex invalidation bugs.
+- **Shared distributed cache only (no local memory layer):** Reduces caching layers, but forces every cache hit to make a network round trip instead of serving repeat reads directly from instance memory.
+
+### Trade-offs & operational considerations
+
+- **Brief staleness window:** Cached responses can briefly reflect prior values until invalidation or expiration takes effect, reinforcing why critical purchase checks must use authoritative data (see [[adr|adr-001-postgresql-system-of-record]]).
+- **Additional operational concerns:** A two-layer cache introduces invalidation, expiration, data-shape versioning, and observability requirements. Changing the structure of a cached summary requires introducing a new versioned key so old and new data formats never collide.
+- **Monitoring dependency:** Operations teams must monitor cache hit/miss telemetry alongside distributed-cache connectivity and latency to tell whether read slowdowns stem from the database or the cache layer.
+
+## 5. Technical Reference
+
+- **Caching implementation (`[[service|catalog-api]]`):** Registers **FusionCache** with an **L1 in-process memory cache** backed by a **Redis distributed cache** (`[[container|catalog-cache]]`), using JSON serialization and default expiration from `Caching:Expiration` (overridable per entry).
+- **Selected cached entries:**
 
 | Data                          | Key                    | Source           | Expiration           |
 | ----------------------------- | ---------------------- | ---------------- | -------------------- |
 | [[entity\|book]] lookup by ID | `book:{id}`            | Catalog Database | `Caching:Expiration` |
 | Dashboard summary             | `catalog:dashboard:v1` | Catalog Database | 15 seconds           |
 
-Book changes invalidate their `book:{id}` entry so the next lookup reloads
-from PostgreSQL. The dashboard summary refreshes when its entry expires. Only
-selected reads are cached; Redis and the local L1 are never authorities for
-catalog data.
-
-## Decision drivers
-
-The Catalog API serves repeated read patterns at high volume, especially for
-book detail pages and administrative summaries. The system needs to keep
-these paths fast without making read consistency or data freshness a hidden
-dependency on cache correctness.
-
-The in-process layer provides locality for repeated reads handled by an API
-instance, while Redis provides a distributed cache shared across instances.
-Keeping the cache selective and bounded by expiration and invalidation
-preserves PostgreSQL as the only source of truth.
-
-## Alternatives considered
-
-### No cache
-
-This is simple and correct, but it increases database pressure and response
-latency under load. Repeated book lookups and summary reads are common enough
-that avoiding the cache would forgo a useful read optimization.
-
-### Cache everything aggressively
-
-This would reduce database traffic but increase the risk and impact of stale
-responses, especially for mutable book metadata, prices, or dashboard
-aggregates. Selective caching with explicit expiration and invalidation is
-preferred over treating every query as cacheable.
-
-### Use Redis without a local L1 cache
-
-This would reduce the number of cache layers, but each cache read would
-require a remote round trip and would miss the locality of in-process reads.
-The two-layer design trades some operational complexity for lower latency on
-hot reads.
-
-## Consistency and operating constraints
-
-- Cache entries are disposable copies populated from the database-backed query
-  path. A cache miss or cache loss must not change catalog ownership.
-- Book changes invalidate the matching book key; the dashboard uses a short
-  fixed expiration. Updates to cache key shapes should use a new key version
-  (for example, `catalog:dashboard:v2`) to avoid interpreting old serialized
-  values as the new shape.
-- Cached reads can be briefly stale until invalidation or expiration takes
-  effect. Purchase-time price and availability decisions must use current
-  authoritative data rather than relying on a cached value.
-- FusionCache metrics and traces, Redis connectivity, and Redis latency are
-  needed to distinguish database load from cache-related read behavior.
-
-## Consequences
-
-- Hot book lookups and dashboard reads can reduce database load and response
-  latency.
-- Cached values can be briefly stale until entries expire or are invalidated;
-  cache freshness is not a substitute for canonical data access.
-- Cache loss or a miss requires reads to be served through the
-  database-backed path and affects performance rather than data ownership.
-- The local and distributed layers introduce cache invalidation, expiration,
-  serialization, and observability concerns that must be maintained as read
-  contracts evolve.
-- Redis connectivity and latency become operational concerns; monitor
-  FusionCache metrics and traces alongside the database.
+- **Invalidation & key versioning:**
+  - Book mutations invalidate `book:{id}` so the next lookup reloads from PostgreSQL (`[[adr|adr-001-postgresql-system-of-record]]`).
+  - `catalog:dashboard:v1` relies on its 15-second TTL.
+  - Changes to cached payload shapes must increment the key version (for example, `catalog:dashboard:v2`) to avoid deserializing incompatible cached JSON.
+- **Fallback & observability:**
+  - Cache entries are disposable; cache misses or Redis outages fall back to the PostgreSQL-backed query path.
+  - Monitor FusionCache metrics and traces, Redis connectivity, and Redis latency alongside PostgreSQL metrics.

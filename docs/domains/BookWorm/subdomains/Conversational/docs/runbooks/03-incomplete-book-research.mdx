@@ -12,42 +12,57 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Symptoms
+## 1. Context & Problem
 
-- A recommendation omits part of the customer's stated preferences.
-- A complex request is answered with only book details or only a shortlist.
-- The response contains duplicate recommendations or unsupported claims.
-- A direct answer is expected to include research that was not delegated.
+When customers ask complex book discovery or recommendation questions, BookWorm's book specialist can either respond directly for straightforward lookups or coordinate two parallel research streams—one gathering factual catalog details and another curating preference-matched recommendations. When an answer omits preferences, feels half-complete, repeats titles, or skips expected research, operations and support teams need a structured way to distinguish normal direct handling from incomplete or conflicting delegated research.
 
-## Diagnose
+## 2. Business Value
 
-1. Confirm the request reached [[agent\|book-agent]] and determine whether it
-   was handled directly or delegated.
-2. For delegated work, check that both
-   [[agent\|book-catalog-researcher]] and
-   [[agent\|book-recommendation-researcher]] completed and returned findings.
-3. Check whether Plan Mode required customer approval before multi-step work
-   and whether that approval was given.
-4. Compare the final response with the available findings. Missing Catalog
-   evidence must remain unknown; it must not be replaced with invented facts.
-5. Remember that simple lookups and clarifications can be handled directly.
-   The absence of delegated work alone does not establish a failure.
+- **Protects factual accuracy and trust**: Reinforces the rule that missing catalog facts remain explicitly unknown rather than being filled with invented details.
+- **Reduces false-positive escalations**: Helps teams quickly separate intentional direct answers and pending customer approvals from genuine research-branch failures.
+- **Preserves partial value safely**: Enables teams to deliver verified portions of an answer transparently when one research stream is unavailable or conflicting.
 
-## Recover
+## 3. How It Works
 
-- If a research branch did not return, retry the relevant work after confirming
-  the request is still valid and any required approval is present.
-- If findings conflict, avoid making a definitive claim until the source facts
-  are confirmed.
-- If one branch is unavailable, provide only the supported portion and state
-  what could not be confirmed.
-- Preserve the request category, selected handling mode, branch outcomes, and
-  sanitized findings when escalating.
+### Symptoms to Watch For
 
-## Escalation
+- A recommendation leaves out part of the customer's stated preferences.
+- A complex request returns only factual book details or only a recommendation shortlist.
+- The response includes duplicate book recommendations or unsupported claims.
+- A direct answer was expected to include deeper research that did not happen.
 
-Contact [[team\|contributor-team]] with the environment, approximate time,
-whether the request was direct or delegated, the status of both research
-branches, and the final response outcome.
+### Diagnosis Steps
+
+1. Confirm the request reached the book specialist and determine whether it was handled directly or delegated for deeper research.
+2. For delegated requests, verify that both the factual catalog research branch and the preference-recommendation research branch completed and returned findings.
+3. Check whether planning mode required customer approval before multi-step work and whether that approval was granted.
+4. Compare the final response against the available findings. Missing catalog evidence must remain unknown and must never be replaced with invented facts.
+5. Remember that simple lookups and preference clarifications are handled directly; the absence of delegated research alone does not indicate a failure.
+
+### Recovery Actions
+
+- If a research branch did not return, retry the relevant work after confirming the request is still valid and any required approval is present.
+- If findings conflict, avoid making a definitive claim until the underlying source facts are confirmed.
+- If one branch is unavailable, provide only the verified portion of the answer and state clearly what could not be confirmed.
+- Capture the request category, selected handling mode, individual branch outcomes, and sanitized findings before escalating.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Direct replies vs. parallel research overhead**: Answering simple lookups directly keeps latency low, while delegating complex queries improves breadth—at the cost of needing two independent branches to complete and merge cleanly.
+- **Approval gates vs. seamless execution**: Waiting for customer approval before multi-step research keeps complex workflows transparent, but an unapproved plan can resemble stalled research during triage.
+- **Accuracy over completeness**: Leaving gaps explicit when catalog evidence is missing avoids hallucinated product claims, even when it means delivering a narrower response.
+
+## 5. Technical Reference
+
+- **Primary specialist**: [[agent\|book-agent]] (handles direct lookups/clarifications or delegates multi-step research; in Plan Mode, waits for customer approval before starting multi-step work).
+- **Delegated research subagents**:
+  - [[agent\|book-catalog-researcher]]
+  - [[agent\|book-recommendation-researcher]]
+- **Grounding rule**: Missing Catalog evidence must remain unknown and must not be replaced with invented facts.
+- **Escalation**: Contact [[team\|contributor-team]] with:
+  - Environment and approximate time
+  - Request category and whether handling was direct or delegated (including selected mode)
+  - Status and outcomes of both [[agent\|book-catalog-researcher]] and [[agent\|book-recommendation-researcher]]
+  - Sanitized findings and the final response outcome
 
 <Footer />

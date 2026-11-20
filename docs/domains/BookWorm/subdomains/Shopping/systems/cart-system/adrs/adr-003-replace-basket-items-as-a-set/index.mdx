@@ -26,35 +26,33 @@ badges:
     textColor: blue
 ---
 
-## Context
+## 1. Context & Problem
 
-The storefront edits the customer's complete current selection. Merge-style
-updates would make removal behavior implicit and could leave stale items in
-the basket when a client submits a new view of the selection.
+When customers edit their [[entity|basket]] on the storefront, they expect the saved cart to match the exact selection shown on their screen. If updates only merged individual item changes, removing an item would be implicit and easy to miss, potentially leaving stale items behind when a customer submits an updated view of their cart.
 
-The Basket API's `PUT /api/v1/baskets` contract therefore accepts the desired
-item collection, validates it, and returns `204 No Content` when the
-replacement succeeds. An update to a missing basket is reported as `404`, and
-invalid input is reported as `400`; the contract does not describe a
-per-item patch operation.
+## 2. Business Value
 
-## Decision
+- **Predictable cart state**: Ensures what the customer sees on screen matches what is stored, reducing "ghost item" bugs.
+- **Simpler validation**: Every update is checked as a complete set, guaranteeing that carts always contain valid books and positive quantities.
+- **Cleaner removal semantics**: Removing an item is unambiguous—it is simply omitted from the submitted selection rather than tracked through special zero-quantity flags.
 
-[[command|UpdateBasket]] replaces the entire item collection in the
-[[entity|basket]]. The service rejects missing [[entity|book]] identifiers and
-non-positive quantities, and basket creation requires at least one item.
-Removing an item is represented by submitting the desired collection without
-that item; it is not represented by a zero quantity. An empty collection is
-invalid for both creation and update.
+## 3. How It Works
 
-## Consequences
+Every basket update replaces the entire item list in the customer's [[entity|basket]] with the full collection submitted by the storefront. When a customer adds a [[entity|book]], changes a quantity, or removes an item, the storefront sends the complete desired list rather than a partial edit.
 
-- Clients have a deterministic representation of the desired basket state.
-- The API validates the complete submitted collection against the basket
-  invariants rather than interpreting partial edits.
-- Clients must send the full item collection when updating.
-- A client editing a stale view can overwrite a more recent replacement.
-  Concurrent-edit protection (such as a version check) is not part of this
-  decision and would require an explicit contract change.
-- A retry with an old full collection can reapply that older state; clients
-  should refresh the basket when they need to reconcile concurrent changes.
+Before saving, the system checks that the submitted basket is not empty, that every item references a valid book, and that every quantity is greater than zero. Removing an item is expressed by leaving it out of the submitted list, not by setting its quantity to zero. Creating a new basket also requires at least one valid item, and attempting to update a basket that does not exist or submitting invalid details is rejected.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Full list required on every edit**: Storefront clients must always send the complete item collection rather than lightweight single-item patches.
+- **Last-write-wins behavior**: Because this design does not include version checks for simultaneous edits, a customer editing an outdated view—or a delayed retry of an older update—can overwrite a newer cart change.
+- **Reconciliation responsibility**: Clients need to refresh the basket state when reconciling concurrent changes across multiple tabs or devices; adding conflict detection later would require an explicit contract change.
+
+## 5. Technical Reference
+
+- **Command**: [[command|UpdateBasket]]
+- **HTTP contract**: `PUT /api/v1/baskets` accepts the full desired item collection (no per-item patch operation is provided).
+  - Returns `204 No Content` when replacement succeeds.
+  - Returns `400` on invalid input (missing [[entity|book]] identifiers, non-positive quantities, or an empty collection on creation or update).
+  - Returns `404` when updating a missing [[entity|basket]].
+- **Concurrency note**: Optimistic concurrency / version checks are not part of this decision and would require an explicit contract update.

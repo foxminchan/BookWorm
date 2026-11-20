@@ -22,85 +22,62 @@ appliesTo:
     id: CancelOrderCommand
 ---
 
-## Context
+## 1. Context & Problem
 
-Checkout coordination cannot wait indefinitely for downstream progress, and
-immediate unbounded retries could amplify a [[service|basket-api]] or messaging outage. [[system|finance-system]]
-already has durable saga state and scheduled-message support.
-The timeout policy must distinguish a missing cleanup outcome from an
-authoritative Order status change and limit how many times Finance republishes
-its placement command.
+Post-checkout coordination in [[system|finance-system]] cannot wait indefinitely for downstream progress, yet immediate or unlimited retries could worsen an outage in [[service|basket-api]] or the messaging layer. Finance already maintains durable workflow state and scheduled reminders, so it needed a bounded retry mechanism that:
 
-This retrospective ADR records the current timeout algorithm, including its
-limitations rather than an idealized retry policy.
+- Limits how many times a placement request is reissued.
+- Spaces attempts out to allow transient issues time to clear.
+- Distinguishes a missing cleanup confirmation from an authoritative Order cancellation in [[domain|ordering]].
 
-## Decision
+This retrospective ADR documents the timeout behavior actually implemented, including its known caveats rather than an idealized retry design.
 
-At saga start, emit [[command|PlaceOrderCommand]] and a local
-`PlaceOrderTimeout(OrderId, MaxRetryTimeout)` message. On each timeout,
-increment `TimeoutRetryCount`; reissue the command and schedule another timeout
-only while the count is less than `MaxAttempts`.
+## 2. Business Value
 
-The checked-in settings use `MaxAttempts: 3` and a 30-minute delay. In an
-uninterrupted timeout sequence, this means the initial command plus two
-reissues; the third timeout exhausts the limit. Delays describe scheduled
-intervals, not a guaranteed wall-clock completion deadline.
+- **Outage protection:** Spacing retries apart and capping total attempts prevents Finance from flooding an unhealthy dependency with retry traffic.
+- **Bounded operational lifespan:** Workflows do not remain stuck open indefinitely when expected cleanup confirmations never arrive.
+- **Preserved source of truth:** When retries run out, Finance closes only its internal coordination workflow rather than prematurely cancelling the customer's Order.
+- **Survives restarts:** Because the retry count and scheduled checks are persisted, restarts do not reset the limit or lose track of active workflows.
 
-On exhaustion, mark the saga Cancelled, call `MarkCompleted()`, and emit a
-cancellation notification command only when name and email are nonblank.
-Do not invoke [[domain|ordering]]'s cancel operation.
+## 3. How It Works
 
-The delay is applied between scheduled timeout messages, not as a strict
-end-to-end deadline. Basket success reports cleanup progress but does not
-cancel the outstanding timeout or complete the saga; consequently, an open
-saga can still receive a timeout and reissue placement after cleanup success.
-Explicit basket failure ends the saga immediately rather than consuming the
-remaining timeout attempts.
+1. **Initial request and timer:** When a checkout workflow starts, Finance sends the initial placement request and schedules a follow-up check for 30 minutes later.
+2. **Bounded reissues:** Each time a scheduled check fires, Finance increments its saved attempt count. Under the configured limit of 3 attempts, a full uninterrupted sequence sends the initial request plus 2 reissues; the third timeout exhausts the retry budget.
+3. **Immediate stop on explicit failure:** If Basket explicitly reports that cleanup failed, Finance closes its workflow right away instead of waiting through the remaining scheduled checks.
+4. **Open-workflow overlap on cleanup success:** When Basket reports cleanup success, Finance forwards that progress, but the workflow stays open waiting for the final Order outcome and does not cancel the scheduled check. As a result, a still-open workflow can receive a later timeout and reissue the placement request even after cleanup succeeded.
+5. **Closure on exhaustion:** Once the retry limit is reached, Finance marks its internal workflow as cancelled, closes it, and requests a cancellation email only when both customer name and email are nonblank. It never calls Ordering to cancel the Order itself.
 
-## Consequences
+## 4. Trade-offs & Lessons Learned
 
-- Retries are bounded and their count survives through saga persistence.
-- The timeout is a local Wolverine `TimeoutMessage`, not the unused
-  `PlaceOrderTimeoutIntegrationEvent` Kafka contract.
-- The basket-success handler does not cancel the timeout or change the saga
-  state. A still-open saga can therefore receive later timeouts and reissue
-  placement even after successful cleanup.
-- Explicit basket failure ends the saga immediately instead of consuming
-  the remaining timeout attempts.
-- Reissued placement commands can repeat Basket and Notification work.
-  These workflow retries are distinct from transport-level delivery retries.
-- A timeout exhaustion changes Finance's saga state only. It is not evidence
-  that Ordering cancelled the Order or that a cancellation notification was
-  delivered.
-- The current placement-command retry can cause duplicate consumer work
-  because the same command is consumed by Basket and Notification; consumers
-  and operations must account for repeated processing.
-- The configured 30-minute delay and maximum-attempt value do not establish a
-  wall-clock completion SLA, especially when scheduling, message delivery, or
-  downstream processing is delayed.
+### Alternatives Considered
 
-## Alternatives considered
+- **Retrying indefinitely:** Keeps trying during long outages, but amplifies downstream load and leaves coordination records open forever.
+- **Retrying immediately:** Gives failing services no time to recover and increases pressure during partial outages.
+- **Cancelling the Order on retry exhaustion:** Would turn an internal coordination timeout into an unauthorized business-status change, creating competing owners for the Order lifecycle.
+- **Publishing a cross-service timeout event:** Would misrepresent an internal timer as an external integration contract across services.
 
-### Retry indefinitely
+### Operational Realities & Caveats
 
-Unbounded retries could keep transient work alive, but may repeatedly amplify
-a sustained Basket or messaging outage and leave the saga active indefinitely.
+- **Repeated downstream work:** Because reissuing the placement request targets a shared contract consumed by both Basket and Notification—and because cleanup success does not cancel pending timeouts—retries can trigger duplicate basket cleanup attempts and additional emails. Downstream consumers and operations teams must account for repeated processing.
+- **Intervals, not strict SLAs:** The 30-minute delay governs the gap between scheduled checks; scheduling delays, queue backlogs, or downstream latency mean it is not a guaranteed wall-clock completion deadline.
+- **Workflow retries vs. transport retries:** These scheduled workflow reissues operate at the coordination level and are distinct from lower-level message-broker delivery retries.
+- **Internal closure only:** A Finance timeout exhaustion updates only Finance's workflow state; it does not prove that Ordering cancelled the Order or that a cancellation email reached the customer.
 
-### Retry immediately
+## 5. Technical Reference
 
-Immediate retries would provide little recovery time for a transient outage
-and could increase load on an already unhealthy dependency. Scheduled delays
-space attempts apart.
+### Implemented Retry Algorithm & Configuration
 
-### Cancel the Order when Finance retries are exhausted
+- **Initial emission:** At saga start, emit [[command|PlaceOrderCommand]] and schedule a local `PlaceOrderTimeout(OrderId, MaxRetryTimeout)` message.
+- **Timeout handling:** On each timeout, increment persisted `TimeoutRetryCount`. While `TimeoutRetryCount` is less than `MaxAttempts`, reissue [[command|PlaceOrderCommand]] and schedule another timeout.
+- **Checked-in settings:** `MaxAttempts: 3` with a 30-minute delay (1 initial command + 2 reissues; the 3rd timeout exhausts the limit).
+- **Exhaustion behavior:** Mark the saga `Cancelled`, call `MarkCompleted()`, and emit a cancellation notification command ([[command|CancelOrderCommand]]) only when both recipient name and email are nonblank. Do not invoke [[domain|ordering]]'s cancel operation.
 
-This would turn a Finance timeout into a business-status mutation and create
-a competing Order lifecycle owner. Finance marks its own saga complete and
-leaves Order cancellation to Ordering's explicit business workflow.
+### Contracts & Messaging Notes
 
-### Use a Kafka timeout event
-
-The implemented timeout is a local Wolverine `TimeoutMessage`, not the
-documented-but-unused `PlaceOrderTimeoutIntegrationEvent`. Treating those as
-interchangeable would incorrectly imply that timeout scheduling is a
-cross-service integration contract.
+| Item                             | Detail                                                                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scheduled timeout mechanism      | Local Wolverine `TimeoutMessage` (`PlaceOrderTimeout`) — **not** the documented-but-unused `PlaceOrderTimeoutIntegrationEvent` Kafka contract. |
+| Reissued command                 | [[command\|PlaceOrderCommand]] (consumed by both Basket and Notification).                                                                     |
+| Saga persistence                 | Retry count (`TimeoutRetryCount`) and saga state persist across process restarts.                                                              |
+| Basket-success side effect       | Does not cancel outstanding timeouts or complete the saga; later timeouts can still reissue [[command\|PlaceOrderCommand]].                    |
+| Explicit basket-failure behavior | Ends the saga immediately rather than consuming remaining timeout attempts.                                                                    |

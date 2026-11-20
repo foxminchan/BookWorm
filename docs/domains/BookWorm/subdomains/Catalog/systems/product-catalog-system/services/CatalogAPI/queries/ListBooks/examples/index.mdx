@@ -2,22 +2,46 @@
 summary: Search and filter books with paging, sorting, price, and relationship criteria.
 ---
 
+## 1. Context & Problem
+
+Frontend and integration developers building catalog search screens need clear guidance on how to combine paging, sorting, price bounds, and relationship filters in a single request, as well as how to handle zero-match searches and invalid user inputs.
+
+## 2. Business Value
+
+- **Consistent storefront pagination**: Guiding clients to preserve active filters across page transitions prevents jarring resets where shoppers lose their search context when moving to the next page.
+- **Graceful zero-match experience**: Clarifying that no matching books still produces a valid empty result enables user interfaces to show helpful "no books found" guidance instead of error banners.
+- **Faster troubleshooting**: Documenting how malformed identifiers, price bounds, or paging inputs are rejected helps teams surface actionable validation messages.
+
+## 3. How It Works
+
+1. The client sends a single structured query containing the desired page settings, sort order, text search, price bounds, and any selected categories, publishers, or authors.
+2. When books match the criteria, the catalog returns the matching page of books with core details such as title, price, and availability; when moving to the next page, the client resends the same filters with an updated page number.
+3. When no books match the combined filters, the catalog succeeds and returns an empty list.
+4. When any input is malformed—such as an invalid identifier, non-numeric price bound, or invalid page value—the catalog rejects the request with validation details.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Stateless filter repetition**: Because the catalog does not store search sessions on the server, clients must retain and resend active filter criteria with every page change, trading a small amount of client state management for stateless server scalability.
+- **Empty list vs. validation error**: Distinguishing "no matches found" from "invalid filter input" ensures shoppers see empty-state guidance on valid narrow searches while catching malformed inputs early.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. Search and filter books
+### 1. Search and filter books
 
 The `QUERY` request sends filter criteria in a JSON request body and returns `200` with the matching `BookDto` array.
 
-### Filter details
+#### Filter details
 
 - `pageIndex` and `pageSize` control paging.
 - `orderBy` and `isDescending` control sorting.
 - `search` performs text search; `minPrice` and `maxPrice` constrain price.
 - `categoryId`, `publisherId`, and `authorIds` filter by arrays of relationship IDs.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -34,7 +58,7 @@ const books: BookDto[] = [
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Render the matching books and keep the current filters when requesting the next page.
 
@@ -87,10 +111,10 @@ console.log(`Found ${books.length} books`);
 
 ---
 
-## 2. Handle an empty result
+### 2. Handle an empty result
 
 No matches return `200` and `[]`.
 
-## 3. Reject invalid filters
+### 3. Reject invalid filters
 
 Malformed UUIDs, non-numeric price bounds, or invalid paging values return `400` with validation problem details.

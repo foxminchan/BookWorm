@@ -9,7 +9,42 @@ badges:
     textColor: blue
 ---
 
-This documentation describes the architecture of BookWorm at the whole-system level. It is not specific to an individual business domain, bounded context, service, or deployment unit. Detailed ownership and implementation are documented in the relevant catalog entries.
+## 1. Context & Problem
+
+As a multi-capability platform grows, architectural knowledge easily becomes fragmented across individual services, codebases, and team conventions. Solution architects, project managers, business analysts, and developers need a single system-wide entry point that explains how BookWorm fits together as a whole—from business goals and boundaries down to runtime flows, operational assumptions, and open risks—without having to piece together every individual service specification first.
+
+This overview frames BookWorm at the whole-system level rather than focusing on a single business domain, service, or deployment unit.
+
+## 2. Business Value
+
+Organizing whole-system architecture documentation around a standardized structure provides immediate practical value:
+
+- **Faster cross-team alignment (SA, PM, BA)**: Gives stakeholders a consistent map of business capabilities, ownership boundaries, and quality goals for roadmap planning and impact assessment.
+- **Clarity between fact and intent**: Explicitly distinguishes confirmed system behavior from provisional targets or open questions, preventing unfounded assumptions in delivery estimates or operational commitments.
+- **Predictable evolution (Engineering)**: Grounds individual service changes in system-wide constraints, engineering standards, and cross-cutting rules so independent capabilities evolve without breaking one another.
+
+## 3. How It Works
+
+BookWorm is structured around clear business capabilities rather than a single shared application model. At the system level, the operating model connects six complementary areas:
+
+- **Product truth and discovery**: Maintains authoritative book details, pricing, and availability.
+- **Pre-purchase shopping**: Captures mutable customer basket selections and turns them into checkout requests.
+- **Order management**: Accepts checkout requests and owns the order lifecycle after a purchase is confirmed.
+- **Customer feedback**: Captures individual book ratings and reviews while referencing catalog book identities without duplicating book ownership.
+- **Conversational assistance**: Provides AI-assisted customer guidance and discovery using explicit, controlled access to product and order information.
+- **Shared platform capabilities**: Handles cross-cutting needs such as notifications and scheduled background work without owning any business area's core records.
+
+The 12 architecture chapters guide readers progressively—from business intent and constraints, through system scope, solution strategy, structural building blocks, runtime flows, and deployment considerations, to cross-cutting concepts, key architectural decisions, quality requirements, risks, and shared terminology.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Capability boundaries over a single shared model**: Separating BookWorm into distinct business contexts keeps ownership clear and prevents unintended coupling, at the cost of explicit coordination across boundaries.
+- **Transparency over false completeness**: Where the repository does not yet state a formal requirement, target, or external interface, the architecture documentation marks it as an architectural intent or an item to confirm rather than presenting it as settled fact.
+- **Whole-system map vs. service-level depth**: This overview summarizes system-wide relationships and narratives; detailed service contracts, schemas, and implementation specifics remain in their respective catalog entries.
+
+## 5. Technical Reference
+
+### arc42 Chapter Index
 
 The arc42 chapters are organized into folders and progress from business intent to system boundaries:
 
@@ -26,9 +61,9 @@ The arc42 chapters are organized into folders and progress from business intent 
 11. [[doc|arc42/11-risks-and-technical-debt]]
 12. [[doc|arc42/12-glossary]]
 
-This overview is based on the repository's architecture catalog and [[doc|development/004-engineering-standards]]. It reflects the current BookWorm operating model: a catalog of books and prices, a shopping flow that creates an order, a separate ordering lifecycle after purchase acceptance, review capture as a supporting capability, conversational assistance as a customer-facing experience, and platform infrastructure that provides scheduling and cross-cutting notifications.
+This overview is based on the repository's architecture catalog and [[doc|development/004-engineering-standards]].
 
-## Architectural framing
+### Architectural Framing
 
 BookWorm is intentionally modeled as a bounded-context system rather than a monolith with a single shared model. The primary decomposition is by business capability and ownership:
 

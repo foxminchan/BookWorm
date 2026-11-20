@@ -12,7 +12,34 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Before changing behavior
+## 1. Context & Problem
+
+Modifications to conversational agents, routing questions, decision thresholds, or multi-step handoffs can easily create unintended ripple effects. Without a shared review gate before and after making changes, updates can blur boundaries with neighboring business domains, cause assistants to fabricate unavailable book details or imply live account access, and leave architecture diagrams, guides, and support runbooks out of sync with live behavior.
+
+## 2. Business Value
+
+- **Customer trust and safety**: Prevents misleading responses, fabricated catalog facts, and false promises around account lookups or review persistence.
+- **Clear domain ownership**: Protects Catalog, Shopping, Ordering, and Reviews as the single sources of truth for their business data and operations.
+- **Predictable delivery**: Gives Solution Architects, Product Managers, Business Analysts, and Developers a consistent readiness standard before releasing routing or prompt changes.
+- **Operational alignment**: Keeps customer-facing behavior, documentation, and support triage guides synchronized.
+
+## 3. How It Works
+
+Before releasing any change to the conversational experience, teams follow three review stages:
+
+1. **Assess Scope and Domain Boundaries**: Determine which part of the interaction flow is affected—initial input screening, routing decisions, specialist behavior, delegated multi-step research, or final answer formatting. Confirm that adjacent domains keep ownership of their own data and operations, and define explicit limits for unsupported languages, off-topic questions, live account inquiries, and incomplete book details so gaps are never filled with guesses.
+2. **Synchronize Documentation and Catalog Assets**: Update the affected specialist profiles, routing policies, end-to-end interaction flows, and system or service descriptions so they accurately reflect externally visible behavior. Review related guides and operational runbooks to remove or update outdated steps.
+3. **Verify End-to-End Outcomes**: Validate both accepted and rejected inputs, every supported specialist destination, and boundary outcomes for unsupported languages or out-of-scope topics. Confirm that mixed support-and-book requests behave cleanly, parallel research branches merge into a useful summary even when some details are missing, and session behavior is never described as durable history unless persistence actually exists.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Upfront review vs. iteration speed**: Requiring documentation and cross-path verification adds friction to small routing or prompt tweaks, but catches boundary regressions before customers encounter them.
+- **Strict domain separation vs. conversational convenience**: Keeping Catalog, Shopping, Ordering, and Reviews isolated from direct conversational writes limits what chat can do autonomously, yet prevents inconsistent business state and unverified data claims.
+- **Explicit session expectations**: Teams must avoid assuming or documenting conversation memory as durable across restarts unless explicit persistence has been implemented and verified.
+
+## 5. Technical Reference
+
+### Before changing behavior
 
 - [ ] Identify whether the change affects input validation, Decision Router
       questions/thresholds, specialist behavior, delegated research, or final
@@ -24,7 +51,7 @@ import Footer from "@catalog/components/footer.astro";
 - [ ] For book answers, define how the response handles missing or incomplete
       supporting information without inventing facts.
 
-## Update the catalog
+### Update the catalog
 
 - [ ] Update the affected agent resource, such as [[agent|book-agent]],
       [[agent|qa-agent]], or [[agent|rating-agent]], or the routing policy in
@@ -36,7 +63,7 @@ import Footer from "@catalog/components/footer.astro";
 - [ ] Review related domain guidance and runbooks for steps that are no longer
       valid.
 
-## Verify the behavior
+### Verify the behavior
 
 - [ ] Test accepted and rejected input paths.
 - [ ] Test each supported Decision Router destination (`Book`, `QA`, `Rating`)

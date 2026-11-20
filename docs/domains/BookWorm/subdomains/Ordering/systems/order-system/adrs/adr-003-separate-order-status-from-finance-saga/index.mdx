@@ -24,64 +24,47 @@ badges:
     textColor: purple
 ---
 
-## Context
+## 1. Context & Problem
 
-[[entity|order]] placement starts a separate [[system|finance-system]] workflow that coordinates basket
-cleanup and related follow-up. Those operations can succeed or fail
-independently of the business lifecycle of the accepted Order. Treating a
-Finance saga outcome as an Order status change would conflate two different
-owners and lifecycles. In particular, basket cleanup is an operational
-coordination step, while completion or cancellation is a business transition
-that Ordering must validate against the current Order state.
+Placing an [[entity|order]] kicks off a separate coordination workflow in [[system|finance-system]] to handle follow-up tasks such as clearing the customer's shopping basket and triggering notifications. Those operational steps can succeed, retry, or fail independently of the business lifecycle of the accepted order.
 
-## Decision
+If the outcome of that follow-up workflow automatically changed an order's business status, technical cleanup steps would overwrite business decisions. For example, successfully emptying a shopping basket does not mean an order has been fulfilled and completed, nor should a retry failure in basket cleanup silently mark an order as cancelled without Ordering validating the business transition.
 
-[[domain|ordering]] remains authoritative for Order status. Finance owns its saga state
-and communicates checkout and follow-up outcomes through integration
-contracts. Basket deletion success does not complete an Order, and a failed
-or exhausted basket-deletion workflow does not cancel one. An Order becomes
-Completed or Cancelled only when Ordering accepts the corresponding explicit
-status operation.
+## 2. Business Value
 
-Finance's basket-deletion result may be logged or cause the matching Order to
-be soft-deleted after a failure, but it does not itself mutate the business
-status. Ordering publishes explicit status integration events after its own
-accepted lifecycle changes; Finance consumes them to advance its separate
-saga and request follow-up work.
+- **Unambiguous business status:** Stakeholders, customers, and support teams can trust that "Completed" and "Cancelled" reflect deliberate business transitions validated by Ordering, not side effects of background housekeeping.
+- **Resilient failure handling:** Operational hiccups in basket cleanup or notifications do not corrupt an order's official business state.
+- **Independent system evolution:** Ordering and Finance teams can modify their internal workflows, retry policies, and recovery rules without tightly coupling their state machines.
 
-## Consequences
+## 3. How It Works
 
-- Consumers must distinguish Finance workflow outcomes from Order business
-  status and read the Order when they need its current status.
-- Checkout and status integration events communicate Order facts; they do not
-  transfer ownership of the Order aggregate to Finance.
-- An Order may remain New when Finance's basket cleanup fails or its saga is
-  cancelled.
-- A Finance saga can be terminal while its correlated Order remains New; the
-  two lifecycles may legitimately diverge.
-- Soft deletion is separate from the Order's business status. A deleted Order
-  is not thereby Completed or Cancelled.
-- Only Ordering's explicit lifecycle operation can make an eligible New
-  Order Completed or Cancelled; downstream consumers must not infer that
-  transition from cleanup, retry exhaustion, or notification requests.
-- Monitoring and support workflows should inspect the Order and Finance saga
-  independently and correlate them by Order ID.
+[[domain|ordering]] remains the sole authority for an order's business status, while [[system|finance-system]] owns its separate coordination workflow state. The two systems communicate through explicit business announcements rather than directly mutating each other's records.
 
-## Alternatives considered
+- When an order is placed, Ordering announces the checkout so Finance can start its coordination workflow.
+- Basket cleanup outcomes do not change business status: a successful basket deletion does not mark an order as completed, and a failed or exhausted basket-deletion workflow does not mark it as cancelled.
+- If basket cleanup fails, Finance's outcome may be logged or result in the matching order being hidden via soft deletion, without changing its underlying business status.
+- An order only moves from "New" to "Completed" or "Cancelled" when Ordering explicitly accepts and validates that status change, after which Ordering announces the change so Finance can advance its workflow and trigger follow-up actions.
 
-### Let Finance set Order status after cleanup
+## 4. Trade-offs & Lessons Learned
 
-This would make a coordination outcome change the Order's business state
-without passing through the system that owns and validates the Order
-aggregate.
+### Alternatives Considered
 
-### Treat basket deletion success as Order completion
+- **Let Finance set Order status after cleanup:** Rejected because an external coordination outcome would bypass the validation rules owned by the Order aggregate.
+- **Treat basket deletion success as Order completion:** Rejected because clearing a submitted basket only confirms housekeeping finished, not that the order's business lifecycle is complete.
+- **Use one shared lifecycle state for the Order and saga:** Rejected because it tightly couples state transitions and failure recovery across two distinct systems.
 
-Basket cleanup only reports that the submitted basket was handled. It does
-not establish that the Order's business lifecycle is complete.
+### Operational Trade-offs & Risks
 
-### Use one shared lifecycle state for the Order and saga
+- **Legitimate state divergence:** An order can remain in the "New" status even when the corresponding Finance workflow has finished or been cancelled. Downstream consumers must read the order directly when they need its true business status.
+- **Soft deletion vs. business status:** Operational soft deletion (such as hiding an order after a failed basket cleanup) is distinct from business cancellation or completion—a soft-deleted order is not considered completed or cancelled.
+- **Dual-view troubleshooting:** Monitoring and support teams must inspect the Order and the Finance workflow independently, correlating the two by Order ID rather than assuming one mirrors the other.
 
-This would couple two systems' state transitions and recovery behavior. The
-separate states preserve clear ownership and allow each system to report its
-own outcome.
+## 5. Technical Reference
+
+- **Ownership split:** [[domain|ordering]] ([[system|order-system]] / [[service|order-api]]) owns the `Order` aggregate business status (`New`, `Completed`, `Cancelled`); [[system|finance-system]] owns its checkout coordination saga state.
+- **Integration contracts:**
+  - `UserCheckedOutIntegrationEvent` — published by Ordering upon placement; consumed by Finance to start the saga.
+  - `OrderStatusChangedToCompleteIntegrationEvent` — published by Ordering only after an explicit completion transition on an eligible `New` Order.
+  - `OrderStatusChangedToCancelIntegrationEvent` — published by Ordering only after an explicit cancellation transition on an eligible `New` Order.
+- **Non-mutating outcomes:** Downstream consumers must not infer `Completed` or `Cancelled` from basket cleanup, retry exhaustion, or notification requests. Failed basket deletion may be logged or trigger Order soft deletion, which remains separate from business status.
+- **Correlation:** Support and observability tooling must correlate Order records and Finance saga instances by Order ID.

@@ -12,11 +12,47 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## System boundaries
+## 1. Context & Problem
 
-Platform provides shared scheduling and notification capabilities. A scheduled
-invocation or email delivery attempt does not transfer ownership of the
-underlying domain operation.
+Platform provides shared background scheduling and outbound email notification services used across BookWorm. Because these capabilities interact with multiple business domains—including catalog indexing, post-checkout finance coordination, and external mail delivery—teams can easily blur ownership boundaries or mistake a scheduled trigger or sent email for a completed business transaction.
+
+This document establishes clear system boundaries, ownership rules, and operational constraints for scheduled work and email notifications.
+
+## 2. Business Value
+
+- **Clear accountability across domains**: Keeps business state in its owning domain while allowing Platform to specialize in reliable scheduling and email dispatch.
+- **Safer background automation**: Prevents scheduled tasks from bypassing domain validation or directly modifying another system's database.
+- **Operational and privacy clarity**: Clarifies what "email sent" means versus inbox delivery and protects customer email data in operational logs.
+
+## 3. How It Works
+
+### Ownership boundaries
+
+A scheduled run or email delivery attempt never transfers ownership of the underlying business operation:
+
+- **Scheduling**: The scheduler owns job definitions, timing, missed-run handling, and execution history. It invokes or notifies target systems through published contracts and never reads or writes their databases directly.
+- **Catalog indexing**: When the scheduler triggers batch vector indexing, the catalog system owns its processing queue and index updates.
+- **Order & Finance vs. Notification**: Finance owns post-checkout order coordination while Notification owns outbound email state. Notification state is never a substitute for order status.
+- **Email provider boundary**: Notification prepares outbound email records and hands them off to the configured mail transport provider; provider acceptance does not confirm final delivery to the recipient's inbox.
+
+### Outbound notification and maintenance flow
+
+1. Notification receives an order email request and skips it if the email address is blank.
+2. For a nonblank address, Notification renders the email and saves an unsent [[entity|outbox]] record before attempting delivery.
+3. After successful handoff to the mail provider, Notification marks the record as sent—meaning the sender completed its handoff, not that the message reached the recipient's inbox.
+4. On an hourly schedule, the scheduler issues resend and cleanup maintenance requests, and Notification processes up to 100 records per request.
+5. Resend sweeps pick up all unsent records, while cleanup sweeps remove only sent records.
+
+## 4. Trade-offs & Lessons Learned
+
+- **At-least-once resend behavior vs. duplicate risk**: Because the current outbox stores no persisted attempt limit or terminal-failure state, and each resend creates a new outbox record through the shared sender wrapper, repeated failures can leave multiple unsent records and ambiguous transport outcomes can lead to duplicate email submissions.
+- **Lean outbox cleanup vs. permanent audit trail**: Cleanup removes sent records with no age threshold or audit hold, keeping outbox storage small at the cost of not serving as a permanent delivery archive.
+- **Standard mail transport vs. provider-specific features**: Routing outbound email through a standard mail transport configuration simplifies swapping local development mail catchers for production providers, while deferring provider-specific web capabilities until needed.
+- **Privacy-first logging**: Keeping recipient addresses and rendered email content out of logs—preferring identifiers, counts, timestamps, and sanitized error categories—protects customer confidentiality during diagnostics.
+
+## 5. Technical Reference
+
+### System boundaries
 
 | Interaction               | Contract                                                                             | Owning system                                                            |
 | ------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
@@ -25,54 +61,24 @@ underlying domain operation.
 | Finance to Notification   | Order commands on the Finance command channels                                       | Finance owns order state; Notification owns email state                  |
 | Notification to provider  | MailKit submission over SMTP                                                         | Notification owns the outbox; the configured provider owns its transport |
 
-Scheduler owns job definitions, timing, misfire handling, and execution history.
-It must not read or write Catalog or Notification databases directly. The
-receiving system validates and processes the request using its own storage and
-concurrency controls.
+Scheduler owns job definitions, timing, misfire handling, and execution history. It must not read or write Catalog or Notification databases directly. The receiving system validates and processes the request using its own storage and concurrency controls.
 
-## Notification lifecycle
+### Notification lifecycle and provider details
 
-1. Notification consumes an order command and skips it when the email address
-   is blank.
-2. For a nonblank address, Notification renders the email and persists an
-   unsent [[entity|outbox]] record before attempting SMTP submission.
-3. After successful submission, Notification marks the record sent. This means
-   the sender completed successfully; it does not confirm delivery to the
-   recipient.
-4. Scheduler publishes hourly resend and cleanup requests. Notification
-   selects at most 100 records per request.
+- **Outbox & maintenance**: Hourly resend and cleanup requests are published via Kafka; Notification selects at most `100` records per request.
+- **Resend semantics**: The resend request selects all unsent records, not only records with a stored failure classification. The current outbox has no persisted attempt limit or terminal-failure state. A resend uses the shared sender wrapper, which creates a new [[entity|outbox]] record for each attempt; failures can leave multiple unsent records, and ambiguous SMTP outcomes can result in duplicate submissions.
+- **Cleanup semantics**: Cleanup selects sent records only and has no age threshold or audit hold. Do not treat the outbox as a permanent delivery archive.
+- **Provider boundary**: The current Notification implementation uses MailKit over SMTP, with MailPit for development and a configured provider outside development. The documented [[system|sendgrid]] boundary is not called through SendGrid's HTTP Mail Send API by the current implementation. Keep provider-specific behavior behind the SMTP configuration and do not infer successful final delivery from SMTP acceptance.
 
-The resend request selects all unsent records, not only records with a stored
-failure classification. The current outbox has no persisted attempt limit or
-terminal-failure state. A resend uses the shared sender wrapper, which creates
-a new outbox record for each attempt; failures can leave multiple unsent
-records, and ambiguous SMTP outcomes can result in duplicate submissions.
+### Rules for changes
 
-Cleanup selects sent records only and has no age threshold or audit hold. Do
-not treat the outbox as a permanent delivery archive.
-
-## Provider boundary
-
-The current Notification implementation uses MailKit over SMTP, with MailPit
-for development and a configured provider outside development. The documented
-[[system|sendgrid]] boundary is not called through SendGrid's HTTP Mail Send
-API by the current implementation. Keep provider-specific behavior behind the
-SMTP configuration and do not infer successful final delivery from SMTP
-acceptance.
-
-## Rules for changes
-
-- Keep business state in its owning domain; Notification state is not a
-  substitute for order state.
+- Keep business state in its owning domain; Notification state is not a substitute for order state.
 - Keep Scheduler limited to authenticated invocation and message publication.
 - Make target operations safe to retry and preserve durable work on failure.
-- Correlate Scheduler execution history with target-system queues or outbox
-  state before declaring work complete.
+- Correlate Scheduler execution history with target-system queues or outbox state before declaring work complete.
 - Keep SMTP and database credentials in runtime secret configuration.
-- Treat recipient addresses and rendered content as confidential; prefer
-  identifiers, counts, timestamps, and sanitized error categories in logs.
+- Treat recipient addresses and rendered content as confidential; prefer identifiers, counts, timestamps, and sanitized error categories in logs.
 
-See [[system|scheduler-system]], [[system|notification-system]], and
-[[container|notification-database]] for implementation and storage details.
+See [[system|scheduler-system]], [[system|notification-system]], and [[container|notification-database]] for implementation and storage details.
 
 <Footer />

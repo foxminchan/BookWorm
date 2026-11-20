@@ -2,10 +2,32 @@
 summary: Create a Buyer profile using the authenticated customer's address.
 ---
 
-## 1. Create a Buyer profile
+## 1. Context & Problem
 
-Send the address as JSON. The service obtains the Buyer identity and name from
-the authenticated customer.
+Before a customer can maintain address information for ordering, the system needs a buyer profile tied to their verified identity. Asking customers to re-submit their identity or name creates unnecessary friction and opens the door to mismatched or spoofed profile details. Integrating teams need a clear example of how to register a buyer profile using only address details and how to handle validation errors.
+
+## 2. Business Value
+
+- **Faster customer onboarding**: Callers only submit address fields, reducing form complexity and data entry errors.
+- **Stronger identity integrity**: Deriving the buyer's identity and name directly from their verified sign-in session prevents impersonation or mismatched records.
+- **Actionable validation feedback**: Returning structured field-level error messages allows frontend forms to highlight missing fields immediately for the user.
+
+## 3. How It Works
+
+1. The signed-in customer's application submits an address consisting of street, city, and province.
+2. The system reads the customer's identity and name automatically from their authenticated session rather than from the submitted details.
+3. If all required address fields are valid, the system creates the buyer profile and returns the newly generated buyer identifier.
+4. If any required address field (such as street) is missing or invalid, the request is rejected and field-specific validation messages are returned so the user can correct their input.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Session-derived identity and name**: Pulling identity and name from authentication claims eliminates client-side tampering, though it assumes the identity provider always supplies accurate, up-to-date name details.
+- **Minimal creation response**: Returning only the generated buyer identifier keeps creation fast and lightweight, meaning clients that need the full stored profile afterward must retain the submitted values or fetch the profile separately.
+- **Strict address validation**: Enforcing required fields upfront prevents incomplete buyer records from entering downstream order flows.
+
+## 5. Technical Reference
+
+Send the address as JSON to `POST /api/v1/buyers`. The service obtains the Buyer identity and name from the authenticated customer's bearer token.
 
 <CodeGroup dropdown>
 
@@ -67,10 +89,9 @@ console.log(`Created buyer ${buyerId}`);
 
 </CodeGroup>
 
-## 2. Handle an invalid address
+### Handle an Invalid Address
 
-Missing or invalid address fields return `400 Bad Request` with validation
-problem details.
+Missing or invalid address fields return `400 Bad Request` with validation problem details:
 
 <CodeGroup dropdown>
 

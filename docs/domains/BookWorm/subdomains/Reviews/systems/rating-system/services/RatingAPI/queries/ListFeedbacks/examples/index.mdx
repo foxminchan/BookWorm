@@ -2,11 +2,33 @@
 summary: List feedback for a book with paging and ordering.
 ---
 
+## 1. Context & Problem
+
+Teams building storefront screens or integrating with the Reviews capability need concrete, ready-to-use examples showing how to request paged feedback for a book and how invalid inputs are reported. Without shared examples of valid requests, expected output fields, and validation errors, developers can misinterpret optional defaults or handle malformed requests inconsistently.
+
+## 2. Business Value
+
+- **Faster team onboarding**: Copy-ready request and response examples shorten the time needed to wire up book review listings.
+- **Consistent error handling**: Demonstrating how validation errors are structured helps client applications surface actionable feedback rather than generic failures.
+- **Fewer integration defects**: Showing exact response fields—including optional reviewer names and comments—prevents storefront rendering bugs when customers submit a rating without text.
+
+## 3. How It Works
+
+1. **Retrieving paged feedback**: The caller asks for feedback belonging to a single book while specifying the target page, page size, rating sort order, and descending direction. The service returns a matching list of feedback entries, each carrying an entry identifier, optional reviewer first and last name, optional comment, rating, and associated book identifier.
+2. **Handling invalid requests**: If the caller provides a malformed book identifier, invalid paging values, or unsupported sorting options, the request is rejected before data retrieval and returns a structured validation error explaining which input failed.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Handling optional customer fields**: Because reviewer names and written comments are optional, consuming user interfaces must handle missing values gracefully instead of assuming every review contains text and a full name.
+- **Separating validation mistakes from service outages**: Distinguishing client input errors from unexpected system failures lets storefront applications handle bad inputs cleanly without triggering outage alerts.
+
+## 5. Technical Reference
+
+### List feedback for a book
+
 <Columns cols={2}>
 
 <Column>
-
-## 1. List feedback for a book
 
 Pass the required `BookId` and optional paging and ordering parameters. The
 query returns `200 OK` with a JSON array of feedback records.
@@ -86,7 +108,7 @@ console.log(`Received ${feedbacks.length} feedback record(s)`);
 
 ---
 
-## 2. Handle invalid query parameters
+### Handle invalid query parameters
 
 Malformed UUIDs, invalid paging values, or unsupported parameter values return
 `400 Bad Request` with `application/problem+json`.

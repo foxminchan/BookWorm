@@ -12,53 +12,57 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Audience
+## 1. Context & Problem
 
-Catalog business users, support engineers, and teams integrating with
-[[service|catalog-api]].
+Catalog administrators, support staff, and integration teams regularly onboard and update books, authors, categories, and publishers. Because books depend on valid supporting records, enforce strict pricing and deletion boundaries, include cover artwork, and feed downstream storefronts and orders, teams need clear operational rules to avoid broken references, invalid discounts, or misunderstandings about how updates propagate.
 
-## Order of operations
+## 2. Business Value
 
-Books reference categories and publishers and are linked to authors, so create
-reference data first:
+- **Consistent catalog quality:** Enforces unique classifications, valid discount ranges, and clean author-to-book relationships at the point of entry.
+- **Trustworthy customer ratings:** Protects rating integrity by ensuring review scores and counts are derived exclusively from verified customer feedback rather than manual edits.
+- **Safe order boundaries:** Keeps active shopping carts aligned with current pricing at checkout while ensuring catalog edits never retroactively alter accepted customer orders.
+
+## 3. How It Works
+
+This guide is intended for catalog business users, support staff, and teams integrating with the catalog.
+
+### Order of operations
+
+Because every [[entity|book]] references a category, a publisher, and one or more authors, supporting records must exist first:
 
 1. Create the [[entity|publisher]] and [[entity|category]] records.
 2. Create the [[entity|author]] records.
-3. Create the [[entity|book]] referencing those identities, optionally with an
-   image (multipart form data).
-4. Confirm the book with [[query|GetBook]], then allow time for search indexing
-   (see [[doc|guides/search-and-discovery]]).
+3. Create the [[entity|book]] referencing those identities, optionally uploading cover artwork alongside the request.
+4. Confirm the saved book details, then allow time for background search indexing to make the title discoverable via free-text search (see [[doc|guides/search-and-discovery]]).
 
-## Rules to respect
+### Rules to respect
 
-- A discount price on a [[entity|book]] cannot be negative or greater than the
-  original price.
-- [[entity|category]] and [[entity|publisher]] names are unique.
-- Deleting a [[entity|category]] or [[entity|publisher]] keeps its books; the
-  reference is cleared.
-- An [[entity|author]] cannot be deleted while [[entity|book]] records still
-  reference it.
-- Deleting a [[entity|book]] is a soft delete; it is removed from search.
-- Rating fields (`average_rating`, `total_reviews`) are not editable. They are
-  derived from [[domain|reviews]] [[entity|feedback]].
+- A discount price on a [[entity|book]] cannot be negative or greater than its original price.
+- [[entity|category]] and [[entity|publisher]] names must be unique.
+- Deleting a [[entity|category]] or [[entity|publisher]] preserves its books and simply clears the reference on those books.
+- An [[entity|author]] cannot be deleted while any [[entity|book]] records still reference them.
+- Deleting a [[entity|book]] performs a soft delete, hiding it from active listings and removing it from search.
+- Book rating summaries and total review counts are read-only and cannot be edited manually; they are derived automatically from [[domain|reviews]] [[entity|feedback]].
 
-## Images
+### Images and post-change behavior
 
-Upload the image with the [[entity|book]] create or update request. The
-database stores only a URN; image URLs returned by the API are time-limited
-and must not be saved as identifiers. See [[container|catalog-blob]].
+Upload cover artwork directly with the book creation or update request. The catalog keeps a durable internal storage reference and returns short-lived image links when books are read; consumers should never save those temporary links as permanent identifiers.
 
-## What happens after a change
+Immediately after a book is created or updated, any cached copy of that [[entity|book]] is cleared so direct reads reflect the latest values right away. Affected records are queued for background search indexing, meaning free-text search may lag briefly until processing completes. Downstream contexts such as [[domain|shopping]] must re-validate price and availability at checkout, and a [[domain|catalog]] change never rewrites an already accepted [[domain|ordering]] order.
 
-- The cached [[entity|book]] is invalidated, so the next read shows the change.
-- Affected [[entity|book]] records are queued for re-indexing. Search may lag
-  until [[service|catalog-ingestion]] processes the queue.
-- Downstream contexts such as [[domain|shopping]] must re-validate price and
-  availability at checkout; a [[domain|catalog]] change never rewrites an
-  accepted [[domain|ordering]] order.
+## 4. Trade-offs & Lessons Learned
 
-## Related
+- **Strict author protection vs. flexible taxonomy cleanup:** Preventing [[entity|author]] deletion while books exist safeguards author attribution, whereas clearing [[entity|category]] or [[entity|publisher]] links allows taxonomy updates without forcing bulk book edits.
+- **Soft deletion of books:** Retaining soft-deleted book records preserves historical identity and order traceability while cleanly removing titles from customer search.
+- **Immediate read accuracy vs. eventual search indexing:** Clearing cached book reads guarantees immediate accuracy on direct lookups while accepting a brief background delay before text search catches up.
+- **Short-lived image links:** Time-limited media links improve access control, at the trade-off that callers must fetch fresh book data rather than storing image links long-term.
 
-- [[service|catalog-api]] OpenAPI contract
+## 5. Technical Reference
+
+- **Audience & Integration Contract:** Teams integrating with [[service|catalog-api]] should follow the [[service|catalog-api]] OpenAPI contract.
+- **Image Upload & Storage:** Send cover images using multipart form data on [[entity|book]] create or update requests. The database stores only a URN referencing [[container|catalog-blob]]; image URLs returned by the API are time-limited and must not be saved as identifiers.
+- **Verification & Read-Only Fields:** Confirm created or updated books with [[query|GetBook]]. Rating fields (`average_rating`, `total_reviews`) are not editable and are derived from [[domain|reviews]] [[entity|feedback]].
+- **Cache & Indexing Propagation:** Writes invalidate the cached [[entity|book]] entry and enqueue affected [[entity|book]] records for [[service|catalog-ingestion]].
+- **Downstream Checkout & Orders:** [[domain|shopping]] re-validates price and availability at checkout; [[domain|catalog]] updates never mutate accepted [[domain|ordering]] orders.
 
 <Footer />

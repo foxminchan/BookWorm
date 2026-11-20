@@ -29,56 +29,39 @@ badges:
     icon: ShieldCheckIcon
 ---
 
-## Business purpose
+## 1. Context & Problem
 
-Shopping owns the customer-facing path between discovering a [[entity|book]] and accepting
-a purchase. It keeps a customer's current [[entity|basket]], exposes the basket through the
-[[service|basket-api]], and coordinates the transition from checkout into
-[[domain|ordering]] and the Finance workflow.
+Every online bookstore needs a seamless bridge between a shopper browsing books and a confirmed order entering fulfilment. Without a dedicated bounded context for that pre-purchase journey, cart management, live price presentation, checkout confirmation, and order creation quickly collapse into a single coupled workflow—making it difficult to evolve pricing, prevent duplicate orders, or isolate failures.
 
-The subdomain is classified as a **Core Domain** because [[entity|basket]] and checkout
-behavior directly shape conversion and the customer's purchase experience.
-Shopping does not own the product description, order lifecycle, or payment
-settlement. Those responsibilities remain in [[domain|catalog]],
-[[domain|ordering]], and the Finance capability respectively.
+The **Shopping** subdomain solves this by owning the customer-facing path from selecting a [[entity|book]] in a personal [[entity|basket]] through handing an accepted purchase over to [[domain|ordering]] and the Finance workflow. Because cart and checkout behavior directly shape conversion and customer trust, Shopping is classified as a **Core Domain** and **Business Critical** capability, while deliberately leaving product descriptions in [[domain|catalog]], order lifecycles in [[domain|ordering]], and payment settlement in Finance.
 
-### Business outcomes
+## 2. Business Value
 
-- Customers can add [[entity|book]]s to a personal [[entity|basket]] and see an enriched product
-  representation with quantity and price information.
-- Customers can review, change, or clear their basket before checkout.
-- Checkout accepts only an authenticated customer's basket and passes the
-  purchase intent to the order-processing workflow.
-- A successfully accepted purchase does not leave the same basket available for
-  another checkout attempt.
-- Failures in basket cleanup are explicit integration outcomes rather than
-  silent state changes.
+- **Higher conversion and smoother storefront experience:** Gives shoppers a fast, reliable way to add books, review live regular and sale prices, adjust quantities, or clear their cart before buying.
+- **Safe conversational commerce:** Supports adding items through the storefront assistant while requiring explicit customer confirmation so automated suggestions never alter a cart unexpectedly.
+- **Protection against duplicate purchases:** Ensures an accepted checkout cleans up the submitted basket so customers cannot accidentally submit the same purchase twice.
+- **Clear operational visibility:** Turns post-checkout cleanup into explicit success or failure outcomes rather than silent state changes, enabling reliable recovery when downstream issues occur.
+- **Independent service evolution:** Keeps pre-order shopping responsive and decoupled from order-history views, catalog administration, and payment settlement.
 
-## Domain scope and language
+## 3. How It Works
 
-Shopping owns the transient purchase context for a customer:
+Shopping manages the transient purchase context for each authenticated customer using clear domain concepts and strict boundaries:
 
-- [[entity|basket]] is the customer's current collection of book references and
-  quantities.
-- [[entity|basket-item]] is a book identifier paired with a requested quantity.
-  The Basket does not become the owner of Catalog's [[entity|book]] entity.
-- **Checkout** is the boundary at which the current basket is submitted to the
-  order workflow.
-- **Purchase handoff** is the integration step that gives Ordering and Finance
-  enough information to continue processing without sharing the Basket
-  persistence model.
+### Domain language
 
-Important distinctions:
+- **[[entity|basket]]:** The customer's current collection of selected book references and requested quantities.
+- **[[entity|basket-item]]:** A single book reference paired with a positive requested quantity; it does not take over ownership of Catalog's [[entity|book]] entity.
+- **Checkout:** The boundary moment where the current basket is submitted to the order workflow.
+- **Purchase handoff:** The coordination step that provides Ordering and Finance with everything needed to process an order without sharing Shopping's internal basket model.
 
-- A basket is not an Order. Ordering owns the accepted order and its lifecycle
-  after the handoff.
-- Basket pricing is used to present and calculate the current customer
-  proposition; purchase-time validity must still be established by the
-  downstream workflow.
-- Deleting a basket after checkout is a coordination action. It does not mean
-  that Shopping owns payment completion or fulfilment.
+### Customer & checkout flow
 
-## Capability map
+1. **Manage the basket:** An authenticated customer creates a basket with at least one book, reviews enriched product details (names, regular and sale prices, quantities, and totals), replaces the item selection when making changes (treating zero-quantity changes in the storefront as item removal), or clears the basket entirely.
+2. **Confirm conversational actions:** When shoppers use the storefront's conversational assistant to add items, the assistant must obtain explicit customer confirmation before modifying the basket.
+3. **Hand off at checkout:** At checkout, Shopping passes the purchase intent to [[domain|ordering]] and the Finance workflow, where purchase-time validity, payment, and fulfilment are owned.
+4. **Clean up and signal outcome:** Once checkout hands off the purchase, Shopping deletes the submitted basket and emits an explicit completion or failure signal so the order workflow knows whether cleanup succeeded.
+
+### Capability map
 
 | Capability            | Responsibility                                                    | Strategic importance |
 | --------------------- | ----------------------------------------------------------------- | -------------------- |
@@ -88,23 +71,7 @@ Important distinctions:
 | Checkout coordination | Hand an accepted basket to Ordering and the Finance workflow      | Core                 |
 | Failure signalling    | Publish explicit basket-deletion success or failure outcomes      | Enabling             |
 
-## Interaction surface
-
-The [[system|cart-system]] contains the [[service|basket-api]], an internal
-HTTP and gRPC service secured per user. Its API supports:
-
-| Operation                | Purpose                                      |
-| ------------------------ | -------------------------------------------- |
-| `GET /api/v1/baskets`    | Retrieve the authenticated customer's basket |
-| `POST /api/v1/baskets`   | Create a basket with its initial items       |
-| `PUT /api/v1/baskets`    | Replace the basket's current items           |
-| `DELETE /api/v1/baskets` | Clear the authenticated customer's basket    |
-
-The storefront can also expose these capabilities through conversational
-actions. Adding an item through the assistant requires explicit customer
-confirmation before the Basket API is updated.
-
-## Context boundaries
+### Context boundaries
 
 | Relationship        | Direction          | Integration intent                                                   |
 | ------------------- | ------------------ | -------------------------------------------------------------------- |
@@ -113,47 +80,44 @@ confirmation before the Basket API is updated.
 | Shopping → Ordering | Handoff            | Submit the basket for order creation and confirmation                |
 | Shopping → Finance  | Coordination       | Participate in the `place-order` workflow and basket cleanup         |
 
-Shopping consumes published product representations and identifiers. It must
-not mutate Catalog data directly or expose its basket persistence model as an
-Order model.
+## 4. Trade-offs & Lessons Learned
 
-## Checkout interaction
+- **A basket is not an Order:** Keeping the basket strictly as transient, pre-order intent prevents Ordering from depending on Shopping's internal storage, even though checkout must transfer full purchase details during the handoff.
+- **Catalog remains the authority for product data:** Reading live book metadata and prices at display time ensures accuracy without duplicating Catalog ownership, though downstream checkout must still validate purchase-time prices and availability.
+- **Whole-set basket replacement over incremental merging:** Replacing the full item set on updates prevents ambiguous partial-merge bugs and keeps customer-scoped state predictable.
+- **Explicit handoff and cleanup signalling:** Crossing domain boundaries with asynchronous commands and outcome events avoids shared database tables, while requiring idempotent consumers and clear rules so a cleanup outcome is never mistaken for payment completion.
+- **Per-user isolation and protection:** Scoping every action to an authenticated customer and applying per-user rate limits protects availability while preserving low-latency storefront performance.
 
-See [[diagram|checkout-interaction]] for the source-backed sequence from
-checkout through basket cleanup. It records the completion and failure paths
-that the Finance workflow receives after it issues [[command|PlaceOrderCommand]].
+## 5. Technical Reference
 
-## Business invariants
+### Owned system and interaction surface
 
-- Basket operations require an authenticated customer and are subject to the
-  Basket API's per-user rate limit.
-- A newly created basket contains at least one item.
-- Basket item quantities must be greater than zero; setting an item to zero is
-  treated by the storefront as a removal flow.
-- Basket updates replace the current item set rather than merging arbitrary
-  state into the existing basket.
-- Checkout must not leave a successfully submitted basket available for a
-  duplicate purchase.
-- Basket deletion failure is represented by
-  [[event|BasketDeletedFailedIntegrationEvent]]; consumers must not interpret it as a
-  successful cleanup.
-- Shopping keeps references to books and quantities, while Catalog remains the
-  owner of book metadata and Ordering remains the owner of order state.
+The [[system|cart-system]] contains the [[service|basket-api]], an internal HTTP and gRPC service secured per user. Its API supports:
 
-## Architecture principles
+| Operation                | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `GET /api/v1/baskets`    | Retrieve the authenticated customer's basket |
+| `POST /api/v1/baskets`   | Create a basket with its initial items       |
+| `PUT /api/v1/baskets`    | Replace the basket's current items           |
+| `DELETE /api/v1/baskets` | Clear the authenticated customer's basket    |
 
-- **Customer-owned state:** Basket state is scoped to the authenticated
-  customer, not shared as a global cart.
-- **Explicit handoff:** Checkout crosses the bounded-context boundary through
-  commands and integration events rather than shared database tables.
-- **Replaceable presentation:** Enriched item details can be read for the
-  storefront without transferring ownership of Catalog entities.
-- **Observable coordination:** Basket cleanup emits a success or failure result
-  so the order workflow can make a deliberate recovery decision.
-- **Single lifecycle owner:** Once a purchase is accepted, Ordering owns the
-  Order lifecycle; Shopping owns only the pre-order basket experience.
+The storefront can also expose these capabilities through conversational actions. Adding an item through the assistant requires explicit customer confirmation before the Basket API is updated.
 
-## Quality attributes and operational concerns
+### Checkout interaction
+
+See [[diagram|checkout-interaction]] for the source-backed sequence from checkout through basket cleanup. It records the completion and failure paths that the Finance workflow receives after it issues [[command|PlaceOrderCommand]].
+
+### Technical invariants & architecture principles
+
+- Basket operations require an authenticated customer and are subject to the Basket API's per-user rate limit.
+- A newly created basket contains at least one item; quantities must be greater than zero (setting an item to zero is treated by the storefront as a removal flow).
+- Basket updates replace the current item set rather than merging arbitrary state into the existing basket.
+- Shopping consumes published product representations and identifiers; it must not mutate Catalog data directly or expose its basket persistence model as an Order model.
+- Checkout crosses the bounded-context boundary through commands and integration events rather than shared database tables.
+- Basket deletion failure is represented by [[event|BasketDeletedFailedIntegrationEvent]]; consumers must not interpret it as a successful cleanup.
+- Once a purchase is accepted, Ordering owns the Order lifecycle; Shopping owns only the pre-order basket experience.
+
+### Quality attributes and operational concerns
 
 | Concern       | High-level expectation                                                |
 | ------------- | --------------------------------------------------------------------- |
@@ -164,9 +128,8 @@ that the Finance workflow receives after it issues [[command|PlaceOrderCommand]]
 | Resilience    | Completion and failure events make cross-service cleanup observable   |
 | Accessibility | Storefront basket changes provide confirmation and status feedback    |
 
-## Architecture Graph
+### Architecture Graph
 
-The graph below shows Shopping's owned system and its relationship to the
-customer purchase journey.
+The graph below shows Shopping's owned system and its relationship to the customer purchase journey.
 
 <NodeGraph mode="full" search="false" legend="false" />

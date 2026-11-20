@@ -9,9 +9,44 @@ badges:
     textColor: blue
 ---
 
-This section records constraints and conventions that shape system-wide design decisions. It distinguishes technical constraints from organizational constraints and engineering conventions; it does not treat an undocumented external mandate as a confirmed requirement. The technical details follow the repository's [[doc|development/004-engineering-standards]] and the system-wide [[doc|arc42/04-solution-strategy]].
+This section records system-wide constraints and engineering conventions that shape design decisions across BookWorm. It distinguishes confirmed technical and organizational rules from open operational targets so teams never mistake an undocumented assumption for a confirmed requirement.
 
-## 2.1 Technical Constraints
+## 1. Context & Problem
+
+As a multi-capability commerce platform grows, individual teams and services can easily introduce hidden shortcuts—sharing internal data directly, changing message formats without warning, or adopting inconsistent tools. Over time, those shortcuts create brittle dependencies that slow down releases and blur who is responsible when something breaks.
+
+BookWorm documents its system-wide constraints and conventions in one place to answer three core needs:
+
+- **Protect capability boundaries:** Keep business rules and data inside the capability that owns them.
+- **Keep cross-capability communication predictable:** Require explicit, reviewed agreements whenever two parts of the platform interact.
+- **Separate confirmed rules from open questions:** Make clear which organizational, vendor, or operational requirements are established today and which still need stakeholder confirmation.
+
+## 2. Business Value
+
+- **Clear accountability:** Every capability and cross-team interaction has a named owner, reducing delays when changes or incidents cross domain lines.
+- **Safer, faster delivery:** When changes stay compatible with agreed contracts, teams can test and release their capabilities independently without coordinating a full-platform release.
+- **Reduced integration risk:** Potentially breaking changes require upfront impact review and a migration plan before consumers are affected.
+- **Transparent planning:** Stakeholders can see that staffing rules, vendor mandates, regulatory baselines, and numerical service-level targets are not yet fixed at the repository level, preventing teams from building around unverified assumptions.
+
+## 3. How It Works
+
+BookWorm's guardrails operate across three complementary layers:
+
+1. **Boundary and ownership discipline:** Each business area owns its own rules, decisions, and data. Shared platform infrastructure supports cross-cutting needs (such as messaging or scheduling) without taking over business logic from any domain. New capabilities or cross-domain flows require an accountable owner before boundaries change.
+2. **Explicit, minimal agreements between capabilities:** Whenever one part of the platform needs to notify or call another, it uses a documented contract with clear ownership, routing details, and a stable identity. Messages carry only the information consumers actually need.
+3. **Controlled evolution and living documentation:** Backward-compatible updates allow independent testing and deployment. Any breaking contract change must be validated before updating the baseline and coordinated with affected consumers through a migration plan. Behavioral changes are reflected in architecture documentation, supported by automated checks that detect drift between documented boundaries and implementation.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Autonomy vs. coordination overhead:** Strict boundary and contract rules empower teams to evolve and deploy capabilities independently for compatible changes, at the cost of requiring upfront consumer-impact review and coordinated migration whenever an incompatible change is unavoidable.
+- **Upfront rigor vs. rework:** Enforcing schema compatibility checks, coding standards, and documentation updates adds discipline to every change, but prevents hidden coupling and silent breakage downstream.
+- **Confirmed baseline vs. open operational targets:** The repository deliberately avoids inventing organization-wide vendor mandates, team structures, procurement rules, regulatory obligations, or numerical targets for availability, latency, throughput, recovery, and data retention. Those baselines must be explicitly agreed with stakeholders and documented once confirmed.
+
+## 5. Technical Reference
+
+Related references: [[doc|development/004-engineering-standards]] and [[doc|arc42/04-solution-strategy]].
+
+### 2.1 Technical Constraints
 
 | ID  | Constraint                                                                                                                                                          | Rationale and architectural consequence                                                                                                                                                     |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -21,16 +56,16 @@ This section records constraints and conventions that shape system-wide design d
 | TC4 | **Use the repository's .NET platform setup.** The documented toolchain targets .NET 11 and C# 15, with .NET Aspire supporting the cloud-native service model.       | Use the repository SDK, language settings, and established service setup rather than introducing an incompatible runtime or language baseline.                                              |
 | TC5 | **Allow independent service evolution only where contracts permit it.**                                                                                             | A service can be tested and released independently when its compatible contracts allow it; incompatible changes require coordinated consumer migration.                                     |
 
-## 2.2 Organizational Constraints
+### 2.2 Organizational Constraints
 
 | ID  | Constraint                                                 | Rationale and architectural consequence                                                                                                                                                          |
 | --- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | OC1 | **Keep responsibility aligned with capability ownership.** | Catalog and service documentation identify owners and responsibilities. New capabilities and cross-context flows need a clear accountable owner before boundaries or data ownership are changed. |
 | OC2 | **Maintain architecture documentation with the system.**   | Changes to behavior should update the relevant documentation. Architecture fitness checks and automated tests help detect drift between documented boundaries, contracts, and implementation.    |
 
-The repository does not establish additional organization-wide constraints such as mandated vendors, team structure, procurement rules, or regulatory requirements. Those must be added when confirmed by stakeholders.
+> The repository does not establish additional organization-wide constraints such as mandated vendors, team structure, procurement rules, or regulatory requirements. Those must be added when confirmed by stakeholders.
 
-## 2.3 Conventions
+### 2.3 Conventions
 
 | ID  | Convention                                                    | Application                                                                                                                                                                                         |
 | --- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,7 +74,7 @@ The repository does not establish additional organization-wide constraints such 
 | C3  | **Validate Protocol Buffer changes in the prescribed order.** | Run schema linting and compatibility checks before rebuilding the committed baseline; coordinate any breaking change with affected consumers.                                                       |
 | C4  | **Use architecture checks as part of change validation.**     | Keep catalog and arc42 descriptions aligned with implementation, and use relevant tests and fitness checks to make boundary or contract drift visible.                                              |
 
-## Implications and open constraints
+### Implications and Open Constraints
 
 - Shared platform infrastructure supports cross-cutting needs; it does not take ownership of business behavior or data from a bounded context.
 - Cross-boundary events are architectural interfaces with explicit ownership and semantics, not incidental implementation details.

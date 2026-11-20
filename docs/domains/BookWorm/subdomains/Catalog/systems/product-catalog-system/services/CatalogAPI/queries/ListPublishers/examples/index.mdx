@@ -2,21 +2,45 @@
 summary: List catalog publishers and distinguish an empty collection from a missing resource.
 ---
 
+## 1. Context & Problem
+
+Client applications and partner integrations that populate publisher selectors or link books to a publisher during creation and updates need clear examples of how to retrieve the publisher list. Without concrete guidance, consumers can easily misinterpret an empty publisher collection as a missing-resource error instead of a valid catalog state.
+
+## 2. Business Value
+
+- **Faster client onboarding**: Practical request and response examples shorten development time for storefront and admin teams.
+- **Reliable empty-state handling**: Distinguishing an empty catalog from an error prevents broken forms or misleading alerts before publishers are added.
+- **Accurate book attribution**: Showing how unique publisher identifiers pair with display names ensures teams pass valid publisher references when creating or updating books.
+
+## 3. How It Works
+
+1. A client requests the publisher list from the catalog without supplying a specific publisher identifier.
+2. The catalog responds with a collection of publisher summaries, each containing a unique identifier and a display name.
+3. Client applications render the display names as selectable options and send the corresponding identifiers when creating or updating books.
+4. When no publishers exist yet, the request still succeeds and returns an empty list rather than indicating a missing resource.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Empty collection over missing-resource signal**: Treating an empty list as a normal response avoids false error states in client apps, though interfaces should provide clear empty-state messaging when no publishers are returned.
+- **Identifier-driven writes**: Requiring consumers to look up publisher identifiers before creating or updating books keeps book-to-publisher links consistent, at the cost of an extra read step prior to submitting changes.
+
+## 5. Technical Reference
+
 <Columns cols={2}>
 
 <Column>
 
-## 1. List publishers
+### 1. List publishers
 
 The query returns `200` with an array of publisher summaries. Each item contains its UUID and display name.
 
-### Response details
+#### Response details
 
 - An empty collection is represented by `200` and `[]`.
 - The endpoint does not require a resource UUID.
 - Use the returned identifiers when creating or updating books.
 
-### Example response
+#### Example response
 
 <CodeGroup dropdown>
 
@@ -31,7 +55,7 @@ const publishers: PublisherSummary[] = [
 
 </CodeGroup>
 
-### Using this example
+#### Using this example
 
 Render the returned summaries as selectable publisher options; an empty array is a valid catalog state.
 
@@ -63,6 +87,6 @@ for (const publisher of publishers) {
 
 ---
 
-## 2. Handle an empty catalog
+### 2. Handle an empty catalog
 
 An empty collection is represented by `200` and `[]`, not by `404`.

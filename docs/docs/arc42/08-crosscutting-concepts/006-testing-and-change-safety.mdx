@@ -9,19 +9,49 @@ badges:
     textColor: purple
 ---
 
-BookWorm uses multiple forms of verification because no single test level can demonstrate business correctness, interface compatibility, and architectural boundaries at once.
+## 1. Context & Problem
 
-## Verification layers
+In a distributed system of independently evolving services, schemas, AI policies, and web interfaces, no single type of test can prove that everything works safely. Isolated logic tests cannot catch broken communication contracts between services, while full end-to-end tests are too slow and coarse-grained to verify every business rule, security boundary, or edge case.
 
-- **Unit tests** exercise domain rules, handlers, validators, and failure paths in isolation. The repository uses TUnit with Moq and Shouldly.
-- **Consumer-driven contract tests** verify asynchronous message contracts and provider behavior. Generate consumer contracts before running provider verification, as the two stages share generated pact artifacts.
-- **Architecture tests** use ArchUnitNET.TUnit to check selected structural rules and prevent boundary drift.
-- **Protocol Buffer checks** lint schema definitions and compare proposed changes with the committed compatibility baseline before updating that baseline.
-- **End-to-end tests** cover customer-facing flows in the client applications, use them for high-value user journeys rather than as a replacement for focused service tests.
+BookWorm relies on a layered verification strategy so changes are checked at the right level—protecting business logic, service interfaces, architectural boundaries, and key customer journeys together.
 
-The repository's test framework, focused commands, and contract-test order are described in [[doc|development/005-testing]]. Schema change conventions are in [[doc|development/004-engineering-standards]]. The layered verification strategy is captured in [[adr|adr-bw-016-layered-architecture-verification]] and exercised across customer journeys such as [[flow|user-checkout]].
+## 2. Business Value
 
-## Cross-cutting cases to protect
+- **Fewer production regressions:** Logic errors, breaking interface changes, and boundary violations are caught early before services reach deployment.
+- **Safe independent team delivery:** Contract and schema compatibility checks allow producers and consumers to release independently without silent integration failures.
+- **Sustained architectural health:** Automated structural checks prevent accidental coupling and boundary drift as the codebase expands.
+- **Shared quality accountability:** A clear cross-cutting checklist ensures critical non-functional concerns—security, privacy, validation, duplicate protection, messaging, and AI governance—are verified alongside feature work.
+
+## 3. How It Works
+
+BookWorm validates changes across five complementary verification layers:
+
+1. **Isolated business logic tests:** Verify domain rules, request handlers, input validators, and failure paths quickly without external dependencies.
+2. **Consumer-driven contract verification:** Protect asynchronous event exchanges in two sequential steps—consumers first generate their expected message contracts, and providers then verify they still satisfy those expectations.
+3. **Architecture boundary checks:** Automatically verify structural rules across projects to prevent services or layers from bypassing established boundaries.
+4. **Service schema compatibility checks:** Lint service interface definitions and compare proposed changes against a committed compatibility baseline before allowing breaking changes.
+5. **End-to-end customer journey tests:** Exercise high-value, customer-facing flows across client applications to confirm critical journeys work together seamlessly.
+
+Alongside these layers, teams verify six cross-cutting quality areas at the service or shared component that owns the behavior: authorization enforcement, privacy and redaction, validation and safe error responses, duplicate-request and retry behavior, messaging compatibility and correlation, and AI tool/prompt governance.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Checklists are prompts, not proof of full coverage:** Listing cross-cutting scenarios highlights what must be protected when making changes; it does not claim every edge case is already covered by existing tests.
+- **Sequencing matters for asynchronous contracts:** Because provider verification depends on contract artifacts produced by consumer tests, running those stages out of order leads to stale or invalid verification.
+- **Focused tests over bloated end-to-end suites:** End-to-end browser or client tests are reserved for high-value customer journeys rather than duplicating business logic or error mapping already tested at the service level.
+- **Documentation must evolve with guarantees:** Whenever a change alters an observed boundary or guarantee, tests and architecture documentation must be updated together.
+
+## 5. Technical Reference
+
+### Verification Layers & Tooling
+
+- **Unit tests:** Exercise domain rules, handlers, validators, and failure paths in isolation using `TUnit` with `Moq` and `Shouldly`.
+- **Consumer-driven contract tests:** Verify asynchronous message contracts and provider behavior. Generate consumer contracts before running provider verification, as both stages share generated Pact artifacts.
+- **Architecture tests:** Use `ArchUnitNET.TUnit` to check selected structural rules and prevent boundary drift.
+- **Protocol Buffer checks:** Lint `.proto` schema definitions and compare proposed changes against the committed compatibility baseline before updating that baseline.
+- **End-to-end tests:** Cover customer-facing flows in the client applications for high-value user journeys such as [[flow|user-checkout]], rather than replacing focused service tests.
+
+### Cross-Cutting Verification Matrix
 
 When changing a shared mechanism, include tests for the behavior at its actual boundary:
 
@@ -34,4 +64,9 @@ When changing a shared mechanism, include tests for the behavior at its actual b
 | Messaging               | Contract changes remain compatible, repeated delivery is safe where required, and correlation survives service boundaries.       |
 | AI governance           | Tool access follows policy, rejected prompts do not reach agents, and failure behavior is observable.                            |
 
-These are coverage prompts, not claims that every case is already tested. Add or update tests alongside the service or shared building block that owns the behavior, and keep architecture documentation aligned when an observed guarantee changes.
+### Related Documentation
+
+- [[doc|development/005-testing]] — test framework, focused commands, and contract-test execution order
+- [[doc|development/004-engineering-standards]] — schema change conventions
+- [[adr|adr-bw-016-layered-architecture-verification]] — layered architecture verification decision record
+- [[flow|user-checkout]] — representative customer journey exercised end-to-end

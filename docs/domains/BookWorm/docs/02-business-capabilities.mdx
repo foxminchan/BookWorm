@@ -12,19 +12,21 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## What BookWorm delivers
+## 1. Context & Problem
 
-BookWorm is a bookstore platform that turns product discovery into a purchase,
-then supports the review and support experience around that journey. The value of
-the system is not just inventory and order handling; it is the combined flow from
-finding a book to deciding to buy it, receiving a confirmation, and later
-revisiting the experience through recommendations, support, and feedback.
+An online bookstore is more than inventory counts and order forms—it is a connected experience stretching from discovering a book to deciding to buy, receiving confirmation, and returning later for reviews or support. Organizing BookWorm around individual user interface screens would collapse all of those responsibilities into one tangled layer, making every feature risky and slow to change.
 
-The business capabilities are organized by domain rather than by UI screen. That
-means the platform can evolve without collapsing the ownership of data and
-responsibility into a single monolithic application layer.
+To avoid that trap, BookWorm organizes its capabilities by business domain so each stage of the customer journey has clear ownership while still working together seamlessly.
 
-## Capability map
+## 2. Business Value
+
+- **Cohesive customer experience**: Connects discovery, basket building, checkout, fulfillment, reviews, and conversational help into one smooth journey.
+- **Independent evolution**: Lets teams improve pricing, checkout, order processing, feedback, or AI guidance without destabilizing unrelated capabilities.
+- **Operational resilience**: Ensures supporting activities—such as sending emails or refreshing rating summaries—can lag or retry without corrupting official customer purchase records.
+
+## 3. How It Works
+
+### Capability map
 
 | Capability                      | Primary owning context     | Purpose                                                                                       |
 | ------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------- |
@@ -35,72 +37,37 @@ responsibility into a single monolithic application layer.
 | Conversational guidance         | [[domain\|conversational]] | Help customers find books, answer support questions, and interpret store policies.            |
 | Notification and scheduled work | [[domain\|platform]]       | Deliver emails and run recurring operational jobs without owning business state.              |
 
-## Customer journeys
+### Customer journeys
 
-### 1. Discovery and selection
+1. **Discovery and selection**: The customer starts with search, browsing, or recommendations. [[domain|catalog]] is the single authority for book facts and availability; storefronts and conversational experiences present information drawn from Catalog rather than maintaining competing product records.
+2. **Basket and checkout**: When a customer chooses a title, [[domain|shopping]] manages the temporary, editable basket representing intent to buy. At checkout, Shopping hands the confirmed purchase commitment to [[domain|ordering]], marking a clear shift from shopping intent to an official order.
+3. **Order confirmation and processing**: Ordering records the accepted purchase and manages its official lifecycle status. Downstream activities such as Finance workflows and customer notifications depend on order progress, but do not control or own order state.
+4. **Reviews and trust signals**: After discovering or purchasing a book, customers can submit feedback. [[domain|reviews]] stores those individual reviews and shares summary figures (such as average rating and review count) so Catalog can display trust signals without taking ownership of the underlying feedback.
+5. **Support and conversational assistance**: Customers can ask questions through [[domain|conversational]], which helps with book questions, store policies, and straightforward support while respecting each domain's ownership rules.
 
-The customer begins with search, browsing, or recommendation. At this stage,
-[[domain|catalog]] is the actor of record for book facts and availability. A user
-may discover a title through the product catalog, a recommendation flow, or a
-book-related conversational request.
+## 4. Trade-offs & Lessons Learned
 
-The important boundary is that discovery data is derived from Catalog data, not a
-separate system of record. This allows the storefront and conversational systems
-to present accurate information while keeping the product domain authoritative.
+- **Eventual alignment for derived views**: Treating Catalog rating summaries as derived views of Reviews means summary numbers may briefly trail newly submitted reviews. That small delay is an intentional trade-off so review activity never blocks or complicates product management.
+- **Separating delivery from business outcome**: Treating notifications as supporting operational work rather than proof of an order outcome prevents email delivery issues from being confused with purchase success or failure.
+- **Upfront boundary checks**: Blurred lines—such as mixing Catalog and Reviews or letting a screen bypass domain rules—create long-term data drift; checking ownership before scoping work prevents costly rework.
 
-### 2. Basket and checkout
+## 5. Technical Reference
 
-Once a customer wants a title, the experience enters the [[domain|shopping]]
-context. A basket is mutable, temporary, and customer-driven. It represents the
-intent to purchase, not a completed order.
+BookWorm operates as a system of bounded contexts governed by three architectural rules:
 
-When the basket is checked out, Shopping hands the business commitment to
-[[domain|ordering]]. This creates a distinct transition from shopping intent to
-accepted order business state.
+- Each bounded context owns its source of truth.
+- Cross-domain state changes occur through explicit contracts rather than shared persistence.
+- Derived projections can lag or be rebuilt/corrected without rewriting authoritative business state.
 
-### 3. Order confirmation and processing
+### Pre-implementation validation checklist
 
-Ordering takes responsibility for the accepted order. It persists the purchase,
-records the lifecycle status, and exposes the order as the business source of
-truth. Related workflows such as Finance, notifications, and downstream side
-Effects depend on the order state but do not own it.
+Before finalizing a product or platform design across [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], or [[domain|platform]], verify:
 
-### 4. Reviews and trust signals
-
-After purchase or discovery, customers may leave feedback. [[domain|reviews]]
-stores this feedback and publishes the information needed for derived catalog
-signals such as average rating and review count. The rating summary remains a
-projection into Catalog and is not treated as the original review record.
-
-### 5. Support and conversational assistance
-
-Customers may also ask for help through the conversational experience. The
-[[domain|conversational]] context routes requests and responds using the right
-organizational boundaries. It can answer questions about books, store policies,
-and straightforward support scenarios without bypassing domain ownership.
-
-## The product as a system of systems
-
-BookWorm's value emerges when these capabilities work together, but the domain
-boundaries still matter. A poor design would blur Catalog and Reviews, or treat a
-notification as an order outcome. The operating principle is simple:
-
-- Each domain owns its source of truth.
-- Cross-domain changes happen through explicit contracts.
-- Derived data can lag or be corrected without rewriting the real business state.
-
-## What to check before changing the domain
-
-Before a product or platform change is considered complete, validate whether it
-matches the customer journey and the ownership model:
-
-1. Is the change in the correct bounded context?
-2. Is the source of truth still clear?
+1. Is the change placed in the correct bounded context?
+2. Does the authoritative source of truth remain unambiguous?
 3. Are downstream projections treated as derived rather than authoritative?
-4. Is the customer experience consistent across discovery, basket, order, and
-   feedback?
+4. Does the end-to-end customer experience stay consistent across discovery, basket, order, and feedback?
 
-If any answer is unclear, the change likely needs more contract or domain
-clarification before implementation.
+If any answer is unclear, resolve the domain ownership or contract definition before implementation begins.
 
 <Footer />

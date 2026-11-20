@@ -11,14 +11,41 @@ badges:
 
 This chapter defines the system boundary of the complete BookWorm commerce platform and its communication partners. Following arc42, it separates business-level information exchanges from the technical channels and mechanisms used to realize them.
 
+## 1. Context & Problem
+
+Every platform architecture needs a clear starting boundary: what is inside the system we build and operate, who uses it, and which external partners it relies on. Without separating business interactions from technical channels at this entry point, discussions quickly mix customer outcomes with transport and vendor details, making scope harder for stakeholders to validate.
+
+## 2. Business Value
+
+- **Clear system boundaries:** Aligns Solution Architects, Project Managers, Business Analysts, and Developers on what BookWorm owns versus what external systems provide.
+- **Audience-friendly structure:** Lets business stakeholders review customer journeys and partner exchanges independently from technical integration mechanisms.
+- **Traceable documentation:** Connects the platform-wide overview directly to detailed business and technical context views without duplicating service-level specifications.
+
+## 3. How It Works
+
+The BookWorm platform brings together catalog, shopping, ordering, reviews, conversational assistance, and shared platform capabilities for its customers. External identity, payment, fulfillment, notification, and AI infrastructure support selected interactions across the boundary.
+
 <MermaidFileLoader file="mermaids/bookworm-scope.mmd" />
 
-## Chapter contents
+To keep both business and engineering perspectives clear, this chapter is organized into three focused views:
+
+1. **Scope and assumptions:** Defines what sits inside and outside the BookWorm platform boundary and records overarching assumptions.
+2. **Business context:** Maps business actors, external partners, and the domain information exchanged across the boundary.
+3. **Technical context:** Maps documented communication mechanisms between capabilities and external neighbors while highlighting technical details that remain open.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Business vs. technical separation:** Splitting business context from technical context prevents stakeholder reviews from getting bogged down in infrastructure details, while keeping technical gaps visible for engineering teams.
+- **Overview vs. exhaustive specification:** The diagrams and summaries in this chapter are intentionally high-level. Keeping exact providers, communication protocols, message payloads, and deployment details in individual service documentation avoids stale duplication at the platform level.
+
+## 5. Technical Reference
+
+### Chapter Contents
 
 - [[doc|arc42/03-context-and-scope/001-overview]] defines what is inside and outside the system boundary and records context assumptions.
 - [[doc|arc42/03-context-and-scope/002-business-context]] shows business actors, external partners, and the domain information exchanged.
 - [[doc|arc42/03-context-and-scope/003-technical-context]] maps documented communication mechanisms and identifies technical details that remain open.
 
-## Context at a glance
+### Scope Delegation
 
-The platform brings together catalog, shopping, ordering, reviews, conversational assistance, and shared platform capabilities. Customers use these capabilities; external identity, payment, fulfillment, notification, and AI infrastructure support selected interactions. The diagrams are intentionally an overview: exact providers, protocols, payloads, and deployment details remain the responsibility of the relevant service documentation.
+- Exact external providers, protocols, payload schemas, and deployment details remain the responsibility of the relevant service and system documentation.

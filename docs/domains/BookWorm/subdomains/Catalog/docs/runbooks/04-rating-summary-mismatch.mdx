@@ -12,46 +12,64 @@ badges:
 
 import Footer from "@catalog/components/footer.astro";
 
-## Background
+## 1. Context & Problem
 
-Catalog stores only a derived `average_rating` and `total_reviews` per [[entity|book]].
-[[service|catalog-api]] updates them when [[domain|reviews]] publishes
-feedback-created
-and feedback-deleted integration messages. Reviews owns the individual
-[[entity|feedback]].
+In BookWorm, the Catalog displays each [[entity|book]]'s average star rating and total review count, while the [[domain|reviews]] domain is the authoritative owner of every individual [[entity|feedback]] submission. Rather than querying Reviews every time a customer views a book, Catalog keeps a derived summary of those numbers locally.
 
-## Symptoms
+When an update between the two domains fails, is delayed, or arrives for a book that no longer exists in Catalog, the rating or review count shown in Catalog can drift out of sync with what Reviews reports.
+
+## 2. Business Value
+
+- **Customer trust:** Ensures shoppers see accurate ratings and review totals when evaluating books.
+- **Fast storefront browsing:** Allows Catalog to serve book details without depending on live calls to Reviews on every page load.
+- **Safe operations:** Gives support and engineering teams a clear, repeatable way to detect and fix mismatches without risking manual data corruption.
+
+## 3. How It Works
+
+Normally, whenever a customer submits or removes [[entity|feedback]] in [[domain|reviews]], Reviews sends a notification so Catalog can recalculate the [[entity|book]]'s average rating and review count.
+
+When a mismatch occurs—either noticed as differing numbers between Catalog and Reviews or flagged by a failed rating-update notification—operators follow a three-stage recovery flow:
+
+1. **Diagnose:** Determine whether the feedback referenced a book that is missing or already deleted in Catalog, whether update notifications were delayed or failed in transit, or whether a stale cached copy of the book is still being served.
+2. **Recover:** Resolve the root cause (such as a missing book record or a delivery failure) and replay the missed notifications so Catalog recalculates the summary automatically. Operators must not manually overwrite rating numbers unless performing an approved correction derived directly from Reviews data.
+3. **Verify:** Confirm that the book's displayed average rating and review count in Catalog match the authoritative figures in Reviews.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Eventual consistency for speed and isolation:** Storing a derived summary in Catalog keeps storefront reads fast and resilient to Reviews downtime, at the cost of brief synchronization lag or drift if notifications fail.
+- **Single source of truth:** Because Reviews owns all individual feedback records, recovery must always flow from Reviews to Catalog rather than editing Catalog figures ad hoc.
+- **Ownership & escalation clarity:** While Catalog owns the rating summary update flow, delivery or source-data issues require coordinating with the Reviews domain owner. Note that a dedicated Reviews team contact and an urgent on-call rotation or channel are not yet documented in the catalog.
+
+## 5. Technical Reference
+
+### Integration & Projection Details
+
+- **Stored fields on [[entity|book]]:** `average_rating` and `total_reviews` (derived summary projection).
+- **Synchronization:** [[service|catalog-api]] updates `average_rating` and `total_reviews` when [[domain|reviews]] publishes `feedback-created` and `feedback-deleted` integration messages. Reviews owns the individual [[entity|feedback]].
+
+### Symptoms
 
 - Rating or review count differs from what Reviews reports.
-- A rating-update-failed integration event was published.
+- A `rating-update-failed` integration event was published.
 
-## Diagnose
+### Diagnose
 
-1. If a rating-update-failed event exists, the feedback referred to a book that
-   is missing in Catalog (never created, or deleted). Confirm the book ID.
-2. Otherwise check Catalog API handler logs and the message broker for failed,
-   dead-lettered, or delayed feedback messages.
-3. Check whether the cached book (`book:{id}`) is stale; see the
-   [[doc|runbooks/stale-cache-or-redis-outage]].
+1. If a `rating-update-failed` event exists, the feedback referred to a book that is missing in Catalog (never created, or deleted). Confirm the book ID.
+2. Otherwise check Catalog API handler logs and the message broker for failed, dead-lettered, or delayed feedback messages.
+3. Check whether the cached book (`book:{id}`) is stale; see [[doc|runbooks/stale-cache-or-redis-outage]].
 
-## Recover
+### Recover
 
-- Fix the cause (missing book, broker or handler failure) and replay the
-  failed messages. Reviews remains the source of truth for feedback.
-- Do not edit rating fields manually except as an approved correction derived
-  from Reviews data.
+- Fix the cause (missing book, broker or handler failure) and replay the failed messages. Reviews remains the source of truth for feedback.
+- Do not edit rating fields manually except as an approved correction derived from Reviews data.
 
-## Verify
+### Verify
 
-Rating and count match the Reviews data for the book.
+- Confirm `average_rating` and `total_reviews` in Catalog match the Reviews data for the book.
 
-## Contact
+### Contact & Escalation
 
-- **Contact point:** [[team\|contributor-team]] for Catalog message handling
-  and rating projection issues. For feedback delivery or source-data issues,
-  coordinate with the Reviews domain owner; no Reviews team contact is listed
-  in the catalog yet.
-- For urgent incidents, use the responsible team's established support or
-  on-call channel. A specific channel or rotation is not documented here.
+- **Contact point:** [[team\|contributor-team]] for Catalog message handling and rating projection issues. For feedback delivery or source-data issues, coordinate with the Reviews domain owner; no Reviews team contact is listed in the catalog yet.
+- For urgent incidents, use the responsible team's established support or on-call channel. A specific channel or rotation is not documented here.
 
 <Footer />

@@ -18,22 +18,40 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Deletes the [[entity|category]] identified by the UUID path parameter. This is a permanent catalog mutation.
+Categories organize the bookstore catalog for browsing, filtering, and merchandising. Over time, temporary, duplicate, or discontinued categories must be retired so customers and staff do not see unused taxonomy entries. Without a formal removal capability, obsolete categories accumulate and degrade catalog navigation.
+
+## 2. Business Value
+
+- **Cleaner catalog taxonomy:** Keeps browsing menus and category filters focused on active, meaningful groupings.
+- **Lightweight administration:** Lets authorized tools or administrators remove an unwanted category using only its unique identifier.
+- **Predictable state:** Gives callers an unambiguous confirmation when removal completes, or a clear notice if the category does not exist.
+
+## 3. How It Works
+
+1. A caller identifies the specific [[entity|category]] to remove using its unique identifier, without needing to supply any extra data.
+2. The catalog service checks whether a category with that identifier exists.
+3. If found, the category is permanently deleted and an empty confirmation is returned to the caller.
+4. If no matching category exists, nothing is modified and the service informs the caller that the category could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Permanent catalog change:** Deletion permanently removes the category rather than hiding it temporarily. Confirming that no active books depend on the category before removal helps preserve catalog integrity.
+- **Missing-record semantics:** Reporting an absent category as not found protects against mistyped identifiers. Workflows should treat an already-missing category as deleted only when that assumption is explicitly safe.
+
+## 5. Technical Reference
 
 <NodeGraph />
 
-## Contract
+### Endpoint & Contract
 
-Provide the resource UUID in the `{id}` path parameter. The operation has no request body.
+- **Operation:** `DELETE /api/v1/categories/{id}`
+- **Path parameter:** `{id}` — UUID of the category resource to delete.
+- **Request body:** None.
+- **Success response:** `204 No Content` with an empty body.
+- **Missing resource response:** `404` when no category exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
 
-The successful response is `204 No Content` with an empty body.
-
-## Operational notes
-
-`404` indicates that no category exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
-
-## Schema
+### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

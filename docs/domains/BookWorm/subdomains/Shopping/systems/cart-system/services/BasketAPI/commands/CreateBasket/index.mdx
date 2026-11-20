@@ -18,24 +18,45 @@ sidebar:
   badge: "POST"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Creates a new [[entity|basket]] from an item collection. The request body is a
-`CreateBasketCommand`; each item identifies a [[entity|basket-item]] and its requested
-quantity.
+When a customer selects their first book(s) to purchase, the storefront needs a dedicated operation to initialize a personal [[entity|basket]] with those selections. Creating baskets without validating the incoming items upfront would allow empty or malformed shopping carts into the system and cause downstream checkout failures.
+
+## 2. Business Value
+
+- **Reliable basket initialization**: Guarantees every new basket starts with a valid collection of items and requested quantities.
+- **Clear customer feedback**: Surfaces structured validation details immediately when required item information is missing, avoiding confusing failures later in the purchase journey.
+- **Explicit customer association**: Returns the customer identifier tied to the newly created basket so downstream steps can track ownership cleanly.
+
+## 3. How It Works
+
+To start a shopping session, the caller submits a collection of selected items to create a new [[entity|basket]]. Each [[entity|basket-item]] in the collection must specify which product is being added and the requested quantity.
+
+Once validated, the service records the new basket and returns the associated customer identifier. If the item collection is missing or fails validation rules, the creation request is rejected with clear validation details so the caller can correct the submission before retrying.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Requiring items at creation vs. creating empty baskets**: Requiring an item collection upfront keeps stored baskets meaningful and avoids empty shell records, though clients must wait until at least one item is chosen before initializing a basket.
+- **Strict contract validation vs. permissive acceptance**: Enforcing validation rules at the boundary protects basket data integrity and simplifies downstream checkout logic, requiring clients to handle structured validation errors.
+
+## 5. Technical Reference
+
+### Command & Endpoint
+
+- **Operation**: `POST /api/v1/baskets`
+- **Command**: `CreateBasketCommand`
+
+### Request and Response
+
+Send `application/json` with the required `items` array. Each item requires an `id` and `quantity`. A successful `201` response returns a JSON customer ID, which may be `null` according to the OpenAPI contract.
+
+`400` returns `application/problem+json` with `HttpValidationProblemDetails`.
+
+### Architecture Graph
 
 <NodeGraph />
 
-## Request and response
-
-Send `application/json` with the required `items` array. Each item requires an
-`id` and `quantity`. A successful `201` response returns a JSON customer ID,
-which may be `null` according to the OpenAPI contract.
-
-`400` returns `application/problem+json` with
-`HttpValidationProblemDetails`.
-
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"

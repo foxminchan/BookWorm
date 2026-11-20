@@ -11,13 +11,41 @@ badges:
 
 BookWorm's Azure platform combines the managed **Aspire Dashboard** (`aspire-dashboard` dotNetComponent), **Azure Log Analytics** (90-day retention), and **Application Insights** (linked via `Foundry-project`) to provide unified logs, metrics, and distributed traces.
 
-## Tracing Message Flows Visually
+## 1. Context & Problem
+
+In a distributed microservices platform, a single user interaction—such as browsing the catalog, placing an order, or asking the AI assistant for recommendations—passes through the API gateway, backend domain services, background workers, messaging channels, and external AI models. When latency rises or an asynchronous integration event goes missing, teams cannot rely on inspecting one server log in isolation; they need unified visibility across live request traces, historical container logs, and AI pipeline telemetry.
+
+## 2. Business Value
+
+- **Faster Incident Resolution:** Unified logs, metrics, and end-to-end traces let engineering and operations teams pinpoint root causes across services in minutes rather than hours.
+- **End-to-End Message Accountability:** Visual message-flow mapping makes it easy for architects and analysts to trace how business events move from publishers to downstream consumers.
+- **AI Reliability & Cost Visibility:** Dedicated telemetry for AI model response times, rate throttling, and personal-data redaction protects user experience and helps right-size capacity.
+- **90-Day Audit & Trend History:** Long-term log retention supports post-incident reviews, scaling analysis, and operational compliance.
+
+## 3. How It Works
+
+BookWorm's observability workflow layers three complementary views so teams can move seamlessly from high-level topology down to individual errors:
+
+1. **Trace Cross-Service Message Flows:** When diagnosing delayed updates or dropped integration events, teams start with the visual message-flow architecture view to identify which upstream service emits an event and which downstream services consume it.
+2. **Inspect Live Telemetry in the Managed Dashboard:** Inside the cloud hosting environment, operators open the managed observability dashboard to inspect live structured logs, distributed request traces, and performance metrics spanning the gateway, backend APIs, background functions, and web storefronts.
+3. **Query Historical Application & Platform Logs:** Every container's output and platform lifecycle event—including container terminations, image pull failures, failed health probes, and replica scaling—streams automatically to a central log workspace retained for 90 days.
+4. **Monitor AI & Privacy Pipelines:** Dedicated AI application telemetry tracks model latency and capacity throttling, measures round-trip timings for personal-data detection and redaction between chat/rating services and the privacy sidecar, and surfaces delegated AI agent authentication issues.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Complementary Tools Over One-Size-Fits-All:** Keeping a live developer-friendly dashboard alongside a 90-day log archive and AI-focused application insights avoids forcing every persona into a single complex tool, though responders must know which view answers which question.
+- **Usage-Based Log Costs:** Central log ingestion is metered per gigabyte with a 90-day retention window, so services must log structured, meaningful events rather than verbose debug payloads in production.
+- **Proactive Alerting Still Needed:** Dashboards and ad-hoc log searches excel at active triage, but production readiness requires pairing them with automated alerts for error spikes, container restarts, and AI quota throttling.
+
+## 5. Technical Reference
+
+### Tracing Message Flows Visually
 
 When diagnosing cross-service latency or dropped integration events, start by inspecting the **messages** lens in the architecture graph to identify upstream producers and downstream consumers:
 
 <ArchitectureGraph lens="messages" lensPicker={true} maxHeight="32" />
 
-## Accessing the Managed Aspire Dashboard
+### Accessing the Managed Aspire Dashboard
 
 The `aca` module deploys `aspire-dashboard` as a `Microsoft.App/managedEnvironments/dotNetComponents` resource inside `cae-<token>`.
 
@@ -25,11 +53,11 @@ The `aca` module deploys `aspire-dashboard` as a `Microsoft.App/managedEnvironme
 2. Under **Settings** or **Monitoring**, open the **Aspire Dashboard** component.
 3. Use the dashboard's **Structured Logs**, **Traces**, and **Metrics** views to inspect OpenTelemetry spans across `gateway`, .NET APIs, Azure Functions (`catalog-ingestion`, `finance`), and Next.js clients.
 
-## Querying Container Logs in Log Analytics
+### Querying Container Logs in Log Analytics
 
 All container app stdout/stderr and ACA platform system logs stream to `law-<token>` (`PerGB2018`, 90-day retention).
 
-### Recent Container Errors Across All Apps
+#### Recent Container Errors Across All Apps
 
 ```kusto
 ContainerAppConsoleLogs_CL
@@ -40,7 +68,7 @@ ContainerAppConsoleLogs_CL
 | take 100
 ```
 
-### ACA System & Revision Scaling Events
+#### ACA System & Revision Scaling Events
 
 ```kusto
 ContainerAppSystemLogs_CL
@@ -50,7 +78,7 @@ ContainerAppSystemLogs_CL
 | order by TimeGenerated desc
 ```
 
-## AI & Token Telemetry in Application Insights
+### AI & Token Telemetry in Application Insights
 
 `Foundry-project` provisions an Application Insights workspace (`Foundry_project_APPLICATION_INSIGHTS_CONNECTION_STRING`) used by [[service|catalog-api]], [[service|catalog-ingestion]], [[service|chat-api]], and [[service|rating-api]]. Use Application Insights **Transaction Search** and **Failures** to inspect:
 

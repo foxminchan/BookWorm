@@ -18,20 +18,41 @@ sidebar:
   badge: "DELETE"
 ---
 
-## Overview
+## 1. Context & Problem
 
-Deletes a [[entity|feedback]] record when it exists. This administrator-only operation
-publishes a [[event|FeedbackDeletedIntegrationEvent]] after the record is removed.
+BookWorm needs a controlled way for authorized administrators to remove inappropriate, spam, or erroneous customer reviews. At the same time, removing a review must notify downstream systems so book rating summaries stay aligned with the remaining feedback.
+
+## 2. Business Value
+
+- **Moderation governance**: Restricting deletion to administrators protects legitimate customer reviews from unauthorized removal while supporting content moderation.
+- **Accurate catalog summaries**: Publishing a deletion notification after removal ensures downstream book rating averages and counts adjust accordingly.
+- **Clear operational outcomes**: Explicitly reporting when a target review is missing helps admin dashboards surface accurate status.
+
+## 3. How It Works
+
+This administrator-only operation deletes an existing [[entity|feedback]] record identified by its unique identifier.
+
+When the targeted feedback exists, the service removes the record, returns an empty confirmation, and emits a deletion notification so downstream consumers can update derived rating summaries. If no record matches the given identifier, nothing is deleted and the caller is informed that the feedback could not be found.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Administrator-only access**: Limiting removal to administrators strengthens review integrity and auditability, meaning end users cannot self-delete reviews through this workflow.
+- **Notify after removal**: Emitting the deletion event only after the record is removed prevents downstream systems from subtracting a rating if the record did not exist or the deletion failed, while accepting brief eventual consistency in Catalog totals.
+- **Non-idempotent missing-record signaling**: Returning a not-found outcome for missing records helps interactive admin interfaces detect stale lists, though automated callers must handle missing-record responses explicitly.
+
+## 5. Technical Reference
 
 <NodeGraph />
 
-## Request and response
+### Request & Response Contract
 
-Provide the feedback UUID in the `id` path parameter. The successful `204`
-response has no body. A missing feedback record returns `404` with
-`application/problem+json` and `ProblemDetails`.
+- **Endpoint**: `DELETE /api/v1/feedbacks/{id}` (administrator-only operation).
+- **Request**: Provide the feedback UUID in the `id` path parameter.
+- **Success (`204`)**: No response body.
+- **Not Found (`404`)**: Returns `application/problem+json` with `ProblemDetails`.
+- **Integration Event**: Publishes [[event|FeedbackDeletedIntegrationEvent]] after the [[entity|feedback]] record is removed.
 
-## Schema
+### Schema
 
 <SchemaViewer
 	file="schema.json"
