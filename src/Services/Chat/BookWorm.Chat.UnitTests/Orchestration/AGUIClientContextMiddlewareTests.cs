@@ -79,8 +79,8 @@ public sealed class AGUIClientContextMiddlewareTests
         var frontendTool = AIFunctionFactory.Create(() => "shown", "showBookCard");
         var serverTool = AIFunctionFactory.Create(() => "found", "search_catalog");
 
-        var stateElement = JsonDocument.Parse("""{"searchQuery":"dune"}""").RootElement;
-        var contextElement = JsonDocument.Parse("""{"itemCount":2}""").RootElement;
+        var stateElement = JsonElement.Parse("""{"searchQuery":"dune"}""");
+        var contextElement = JsonElement.Parse("""{"itemCount":2}""");
 
         var runOptions = new ChatClientAgentRunOptions(
             new()
@@ -116,5 +116,57 @@ public sealed class AGUIClientContextMiddlewareTests
         capturedOptions.Tools.ShouldNotBeNull();
         capturedOptions.Tools.Select(t => t.Name).ShouldContain("search_catalog");
         capturedOptions.Tools.Select(t => t.Name).ShouldContain("showBookCard");
+    }
+
+    [Test]
+    public async Task GivenAGUIStateWithoutStateOrContext_WhenInvoking_ThenShouldNotInjectContextPrompt()
+    {
+        // Arrange
+        List<ChatMessage>? capturedMessages = null;
+
+        var innerClient = new Mock<IChatClient>();
+        innerClient
+            .Setup(c =>
+                c.GetResponseAsync(
+                    It.IsAny<IEnumerable<ChatMessage>>(),
+                    It.IsAny<ChatOptions?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<IEnumerable<ChatMessage>, ChatOptions?, CancellationToken>(
+                (msgs, _, _) => capturedMessages = [.. msgs]
+            )
+            .ReturnsAsync(new ChatResponse(new ChatMessage(ChatRole.Assistant, "ok")));
+
+        using var client = innerClient.Object.AsBuilder().UseAGUIClientContext().Build();
+        var runOptions = new ChatClientAgentRunOptions(new());
+
+        // Act
+        using (AGUIRunContext.Push(runOptions))
+        {
+            await client.GetResponseAsync([new(ChatRole.User, "Hello")], new());
+        }
+
+        // Assert
+        capturedMessages.ShouldNotBeNull();
+        capturedMessages.Count.ShouldBe(1);
+        capturedMessages[0].Role.ShouldBe(ChatRole.User);
+    }
+
+    [Test]
+    public void GivenPushWithNonChatClientAgentRunOptions_WhenInvoked_ThenShouldReturnScopeWithoutModifyingState()
+    {
+        // Act & Assert - options is null
+        using (AGUIRunContext.Push(null))
+        {
+            AGUIRunContext.Current.ShouldBeNull();
+        }
+
+        // Act & Assert - options is generic AgentRunOptions
+        var genericOptions = new AgentRunOptions();
+        using (AGUIRunContext.Push(genericOptions))
+        {
+            AGUIRunContext.Current.ShouldBeNull();
+        }
     }
 }
