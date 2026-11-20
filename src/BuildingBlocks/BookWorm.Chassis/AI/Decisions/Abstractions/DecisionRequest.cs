@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using BookWorm.Chassis.AI.Decisions.Abstractions.Questions;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Decisions.Abstractions;
@@ -56,6 +56,3 @@ public sealed class DecisionRequest
     public IReadOnlyList<AIContent> Contents { get; }
     public IReadOnlyList<DecisionQuestion> Questions { get; }
 }
-
-[JsonSerializable(typeof(string))]
-internal sealed partial class DecisionSerializationContext : JsonSerializerContext;

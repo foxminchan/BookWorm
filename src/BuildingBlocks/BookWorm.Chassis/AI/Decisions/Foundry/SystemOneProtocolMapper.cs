@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BookWorm.Chassis.AI.Decisions.Abstractions;
+using BookWorm.Chassis.AI.Decisions.Abstractions.Answers;
+using BookWorm.Chassis.AI.Decisions.Abstractions.Questions;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Decisions.Foundry;

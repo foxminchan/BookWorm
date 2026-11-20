@@ -7,6 +7,4 @@ public interface IDecisionClient : IDisposable
         DecisionOptions? options = null,
         CancellationToken cancellationToken = default
     );
-
-    object? GetService(Type serviceType, object? serviceKey = null);
 }

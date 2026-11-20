@@ -18,7 +18,6 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
     private static readonly ActivitySource _activitySource = new(ActivitySourceName);
     private readonly string _defaultModelId;
     private readonly ILogger<FoundrySystemOneDecisionClient> _logger;
-    private readonly DecisionClientMetadata _metadata;
 
     private readonly ClientPipeline _pipeline;
     private readonly Uri _systemOneEndpoint;
@@ -47,12 +46,6 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
         }.Uri;
         _defaultModelId = defaultModelId;
         _logger = logger ?? NullLogger<FoundrySystemOneDecisionClient>.Instance;
-        _metadata = new(
-            "microsoft.foundry",
-            _systemOneEndpoint,
-            _defaultModelId,
-            [DecisionKind.Binary, DecisionKind.Choice, DecisionKind.Score]
-        );
     }
 
     public async Task<DecisionResponse> GetDecisionAsync(
@@ -97,23 +90,6 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
             Usage = usage,
             RawRepresentation = raw,
         };
-    }
-
-    public object? GetService(Type serviceType, object? serviceKey = null)
-    {
-        ArgumentNullException.ThrowIfNull(serviceType);
-
-        if (serviceKey is not null)
-        {
-            return null;
-        }
-
-        if (serviceType == typeof(DecisionClientMetadata))
-        {
-            return _metadata;
-        }
-
-        return serviceType.IsInstanceOfType(this) ? this : null;
     }
 
     public void Dispose()

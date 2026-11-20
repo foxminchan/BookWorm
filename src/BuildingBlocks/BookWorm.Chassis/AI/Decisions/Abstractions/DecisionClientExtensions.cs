@@ -1,4 +1,5 @@
 using System.Text.Json;
+using BookWorm.Chassis.AI.Decisions.Abstractions.Questions;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Decisions.Abstractions;
@@ -61,14 +62,6 @@ public static class DecisionClientExtensions
                 options,
                 cancellationToken
             );
-        }
-
-        public TService? GetService<TService>(object? serviceKey = null)
-        {
-            ArgumentNullException.ThrowIfNull(client);
-            return client.GetService(typeof(TService), serviceKey) is TService service
-                ? service
-                : default;
         }
     }
 }
