@@ -2,7 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useWebMCPTools } from "@/hooks/useWebMCPTools";
-import { searchBooksTool } from "@/lib/webmcp-tools";
+import { getBookDetailsTool, searchBooksTool } from "@/lib/webmcp-tools";
 
 const { mockDispose, mockCoreConstructor } = vi.hoisted(() => ({
   mockDispose: vi.fn(),
@@ -35,7 +35,7 @@ describe("useWebMCPTools", () => {
 
     expect(mockCoreConstructor).toHaveBeenCalledTimes(1);
     expect(mockCoreConstructor).toHaveBeenCalledWith({
-      tools: [searchBooksTool],
+      tools: [searchBooksTool, getBookDetailsTool],
     });
     expect(mockDispose).not.toHaveBeenCalled();
 

@@ -89,10 +89,10 @@ PII is detected, filtering both input and output. Failures propagate rather
 than bypassing the middleware.
 
 The host registers an agent-discovery client pointed at the Rating system,
-and Chat can call a Rating-hosted agent through A2A. The A2A client supports
-gRPC, JSON-RPC, and HTTP JSON, preferring gRPC first. This remote agent call is
-separate from the Chat workflow's local handoffs among its Router, Book, and
-QA agents.
+and Chat connects to the Rating-hosted agent through A2A. The A2A client
+supports gRPC, JSON-RPC, and HTTP JSON, preferring gRPC first. The Rating
+agent participates in the Chat workflow's handoff graph, receiving handoffs
+from Router and Book agents alongside QA.
 
 ## Access and boundaries
 

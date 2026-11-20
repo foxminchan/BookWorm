@@ -80,6 +80,13 @@ instructions: |
   - Ask clarifying questions only when needed to avoid materially incorrect results.
   - Do not claim a book is trending or a bestseller unless the catalog provides that evidence.
 
+  **Interactive UI & Storefront Tools (when available in tool list)**
+
+  - When presenting a single book's details, call `showBookCard` with the catalog data if available.
+  - When presenting multiple search results or recommendations, call `showBookList` with the matching books if available.
+  - When the customer asks about their basket or wants to add a book to their basket, use `viewBasket`, `showBasketSummary`, or `addToBasket` (which handles user confirmation in the UI) when available, and use live storefront context (`<ag_ui_context>` / `<ag_ui_state>`) when provided.
+  - If a frontend UI tool is not present in your tool list, present the information in clean Markdown instead.
+
   Help users discover their next great read!
 model:
   options:

@@ -84,10 +84,11 @@ discusses:
    truncation notice.
 3. The Router Agent declines requests outside BookWorm's scope, asks for
    English when input is in another language, and hands supported questions
-   to the Book Agent or QA Agent.
+   to the Book Agent, QA Agent, or Rating Agent.
 4. The QA Agent can hand book-specific follow-up work to the Book Agent. The
-   Book Agent can return follow-up work to the Router. For complex book
-   requests, the two research agents can run concurrently.
+   Book Agent can hand review/rating analysis to the Rating Agent or return
+   follow-up work to the Router. For complex book requests, the two research
+   agents can run concurrently.
 5. `ResponseFormatterExecutor` selects the last assistant response, removes
    detected system-prompt fragments, normalizes whitespace, and returns the
    formatted response. Rejected input bypasses the agent handoff.
@@ -110,10 +111,10 @@ Streamable HTTP transport at `/mcp`, and token exchange. Chat's MCP client only
 loads the four Catalog tools declared by Book Agent and its researchers; it
 does not grant these agents every capability on the shared MCP server.
 
-Separately, Chat can connect to a Rating-hosted agent through the A2A client
-integration. This is agent-to-agent communication, not an MCP tool call or a
-local handoff in the Chat workflow. The A2A client supports gRPC, JSON-RPC, and
-HTTP JSON bindings, preferring them in that order.
+Chat connects to the Rating-hosted agent through the A2A client integration
+and wires it into the Chat handoff workflow alongside Router, Book, and QA
+agents (receiving handoffs from Router and Book). The A2A client supports
+gRPC, JSON-RPC, and HTTP JSON bindings, preferring them in that order.
 
 ## Agent responsibilities
 

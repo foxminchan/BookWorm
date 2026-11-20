@@ -157,4 +157,20 @@ public sealed class ResponseFormatterExecutorTests
         // Assert
         result.ShouldBe("Here is a more detailed answer.");
     }
+
+    [Test]
+    public async Task GivenAssistantMessageWithFunctionCallAndNoText_WhenHandling_ThenShouldReturnEmptyString()
+    {
+        // Arrange
+        ChatMessage toolCallMessage = new(
+            ChatRole.Assistant,
+            [new FunctionCallContent("call-1", "showBookList")]
+        );
+
+        // Act
+        var result = await _sut.HandleAsync([toolCallMessage], _context);
+
+        // Assert
+        result.ShouldBeEmpty();
+    }
 }

@@ -1,4 +1,5 @@
 using Azure.AI.Projects;
+using BookWorm.Chat.Orchestration;
 using Microsoft.Agents.AI.Foundry;
 
 namespace BookWorm.Chat.Agents.BookSearch;
@@ -36,6 +37,7 @@ internal static class BookAgentRegistration
 
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseAGUIClientContext()
                     .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
                     .UseAIContextProviders(compactionProvider)

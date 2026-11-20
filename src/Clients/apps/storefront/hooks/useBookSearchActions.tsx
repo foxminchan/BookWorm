@@ -13,7 +13,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner";
 import { formatPrice } from "@workspace/utils/format";
 
-import { searchBooksTool } from "@/lib/webmcp-tools";
+import { getBookDetailsTool, searchBooksTool } from "@/lib/webmcp-tools";
 
 export function useBookSearchActions() {
   useFrontendTool({
@@ -71,6 +71,53 @@ export function useBookSearchActions() {
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        );
+      }
+
+      return <></>;
+    },
+  });
+
+  useFrontendTool({
+    ...getBookDetailsTool,
+    render: ({ status, result }) => {
+      const book =
+        status === "complete" && result ? (JSON.parse(result) as Book) : null;
+
+      if (status === "executing") {
+        return (
+          <Card>
+            <CardContent className="flex items-center gap-2 py-4">
+              <Spinner />
+              <span className="text-sm">Loading book details...</span>
+            </CardContent>
+          </Card>
+        );
+      }
+
+      if (status === "complete" && book) {
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>{book.name}</CardTitle>
+              <CardDescription>
+                {book.authors
+                  ?.map((a) => a.name)
+                  .filter(Boolean)
+                  .join(", ")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {book.description && (
+                <p className="text-muted-foreground line-clamp-3">
+                  {book.description}
+                </p>
+              )}
+              <div className="font-semibold">
+                {formatPrice(book.priceSale ?? book.price)}
+              </div>
             </CardContent>
           </Card>
         );

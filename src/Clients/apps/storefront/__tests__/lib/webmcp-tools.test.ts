@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
 
-import { searchBooksParameters, searchBooksTool } from "@/lib/webmcp-tools";
+import {
+  getBookDetailsParameters,
+  getBookDetailsTool,
+  searchBooksParameters,
+  searchBooksTool,
+} from "@/lib/webmcp-tools";
 
 describe("searchBooksTool", () => {
   let listSpy: ReturnType<typeof vi.spyOn>;
@@ -93,5 +98,35 @@ describe("searchBooksTool", () => {
       maxResults: 20,
     });
     expect(() => searchBooksParameters.parse({})).toThrow();
+  });
+});
+
+describe("getBookDetailsTool", () => {
+  let getSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getSpy = vi.spyOn(booksApiClient, "get");
+  });
+
+  afterEach(() => {
+    getSpy.mockRestore();
+  });
+
+  it("retrieves book details by ID and returns serialized JSON", async () => {
+    const book = { id: "book-1", name: "Dune", price: 19.99 };
+    getSpy.mockResolvedValue(book as never);
+
+    const result = await getBookDetailsTool.handler({ bookId: "book-1" });
+
+    expect(getSpy).toHaveBeenCalledWith("book-1");
+    expect(result).toBe(JSON.stringify(book));
+  });
+
+  it("validates parameters with getBookDetailsParameters", () => {
+    expect(getBookDetailsParameters.parse({ bookId: "book-1" })).toEqual({
+      bookId: "book-1",
+    });
+    expect(() => getBookDetailsParameters.parse({})).toThrow();
   });
 });
