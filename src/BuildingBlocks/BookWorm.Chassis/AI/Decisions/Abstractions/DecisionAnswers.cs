@@ -72,7 +72,7 @@ public abstract class DecisionAnswer
         var seenIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var probability in probabilities)
         {
-            ArgumentNullException.ThrowIfNull(probability, nameof(probabilities));
+            ArgumentNullException.ThrowIfNull(probability);
             if (!seenIds.Add(probability.Id))
             {
                 throw new ArgumentException(

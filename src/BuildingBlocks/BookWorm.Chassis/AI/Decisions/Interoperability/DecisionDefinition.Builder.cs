@@ -74,10 +74,7 @@ public sealed partial class DecisionDefinition<TResult>
                     }
 
                     var parsed = enumDefinition.Parse(choiceAnswer.SelectedCandidateId);
-                    jsonObject[questionId] = JsonSerializer.SerializeToNode(
-                        parsed,
-                        _serializerOptions
-                    );
+                    jsonObject[questionId] = JsonValue.Create(enumDefinition.GetId(parsed));
                     distributions[questionId] = distribution;
                 }));
         }
@@ -197,14 +194,14 @@ public sealed partial class DecisionDefinition<TResult>
                 question.Levels.Select(static l => l.Id),
                 StringComparer.Ordinal
             );
-            foreach (var probability in scoreAnswer.Probabilities)
+            var undeclaredLevel = scoreAnswer.Probabilities.FirstOrDefault(p =>
+                !levelIds.Contains(p.Id)
+            );
+            if (undeclaredLevel is not null)
             {
-                if (!levelIds.Contains(probability.Id))
-                {
-                    throw new InvalidOperationException(
-                        $"Probability level '{probability.Id}' is not declared on question '{question.Id}'."
-                    );
-                }
+                throw new InvalidOperationException(
+                    $"Probability level '{undeclaredLevel.Id}' is not declared on question '{question.Id}'."
+                );
             }
 
             return scoreAnswer;

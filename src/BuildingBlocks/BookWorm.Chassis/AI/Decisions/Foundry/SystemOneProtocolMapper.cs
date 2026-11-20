@@ -6,6 +6,8 @@ namespace BookWorm.Chassis.AI.Decisions;
 
 internal static class SystemOneProtocolMapper
 {
+    private const string ChoiceQuestionType = "choice";
+
     public static SystemOneRequest BuildPayload(string modelId, DecisionRequest request)
     {
         var combinedState = BuildCombinedState(request);
@@ -21,7 +23,7 @@ internal static class SystemOneProtocolMapper
                         null
                     ),
                     ChoiceDecisionQuestion choice => new SystemOneQuestion(
-                        "choice",
+                        ChoiceQuestionType,
                         FormatQuestionText(choice.Instructions),
                         choice.Candidates.ToDictionary(
                             c => c.Id,
@@ -30,7 +32,7 @@ internal static class SystemOneProtocolMapper
                         )
                     ),
                     ScoreDecisionQuestion score => new SystemOneQuestion(
-                        "choice",
+                        ChoiceQuestionType,
                         FormatQuestionText(score.Instructions),
                         score.Levels.ToDictionary(
                             l => l.Id,
@@ -202,14 +204,12 @@ internal static class SystemOneProtocolMapper
 
     private static string FormatQuestionText(IReadOnlyList<AIContent> contents)
     {
-        foreach (var content in contents)
+        var unsupported = contents.FirstOrDefault(static content => content is not TextContent);
+        if (unsupported is not null)
         {
-            if (content is not TextContent)
-            {
-                throw new NotSupportedException(
-                    $"Microsoft-Decision-1 does not support AIContent type '{content.GetType().Name}' in question instructions or descriptions."
-                );
-            }
+            throw new NotSupportedException(
+                $"Microsoft-Decision-1 does not support AIContent type '{unsupported.GetType().Name}' in question instructions or descriptions."
+            );
         }
 
         return DecisionQuestion.FormatText(contents);

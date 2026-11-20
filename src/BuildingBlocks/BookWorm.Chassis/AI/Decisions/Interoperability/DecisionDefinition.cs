@@ -104,30 +104,30 @@ public sealed partial class DecisionDefinition<TResult>
             StringComparer.Ordinal
         );
 
-        foreach (var binding in _bindings)
+        foreach (var question in _bindings.Select(static binding => binding.Question))
         {
-            var answer = response.GetAnswer(binding.Question.Id);
+            var answer = response.GetAnswer(question.Id);
             if (answer is UnansweredDecisionAnswer)
             {
-                unansweredIds.Add(binding.Question.Id);
+                unansweredIds.Add(question.Id);
                 continue;
             }
 
             if (answer is null)
             {
                 throw new InvalidOperationException(
-                    $"No answer was returned for bound decision question '{binding.Question.Id}'."
+                    $"No answer was returned for bound decision question '{question.Id}'."
                 );
             }
 
-            if (answer.Kind != binding.Question.Kind)
+            if (answer.Kind != question.Kind)
             {
                 throw new InvalidOperationException(
-                    $"Decision question '{binding.Question.Id}' expected answer kind '{binding.Question.Kind}' but received '{answer.Kind}'."
+                    $"Decision question '{question.Id}' expected answer kind '{question.Kind}' but received '{answer.Kind}'."
                 );
             }
 
-            resolvedAnswers[binding.Question.Id] = answer;
+            resolvedAnswers[question.Id] = answer;
         }
 
         if (unansweredIds.Count > 0)

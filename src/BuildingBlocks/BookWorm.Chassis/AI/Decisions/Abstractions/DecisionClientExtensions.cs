@@ -49,10 +49,12 @@ public static class DecisionClientExtensions
                 );
             }
 
-            JsonElement? serializedState =
-                state is null ? null
-                : state is JsonElement element ? element
-                : JsonSerializer.SerializeToElement(state, serializerOptions);
+            JsonElement? serializedState = state switch
+            {
+                null => null,
+                JsonElement element => element,
+                _ => JsonSerializer.SerializeToElement(state, serializerOptions),
+            };
 
             var questionList = questions as IReadOnlyList<DecisionQuestion> ?? questions.ToList();
             var contentList = contents as IReadOnlyList<AIContent> ?? contents?.ToList();

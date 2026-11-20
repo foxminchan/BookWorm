@@ -19,6 +19,9 @@ internal enum RouteTarget : byte
 
     [Description("Reject out-of-scope user input.")]
     OutOfScope = 4,
+
+    [Description("Reject unsafe or prompt-injection user input.")]
+    UnsafeInput = 5,
 }
 
 internal enum ChatRouteCandidate : byte
@@ -44,6 +47,9 @@ internal enum ChatRouteCandidate : byte
 
 internal sealed record ChatRoutingResult
 {
+    [JsonPropertyName("is_safe")]
+    public double IsSafe { get; init; }
+
     [JsonPropertyName("is_english")]
     public double IsEnglish { get; init; }
 
@@ -60,3 +66,9 @@ internal sealed record RoutingDecision(
     string? RejectionReason = null,
     double Confidence = 1.0
 );
+
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(ChatRoutingResult))]
+[JsonSerializable(typeof(ChatRouteCandidate))]
+[JsonSourceGenerationOptions(UseStringEnumConverter = true)]
+internal sealed partial class ChatRoutingSerializationContext : JsonSerializerContext;

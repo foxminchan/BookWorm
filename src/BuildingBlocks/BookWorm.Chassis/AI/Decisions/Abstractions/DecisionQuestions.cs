@@ -42,7 +42,11 @@ public abstract class DecisionQuestion
         string paramName
     )
     {
-        ArgumentNullException.ThrowIfNull(items, paramName);
+        if (items is null)
+        {
+            throw new ArgumentNullException(paramName);
+        }
+
         if (items.Count == 0)
         {
             throw new ArgumentException(emptyMessage, paramName);
@@ -51,7 +55,10 @@ public abstract class DecisionQuestion
         var seenIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in items)
         {
-            ArgumentNullException.ThrowIfNull(item, paramName);
+            if (item is null)
+            {
+                throw new ArgumentNullException(paramName);
+            }
             var id = getId(item);
             if (!seenIds.Add(id))
             {

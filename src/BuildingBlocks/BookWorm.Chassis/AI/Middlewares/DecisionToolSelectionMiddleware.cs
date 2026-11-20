@@ -20,10 +20,8 @@ public sealed class DecisionToolSelectionOptions
     {
         if (double.IsNaN(ProbabilityThreshold) || ProbabilityThreshold is < 0.0 or > 1.0)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(ProbabilityThreshold),
-                ProbabilityThreshold,
-                "ProbabilityThreshold must be between 0.0 and 1.0."
+            throw new InvalidOperationException(
+                $"{nameof(ProbabilityThreshold)} ({ProbabilityThreshold}) must be between 0.0 and 1.0."
             );
         }
 
@@ -115,26 +113,66 @@ internal static partial class DecisionToolSelectionMiddleware
                 return options;
             }
 
-            var requiredToolName = (options.ToolMode as RequiredChatToolMode)?.RequiredFunctionName;
+            var (alwaysIncluded, candidates, questions) = PartitionTools(
+                options.Tools,
+                (options.ToolMode as RequiredChatToolMode)?.RequiredFunctionName
+            );
+
+            if (questions.Count == 0)
+            {
+                return options;
+            }
+
+            var response = await TryGetDecisionResponseAsync(
+                    state,
+                    questions,
+                    options.Tools.Count,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
+
+            if (response is null)
+            {
+                return options;
+            }
+
+            var selectedTools = ResolveSelectedTools(
+                options.Tools,
+                alwaysIncluded,
+                candidates,
+                response
+            );
+
+            if (logger is not null)
+            {
+                LogToolsSelected(
+                    logger,
+                    selectedTools.Count,
+                    options.Tools.Count,
+                    selectionOptions.ProbabilityThreshold
+                );
+            }
+
+            var filteredOptions = options.Clone();
+            filteredOptions.Tools = selectedTools;
+            return filteredOptions;
+        }
+
+        private (
+            HashSet<AITool> AlwaysIncluded,
+            List<(AITool Tool, string QuestionId)> Candidates,
+            List<BinaryDecisionQuestion> Questions
+        ) PartitionTools(IList<AITool> tools, string? requiredToolName)
+        {
             HashSet<AITool> alwaysIncluded = [];
             List<(AITool Tool, string QuestionId)> candidates = [];
             List<BinaryDecisionQuestion> questions = [];
             HashSet<string> seenQuestionIds = [with(StringComparer.Ordinal)];
 
-            for (var i = 0; i < options.Tools.Count; i++)
+            for (var i = 0; i < tools.Count; i++)
             {
-                var tool = options.Tools[i];
-                if (
-                    selectionOptions.AlwaysIncludedToolNames.Contains(tool.Name)
-                    || (
-                        requiredToolName is not null
-                        && string.Equals(
-                            tool.Name,
-                            requiredToolName,
-                            StringComparison.OrdinalIgnoreCase
-                        )
-                    )
-                )
+                var tool = tools[i];
+                if (IsAlwaysIncludedTool(tool, requiredToolName))
                 {
                     alwaysIncluded.Add(tool);
                     continue;
@@ -158,15 +196,32 @@ internal static partial class DecisionToolSelectionMiddleware
                 );
             }
 
-            if (questions.Count == 0)
-            {
-                return options;
-            }
+            return (alwaysIncluded, candidates, questions);
+        }
 
-            DecisionResponse response;
+        private bool IsAlwaysIncludedTool(AITool tool, string? requiredToolName)
+        {
+            return selectionOptions.AlwaysIncludedToolNames.Contains(tool.Name)
+                || (
+                    requiredToolName is not null
+                    && string.Equals(
+                        tool.Name,
+                        requiredToolName,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                );
+        }
+
+        private async ValueTask<DecisionResponse?> TryGetDecisionResponseAsync(
+            string state,
+            List<BinaryDecisionQuestion> questions,
+            int totalToolCount,
+            CancellationToken cancellationToken
+        )
+        {
             try
             {
-                response = await decisionClient
+                return await decisionClient
                     .GetDecisionAsync(state, questions, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
@@ -177,45 +232,38 @@ internal static partial class DecisionToolSelectionMiddleware
             {
                 if (logger is not null)
                 {
-                    LogSelectionFailed(logger, ex, options.Tools.Count);
+                    LogSelectionFailed(logger, ex, totalToolCount);
                 }
 
-                return options;
+                return null;
             }
+        }
 
-            HashSet<AITool> selectedByDecision = [];
-            foreach (var (tool, questionId) in candidates)
-            {
-                var answer = response.GetBinaryAnswer(questionId);
-                if (
-                    answer is null
-                    || answer.TrueProbability >= selectionOptions.ProbabilityThreshold
-                )
-                {
-                    selectedByDecision.Add(tool);
-                }
-            }
-
-            List<AITool> selectedTools =
+        private List<AITool> ResolveSelectedTools(
+            IList<AITool> allTools,
+            HashSet<AITool> alwaysIncluded,
+            List<(AITool Tool, string QuestionId)> candidates,
+            DecisionResponse response
+        )
+        {
+            HashSet<AITool> selectedByDecision =
             [
-                .. options.Tools.Where(t =>
+                .. candidates
+                    .Where(c =>
+                    {
+                        var answer = response.GetBinaryAnswer(c.QuestionId);
+                        return answer is null
+                            || answer.TrueProbability >= selectionOptions.ProbabilityThreshold;
+                    })
+                    .Select(static c => c.Tool),
+            ];
+
+            return
+            [
+                .. allTools.Where(t =>
                     alwaysIncluded.Contains(t) || selectedByDecision.Contains(t)
                 ),
             ];
-
-            if (logger is not null)
-            {
-                LogToolsSelected(
-                    logger,
-                    selectedTools.Count,
-                    options.Tools.Count,
-                    selectionOptions.ProbabilityThreshold
-                );
-            }
-
-            var filteredOptions = options.Clone();
-            filteredOptions.Tools = selectedTools;
-            return filteredOptions;
         }
 
         private static string BuildDecisionState(

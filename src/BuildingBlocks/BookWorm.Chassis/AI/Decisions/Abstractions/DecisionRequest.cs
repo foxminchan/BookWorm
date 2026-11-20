@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Decisions;
@@ -36,7 +37,7 @@ public sealed class DecisionRequest
         var seenIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var question in questions)
         {
-            ArgumentNullException.ThrowIfNull(question, nameof(questions));
+            ArgumentNullException.ThrowIfNull(question);
             if (!seenIds.Add(question.Id))
             {
                 throw new ArgumentException(
@@ -58,7 +59,8 @@ public sealed class DecisionRequest
     )
         : this(
             JsonSerializer.SerializeToElement(
-                state ?? throw new ArgumentNullException(nameof(state))
+                state ?? throw new ArgumentNullException(nameof(state)),
+                DecisionSerializationContext.Default.String
             ),
             questions,
             contents
@@ -71,3 +73,6 @@ public sealed class DecisionRequest
     public IReadOnlyList<AIContent> Contents { get; }
     public IReadOnlyList<DecisionQuestion> Questions { get; }
 }
+
+[JsonSerializable(typeof(string))]
+internal sealed partial class DecisionSerializationContext : JsonSerializerContext;

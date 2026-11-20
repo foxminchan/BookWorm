@@ -17,10 +17,10 @@ public sealed class OrderCancelledTrigger
         CancellationToken cancellationToken
     )
     {
-        var @event =
-            CloudEventsMessageParser.Deserialize<OrderStatusChangedToCancelIntegrationEvent>(
-                message
-            );
+        var @event = CloudEventsMessageParser.Deserialize(
+            message,
+            FinanceEventSerializationContext.Default.OrderStatusChangedToCancelIntegrationEvent
+        );
 
         return client.RaiseEventAsync(
             @event.OrderId.ToString(),

@@ -26,10 +26,12 @@ public static class DecisionClientTypedExtensions
                 );
             }
 
-            JsonElement? serializedState =
-                state is null ? null
-                : state is JsonElement element ? element
-                : JsonSerializer.SerializeToElement(state, definition.SerializerOptions);
+            JsonElement? serializedState = state switch
+            {
+                null => null,
+                JsonElement element => element,
+                _ => JsonSerializer.SerializeToElement(state, definition.SerializerOptions),
+            };
 
             return ExecuteTypedAsync(
                 client,
