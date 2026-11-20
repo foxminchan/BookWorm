@@ -38,6 +38,7 @@ internal static class BookAgentRegistration
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
                     .UseAGUIClientContext()
+                    .UseDecisionToolSelection(sp)
                     .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
                     .UseAIContextProviders(compactionProvider)
