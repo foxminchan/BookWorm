@@ -4,7 +4,7 @@ using BookWorm.Chat.Infrastructure.Decisions;
 namespace BookWorm.Chat.Orchestration.Executors;
 
 internal sealed class DecisionRouterExecutor(ChatRoutingDecisionService routingService)
-    : Executor<ChatMessage, RoutingDecision>(nameof(DecisionRouterExecutor))
+    : Executor<AcceptedInput, RoutingDecision>(nameof(DecisionRouterExecutor))
 {
     public DecisionRouterExecutor(
         IDecisionClient decisionClient,
@@ -13,8 +13,18 @@ internal sealed class DecisionRouterExecutor(ChatRoutingDecisionService routingS
         : this(new(decisionClient, logger)) { }
 
     public override ValueTask<RoutingDecision> HandleAsync(
-        ChatMessage message,
+        AcceptedInput message,
         IWorkflowContext context,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        return routingService.EvaluateAsync(message.EffectiveMessages, cancellationToken);
+    }
+
+    public ValueTask<RoutingDecision> HandleAsync(
+        ChatMessage message,
         CancellationToken cancellationToken = default
     )
     {

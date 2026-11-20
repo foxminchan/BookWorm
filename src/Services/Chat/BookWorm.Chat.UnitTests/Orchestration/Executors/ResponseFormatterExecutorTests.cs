@@ -74,6 +74,11 @@ public sealed class ResponseFormatterExecutorTests
     [Arguments("Is this what you need?")]
     [Arguments("She said \"hello\"")]
     [Arguments("(see details above)")]
+    [Arguments("_Would you like more details on any of these?_")]
+    [Arguments("**Clean Code**")]
+    [Arguments("Use `search_catalog`")]
+    [Arguments("| Title | Price |")]
+    [Arguments("[View book](https://bookworm.com/1)")]
     public async Task GivenMessageEndingWithValidPunctuation_WhenHandling_ThenShouldNotAddPeriod(
         string text
     )

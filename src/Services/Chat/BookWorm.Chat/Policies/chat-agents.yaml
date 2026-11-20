@@ -19,7 +19,9 @@ description: >
 default_action: deny
 rules:
   - name: book-agent-run
-    condition: "agent_did == 'did:mesh:bookworm:book' and agent_name == 'BookAgent'"
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'agent_run' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'agent_run_streaming'
     action: allow
     priority: 60
 
@@ -29,6 +31,46 @@ rules:
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'get_book' or
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'list_categories' or
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'list_authors'
+    action: allow
+    priority: 60
+
+  - name: book-agent-skills-and-harness-tools
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'load_skill' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'read_skill_resource' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'mode_get' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'mode_set' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'todos_add' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'todos_complete' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'todos_get_remaining' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'todos_get_all' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'todos_remove' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'file_memory_write' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'file_memory_read' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'file_memory_delete' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'file_memory_ls' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'file_memory_grep' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'file_memory_replace' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'file_memory_replace_lines'
+    action: allow
+    priority: 60
+
+  - name: book-agent-handoff-tools
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'handoff_to_rating' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'handoff_to_qa'
+    action: allow
+    priority: 60
+
+  - name: book-agent-storefront-ui-tools
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'showBookCard' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'showBookList' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'showBasketSummary' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'addToBasket' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'viewBasket' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'searchBooks' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'getBookDetails'
     action: allow
     priority: 60
 
@@ -43,7 +85,9 @@ rules:
     priority: 60
 
   - name: book-catalog-researcher-run
-    condition: "agent_did == 'did:mesh:bookworm:book-catalog-researcher' and agent_name == 'book-catalog-researcher'"
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book-catalog-researcher' and tool_name == 'agent_run' or
+      agent_did == 'did:mesh:bookworm:book-catalog-researcher' and tool_name == 'agent_run_streaming'
     action: allow
     priority: 60
 
@@ -57,7 +101,9 @@ rules:
     priority: 60
 
   - name: book-recommendation-researcher-run
-    condition: "agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and agent_name == 'book-recommendation-researcher'"
+    condition: >-
+      agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and tool_name == 'agent_run' or
+      agent_did == 'did:mesh:bookworm:book-recommendation-researcher' and tool_name == 'agent_run_streaming'
     action: allow
     priority: 60
 
@@ -70,10 +116,29 @@ rules:
     action: allow
     priority: 60
 
-  - name: qa-agent-no-tools
-    condition: "agent_id == 'qa-agent'"
+  - name: qa-agent-run
+    condition: >-
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'agent_run' or
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'agent_run_streaming'
+    action: allow
+    priority: 60
+
+  - name: qa-agent-skills-and-handoff
+    condition: >-
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'load_skill' or
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'read_skill_resource' or
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'handoff_to_book'
+    action: allow
+    priority: 60
+
+  - name: qa-agent-deny-catalog-tools
+    condition: >-
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'search_catalog' or
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'get_book' or
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'list_categories' or
+      agent_did == 'did:mesh:bookworm:qa' and tool_name == 'list_authors'
     action: deny
-    priority: 50
+    priority: 70
 
 # ── Conversation guardian ───────────────────────────────────────────
 # Adapted from AGT conversation-guardian.yaml — thresholds for

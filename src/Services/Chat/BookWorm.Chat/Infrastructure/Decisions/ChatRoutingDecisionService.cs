@@ -1,8 +1,5 @@
-using System.Text;
-using System.Text.Json;
 using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chassis.AI.Decisions.Interoperability;
-using BookWorm.Chat.Orchestration;
 
 namespace BookWorm.Chat.Infrastructure.Decisions;
 
@@ -19,8 +16,6 @@ internal sealed class ChatRoutingDecisionService(
 
     internal const string UnsafeInputMessage =
         "I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services.";
-
-    private const double ProbabilityThreshold = 0.5;
 
     private static readonly DecisionDefinition<ChatRoutingResult> _routingDefinition =
         DecisionDefinition<ChatRoutingResult>.Create(
@@ -46,17 +41,30 @@ internal sealed class ChatRoutingDecisionService(
             ChatRoutingSerializationContext.Default.Options
         );
 
-    internal static IReadOnlyList<DecisionQuestion> RoutingQuestions =>
-        _routingDefinition.Questions;
-
-    internal async ValueTask<RoutingDecision> EvaluateAsync(
+    internal ValueTask<RoutingDecision> EvaluateAsync(
         ChatMessage message,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var decisionInput = BuildDecisionInput(message);
+        return EvaluateAsync([message], cancellationToken);
+    }
+
+    internal async ValueTask<RoutingDecision> EvaluateAsync(
+        IReadOnlyList<ChatMessage> messages,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(messages);
+
+        if (messages.Count == 0)
+        {
+            throw new ArgumentException("At least one message is required.", nameof(messages));
+        }
+
+        var latestUserMessage = DecisionInputBuilder.GetLatestUserMessage(messages);
+        var decisionInput = DecisionInputBuilder.Build(messages, latestUserMessage);
 
         try
         {
@@ -71,7 +79,14 @@ internal sealed class ChatRoutingDecisionService(
             var result = typedResponse.Result;
 
             if (
-                EvaluateGuardrails(message, result.IsSafe, result.IsEnglish, result.IsInScope) is
+                ChatRoutingGuardrailEvaluator.Evaluate(
+                    latestUserMessage,
+                    messages,
+                    result.IsSafe,
+                    result.IsEnglish,
+                    result.IsInScope,
+                    logger
+                ) is
                 { } rejected
             )
             {
@@ -88,102 +103,17 @@ internal sealed class ChatRoutingDecisionService(
                 confidence
             );
 
-            return new(target, message, Confidence: confidence);
+            return new(target, latestUserMessage, Confidence: confidence, Messages: messages);
         }
         catch (DecisionUnansweredException ex)
         {
-            return HandlePartialResponse(message, ex.Response);
-        }
-    }
-
-    private RoutingDecision? EvaluateGuardrails(
-        ChatMessage message,
-        double isSafeProbability,
-        double isEnglishProbability,
-        double isInScopeProbability
-    )
-    {
-        if (isSafeProbability < ProbabilityThreshold)
-        {
-            logger?.LogInformation(
-                "Decision router rejected unsafe message (P(is_safe)={Probability:F3})",
-                isSafeProbability
-            );
-
-            return new(
-                RouteTarget.UnsafeInput,
-                message,
-                UnsafeInputMessage,
-                1.0 - isSafeProbability
+            return ChatRoutingGuardrailEvaluator.HandlePartialResponse(
+                latestUserMessage,
+                messages,
+                ex.Response,
+                logger
             );
         }
-
-        if (isEnglishProbability < ProbabilityThreshold)
-        {
-            logger?.LogInformation(
-                "Decision router rejected non-English message (P(is_english)={Probability:F3})",
-                isEnglishProbability
-            );
-
-            return new(
-                RouteTarget.NonEnglish,
-                message,
-                NonEnglishMessage,
-                1.0 - isEnglishProbability
-            );
-        }
-
-        if (isInScopeProbability < ProbabilityThreshold)
-        {
-            logger?.LogInformation(
-                "Decision router rejected out-of-scope message (P(is_in_scope)={Probability:F3})",
-                isInScopeProbability
-            );
-
-            return new(
-                RouteTarget.OutOfScope,
-                message,
-                OutOfScopeMessage,
-                1.0 - isInScopeProbability
-            );
-        }
-
-        return null;
-    }
-
-    private RoutingDecision HandlePartialResponse(ChatMessage message, DecisionResponse response)
-    {
-        var isSafe = response.GetBinaryAnswer("is_safe")?.TrueProbability ?? 1.0;
-        var isEnglish = response.GetBinaryAnswer("is_english")?.TrueProbability ?? 1.0;
-        var isInScope = response.GetBinaryAnswer("is_in_scope")?.TrueProbability ?? 1.0;
-
-        if (EvaluateGuardrails(message, isSafe, isEnglish, isInScope) is { } rejected)
-        {
-            return rejected;
-        }
-
-        var routeChoice = response.GetChoiceAnswer("route");
-        var target = routeChoice?.SelectedCandidateId switch
-        {
-            Constants.Other.Agents.QAAgent => RouteTarget.QA,
-            Constants.Other.Agents.RatingAgent => RouteTarget.Rating,
-            _ => RouteTarget.Book,
-        };
-
-        var confidence = routeChoice
-            ?.Probabilities.FirstOrDefault(p =>
-                string.Equals(p.Id, routeChoice.SelectedCandidateId, StringComparison.Ordinal)
-            )
-            ?.Value
-            ?? 1.0;
-
-        logger?.LogInformation(
-            "Decision router selected {Target} with partial response (confidence={Confidence:F3})",
-            target,
-            confidence
-        );
-
-        return new(target, message, Confidence: confidence);
     }
 
     private static RouteTarget MapRouteTarget(ChatRouteCandidate candidate)
@@ -194,54 +124,5 @@ internal sealed class ChatRoutingDecisionService(
             ChatRouteCandidate.Rating => RouteTarget.Rating,
             _ => RouteTarget.Book,
         };
-    }
-
-    private static string BuildDecisionInput(ChatMessage message)
-    {
-        var aguiState = AGUIRunContext.Current;
-        if (aguiState is null)
-        {
-            return message.Text;
-        }
-
-        var hasContext =
-            aguiState.Context is
-            { ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null };
-        var hasState =
-            aguiState.State is
-            { ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null };
-        var hasClientTools = aguiState.ClientTools.Count > 0;
-
-        if (!hasContext && !hasState && !hasClientTools)
-        {
-            return message.Text;
-        }
-
-        var sb = new StringBuilder();
-        sb.AppendLine(message.Text);
-        sb.AppendLine();
-        sb.AppendLine("Storefront client context:");
-
-        if (hasContext)
-        {
-            sb.Append("context: ");
-            sb.AppendLine(aguiState.Context!.Value.GetRawText());
-        }
-
-        if (hasState)
-        {
-            sb.Append("state: ");
-            sb.AppendLine(aguiState.State!.Value.GetRawText());
-        }
-
-        if (!hasClientTools)
-        {
-            return sb.ToString();
-        }
-
-        sb.Append("client_tools: ");
-        sb.AppendLine(string.Join(", ", aguiState.ClientTools.Select(static t => t.Name)));
-
-        return sb.ToString();
     }
 }

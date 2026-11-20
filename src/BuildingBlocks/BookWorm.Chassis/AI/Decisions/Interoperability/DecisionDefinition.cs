@@ -5,6 +5,8 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using BookWorm.Chassis.AI.Decisions.Abstractions;
+using BookWorm.Chassis.AI.Decisions.Abstractions.Answers;
+using BookWorm.Chassis.AI.Decisions.Abstractions.Questions;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chassis.AI.Decisions.Interoperability;

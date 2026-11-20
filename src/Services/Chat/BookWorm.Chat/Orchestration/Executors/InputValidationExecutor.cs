@@ -4,7 +4,14 @@ using BookWorm.Chat.Infrastructure.Governance;
 
 namespace BookWorm.Chat.Orchestration.Executors;
 
-internal sealed record AcceptedInput(ChatMessage Message);
+internal sealed record AcceptedInput(
+    ChatMessage Message,
+    IReadOnlyList<ChatMessage>? Messages = null
+)
+{
+    public IReadOnlyList<ChatMessage> EffectiveMessages =>
+        Messages is { Count: > 0 } ? Messages : [Message];
+}
 
 internal sealed record RejectedInput(ChatMessage Message);
 
@@ -21,26 +28,73 @@ internal union InputValidationResult(AcceptedInput, RejectedInput)
 }
 
 internal sealed class InputValidationExecutor(PromptValidationService validationService)
-    : Executor<ChatMessage, InputValidationResult>(nameof(InputValidationExecutor))
+    : ChatProtocolExecutor(
+        nameof(InputValidationExecutor),
+        new() { StringMessageChatRole = ChatRole.User, AutoSendTurnToken = false },
+        true
+    )
 {
     public InputValidationExecutor(GovernanceKernel? governanceKernel = null)
         : this(new PromptValidationService(new GovernancePromptSafetyEvaluator(governanceKernel)))
     { }
 
-    public override ValueTask<InputValidationResult> HandleAsync(
-        ChatMessage message,
-        IWorkflowContext context,
-        CancellationToken cancellationToken = default
-    )
+    protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder protocolBuilder)
+    {
+        return base.ConfigureProtocol(protocolBuilder).SendsMessage<InputValidationResult>();
+    }
+
+    public ValueTask<InputValidationResult> HandleAsync(ChatMessage message)
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var outcome = validationService.Validate(message.Text);
+        return ValueTask.FromResult(ValidateMessages([message]));
+    }
 
-        InputValidationResult result = outcome.IsAccepted
-            ? new AcceptedInput(new(ChatRole.User, outcome.Prompt!.Value))
-            : new RejectedInput(new(ChatRole.Assistant, outcome.RejectionReason!));
+    protected override async ValueTask TakeTurnAsync(
+        List<ChatMessage> messages,
+        IWorkflowContext context,
+        bool? emitEvents,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var result = ValidateMessages(messages);
+        await context.SendMessageAsync(result, cancellationToken).ConfigureAwait(false);
+    }
 
-        return ValueTask.FromResult(result);
+    private InputValidationResult ValidateMessages(IReadOnlyList<ChatMessage> messages)
+    {
+        if (messages.Count == 0)
+        {
+            var emptyOutcome = validationService.Validate(string.Empty);
+            return new RejectedInput(new(ChatRole.Assistant, emptyOutcome.RejectionReason!));
+        }
+
+        var targetIndex = FindLastUserMessageIndex(messages);
+        var targetMessage = messages[targetIndex];
+        var outcome = validationService.Validate(targetMessage.Text);
+
+        if (!outcome.IsAccepted)
+        {
+            return new RejectedInput(new(ChatRole.Assistant, outcome.RejectionReason!));
+        }
+
+        var sanitizedMessage = new ChatMessage(ChatRole.User, outcome.Prompt!.Value);
+        List<ChatMessage> updatedMessages = [.. messages];
+        updatedMessages[targetIndex] = sanitizedMessage;
+
+        return new AcceptedInput(sanitizedMessage, updatedMessages);
+    }
+
+    private static int FindLastUserMessageIndex(IReadOnlyList<ChatMessage> messages)
+    {
+        for (var i = messages.Count - 1; i >= 0; i--)
+        {
+            if (messages[i].Role == ChatRole.User)
+            {
+                return i;
+            }
+        }
+
+        return messages.Count - 1;
     }
 }

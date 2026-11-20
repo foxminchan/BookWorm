@@ -28,7 +28,23 @@ public static partial class ResponseFormattingService
             return AssistantResponse.Fallback();
         }
 
-        if (content[^1] is not ('.' or '!' or '?' or '"' or ')'))
+        if (
+            content[^1]
+            is not (
+                '.'
+                or '!'
+                or '?'
+                or '"'
+                or ')'
+                or '*'
+                or '_'
+                or '`'
+                or '|'
+                or ']'
+                or ':'
+                or '>'
+            )
+        )
         {
             content += ".";
         }

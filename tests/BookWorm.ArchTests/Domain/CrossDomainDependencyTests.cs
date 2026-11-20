@@ -6,37 +6,26 @@ namespace BookWorm.ArchTests.Domain;
 
 public sealed class CrossDomainDependencyTests : ArchUnitBaseTest
 {
+    private static readonly string[] _domains =
+    [
+        nameof(Catalog),
+        nameof(Ordering),
+        nameof(Rating),
+        nameof(Basket),
+        nameof(Notification),
+        nameof(Chat),
+    ];
+
+    public static IEnumerable<(string SourceDomain, string TargetDomain)> DomainPairs()
+    {
+        return from source in _domains
+            from target in _domains
+            where source != target
+            select (source, target);
+    }
+
     [Test]
-    [Arguments(nameof(Catalog), nameof(Ordering))]
-    [Arguments(nameof(Catalog), nameof(Rating))]
-    [Arguments(nameof(Catalog), nameof(Basket))]
-    [Arguments(nameof(Catalog), nameof(Notification))]
-    [Arguments(nameof(Ordering), nameof(Catalog))]
-    [Arguments(nameof(Ordering), nameof(Rating))]
-    [Arguments(nameof(Ordering), nameof(Basket))]
-    [Arguments(nameof(Ordering), nameof(Notification))]
-    [Arguments(nameof(Rating), nameof(Catalog))]
-    [Arguments(nameof(Rating), nameof(Ordering))]
-    [Arguments(nameof(Rating), nameof(Basket))]
-    [Arguments(nameof(Rating), nameof(Notification))]
-    [Arguments(nameof(Basket), nameof(Catalog))]
-    [Arguments(nameof(Basket), nameof(Ordering))]
-    [Arguments(nameof(Basket), nameof(Rating))]
-    [Arguments(nameof(Basket), nameof(Notification))]
-    [Arguments(nameof(Notification), nameof(Catalog))]
-    [Arguments(nameof(Notification), nameof(Ordering))]
-    [Arguments(nameof(Notification), nameof(Rating))]
-    [Arguments(nameof(Notification), nameof(Basket))]
-    [Arguments(nameof(Chat), nameof(Catalog))]
-    [Arguments(nameof(Chat), nameof(Ordering))]
-    [Arguments(nameof(Chat), nameof(Rating))]
-    [Arguments(nameof(Chat), nameof(Basket))]
-    [Arguments(nameof(Chat), nameof(Notification))]
-    [Arguments(nameof(Catalog), nameof(Chat))]
-    [Arguments(nameof(Ordering), nameof(Chat))]
-    [Arguments(nameof(Rating), nameof(Chat))]
-    [Arguments(nameof(Basket), nameof(Chat))]
-    [Arguments(nameof(Notification), nameof(Chat))]
+    [MethodDataSource(nameof(DomainPairs))]
     public void GivenDomains_WhenCheckingDependencies_ThenShouldNotDependOnOtherDomains(
         string sourceDomain,
         string targetDomain
