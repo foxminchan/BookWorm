@@ -1,0 +1,16 @@
+flowchart TD
+	A["Customer Message (/ag-ui)"] --> B["InputValidationExecutor"]
+	B -->|"Valid & bounded"| C["DecisionRouterExecutor"]
+	B -->|"Empty / injection pattern"| R1["Short-circuit rejection"]
+	C --> D["ChatRoutingDecisionService.EvaluateAsync"]
+	D --> E["IDecisionClient -> Microsoft-Decision-1<br/>(/providers/microsoft/v1/systemone)"]
+	E -->|"DecisionResponse"| F{"EvaluateGuardrails<br/>(threshold = 0.5)"}
+	E -->|"DecisionUnansweredException"| G["HandlePartialResponse<br/>(enforce answered guardrails,<br/>default route = Book)"]
+	G --> F
+	F -->|"is_safe < 0.5"| R2["UnsafeInput boundary response"]
+	F -->|"is_english < 0.5"| R3["NonEnglish boundary response"]
+	F -->|"is_in_scope < 0.5"| R4["OutOfScope boundary response"]
+	F -->|"All guardrails >= 0.5"| H{"route Choice"}
+	H -->|"book-agent"| I["BookAgent"]
+	H -->|"qa-agent"| J["QAAgent"]
+	H -->|"rating-agent (catalog ID present)"| K["RatingAgent (A2A)"]
