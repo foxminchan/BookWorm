@@ -1,8 +1,11 @@
+using BookWorm.Chassis.AI.Decisions;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace BookWorm.Chassis.AI.Extensions;
 
@@ -59,11 +62,9 @@ public static class ModelExtensions
         }
 
         /// <summary>
-        ///     Configures decision models for the application.
+        ///     Configures the <see cref="IDecisionClient" /> backed by Microsoft Foundry's
+        ///     <c>Microsoft-Decision-1</c> (<c>/providers/microsoft/v1/systemone</c>) endpoint.
         /// </summary>
-        /// <remarks>
-        ///     This method is a placeholder for future decision model configuration.
-        /// </remarks>
         /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
         /// <example>
         ///     <code>
@@ -72,12 +73,33 @@ public static class ModelExtensions
         /// </example>
         public IHostApplicationBuilder WithDecisionModels()
         {
-            var clientBuilder = builder.AddAzureProjectOpenAIClient(Components.Foundry.Project);
+            builder.Services.AddHttpClient(nameof(FoundrySystemOneDecisionClient));
 
-            clientBuilder
-                .AddChatClient(Components.Foundry.Decision)
-                .UseFunctionInvocation()
-                .UseModelLogging();
+            builder.Services.AddSingleton<IDecisionClient>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString(Components.Foundry.Project)
+                    ?? throw new InvalidOperationException(
+                        $"Connection string '{Components.Foundry.Project}' is required for {nameof(FoundrySystemOneDecisionClient)}."
+                    );
+
+                var (endpoint, apiKey) = FoundrySystemOneDecisionClient.ParseConnectionString(
+                    connectionString
+                );
+                var httpClient = sp.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient(nameof(FoundrySystemOneDecisionClient));
+                var credential = sp.GetService<Azure.Core.TokenCredential>();
+                var logger = sp.GetService<ILogger<FoundrySystemOneDecisionClient>>();
+
+                return new FoundrySystemOneDecisionClient(
+                    httpClient,
+                    endpoint,
+                    Components.Foundry.Decision,
+                    apiKey,
+                    credential,
+                    logger
+                );
+            });
 
             return builder;
         }
@@ -115,6 +137,7 @@ public static class ModelExtensions
                         .AddSource(
                             "Microsoft.Agents.AI.Runtime.Abstractions.InMemoryActorStateStorage"
                         )
+                        .AddSource(FoundrySystemOneDecisionClient.ActivitySourceName)
                 )
                 .WithMetrics(x => x.AddMeter("*Microsoft.Agents.AI").AddMeter("agent_governance"));
         }
