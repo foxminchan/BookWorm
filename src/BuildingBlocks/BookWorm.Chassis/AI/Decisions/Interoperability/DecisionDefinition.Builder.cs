@@ -5,16 +5,17 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Interoperability;
 
 public sealed partial class DecisionDefinition<TResult>
 {
     public sealed class Builder
     {
-        private readonly JsonSerializerOptions _serializerOptions;
         private readonly JsonTypeInfo<TResult> _resultTypeInfo;
         private readonly HashSet<string> _seenQuestionIds = new(StringComparer.Ordinal);
+        private readonly JsonSerializerOptions _serializerOptions;
 
         internal Builder(
             JsonSerializerOptions serializerOptions,
@@ -37,7 +38,7 @@ public sealed partial class DecisionDefinition<TResult>
             var enumDefinition = new DecisionEnumDefinition<TEnum>(_serializerOptions);
             var question = enumDefinition.CreateQuestion(questionId, resolvedInstructions);
 
-            Bindings.Add(new BoundQuestion(question, (answer, jsonObject, distributions) =>
+            Bindings.Add(new(question, (answer, jsonObject, distributions) =>
                 {
                     if (answer is not ChoiceDecisionAnswer choiceAnswer)
                     {
@@ -88,7 +89,7 @@ public sealed partial class DecisionDefinition<TResult>
             var resolvedInstructions = ResolveInstructions(instructions, member);
             var question = new BinaryDecisionQuestion(questionId, resolvedInstructions);
 
-            Bindings.Add(new BoundQuestion(question, (answer, jsonObject, _) =>
+            Bindings.Add(new(question, (answer, jsonObject, _) =>
                 {
                     if (answer is not BinaryDecisionAnswer binaryAnswer)
                     {
@@ -112,7 +113,7 @@ public sealed partial class DecisionDefinition<TResult>
             var resolvedInstructions = ResolveInstructions(instructions, member);
             var question = new ScoreDecisionQuestion(questionId, resolvedInstructions, levels);
 
-            Bindings.Add(new BoundQuestion(question, (answer, jsonObject, _) =>
+            Bindings.Add(new(question, (answer, jsonObject, _) =>
                 {
                     var scoreAnswer = ValidateScoreAnswer(question, answer);
                     if (scoreAnswer.Score is not { } score)
@@ -130,29 +131,6 @@ public sealed partial class DecisionDefinition<TResult>
                     }
 
                     jsonObject[questionId] = score;
-                }));
-        }
-
-        public void ExpectedScore(
-            Expression<Func<TResult, double>> selector,
-            IReadOnlyList<DecisionScoreLevel> levels,
-            string? instructions = null
-        )
-        {
-            ArgumentNullException.ThrowIfNull(levels);
-            var questionId = RegisterQuestionId(selector, out var member);
-            var resolvedInstructions = ResolveInstructions(instructions, member);
-            var question = new ScoreDecisionQuestion(questionId, resolvedInstructions, levels);
-
-            Bindings.Add(new BoundQuestion(question, (answer, jsonObject, _) =>
-                {
-                    var scoreAnswer = ValidateScoreAnswer(question, answer);
-                    var expected = scoreAnswer.GetExpectedScore(question)
-                        ?? throw new InvalidOperationException(
-                            $"Score distribution has no positive probability for question '{questionId}'."
-                        );
-
-                    jsonObject[questionId] = expected;
                 }));
         }
 

@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Abstractions;
 
 public enum DecisionKind : byte
 {
@@ -50,23 +50,6 @@ public sealed class DecisionRequest
         State = state;
         Questions = questions;
         Contents = contents ?? [];
-    }
-
-    public DecisionRequest(
-        string state,
-        IReadOnlyList<DecisionQuestion> questions,
-        IReadOnlyList<AIContent>? contents = null
-    )
-        : this(
-            JsonSerializer.SerializeToElement(
-                state ?? throw new ArgumentNullException(nameof(state)),
-                DecisionSerializationContext.Default.String
-            ),
-            questions,
-            contents
-        )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(state);
     }
 
     public JsonElement? State { get; }

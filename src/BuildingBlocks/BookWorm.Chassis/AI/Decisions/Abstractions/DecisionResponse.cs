@@ -1,14 +1,9 @@
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Abstractions;
 
 public sealed class DecisionResponse
 {
-    public DecisionResponse()
-    {
-        Answers = [];
-    }
-
     public DecisionResponse(IList<DecisionAnswer> answers, string? modelId = null)
     {
         ArgumentNullException.ThrowIfNull(answers);
@@ -16,7 +11,7 @@ public sealed class DecisionResponse
         ModelId = modelId;
     }
 
-    public IList<DecisionAnswer> Answers { get; set; }
+    private IList<DecisionAnswer> Answers { get; }
 
     public string? ModelId { get; set; }
 
@@ -44,10 +39,5 @@ public sealed class DecisionResponse
     public ChoiceDecisionAnswer? GetChoiceAnswer(string questionId)
     {
         return GetAnswer(questionId) as ChoiceDecisionAnswer;
-    }
-
-    public ScoreDecisionAnswer? GetScoreAnswer(string questionId)
-    {
-        return GetAnswer(questionId) as ScoreDecisionAnswer;
     }
 }

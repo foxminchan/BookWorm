@@ -1,8 +1,9 @@
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Interoperability;
 
 public sealed class DecisionResponse<TResult>
 {

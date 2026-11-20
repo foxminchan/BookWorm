@@ -1,11 +1,8 @@
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Abstractions;
 
-/// <summary>
-///     Extension methods for <see cref="IDecisionClient" /> (Layer 1).
-/// </summary>
 public static class DecisionClientExtensions
 {
     extension(IDecisionClient client)
@@ -60,7 +57,7 @@ public static class DecisionClientExtensions
             var contentList = contents as IReadOnlyList<AIContent> ?? contents?.ToList();
 
             return client.GetDecisionAsync(
-                new DecisionRequest(serializedState, questionList, contentList),
+                new(serializedState, questionList, contentList),
                 options,
                 cancellationToken
             );

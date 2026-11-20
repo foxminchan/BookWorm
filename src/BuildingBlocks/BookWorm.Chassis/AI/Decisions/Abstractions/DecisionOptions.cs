@@ -1,14 +1,14 @@
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Abstractions;
 
 public sealed class DecisionOptions
 {
-    public string? ModelId { get; set; }
+    public string? ModelId { get; private init; }
 
-    public Func<IDecisionClient, object?>? RawRepresentationFactory { get; set; }
+    private Func<IDecisionClient, object?>? RawRepresentationFactory { get; init; }
 
-    public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
+    private AdditionalPropertiesDictionary? AdditionalProperties { get; init; }
 
     public DecisionOptions Clone()
     {
@@ -18,7 +18,7 @@ public sealed class DecisionOptions
             RawRepresentationFactory = RawRepresentationFactory,
             AdditionalProperties = AdditionalProperties is null
                 ? null
-                : new AdditionalPropertiesDictionary(AdditionalProperties),
+                : new AdditionalPropertiesDictionary([]),
         };
     }
 }
@@ -39,25 +39,11 @@ public sealed class DecisionClientMetadata(
     public IReadOnlyList<DecisionKind>? SupportedKinds { get; } = supportedKinds;
 }
 
-public sealed class DecisionClientException : Exception
+public sealed class DecisionClientException(
+    string? message,
+    Exception? innerException,
+    bool isTransient = false
+) : Exception(message, innerException)
 {
-    public DecisionClientException() { }
-
-    public DecisionClientException(string? message, bool isTransient = false)
-        : base(message)
-    {
-        IsTransient = isTransient;
-    }
-
-    public DecisionClientException(
-        string? message,
-        Exception? innerException,
-        bool isTransient = false
-    )
-        : base(message, innerException)
-    {
-        IsTransient = isTransient;
-    }
-
-    public bool IsTransient { get; }
+    public bool IsTransient { get; } = isTransient;
 }

@@ -2,16 +2,6 @@ namespace BookWorm.SharedKernel.SeedWork;
 
 public abstract class ValueObject
 {
-    private static bool EqualOperator(ValueObject? left, ValueObject? right)
-    {
-        return Equals(left, right);
-    }
-
-    protected static bool NotEqualOperator(ValueObject? left, ValueObject? right)
-    {
-        return !EqualOperator(left, right);
-    }
-
     protected abstract IEnumerable<object?> GetEqualityComponents();
 
     public override bool Equals(object? obj)

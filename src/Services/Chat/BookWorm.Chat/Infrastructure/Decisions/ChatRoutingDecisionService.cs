@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
-using BookWorm.Chassis.AI.Decisions;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
+using BookWorm.Chassis.AI.Decisions.Interoperability;
 using BookWorm.Chat.Orchestration;
 
 namespace BookWorm.Chat.Infrastructure.Decisions;
@@ -19,9 +20,9 @@ internal sealed class ChatRoutingDecisionService(
     internal const string UnsafeInputMessage =
         "I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services.";
 
-    internal const double ProbabilityThreshold = 0.5;
+    private const double ProbabilityThreshold = 0.5;
 
-    internal static readonly DecisionDefinition<ChatRoutingResult> RoutingDefinition =
+    private static readonly DecisionDefinition<ChatRoutingResult> _routingDefinition =
         DecisionDefinition<ChatRoutingResult>.Create(
             builder =>
             {
@@ -45,7 +46,8 @@ internal sealed class ChatRoutingDecisionService(
             ChatRoutingSerializationContext.Default.Options
         );
 
-    internal static IReadOnlyList<DecisionQuestion> RoutingQuestions => RoutingDefinition.Questions;
+    internal static IReadOnlyList<DecisionQuestion> RoutingQuestions =>
+        _routingDefinition.Questions;
 
     internal async ValueTask<RoutingDecision> EvaluateAsync(
         ChatMessage message,
@@ -61,7 +63,7 @@ internal sealed class ChatRoutingDecisionService(
             var typedResponse = await decisionClient
                 .GetDecisionAsync(
                     decisionInput,
-                    RoutingDefinition,
+                    _routingDefinition,
                     cancellationToken: cancellationToken
                 )
                 .ConfigureAwait(false);
@@ -86,7 +88,7 @@ internal sealed class ChatRoutingDecisionService(
                 confidence
             );
 
-            return new RoutingDecision(target, message, Confidence: confidence);
+            return new(target, message, Confidence: confidence);
         }
         catch (DecisionUnansweredException ex)
         {
@@ -108,7 +110,7 @@ internal sealed class ChatRoutingDecisionService(
                 isSafeProbability
             );
 
-            return new RoutingDecision(
+            return new(
                 RouteTarget.UnsafeInput,
                 message,
                 UnsafeInputMessage,
@@ -123,7 +125,7 @@ internal sealed class ChatRoutingDecisionService(
                 isEnglishProbability
             );
 
-            return new RoutingDecision(
+            return new(
                 RouteTarget.NonEnglish,
                 message,
                 NonEnglishMessage,
@@ -138,7 +140,7 @@ internal sealed class ChatRoutingDecisionService(
                 isInScopeProbability
             );
 
-            return new RoutingDecision(
+            return new(
                 RouteTarget.OutOfScope,
                 message,
                 OutOfScopeMessage,
@@ -181,7 +183,7 @@ internal sealed class ChatRoutingDecisionService(
             confidence
         );
 
-        return new RoutingDecision(target, message, Confidence: confidence);
+        return new(target, message, Confidence: confidence);
     }
 
     private static RouteTarget MapRouteTarget(ChatRouteCandidate candidate)
@@ -232,11 +234,13 @@ internal sealed class ChatRoutingDecisionService(
             sb.AppendLine(aguiState.State!.Value.GetRawText());
         }
 
-        if (hasClientTools)
+        if (!hasClientTools)
         {
-            sb.Append("client_tools: ");
-            sb.AppendLine(string.Join(", ", aguiState.ClientTools.Select(static t => t.Name)));
+            return sb.ToString();
         }
+
+        sb.Append("client_tools: ");
+        sb.AppendLine(string.Join(", ", aguiState.ClientTools.Select(static t => t.Name)));
 
         return sb.ToString();
     }

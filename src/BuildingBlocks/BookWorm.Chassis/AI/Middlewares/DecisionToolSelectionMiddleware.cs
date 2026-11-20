@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using BookWorm.Chassis.AI.Decisions;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -187,7 +187,7 @@ internal static partial class DecisionToolSelectionMiddleware
 
                 candidates.Add((tool, questionId));
                 questions.Add(
-                    new BinaryDecisionQuestion(
+                    new(
                         questionId,
                         instructions,
                         "Yes, this tool is relevant and may be needed to answer or act on the request.",

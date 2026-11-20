@@ -1,5 +1,4 @@
-using BookWorm.Chassis.AI.Decisions;
-using BookWorm.Chat.Domain.Services;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chat.Orchestration;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
@@ -47,7 +46,7 @@ public sealed class WorkflowRegistrationTests
             bookAgent,
             qaAgent,
             ratingAgent,
-            new PromptValidationService(),
+            new(),
             decisionClient.Object
         );
 
@@ -69,9 +68,9 @@ public sealed class WorkflowRegistrationTests
     }
 
     [Test]
-    [Arguments(BookWorm.Constants.Other.Agents.BookAgent, "book-reply")]
-    [Arguments(BookWorm.Constants.Other.Agents.QAAgent, "qa-reply")]
-    [Arguments(BookWorm.Constants.Other.Agents.RatingAgent, "rating-reply")]
+    [Arguments(Constants.Other.Agents.BookAgent, "book-reply")]
+    [Arguments(Constants.Other.Agents.QAAgent, "qa-reply")]
+    [Arguments(Constants.Other.Agents.RatingAgent, "rating-reply")]
     public async Task GivenRoutedDecision_WhenRunningWorkflow_ThenInvokesSelectedAgent(
         string selectedCandidateId,
         string expectedReply
@@ -99,7 +98,7 @@ public sealed class WorkflowRegistrationTests
                     new ChoiceDecisionAnswer(
                         "route",
                         selectedCandidateId,
-                        [new DecisionProbability(selectedCandidateId, 0.93)]
+                        [new(selectedCandidateId, 0.93)]
                     ),
                 ])
             );
@@ -108,7 +107,7 @@ public sealed class WorkflowRegistrationTests
             bookAgent,
             qaAgent,
             ratingAgent,
-            new PromptValidationService(),
+            new(),
             decisionClient.Object
         );
 
@@ -168,7 +167,7 @@ public sealed class WorkflowRegistrationTests
             bookAgent,
             qaAgent,
             ratingAgent,
-            new PromptValidationService(),
+            new(),
             decisionClient.Object
         );
 
@@ -227,7 +226,7 @@ public sealed class WorkflowRegistrationTests
             bookAgent,
             qaAgent,
             ratingAgent,
-            new PromptValidationService(),
+            new(),
             decisionClient.Object
         );
 
@@ -285,11 +284,11 @@ public sealed class WorkflowRegistrationTests
                 }
             );
 
-        return new ChatClientAgent(chatClient.Object, name: name);
+        return new(chatClient.Object, name: name);
 
         static async IAsyncEnumerable<ChatResponseUpdate> StreamReply(string text)
         {
-            yield return new ChatResponseUpdate(ChatRole.Assistant, text);
+            yield return new(ChatRole.Assistant, text);
             await Task.CompletedTask;
         }
     }

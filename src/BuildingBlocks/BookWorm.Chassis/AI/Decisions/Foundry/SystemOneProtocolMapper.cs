@@ -1,8 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Foundry;
 
 internal static class SystemOneProtocolMapper
 {
@@ -17,12 +18,12 @@ internal static class SystemOneProtocolMapper
             q =>
                 q switch
                 {
-                    BinaryDecisionQuestion binary => new SystemOneQuestion(
+                    BinaryDecisionQuestion binary => new(
                         "noul",
                         FormatQuestionText(binary.Instructions),
                         null
                     ),
-                    ChoiceDecisionQuestion choice => new SystemOneQuestion(
+                    ChoiceDecisionQuestion choice => new(
                         ChoiceQuestionType,
                         FormatQuestionText(choice.Instructions),
                         choice.Candidates.ToDictionary(
@@ -47,7 +48,7 @@ internal static class SystemOneProtocolMapper
             StringComparer.Ordinal
         );
 
-        return new SystemOneRequest(modelId, combinedState, questions);
+        return new(modelId, combinedState, questions);
     }
 
     public static List<DecisionAnswer> ParseAnswers(
@@ -80,7 +81,7 @@ internal static class SystemOneProtocolMapper
                 var reasonText = unanswered.GetString();
                 var reason = string.IsNullOrWhiteSpace(reasonText)
                     ? DecisionUnansweredReason.Refusal
-                    : new DecisionUnansweredReason(reasonText);
+                    : new(reasonText);
 
                 answers.Add(new UnansweredDecisionAnswer(question.Id, question.Kind, reason));
                 continue;
@@ -145,25 +146,23 @@ internal static class SystemOneProtocolMapper
         var levelProbs = ParseProbabilities(element);
 
         double? resolvedScore = null;
-        if (!string.IsNullOrWhiteSpace(selectedLevel))
+        if (string.IsNullOrWhiteSpace(selectedLevel))
         {
-            for (var i = 0; i < scoreQuestion.Levels.Count; i++)
-            {
-                if (
-                    string.Equals(
-                        scoreQuestion.Levels[i].Id,
-                        selectedLevel,
-                        StringComparison.Ordinal
-                    )
-                )
-                {
-                    resolvedScore = i;
-                    break;
-                }
-            }
+            return new(scoreQuestion.Id, resolvedScore, levelProbs);
         }
 
-        return new ScoreDecisionAnswer(scoreQuestion.Id, resolvedScore, levelProbs);
+        for (var i = 0; i < scoreQuestion.Levels.Count; i++)
+        {
+            if (!string.Equals(scoreQuestion.Levels[i].Id, selectedLevel, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            resolvedScore = i;
+            break;
+        }
+
+        return new(scoreQuestion.Id, resolvedScore, levelProbs);
     }
 
     private static string BuildCombinedState(DecisionRequest request)
@@ -220,11 +219,13 @@ internal static class SystemOneProtocolMapper
         return
             element.TryGetProperty("probabilities", out var probsProp)
             && probsProp.ValueKind == JsonValueKind.Object
-            ? probsProp
-                .EnumerateObject()
-                .Where(static p => p.Value.TryGetDouble(out _))
-                .Select(static p => new DecisionProbability(p.Name, p.Value.GetDouble()))
-                .ToList()
+            ?
+            [
+                .. probsProp
+                    .EnumerateObject()
+                    .Where(static p => p.Value.TryGetDouble(out _))
+                    .Select(static p => new DecisionProbability(p.Name, p.Value.GetDouble())),
+            ]
             : [];
     }
 }

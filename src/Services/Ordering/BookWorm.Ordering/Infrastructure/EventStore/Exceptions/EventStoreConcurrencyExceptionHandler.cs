@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using JasperFx.Events;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;

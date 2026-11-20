@@ -1,15 +1,23 @@
-namespace BookWorm.Chassis.AI.Decisions;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
+
+namespace BookWorm.Chassis.AI.Decisions.Interoperability;
 
 public sealed class DecisionUnansweredException : InvalidOperationException
 {
     public DecisionUnansweredException(DecisionResponse response, IEnumerable<string> questionIds)
+        : this(response, questionIds as IReadOnlyList<string> ?? [.. questionIds]) { }
+
+    private DecisionUnansweredException(
+        DecisionResponse response,
+        IReadOnlyList<string> questionIds
+    )
         : base(BuildMessage(questionIds))
     {
         ArgumentNullException.ThrowIfNull(response);
         ArgumentNullException.ThrowIfNull(questionIds);
 
         Response = response;
-        QuestionIds = questionIds.ToList();
+        QuestionIds = questionIds;
     }
 
     public DecisionResponse Response { get; }

@@ -1,5 +1,5 @@
 using Azure.Storage.Blobs;
-using BookWorm.Chassis.AI.Decisions;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chat.Domain.Services;
 using BookWorm.Chat.Infrastructure.Decisions;
 using BookWorm.Chat.Orchestration.Executors;
@@ -170,7 +170,7 @@ internal static class WorkflowRegistration
                 .SendMessageAsync(message.Message, cancellationToken)
                 .ConfigureAwait(false);
             await context
-                .SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken)
+                .SendMessageAsync(new TurnToken(true), cancellationToken)
                 .ConfigureAwait(false);
         }
     }

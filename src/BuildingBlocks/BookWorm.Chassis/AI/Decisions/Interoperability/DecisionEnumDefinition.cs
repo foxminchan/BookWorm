@@ -4,8 +4,9 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Interoperability;
 
 public sealed record DecisionEnumValue<TEnum>(TEnum Value, string Id, string Description)
     where TEnum : struct, Enum;
@@ -24,8 +25,8 @@ public sealed class DecisionEnumDefinition<
         var fields = typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static);
         var values = new List<DecisionEnumValue<TEnum>>(fields.Length);
         var candidates = new List<DecisionCandidate>(fields.Length);
-        _byId = new Dictionary<string, TEnum>(fields.Length, StringComparer.Ordinal);
-        _toId = new Dictionary<TEnum, string>(fields.Length);
+        _byId = new(fields.Length, StringComparer.Ordinal);
+        _toId = [with(fields.Length)];
 
         foreach (var field in fields)
         {
@@ -33,8 +34,8 @@ public sealed class DecisionEnumDefinition<
             var id = ResolveMemberId(field, namingPolicy);
             var description = field.GetCustomAttribute<DescriptionAttribute>()?.Description ?? id;
 
-            values.Add(new DecisionEnumValue<TEnum>(value, id, description));
-            candidates.Add(new DecisionCandidate(id, description));
+            values.Add(new(value, id, description));
+            candidates.Add(new(id, description));
             _byId[id] = value;
             _toId[value] = id;
         }
@@ -102,11 +103,6 @@ public sealed class DecisionEnumDefinition<
         JsonSerializerOptions? serializerOptions
     )
     {
-        if (serializerOptions is null)
-        {
-            return null;
-        }
-
-        return serializerOptions.PropertyNamingPolicy;
+        return serializerOptions?.PropertyNamingPolicy;
     }
 }

@@ -1,4 +1,3 @@
-using BookWorm.Contracts;
 using Microsoft.Azure.Functions.Worker;
 
 namespace BookWorm.Finance.Features.Orders.OrderCancellation;

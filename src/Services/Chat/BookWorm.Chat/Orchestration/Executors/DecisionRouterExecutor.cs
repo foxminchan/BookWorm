@@ -1,4 +1,4 @@
-using BookWorm.Chassis.AI.Decisions;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chat.Infrastructure.Decisions;
 
 namespace BookWorm.Chat.Orchestration.Executors;
@@ -10,7 +10,7 @@ internal sealed class DecisionRouterExecutor(ChatRoutingDecisionService routingS
         IDecisionClient decisionClient,
         ILogger<ChatRoutingDecisionService>? logger = null
     )
-        : this(new ChatRoutingDecisionService(decisionClient, logger)) { }
+        : this(new(decisionClient, logger)) { }
 
     public override ValueTask<RoutingDecision> HandleAsync(
         ChatMessage message,

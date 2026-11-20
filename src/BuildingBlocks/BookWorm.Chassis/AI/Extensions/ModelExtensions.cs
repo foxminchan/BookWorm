@@ -1,11 +1,12 @@
 using Azure.AI.Projects;
-using BookWorm.Chassis.AI.Decisions;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using FoundrySystemOneDecisionClient = BookWorm.Chassis.AI.Decisions.Foundry.FoundrySystemOneDecisionClient;
 
 namespace BookWorm.Chassis.AI.Extensions;
 

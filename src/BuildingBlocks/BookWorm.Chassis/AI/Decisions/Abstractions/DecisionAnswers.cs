@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Abstractions;
 
 public sealed class DecisionProbability
 {
@@ -20,13 +20,13 @@ public sealed class DecisionProbability
 
 public readonly record struct DecisionUnansweredReason
 {
-    public static DecisionUnansweredReason Refusal { get; } = new("refusal");
-
     public DecisionUnansweredReason(string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
         Value = value;
     }
+
+    public static DecisionUnansweredReason Refusal { get; } = new("refusal");
 
     public string Value { get; }
 
@@ -151,10 +151,6 @@ public sealed class ScoreDecisionAnswer : DecisionAnswer
 
     public IReadOnlyList<DecisionProbability> Probabilities { get; }
 
-    /// <summary>
-    ///     Computes the expected score by weighting each reported probability by the 0-based index
-    ///     of its matching level in <paramref name="question" />.
-    /// </summary>
     public double? GetExpectedScore(ScoreDecisionQuestion question)
     {
         ArgumentNullException.ThrowIfNull(question);
@@ -173,34 +169,26 @@ public sealed class ScoreDecisionAnswer : DecisionAnswer
 
         foreach (var probability in Probabilities)
         {
-            if (levelIndices.TryGetValue(probability.Id, out var index))
+            if (!levelIndices.TryGetValue(probability.Id, out var index))
             {
-                weightedSum += index * probability.Value;
-                totalProbability += probability.Value;
+                continue;
             }
+
+            weightedSum += index * probability.Value;
+            totalProbability += probability.Value;
         }
 
         return totalProbability > 0.0 ? weightedSum / totalProbability : null;
     }
 }
 
-public sealed class UnansweredDecisionAnswer : DecisionAnswer
+public sealed class UnansweredDecisionAnswer(
+    string questionId,
+    DecisionKind kind,
+    DecisionUnansweredReason? reason = null
+) : DecisionAnswer(questionId)
 {
-    public UnansweredDecisionAnswer(
-        string questionId,
-        DecisionKind kind,
-        DecisionUnansweredReason? reason = null
-    )
-        : base(questionId)
-    {
-        Kind = kind;
-        Reason = reason;
-    }
+    public override DecisionKind Kind { get; } = kind;
 
-    public UnansweredDecisionAnswer(string questionId, DecisionUnansweredReason? reason = null)
-        : this(questionId, DecisionKind.Binary, reason) { }
-
-    public override DecisionKind Kind { get; }
-
-    public DecisionUnansweredReason? Reason { get; }
+    public DecisionUnansweredReason? Reason { get; } = reason;
 }

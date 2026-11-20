@@ -4,23 +4,24 @@ using System.Diagnostics;
 using System.Net.Mime;
 using System.Text.Json;
 using Azure.AI.Projects;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Foundry;
 
 internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
 {
     public const string ActivitySourceName = "BookWorm.Chassis.AI.Decisions";
 
-    private static readonly ActivitySource ActivitySource = new(ActivitySourceName);
+    private static readonly ActivitySource _activitySource = new(ActivitySourceName);
+    private readonly string _defaultModelId;
+    private readonly ILogger<FoundrySystemOneDecisionClient> _logger;
+    private readonly DecisionClientMetadata _metadata;
 
     private readonly ClientPipeline _pipeline;
     private readonly Uri _systemOneEndpoint;
-    private readonly string _defaultModelId;
-    private readonly DecisionClientMetadata _metadata;
-    private readonly ILogger<FoundrySystemOneDecisionClient> _logger;
     private bool _disposed;
 
     public FoundrySystemOneDecisionClient(
@@ -46,11 +47,11 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
         }.Uri;
         _defaultModelId = defaultModelId;
         _logger = logger ?? NullLogger<FoundrySystemOneDecisionClient>.Instance;
-        _metadata = new DecisionClientMetadata(
-            providerName: "microsoft.foundry",
-            providerUri: _systemOneEndpoint,
-            defaultModelId: _defaultModelId,
-            supportedKinds: [DecisionKind.Binary, DecisionKind.Choice, DecisionKind.Score]
+        _metadata = new(
+            "microsoft.foundry",
+            _systemOneEndpoint,
+            _defaultModelId,
+            [DecisionKind.Binary, DecisionKind.Choice, DecisionKind.Score]
         );
     }
 
@@ -67,7 +68,7 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
             ? _defaultModelId
             : options.ModelId;
 
-        using var activity = ActivitySource.StartActivity("decision.systemone");
+        using var activity = _activitySource.StartActivity();
         activity?.SetTag("gen_ai.system", "microsoft.foundry");
         activity?.SetTag("gen_ai.request.model", modelId);
         activity?.SetTag("decision.question_count", request.Questions.Count);
@@ -80,7 +81,7 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
         {
             activity?.SetTag("gen_ai.usage.input_tokens", raw.Usage.InputTokens);
             activity?.SetTag("gen_ai.usage.output_tokens", raw.Usage.OutputTokens);
-            usage = new UsageDetails
+            usage = new()
             {
                 InputTokenCount = raw.Usage.InputTokens,
                 OutputTokenCount = raw.Usage.OutputTokens,
@@ -88,7 +89,7 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
             };
         }
 
-        return new DecisionResponse(
+        return new(
             SystemOneProtocolMapper.ParseAnswers(request.Questions, raw.Answers),
             raw.Model ?? modelId
         )
@@ -127,7 +128,7 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
     )
     {
         using var message = _pipeline.CreateMessage();
-        message.Apply(new RequestOptions { CancellationToken = cancellationToken });
+        message.Apply(new() { CancellationToken = cancellationToken });
         message.Request.Method = HttpMethod.Post.Method;
         message.Request.Uri = _systemOneEndpoint;
         message.Request.Headers.Set("Accept", MediaTypeNames.Application.Json);
@@ -144,7 +145,7 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
             throw new DecisionClientException(
                 $"Failed to call Microsoft-Decision-1 endpoint '{_systemOneEndpoint}'.",
                 ex,
-                isTransient: ex is HttpRequestException
+                ex is HttpRequestException
             );
         }
 
@@ -160,7 +161,7 @@ internal sealed partial class FoundrySystemOneDecisionClient : IDecisionClient
             throw new DecisionClientException(
                 $"Microsoft-Decision-1 request failed with HTTP {response.Status}: {errorBody}",
                 new ClientResultException(response),
-                isTransient: response.Status is 408 or 429 or (>= 500 and <= 599)
+                response.Status is 408 or 429 or >= 500 and <= 599
             );
         }
 

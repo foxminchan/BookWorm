@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Abstractions;
 
 public abstract class DecisionQuestion
 {
@@ -59,6 +59,7 @@ public abstract class DecisionQuestion
             {
                 throw new ArgumentNullException(paramName);
             }
+
             var id = getId(item);
             if (!seenIds.Add(id))
             {
@@ -68,7 +69,12 @@ public abstract class DecisionQuestion
     }
 }
 
-public sealed class BinaryDecisionQuestion : DecisionQuestion
+public sealed class BinaryDecisionQuestion(
+    string id,
+    IReadOnlyList<AIContent> instructions,
+    IReadOnlyList<AIContent>? trueDescription = null,
+    IReadOnlyList<AIContent>? falseDescription = null
+) : DecisionQuestion(id, instructions)
 {
     public BinaryDecisionQuestion(
         string id,
@@ -86,23 +92,11 @@ public sealed class BinaryDecisionQuestion : DecisionQuestion
         ArgumentException.ThrowIfNullOrWhiteSpace(instructions);
     }
 
-    public BinaryDecisionQuestion(
-        string id,
-        IReadOnlyList<AIContent> instructions,
-        IReadOnlyList<AIContent>? trueDescription = null,
-        IReadOnlyList<AIContent>? falseDescription = null
-    )
-        : base(id, instructions)
-    {
-        TrueDescription = trueDescription;
-        FalseDescription = falseDescription;
-    }
-
     public override DecisionKind Kind => DecisionKind.Binary;
 
-    public IReadOnlyList<AIContent>? TrueDescription { get; }
+    public IReadOnlyList<AIContent>? TrueDescription { get; } = trueDescription;
 
-    public IReadOnlyList<AIContent>? FalseDescription { get; }
+    public IReadOnlyList<AIContent>? FalseDescription { get; } = falseDescription;
 }
 
 public sealed class ChoiceDecisionQuestion : DecisionQuestion
@@ -117,7 +111,7 @@ public sealed class ChoiceDecisionQuestion : DecisionQuestion
         ArgumentException.ThrowIfNullOrWhiteSpace(instructions);
     }
 
-    public ChoiceDecisionQuestion(
+    private ChoiceDecisionQuestion(
         string id,
         IReadOnlyList<AIContent> instructions,
         IReadOnlyList<DecisionCandidate> candidates
@@ -152,7 +146,7 @@ public sealed class ScoreDecisionQuestion : DecisionQuestion
         ArgumentException.ThrowIfNullOrWhiteSpace(instructions);
     }
 
-    public ScoreDecisionQuestion(
+    private ScoreDecisionQuestion(
         string id,
         IReadOnlyList<AIContent> instructions,
         IReadOnlyList<DecisionScoreLevel> levels
@@ -183,7 +177,7 @@ public sealed class DecisionCandidate
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
     }
 
-    public DecisionCandidate(string id, IReadOnlyList<AIContent> description)
+    private DecisionCandidate(string id, IReadOnlyList<AIContent> description)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(description);
@@ -206,12 +200,6 @@ public sealed class DecisionCandidate
 
 public sealed class DecisionScoreLevel
 {
-    public DecisionScoreLevel(string id, string description)
-        : this(id, [new TextContent(description)])
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(description);
-    }
-
     public DecisionScoreLevel(string id, IReadOnlyList<AIContent> description)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);

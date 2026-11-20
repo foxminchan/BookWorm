@@ -1,4 +1,4 @@
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Abstractions;
 
 public interface IDecisionClient : IDisposable
 {

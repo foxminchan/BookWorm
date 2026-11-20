@@ -1,68 +1,46 @@
 using System.Text.Json;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Interoperability;
 
 public static class DecisionClientTypedExtensions
 {
-    extension(IDecisionClient client)
+    public static Task<DecisionResponse<TResult>> GetDecisionAsync<TState, TResult>(
+        this IDecisionClient client,
+        TState state,
+        DecisionDefinition<TResult> definition,
+        IEnumerable<AIContent>? contents = null,
+        DecisionOptions? options = null,
+        CancellationToken cancellationToken = default
+    )
     {
-        public Task<DecisionResponse<TResult>> GetDecisionAsync<TState, TResult>(
-            TState state,
-            DecisionDefinition<TResult> definition,
-            IEnumerable<AIContent>? contents = null,
-            DecisionOptions? options = null,
-            CancellationToken cancellationToken = default
-        )
+        ArgumentNullException.ThrowIfNull(client);
+        ArgumentNullException.ThrowIfNull(definition);
+
+        if (state is AIContent or IEnumerable<AIContent>)
         {
-            ArgumentNullException.ThrowIfNull(client);
-            ArgumentNullException.ThrowIfNull(definition);
-
-            if (state is AIContent or IEnumerable<AIContent>)
-            {
-                throw new ArgumentException(
-                    "AIContent instances must be passed via the 'contents' parameter rather than as 'state'.",
-                    nameof(state)
-                );
-            }
-
-            JsonElement? serializedState = state switch
-            {
-                null => null,
-                JsonElement element => element,
-                _ => JsonSerializer.SerializeToElement(state, definition.SerializerOptions),
-            };
-
-            return ExecuteTypedAsync(
-                client,
-                serializedState,
-                definition,
-                contents,
-                options,
-                cancellationToken
+            throw new ArgumentException(
+                "AIContent instances must be passed via the 'contents' parameter rather than as 'state'.",
+                nameof(state)
             );
         }
 
-        public Task<DecisionResponse<TResult>> GetDecisionAsync<TResult>(
-            JsonElement state,
-            DecisionDefinition<TResult> definition,
-            IEnumerable<AIContent>? contents = null,
-            DecisionOptions? options = null,
-            CancellationToken cancellationToken = default
-        )
+        JsonElement? serializedState = state switch
         {
-            ArgumentNullException.ThrowIfNull(client);
-            ArgumentNullException.ThrowIfNull(definition);
+            null => null,
+            JsonElement element => element,
+            _ => JsonSerializer.SerializeToElement(state, definition.SerializerOptions),
+        };
 
-            return ExecuteTypedAsync(
-                client,
-                state,
-                definition,
-                contents,
-                options,
-                cancellationToken
-            );
-        }
+        return ExecuteTypedAsync(
+            client,
+            serializedState,
+            definition,
+            contents,
+            options,
+            cancellationToken
+        );
     }
 
     private static async Task<DecisionResponse<TResult>> ExecuteTypedAsync<TResult>(

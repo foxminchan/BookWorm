@@ -4,9 +4,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using Microsoft.Extensions.AI;
 
-namespace BookWorm.Chassis.AI.Decisions;
+namespace BookWorm.Chassis.AI.Decisions.Interoperability;
 
 public sealed partial class DecisionDefinition<TResult>
 {
@@ -50,48 +51,7 @@ public sealed partial class DecisionDefinition<TResult>
             );
         }
 
-        return new DecisionDefinition<TResult>(builder.Bindings, options, resultTypeInfo);
-    }
-
-    public AIFunction AsAIFunction<TState>(
-        IDecisionClient client,
-        AIFunctionFactoryOptions? functionOptions = null,
-        DecisionOptions? decisionOptions = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(client);
-
-        var clonedOptions = decisionOptions?.Clone();
-        var options = functionOptions ?? new AIFunctionFactoryOptions();
-        if (options.SerializerOptions is null)
-        {
-            options = new AIFunctionFactoryOptions
-            {
-                Name = options.Name,
-                Description = options.Description,
-                SerializerOptions = SerializerOptions,
-                JsonSchemaCreateOptions = options.JsonSchemaCreateOptions,
-                AdditionalProperties = options.AdditionalProperties,
-                ConfigureParameterBinding = options.ConfigureParameterBinding,
-                MarshalResult = options.MarshalResult,
-            };
-        }
-
-        return AIFunctionFactory.Create(
-            async (TState state, CancellationToken cancellationToken) =>
-            {
-                var response = await client
-                    .GetDecisionAsync(
-                        state,
-                        this,
-                        options: clonedOptions?.Clone(),
-                        cancellationToken: cancellationToken
-                    )
-                    .ConfigureAwait(false);
-                return response.Result;
-            },
-            options
-        );
+        return new(builder.Bindings, options, resultTypeInfo);
     }
 
     internal DecisionResponse<TResult> BindResponse(DecisionResponse response)
@@ -144,12 +104,12 @@ public sealed partial class DecisionDefinition<TResult>
             binding.Apply(answer, jsonObject, distributions);
         }
 
-        var result = JsonSerializer.Deserialize(jsonObject, ResultTypeInfo)
+        var result = jsonObject.Deserialize(ResultTypeInfo)
             ?? throw new InvalidOperationException(
                 $"Failed to deserialize decision response into '{typeof(TResult).Name}'."
             );
 
-        return new DecisionResponse<TResult>(result, response, distributions, SerializerOptions);
+        return new(result, response, distributions, SerializerOptions);
     }
 
     internal static string ResolvePropertyJsonName(
