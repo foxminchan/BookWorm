@@ -1,8 +1,8 @@
+using Azure.AI.Projects;
 using BookWorm.Chassis.AI.Decisions;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -73,33 +73,11 @@ public static class ModelExtensions
         /// </example>
         public IHostApplicationBuilder WithDecisionModels()
         {
-            builder.Services.AddHttpClient(nameof(FoundrySystemOneDecisionClient));
-
-            builder.Services.AddSingleton<IDecisionClient>(sp =>
-            {
-                var configuration = sp.GetRequiredService<IConfiguration>();
-                var connectionString = configuration.GetConnectionString(Components.Foundry.Project)
-                    ?? throw new InvalidOperationException(
-                        $"Connection string '{Components.Foundry.Project}' is required for {nameof(FoundrySystemOneDecisionClient)}."
-                    );
-
-                var (endpoint, apiKey) = FoundrySystemOneDecisionClient.ParseConnectionString(
-                    connectionString
-                );
-                var httpClient = sp.GetRequiredService<IHttpClientFactory>()
-                    .CreateClient(nameof(FoundrySystemOneDecisionClient));
-                var credential = sp.GetService<Azure.Core.TokenCredential>();
-                var logger = sp.GetService<ILogger<FoundrySystemOneDecisionClient>>();
-
-                return new FoundrySystemOneDecisionClient(
-                    httpClient,
-                    endpoint,
-                    Components.Foundry.Decision,
-                    apiKey,
-                    credential,
-                    logger
-                );
-            });
+            builder.Services.AddSingleton<IDecisionClient>(sp => new FoundrySystemOneDecisionClient(
+                sp.GetRequiredService<AIProjectClient>(),
+                Components.Foundry.Decision,
+                sp.GetService<ILogger<FoundrySystemOneDecisionClient>>()
+            ));
 
             return builder;
         }

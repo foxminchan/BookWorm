@@ -15,8 +15,6 @@ appliesTo:
   - type: service
     id: chat-api
   - type: agent
-    id: router-agent
-  - type: agent
     id: qa-agent
 badges:
   - content: Integration
@@ -44,8 +42,8 @@ require authorization. Discovery identifies registered agents but does not
 grant permission to invoke them.
 
 An AG-UI request runs the composed local workflow; a direct A2A call targets
-an individual registered agent and does not implicitly execute the [[agent|router-agent]],
-specialist handoffs, or final response formatter. Exposing one protocol does
+an individual registered agent and does not implicitly execute
+`DecisionRouterExecutor`, specialist handoffs, or the final response formatter. Exposing one protocol does
 not imply that every local or remote agent participates in every protocol.
 
 ## Consequences

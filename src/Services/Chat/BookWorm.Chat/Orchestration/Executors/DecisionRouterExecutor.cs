@@ -3,10 +3,6 @@ using BookWorm.Chat.Infrastructure.Decisions;
 
 namespace BookWorm.Chat.Orchestration.Executors;
 
-/// <summary>
-///     Routes accepted user messages using <see cref="ChatRoutingDecisionService" />
-///     (<c>Microsoft-Decision-1</c>) instead of a generative LLM router agent.
-/// </summary>
 internal sealed class DecisionRouterExecutor(ChatRoutingDecisionService routingService)
     : Executor<ChatMessage, RoutingDecision>(nameof(DecisionRouterExecutor))
 {

@@ -34,6 +34,11 @@ public sealed class WorkflowRegistrationTests
                 new DecisionResponse([
                     new BinaryDecisionAnswer("is_english", 0.02),
                     new BinaryDecisionAnswer("is_in_scope", 0.90),
+                    new UnansweredDecisionAnswer(
+                        "route",
+                        DecisionKind.Choice,
+                        DecisionUnansweredReason.Refusal
+                    ),
                 ])
             );
 
@@ -92,7 +97,6 @@ public sealed class WorkflowRegistrationTests
                     new ChoiceDecisionAnswer(
                         "route",
                         selectedCandidateId,
-                        0.93,
                         [new DecisionProbability(selectedCandidateId, 0.93)]
                     ),
                 ])
@@ -149,6 +153,11 @@ public sealed class WorkflowRegistrationTests
                 new DecisionResponse([
                     new BinaryDecisionAnswer("is_english", 0.99),
                     new BinaryDecisionAnswer("is_in_scope", 0.05),
+                    new UnansweredDecisionAnswer(
+                        "route",
+                        DecisionKind.Choice,
+                        DecisionUnansweredReason.Refusal
+                    ),
                 ])
             );
 

@@ -1,6 +1,6 @@
 ---
 title: Unexpected request routing or rejection
-summary: Diagnose whether an unexpected outcome came from validation, Router decisions, or specialist handoffs.
+summary: Diagnose whether an unexpected outcome came from validation, Decision Router classification, or specialist handoffs.
 version: 1.0.0
 type: runbooks
 order: 2
@@ -15,7 +15,7 @@ import Footer from "@catalog/components/footer.astro";
 ## Symptoms
 
 - A request is rejected when the customer expected an answer.
-- The Router selects a different specialist than expected.
+- The Decision Router selects a different specialist than expected.
 - A request receives a boundary response or an English-only response.
 - A mixed support and book request is only partially handled.
 
@@ -23,11 +23,12 @@ import Footer from "@catalog/components/footer.astro";
 
 1. Confirm the request entered the composed `/ag-ui` workflow.
 2. Check input validation first: empty text, detected suspicious patterns, or
-   truncation may affect what reaches the Router.
+   truncation may affect what reaches `DecisionRouterExecutor`.
 3. For accepted input, compare the request's language and intent with the
-   routing rules in [[doc|guides/route-customer-requests]].
+   `ChatRoutingDecisionService` questions (`is_english`, `is_in_scope`, `route`)
+   documented in [[doc|guides/route-customer-requests]].
 4. For a mixed question, check whether QA handed the book-specific part to
-   Book Agent or whether Book Agent returned follow-up handling to Router.
+   Book Agent or whether Book Agent handed review/rating analysis to Rating Agent.
 5. Distinguish a routing outcome from a failure: unrelated requests and
    unsupported languages can receive intentional boundary responses.
 

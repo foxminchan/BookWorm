@@ -2,26 +2,6 @@ using BookWorm.Chassis.AI.Decisions;
 
 namespace BookWorm.Chat.Infrastructure.Decisions;
 
-internal enum RouteTarget
-{
-    Book,
-    QA,
-    Rating,
-    NonEnglish,
-    OutOfScope,
-}
-
-internal sealed record RoutingDecision(
-    RouteTarget Target,
-    ChatMessage Message,
-    string? RejectionReason = null,
-    double Confidence = 1.0
-);
-
-/// <summary>
-///     Evaluates incoming user messages against <see cref="IDecisionClient" /> (<c>Microsoft-Decision-1</c>)
-///     to determine language compliance, domain scope, and target specialist agent.
-/// </summary>
 internal sealed class ChatRoutingDecisionService(
     IDecisionClient decisionClient,
     ILogger<ChatRoutingDecisionService>? logger = null
@@ -35,77 +15,108 @@ internal sealed class ChatRoutingDecisionService(
 
     internal const double ProbabilityThreshold = 0.5;
 
-    internal static readonly IReadOnlyList<DecisionQuestion> RoutingQuestions =
-    [
-        new BinaryDecisionQuestion("is_english", "Is the user message written in English?"),
-        new BinaryDecisionQuestion(
-            "is_in_scope",
-            "Is the user request related to BookWorm (books, reading, catalog, book reviews or ratings, bookstore policies, accounts, orders, or billing)?"
-        ),
-        new ChoiceDecisionQuestion(
-            "route",
-            "Which BookWorm specialist should handle this request?",
-            [
-                new(
-                    Constants.Other.Agents.QAAgent,
-                    "Questions about BookWorm store policies, services, accounts, orders, billing, or service complaints."
-                ),
-                new(
-                    Constants.Other.Agents.RatingAgent,
-                    "Requests to summarize reviews or analyze ratings ONLY when a specific book catalog ID (such as a UUID/GUID) is already present in the message."
-                ),
-                new(
-                    Constants.Other.Agents.BookAgent,
-                    "Book searches, recommendations, book information, conversational book feedback, or review/rating requests where the book is identified only by title, author, or description."
-                ),
-            ]
-        ),
-    ];
+    internal static readonly DecisionDefinition<ChatRoutingResult> RoutingDefinition =
+        DecisionDefinition<ChatRoutingResult>.Create(builder =>
+        {
+            builder.BinaryProbability(r => r.IsEnglish, "Is the user message written in English?");
+            builder.BinaryProbability(
+                r => r.IsInScope,
+                "Is the user request related to BookWorm (books, reading, catalog, book reviews or ratings, bookstore policies, accounts, orders, or billing)?"
+            );
+            builder.Choice(r => r.Route, "Which BookWorm specialist should handle this request?");
+        });
 
-    public async ValueTask<RoutingDecision> EvaluateAsync(
+    internal static IReadOnlyList<DecisionQuestion> RoutingQuestions => RoutingDefinition.Questions;
+
+    internal async ValueTask<RoutingDecision> EvaluateAsync(
         ChatMessage message,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var response = await decisionClient
-            .GetDecisionAsync(
-                new DecisionRequest(message.Text, RoutingQuestions),
-                cancellationToken: cancellationToken
-            )
-            .ConfigureAwait(false);
+        try
+        {
+            var typedResponse = await decisionClient
+                .GetDecisionAsync(
+                    message.Text,
+                    RoutingDefinition,
+                    cancellationToken: cancellationToken
+                )
+                .ConfigureAwait(false);
 
-        var isEnglish = response.GetBinaryAnswer("is_english");
-        if (isEnglish is not null && isEnglish.TrueProbability < ProbabilityThreshold)
+            var result = typedResponse.Result;
+
+            if (EvaluateGuardrails(message, result.IsEnglish, result.IsInScope) is { } rejected)
+            {
+                return rejected;
+            }
+
+            var target = MapRouteTarget(result.Route);
+            var distribution = typedResponse.GetDistribution(r => r.Route);
+            var confidence = distribution.TryGetValue(result.Route, out var p) ? p : 1.0;
+
+            logger?.LogInformation(
+                "Decision router selected {Target} (confidence={Confidence:F3})",
+                target,
+                confidence
+            );
+
+            return new RoutingDecision(target, message, Confidence: confidence);
+        }
+        catch (DecisionUnansweredException ex)
+        {
+            return HandlePartialResponse(message, ex.Response);
+        }
+    }
+
+    private RoutingDecision? EvaluateGuardrails(
+        ChatMessage message,
+        double isEnglishProbability,
+        double isInScopeProbability
+    )
+    {
+        if (isEnglishProbability < ProbabilityThreshold)
         {
             logger?.LogInformation(
                 "Decision router rejected non-English message (P(is_english)={Probability:F3})",
-                isEnglish.TrueProbability
+                isEnglishProbability
             );
 
             return new RoutingDecision(
                 RouteTarget.NonEnglish,
                 message,
                 NonEnglishMessage,
-                1.0 - isEnglish.TrueProbability
+                1.0 - isEnglishProbability
             );
         }
 
-        var isInScope = response.GetBinaryAnswer("is_in_scope");
-        if (isInScope is not null && isInScope.TrueProbability < ProbabilityThreshold)
+        if (isInScopeProbability < ProbabilityThreshold)
         {
             logger?.LogInformation(
                 "Decision router rejected out-of-scope message (P(is_in_scope)={Probability:F3})",
-                isInScope.TrueProbability
+                isInScopeProbability
             );
 
             return new RoutingDecision(
                 RouteTarget.OutOfScope,
                 message,
                 OutOfScopeMessage,
-                1.0 - isInScope.TrueProbability
+                1.0 - isInScopeProbability
             );
+        }
+
+        return null;
+    }
+
+    private RoutingDecision HandlePartialResponse(ChatMessage message, DecisionResponse response)
+    {
+        var isEnglish = response.GetBinaryAnswer("is_english")?.TrueProbability ?? 1.0;
+        var isInScope = response.GetBinaryAnswer("is_in_scope")?.TrueProbability ?? 1.0;
+
+        if (EvaluateGuardrails(message, isEnglish, isInScope) is { } rejected)
+        {
+            return rejected;
         }
 
         var routeChoice = response.GetChoiceAnswer("route");
@@ -116,14 +127,29 @@ internal sealed class ChatRoutingDecisionService(
             _ => RouteTarget.Book,
         };
 
-        var confidence = routeChoice?.Confidence ?? 1.0;
+        var confidence = routeChoice
+            ?.Probabilities.FirstOrDefault(p =>
+                string.Equals(p.Id, routeChoice.SelectedCandidateId, StringComparison.Ordinal)
+            )
+            ?.Value
+            ?? 1.0;
 
         logger?.LogInformation(
-            "Decision router selected {Target} (confidence={Confidence:F3})",
+            "Decision router selected {Target} with partial response (confidence={Confidence:F3})",
             target,
             confidence
         );
 
         return new RoutingDecision(target, message, Confidence: confidence);
+    }
+
+    private static RouteTarget MapRouteTarget(ChatRouteCandidate candidate)
+    {
+        return candidate switch
+        {
+            ChatRouteCandidate.QA => RouteTarget.QA,
+            ChatRouteCandidate.Rating => RouteTarget.Rating,
+            _ => RouteTarget.Book,
+        };
     }
 }

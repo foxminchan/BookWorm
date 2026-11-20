@@ -107,7 +107,11 @@ public sealed class DecisionRouterExecutorTests
                 new DecisionResponse([
                     new BinaryDecisionAnswer("is_english", 0.98),
                     new BinaryDecisionAnswer("is_in_scope", 0.92),
-                    new UnansweredDecisionAnswer("route", "refusal"),
+                    new UnansweredDecisionAnswer(
+                        "route",
+                        DecisionKind.Choice,
+                        DecisionUnansweredReason.Refusal
+                    ),
                 ])
             );
 
@@ -143,7 +147,6 @@ public sealed class DecisionRouterExecutorTests
                     new ChoiceDecisionAnswer(
                         "route",
                         selectedRoute,
-                        confidence,
                         [new DecisionProbability(selectedRoute, confidence)]
                     ),
                 ])
