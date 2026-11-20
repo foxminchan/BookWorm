@@ -60,23 +60,25 @@ internal static class WorkflowRegistration
     {
         // Build specialized sub-workflows so domain agents retain inter-agent handoffs
         // without requiring an LLM-based router agent at the entry point.
+        const string ratingHandoffReason =
+            "Transfer to this agent to summarize a book's reviews or analyze its rating and review-based quality signals.";
+        const string qaHandoffReason =
+            "Transfer to this agent for questions about store policies, shipping, returns, accounts, orders, or billing.";
+        const string bookHandoffReason =
+            "Transfer to this agent if a customer-service request also needs book information.";
+
         var bookWorkflowExecutor = AgentWorkflowBuilder
             .CreateHandoffBuilderWith(bookAgent)
-            .WithHandoff(
-                bookAgent,
-                ratingAgent,
-                "Transfer to this agent to summarize a book's reviews or analyze its rating and review-based quality signals."
-            )
+            .WithHandoff(bookAgent, ratingAgent, ratingHandoffReason)
+            .WithHandoff(bookAgent, qaAgent, qaHandoffReason)
             .Build()
             .BindAsExecutor("BookWorkflowExecutor");
 
         var qaWorkflowExecutor = AgentWorkflowBuilder
             .CreateHandoffBuilderWith(qaAgent)
-            .WithHandoff(
-                qaAgent,
-                bookAgent,
-                "Transfer to this agent if a customer-service request also needs book information."
-            )
+            .WithHandoff(qaAgent, bookAgent, bookHandoffReason)
+            .WithHandoff(bookAgent, ratingAgent, ratingHandoffReason)
+            .WithHandoff(bookAgent, qaAgent, qaHandoffReason)
             .Build()
             .BindAsExecutor("QAWorkflowExecutor");
 
@@ -86,7 +88,7 @@ internal static class WorkflowRegistration
             .BindAsExecutor("RatingWorkflowExecutor");
 
         // Bind lambda executors for type extraction from validation and routing results
-        Func<InputValidationResult, ChatMessage> extractAccepted = r => r.Message;
+        Func<InputValidationResult, AcceptedInput> extractAccepted = r => (AcceptedInput)r.Value!;
         var acceptedExtractor = extractAccepted.BindAsExecutor("AcceptedInputExtractor");
         Func<InputValidationResult, string> extractRejected = r => r.Message.Text;
         var rejectedExtractor = extractRejected.BindAsExecutor("RejectedOutputExtractor");
@@ -156,7 +158,7 @@ internal static class WorkflowRegistration
             .Build();
     }
 
-    [SendsMessage(typeof(ChatMessage))]
+    [SendsMessage(typeof(List<ChatMessage>))]
     [SendsMessage(typeof(TurnToken))]
     private sealed class RouteForwarderExecutor(string id) : Executor<RoutingDecision>(id)
     {
@@ -167,7 +169,10 @@ internal static class WorkflowRegistration
         )
         {
             await context
-                .SendMessageAsync(message.Message, cancellationToken)
+                .SendMessageAsync(
+                    new List<ChatMessage>(message.EffectiveMessages),
+                    cancellationToken
+                )
                 .ConfigureAwait(false);
             await context
                 .SendMessageAsync(new TurnToken(true), cancellationToken)

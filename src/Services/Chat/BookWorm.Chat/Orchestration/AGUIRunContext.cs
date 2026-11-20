@@ -9,10 +9,6 @@ internal sealed class AGUIRunState
     public JsonElement? Context { get; init; }
 
     public IReadOnlyList<AITool> ClientTools { get; init; } = [];
-
-    public string? LastAction { get; set; }
-
-    public string? SearchQuery { get; set; }
 }
 
 internal static class AGUIRunContext

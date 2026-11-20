@@ -67,16 +67,25 @@ public sealed class BuyerAggregateTests
         address.Province.ShouldBe(province);
     }
 
+    public static IEnumerable<(
+        string? Street,
+        string? City,
+        string? Province,
+        string ExpectedErrorMessage
+    )> InvalidAddressParameters()
+    {
+        string?[] invalidValues = [null, "", "  "];
+
+        foreach (var invalid in invalidValues)
+        {
+            yield return (invalid, "Bookville", "Readland", "Street is required");
+            yield return ("123 Main St", invalid, "Readland", "City is required");
+            yield return ("123 Main St", "Bookville", invalid, "Province is required");
+        }
+    }
+
     [Test]
-    [Arguments(null, "Bookville", "Readland", "Street is required")]
-    [Arguments("123 Main St", null, "Readland", "City is required")]
-    [Arguments("123 Main St", "Bookville", null, "Province is required")]
-    [Arguments("", "Bookville", "Readland", "Street is required")]
-    [Arguments("123 Main St", "", "Readland", "City is required")]
-    [Arguments("123 Main St", "Bookville", "", "Province is required")]
-    [Arguments("  ", "Bookville", "Readland", "Street is required")]
-    [Arguments("123 Main St", "  ", "Readland", "City is required")]
-    [Arguments("123 Main St", "Bookville", "  ", "Province is required")]
+    [MethodDataSource(nameof(InvalidAddressParameters))]
     public void GivenInvalidParameters_WhenCreatingAddress_ThenShouldThrowOrderingDomainException(
         string? street,
         string? city,

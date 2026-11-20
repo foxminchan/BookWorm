@@ -1,19 +1,17 @@
 using BookWorm.Chat.Orchestration.Executors;
-using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chat.UnitTests.Orchestration.Executors;
 
 public sealed class InputValidationExecutorTests
 {
-    private readonly IWorkflowContext _context = Mock.Of<IWorkflowContext>();
     private readonly InputValidationExecutor _sut = new();
 
     [Test]
     public void GivenNullMessage_WhenHandling_ThenShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Should.Throw<ArgumentNullException>(async () => await _sut.HandleAsync(null!, _context));
+        Should.Throw<ArgumentNullException>(async () => await _sut.HandleAsync(null!));
     }
 
     [Test]
@@ -27,7 +25,7 @@ public sealed class InputValidationExecutorTests
         var message = new ChatMessage(ChatRole.User, content);
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeFalse();
@@ -52,7 +50,7 @@ public sealed class InputValidationExecutorTests
         var message = new ChatMessage(ChatRole.User, content);
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeFalse();
@@ -67,7 +65,7 @@ public sealed class InputValidationExecutorTests
         var message = new ChatMessage(ChatRole.User, "Can you recommend a good book?");
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeTrue();
@@ -83,7 +81,7 @@ public sealed class InputValidationExecutorTests
         var message = new ChatMessage(ChatRole.User, longContent);
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeTrue();
@@ -100,7 +98,7 @@ public sealed class InputValidationExecutorTests
         var message = new ChatMessage(ChatRole.User, content);
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeTrue();
@@ -115,7 +113,7 @@ public sealed class InputValidationExecutorTests
         var message = new ChatMessage(ChatRole.User, "  Hello, can you help me?  ");
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeTrue();
@@ -129,7 +127,7 @@ public sealed class InputValidationExecutorTests
         var message = new ChatMessage(ChatRole.User, "x");
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeTrue();
@@ -147,7 +145,7 @@ public sealed class InputValidationExecutorTests
         );
 
         // Act
-        var result = await _sut.HandleAsync(message, _context);
+        var result = await _sut.HandleAsync(message);
 
         // Assert
         result.IsAccepted.ShouldBeTrue();

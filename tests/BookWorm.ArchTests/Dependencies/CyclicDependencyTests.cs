@@ -18,15 +18,13 @@ public sealed class CyclicDependencyTests : ArchUnitBaseTest
         nameof(Scheduler),
     ];
 
+    public static IEnumerable<string> ServiceNames()
+    {
+        return _serviceNames;
+    }
+
     [Test]
-    [Arguments(nameof(Basket))]
-    [Arguments(nameof(Catalog))]
-    [Arguments(nameof(Chat))]
-    [Arguments(nameof(Finance))]
-    [Arguments(nameof(Notification))]
-    [Arguments(nameof(Ordering))]
-    [Arguments(nameof(Rating))]
-    [Arguments(nameof(Scheduler))]
+    [MethodDataSource(nameof(ServiceNames))]
     public void GivenService_WhenCheckingDependencies_ThenShouldNotDependOnOtherServices(
         string serviceName
     )

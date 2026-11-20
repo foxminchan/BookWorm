@@ -21,6 +21,7 @@ internal sealed class ChatRoutingDecisionService(
         "I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services.";
 
     private const double ProbabilityThreshold = 0.5;
+    private const int MaxPriorContextMessages = 4;
 
     private static readonly DecisionDefinition<ChatRoutingResult> _routingDefinition =
         DecisionDefinition<ChatRoutingResult>.Create(
@@ -49,14 +50,30 @@ internal sealed class ChatRoutingDecisionService(
     internal static IReadOnlyList<DecisionQuestion> RoutingQuestions =>
         _routingDefinition.Questions;
 
-    internal async ValueTask<RoutingDecision> EvaluateAsync(
+    internal ValueTask<RoutingDecision> EvaluateAsync(
         ChatMessage message,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var decisionInput = BuildDecisionInput(message);
+        return EvaluateAsync([message], cancellationToken);
+    }
+
+    internal async ValueTask<RoutingDecision> EvaluateAsync(
+        IReadOnlyList<ChatMessage> messages,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(messages);
+
+        if (messages.Count == 0)
+        {
+            throw new ArgumentException("At least one message is required.", nameof(messages));
+        }
+
+        var latestUserMessage = GetLatestUserMessage(messages);
+        var decisionInput = BuildDecisionInput(messages, latestUserMessage);
 
         try
         {
@@ -71,7 +88,13 @@ internal sealed class ChatRoutingDecisionService(
             var result = typedResponse.Result;
 
             if (
-                EvaluateGuardrails(message, result.IsSafe, result.IsEnglish, result.IsInScope) is
+                EvaluateGuardrails(
+                    latestUserMessage,
+                    messages,
+                    result.IsSafe,
+                    result.IsEnglish,
+                    result.IsInScope
+                ) is
                 { } rejected
             )
             {
@@ -88,16 +111,17 @@ internal sealed class ChatRoutingDecisionService(
                 confidence
             );
 
-            return new(target, message, Confidence: confidence);
+            return new(target, latestUserMessage, Confidence: confidence, Messages: messages);
         }
         catch (DecisionUnansweredException ex)
         {
-            return HandlePartialResponse(message, ex.Response);
+            return HandlePartialResponse(latestUserMessage, messages, ex.Response);
         }
     }
 
     private RoutingDecision? EvaluateGuardrails(
         ChatMessage message,
+        IReadOnlyList<ChatMessage> messages,
         double isSafeProbability,
         double isEnglishProbability,
         double isInScopeProbability
@@ -114,7 +138,8 @@ internal sealed class ChatRoutingDecisionService(
                 RouteTarget.UnsafeInput,
                 message,
                 UnsafeInputMessage,
-                1.0 - isSafeProbability
+                1.0 - isSafeProbability,
+                messages
             );
         }
 
@@ -129,35 +154,41 @@ internal sealed class ChatRoutingDecisionService(
                 RouteTarget.NonEnglish,
                 message,
                 NonEnglishMessage,
-                1.0 - isEnglishProbability
+                1.0 - isEnglishProbability,
+                messages
             );
         }
 
-        if (isInScopeProbability < ProbabilityThreshold)
+        if (!(isInScopeProbability < ProbabilityThreshold))
         {
-            logger?.LogInformation(
-                "Decision router rejected out-of-scope message (P(is_in_scope)={Probability:F3})",
-                isInScopeProbability
-            );
-
-            return new(
-                RouteTarget.OutOfScope,
-                message,
-                OutOfScopeMessage,
-                1.0 - isInScopeProbability
-            );
+            return null;
         }
 
-        return null;
+        logger?.LogInformation(
+            "Decision router rejected out-of-scope message (P(is_in_scope)={Probability:F3})",
+            isInScopeProbability
+        );
+
+        return new(
+            RouteTarget.OutOfScope,
+            message,
+            OutOfScopeMessage,
+            1.0 - isInScopeProbability,
+            messages
+        );
     }
 
-    private RoutingDecision HandlePartialResponse(ChatMessage message, DecisionResponse response)
+    private RoutingDecision HandlePartialResponse(
+        ChatMessage message,
+        IReadOnlyList<ChatMessage> messages,
+        DecisionResponse response
+    )
     {
         var isSafe = response.GetBinaryAnswer("is_safe")?.TrueProbability ?? 1.0;
         var isEnglish = response.GetBinaryAnswer("is_english")?.TrueProbability ?? 1.0;
         var isInScope = response.GetBinaryAnswer("is_in_scope")?.TrueProbability ?? 1.0;
 
-        if (EvaluateGuardrails(message, isSafe, isEnglish, isInScope) is { } rejected)
+        if (EvaluateGuardrails(message, messages, isSafe, isEnglish, isInScope) is { } rejected)
         {
             return rejected;
         }
@@ -183,7 +214,7 @@ internal sealed class ChatRoutingDecisionService(
             confidence
         );
 
-        return new(target, message, Confidence: confidence);
+        return new(target, message, Confidence: confidence, Messages: messages);
     }
 
     private static RouteTarget MapRouteTarget(ChatRouteCandidate candidate)
@@ -196,42 +227,91 @@ internal sealed class ChatRoutingDecisionService(
         };
     }
 
-    private static string BuildDecisionInput(ChatMessage message)
+    private static ChatMessage GetLatestUserMessage(IReadOnlyList<ChatMessage> messages)
     {
-        var aguiState = AGUIRunContext.Current;
-        if (aguiState is null)
+        for (var i = messages.Count - 1; i >= 0; i--)
         {
-            return message.Text;
+            if (messages[i].Role == ChatRole.User)
+            {
+                return messages[i];
+            }
         }
 
+        return messages[^1];
+    }
+
+    private static string BuildDecisionInput(
+        IReadOnlyList<ChatMessage> messages,
+        ChatMessage latestUserMessage
+    )
+    {
+        List<ChatMessage> priorMessages = [];
+        for (
+            var i = messages.Count - 1;
+            i >= 0 && priorMessages.Count < MaxPriorContextMessages;
+            i--
+        )
+        {
+            var candidate = messages[i];
+            if (
+                ReferenceEquals(candidate, latestUserMessage)
+                || candidate.Role == ChatRole.System
+                || string.IsNullOrWhiteSpace(candidate.Text)
+            )
+            {
+                continue;
+            }
+
+            priorMessages.Add(candidate);
+        }
+
+        var aguiState = AGUIRunContext.Current;
+        var hasPrior = priorMessages.Count > 0;
         var hasContext =
-            aguiState.Context is
+            aguiState?.Context is
             { ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null };
         var hasState =
-            aguiState.State is
+            aguiState?.State is
             { ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null };
-        var hasClientTools = aguiState.ClientTools.Count > 0;
+        var hasClientTools = aguiState is { ClientTools.Count: > 0 };
 
-        if (!hasContext && !hasState && !hasClientTools)
+        if (!hasPrior && !hasContext && !hasState && !hasClientTools)
         {
-            return message.Text;
+            return latestUserMessage.Text;
         }
 
         var sb = new StringBuilder();
-        sb.AppendLine(message.Text);
+        sb.AppendLine(latestUserMessage.Text);
+
+        if (hasPrior)
+        {
+            priorMessages.Reverse();
+            sb.AppendLine();
+            sb.AppendLine("Recent conversation context:");
+            foreach (var prior in priorMessages)
+            {
+                sb.Append(prior.Role.Value).Append(": ").AppendLine(prior.Text);
+            }
+        }
+
+        if (!hasContext && !hasState && !hasClientTools)
+        {
+            return sb.ToString();
+        }
+
         sb.AppendLine();
         sb.AppendLine("Storefront client context:");
 
         if (hasContext)
         {
             sb.Append("context: ");
-            sb.AppendLine(aguiState.Context!.Value.GetRawText());
+            sb.AppendLine(aguiState!.Context!.Value.GetRawText());
         }
 
         if (hasState)
         {
             sb.Append("state: ");
-            sb.AppendLine(aguiState.State!.Value.GetRawText());
+            sb.AppendLine(aguiState!.State!.Value.GetRawText());
         }
 
         if (!hasClientTools)
@@ -240,7 +320,7 @@ internal sealed class ChatRoutingDecisionService(
         }
 
         sb.Append("client_tools: ");
-        sb.AppendLine(string.Join(", ", aguiState.ClientTools.Select(static t => t.Name)));
+        sb.AppendLine(string.Join(", ", aguiState!.ClientTools.Select(static t => t.Name)));
 
         return sb.ToString();
     }

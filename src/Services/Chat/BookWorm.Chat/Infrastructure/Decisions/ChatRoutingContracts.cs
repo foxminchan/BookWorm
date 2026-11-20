@@ -64,8 +64,13 @@ internal sealed record RoutingDecision(
     RouteTarget Target,
     ChatMessage Message,
     string? RejectionReason = null,
-    double Confidence = 1.0
-);
+    double Confidence = 1.0,
+    IReadOnlyList<ChatMessage>? Messages = null
+)
+{
+    public IReadOnlyList<ChatMessage> EffectiveMessages =>
+        Messages is { Count: > 0 } ? Messages : [Message];
+}
 
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(ChatRoutingResult))]
