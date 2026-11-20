@@ -25,18 +25,6 @@ public static class Extensions
         }
 
         /// <summary>
-        ///     Configures machine-to-machine token exchange using Microsoft.Identity.Web's app authentication handler.
-        /// </summary>
-        /// <param name="serviceKey">Target service identifier used to name the handler configuration.</param>
-        /// <returns>The same <see cref="IHttpClientBuilder" /> instance for fluent configuration.</returns>
-        public IHttpClientBuilder AddMachineTokenExchange(string serviceKey)
-        {
-            builder.ConfigureScopes(serviceKey);
-
-            return builder.AddMicrosoftIdentityAppAuthenticationHandler(serviceKey, _ => { });
-        }
-
-        /// <summary>
         ///     Configures agent token exchange using <c>Microsoft.Identity.Web.AgentIdentities</c> and
         ///     <see cref="IAuthorizationHeaderProvider" /> for either user on-behalf-of (OBO) or autonomous app-only flows.
         /// </summary>

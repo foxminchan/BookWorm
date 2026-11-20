@@ -1,8 +1,12 @@
+using Azure.AI.Projects;
+using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chassis.AI.Middlewares;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using FoundrySystemOneDecisionClient = BookWorm.Chassis.AI.Decisions.Foundry.FoundrySystemOneDecisionClient;
 
 namespace BookWorm.Chassis.AI.Extensions;
 
@@ -59,11 +63,9 @@ public static class ModelExtensions
         }
 
         /// <summary>
-        ///     Configures decision models for the application.
+        ///     Configures the <see cref="IDecisionClient" /> backed by Microsoft Foundry's
+        ///     <c>Microsoft-Decision-1</c> (<c>/providers/microsoft/v1/systemone</c>) endpoint.
         /// </summary>
-        /// <remarks>
-        ///     This method is a placeholder for future decision model configuration.
-        /// </remarks>
         /// <returns>The <see cref="IHostApplicationBuilder" /> instance for chaining.</returns>
         /// <example>
         ///     <code>
@@ -72,12 +74,11 @@ public static class ModelExtensions
         /// </example>
         public IHostApplicationBuilder WithDecisionModels()
         {
-            var clientBuilder = builder.AddAzureProjectOpenAIClient(Components.Foundry.Project);
-
-            clientBuilder
-                .AddChatClient(Components.Foundry.Decision)
-                .UseFunctionInvocation()
-                .UseModelLogging();
+            builder.Services.AddSingleton<IDecisionClient>(sp => new FoundrySystemOneDecisionClient(
+                sp.GetRequiredService<AIProjectClient>(),
+                Components.Foundry.Decision,
+                sp.GetService<ILogger<FoundrySystemOneDecisionClient>>()
+            ));
 
             return builder;
         }
@@ -115,6 +116,7 @@ public static class ModelExtensions
                         .AddSource(
                             "Microsoft.Agents.AI.Runtime.Abstractions.InMemoryActorStateStorage"
                         )
+                        .AddSource(FoundrySystemOneDecisionClient.ActivitySourceName)
                 )
                 .WithMetrics(x => x.AddMeter("*Microsoft.Agents.AI").AddMeter("agent_governance"));
         }

@@ -57,8 +57,8 @@ invoke the internal [[agent|book-catalog-researcher]] and
 [[agent|book-recommendation-researcher]] subagents concurrently, then
 synthesize their findings. These subagents are registered as delegated tools
 of Book Agent rather than as top-level handoff workflow participants. Simple
-lookups use catalog tools directly. Non-book requests can be handed back to the
-[[agent|router-agent]].
+lookups use catalog tools directly. Review and rating requests can be handed off
+to [[agent|rating-agent]] once a single book catalog ID is resolved.
 
 The agent also receives the `book-catalog` skill and planning, mode, todo, and
 file-memory context providers. Its model provider is inherited from the shared

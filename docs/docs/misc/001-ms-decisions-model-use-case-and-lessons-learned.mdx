@@ -1,0 +1,86 @@
+---
+title: MS Decisions Model Use Case & Lessons Learned
+summary: How BookWorm applies Microsoft-Decision-1 (System 1) for single-pass chat routing, safety gating, and dynamic tool selection, and the engineering lessons learned.
+owners:
+  - contributor-team
+badges:
+  - content: AI Architecture
+    backgroundColor: purple
+    textColor: purple
+  - content: Lessons Learned
+    backgroundColor: teal
+    textColor: teal
+---
+
+# MS Decisions Model (`Microsoft-Decision-1`) in BookWorm Chat
+
+BookWorm integrates Microsoft Foundry's `Microsoft-Decision-1` model (`/providers/microsoft/v1/systemone`) via a reusable `IDecisionClient` abstraction in `BookWorm.Chassis.AI.Decisions` to replace generative LLM routing and static tool-list prompting in [[system|chat-system]].
+
+## Use case: Fast, calibrated decisions before generative execution
+
+In a multi-agent conversational system, two frequent operations are **classification** rather than **generation**:
+
+1. **Request gating and specialist routing** (`ChatRoutingDecisionService` + `DecisionRouterExecutor`)
+2. **Per-turn tool filtering** (`DecisionToolSelectionMiddleware`)
+
+Running a full generative chat model for these tasks adds latency, token cost, and JSON-parsing fragility. `Microsoft-Decision-1` solves both by answering multiple structured `Binary` (`noul`) and `Choice` questions with calibrated probabilities in a single pass.
+
+### 1. Single-pass routing and safety gate
+
+<MermaidFileLoader file="mermaids/decision-routing-and-safety-flow.mmd" />
+
+Instead of invoking a legacy `router-agent` LLM, `DecisionRouterExecutor` delegates to `ChatRoutingDecisionService.EvaluateAsync`, which evaluates `DecisionDefinition<ChatRoutingResult>` in one `IDecisionClient.GetDecisionAsync` call:
+
+| Question ID   | Kind     | Purpose                                                      | Threshold / Behavior                                             |
+| ------------- | -------- | ------------------------------------------------------------ | ---------------------------------------------------------------- |
+| `is_safe`     | `Binary` | Detects prompt-injection, jailbreak, or override attempts    | `< 0.5` rejects with `RouteTarget.UnsafeInput`                   |
+| `is_english`  | `Binary` | Verifies the request is written in English                   | `< 0.5` rejects with `RouteTarget.NonEnglish`                    |
+| `is_in_scope` | `Binary` | Checks relevance to BookWorm (books, orders, policies, etc.) | `< 0.5` rejects with `RouteTarget.OutOfScope`                    |
+| `route`       | `Choice` | Selects `book-agent`, `qa-agent`, or `rating-agent`          | `rating-agent` only when a book catalog UUID/GUID is in the text |
+
+This combines safety, language, domain scope, and agent selection into a single pre-agent gate before any specialist LLM is invoked.
+
+### 2. Dynamic per-turn tool selection
+
+<MermaidFileLoader file="mermaids/decision-tool-selection-flow.mmd" />
+
+`DecisionToolSelectionMiddleware` (`UseDecisionToolSelection`) wraps `IChatClient` for `BookAgent` and `QAAgent`. On each chat turn where `ChatOptions.Tools` is non-empty and `ToolMode` is not `NoneChatToolMode`:
+
+- It builds a compact context window from the most recent messages (`MaxContextMessages`, default `6`).
+- It turns each candidate `AITool` (excluding `AlwaysIncludedToolNames` and `RequiredChatToolMode.RequiredFunctionName`) into a `BinaryDecisionQuestion` using the tool's name and description.
+- Only tools whose `TrueProbability >= ProbabilityThreshold` (`0.5`) are forwarded to the downstream generative model.
+
+## Lessons learned
+
+### 1. Decouple domain services from the Foundry System 1 wire protocol
+
+Initially, `FoundrySystemOneDecisionClient` mixed request/response DTOs, wire mapping, and client logic in one file. Modularizing `BookWorm.Chassis.AI.Decisions` into `Abstractions/` (`IDecisionClient`, `DecisionRequest`, `DecisionResponse`), `Foundry/` (`FoundrySystemOneDecisionClient`, `SystemOneProtocolMapper`), and `Interoperability/` (`DecisionDefinition<T>`) isolated Foundry-specific protocol details (such as mapping `BinaryDecisionQuestion` to `"noul"` and `ChoiceDecisionQuestion`/`ScoreDecisionQuestion` to `"choice"`) from `BookWorm.Chat`.
+
+### 2. Handle partial and unanswered decisions explicitly
+
+A decision model can return partial answers or refuse individual questions (`DecisionUnansweredException`). Failing the entire request blindly would either drop valid safety rejections or break tool execution:
+
+- **Routing (`HandlePartialResponse`)**: Still inspects any answered `is_safe`, `is_english`, and `is_in_scope` probabilities to enforce guardrails first, and falls back to `BookAgent` if `route` is unanswered.
+- **Tool selection (`DecisionToolSelectionMiddleware`)**: Fails open—if the decision call fails, times out, or selects zero tools unexpectedly, it logs and forwards the original `ChatOptions.Tools` so the agent remains functional.
+
+### 3. Never strip explicitly required or always-included tools
+
+When `ChatOptions.ToolMode` is `RequiredChatToolMode`, the caller expects a specific function to be available. `DecisionToolSelectionMiddleware` partitions tools before querying `IDecisionClient` so `AlwaysIncludedToolNames` and `RequiredFunctionName` bypass filtering completely.
+
+### 4. Use `System.Text.Json` source generation everywhere
+
+Reflection-based `JsonSerializer` calls trigger trimming/AOT warnings and analyzer diagnostics. Defining explicit `JsonSerializerContext` types (`DecisionSerializationContext`, `ChatRoutingSerializationContext`, `SystemOneSerializationContext`) with `[JsonSourceGenerationOptions(UseStringEnumConverter = true)]` keeps serialization AOT-safe and clean under SonarCloud/Roslyn analyzers.
+
+### 5. Keep decision-based safety gating layered with deterministic checks
+
+`is_safe` in `ChatRoutingDecisionService` complements—but does not replace—deterministic `InputValidationExecutor` rules (empty-input rejection, regex/pattern checks, length truncation) and downstream `PIIMiddleware` / `GuardrailMiddleware`.
+
+### 6. Test the decision contract with fakes and workflow tests
+
+Because question IDs, descriptions, and probability thresholds (`0.5`) define the routing contract, unit tests (`DecisionRouterExecutorTests`) and workflow tests (`WorkflowRegistrationTests`) should verify threshold boundaries, `DecisionUnansweredException` fallback paths, and `AGUIRunContext` propagation using fake `IDecisionClient` implementations.
+
+## Related documentation
+
+- [[adr|adr-007-system-one-decision-model-routing-and-tool-selection]]
+- [[adr|adr-001-chat-agent-orchestration-boundary]]
+- [[adr|adr-005-govern-agent-tools-per-agent]]

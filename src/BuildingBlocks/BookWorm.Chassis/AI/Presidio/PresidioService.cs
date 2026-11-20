@@ -1,12 +1,13 @@
 using System.Collections.Frozen;
 using System.Text.Json;
+using BookWorm.Chassis.AI.Presidio.Clients;
 
 namespace BookWorm.Chassis.AI.Presidio;
 
 internal sealed class PresidioService(IPresidioAnalyzer analyzer, IPresidioAnonymizer anonymizer)
     : IPresidioService
 {
-    private static readonly FrozenDictionary<string, ReplaceAnonymizer> DefaultAnonymizers =
+    private static readonly FrozenDictionary<string, ReplaceAnonymizer> _defaultAnonymizers =
         new Dictionary<string, ReplaceAnonymizer>
         {
             ["DEFAULT"] = new("<PII>"),
@@ -30,7 +31,7 @@ internal sealed class PresidioService(IPresidioAnalyzer analyzer, IPresidioAnony
             return text;
         }
 
-        var request = new AnonymizerRequest(text, analyzerResults, DefaultAnonymizers);
+        var request = new AnonymizerRequest(text, analyzerResults, _defaultAnonymizers);
 
         var result = await anonymizer.AnonymizeAsync(request, cancellationToken)
             ?? throw new JsonException("The Presidio anonymizer returned a null response.");

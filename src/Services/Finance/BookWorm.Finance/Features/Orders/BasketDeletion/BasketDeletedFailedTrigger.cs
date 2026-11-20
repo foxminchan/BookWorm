@@ -1,4 +1,3 @@
-using BookWorm.Contracts;
 using Microsoft.Azure.Functions.Worker;
 
 namespace BookWorm.Finance.Features.Orders.BasketDeletion;
@@ -17,8 +16,9 @@ public sealed class BasketDeletedFailedTrigger
         CancellationToken cancellationToken
     )
     {
-        var @event = CloudEventsMessageParser.Deserialize<BasketDeletedFailedIntegrationEvent>(
-            message
+        var @event = CloudEventsMessageParser.Deserialize(
+            message,
+            FinanceEventSerializationContext.Default.BasketDeletedFailedIntegrationEvent
         );
 
         return client.RaiseEventAsync(

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 
@@ -16,27 +16,8 @@ public static class TelemetryPropagator
         return _propagator.Extract(default, carrier, getter);
     }
 
-    public static PropagationContext? GetPropagationContext(Activity? activity = null)
-    {
-        var activityContext = (activity ?? Activity.Current)?.Context;
-
-        if (!activityContext.HasValue)
-        {
-            return null;
-        }
-
-        return new PropagationContext(activityContext.Value, Baggage.Current);
-    }
-
     extension(PropagationContext context)
     {
-        public PropagationContext Extract<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
-        {
-            _propagator.Extract(context, carrier, getter);
-
-            return context;
-        }
-
         public void Inject<T>(T carrier, Action<T, string, string> setter)
         {
             _propagator.Inject(context, carrier, setter);

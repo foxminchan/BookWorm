@@ -15,8 +15,6 @@ appliesTo:
   - type: service
     id: chat-api
   - type: agent
-    id: router-agent
-  - type: agent
     id: book-agent
   - type: agent
     id: qa-agent
@@ -38,13 +36,17 @@ the business systems that own the facts being discussed.
 
 ## Decision
 
-The [[system|chat-system]] composes input validation, local handoffs between the [[agent|router-agent]],
-[[agent|book-agent]], and [[agent|qa-agent]], and response formatting in the interactive AG-UI
-workflow. Validation rejects empty or suspicious input and bounds long
-messages before an agent handoff. Router selects Book Agent for book requests
-and QA Agent for store-policy and service questions. For complex book
-requests, Book Agent may delegate independent research to its specialist
-researchers ([[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]).
+The [[system|chat-system]] composes input validation, `DecisionRouterExecutor`
+routing (via `Microsoft-Decision-1`), specialist sub-workflows for
+[[agent|book-agent]], [[agent|qa-agent]], and [[agent|rating-agent]], and
+response formatting in the interactive AG-UI workflow. Validation rejects empty
+or suspicious input and bounds long messages before routing. The Decision
+Router selects Book Agent for book requests (and review requests without a
+catalog ID), QA Agent for store-policy and service questions, and Rating Agent
+for review/rating requests that already include a book catalog ID. For complex
+book requests, Book Agent may delegate independent research to its specialist
+researchers ([[agent|book-catalog-researcher]] and
+[[agent|book-recommendation-researcher]]).
 
 The workflow provides assistance, not business transactions. [[domain|catalog]] remains
 the source of book facts, [[domain|reviews]] owns individual feedback, and [[domain|shopping]] and

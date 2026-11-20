@@ -144,11 +144,11 @@ Feedback-created and feedback-deleted messages let Catalog maintain its rating p
 
 **Purpose.** Conversational provides interactive support and book discovery through a composed workflow and specialist agents. Its agents use tools and delegated agent interfaces rather than owning Catalog or Reviews records.
 
-| Internal building block      | Responsibility                                                                                                                               | Main source location                                                                      |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Chat workflow and agents** | [[service\|chat-api]] hosts request orchestration, validation and response formatting, and specialist Router, QA, Book, and research agents. | `Services/Chat/BookWorm.Chat/` (`Orchestration/`, `Agents/`, `Policies/`, `Skills/`)      |
-| **MCP tools service**        | [[system\|mcp-tools]] provides reusable, explicitly scoped tools and resources, including Catalog-backed book lookups.                       | `Services/McpTools/BookWorm.McpTools/` (`Tools/`, `Resources/`, `Services/`)              |
-| **Privacy integration**      | Applies the configured PII analysis and anonymization path through the Presidio integration.                                                 | `Integrations/BookWorm.Hosting.Presidio/`; `BuildingBlocks/BookWorm.Chassis/AI/Presidio/` |
+| Internal building block      | Responsibility                                                                                                                                                    | Main source location                                                                      |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Chat workflow and agents** | [[service\|chat-api]] hosts request orchestration, validation, `Microsoft-Decision-1` routing, response formatting, and specialist QA, Book, and research agents. | `Services/Chat/BookWorm.Chat/` (`Orchestration/`, `Agents/`, `Policies/`, `Skills/`)      |
+| **MCP tools service**        | [[system\|mcp-tools]] provides reusable, explicitly scoped tools and resources, including Catalog-backed book lookups.                                            | `Services/McpTools/BookWorm.McpTools/` (`Tools/`, `Resources/`, `Services/`)              |
+| **Privacy integration**      | Applies the configured PII analysis and anonymization path through the Presidio integration.                                                                      | `Integrations/BookWorm.Hosting.Presidio/`; `BuildingBlocks/BookWorm.Chassis/AI/Presidio/` |
 
 Chat can call the Rating-hosted agent through its agent-to-agent interface. This is separate from the MCP path to Catalog tools. The conversational workflow is advisory: it does not place Orders, mutate Baskets, or publish commerce lifecycle events.
 

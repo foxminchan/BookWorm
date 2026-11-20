@@ -6,7 +6,7 @@ sequenceDiagram
 	participant Client as AG-UI client
 	participant Chat as Chat API
 	participant Validation as Input validation
-	participant Router as Router Agent
+	participant DecisionRouter as Decision Router (Microsoft-Decision-1)
 	participant Book as Book Agent
 	participant CatalogResearcher as Book Catalog Researcher
 	participant RecommendationResearcher as Book Recommendation Researcher
@@ -23,10 +23,10 @@ sequenceDiagram
 		Chat -->> Client: Format and return response
 		Client -->> Customer: Show rejection
 	else Input accepted
-		Validation ->> Router: Route customer request
+		Validation ->> DecisionRouter: Evaluate language, scope & route
 
 		alt Book discovery
-			Router ->> Book: Hand off book request
+			DecisionRouter ->> Book: Route to Book workflow
 
 			alt Straightforward request
 				Book ->> MCP: Request scoped Catalog information
@@ -51,14 +51,13 @@ sequenceDiagram
 				end
 				Book ->> Book: Synthesize research results
 			end
-			Book -->> Router: Book response
+			Book -->> Chat: Format and return response
 		else Store or account question
-			Router ->> QA: Hand off support request
-			QA -->> Router: Support response
-		else Unsupported request
-			Router -->> Chat: Boundary response
+			DecisionRouter ->> QA: Route to QA workflow
+			QA -->> Chat: Format and return response
+		else Unsupported or non-English request
+			DecisionRouter -->> Chat: Short-circuit boundary response
 		end
-		Router -->> Chat: Final assistant response
-		Chat -->> Client: Format and return response
+		Chat -->> Client: Return response
 		Client -->> Customer: Show answer
 	end

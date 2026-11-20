@@ -18,8 +18,8 @@ badges:
 ### Interaction
 
 1. A customer submits a request to the [[service|chat-api]]'s AG-UI endpoint.
-2. Input validation rejects empty or detected prompt-injection input. Accepted input is passed to the handoff workflow.
-3. [[agent|router-agent]] selects a specialist: book requests go to [[agent|book-agent]]; store or account questions go to [[agent|qa-agent]]. Unsupported requests receive a boundary response.
+2. Input validation rejects empty or detected prompt-injection input. Accepted input is passed to `DecisionRouterExecutor` (`Microsoft-Decision-1`).
+3. `DecisionRouterExecutor` checks language and scope, then routes to a specialist: book requests (and review requests without a catalog ID) go to [[agent|book-agent]]; store or account questions go to [[agent|qa-agent]]; review/rating requests with a book catalog ID go to [[agent|rating-agent]]. Unsupported or non-English requests short-circuit with a boundary response.
 4. [[agent|book-agent]] handles a straightforward request directly. For a complex discovery request, it can delegate independent book-fact and recommendation research to specialist agents ([[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]) in parallel, then synthesize their results.
 5. Catalog information is accessed through the scoped [[system|mcp-tools]] ([[service|mcp-server]]). The workflow formats and returns the final assistant response.
 

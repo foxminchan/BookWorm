@@ -15,8 +15,6 @@ appliesTo:
   - type: service
     id: chat-api
   - type: agent
-    id: router-agent
-  - type: agent
     id: book-agent
   - type: agent
     id: qa-agent
@@ -41,7 +39,7 @@ from the MCP tools, so both types of access need an explicit owner and policy.
 ## Decision
 
 Chat configures tools per agent definition and applies an explicit
-per-agent governance policy. Router and QA have no Catalog MCP tools. Book
+per-agent governance policy. QA has no Catalog MCP tools. Book
 Agent and its Catalog and recommendation researchers receive only the four
 declared Catalog read tools: `search_catalog`, `get_book`, `list_categories`,
 and `list_authors`. Those server tools do not create or update records.
@@ -64,8 +62,8 @@ agent does not bypass those checks.
 - Delegated subagents remain explicit capabilities and must be governed
   independently from direct tool invocation; the researchers inherit
   Book Agent's approved read capabilities, not a broader server tool set.
-- Router and QA can answer only from their supplied context and instructions;
-  they do not have live Catalog MCP lookup capability.
+- QA can answer only from its supplied context and instructions;
+  it does not have live Catalog MCP lookup capability.
 - Per-agent policy and tool declarations add configuration to maintain and
   test as agents or server capabilities change.
 

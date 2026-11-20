@@ -14,8 +14,9 @@ import Footer from "@catalog/components/footer.astro";
 
 ## Before changing behavior
 
-- [ ] Identify whether the change affects input validation, Router decisions,
-      specialist behavior, delegated research, or final response formatting.
+- [ ] Identify whether the change affects input validation, Decision Router
+      questions/thresholds, specialist behavior, delegated research, or final
+      response formatting.
 - [ ] Keep Catalog, Shopping, Ordering, and Reviews as owners of their business
       data and operations.
 - [ ] Confirm the intended boundary for unsupported languages, out-of-scope
@@ -25,8 +26,9 @@ import Footer from "@catalog/components/footer.astro";
 
 ## Update the catalog
 
-- [ ] Update the affected agent resource, such as [[agent|router-agent]],
-      [[agent|book-agent]], or [[agent|qa-agent]].
+- [ ] Update the affected agent resource, such as [[agent|book-agent]],
+      [[agent|qa-agent]], or [[agent|rating-agent]], or the routing policy in
+      `ChatRoutingDecisionService`.
 - [ ] Update the [[flow|agent-orchestration]] when the request path, branch,
       handoff, or terminal outcome changes.
 - [ ] Keep the [[system|chat-system]] and [[service|chat-api]] descriptions
@@ -37,7 +39,8 @@ import Footer from "@catalog/components/footer.astro";
 ## Verify the behavior
 
 - [ ] Test accepted and rejected input paths.
-- [ ] Test each supported Router destination and its boundary outcomes.
+- [ ] Test each supported Decision Router destination (`Book`, `QA`, `Rating`)
+      and its boundary outcomes (`NonEnglish`, `OutOfScope`).
 - [ ] Test mixed requests where customer-support questions also need book
       information.
 - [ ] For delegated research, verify both branches and the synthesized result.

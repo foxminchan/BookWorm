@@ -1,4 +1,3 @@
-using BookWorm.Contracts;
 using Microsoft.Azure.Functions.Worker;
 
 namespace BookWorm.Finance.Features.Orders.OrderCancellation;
@@ -17,10 +16,10 @@ public sealed class OrderCancelledTrigger
         CancellationToken cancellationToken
     )
     {
-        var @event =
-            CloudEventsMessageParser.Deserialize<OrderStatusChangedToCancelIntegrationEvent>(
-                message
-            );
+        var @event = CloudEventsMessageParser.Deserialize(
+            message,
+            FinanceEventSerializationContext.Default.OrderStatusChangedToCancelIntegrationEvent
+        );
 
         return client.RaiseEventAsync(
             @event.OrderId.ToString(),

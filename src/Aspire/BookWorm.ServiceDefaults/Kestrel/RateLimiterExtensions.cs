@@ -1,6 +1,8 @@
 ﻿using System.Globalization;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using BookWorm.Chassis.Utilities.Configurations;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -162,9 +164,16 @@ public static class RateLimiterExtensions
                         $"You have exceeded the rate limit. Try again in {milliseconds} ms."
                     );
 
-                    await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+                    await httpContext.Response.WriteAsJsonAsync(
+                        problemDetails,
+                        RateLimiterSerializationContext.Default.ProblemDetails,
+                        cancellationToken: cancellationToken
+                    );
                 }
             };
         }
     }
 }
+
+[JsonSerializable(typeof(ProblemDetails))]
+internal sealed partial class RateLimiterSerializationContext : JsonSerializerContext;

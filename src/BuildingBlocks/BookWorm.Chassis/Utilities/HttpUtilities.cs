@@ -13,9 +13,7 @@ public static class HttpUtilities
 public sealed class UrlBuilder
 {
     private readonly List<string> _pathSegments = [];
-    private readonly Dictionary<string, string?> _query = [with(StringComparer.OrdinalIgnoreCase)];
     private string? _baseUrl;
-    private string? _fragment;
     private HostString _host;
     private string? _scheme;
 
@@ -56,12 +54,6 @@ public sealed class UrlBuilder
         return this;
     }
 
-    public UrlBuilder WithPort(int port)
-    {
-        _host = new(_host.Host, port);
-        return this;
-    }
-
     public UrlBuilder WithPath(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -74,26 +66,6 @@ public sealed class UrlBuilder
         return this;
     }
 
-    public UrlBuilder WithQuery(string key, string? value)
-    {
-        ArgumentNullException.ThrowIfNull(key);
-        _query[key] = value;
-        return this;
-    }
-
-    public UrlBuilder WithFragment(string fragment)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(fragment);
-        _fragment = fragment.StartsWith('#') ? fragment[1..] : fragment;
-        return this;
-    }
-
-    public UrlBuilder WithFragment(FragmentString fragment)
-    {
-        _fragment = fragment.HasValue ? fragment.Value.TrimStart('#') : null;
-        return this;
-    }
-
     public string Build()
     {
         var inner = CreateUriBuilder();
@@ -102,23 +74,6 @@ public sealed class UrlBuilder
         {
             var basePath = inner.Path.TrimEnd('/');
             inner.Path = $"{basePath}/{string.Join('/', _pathSegments)}";
-        }
-
-        if (_query.Count > 0)
-        {
-            inner.Query = string.Join(
-                '&',
-                _query.Select(x =>
-                    string.IsNullOrWhiteSpace(x.Value)
-                        ? Uri.EscapeDataString(x.Key)
-                        : $"{Uri.EscapeDataString(x.Key)}={Uri.EscapeDataString(x.Value)}"
-                )
-            );
-        }
-
-        if (_fragment is not null)
-        {
-            inner.Fragment = Uri.EscapeDataString(_fragment);
         }
 
         var url = inner.ToString();

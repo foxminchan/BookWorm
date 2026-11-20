@@ -25,9 +25,9 @@ detect and redact sensitive text in the [[agent|rating-agent]] chat pipeline
 before it reaches the model or the output.
 
 The [[domain|conversational]] agents also use this middleware:
-[[agent|router-agent]], [[agent|qa-agent]], and [[agent|book-agent]] register it
-directly, while [[agent|book-catalog-researcher]] and
-[[agent|book-recommendation-researcher]] reuse Book Agent's wrapped chat client.
+[[agent|qa-agent]] and [[agent|book-agent]] register it directly, while
+[[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]
+reuse Book Agent's wrapped chat client.
 
 <ContextDiagram />
 

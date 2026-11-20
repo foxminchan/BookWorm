@@ -13,8 +13,6 @@ systems:
   - id: mcp-tools
     version: 1.0.0
 agents:
-  - id: router-agent
-    version: 1.0.0
   - id: book-agent
     version: 1.0.0
   - id: qa-agent
@@ -63,8 +61,9 @@ that agents discuss.
   not an Order, Basket, or Feedback record.
 - A **Handoff** transfers a request between specialist agents. It is distinct
   from a business workflow such as checkout or order fulfillment.
-- The **Router Agent** selects a specialist; it does not answer in-scope
-  requests itself.
+- The **Decision Router** (`DecisionRouterExecutor` backed by
+  `ChatRoutingDecisionService` and `Microsoft-Decision-1`) evaluates language,
+  scope, and target specialist without invoking an LLM agent.
 - The **Book Agent** and its researchers use Catalog results for factual book
   details. Catalog remains the source of truth for book data.
 - The **QA Agent** answers general store questions using the supplied policy
@@ -96,19 +95,23 @@ The Chat service exposes an interactive AG-UI endpoint at `/ag-ui`. Accepted
 requests pass through input validation, agent handoff, and response formatting;
 rejected input bypasses the agent handoff.
 
-1. The Router Agent checks that a request is in English and concerns BookWorm.
-   It routes bookstore policy, service, account, order, and billing questions
-   to the [[agent|qa-agent]], and book searches, recommendations, information,
-   and feedback to the [[agent|book-agent]].
+1. `DecisionRouterExecutor` evaluates the accepted message via
+   `Microsoft-Decision-1` (`is_english`, `is_in_scope`, and `route`).
+   Non-English and out-of-scope requests short-circuit with a boundary
+   response; in-scope requests route to [[agent|qa-agent]] (store policies,
+   services, accounts, orders, billing), [[agent|rating-agent]] (review
+   summaries or rating analysis when a book catalog ID is already present), or
+   [[agent|book-agent]] (book search, recommendations, information, feedback, or
+   review/rating requests without a catalog ID).
 2. The QA Agent can hand a customer-service request to the Book Agent when it
-   also needs book information. The Book Agent can return a follow-up to the
-   Router Agent for further handling.
+   also needs book information. The Book Agent can hand off review/rating
+   analysis to the Rating Agent once a book catalog ID is resolved.
 3. For complex requests with independent research tasks, the Book Agent can
    delegate to the [[agent|book-catalog-researcher]] and
    [[agent|book-recommendation-researcher]] concurrently. Simple lookups use
    Catalog tools directly.
 4. The selected agent's response is formatted before it is returned. The
-   workflow currently uses an in-memory session store.
+   workflow persists conversation session state in [[container|chat-session-blob]].
 
 ## Catalog MCP tools
 
@@ -122,7 +125,7 @@ They query the Catalog API; Catalog continues to own the underlying book data.
 | `list_categories` | List available book categories            |
 | `list_authors`    | List available book authors               |
 
-The Router Agent and QA Agent have no MCP tools. The list above describes the
+The QA Agent has no MCP tools. The list above describes the
 tool set assigned to Chat agents, not every capability exposed by the shared
 MCP server.
 
@@ -141,8 +144,8 @@ their state, and book information remains sourced from Catalog.
 
 ## Privacy middleware
 
-All five Chat agents use [[service|PresidioAPI]] in the external
-[[system|data-privacy]] system. Router, QA, and Book Agent register
+All four Chat agents use [[service|PresidioAPI]] in the external
+[[system|data-privacy]] system. QA and Book Agent register
 `UsePIIMiddleware(sp)` directly; the two Book researchers inherit Book Agent's
 middleware-wrapped chat client through `InitSubAgent`.
 

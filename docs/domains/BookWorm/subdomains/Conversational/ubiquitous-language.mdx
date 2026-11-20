@@ -7,12 +7,13 @@ dictionary:
       A request is the interaction being routed or answered. Books, Baskets,
       and Orders mentioned in it remain owned by their respective contexts.
     icon: MessageCircle
-  - id: Router Agent
-    name: Router Agent
-    summary: Chooses the next handler for a customer request.
+  - id: Decision Router
+    name: Decision Router
+    summary: Evaluates language, scope, and target specialist for a customer request.
     description: |
-      The Router Agent selects a specialist based on language, topic, length,
-      or sentiment and does not handle the request directly.
+      The Decision Router (DecisionRouterExecutor backed by Microsoft-Decision-1)
+      checks English language compliance, BookWorm domain scope, and selects
+      Book Agent, QA Agent, or Rating Agent without invoking an LLM agent.
     icon: Route
   - id: Book Agent
     name: Book Agent
@@ -37,9 +38,9 @@ dictionary:
     icon: HeartPulse
   - id: Handoff
     name: Handoff
-    summary: Transfer of a request between agents.
+    summary: Transfer of a request between specialist agents.
     description: |
-      A handoff routes a request to another specialist or back to the Router
-      Agent. It is not a business process such as placing an Order.
+      A handoff routes a request from QA Agent to Book Agent or from Book Agent
+      to Rating Agent. It is not a business process such as placing an Order.
     icon: Forward
 ---

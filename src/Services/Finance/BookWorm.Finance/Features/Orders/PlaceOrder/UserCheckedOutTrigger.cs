@@ -1,4 +1,3 @@
-using BookWorm.Contracts;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Options;
 
@@ -21,7 +20,10 @@ public sealed class UserCheckedOutTrigger(
         CancellationToken cancellationToken
     )
     {
-        var @event = CloudEventsMessageParser.Deserialize<UserCheckedOutIntegrationEvent>(message);
+        var @event = CloudEventsMessageParser.Deserialize(
+            message,
+            FinanceEventSerializationContext.Default.UserCheckedOutIntegrationEvent
+        );
         var instanceId = @event.OrderId.ToString();
 
         var existing = await client.GetInstanceAsync(instanceId, cancellationToken);

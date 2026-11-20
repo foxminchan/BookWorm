@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using BookWorm.Chassis.EventBus.Kafka;
 using BookWorm.Contracts;
 using Microsoft.Azure.Functions.Worker;
@@ -18,8 +20,9 @@ public sealed partial class ProcessVectorBatchFunction(
         CancellationToken cancellationToken
     )
     {
-        var @event = CloudEventsMessageParser.Deserialize<ProcessVectorBatchIntegrationEvent>(
-            message
+        var @event = CloudEventsMessageParser.Deserialize(
+            message,
+            CatalogIngestionSerializationContext.Default.ProcessVectorBatchIntegrationEvent
         );
 
         LogReceivedEvent(logger, @event.Id, message.Length);
@@ -33,3 +36,7 @@ public sealed partial class ProcessVectorBatchFunction(
     )]
     private static partial void LogReceivedEvent(ILogger logger, Guid eventId, int length);
 }
+
+[JsonSerializable(typeof(ProcessVectorBatchIntegrationEvent))]
+[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
+internal sealed partial class CatalogIngestionSerializationContext : JsonSerializerContext;

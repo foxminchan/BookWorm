@@ -15,15 +15,18 @@ import Footer from "@catalog/components/footer.astro";
 ## Request path
 
 The Chat API accepts interactive requests through `/ag-ui`. The composed
-workflow validates the request, hands accepted messages to the Router, and
-formats the final assistant response. Rejected input returns without entering
-the agent handoff.
+workflow validates the request, evaluates routing via `DecisionRouterExecutor`
+(`Microsoft-Decision-1`), and formats the final assistant response. Rejected,
+non-English, or out-of-scope input returns without entering a specialist
+sub-workflow.
 
-The Router selects the [[agent|book-agent]] for book discovery and feedback,
-or the [[agent|qa-agent]] for store and customer-support questions. The QA
-Agent can hand book-specific work to the Book Agent. For complex requests,
-Book Agent can delegate independent book research to
-[[agent|book-catalog-researcher]] and
+The Decision Router selects [[agent|book-agent]] for book discovery, feedback,
+or review requests without a catalog ID, [[agent|qa-agent]] for store and
+customer-support questions, or [[agent|rating-agent]] for review/rating requests
+that already include a book catalog ID. The QA Agent can hand book-specific work
+to the Book Agent, and the Book Agent can hand review/rating analysis to the
+Rating Agent once a book ID is resolved. For complex requests, Book Agent can
+delegate independent book research to [[agent|book-catalog-researcher]] and
 [[agent|book-recommendation-researcher]] before composing a response.
 
 ## Domain boundaries
@@ -39,13 +42,14 @@ Book Agent can delegate independent book research to
 
 ## Workflow responsibilities
 
-| Stage              | Responsibility                                                                                 |
-| ------------------ | ---------------------------------------------------------------------------------------------- |
-| Input validation   | Reject empty or detected suspicious input and constrain message length.                        |
-| Router             | Check language and request scope, then choose a specialist or respond with a boundary message. |
-| Book Agent         | Handle book requests directly or coordinate independent research.                              |
-| QA Agent           | Answer from supplied store-policy context and identify when information is unavailable.        |
-| Response formatter | Select and normalize the final assistant message.                                              |
+| Stage              | Responsibility                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| Input validation   | Reject empty or detected suspicious input and constrain message length.                                 |
+| Decision Router    | Check language and request scope via `Microsoft-Decision-1`, then choose a specialist or short-circuit. |
+| Book Agent         | Handle book requests directly, coordinate independent research, or hand off to Rating Agent.            |
+| QA Agent           | Answer from supplied store-policy context and identify when information is unavailable.                 |
+| Rating Agent       | Summarize reviews or analyze rating/quality signals via A2A when a book ID is known.                    |
+| Response formatter | Select and normalize the final assistant message.                                                       |
 
 The [[flow|agent-orchestration]] documents the customer-facing workflow.
 System and agent resources describe their own responsibilities in more detail.

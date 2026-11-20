@@ -3,7 +3,6 @@ using BookWorm.Chassis.Security.Extensions;
 using BookWorm.Chat.Agents.BookSearch;
 using BookWorm.Chat.Agents.CustomerSupport;
 using BookWorm.Chat.Agents.Rating;
-using BookWorm.Chat.Agents.Routing;
 using BookWorm.Chat.Orchestration;
 using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
@@ -98,7 +97,6 @@ internal static class Extensions
             builder.AddBookAgent();
             builder.AddQAAgent();
             builder.AddRatingAgent();
-            builder.AddRouterAgent();
 
             // Compose the multi-agent workflow
             builder.AddChatWorkflow();

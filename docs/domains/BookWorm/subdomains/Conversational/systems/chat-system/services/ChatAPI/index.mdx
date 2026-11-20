@@ -32,14 +32,16 @@ badges:
 Chat API is the HTTP and gRPC application surface of
 [[system|chat-system]]. It hosts the composed conversational workflow and
 exposes discovery and agent-to-agent protocol endpoints. The API coordinates
-[[agent|router-agent]], [[agent|book-agent]], and [[agent|qa-agent]]; it does
-not own Catalog, Basket, Order, or Feedback data.
+`DecisionRouterExecutor` (`Microsoft-Decision-1`), [[agent|book-agent]], and
+[[agent|qa-agent]]; it does not own Catalog, Basket, Order, or Feedback data.
 
-The interactive workflow validates a customer request, hands accepted input
-to the appropriate specialist, and formats the result. The Router Agent
-routes book-related requests to Book Agent and store-policy or service
-questions to QA Agent. The Book Agent can delegate complex Catalog research
-to [[agent|book-catalog-researcher]] and
+The interactive workflow validates a customer request, evaluates routing via
+`ChatRoutingDecisionService` (`Microsoft-Decision-1`), hands accepted input to
+the appropriate specialist sub-workflow, and formats the result. The Decision
+Router routes book-related requests to Book Agent, store-policy or service
+questions to QA Agent, and review/rating requests with a book catalog ID to
+[[agent|rating-agent]]. The Book Agent can delegate complex Catalog research to
+[[agent|book-catalog-researcher]] and
 [[agent|book-recommendation-researcher]].
 
 ## HTTP and agent protocols
@@ -63,8 +65,11 @@ endpoint is separate from the per-agent A2A endpoints.
 2. The workflow's `InputValidationExecutor` rejects empty or suspicious input,
    consults the configured injection detector, and truncates overly long
    messages.
-3. Accepted input is handled by the agent handoff workflow. Invalid input
-   bypasses the agent calls.
+3. Accepted input is evaluated by `DecisionRouterExecutor`
+   (`Microsoft-Decision-1`). Non-English or out-of-scope requests short-circuit
+   to `DecisionRejectedOutputExtractor`, while in-scope requests enter the
+   selected specialist sub-workflow. Invalid input bypasses both routing and
+   agent calls.
 4. `ResponseFormatterExecutor` selects the last assistant response, removes
    detected system-prompt fragments, and normalizes its formatting.
 
@@ -80,9 +85,9 @@ and Cohere `EmbedV40`.
 Book Agent and its two researchers connect to [[service|mcp-server]] through
 the MCP client over Streamable HTTP at `/mcp`, using service discovery and
 token exchange. They load only `search_catalog`, `get_book`,
-`list_categories`, and `list_authors`. Router and QA have no MCP tools.
+`list_categories`, and `list_authors`. QA Agent has no MCP tools.
 
-All five agents use privacy middleware backed by
+All four Chat agents use privacy middleware backed by
 [[service|PresidioAPI]] in [[system|data-privacy]]. It calls
 [[command|AnalyzeText]] for non-empty text and [[command|AnonymizeText]] when
 PII is detected, filtering both input and output. Failures propagate rather
@@ -91,8 +96,9 @@ than bypassing the middleware.
 The host registers an agent-discovery client pointed at the Rating system,
 and Chat connects to the Rating-hosted agent through A2A. The A2A client
 supports gRPC, JSON-RPC, and HTTP JSON, preferring gRPC first. The Rating
-agent participates in the Chat workflow's handoff graph, receiving handoffs
-from Router and Book agents alongside QA.
+agent participates in the Chat workflow, receiving direct routes from
+`DecisionRouterExecutor` (when a book catalog ID is present) or handoffs from
+Book Agent alongside QA.
 
 ## Access and boundaries
 

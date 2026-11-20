@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <NoWarn>$(NoWarn);EXTEXP0003</NoWarn>
+    <NoWarn>$(NoWarn);EXTEXP0003;OPENAI001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Framework">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

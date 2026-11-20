@@ -1,3 +1,4 @@
+using BookWorm.Chassis.AI.Presidio.Clients;
 using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 using Microsoft.Extensions.DependencyInjection;

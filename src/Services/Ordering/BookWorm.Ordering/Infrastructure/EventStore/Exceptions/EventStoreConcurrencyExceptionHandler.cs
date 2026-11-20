@@ -49,8 +49,15 @@ internal sealed class EventStoreConcurrencyExceptionHandler(
         logBuffer.Flush();
 
         httpContext.Response.StatusCode = problemDetails.Status!.Value;
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(
+            problemDetails,
+            EventStoreExceptionSerializationContext.Default.ProblemDetails,
+            cancellationToken: cancellationToken
+        );
 
         return true;
     }
 }
+
+[JsonSerializable(typeof(ProblemDetails))]
+internal sealed partial class EventStoreExceptionSerializationContext : JsonSerializerContext;

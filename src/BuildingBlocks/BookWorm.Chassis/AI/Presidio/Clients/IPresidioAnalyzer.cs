@@ -1,6 +1,6 @@
 using Refit;
 
-namespace BookWorm.Chassis.AI.Presidio;
+namespace BookWorm.Chassis.AI.Presidio.Clients;
 
 public interface IPresidioAnalyzer
 {

@@ -68,10 +68,10 @@
         <Function>.*Trace\.Log.*</Function>
 
         <!-- Infrastructure & Extensions (aligned with SonarQube.Analysis.xml) -->
-        <Function>.*\.Infrastructure\..*</Function>
-        <Function>BookWorm\..*\.Infrastructure\..*</Function>
-        <Function>.*\.Extensions\..*</Function>
-        <Function>BookWorm\..*\.Extensions\..*</Function>
+        <Function>^[^\(&lt;]*\.Infrastructure\..*</Function>
+        <Function>^BookWorm\.[^\(&lt;]*\.Infrastructure\..*</Function>
+        <Function>^[^\(&lt;]*\.Extensions\..*</Function>
+        <Function>^BookWorm\.[^\(&lt;]*\.Extensions\..*</Function>
       </Exclude>
     </Functions>
 
