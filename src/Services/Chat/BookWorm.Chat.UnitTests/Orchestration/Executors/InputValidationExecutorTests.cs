@@ -1,4 +1,5 @@
 using BookWorm.Chat.Orchestration.Executors;
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
 namespace BookWorm.Chat.UnitTests.Orchestration.Executors;
@@ -149,5 +150,56 @@ public sealed class InputValidationExecutorTests
 
         // Assert
         result.IsAccepted.ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task GivenEmptyTurn_WhenExecutingInWorkflow_ThenShouldReturnRejection()
+    {
+        // Act
+        var result = await ExecuteWorkflowAsync(new TurnToken());
+
+        // Assert
+        result.IsAccepted.ShouldBeFalse();
+        result.Message.Role.ShouldBe(ChatRole.Assistant);
+        result.Message.Text.ShouldContain("provide more details");
+    }
+
+    [Test]
+    public async Task GivenMessagesWithoutUserRole_WhenExecutingInWorkflow_ThenShouldValidateLastMessage()
+    {
+        // Arrange
+        List<ChatMessage> messages =
+        [
+            new(ChatRole.System, "System prompt"),
+            new(ChatRole.Assistant, "Hello, how can I help?"),
+        ];
+
+        // Act
+        var result = await ExecuteWorkflowAsync(messages);
+
+        // Assert
+        result.IsAccepted.ShouldBeTrue();
+        result.Message.Role.ShouldBe(ChatRole.User);
+        result.Message.Text.ShouldBe("Hello, how can I help?");
+    }
+
+    private async Task<InputValidationResult> ExecuteWorkflowAsync<TInput>(TInput input)
+        where TInput : notnull
+    {
+        InputValidationResult? captured = null;
+        Func<InputValidationResult, InputValidationResult> capture = r =>
+        {
+            captured = r;
+            return r;
+        };
+        var captureExecutor = capture.BindAsExecutor("CaptureInputValidationResult");
+        var workflow = new WorkflowBuilder(_sut)
+            .AddEdge(_sut, captureExecutor)
+            .WithOutputFrom(captureExecutor)
+            .Build();
+
+        await using var run = await InProcessExecution.RunAsync(workflow, input);
+        captured.HasValue.ShouldBeTrue();
+        return captured.Value;
     }
 }

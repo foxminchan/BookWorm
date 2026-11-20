@@ -88,7 +88,7 @@ internal static class WorkflowRegistration
             .BindAsExecutor("RatingWorkflowExecutor");
 
         // Bind lambda executors for type extraction from validation and routing results
-        Func<InputValidationResult, AcceptedInput> extractAccepted = r => (AcceptedInput)r.Value!;
+        Func<InputValidationResult, AcceptedInput> extractAccepted = r => (AcceptedInput)r.Value;
         var acceptedExtractor = extractAccepted.BindAsExecutor("AcceptedInputExtractor");
         Func<InputValidationResult, string> extractRejected = r => r.Message.Text;
         var rejectedExtractor = extractRejected.BindAsExecutor("RejectedOutputExtractor");
