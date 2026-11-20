@@ -1,3 +1,5 @@
+using BookWorm.Chat.Orchestration;
+
 namespace BookWorm.Chat.Agents.CustomerSupport;
 
 internal static class QAAgentRegistration
@@ -14,6 +16,7 @@ internal static class QAAgentRegistration
 
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseAGUIClientContext()
                     .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
                     .UseAIContextProviders(compactionProvider)

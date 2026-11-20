@@ -11,7 +11,13 @@ internal static class EndpointMapping
         {
             app.MapAgentDiscovery("/agents");
 
-            app.MapAGUIServer(Workflows.Chat, "/ag-ui")
+            app.MapAGUIServer("/ag-ui", ctx =>
+                {
+                    var innerAgent = ctx.RequestServices.GetRequiredKeyedService<AIAgent>(
+                        Workflows.Chat
+                    );
+                    return new AGUIWorkflowAgent(innerAgent);
+                })
                 .WithSummary("Interactive AI Agent")
                 .WithTags(nameof(Chat))
                 .RequireAuthorization(Authorization.Policies.Customer)

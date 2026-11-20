@@ -49,3 +49,30 @@ export const searchBooksTool = {
     },
   },
 } as const;
+
+export const getBookDetailsParameters = z.object({
+  bookId: z.string().describe("The unique identifier of the book to retrieve"),
+});
+
+export type GetBookDetailsArgs = z.infer<typeof getBookDetailsParameters>;
+
+/**
+ * Shared `getBookDetails` tool definition used by both `useBookSearchActions`
+ * (when CopilotKit chat is active) and standalone `CopilotKitCore` WebMCP
+ * registration (when no chat agent is mounted).
+ */
+export const getBookDetailsTool = {
+  name: "getBookDetails",
+  description:
+    "Retrieve detailed information about a specific book by its ID, including description, price, authors, and rating.",
+  parameters: getBookDetailsParameters,
+  handler: async ({ bookId }: GetBookDetailsArgs): Promise<string> => {
+    const book = await booksApiClient.get(bookId);
+    return JSON.stringify(book);
+  },
+  webmcp: {
+    annotations: {
+      readOnlyHint: true,
+    },
+  },
+} as const;

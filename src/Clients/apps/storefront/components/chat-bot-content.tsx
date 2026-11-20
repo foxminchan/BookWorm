@@ -23,6 +23,7 @@ import { useBasketActions } from "@/hooks/useBasketActions";
 import { useBasketContext } from "@/hooks/useBasketContext";
 import { useBookSearchActions } from "@/hooks/useBookSearchActions";
 import { useChatAgentState } from "@/hooks/useChatAgentState";
+import { useChatSuggestions } from "@/hooks/useChatSuggestions";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { useUserContext } from "@/hooks/useUserContext";
@@ -101,8 +102,9 @@ export const ChatBotContent = forwardRef<ChatBotRef>(
 
     const triggerButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Enable copilot tools, A2UI components, and bidirectional agent state
+    // Enable copilot tools, A2UI components, suggestions, and bidirectional agent state
     useChatAgentState();
+    useChatSuggestions();
     useBasketContext();
     useUserContext();
     useBookSearchActions();

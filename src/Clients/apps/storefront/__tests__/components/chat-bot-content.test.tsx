@@ -50,6 +50,9 @@ vi.mock("@/env.mjs", () => ({
 vi.mock("@/hooks/useChatAgentState", () => ({
   useChatAgentState: vi.fn(),
 }));
+vi.mock("@/hooks/useChatSuggestions", () => ({
+  useChatSuggestions: vi.fn(),
+}));
 vi.mock("@/hooks/useBasketContext", () => ({
   useBasketContext: vi.fn(),
 }));

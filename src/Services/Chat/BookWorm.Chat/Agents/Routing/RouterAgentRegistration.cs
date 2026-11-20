@@ -1,3 +1,5 @@
+using BookWorm.Chat.Orchestration;
+
 namespace BookWorm.Chat.Agents.Routing;
 
 internal static class RouterAgentRegistration
@@ -14,6 +16,7 @@ internal static class RouterAgentRegistration
 
                 var chatClient = sp.GetRequiredService<IChatClient>()
                     .AsBuilder()
+                    .UseAGUIClientContext()
                     .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
                     .UseAIContextProviders(compactionProvider)
