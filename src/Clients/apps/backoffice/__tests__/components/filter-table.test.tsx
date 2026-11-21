@@ -290,4 +290,31 @@ describe("FilterTable", () => {
     const selectedRow = rows.find((row) => row.textContent?.includes("Item 1"));
     expect(selectedRow).toHaveAttribute("data-state", "selected");
   });
+
+  it("should synchronize controlled sorting state when sorting prop is provided", async () => {
+    const user = userEvent.setup();
+    const sortableColumns = [
+      {
+        accessorKey: "name",
+        header: ({ column }: { column: { toggleSorting: () => void } }) => (
+          <button type="button" onClick={() => column.toggleSorting()}>
+            Name
+          </button>
+        ),
+      },
+    ];
+
+    render(
+      <FilterTable
+        {...defaultProps}
+        columns={sortableColumns}
+        sorting={[{ id: "name", desc: false }]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Name" }));
+    expect(mockOnSortingChange).toHaveBeenCalledWith([
+      { id: "name", desc: true },
+    ]);
+  });
 });

@@ -3,7 +3,7 @@
 import { useCallback, useReducer } from "react";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { flexRender, useTable } from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
 import { toast } from "sonner";
 
 import {
@@ -206,12 +206,9 @@ export function SimpleTable<T extends BaseItem>({
                         className={header.id === "actions" ? "w-30" : ""}
                         scope="col"
                       >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
+                        {header.isPlaceholder ? null : (
+                          <table.FlexRender header={header} />
+                        )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -223,10 +220,7 @@ export function SimpleTable<T extends BaseItem>({
                     <TableRow key={row.id}>
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
+                          <table.FlexRender cell={cell} />
                         </TableCell>
                       ))}
                     </TableRow>

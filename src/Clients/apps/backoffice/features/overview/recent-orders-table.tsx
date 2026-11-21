@@ -5,7 +5,6 @@ import { useMemo } from "react";
 import {
   type CellContext,
   type ColumnDef,
-  flexRender,
   useTable,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -102,10 +101,7 @@ export function RecentOrdersTable({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} scope="col">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
+                    <table.FlexRender header={header} />
                   </TableHead>
                 ))}
               </TableRow>
@@ -117,10 +113,7 @@ export function RecentOrdersTable({
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      <table.FlexRender cell={cell} />
                     </TableCell>
                   ))}
                 </TableRow>

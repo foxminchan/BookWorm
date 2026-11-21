@@ -11,6 +11,7 @@ import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 import { columns } from "./columns";
 
 const getBookRowId = (row: Book) => row.id;
+const EMPTY_BOOKS: Book[] = [];
 
 type BooksTableProps = Readonly<{
   query: Omit<ListBooksQuery, "pageIndex" | "pageSize">;
@@ -21,6 +22,7 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
   const {
     pageIndex,
     pageSize,
+    sorting,
     sortingQuery,
     apiPageIndex,
     handlePaginationChange,
@@ -42,7 +44,7 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
 
   const { data, isLoading } = useBooks(fullQuery);
 
-  const books = data?.items ?? [];
+  const books = data?.items ?? EMPTY_BOOKS;
   const totalCount = data?.totalCount ?? 0;
 
   return (
@@ -56,6 +58,7 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
       pageSize={pageSize}
       isLoading={isLoading}
       onPaginationChange={handlePaginationChange}
+      sorting={sorting}
       onSortingChange={handleSortingChange}
       highlightedId={highlightedBookId}
       getRowId={getBookRowId}
