@@ -1,4 +1,3 @@
-using System.Reflection;
 using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
@@ -16,7 +15,6 @@ using BookWorm.Catalog.Grpc.Services;
 using BookWorm.Catalog.UnitTests.Grpc.Context;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.SharedKernel.Results;
-using BookWorm.SharedKernel.SeedWork;
 using Grpc.Core;
 using Mediator;
 using Microsoft.Extensions.Logging;
@@ -120,26 +118,16 @@ public sealed class BookServiceTests
         var bookRequest = new GetBookRequest { BookId = bookId.ToString() };
         var context = new TestServerCallContext();
 
-        var book = new Book(
+        var book = new BookSummary(
+            BookId.From(bookId),
             "Test Book",
-            "Test Description",
-            "test-image.jpg",
             29.99m,
             19.99m,
-            CategoryId.From(Guid.CreateVersion7()),
-            PublisherId.From(Guid.CreateVersion7()),
-            [AuthorId.From(Guid.CreateVersion7())]
+            Status.InStock
         );
-        // Use reflection to set the id property since it's not settable directly
-        typeof(Entity<BookId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(book, BookId.From(bookId));
 
         _bookRepositoryMock
-            .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
+            .Setup(repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None))
             .ReturnsAsync(book);
 
         // Act
@@ -154,7 +142,7 @@ public sealed class BookServiceTests
         result.Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
-            repo => repo.GetByIdAsync(bookId, CancellationToken.None),
+            repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None),
             Times.Once
         );
     }
@@ -168,8 +156,8 @@ public sealed class BookServiceTests
         var context = new TestServerCallContext();
 
         _bookRepositoryMock
-            .Setup(repo => repo.GetByIdAsync(nonExistentBookId, CancellationToken.None))
-            .ReturnsAsync((Book)null!);
+            .Setup(repo => repo.GetSummaryByIdAsync(nonExistentBookId, CancellationToken.None))
+            .ReturnsAsync((BookSummary)null!);
 
         // Act & Assert
         var exception = await Should.ThrowAsync<RpcException>(async () =>
@@ -180,7 +168,7 @@ public sealed class BookServiceTests
         exception.Status.Detail.ShouldBe($"Book with id {nonExistentBookId} not found.");
 
         _bookRepositoryMock.Verify(
-            repo => repo.GetByIdAsync(nonExistentBookId, CancellationToken.None),
+            repo => repo.GetSummaryByIdAsync(nonExistentBookId, CancellationToken.None),
             Times.Once
         );
     }
@@ -193,27 +181,16 @@ public sealed class BookServiceTests
         var bookRequest = new GetBookRequest { BookId = bookId.ToString() };
         var context = new TestServerCallContext();
 
-        var book = new Book(
+        var book = new BookSummary(
+            BookId.From(bookId),
             "Out of Stock Book",
-            "Test Description",
-            "test-image.jpg",
             29.99m,
             null,
-            CategoryId.From(Guid.CreateVersion7()),
-            PublisherId.From(Guid.CreateVersion7()),
-            [AuthorId.From(Guid.CreateVersion7())]
+            Status.OutOfStock
         );
-        // Use reflection to set the id and Status properties
-        typeof(Entity<BookId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(book, BookId.From(bookId));
-        typeof(Book).GetProperty("Status")?.SetValue(book, Status.OutOfStock);
 
         _bookRepositoryMock
-            .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
+            .Setup(repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None))
             .ReturnsAsync(book);
 
         // Act
@@ -236,45 +213,16 @@ public sealed class BookServiceTests
         };
         var context = new TestServerCallContext();
 
-        List<Book> books =
+        List<BookSummary> books =
         [
-            new(
-                "Test Book 1",
-                "Test Description",
-                "test-image.jpg",
-                29.99m,
-                19.99m,
-                CategoryId.From(Guid.CreateVersion7()),
-                PublisherId.From(Guid.CreateVersion7()),
-                [AuthorId.From(Guid.CreateVersion7())]
-            ),
-            new(
-                "Test Book 2",
-                "Test Description",
-                "test-image.jpg",
-                29.99m,
-                19.99m,
-                CategoryId.From(Guid.CreateVersion7()),
-                PublisherId.From(Guid.CreateVersion7()),
-                [AuthorId.From(Guid.CreateVersion7())]
-            ),
+            new(BookId.From(bookIds[0]), "Test Book 1", 29.99m, 19.99m, Status.InStock),
+            new(BookId.From(bookIds[1]), "Test Book 2", 29.99m, 19.99m, Status.InStock),
         ];
-        // Use reflection to set the id properties since they're not settable directly
-        typeof(Entity<BookId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(books[0], BookId.From(bookIds[0]));
-        typeof(Entity<BookId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(books[1], BookId.From(bookIds[1]));
 
         _bookRepositoryMock
-            .Setup(repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None))
+            .Setup(repo =>
+                repo.ListSummariesAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None)
+            )
             .ReturnsAsync(books);
 
         // Act
@@ -296,7 +244,7 @@ public sealed class BookServiceTests
         result.Books[1].Status.ShouldBe(BookStatus.InStock);
 
         _bookRepositoryMock.Verify(
-            repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None),
+            repo => repo.ListSummariesAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None),
             Times.Once
         );
     }
@@ -320,25 +268,16 @@ public sealed class BookServiceTests
             Mock.Of<ISender>()
         );
 
-        var book = new Book(
+        var book = new BookSummary(
+            BookId.From(bookId),
             "Test Book",
-            "Test Description",
-            "test-image.jpg",
             29.99m,
             19.99m,
-            CategoryId.From(Guid.CreateVersion7()),
-            PublisherId.From(Guid.CreateVersion7()),
-            [AuthorId.From(Guid.CreateVersion7())]
+            Status.InStock
         );
-        typeof(Entity<BookId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(book, BookId.From(bookId));
 
         _bookRepositoryMock
-            .Setup(repo => repo.GetByIdAsync(bookId, CancellationToken.None))
+            .Setup(repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None))
             .ReturnsAsync(book);
 
         // Act
@@ -384,44 +323,16 @@ public sealed class BookServiceTests
             Mock.Of<ISender>()
         );
 
-        List<Book> books =
+        List<BookSummary> books =
         [
-            new(
-                "Test Book 1",
-                "Test Description",
-                "test-image.jpg",
-                29.99m,
-                19.99m,
-                CategoryId.From(Guid.CreateVersion7()),
-                PublisherId.From(Guid.CreateVersion7()),
-                [AuthorId.From(Guid.CreateVersion7())]
-            ),
-            new(
-                "Test Book 2",
-                "Test Description",
-                "test-image.jpg",
-                29.99m,
-                19.99m,
-                CategoryId.From(Guid.CreateVersion7()),
-                PublisherId.From(Guid.CreateVersion7()),
-                [AuthorId.From(Guid.CreateVersion7())]
-            ),
+            new(BookId.From(bookIds[0]), "Test Book 1", 29.99m, 19.99m, Status.InStock),
+            new(BookId.From(bookIds[1]), "Test Book 2", 29.99m, 19.99m, Status.InStock),
         ];
-        typeof(Entity<BookId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(books[0], BookId.From(bookIds[0]));
-        typeof(Entity<BookId>)
-            .GetProperty(
-                nameof(Entity<>.Id),
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly
-            )!
-            .SetValue(books[1], BookId.From(bookIds[1]));
 
         _bookRepositoryMock
-            .Setup(repo => repo.ListAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None))
+            .Setup(repo =>
+                repo.ListSummariesAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None)
+            )
             .ReturnsAsync(books);
 
         // Act

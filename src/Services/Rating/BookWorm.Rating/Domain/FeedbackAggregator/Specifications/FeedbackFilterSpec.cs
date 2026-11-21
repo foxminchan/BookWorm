@@ -1,16 +1,18 @@
-﻿using BookWorm.Chassis.Specification;
+using BookWorm.Chassis.Specification;
 using BookWorm.Chassis.Specification.Builders;
 
 namespace BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 
 public sealed class FeedbackFilterSpec : Specification<Feedback>
 {
-    public FeedbackFilterSpec(Guid bookId, string? orderBy, bool isDescending)
+    public FeedbackFilterSpec(Guid bookId)
     {
-        Query.AsNoTracking();
+        Query.AsNoTracking().Where(f => f.BookId == bookId);
+    }
 
-        Query.Where(f => f.BookId == bookId);
-
+    public FeedbackFilterSpec(Guid bookId, string? orderBy, bool isDescending)
+        : this(bookId)
+    {
         if (!string.IsNullOrWhiteSpace(orderBy))
         {
             Query.ApplyOrdering(orderBy, isDescending);

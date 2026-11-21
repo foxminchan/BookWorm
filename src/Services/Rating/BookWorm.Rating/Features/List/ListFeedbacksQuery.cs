@@ -1,4 +1,4 @@
-﻿using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
+using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.SharedKernel.Results;
 
 namespace BookWorm.Rating.Features.List;
@@ -37,11 +37,7 @@ internal sealed class ListFeedbacksHandler(IFeedbackRepository repository)
 
         var feedbacks = await repository.ListAsync(filterSpec, cancellationToken);
 
-        var countSpec = new FeedbackFilterSpec(
-            request.BookId,
-            request.OrderBy,
-            request.IsDescending
-        );
+        var countSpec = new FeedbackFilterSpec(request.BookId);
 
         var totalItems = await repository.CountAsync(countSpec, cancellationToken);
 

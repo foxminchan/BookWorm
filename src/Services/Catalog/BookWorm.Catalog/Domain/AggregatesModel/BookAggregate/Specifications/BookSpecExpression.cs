@@ -8,7 +8,7 @@ internal static class BookSpecExpression
     {
         public ISpecificationBuilder<Book> ApplyOrdering(string? orderBy, bool isDescending)
         {
-            return orderBy switch
+            var ordered = orderBy switch
             {
                 nameof(Book.Name) => isDescending
                     ? builder.OrderByDescending(x => x.Name)
@@ -26,6 +26,8 @@ internal static class BookSpecExpression
                     ? builder.OrderByDescending(x => x.Name)
                     : builder.OrderBy(x => x.Name),
             };
+
+            return isDescending ? ordered.ThenByDescending(x => x.Id) : ordered.ThenBy(x => x.Id);
         }
 
         public void ApplyPaging(int pageIndex, int pageSize)

@@ -22,5 +22,6 @@ public interface IOrderRepository : IRepository<Order>
     );
 
     Task<long> CountAsync(ISpecification<Order> spec, CancellationToken cancellationToken);
+    Task<bool> AnyAsync(ISpecification<Order> spec, CancellationToken cancellationToken);
     void Delete(Order order);
 }

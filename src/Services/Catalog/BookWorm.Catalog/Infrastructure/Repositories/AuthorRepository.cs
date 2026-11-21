@@ -41,4 +41,14 @@ internal sealed class AuthorRepository(CatalogDbContext context) : IAuthorReposi
             .GetQuery(context.Authors.AsQueryable(), spec)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<bool> AnyAsync(
+        ISpecification<Author> spec,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await Specification
+            .GetQuery(context.Authors.AsNoTracking(), spec)
+            .AnyAsync(cancellationToken);
+    }
 }

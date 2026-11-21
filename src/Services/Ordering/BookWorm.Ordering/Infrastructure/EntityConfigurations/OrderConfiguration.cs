@@ -30,6 +30,12 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Navigation(x => x.OrderItems).AutoInclude();
 
+        builder.HasIndex(e => new { e.BuyerId, e.CreatedAt });
+
+        builder.HasIndex(e => new { e.Status, e.CreatedAt });
+
+        builder.HasIndex(e => e.CreatedAt);
+
         builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

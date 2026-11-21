@@ -53,7 +53,7 @@ internal sealed class BookService(
             );
         }
 
-        var book = await repository.GetByIdAsync(
+        var book = await repository.GetSummaryByIdAsync(
             Guid.Parse(request.BookId),
             context.CancellationToken
         )
@@ -79,7 +79,7 @@ internal sealed class BookService(
             );
         }
 
-        var books = await repository.ListAsync(
+        var books = await repository.ListSummariesAsync(
             new BookFilterSpec([.. request.BookIds.Select(Guid.Parse)]),
             context.CancellationToken
         );
@@ -212,19 +212,19 @@ internal sealed class BookService(
         };
     }
 
-    private static GetBookResponse MapToBookResponse(Book book)
+    private static GetBookResponse MapToBookResponse(BookSummary book)
     {
         return new()
         {
             Id = book.Id.ToString(),
             Name = book.Name,
-            Price = book.Price?.OriginalPrice,
-            PriceSale = book.Price?.DiscountPrice,
+            Price = book.OriginalPrice,
+            PriceSale = book.DiscountPrice,
             Status = book.Status == Status.InStock ? BookStatus.InStock : BookStatus.OutOfStock,
         };
     }
 
-    private static GetBooksResponse MapToBookResponse(IReadOnlyList<Book> books)
+    private static GetBooksResponse MapToBookResponse(IReadOnlyList<BookSummary> books)
     {
         return new() { Books = { books.Select(MapToBookResponse) } };
     }

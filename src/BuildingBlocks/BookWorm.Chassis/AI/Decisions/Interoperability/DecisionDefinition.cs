@@ -41,7 +41,7 @@ public sealed partial class DecisionDefinition<TResult>
         ArgumentNullException.ThrowIfNull(configure);
 
         var options = serializerOptions ?? AIJsonUtilities.DefaultOptions;
-        var resultTypeInfo = (JsonTypeInfo<TResult>)options.GetTypeInfo(typeof(TResult));
+        var resultTypeInfo = options.GetTypeInfo<TResult>();
 
         var builder = new Builder(options, resultTypeInfo);
         configure(builder);

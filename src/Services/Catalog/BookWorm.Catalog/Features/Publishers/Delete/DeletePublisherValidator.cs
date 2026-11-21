@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 
 namespace BookWorm.Catalog.Features.Publishers.Delete;
 
@@ -17,10 +17,10 @@ internal sealed class PublisherValidator : AbstractValidator<Guid>
         RuleFor(x => x)
             .MustAsync(
                 async (publisherId, cancellationToken) =>
-                    await repository.CountAsync(
+                    !await repository.AnyAsync(
                         new BookFilterSpec(null, [publisherId]),
                         cancellationToken
-                    ) == 0
+                    )
             )
             .WithMessage("Publisher has books and cannot be deleted");
     }

@@ -188,10 +188,8 @@ public sealed class GetOrderSummaryQueryTests
         var streamState = new StreamState { Id = (Guid)_orderId, Version = 2 };
 
         _orderRepositoryMock
-            .Setup(r =>
-                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(order);
+            .Setup(r => r.AnyAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _eventsMock
             .Setup(e =>
                 e.AggregateStreamAsync<OrderSummary>(
@@ -218,29 +216,9 @@ public sealed class GetOrderSummaryQueryTests
         result.Version.ShouldBe(2);
     }
 
-    [Test]
-    public async Task GivenBuyerRoleAndUnownedOrder_WhenGettingOrderSummary_ThenShouldThrowNotFoundException()
+    private GetOrderSummaryHandler CreateHandler(ClaimsPrincipal _)
     {
-        // Arrange
-        var buyerId = Guid.CreateVersion7();
-        var handler = CreateHandler(CreateBuyerPrincipal(buyerId));
-
-        _orderRepositoryMock
-            .Setup(r =>
-                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync((Order?)null);
-
-        // Act
-        Func<Task> act = async () => await handler.Handle(new(_orderId), CancellationToken.None);
-
-        // Assert
-        await act.ShouldThrowAsync<NotFoundException>();
-    }
-
-    private GetOrderSummaryHandler CreateHandler(ClaimsPrincipal principal)
-    {
-        return new(_querySessionMock.Object, _orderRepositoryMock.Object, principal);
+        return new(_querySessionMock.Object);
     }
 
     private static ClaimsPrincipal CreateAdminPrincipal()

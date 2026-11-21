@@ -11,4 +11,6 @@ public interface IAuthorRepository : IRepository<Author>
         ISpecification<Author> spec,
         CancellationToken cancellationToken = default
     );
+
+    Task<bool> AnyAsync(ISpecification<Author> spec, CancellationToken cancellationToken = default);
 }

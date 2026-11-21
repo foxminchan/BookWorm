@@ -19,6 +19,43 @@ internal sealed class BookRepository(CatalogDbContext context) : IBookRepository
         return await context.Books.FindAsync([id], cancellationToken);
     }
 
+    public async Task<BookSummary?> GetSummaryByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var bookId = BookId.From(id);
+        return await context
+            .Books.IgnoreAutoIncludes()
+            .AsNoTracking()
+            .Where(book => book.Id == bookId)
+            .Select(book => new BookSummary(
+                book.Id,
+                book.Name,
+                book.Price != null ? book.Price.OriginalPrice : null,
+                book.Price != null ? book.Price.DiscountPrice : null,
+                book.Status
+            ))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<BookSummary>> ListSummariesAsync(
+        ISpecification<Book> spec,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await Specification
+            .GetQuery(context.Books.IgnoreAutoIncludes().AsNoTracking(), spec)
+            .Select(book => new BookSummary(
+                book.Id,
+                book.Name,
+                book.Price != null ? book.Price.OriginalPrice : null,
+                book.Price != null ? book.Price.DiscountPrice : null,
+                book.Status
+            ))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Book>> ListAsync(
         ISpecification<Book> spec,
         CancellationToken cancellationToken = default
@@ -33,6 +70,16 @@ internal sealed class BookRepository(CatalogDbContext context) : IBookRepository
     )
     {
         return await Specification.GetQuery(context.Books, spec).LongCountAsync(cancellationToken);
+    }
+
+    public async Task<bool> AnyAsync(
+        ISpecification<Book> spec,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await Specification
+            .GetQuery(context.Books.IgnoreAutoIncludes().AsNoTracking(), spec)
+            .AnyAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<BookCategoryCount>> CountByCategoryAsync(

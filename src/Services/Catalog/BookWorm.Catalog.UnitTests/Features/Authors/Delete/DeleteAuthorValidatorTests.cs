@@ -1,7 +1,6 @@
 using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Catalog.Features.Authors.Delete;
-using BookWorm.Catalog.UnitTests.Fakers;
 
 namespace BookWorm.Catalog.UnitTests.Features.Authors.Delete;
 
@@ -24,12 +23,9 @@ public sealed class DeleteAuthorValidatorTests
         var authorId = AuthorId.From(Guid.CreateVersion7());
         _repositoryMock
             .Setup(repo =>
-                repo.FirstOrDefaultAsync(
-                    It.IsAny<BookAuthorFilterSpec>(),
-                    It.IsAny<CancellationToken>()
-                )
+                repo.AnyAsync(It.IsAny<BookAuthorFilterSpec>(), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync((Author?)null);
+            .ReturnsAsync(false);
 
         var command = new DeleteAuthorCommand(authorId);
 
@@ -45,17 +41,12 @@ public sealed class DeleteAuthorValidatorTests
     {
         // Arrange
         var authorId = AuthorId.From(Guid.CreateVersion7());
-        var authorFaker = new AuthorFaker();
-        var author = authorFaker.Generate()[0];
 
         _repositoryMock
             .Setup(repo =>
-                repo.FirstOrDefaultAsync(
-                    It.IsAny<BookAuthorFilterSpec>(),
-                    It.IsAny<CancellationToken>()
-                )
+                repo.AnyAsync(It.IsAny<BookAuthorFilterSpec>(), It.IsAny<CancellationToken>())
             )
-            .ReturnsAsync(author);
+            .ReturnsAsync(true);
 
         var command = new DeleteAuthorCommand(authorId);
 

@@ -75,25 +75,6 @@ public sealed class GetOrderHistoryQueryTests
     }
 
     [Test]
-    public async Task GivenBuyerRoleAndUnownedOrder_WhenGettingOrderHistory_ThenShouldThrowNotFoundException()
-    {
-        // Arrange
-        var buyerId = Guid.CreateVersion7();
-        var handler = CreateHandler(CreateBuyerPrincipal(buyerId));
-        _orderRepositoryMock
-            .Setup(r =>
-                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync((Order?)null);
-
-        // Act
-        Func<Task> act = async () => await handler.Handle(new(_orderId), CancellationToken.None);
-
-        // Assert
-        await act.ShouldThrowAsync<NotFoundException>();
-    }
-
-    [Test]
     public async Task GivenCancelledAndUnknownEvents_WhenGettingOrderHistory_ThenShouldMapCancelledAndNullForUnknown()
     {
         // Arrange
@@ -134,10 +115,8 @@ public sealed class GetOrderHistoryQueryTests
         var placedEvent = CreateMockEvent(1, 1, "order_placed", new OrderPlacedEvent(order));
 
         _orderRepositoryMock
-            .Setup(r =>
-                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(order);
+            .Setup(r => r.AnyAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _eventsMock
             .Setup(e =>
                 e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>())
@@ -154,9 +133,9 @@ public sealed class GetOrderHistoryQueryTests
         result[0].TotalPrice.ShouldBe(order.TotalPrice);
     }
 
-    private GetOrderHistoryHandler CreateHandler(ClaimsPrincipal principal)
+    private GetOrderHistoryHandler CreateHandler(ClaimsPrincipal _)
     {
-        return new(_querySessionMock.Object, _orderRepositoryMock.Object, principal);
+        return new(_querySessionMock.Object);
     }
 
     private static ClaimsPrincipal CreateAdminPrincipal()

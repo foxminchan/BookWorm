@@ -134,8 +134,14 @@ namespace BookWorm.Catalog.Infrastructure.Migrations
                     b.HasIndex("CategoryId")
                         .HasDatabaseName("ix_books_category_id");
 
+                    b.HasIndex("Name")
+                        .HasDatabaseName("ix_books_name");
+
                     b.HasIndex("PublisherId")
                         .HasDatabaseName("ix_books_publisher_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_books_status");
 
                     b.ToTable("books", (string)null);
                 });

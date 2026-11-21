@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using BookWorm.Chassis.AI.Decisions.Abstractions;
 
 namespace BookWorm.Chassis.AI.Decisions.Interoperability;
@@ -34,7 +33,7 @@ public sealed class DecisionResponse<TResult>
     {
         ArgumentNullException.ThrowIfNull(selector);
 
-        var typeInfo = (JsonTypeInfo<TResult>)_serializerOptions.GetTypeInfo(typeof(TResult));
+        var typeInfo = _serializerOptions.GetTypeInfo<TResult>();
         var questionId = DecisionDefinition<TResult>.ResolvePropertyJsonName(
             selector,
             typeInfo,

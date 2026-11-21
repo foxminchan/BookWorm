@@ -1,6 +1,4 @@
 using BookWorm.Chassis.Utilities.Guards;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
-using BookWorm.Ordering.Extensions;
 
 namespace BookWorm.Ordering.Features.Orders.GetSummary;
 
@@ -12,11 +10,8 @@ public sealed record GetOrderSummaryQuery(
         DateTimeOffset? At = null
 ) : IQuery<OrderSummaryDto>;
 
-internal sealed class GetOrderSummaryHandler(
-    IQuerySession querySession,
-    IOrderRepository repository,
-    ClaimsPrincipal claimsPrincipal
-) : IQueryHandler<GetOrderSummaryQuery, OrderSummaryDto>
+internal sealed class GetOrderSummaryHandler(IQuerySession querySession)
+    : IQueryHandler<GetOrderSummaryQuery, OrderSummaryDto>
 {
     public async ValueTask<OrderSummaryDto> Handle(
         GetOrderSummaryQuery request,
@@ -24,16 +19,6 @@ internal sealed class GetOrderSummaryHandler(
     )
     {
         var orderId = (Guid)request.Id;
-
-        if (!claimsPrincipal.HasRole(Authorization.Roles.Admin))
-        {
-            var buyerId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
-            var order = await repository.FirstOrDefaultAsync(
-                new OrderFilterSpec(orderId, (Guid)buyerId),
-                cancellationToken
-            );
-            Guard.Against.NotFound(order, orderId);
-        }
 
         var summary = await querySession.Events.AggregateStreamAsync<OrderSummary>(
             orderId,

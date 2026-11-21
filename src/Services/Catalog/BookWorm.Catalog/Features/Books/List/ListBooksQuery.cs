@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Chassis.AI.Search;
 using BookWorm.SharedKernel.Results;
 
@@ -81,16 +81,24 @@ internal sealed class ListBooksHandler(
 
         var books = await repository.ListAsync(filterSpec, cancellationToken);
 
-        var countSpec = new BookFilterSpec(
-            request.MinPrice,
-            request.MaxPrice,
-            request.CategoryId,
-            request.PublisherId,
-            request.AuthorIds,
-            ids
-        );
+        long totalItems;
+        if (ids.Length > 0 && ids.Length < request.PageSize && request.PageIndex == 1)
+        {
+            totalItems = books.Count;
+        }
+        else
+        {
+            var countSpec = new BookFilterSpec(
+                request.MinPrice,
+                request.MaxPrice,
+                request.CategoryId,
+                request.PublisherId,
+                request.AuthorIds,
+                ids
+            );
 
-        var totalItems = await repository.CountAsync(countSpec, cancellationToken);
+            totalItems = await repository.CountAsync(countSpec, cancellationToken);
+        }
 
         var results = mapper.Map(books);
 
