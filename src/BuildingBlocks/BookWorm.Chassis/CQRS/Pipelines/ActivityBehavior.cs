@@ -99,7 +99,7 @@ file static class ActivityBehaviorMetadata
         });
     }
 
-    private readonly record struct MessageMetadata(
+    public readonly record struct MessageMetadata(
         string MessageType,
         string HandlerName,
         string ActivityName,
