@@ -65,6 +65,9 @@ vi.mock("@/hooks/useBookSearchActions", () => ({
 vi.mock("@/hooks/useA2UIComponents", () => ({
   useA2UIComponents: vi.fn(),
 }));
+vi.mock("@/hooks/useRouteDisambiguation", () => ({
+  useRouteDisambiguation: vi.fn(),
+}));
 vi.mock("@/hooks/useBasketActions", () => ({
   useBasketActions: () => ({
     ConfirmationDialog: () => <div data-testid="confirmation-dialog" />,
