@@ -84,13 +84,10 @@ export function HeaderSearch() {
                   const { ref: fieldRef, ...fieldRest } = field;
                   return (
                     <FormItem>
+                      <Label htmlFor="header-search-input" className="sr-only">
+                        Search books
+                      </Label>
                       <FormControl>
-                        <Label
-                          htmlFor="header-search-input"
-                          className="sr-only"
-                        >
-                          Search books
-                        </Label>
                         <Input
                           id="header-search-input"
                           ref={(node) => {

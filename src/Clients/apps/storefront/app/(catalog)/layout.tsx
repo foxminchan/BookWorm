@@ -1,20 +1,11 @@
 import type React from "react";
 
-import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { StorefrontShell } from "@/components/storefront-shell";
 
-export default function MainLayout({
+export default function CatalogLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <div className="bg-background flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1">{children}</main>
-      <Footer />
-      <MobileBottomNav />
-    </div>
-  );
+  return <StorefrontShell>{children}</StorefrontShell>;
 }

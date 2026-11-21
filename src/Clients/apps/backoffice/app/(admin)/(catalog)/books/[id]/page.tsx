@@ -1,5 +1,16 @@
-import { PageHeader } from "@/components/page-header";
+import type { Metadata } from "next";
+
+import { createMetadata } from "@workspace/seo/metadata";
+
+import { PageContainer } from "@/components/page-container";
+import { APP_CONFIG } from "@/config/app-config";
 import { BookForm } from "@/features/books/book-form";
+
+export const metadata: Metadata = createMetadata({
+  title: "Edit Book",
+  description: "Modify the details of the book",
+  appName: APP_CONFIG.name,
+});
 
 type EditBookPageProps = {
   params: Promise<{ id: string }>;
@@ -17,13 +28,12 @@ export default async function EditBookPage({
   const { id } = await params;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Edit Book"
-        description="Modify the details of the book"
-        breadcrumbs={breadcrumbs}
-      />
+    <PageContainer
+      title="Edit Book"
+      description="Modify the details of the book"
+      breadcrumbs={breadcrumbs}
+    >
       <BookForm bookId={id} />
-    </div>
+    </PageContainer>
   );
 }

@@ -1,73 +1,16 @@
-"use client";
+import type { Metadata } from "next";
 
-import dynamic from "next/dynamic";
+import { createMetadata } from "@workspace/seo/metadata";
 
-import { Button } from "@workspace/ui/components/button";
+import { APP_CONFIG } from "@/config/app-config";
+import { OverviewDashboard } from "@/features/overview/overview-dashboard";
 
-import { KPICards } from "@/features/overview/kpi-cards";
-import { RecentOrdersTable } from "@/features/overview/recent-orders-table";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+export const metadata: Metadata = createMetadata({
+  title: "Overview",
+  description: APP_CONFIG.description,
+  appName: APP_CONFIG.name,
+});
 
-// Dynamic imports for heavy recharts-based components (~300KB)
-const OrdersRevenueChart = dynamic(
-  () =>
-    import("@/features/overview/orders-revenue-chart").then(
-      (m) => m.OrdersRevenueChart,
-    ),
-  { ssr: false },
-);
-
-const BooksCategoryChart = dynamic(
-  () =>
-    import("@/features/overview/books-category-chart").then(
-      (m) => m.BooksCategoryChart,
-    ),
-  { ssr: false },
-);
-
-export default function OverviewTab() {
-  const { data, isLoading, error, isDisconnected, refetch } =
-    useDashboardStats();
-
-  if (error && !data) {
-    return (
-      <div role="alert" className="space-y-4">
-        <p>Unable to load dashboard statistics.</p>
-        <Button onClick={() => void refetch()}>Retry</Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {isDisconnected && (
-        <output className="text-muted-foreground text-sm">
-          Live updates are reconnecting. Showing the last available statistics.
-        </output>
-      )}
-      <KPICards
-        totalOrders={data?.totalOrders ?? 0}
-        totalRevenue={data?.totalRevenue ?? 0}
-        totalCustomers={data?.totalCustomers ?? 0}
-        totalBooks={data?.totalBooks ?? 0}
-        isLoading={isLoading}
-      />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <OrdersRevenueChart
-          dailyOrders={data?.dailyOrders ?? []}
-          isLoading={isLoading}
-        />
-        <BooksCategoryChart
-          categories={data?.categories ?? []}
-          isLoading={isLoading}
-        />
-      </div>
-
-      <RecentOrdersTable
-        orders={data?.recentOrders ?? []}
-        isLoading={isLoading}
-      />
-    </div>
-  );
+export default function OverviewPage() {
+  return <OverviewDashboard />;
 }

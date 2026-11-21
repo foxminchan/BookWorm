@@ -19,6 +19,7 @@ import { Label } from "@workspace/ui/components/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -76,11 +77,13 @@ export function ClassificationCard({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -105,11 +108,13 @@ export function ClassificationCard({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {publishers.map((pub) => (
-                        <SelectItem key={pub.id} value={pub.id}>
-                          {pub.name}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        {publishers.map((pub) => (
+                          <SelectItem key={pub.id} value={pub.id}>
+                            {pub.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -122,21 +127,24 @@ export function ClassificationCard({
                 Authors
               </legend>
               <div className="space-y-2">
-                {authors.map((author) => (
-                  <div key={author.id} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`author-${author.id}`}
-                      checked={selectedAuthors.includes(author.id)}
-                      onCheckedChange={() => onToggleAuthor(author.id)}
-                    />
-                    <Label
-                      htmlFor={`author-${author.id}`}
-                      className="text-foreground cursor-pointer text-sm font-normal"
-                    >
-                      {author.name}
-                    </Label>
-                  </div>
-                ))}
+                {(() => {
+                  const selectedAuthorSet = new Set(selectedAuthors);
+                  return authors.map((author) => (
+                    <div key={author.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`author-${author.id}`}
+                        checked={selectedAuthorSet.has(author.id)}
+                        onCheckedChange={() => onToggleAuthor(author.id)}
+                      />
+                      <Label
+                        htmlFor={`author-${author.id}`}
+                        className="text-foreground cursor-pointer text-sm font-normal"
+                      >
+                        {author.name}
+                      </Label>
+                    </div>
+                  ));
+                })()}
               </div>
               {selectedAuthors.length === 0 && (
                 <p

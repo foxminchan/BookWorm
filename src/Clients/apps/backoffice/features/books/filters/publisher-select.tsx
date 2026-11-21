@@ -5,6 +5,7 @@ import { Label } from "@workspace/ui/components/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -41,11 +42,13 @@ export function PublisherSelect({ value, onChange }: PublisherSelectProps) {
           <SelectValue placeholder="All Publishers" />
         </SelectTrigger>
         <SelectContent>
-          {publishers?.map((pub) => (
-            <SelectItem key={pub.id} value={pub.id}>
-              {pub.name}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {publishers?.map((pub) => (
+              <SelectItem key={pub.id} value={pub.id}>
+                {pub.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>

@@ -21,12 +21,17 @@ export default function OrderDetailHeader({
 }: Readonly<OrderDetailHeaderProps>) {
   return (
     <div className="mb-8">
-      <Button variant="ghost" className="mb-4 -ml-2 gap-2" asChild>
-        <Link href="/account/orders">
-          <ArrowLeft className="size-4" />
-          Back to Orders
-        </Link>
-      </Button>
+      <Button
+        render={
+          <Link href="/account/orders">
+            <ArrowLeft className="size-4" />
+            Back to Orders
+          </Link>
+        }
+        nativeButton={false}
+        variant="ghost"
+        className="mb-4 -ml-2 gap-2"
+      />
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <h1 className="font-serif text-4xl">Order {orderId}</h1>
         <Badge className={`${getOrderStatusColor(status)} border-0 text-sm`}>

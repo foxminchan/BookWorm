@@ -29,6 +29,10 @@ export function usePaginatedTable(options?: UsePaginatedTableOptions) {
     setSorting(newSorting);
   }, []);
 
+  const resetPage = useCallback(() => {
+    setPageIndex(0);
+  }, []);
+
   const sortingQuery = useMemo(
     () =>
       sorting.length > 0 && sorting[0]
@@ -49,5 +53,6 @@ export function usePaginatedTable(options?: UsePaginatedTableOptions) {
     apiPageIndex: pageIndex + 1,
     handlePaginationChange,
     handleSortingChange,
+    resetPage,
   };
 }

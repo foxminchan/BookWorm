@@ -1,7 +1,9 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useId, useState } from "react";
+
+import { toast } from "sonner";
 
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -12,6 +14,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog";
 import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
 
 type SimpleDialogProps = {
   open: boolean;
@@ -37,13 +40,19 @@ export function SimpleDialog({
   submittingLabel = "Submitting...",
 }: Readonly<SimpleDialogProps>) {
   const [value, setValue] = useState("");
+  const inputId = useId();
 
   const handleSubmit = useCallback(async () => {
     const trimmed = value.trim();
     if (!trimmed || isLoading) return;
 
-    await onSubmit(trimmed);
-    setValue("");
+    try {
+      await onSubmit(trimmed);
+      setValue("");
+    } catch (error) {
+      console.error("Dialog submission failed:", error);
+      toast.error("Failed to save changes. Please try again.");
+    }
   }, [value, isLoading, onSubmit]);
 
   const handleKeyDown = useCallback(
@@ -73,7 +82,11 @@ export function SimpleDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          <Label htmlFor={inputId} className="sr-only">
+            {placeholder}
+          </Label>
           <Input
+            id={inputId}
             placeholder={placeholder}
             value={value}
             onChange={(e) => setValue(e.target.value)}

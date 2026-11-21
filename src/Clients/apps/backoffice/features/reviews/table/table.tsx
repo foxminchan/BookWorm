@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
+
 import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
 import type { ListFeedbacksQuery } from "@workspace/types/rating";
+import { TooltipProvider } from "@workspace/ui/components/tooltip";
 
 import { FilterTable } from "@/components/filter-table";
 import { usePaginatedTable } from "@/hooks/usePaginatedTable";
@@ -20,7 +23,12 @@ export function ReviewsTable({ bookId }: ReviewsTableProps) {
     apiPageIndex,
     handlePaginationChange,
     handleSortingChange,
+    resetPage,
   } = usePaginatedTable();
+
+  useEffect(() => {
+    resetPage();
+  }, [bookId, resetPage]);
 
   const query: ListFeedbacksQuery = {
     bookId,
@@ -35,17 +43,19 @@ export function ReviewsTable({ bookId }: ReviewsTableProps) {
   const totalCount = data?.totalCount ?? 0;
 
   return (
-    <FilterTable
-      columns={reviewsColumns}
-      data={reviews}
-      title="Book Reviews"
-      description={`Total: ${totalCount} reviews`}
-      totalCount={totalCount}
-      pageIndex={pageIndex}
-      pageSize={pageSize}
-      isLoading={isLoading}
-      onPaginationChange={handlePaginationChange}
-      onSortingChange={handleSortingChange}
-    />
+    <TooltipProvider>
+      <FilterTable
+        columns={reviewsColumns}
+        data={reviews}
+        title="Book Reviews"
+        description={`Total: ${totalCount} reviews`}
+        totalCount={totalCount}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        isLoading={isLoading}
+        onPaginationChange={handlePaginationChange}
+        onSortingChange={handleSortingChange}
+      />
+    </TooltipProvider>
   );
 }

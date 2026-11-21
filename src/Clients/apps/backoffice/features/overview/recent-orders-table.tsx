@@ -96,6 +96,7 @@ export function RecentOrdersTable({
       </CardHeader>
       <CardContent>
         <Table>
+          <caption className="sr-only">Recent orders</caption>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

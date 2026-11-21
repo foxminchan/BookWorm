@@ -75,7 +75,7 @@ export default function BookGrid({
       >
         {books.map((book) => (
           <li key={book.id}>
-            <Link href={`/shop/${book.id}`}>
+            <Link href={`/shop/${book.id}`} prefetch={true}>
               <BookCard book={book} />
             </Link>
           </li>

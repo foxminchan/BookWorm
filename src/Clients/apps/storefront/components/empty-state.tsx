@@ -27,9 +27,11 @@ export function EmptyState({
       <h2 className="font-serif text-2xl font-medium">{title}</h2>
       <p className="text-muted-foreground">{description}</p>
       {actionLabel && actionHref && (
-        <Button asChild className="rounded-full">
-          <Link href={actionHref}>{actionLabel}</Link>
-        </Button>
+        <Button
+          render={<Link href={actionHref}>{actionLabel}</Link>}
+          nativeButton={false}
+          className="rounded-full"
+        />
       )}
     </output>
   );

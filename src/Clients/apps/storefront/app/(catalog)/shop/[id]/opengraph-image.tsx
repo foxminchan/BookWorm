@@ -4,7 +4,6 @@ import booksApiClient from "@workspace/api-client/catalog/books";
 import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
 import { formatPrice } from "@workspace/utils/format";
 
-export const runtime = "edge";
 export const size = {
   width: 1200,
   height: 630,

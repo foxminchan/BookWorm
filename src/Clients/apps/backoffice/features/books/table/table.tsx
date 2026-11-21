@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import type { Book, ListBooksQuery } from "@workspace/types/catalog/books";
 
@@ -7,6 +9,8 @@ import { FilterTable } from "@/components/filter-table";
 import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 import { columns } from "./columns";
+
+const getBookRowId = (row: Book) => row.id;
 
 type BooksTableProps = Readonly<{
   query: Omit<ListBooksQuery, "pageIndex" | "pageSize">;
@@ -21,7 +25,13 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
     apiPageIndex,
     handlePaginationChange,
     handleSortingChange,
+    resetPage,
   } = usePaginatedTable();
+
+  const queryKey = JSON.stringify(query);
+  useEffect(() => {
+    resetPage();
+  }, [queryKey, resetPage]);
 
   const fullQuery: ListBooksQuery = {
     ...query,
@@ -48,7 +58,7 @@ export function BooksTable({ query, highlightedBookId }: BooksTableProps) {
       onPaginationChange={handlePaginationChange}
       onSortingChange={handleSortingChange}
       highlightedId={highlightedBookId}
-      getRowId={(row: Book) => row.id}
+      getRowId={getBookRowId}
     />
   );
 }

@@ -1,17 +1,15 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import ordersApiClient from "@workspace/api-client/ordering/orders";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { OrderDetail } from "@workspace/types/ordering/orders";
 
-import { orderingKeys } from "../../keys";
+import { useQueryFromOptions } from "../../use-query-from-options";
+import { orderQueries } from "../queries";
 
 export default function useOrder(
   id: string,
   options?: Omit<UseQueryOptions<OrderDetail>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: orderingKeys.orders.detail(id),
-    queryFn: () => ordersApiClient.get(id),
-    ...options,
-  });
+  return useQueryFromOptions(orderQueries.detail(id), options);
 }

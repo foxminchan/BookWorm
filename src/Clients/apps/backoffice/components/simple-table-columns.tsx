@@ -63,6 +63,7 @@ function NameCell(
     return (
       <Input
         ref={inputRef}
+        aria-label={`Edit ${item.name ?? "item"} name`}
         value={editValue}
         onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={(e) => {

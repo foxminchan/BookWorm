@@ -20,9 +20,14 @@ export default function DamagedPackages() {
               {text}
             </p>
           ))}
-          <Button size="lg" className="mt-4 rounded-full px-8" asChild>
-            <Link href="mailto:support@bookworm.com">Contact Support</Link>
-          </Button>
+          <Button
+            render={
+              <Link href="mailto:support@bookworm.com">Contact Support</Link>
+            }
+            nativeButton={false}
+            size="lg"
+            className="mt-4 rounded-full px-8"
+          />
         </div>
       </div>
     </section>

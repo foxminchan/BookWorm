@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
 export const alt = "BookWorm - Curated Books for the Modern Reader";
 export const size = {
   width: 1200,

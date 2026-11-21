@@ -1,16 +1,14 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import publishersApiClient from "@workspace/api-client/catalog/publishers";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { Publisher } from "@workspace/types/catalog/publishers";
 
-import { catalogKeys } from "../../keys";
+import { useQueryFromOptions } from "../../use-query-from-options";
+import { publisherQueries } from "../queries";
 
 export default function usePublishers(
   options?: Omit<UseQueryOptions<Publisher[]>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: catalogKeys.publishers.list(),
-    queryFn: () => publishersApiClient.list(),
-    ...options,
-  });
+  return useQueryFromOptions(publisherQueries.list(), options);
 }

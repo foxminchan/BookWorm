@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useWebMCPTools } from "@/hooks/useWebMCPTools";
@@ -9,7 +9,7 @@ const { mockDispose, mockCoreConstructor } = vi.hoisted(() => ({
   mockCoreConstructor: vi.fn(),
 }));
 
-vi.mock("@copilotkit/react-core/v2", () => ({
+vi.mock("@copilotkit/react-core", () => ({
   CopilotKitCore: vi.fn(function MockCopilotKitCore(config: unknown) {
     mockCoreConstructor(config);
     return {
@@ -30,10 +30,12 @@ describe("useWebMCPTools", () => {
     expect(mockDispose).not.toHaveBeenCalled();
   });
 
-  it("registers searchBooksTool via CopilotKitCore when enabled and disposes on unmount", () => {
+  it("registers searchBooksTool via CopilotKitCore when enabled and disposes on unmount", async () => {
     const { unmount } = renderHook(() => useWebMCPTools(true));
 
-    expect(mockCoreConstructor).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockCoreConstructor).toHaveBeenCalledTimes(1);
+    });
     expect(mockCoreConstructor).toHaveBeenCalledWith({
       tools: [searchBooksTool, getBookDetailsTool],
     });
@@ -44,13 +46,15 @@ describe("useWebMCPTools", () => {
     expect(mockDispose).toHaveBeenCalledTimes(1);
   });
 
-  it("disposes CopilotKitCore when enabled changes from true to false", () => {
+  it("disposes CopilotKitCore when enabled changes from true to false", async () => {
     const { rerender } = renderHook(
       ({ enabled }: { enabled: boolean }) => useWebMCPTools(enabled),
       { initialProps: { enabled: true } },
     );
 
-    expect(mockCoreConstructor).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockCoreConstructor).toHaveBeenCalledTimes(1);
+    });
 
     rerender({ enabled: false });
 

@@ -18,12 +18,15 @@ export default function NotFound() {
         </div>
 
         <div className="flex justify-center gap-3">
-          <Button asChild>
-            <Link href="/">Go to Dashboard</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/books">Browse Books</Link>
-          </Button>
+          <Button
+            render={<Link href="/">Go to Dashboard</Link>}
+            nativeButton={false}
+          />
+          <Button
+            render={<Link href="/books">Browse Books</Link>}
+            nativeButton={false}
+            variant="outline"
+          />
         </div>
       </div>
     </div>

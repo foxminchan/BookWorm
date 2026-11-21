@@ -41,14 +41,19 @@ export function CellAction({ book }: CellActionProps) {
   return (
     <>
       <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link
-            href={`/books/${book.id}`}
-            aria-label={`Edit ${book.name ?? "book"}`}
-          >
-            <Edit className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          nativeButton={false}
+          render={
+            <Link
+              href={`/books/${book.id}`}
+              aria-label={`Edit ${book.name ?? "book"}`}
+            >
+              <Edit className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          }
+        />
         <Button
           variant="ghost"
           size="sm"

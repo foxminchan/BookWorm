@@ -6,14 +6,30 @@ import { useSearchParams } from "next/navigation";
 
 export function useShopFilters() {
   const searchParams = useSearchParams();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const pageParam = searchParams.get("page");
+    return pageParam ? Number.parseInt(pageParam, 10) : 1;
+  });
   const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
-  const [selectedPublishers, setSelectedPublishers] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>(() => {
+    const authorParam = searchParams.get("author");
+    return authorParam ? [authorParam] : [];
+  });
+  const [selectedPublishers, setSelectedPublishers] = useState<string[]>(() => {
+    const publisherParam = searchParams.get("publisher");
+    return publisherParam ? [publisherParam] : [];
+  });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    const categoryParam = searchParams.get("category");
+    return categoryParam ? [categoryParam] : [];
+  });
+  const [searchQuery, setSearchQuery] = useState<string>(
+    () => searchParams.get("search") ?? "",
+  );
   const [sortBy, setSortBy] = useState("name");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const searchParamsKey = searchParams.toString();
 
   useEffect(() => {
     const categoryParam = searchParams.get("category");
@@ -22,32 +38,12 @@ export function useShopFilters() {
     const searchParam = searchParams.get("search");
     const pageParam = searchParams.get("page");
 
-    if (categoryParam) {
-      setSelectedCategories([categoryParam]);
-    } else {
-      setSelectedCategories([]);
-    }
-    if (publisherParam) {
-      setSelectedPublishers([publisherParam]);
-    } else {
-      setSelectedPublishers([]);
-    }
-    if (authorParam) {
-      setSelectedAuthors([authorParam]);
-    } else {
-      setSelectedAuthors([]);
-    }
-    if (searchParam) {
-      setSearchQuery(searchParam);
-    } else {
-      setSearchQuery("");
-    }
-    if (pageParam) {
-      setCurrentPage(Number.parseInt(pageParam, 10));
-    } else {
-      setCurrentPage(1);
-    }
-  }, [searchParams]);
+    setSelectedCategories(categoryParam ? [categoryParam] : []);
+    setSelectedPublishers(publisherParam ? [publisherParam] : []);
+    setSelectedAuthors(authorParam ? [authorParam] : []);
+    setSearchQuery(searchParam ?? "");
+    setCurrentPage(pageParam ? Number.parseInt(pageParam, 10) : 1);
+  }, [searchParamsKey, searchParams]);
 
   return {
     currentPage,

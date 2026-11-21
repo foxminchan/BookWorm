@@ -38,13 +38,15 @@ export function AuthorsFilter({
     );
   }
 
+  const selectedAuthorSet = new Set(selectedAuthors);
+
   return (
     <div className="space-y-2">
       <Label className="text-xs">Authors</Label>
       <fieldset className="flex flex-wrap gap-2" aria-label="Filter by authors">
         <legend className="sr-only">Filter by authors</legend>
         {authors?.map((author) => {
-          const isSelected = selectedAuthors.includes(author.id);
+          const isSelected = selectedAuthorSet.has(author.id);
           return (
             <Button
               key={author.id}

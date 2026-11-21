@@ -5,6 +5,7 @@ import { Label } from "@workspace/ui/components/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -41,11 +42,13 @@ export function CategorySelect({ value, onChange }: CategorySelectProps) {
           <SelectValue placeholder="All Categories" />
         </SelectTrigger>
         <SelectContent>
-          {categories?.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id}>
-              {cat.name}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {categories?.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>

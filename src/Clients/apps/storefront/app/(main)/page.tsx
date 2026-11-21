@@ -1,16 +1,26 @@
+import { Suspense } from "react";
+
 import type { Metadata } from "next";
+import { connection } from "next/server";
 
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
-import booksApiClient from "@workspace/api-client/catalog/books";
-import categoriesApiClient from "@workspace/api-client/catalog/categories";
-import { catalogKeys } from "@workspace/api-hooks/keys";
+import {
+  bookQueries,
+  categoryQueries,
+} from "@workspace/api-hooks/catalog/queries";
+import { createMetadata } from "@workspace/seo/metadata";
 
+import { APP_CONFIG } from "@/config/app-config";
 import { env } from "@/env.mjs";
 import BookshopPageContent from "@/features/home/bookshop-page-content";
+import HeroSection from "@/features/home/hero-section";
+import { getCachedBooks, getCachedCategories } from "@/lib/cached-catalog";
 import { getQueryClient } from "@/lib/query-client";
 
-export const metadata: Metadata = {
+const appUrl = env.NEXT_PUBLIC_APP_URL || APP_CONFIG.defaultUrl;
+
+export const metadata: Metadata = createMetadata({
   title: "BookWorm - Curated Books & Design Inspiration | Online Bookstore",
   description:
     "Discover a carefully curated collection of literature, design books, and inspiration for the modern reader. Shop fiction, non-fiction, design, science, and more.",
@@ -30,8 +40,8 @@ export const metadata: Metadata = {
     title: "BookWorm - Curated Books & Design Inspiration",
     description:
       "Discover a carefully curated collection of literature and design books for the modern reader.",
-    url: env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
-    siteName: "BookWorm",
+    url: appUrl,
+    siteName: APP_CONFIG.name,
     locale: "en_US",
   },
   twitter: {
@@ -41,7 +51,7 @@ export const metadata: Metadata = {
       "Discover a carefully curated collection of literature and design books.",
   },
   alternates: {
-    canonical: env.NEXT_PUBLIC_APP_URL || "https://bookworm.com",
+    canonical: appUrl,
   },
   robots: {
     index: true,
@@ -54,26 +64,43 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-};
+});
 
-export default async function BookshopPage() {
+async function BookshopContent() {
+  await connection();
   const queryClient = getQueryClient();
 
   // Prefetch featured books and categories in parallel on the server
   await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: catalogKeys.books.list({ pageSize: 4 }),
-      queryFn: () => booksApiClient.list({ pageSize: 4 }),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: catalogKeys.categories.lists(),
-      queryFn: () => categoriesApiClient.list(),
-    }),
+    queryClient
+      .query({
+        queryKey: bookQueries.list({ pageSize: 4 }).queryKey,
+        queryFn: () => getCachedBooks({ pageSize: 4 }),
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to prefetch featured books:", error);
+      }),
+    queryClient
+      .query({
+        queryKey: categoryQueries.list().queryKey,
+        queryFn: () => getCachedCategories(),
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to prefetch categories:", error);
+      }),
   ]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <BookshopPageContent />
+      <BookshopPageContent heroSlot={<HeroSection />} />
     </HydrationBoundary>
+  );
+}
+
+export default function BookshopPage() {
+  return (
+    <Suspense fallback={<BookshopPageContent heroSlot={<HeroSection />} />}>
+      <BookshopContent />
+    </Suspense>
   );
 }

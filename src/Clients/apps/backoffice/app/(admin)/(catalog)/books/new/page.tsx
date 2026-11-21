@@ -1,5 +1,16 @@
-import { PageHeader } from "@/components/page-header";
+import type { Metadata } from "next";
+
+import { createMetadata } from "@workspace/seo/metadata";
+
+import { PageContainer } from "@/components/page-container";
+import { APP_CONFIG } from "@/config/app-config";
 import { BookForm } from "@/features/books/book-form";
+
+export const metadata: Metadata = createMetadata({
+  title: "Create Book",
+  description: "Add a new book to your inventory",
+  appName: APP_CONFIG.name,
+});
 
 const breadcrumbs = [
   { label: "Admin", href: "/" },
@@ -9,13 +20,12 @@ const breadcrumbs = [
 
 export default function NewBookPage() {
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Create New Book"
-        description="Add a new book to your inventory"
-        breadcrumbs={breadcrumbs}
-      />
+    <PageContainer
+      title="Create New Book"
+      description="Add a new book to your inventory"
+      breadcrumbs={breadcrumbs}
+    >
       <BookForm />
-    </div>
+    </PageContainer>
   );
 }

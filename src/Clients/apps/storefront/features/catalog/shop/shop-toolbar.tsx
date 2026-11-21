@@ -7,6 +7,7 @@ import { Button } from "@workspace/ui/components/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -83,7 +84,18 @@ export default function ShopToolbar({
         >
           <Filter className="size-4" aria-hidden="true" /> Filters
         </Button>
-        <Select value={sortBy} onValueChange={onSortChange}>
+        <Select
+          value={sortBy}
+          onValueChange={(value) => {
+            if (value) onSortChange(value);
+          }}
+          items={{
+            name: "Name (A-Z)",
+            "price-low": "Price (Low to High)",
+            "price-high": "Price (High to Low)",
+            rating: "Rating",
+          }}
+        >
           <SelectTrigger
             className="w-45 rounded-full"
             aria-label="Sort options"
@@ -91,10 +103,12 @@ export default function ShopToolbar({
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Name (A-Z)</SelectItem>
-            <SelectItem value="price-low">Price (Low to High)</SelectItem>
-            <SelectItem value="price-high">Price (High to Low)</SelectItem>
-            <SelectItem value="rating">Rating</SelectItem>
+            <SelectGroup>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="price-low">Price (Low to High)</SelectItem>
+              <SelectItem value="price-high">Price (High to Low)</SelectItem>
+              <SelectItem value="rating">Rating</SelectItem>
+            </SelectGroup>
           </SelectContent>
         </Select>
       </div>

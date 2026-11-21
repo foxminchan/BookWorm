@@ -3,23 +3,27 @@
 import * as React from "react";
 import { useEffect } from "react";
 
-import { CopilotKitProvider } from "@copilotkit/react-core/v2";
+import dynamic from "next/dynamic";
+
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-import { initMocks } from "@workspace/mocks/init";
 import { useAccessToken } from "@workspace/ui/hooks/useAccessToken";
 
 import { isAuthenticatedAtom } from "@/atoms/basket-atom";
 import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { BackToTop } from "@/components/back-to-top";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { env } from "@/env.mjs";
 import { useWebMCPTools } from "@/hooks/useWebMCPTools";
 import { authClient, useSession } from "@/lib/auth-client";
 import { COPILOT_RUNTIME_URL } from "@/lib/constants";
 import { getQueryClient } from "@/lib/query-client";
+
+const CopilotKitProvider = dynamic(
+  () => import("@copilotkit/react-core/v2").then((m) => m.CopilotKitProvider),
+  { ssr: false },
+);
 
 export function Providers({
   children,
@@ -37,9 +41,11 @@ export function Providers({
 
   useEffect(() => {
     if (!gatewayUrl && process.env.NODE_ENV === "development") {
-      void initMocks().catch((error: unknown) => {
-        console.error("Failed to initialize storefront mocks:", error);
-      });
+      void import("@workspace/mocks/init")
+        .then(({ initMocks }) => initMocks())
+        .catch((error: unknown) => {
+          console.error("Failed to initialize storefront mocks:", error);
+        });
     }
     setIsCopilotEnabled(isCopilotEnabled);
   }, [isCopilotEnabled, setIsCopilotEnabled, gatewayUrl]);
@@ -71,7 +77,6 @@ export function Providers({
         ) : (
           <div className="pb-16 md:pb-0">{children}</div>
         )}
-        <MobileBottomNav />
         <BackToTop />
       </NextThemesProvider>
     </QueryClientProvider>

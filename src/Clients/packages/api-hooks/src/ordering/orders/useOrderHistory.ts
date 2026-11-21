@@ -1,17 +1,15 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import ordersApiClient from "@workspace/api-client/ordering/orders";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { OrderEventHistory } from "@workspace/types/ordering/orders";
 
-import { orderingKeys } from "../../keys";
+import { useQueryFromOptions } from "../../use-query-from-options";
+import { orderQueries } from "../queries";
 
 export default function useOrderHistory(
   id: string,
   options?: Omit<UseQueryOptions<OrderEventHistory[]>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: orderingKeys.orders.history(id),
-    queryFn: () => ordersApiClient.getHistory(id),
-    ...options,
-  });
+  return useQueryFromOptions(orderQueries.history(id), options);
 }

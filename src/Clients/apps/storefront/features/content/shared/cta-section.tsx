@@ -23,9 +23,12 @@ export default function CtaSection({
       <p className="text-muted-foreground mx-auto mb-12 max-w-2xl text-lg">
         {description}
       </p>
-      <Button size="lg" className="rounded-full px-8" asChild>
-        <Link href={href}>{label}</Link>
-      </Button>
+      <Button
+        render={<Link href={href}>{label}</Link>}
+        nativeButton={false}
+        size="lg"
+        className="rounded-full px-8"
+      />
     </section>
   );
 }

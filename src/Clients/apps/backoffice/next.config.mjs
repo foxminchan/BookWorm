@@ -4,5 +4,10 @@ import "./env.mjs";
 
 export default createNextConfig({
   basePath: "/backoffice",
-  optimizePackageImports: ["lucide-react", "recharts", "date-fns"],
+  optimizePackageImports: [
+    "lucide-react",
+    "recharts",
+    "date-fns",
+    "@tanstack/react-table",
+  ],
 });

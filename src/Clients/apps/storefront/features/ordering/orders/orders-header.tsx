@@ -8,6 +8,7 @@ import { Label } from "@workspace/ui/components/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -33,15 +34,16 @@ export default function OrdersHeader({
     <div className="mb-12 flex flex-col justify-between gap-8 md:flex-row md:items-end">
       <div className="flex-1">
         <Button
-          asChild
+          render={
+            <Link href="/account">
+              <ArrowLeft className="size-4" aria-hidden="true" />
+              Back to Account
+            </Link>
+          }
+          nativeButton={false}
           variant="ghost"
           className="text-muted-foreground hover:text-foreground mb-6 -ml-2 gap-2"
-        >
-          <Link href="/account">
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            Back to Account
-          </Link>
-        </Button>
+        />
         <div className="space-y-2">
           <h1 className="font-serif text-5xl font-medium text-balance">
             Order History
@@ -59,7 +61,12 @@ export default function OrdersHeader({
         >
           Filter Orders
         </Label>
-        <Select value={selectedStatus} onValueChange={onStatusChange}>
+        <Select
+          value={selectedStatus}
+          onValueChange={(value) => {
+            if (value) onStatusChange(value);
+          }}
+        >
           <SelectTrigger
             id="order-status-filter"
             className="hover:border-primary/50 border-2 transition-colors"
@@ -67,11 +74,13 @@ export default function OrdersHeader({
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
-            {STATUS_OPTIONS.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              {STATUS_OPTIONS.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
       </div>

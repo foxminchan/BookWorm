@@ -38,15 +38,16 @@ export default function FeaturedBooksSection() {
         </div>
         {hasFeaturedBooks ? (
           <Button
+            render={
+              <Link href="/shop">
+                View All <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            }
+            nativeButton={false}
             variant="ghost"
             className="hidden gap-2 md:flex"
             aria-label="View all books"
-            asChild
-          >
-            <Link href="/shop">
-              View All <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </Button>
+          />
         ) : null}
       </div>
 
@@ -56,7 +57,7 @@ export default function FeaturedBooksSection() {
               <BookCardSkeleton key={`skeleton-${i.toString()}`} />
             ))
           : books.map((book) => (
-              <Link key={book.id} href={`/shop/${book.id}`}>
+              <Link key={book.id} href={`/shop/${book.id}`} prefetch={true}>
                 <BookCard book={book} />
               </Link>
             ))}

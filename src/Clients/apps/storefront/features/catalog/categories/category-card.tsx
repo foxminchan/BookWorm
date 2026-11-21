@@ -16,6 +16,7 @@ export default function CategoryCard({
   return (
     <Link
       href={`/shop?category=${id}`}
+      prefetch={true}
       className="group bg-background hover:bg-secondary/20 relative flex items-center justify-between p-8 transition-all duration-300 md:p-12"
     >
       <div className="flex flex-col gap-1">

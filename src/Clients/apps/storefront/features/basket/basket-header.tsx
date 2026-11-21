@@ -44,16 +44,18 @@ export default function BasketHeader({
           )}
           {hasItems && (
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-destructive gap-2 text-sm md:text-base"
-                >
-                  <Trash2 className="size-4" aria-hidden="true" />{" "}
-                  <span className="hidden sm:inline">Clear Basket</span>
-                  <span className="sm:hidden">Clear</span>
-                </Button>
-              </AlertDialogTrigger>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive gap-2 text-sm md:text-base"
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />{" "}
+                    <span className="hidden sm:inline">Clear Basket</span>
+                    <span className="sm:hidden">Clear</span>
+                  </Button>
+                }
+              />
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

@@ -8,14 +8,7 @@
     "NEXT_PUBLIC_COPILOT_ENABLED",
     "NEXT_PUBLIC_COPILOT_AGENT_NAME",
     "NEXT_PUBLIC_MAX_RETRIES",
-    "ENTRA_INSTANCE",
-    "ENTRA_TENANT_ID",
-    "ENTRA_CLIENT_ID",
-    "BETTER_AUTH_SECRET",
-    "SKIP_ENV_VALIDATION",
-    "NEXT_RUNTIME",
-    "OTEL_EXPORTER_OTLP_ENDPOINT",
-    "OTEL_EXPORTER_OTLP_HEADERS"
+    "NEXT_PUBLIC_APP_URL"
   ],
   "boundaries": {
     "tags": {
@@ -42,8 +35,18 @@
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "ENTRA_INSTANCE",
+        "ENTRA_TENANT_ID",
+        "ENTRA_CLIENT_ID",
+        "BETTER_AUTH_SECRET",
+        "SKIP_ENV_VALIDATION",
+        "NEXT_RUNTIME",
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "OTEL_EXPORTER_OTLP_HEADERS"
+      ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
     "lint": {
       "dependsOn": ["transit"]
@@ -54,23 +57,13 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["allure-results/**"],
-      "inputs": [
-        "**/*.{ts,tsx}",
-        "**/*.test.{ts,tsx}",
-        "vitest.config.ts",
-        "**/__tests__/**"
-      ],
+      "inputs": ["$TURBO_DEFAULT$", "!e2e/**", "!playwright.config.*"],
       "passThroughEnv": ["FAKER_SEED", "MSW_COOKIE_STORE_PATH"]
     },
     "test:coverage": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "inputs": [
-        "**/*.{ts,tsx}",
-        "**/*.test.{ts,tsx}",
-        "vitest.config.ts",
-        "**/__tests__/**"
-      ],
+      "inputs": ["$TURBO_DEFAULT$", "!e2e/**", "!playwright.config.*"],
       "passThroughEnv": ["FAKER_SEED", "MSW_COOKIE_STORE_PATH"]
     },
     "test:watch": {
@@ -96,7 +89,7 @@
     "test:e2e": {
       "dependsOn": ["^build"],
       "outputs": ["test-results/**", ".features-gen/**", "allure-results/**"],
-      "inputs": ["e2e/**", "playwright.config.ts"],
+      "inputs": ["$TURBO_DEFAULT$", "e2e/**", "playwright.config.ts"],
       "passThroughEnv": [
         "PLAYWRIGHT_*",
         "BASE_URL",
@@ -135,7 +128,7 @@
     "test:e2e:ci": {
       "dependsOn": ["^build"],
       "outputs": ["test-results/**", ".features-gen/**", "allure-results/**"],
-      "inputs": ["e2e/**", "playwright.config.ts"],
+      "inputs": ["$TURBO_DEFAULT$", "e2e/**", "playwright.config.ts"],
       "passThroughEnv": [
         "PLAYWRIGHT_*",
         "BASE_URL",

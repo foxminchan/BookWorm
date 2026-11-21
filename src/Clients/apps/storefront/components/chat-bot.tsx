@@ -121,12 +121,17 @@ const UnavailableChatUI = ({
             <h3 className="mb-2 text-lg font-semibold">{heading}</h3>
             <p className="text-muted-foreground text-sm">{description}</p>
             {isUnauthenticated && !isFeatureDisabled && (
-              <Button asChild size="sm" className="mt-4 gap-2">
-                <Link href="/login">
-                  <LogIn className="h-4 w-4" aria-hidden="true" />
-                  Sign In
-                </Link>
-              </Button>
+              <Button
+                render={
+                  <Link href="/login">
+                    <LogIn className="h-4 w-4" aria-hidden="true" />
+                    Sign In
+                  </Link>
+                }
+                nativeButton={false}
+                size="sm"
+                className="mt-4 gap-2"
+              />
             )}
           </div>
         </CardContent>

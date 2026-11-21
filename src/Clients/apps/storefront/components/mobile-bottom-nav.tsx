@@ -6,44 +6,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAtomValue } from "jotai";
-import type { LucideIcon } from "lucide-react";
-import { Home, Menu, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import { Menu } from "lucide-react";
 
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 
 import { basketItemCountAtom } from "@/atoms/basket-atom";
+import {
+  type MobileNavItem as NavItem,
+  STOREFRONT_MOBILE_ACCOUNT_NAV,
+  STOREFRONT_MOBILE_BASE_NAV,
+  STOREFRONT_MOBILE_BASKET_NAV,
+  STOREFRONT_MOBILE_MORE_LINKS,
+} from "@/config/nav-config";
 import { useSession } from "@/lib/auth-client";
 import { isNavActive } from "@/lib/nav-utils";
-
-type NavItem = {
-  readonly href: string;
-  readonly icon: LucideIcon;
-  readonly label: string;
-};
-
-const BASE_NAV_ITEMS: readonly NavItem[] = [
-  { href: "/", icon: Home, label: "Home" },
-  { href: "/shop", icon: ShoppingBag, label: "Shop" },
-] as const;
-
-const BASKET_NAV_ITEM: NavItem = {
-  href: "/basket",
-  icon: ShoppingCart,
-  label: "Basket",
-} as const;
-
-const ACCOUNT_NAV_ITEM: NavItem = {
-  href: "/account",
-  icon: User,
-  label: "Account",
-} as const;
-
-const MORE_MENU_ITEMS = [
-  { href: "/categories", label: "Categories" },
-  { href: "/publishers", label: "Publishers" },
-  { href: "/about", label: "Our Story" },
-] as const;
 
 function useEscapeKey(isActive: boolean, onEscape: () => void) {
   useEffect(() => {
@@ -114,11 +91,11 @@ export function MobileBottomNav() {
   useEscapeKey(isMenuOpen, closeMenu);
 
   const navigationItems = useMemo<readonly NavItem[]>(() => {
-    const items = [...BASE_NAV_ITEMS];
+    const items = [...STOREFRONT_MOBILE_BASE_NAV];
     if (session?.user) {
-      items.push(BASKET_NAV_ITEM);
+      items.push(STOREFRONT_MOBILE_BASKET_NAV);
     }
-    items.push(ACCOUNT_NAV_ITEM);
+    items.push(STOREFRONT_MOBILE_ACCOUNT_NAV);
     return items;
   }, [session?.user]);
 
@@ -164,7 +141,7 @@ export function MobileBottomNav() {
             aria-label="Additional navigation menu"
           >
             <div className="flex flex-col gap-2 p-3 text-sm" role="menu">
-              {MORE_MENU_ITEMS.map((item) => (
+              {STOREFRONT_MOBILE_MORE_LINKS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

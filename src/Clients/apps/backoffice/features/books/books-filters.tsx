@@ -189,12 +189,16 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
   }, []);
 
   return (
-    <Collapsible open={isExpanded} onOpenChange={setIsExpanded} asChild>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Filter &amp; Search</CardTitle>
-            <CollapsibleTrigger asChild>
+    <Collapsible
+      open={isExpanded}
+      onOpenChange={setIsExpanded}
+      render={<Card />}
+    >
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Filter &amp; Search</CardTitle>
+          <CollapsibleTrigger
+            render={
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 {isExpanded ? (
                   <ChevronUp className="h-4 w-4" />
@@ -205,61 +209,61 @@ export function BooksFilters({ onFiltersChange }: BooksFiltersProps) {
                   {isExpanded ? "Collapse" : "Expand"} filters
                 </span>
               </Button>
-            </CollapsibleTrigger>
-          </div>
-        </CardHeader>
-        <CollapsibleContent>
-          <CardContent>
-            <div className="space-y-4">
-              <SearchInput
-                value={state.searchTerm}
-                onChange={(value) => {
-                  dispatch({ type: "SET_SEARCH_TERM", payload: value });
-                  handleSearchChange(value);
-                }}
+            }
+          />
+        </div>
+      </CardHeader>
+      <CollapsibleContent>
+        <CardContent>
+          <div className="space-y-4">
+            <SearchInput
+              value={state.searchTerm}
+              onChange={(value) => {
+                dispatch({ type: "SET_SEARCH_TERM", payload: value });
+                handleSearchChange(value);
+              }}
+            />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <CategorySelect
+                value={state.selectedCategory}
+                onChange={(value) =>
+                  dispatch({ type: "SET_CATEGORY", payload: value })
+                }
               />
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <CategorySelect
-                  value={state.selectedCategory}
-                  onChange={(value) =>
-                    dispatch({ type: "SET_CATEGORY", payload: value })
-                  }
-                />
-                <PublisherSelect
-                  value={state.selectedPublisher}
-                  onChange={(value) =>
-                    dispatch({ type: "SET_PUBLISHER", payload: value })
-                  }
-                />
-              </div>
-
-              <AuthorsFilter
-                selectedAuthors={state.selectedAuthors}
-                onToggle={handleAuthorToggle}
-                onClear={handleAuthorClear}
+              <PublisherSelect
+                value={state.selectedPublisher}
+                onChange={(value) =>
+                  dispatch({ type: "SET_PUBLISHER", payload: value })
+                }
               />
-
-              <PriceRangeFilter
-                min={PRICE_RANGE.min}
-                max={PRICE_RANGE.max}
-                minPrice={state.priceRange[0]}
-                maxPrice={state.priceRange[1]}
-                onChange={handlePriceRangeChange}
-              />
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResetFilters}
-                className="w-full bg-transparent"
-              >
-                Reset Filters
-              </Button>
             </div>
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
+
+            <AuthorsFilter
+              selectedAuthors={state.selectedAuthors}
+              onToggle={handleAuthorToggle}
+              onClear={handleAuthorClear}
+            />
+
+            <PriceRangeFilter
+              min={PRICE_RANGE.min}
+              max={PRICE_RANGE.max}
+              minPrice={state.priceRange[0]}
+              maxPrice={state.priceRange[1]}
+              onChange={handlePriceRangeChange}
+            />
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetFilters}
+              className="w-full bg-transparent"
+            >
+              Reset Filters
+            </Button>
+          </div>
+        </CardContent>
+      </CollapsibleContent>
     </Collapsible>
   );
 }

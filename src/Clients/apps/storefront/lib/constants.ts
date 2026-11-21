@@ -1,12 +1,8 @@
-export const COPILOT_RUNTIME_URL = "/api/copilotkit";
-
-export const APP_CONFIG = {
-  name: "BookWorm",
-  email: {
-    support: "support@bookworm.com",
-  },
-  social: {
-    twitter: "https://twitter.com/bookworm",
-    facebook: "https://facebook.com/bookworm",
-  },
-} as const;
+export {
+  APP_CONFIG,
+  COPILOT_RUNTIME_URL,
+  DEFAULT_SHIPPING_COST,
+  ORDERS_PER_PAGE,
+  REVIEWS_PER_PAGE,
+  SHOP_ITEMS_PER_PAGE,
+} from "@/config/app-config";

@@ -1,6 +1,9 @@
+"use client";
+
 import * as React from "react";
 
-import { Slot } from "@radix-ui/react-slot";
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { mergeProps } from "@base-ui/react/merge-props";
 import { type VariantProps, cva } from "class-variance-authority";
 
 import { cn } from "@workspace/ui/lib/utils";
@@ -41,19 +44,35 @@ function Button({
   className,
   variant = "default",
   size = "default",
-  asChild = false,
+  render,
+  nativeButton,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
-  const Comp = asChild ? Slot : "button";
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // Preserve native link semantics when rendering an anchor/Link inside Button.
+  const resolvedRender =
+    nativeButton === false &&
+    React.isValidElement(render) &&
+    "href" in (render.props as object)
+      ? (buttonProps: React.HTMLAttributes<HTMLElement>) => {
+          const restButtonProps = { ...buttonProps };
+          delete restButtonProps.role;
+          return React.cloneElement(
+            render as React.ReactElement<Record<string, unknown>>,
+            mergeProps<"a">(
+              restButtonProps,
+              render.props as React.ComponentPropsWithRef<"a">,
+            ),
+          );
+        }
+      : render;
 
   return (
-    <Comp
+    <ButtonPrimitive
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      nativeButton={nativeButton}
+      render={resolvedRender}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

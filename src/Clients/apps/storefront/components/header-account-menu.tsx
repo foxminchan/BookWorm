@@ -6,19 +6,13 @@ import { User } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
 
+import {
+  STOREFRONT_ACCOUNT_AUTH_NAV,
+  STOREFRONT_ACCOUNT_GUEST_NAV,
+} from "@/config/nav-config";
 import { useDelayedToggle } from "@/hooks/useDelayedToggle";
 import { useLogout } from "@/hooks/useLogout";
 import { useSession } from "@/lib/auth-client";
-
-const AUTHENTICATED_MENU_ITEMS = [
-  { href: "/account", label: "My Profile" },
-  { href: "/account/orders", label: "Order History" },
-] as const;
-
-const GUEST_MENU_ITEMS = [
-  { href: "/login", label: "Login" },
-  { href: "/register", label: "Register" },
-] as const;
 
 type HeaderAccountMenuProps = {
   readonly isAccountActive: boolean;
@@ -27,7 +21,7 @@ type HeaderAccountMenuProps = {
 export function HeaderAccountMenu({ isAccountActive }: HeaderAccountMenuProps) {
   const { data: session } = useSession();
   const { logout } = useLogout();
-  const { isOpen, close, handleMouseEnter, handleMouseLeave } =
+  const { isOpen, close, toggle, handleMouseEnter, handleMouseLeave } =
     useDelayedToggle({ closeDelay: 200 });
 
   const handleLogout = async () => {
@@ -49,6 +43,7 @@ export function HeaderAccountMenu({ isAccountActive }: HeaderAccountMenuProps) {
         className={`h-9 w-9 rounded-full ${
           isAccountActive ? "bg-secondary" : ""
         }`}
+        onClick={toggle}
         onKeyDown={(e) => {
           if (e.key === "Escape" && isOpen) {
             close();
@@ -70,7 +65,7 @@ export function HeaderAccountMenu({ isAccountActive }: HeaderAccountMenuProps) {
         >
           {session?.user ? (
             <>
-              {AUTHENTICATED_MENU_ITEMS.map((item) => (
+              {STOREFRONT_ACCOUNT_AUTH_NAV.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -90,7 +85,7 @@ export function HeaderAccountMenu({ isAccountActive }: HeaderAccountMenuProps) {
               </Button>
             </>
           ) : (
-            GUEST_MENU_ITEMS.map((item) => (
+            STOREFRONT_ACCOUNT_GUEST_NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

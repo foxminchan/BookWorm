@@ -17,7 +17,8 @@ type OfflineQueueState = {
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
-const QUEUE_STORAGE_KEY = "copilot-message-queue";
+const LEGACY_QUEUE_STORAGE_KEY = "copilot-message-queue";
+const QUEUE_STORAGE_KEY = "copilot-message-queue:v1";
 
 export function useOfflineQueue() {
   const [state, setState] = useState<OfflineQueueState>({
@@ -27,6 +28,7 @@ export function useOfflineQueue() {
   });
   const syncTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const syncQueueRef = useRef<(() => Promise<void>) | null>(null);
+  const hasHydratedRef = useRef(false);
 
   const removeFromQueue = useCallback((messageId: string) => {
     setState((prev) => ({
@@ -126,21 +128,30 @@ export function useOfflineQueue() {
     syncQueueRef.current = syncQueue;
   }, [syncQueue]);
 
-  // Load queue from localStorage on mount
+  // Load queue from localStorage on mount (with legacy key migration)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(QUEUE_STORAGE_KEY);
+      const stored =
+        localStorage.getItem(QUEUE_STORAGE_KEY) ??
+        localStorage.getItem(LEGACY_QUEUE_STORAGE_KEY);
       if (stored) {
         const queue = JSON.parse(stored) as QueuedMessage[];
         setState((prev) => ({ ...prev, queue }));
+        if (localStorage.getItem(LEGACY_QUEUE_STORAGE_KEY)) {
+          localStorage.setItem(QUEUE_STORAGE_KEY, stored);
+          localStorage.removeItem(LEGACY_QUEUE_STORAGE_KEY);
+        }
       }
     } catch {
       console.error("Failed to load message queue");
+    } finally {
+      hasHydratedRef.current = true;
     }
   }, []);
 
-  // Save queue to localStorage whenever it changes
+  // Save queue to localStorage whenever it changes after initial hydration
   useEffect(() => {
+    if (!hasHydratedRef.current) return;
     try {
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(state.queue));
     } catch {
@@ -152,10 +163,7 @@ export function useOfflineQueue() {
   useEffect(() => {
     const handleOnline = () => {
       setState((prev) => ({ ...prev, isOnline: true }));
-      // Trigger sync when coming back online
-      if (state.queue.length > 0) {
-        syncQueue();
-      }
+      void syncQueueRef.current?.();
     };
 
     const handleOffline = () => {
@@ -169,7 +177,7 @@ export function useOfflineQueue() {
       globalThis.removeEventListener("online", handleOnline);
       globalThis.removeEventListener("offline", handleOffline);
     };
-  }, [state.queue.length, syncQueue]);
+  }, []);
 
   useEffect(() => {
     return () => {

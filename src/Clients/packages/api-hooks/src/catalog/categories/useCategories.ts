@@ -1,16 +1,14 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import categoriesApiClient from "@workspace/api-client/catalog/categories";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { Category } from "@workspace/types/catalog/categories";
 
-import { catalogKeys } from "../../keys";
+import { useQueryFromOptions } from "../../use-query-from-options";
+import { categoryQueries } from "../queries";
 
 export default function useCategories(
   options?: Omit<UseQueryOptions<Category[]>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: catalogKeys.categories.list(),
-    queryFn: () => categoriesApiClient.list(),
-    ...options,
-  });
+  return useQueryFromOptions(categoryQueries.list(), options);
 }

@@ -19,14 +19,23 @@ export function CellAction({ feedback }: CellActionProps) {
   const [openDelete, setOpenDelete] = useState(false);
   const deleteFeedbackMutation = useDeleteFeedback();
 
+  const { mutateAsync: deleteFeedback } = deleteFeedbackMutation;
+
   const handleDelete = useCallback(async () => {
-    await deleteFeedbackMutation.mutateAsync(feedback.id, {
-      onSuccess: () => {
-        setOpenDelete(false);
-        toast.success("Review has been deleted");
-      },
-    });
-  }, [feedback.id, deleteFeedbackMutation]);
+    try {
+      await deleteFeedback(feedback.id, {
+        onSuccess: () => {
+          setOpenDelete(false);
+          toast.success("Review has been deleted");
+        },
+        onError: () => {
+          toast.error("Failed to delete review");
+        },
+      });
+    } catch (error) {
+      console.error("Failed to delete review:", error);
+    }
+  }, [feedback.id, deleteFeedback]);
 
   return (
     <>

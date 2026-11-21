@@ -1,4 +1,4 @@
-import { createEntraAuth } from "@workspace/utils/auth";
+import { createEntraAuth } from "@workspace/auth/server";
 
 import { env } from "@/env.mjs";
 

@@ -1,14 +1,18 @@
+const navigationMock = {};
+
 /**
  * Creates the shared `next/navigation` mock object for Vitest tests.
  */
 export function createNextNavigationMock(vi) {
-  return {
+  return Object.assign(navigationMock, {
     useRouter() {
       return {
         push: vi.fn(),
         replace: vi.fn(),
         prefetch: vi.fn(),
         back: vi.fn(),
+        forward: vi.fn(),
+        refresh: vi.fn(),
         pathname: "/",
         query: {},
         asPath: "/",
@@ -25,7 +29,7 @@ export function createNextNavigationMock(vi) {
     },
     redirect: vi.fn(),
     notFound: vi.fn(),
-  };
+  });
 }
 
 /**

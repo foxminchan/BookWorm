@@ -149,6 +149,9 @@ export function BookForm({ bookId }: BookFormProps) {
         },
         {
           onSuccess: (response) => router.push(`/books?new=${response.id}`),
+          onError: () => {
+            toast.error("Failed to create book");
+          },
         },
       );
     }
@@ -157,6 +160,15 @@ export function BookForm({ bookId }: BookFormProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        toast.error("Image size must be 5 MB or smaller");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === "string") {

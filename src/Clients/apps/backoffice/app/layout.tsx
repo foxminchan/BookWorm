@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { createMetadata } from "@workspace/seo/metadata";
 import "@workspace/ui/globals.css";
 
+import { APP_CONFIG } from "@/config/app-config";
 import { env } from "@/env.mjs";
 
 import { Providers } from "./providers";
@@ -19,24 +21,23 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"),
+  ...createMetadata({
+    title: "BookWorm Admin - Dashboard",
+    description: APP_CONFIG.description,
+    appName: APP_CONFIG.name,
+    baseUrl: env.NEXT_PUBLIC_APP_URL || APP_CONFIG.defaultUrl,
+    creatorName: APP_CONFIG.brandName,
+    publisherName: APP_CONFIG.brandName,
+  }),
   title: {
     default: "BookWorm Admin - Dashboard",
     template: "%s | BookWorm Admin",
   },
-  description:
-    "Admin dashboard for managing BookWorm inventory, orders, and analytics.",
   generator: "Next.js",
-  applicationName: "BookWorm Admin",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
 };
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export default function RootLayout({
   children,
@@ -44,8 +45,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
+    <html
+      lang="en"
+      className={`${geist.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="font-sans antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

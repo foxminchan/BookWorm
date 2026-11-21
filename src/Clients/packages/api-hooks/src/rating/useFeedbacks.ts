@@ -1,10 +1,12 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import ratingApiClient from "@workspace/api-client/rating/feedbacks";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { Feedback, ListFeedbacksQuery } from "@workspace/types/rating";
 import type { PagedResult } from "@workspace/types/shared";
 
-import { ratingKeys } from "../keys";
+import { useQueryFromOptions } from "../use-query-from-options";
+import { feedbackQueries } from "./queries";
 
 export default function useFeedbacks(
   query?: ListFeedbacksQuery,
@@ -13,9 +15,5 @@ export default function useFeedbacks(
     "queryKey" | "queryFn"
   >,
 ) {
-  return useQuery({
-    queryKey: ratingKeys.feedbacks.list(query),
-    queryFn: () => ratingApiClient.list(query),
-    ...options,
-  });
+  return useQueryFromOptions(feedbackQueries.list(query), options);
 }

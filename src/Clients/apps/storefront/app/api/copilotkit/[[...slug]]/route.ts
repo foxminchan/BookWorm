@@ -99,8 +99,7 @@ const handleRequest = async (req: NextRequest) => {
     console.error("CopilotKit runtime error:", error);
     return jsonResponse(500, {
       error: "Failed to process request",
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: "An unexpected error occurred while processing your request.",
     });
   }
 };

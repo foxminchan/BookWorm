@@ -6,6 +6,7 @@ import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
@@ -43,26 +44,30 @@ export default function ReviewsSection({
         <div className="flex flex-wrap gap-3">
           {/* Sorting Dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="gap-2 rounded-full bg-transparent px-6"
-                aria-label="Sort reviews by"
-              >
-                Sort by: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}{" "}
-                <ChevronDown className="size-4" aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="gap-2 rounded-full bg-transparent px-6"
+                  aria-label="Sort reviews by"
+                >
+                  Sort by: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}{" "}
+                  <ChevronDown className="size-4" aria-hidden="true" />
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end" className="rounded-xl">
-              <DropdownMenuItem onClick={() => onSortChange("newest")}>
-                Newest
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSortChange("highest")}>
-                Highest Rating
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSortChange("lowest")}>
-                Lowest Rating
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => onSortChange("newest")}>
+                  Newest
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSortChange("highest")}>
+                  Highest Rating
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSortChange("lowest")}>
+                  Lowest Rating
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 

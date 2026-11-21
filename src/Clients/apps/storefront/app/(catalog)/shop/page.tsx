@@ -1,21 +1,31 @@
+import { Suspense } from "react";
+
 import type { Metadata } from "next";
 
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
-import authorsApiClient from "@workspace/api-client/catalog/authors";
-import booksApiClient from "@workspace/api-client/catalog/books";
-import categoriesApiClient from "@workspace/api-client/catalog/categories";
-import publishersApiClient from "@workspace/api-client/catalog/publishers";
-import { catalogKeys } from "@workspace/api-hooks/keys";
+import {
+  authorQueries,
+  bookQueries,
+  categoryQueries,
+  publisherQueries,
+} from "@workspace/api-hooks/catalog/queries";
 import { PRICE_RANGE } from "@workspace/utils/constants";
 
+import { APP_CONFIG, SHOP_ITEMS_PER_PAGE } from "@/config/app-config";
 import { env } from "@/env.mjs";
 import ShopPageClient from "@/features/catalog/shop/shop-page-client";
+import {
+  getCachedAuthors,
+  getCachedBooks,
+  getCachedCategories,
+  getCachedPublishers,
+} from "@/lib/cached-catalog";
 import { getShopSortParams } from "@/lib/pattern";
 import { getQueryClient } from "@/lib/query-client";
 import { buildQueryString } from "@/lib/seo";
 
-const ITEMS_PER_PAGE = 8;
+import ShopLoading from "./loading";
 
 function parsePageNumber(page: string | undefined): number {
   return Number.parseInt(page ?? "1", 10);
@@ -40,23 +50,23 @@ export async function generateMetadata({
   searchParams,
 }: ShopPageProps): Promise<Metadata> {
   const params = await searchParams;
-  const url = `${env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop`;
+  const url = `${env.NEXT_PUBLIC_APP_URL || APP_CONFIG.defaultUrl}/shop`;
 
-  let title = "Shop Books | BookWorm";
+  let title = "Shop Books";
   let description =
     "Browse our curated collection of books across various genres and categories.";
   const keywords = ["books", "online bookstore", "buy books", "literature"];
 
   // Customize metadata based on filters
   if (params.search) {
-    title = `Search: "${params.search}" | BookWorm`;
+    title = `Search: "${params.search}"`;
     description = `Search results for "${params.search}" in our book collection.`;
     keywords.push(params.search);
   } else if (params.category) {
-    const categories = await categoriesApiClient.list();
+    const categories = await getCachedCategories();
     const category = categories.find((c) => c.id === params.category);
     if (category) {
-      title = `${category.name} Books | BookWorm`;
+      title = `${category.name} Books`;
       description = `Explore our collection of ${category.name} books. Find your next great read in this category.`;
       keywords.push(category.name ?? "Unknown Category");
     }
@@ -103,15 +113,15 @@ export async function generateMetadata({
     keywords,
     openGraph: {
       type: "website",
-      title,
+      title: `${title} | ${APP_CONFIG.name}`,
       description,
       url: canonicalUrl,
-      siteName: "BookWorm",
+      siteName: APP_CONFIG.name,
       locale: "en_US",
     },
     twitter: {
       card: "summary",
-      title,
+      title: `${title} | ${APP_CONFIG.name}`,
       description,
     },
     alternates: {
@@ -136,9 +146,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function ShopPage({
-  searchParams,
-}: Readonly<ShopPageProps>) {
+async function ShopContent({ searchParams }: Readonly<ShopPageProps>) {
   const params = await searchParams;
   const queryClient = getQueryClient();
 
@@ -148,7 +156,7 @@ export default async function ShopPage({
 
   const bookListParams = {
     pageIndex: currentPage,
-    pageSize: ITEMS_PER_PAGE,
+    pageSize: SHOP_ITEMS_PER_PAGE,
     categoryId: params.category,
     publisherId: params.publisher,
     authorId: params.author,
@@ -162,21 +170,21 @@ export default async function ShopPage({
   // Prefetch all necessary data in parallel
   try {
     await Promise.all([
-      queryClient.prefetchQuery({
-        queryKey: catalogKeys.books.list(bookListParams),
-        queryFn: () => booksApiClient.list(bookListParams),
+      queryClient.query({
+        queryKey: bookQueries.list(bookListParams).queryKey,
+        queryFn: () => getCachedBooks(bookListParams),
       }),
-      queryClient.prefetchQuery({
-        queryKey: catalogKeys.categories.lists(),
-        queryFn: () => categoriesApiClient.list(),
+      queryClient.query({
+        queryKey: categoryQueries.list().queryKey,
+        queryFn: () => getCachedCategories(),
       }),
-      queryClient.prefetchQuery({
-        queryKey: catalogKeys.publishers.lists(),
-        queryFn: () => publishersApiClient.list(),
+      queryClient.query({
+        queryKey: publisherQueries.list().queryKey,
+        queryFn: () => getCachedPublishers(),
       }),
-      queryClient.prefetchQuery({
-        queryKey: catalogKeys.authors.lists(),
-        queryFn: () => authorsApiClient.list(),
+      queryClient.query({
+        queryKey: authorQueries.list().queryKey,
+        queryFn: () => getCachedAuthors(),
       }),
     ]);
   } catch (error) {
@@ -187,5 +195,13 @@ export default async function ShopPage({
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ShopPageClient />
     </HydrationBoundary>
+  );
+}
+
+export default function ShopPage({ searchParams }: Readonly<ShopPageProps>) {
+  return (
+    <Suspense fallback={<ShopLoading />}>
+      <ShopContent searchParams={searchParams} />
+    </Suspense>
   );
 }

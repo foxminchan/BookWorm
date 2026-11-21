@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @source "../../../apps/**/*.{ts,tsx}";
-@source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 @import "tw-animate-css";
@@ -82,7 +81,8 @@
 
 @theme inline {
   /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
-  --font-sans: "Geist", "Geist Fallback";
+  --font-sans: var(--font-sans, "Geist", "Geist Fallback");
+  --font-mono: var(--font-mono, "Geist Mono", "Geist Mono Fallback");
   --font-serif: "Times New Roman", "serif";
   --color-background: var(--background);
   --color-foreground: var(--foreground);

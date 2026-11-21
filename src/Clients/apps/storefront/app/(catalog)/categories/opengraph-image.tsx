@@ -1,7 +1,6 @@
 import { createCatalogOgImage } from "@/lib/og-image";
 
 export { OG_IMAGE_SIZE as size } from "@/lib/og-image";
-export const runtime = "edge";
 export const alt = "BookWorm - Browse by Category";
 export const contentType = "image/png";
 
