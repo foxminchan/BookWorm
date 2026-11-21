@@ -30,10 +30,11 @@ This document defines how customer requests move through the Chat workflow and e
 Customer requests move through a four-stage conversational flow with clear handoff paths and strict ownership rules:
 
 1. **Input validation:** Each incoming request is checked first to constrain message length and reject empty or suspicious input before routing begins.
-2. **Routing evaluation:** A dedicated decision step checks English language compliance and bookstore scope. Non-English, rejected, or out-of-scope inputs return immediately with a boundary response without entering any specialist workflow. In-scope requests route to:
+2. **Routing evaluation & HITL disambiguation:** A dedicated decision step checks English language compliance and bookstore scope. Non-English, rejected, or out-of-scope inputs return immediately with a boundary response without entering any specialist workflow. In-scope requests with high confidence route directly to:
    - [[agent|book-agent]] for book discovery, feedback discussions, or review requests without a specific book identifier.
    - [[agent|qa-agent]] for store-policy and customer-support questions.
    - [[agent|rating-agent]] for review or rating requests that already include a book identifier.
+     If the router's confidence for an in-scope request is below `0.6`, the workflow pauses via a human-in-the-loop (HITL) disambiguation step (`RouteDisambiguationPort` / `disambiguateRoute`) and asks the customer to confirm which specialist should handle the request before resuming.
 3. **Specialist execution and handoffs:** [[agent|qa-agent]] can transfer book-specific needs to [[agent|book-agent]], and [[agent|book-agent]] can transfer review or rating analysis to [[agent|rating-agent]] once a single book identifier is resolved. For complex book inquiries, [[agent|book-agent]] can also delegate independent research concurrently to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] before synthesizing a response.
 4. **Response formatting:** The final stage selects and normalizes the assistant's reply before delivering it to the customer.
 
@@ -56,19 +57,20 @@ Customer requests move through a four-stage conversational flow with clear hando
 ### Request Path & Orchestration
 
 - The Chat API accepts interactive requests through `/ag-ui`.
-- The composed workflow validates the request, evaluates routing via `DecisionRouterExecutor` (`Microsoft-Decision-1`), and formats the final assistant response.
+- The composed workflow validates the request, evaluates routing via `DecisionRouterExecutor` (`Microsoft-Decision-1`), pauses at `RouteDisambiguationPort` (`disambiguateRoute`) when in-scope route confidence is below `0.6` (`AGUIWorkflowAgent` also normalizes plain-text disambiguation replies), and formats the final assistant response.
 - Rejected, non-English, or out-of-scope input returns without entering a specialist sub-workflow.
 - See [[flow|agent-orchestration]] for the customer-facing workflow; system and agent resources describe their own responsibilities in more detail.
 
 ### Workflow Responsibilities
 
-| Stage              | Responsibility                                                                                          |
-| ------------------ | ------------------------------------------------------------------------------------------------------- |
-| Input validation   | Reject empty or detected suspicious input and constrain message length.                                 |
-| Decision Router    | Check language and request scope via `Microsoft-Decision-1`, then choose a specialist or short-circuit. |
-| Book Agent         | Handle book requests directly, coordinate independent research, or hand off to Rating Agent.            |
-| QA Agent           | Answer from supplied store-policy context and identify when information is unavailable.                 |
-| Rating Agent       | Summarize reviews or analyze rating/quality signals via A2A when a book ID is known.                    |
-| Response formatter | Select and normalize the final assistant message.                                                       |
+| Stage                | Responsibility                                                                                                                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Input validation     | Reject empty or detected suspicious input and constrain message length (skipping pure tool-result resume turns).                               |
+| Decision Router      | Check language and request scope via `Microsoft-Decision-1`, then choose a specialist, flag low-confidence routes (`< 0.6`), or short-circuit. |
+| Route Disambiguation | Pause at `RouteDisambiguationPort` (`disambiguateRoute`) for human specialist selection and resume to the chosen specialist.                   |
+| Book Agent           | Handle book requests directly, coordinate independent research, or hand off to Rating Agent.                                                   |
+| QA Agent             | Answer from supplied store-policy context and identify when information is unavailable.                                                        |
+| Rating Agent         | Summarize reviews or analyze rating/quality signals via A2A when a book ID is known.                                                           |
+| Response formatter   | Select and normalize the final assistant message.                                                                                              |
 
 <Footer />

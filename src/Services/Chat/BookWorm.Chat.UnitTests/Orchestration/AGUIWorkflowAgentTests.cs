@@ -1,4 +1,5 @@
 using BookWorm.Chat.Orchestration;
+using BookWorm.Chat.Orchestration.Executors.Disambiguation;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
@@ -94,5 +95,31 @@ public sealed class AGUIWorkflowAgentTests
         updates.Count.ShouldBeGreaterThan(0);
         observedState.ShouldNotBeNull();
         AGUIRunContext.Current.ShouldBeNull();
+    }
+
+    [Test]
+    public void GivenUnansweredDisambiguationCall_WhenUserRepliesWithText_ThenNormalizesToToolResult()
+    {
+        // Arrange
+        ChatMessage[] messages =
+        [
+            new(ChatRole.User, "Help with my order"),
+            new(
+                ChatRole.Assistant,
+                [new FunctionCallContent("call-123", RouteDisambiguationConstants.ToolName)]
+            ),
+            new(ChatRole.User, "Store policies and support"),
+        ];
+
+        // Act
+        var normalized = AGUIWorkflowAgent.NormalizeDisambiguationResume(messages);
+
+        // Assert
+        normalized.Count.ShouldBe(3);
+        normalized[^1].Role.ShouldBe(ChatRole.Tool);
+        var toolResult = normalized[^1].Contents.OfType<FunctionResultContent>().SingleOrDefault();
+        toolResult.ShouldNotBeNull();
+        toolResult.CallId.ShouldBe("call-123");
+        toolResult.Result?.ToString().ShouldBe(Constants.Other.Agents.QAAgent);
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using BookWorm.Chassis.CQRS.Command;
 using BookWorm.Chassis.CQRS.Query;
@@ -18,22 +19,6 @@ internal sealed partial class ActivityBehavior<TMessage, TResponse>(
     where TResponse : notnull
 {
     private const string Behavior = nameof(ActivityBehavior<,>);
-    private static readonly string _messageType = typeof(TMessage).Name;
-    private static readonly string _responseType = typeof(TResponse).Name;
-    private static readonly string _handlerName = $"{_messageType}Handler";
-    private static readonly string _activityName = $"{_handlerName}/{_messageType}";
-
-    private static readonly bool _ignoreOTel =
-        typeof(TMessage).GetCustomAttribute<IgnoreOTelOnHandlerAttribute>() is not null;
-
-    private static readonly bool _isCommand = _messageType.EndsWith(
-        nameof(Command),
-        StringComparison.OrdinalIgnoreCase
-    );
-
-    private static readonly string _tagName = _isCommand
-        ? TelemetryTags.Commands.Command
-        : TelemetryTags.Queries.Query;
 
     public async ValueTask<TResponse> Handle(
         TMessage message,
@@ -41,35 +26,37 @@ internal sealed partial class ActivityBehavior<TMessage, TResponse>(
         CancellationToken cancellationToken
     )
     {
-        LogHandlingRequest(logger, Behavior, _messageType, _responseType);
+        var metadata = ActivityBehaviorMetadata.GetOrAdd(typeof(TMessage));
 
-        if (_ignoreOTel)
+        LogHandlingRequest(logger, Behavior, metadata.MessageType, typeof(TResponse).Name);
+
+        if (metadata.IgnoreOTel)
         {
             return await next(message, cancellationToken);
         }
 
-        var startingTimestamp = _isCommand
-            ? commandMetrics.CommandHandlingStart(_handlerName)
-            : queryMetrics.QueryHandlingStart(_handlerName);
+        var startingTimestamp = metadata.IsCommand
+            ? commandMetrics.CommandHandlingStart(metadata.HandlerName)
+            : queryMetrics.QueryHandlingStart(metadata.HandlerName);
 
         try
         {
             return await activityScope.Run(
-                _activityName,
+                metadata.ActivityName,
                 async (_, ct) => await next(message, ct),
-                new() { Tags = { { _tagName, _messageType } } },
+                new() { Tags = { { metadata.TagName, metadata.MessageType } } },
                 cancellationToken
             );
         }
         finally
         {
-            if (_isCommand)
+            if (metadata.IsCommand)
             {
-                commandMetrics.CommandHandlingEnd(_handlerName, startingTimestamp);
+                commandMetrics.CommandHandlingEnd(metadata.HandlerName, startingTimestamp);
             }
             else
             {
-                queryMetrics.QueryHandlingEnd(_handlerName, startingTimestamp);
+                queryMetrics.QueryHandlingEnd(metadata.HandlerName, startingTimestamp);
             }
         }
     }
@@ -83,5 +70,41 @@ internal sealed partial class ActivityBehavior<TMessage, TResponse>(
         string behavior,
         string requestData,
         string responseData
+    );
+}
+
+file static class ActivityBehaviorMetadata
+{
+    private static readonly ConcurrentDictionary<Type, MessageMetadata> _cache = new();
+
+    public static MessageMetadata GetOrAdd(Type messageType)
+    {
+        return _cache.GetOrAdd(messageType, static type =>
+        {
+            var messageType = type.Name;
+            var handlerName = $"{messageType}Handler";
+            var isCommand = messageType.EndsWith(
+                nameof(Command),
+                StringComparison.OrdinalIgnoreCase
+            );
+
+            return new(
+                messageType,
+                handlerName,
+                $"{handlerName}/{messageType}",
+                type.GetCustomAttribute<IgnoreOTelOnHandlerAttribute>() is not null,
+                isCommand,
+                isCommand ? TelemetryTags.Commands.Command : TelemetryTags.Queries.Query
+            );
+        });
+    }
+
+    private readonly record struct MessageMetadata(
+        string MessageType,
+        string HandlerName,
+        string ActivityName,
+        bool IgnoreOTel,
+        bool IsCommand,
+        string TagName
     );
 }

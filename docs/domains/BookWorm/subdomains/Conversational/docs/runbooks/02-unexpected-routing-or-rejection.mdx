@@ -28,6 +28,7 @@ In BookWorm's conversational experience, every customer message passes through m
 
 - A request is rejected even though the customer expected an answer.
 - The routing step sends the request to a different specialist than expected.
+- The chat UI pauses with a "Choose a Specialist" prompt (`disambiguateRoute`) instead of answering immediately.
 - A request receives a scope-boundary response or an English-only response.
 - A mixed customer-support and book request is only partially answered.
 
@@ -59,6 +60,7 @@ In BookWorm's conversational experience, every customer message passes through m
 - **Validation & routing pipeline**:
   - Input validation checks for empty text, detected suspicious patterns, or truncation before input reaches `DecisionRouterExecutor`.
   - Accepted input is evaluated by `ChatRoutingDecisionService` using the `is_english`, `is_in_scope`, and `route` questions documented in [[doc|guides/route-customer-requests]].
+  - In-scope requests with `route` confidence below `0.6` (`ChatRoutingDecisionService.RouteConfidenceThreshold`) intentionally pause at `RouteDisambiguationPort` (`disambiguateRoute`) so the user can pick the specialist; both tool-result selections (`useRouteDisambiguation`) and plain-text replies (via `AGUIWorkflowAgent.NormalizeDisambiguationResume`) resume the workflow.
 - **Specialist handoffs**:
   - QA Agent hands book-specific portions of mixed requests to Book Agent.
   - Book Agent hands review and rating analysis to Rating Agent.

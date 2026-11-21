@@ -2,7 +2,7 @@ using AgentGovernance;
 using BookWorm.Chat.Domain.Services;
 using BookWorm.Chat.Infrastructure.Governance;
 
-namespace BookWorm.Chat.Orchestration.Executors;
+namespace BookWorm.Chat.Orchestration.Executors.Validation;
 
 internal sealed record AcceptedInput(
     ChatMessage Message,
@@ -27,7 +27,10 @@ internal union InputValidationResult(AcceptedInput, RejectedInput)
         };
 }
 
-internal sealed class InputValidationExecutor(PromptValidationService validationService)
+internal sealed class InputValidationExecutor(
+    PromptValidationService validationService,
+    bool ignoreEmptyTurns = false
+)
     : ChatProtocolExecutor(
         nameof(InputValidationExecutor),
         new() { StringMessageChatRole = ChatRole.User, AutoSendTurnToken = false },
@@ -57,8 +60,20 @@ internal sealed class InputValidationExecutor(PromptValidationService validation
         CancellationToken cancellationToken = default
     )
     {
+        if (IsPureToolResultResumeTurn(messages) || (ignoreEmptyTurns && messages.Count == 0))
+        {
+            return;
+        }
+
         var result = ValidateMessages(messages);
         await context.SendMessageAsync(result, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static bool IsPureToolResultResumeTurn(IReadOnlyList<ChatMessage> messages)
+    {
+        return messages.Count > 0
+            && messages[^1].Role == ChatRole.Tool
+            && messages[^1].Contents.OfType<FunctionResultContent>().Any();
     }
 
     private InputValidationResult ValidateMessages(IReadOnlyList<ChatMessage> messages)

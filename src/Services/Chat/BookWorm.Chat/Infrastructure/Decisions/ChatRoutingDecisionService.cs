@@ -8,6 +8,8 @@ internal sealed class ChatRoutingDecisionService(
     ILogger<ChatRoutingDecisionService>? logger = null
 )
 {
+    internal const double RouteConfidenceThreshold = 0.6;
+
     internal const string NonEnglishMessage =
         "BookWorm Chat currently supports English only. Please resend your request in English.";
 
@@ -97,13 +99,32 @@ internal sealed class ChatRoutingDecisionService(
             var distribution = typedResponse.GetDistribution(r => r.Route);
             var confidence = distribution.TryGetValue(result.Route, out var p) ? p : 1.0;
 
-            logger?.LogInformation(
-                "Decision router selected {Target} (confidence={Confidence:F3})",
+            var decision = new RoutingDecision(
                 target,
-                confidence
+                latestUserMessage,
+                Confidence: confidence,
+                Messages: messages
             );
 
-            return new(target, latestUserMessage, Confidence: confidence, Messages: messages);
+            if (decision.NeedsDisambiguation)
+            {
+                logger?.LogInformation(
+                    "Decision router confidence {Confidence:F3} is below threshold {Threshold:F3}; requesting human disambiguation (suggested={Target})",
+                    confidence,
+                    RouteConfidenceThreshold,
+                    target
+                );
+            }
+            else
+            {
+                logger?.LogInformation(
+                    "Decision router selected {Target} (confidence={Confidence:F3})",
+                    target,
+                    confidence
+                );
+            }
+
+            return decision;
         }
         catch (DecisionUnansweredException ex)
         {

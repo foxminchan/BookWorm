@@ -1,7 +1,8 @@
 using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chat.Infrastructure.Decisions;
+using BookWorm.Chat.Orchestration.Executors.Validation;
 
-namespace BookWorm.Chat.Orchestration.Executors;
+namespace BookWorm.Chat.Orchestration.Executors.Routing;
 
 internal sealed class DecisionRouterExecutor(ChatRoutingDecisionService routingService)
     : Executor<AcceptedInput, RoutingDecision>(nameof(DecisionRouterExecutor))
