@@ -67,7 +67,7 @@ At the same time, Catalog uses a read cache to speed up popular queries and a se
 
 ## 5. Technical Reference
 
-- **System of record:** `[[container|catalog-database]]` (PostgreSQL), accessed for writes by `[[service|catalog-api]]` and read for indexing by `[[service|catalog-ingestion]]`.
+- **System of record:** [[container|catalog-database]] (PostgreSQL), accessed for writes by [[service|catalog-api]] and read for indexing by [[service|catalog-ingestion]].
 - **Identifiers & timestamps:** PostgreSQL-generated `uuidv7()` identifiers and database-generated creation/modification timestamps.
 - **Referential integrity rules:**
   - Category or publisher deletion clears the foreign-key reference on books (`SET NULL` behavior) so books are preserved.
@@ -75,11 +75,11 @@ At the same time, Catalog uses a read cache to speed up popular queries and a se
   - Author deletion is restricted while `book_author` links remain.
 - **Transactional vector queue:** Database triggers atomically write to `pending_vector_updates` (coalesced by book ID and revision) within the same PostgreSQL transaction as the catalog mutation.
 - **External storage & projection boundaries:**
-  - Book images are stored in `[[container|catalog-blob]]` and referenced from the book record by URN.
+  - Book images are stored in [[container|catalog-blob]] and referenced from the book record by URN.
   - Individual feedback records belong to Reviews; Catalog stores only a denormalized rating summary updated from Reviews integration messages.
 - **Cache & search rules:**
-  - `[[container|catalog-cache]]` entries are invalidated on book changes and expire per configured lifetime; cache loss impacts performance only.
-  - Text search queries `[[container|catalog-vector]]` for candidate book IDs, then reads canonical records from PostgreSQL; price and availability for purchase validation must never come from cache or Qdrant.
+  - [[container|catalog-cache]] entries are invalidated on book changes and expire per configured lifetime; cache loss impacts performance only.
+  - Text search queries [[container|catalog-vector]] for candidate book IDs, then reads canonical records from PostgreSQL; price and availability for purchase validation must never come from cache or Qdrant.
 - **Schema governance & runbooks:**
   - Schema changes require an EF Core migration and an update to the documented current-state `schema.sql` (note: `schema.sql` is a current-state reference, not migration history).
   - Operational references: [[doc|runbooks/vector-index-lag]] and [[doc|engineering/02-change-checklist]].

@@ -63,11 +63,11 @@ In addition, a [[entity|book]]'s searchable details do not change only when the 
 
 ## 5. Technical Reference
 
-- **Queue mechanism (`[[container|catalog-database]]`):** PostgreSQL triggers on `[[entity|book]]`, `[[entity|author]]`, `[[entity|category]]`, `[[entity|publisher]]`, and `[[entity|book-author]]` tables insert or update rows in the pending-update table keyed by book ID with a revision token, sharing the PostgreSQL transaction boundary (see [[adr|adr-001-postgresql-system-of-record]]).
-- **Worker (`[[service|catalog-ingestion]]`):** Azure Functions worker invoked on a five-minute Scheduler cadence.
+- **Queue mechanism ([[container|catalog-database]]):** PostgreSQL triggers on [[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]], and [[entity|book-author]] tables insert or update rows in the pending-update table keyed by book ID with a revision token, sharing the PostgreSQL transaction boundary (see [[adr|adr-001-postgresql-system-of-record]]).
+- **Worker ([[service|catalog-ingestion]]):** Azure Functions worker invoked on a five-minute Scheduler cadence.
 - **Concurrency control & batching:**
   - PostgreSQL advisory lock ensures only one batch processor executes at a time.
-  - Reads a bounded batch of up to **200** pending rows per invocation, reading current book state from PostgreSQL and writing to `[[container|catalog-vector]]` (Qdrant; see [[adr|adr-002-hybrid-vector-search-qdrant]]).
+  - Reads a bounded batch of up to **200** pending rows per invocation, reading current book state from PostgreSQL and writing to [[container|catalog-vector]] (Qdrant; see [[adr|adr-002-hybrid-vector-search-qdrant]]).
 - **Acknowledgement semantics:**
   - Acknowledgements run only after all vector upserts and deletes in the batch succeed.
   - Each pending row is deleted using both its **book ID** and the **revision** read at batch start, preserving any newer revision enqueued while the batch was in flight.

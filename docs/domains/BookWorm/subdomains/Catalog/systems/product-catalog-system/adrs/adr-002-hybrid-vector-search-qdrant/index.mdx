@@ -64,14 +64,14 @@ Browsing and filtered listing requests that do not include a search term bypass 
 
 ## 5. Technical Reference
 
-- **Search container:** `[[container|catalog-vector]]` (Qdrant), holding one record per active `[[entity|book]]` keyed by book UUID.
+- **Search container:** [[container|catalog-vector]] (Qdrant), holding one record per active [[entity|book]] keyed by book UUID.
 - **Indexed payload & vector contract:**
   - Searchable text built from: `title`, `description`, `authors`, `category`, and `publisher`.
   - Excluded from index: prices, images, rating summaries, and inactive/soft-deleted books.
   - Vector format: `1,536-dimension` embedding using **cosine similarity** (part of the index contract; changing the embedding model requires rebuilding the index so stored book vectors and query vectors stay compatible).
-- **Query execution path (`[[service|catalog-api]]`):**
+- **Query execution path ([[service|catalog-api]]):**
   1. Generate a query embedding for the search term.
   2. Run hybrid vector + keyword search in Qdrant to retrieve candidate book UUIDs.
-  3. Query `[[container|catalog-database]]` (PostgreSQL) for the candidate IDs, applying SQL filters, sorting, and paging against canonical records.
+  3. Query [[container|catalog-database]] (PostgreSQL) for the candidate IDs, applying SQL filters, sorting, and paging against canonical records.
 - **Non-search paths:** Browse and filtered-list requests without a text-search term remain PostgreSQL-backed only.
 - **Indexing pipeline & source of truth:** Maintained asynchronously via [[adr|adr-003-database-queue-for-vector-indexing]], with canonical authority governed by [[adr|adr-001-postgresql-system-of-record]]. Changing searchable fields requires coordinated updates to text construction, database queue triggers, and reindexing.

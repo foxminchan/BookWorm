@@ -57,8 +57,8 @@ This decision sets clear access, secrecy, and monitoring rules around notificati
 
 ## 5. Technical Reference
 
-- **Decision status & scope**: Accepted (`2026-11-01`), applying to `notification-system` and `[[service|notification-api]]`.
-- **Confidential data store**: `[[container|notification-database]]` (PostgreSQL) holds email outbox rows containing recipient names, addresses, subjects, and rendered order content.
+- **Decision status & scope**: Accepted (`2026-11-01`), applying to `notification-system` and [[service|notification-api]].
+- **Confidential data store**: [[container|notification-database]] (PostgreSQL) holds email outbox rows containing recipient names, addresses, subjects, and rendered order content.
 - **Runtime secrets**: SMTP authentication and PostgreSQL connection strings must be supplied via runtime secret configuration and excluded from catalog content, source control, outbox rows, and routine logs.
 - **Observability & logging policy**:
   - Prefer outbox identifiers, sequence numbers, timestamps, aggregate backlog counts, and sanitized error categories.

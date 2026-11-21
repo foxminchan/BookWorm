@@ -61,7 +61,7 @@ However, caching introduces a secondary copy of data that can briefly lag behind
 
 ## 5. Technical Reference
 
-- **Caching implementation (`[[service|catalog-api]]`):** Registers **FusionCache** with an **L1 in-process memory cache** backed by a **Redis distributed cache** (`[[container|catalog-cache]]`), using JSON serialization and default expiration from `Caching:Expiration` (overridable per entry).
+- **Caching implementation ([[service|catalog-api]]):** Registers **FusionCache** with an **L1 in-process memory cache** backed by a **Redis distributed cache** ([[container|catalog-cache]]), using JSON serialization and default expiration from `Caching:Expiration` (overridable per entry).
 - **Selected cached entries:**
 
 | Data                          | Key                    | Source           | Expiration           |
@@ -70,7 +70,7 @@ However, caching introduces a secondary copy of data that can briefly lag behind
 | Dashboard summary             | `catalog:dashboard:v1` | Catalog Database | 15 seconds           |
 
 - **Invalidation & key versioning:**
-  - Book mutations invalidate `book:{id}` so the next lookup reloads from PostgreSQL (`[[adr|adr-001-postgresql-system-of-record]]`).
+  - Book mutations invalidate `book:{id}` so the next lookup reloads from PostgreSQL ([[adr|adr-001-postgresql-system-of-record]]).
   - `catalog:dashboard:v1` relies on its 15-second TTL.
   - Changes to cached payload shapes must increment the key version (for example, `catalog:dashboard:v2`) to avoid deserializing incompatible cached JSON.
 - **Fallback & observability:**

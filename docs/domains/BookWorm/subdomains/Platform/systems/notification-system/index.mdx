@@ -47,7 +47,7 @@ The Notification System owns BookWorm's order email workflow from template rende
 1. Finance sends an order-placement, cancellation, or completion notification request containing customer and order details.
 2. If the recipient email address is blank, the system skips the request safely without failing.
 3. For valid addresses, the system merges the supplied order details into the matching email template to produce the subject and message body.
-4. It submits the formatted email to the configured mail provider—a local test inbox in development environments, or an external provider such as `[[system|sendgrid]]` elsewhere—using built-in retry protection.
+4. It submits the formatted email to the configured mail provider—a local test inbox in development environments, or an external provider such as [[system|sendgrid]] elsewhere—using built-in retry protection.
 5. Once the mail provider accepts the submission, processing completes. The Notification System does not track final inbox delivery or publish a result back to upstream systems.
 
 <ContextDiagram />
@@ -63,10 +63,10 @@ The Notification System owns BookWorm's order email workflow from template rende
 
 ### Service & Transport Implementation
 
-- `[[service|notification-api]]` consumes Finance order-placement, cancellation, and completion commands, renders emails with `MjmlTemplateRenderer` using MJML templates, and builds MIME messages.
-- Messages are submitted over SMTP using MailKit protected by a configured mail resilience pipeline (MailPit in development; a configured SMTP provider such as `[[system|sendgrid]]` elsewhere).
+- [[service|notification-api]] consumes Finance order-placement, cancellation, and completion commands, renders emails with `MjmlTemplateRenderer` using MJML templates, and builds MIME messages.
+- Messages are submitted over SMTP using MailKit protected by a configured mail resilience pipeline (MailPit in development; a configured SMTP provider such as [[system|sendgrid]] elsewhere).
 - **Important implementation note**: The current implementation does not call the SendGrid HTTP API and does not maintain a separate PostgreSQL database.
-- In the service architecture graph, `[[service|notification-api]]` connects to `[[service|sendgrid-api]]` via `[[command|SendMail]]` as a logical submission relationship; this does not alter the underlying SMTP transport.
+- In the service architecture graph, [[service|notification-api]] connects to [[service|sendgrid-api]] via [[command|SendMail]] as a logical submission relationship; this does not alter the underlying SMTP transport.
 
 ### Responsibilities and Boundaries
 
