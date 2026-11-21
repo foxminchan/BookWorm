@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Options;
 
 namespace BookWorm.Chassis.Caching;
@@ -9,5 +9,6 @@ public sealed partial class CachingOptions : IValidateOptions<CachingOptions>
     public const string ConfigurationSection = "Caching";
 
     [Required]
-    public TimeSpan Expiration { get; set; }
+    [Range(typeof(TimeSpan), "00:00:01", "365.00:00:00")]
+    public TimeSpan Expiration { get; set; } = TimeSpan.FromMinutes(30);
 }

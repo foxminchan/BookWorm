@@ -1,18 +1,16 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import booksApiClient from "@workspace/api-client/catalog/books";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { Book, ListBooksQuery } from "@workspace/types/catalog/books";
 import type { PagedResult } from "@workspace/types/shared";
 
-import { catalogKeys } from "../../keys";
+import { useQueryFromOptions } from "../../use-query-from-options";
+import { bookQueries } from "../queries";
 
 export default function useBooks(
   query?: ListBooksQuery,
   options?: Omit<UseQueryOptions<PagedResult<Book>>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: catalogKeys.books.list(query),
-    queryFn: () => booksApiClient.list(query),
-    ...options,
-  });
+  return useQueryFromOptions(bookQueries.list(query), options);
 }

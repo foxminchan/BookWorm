@@ -9,6 +9,6 @@ public sealed class BookAuthor() : Entity
     }
 
     public AuthorId AuthorId { get; private set; }
-    public Author Author { get; private set; } = null!;
+    public Author? Author { get; private set; }
     public Book Book { get; private set; } = null!;
 }

@@ -1,12 +1,9 @@
 "use client";
 
-import { createAuthClient } from "better-auth/react";
+import { createAppAuthClient } from "@workspace/auth/client";
 
-export const authClient = createAuthClient({
-  baseURL:
-    globalThis.window === undefined
-      ? "http://localhost:3000"
-      : globalThis.location.origin,
+export const authClient = createAppAuthClient({
+  defaultOrigin: "http://localhost:3000",
 });
 
 export const { signIn, useSession } = authClient;

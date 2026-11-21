@@ -17,10 +17,10 @@ internal sealed class CategoryValidator : AbstractValidator<Guid>
         RuleFor(x => x)
             .MustAsync(
                 async (categoryId, cancellationToken) =>
-                    await repository.CountAsync(
+                    !await repository.AnyAsync(
                         new BookFilterSpec([categoryId], null),
                         cancellationToken
-                    ) == 0
+                    )
             )
             .WithMessage("Category has books and cannot be deleted");
     }

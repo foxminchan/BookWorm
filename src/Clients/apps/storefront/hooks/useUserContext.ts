@@ -2,17 +2,17 @@
 
 import { useAgentContext } from "@copilotkit/react-core/v2";
 
+import { useUserSession } from "@workspace/auth/hooks";
+
 import { useSession } from "@/lib/auth-client";
 
 export function useUserContext() {
-  const { data: session } = useSession();
-
-  const userData = {
-    isAuthenticated: !!session?.user,
-  };
+  const { isAuthenticated } = useUserSession(useSession);
 
   useAgentContext({
     description: "Whether the user is currently authenticated",
-    value: userData,
+    value: {
+      isAuthenticated,
+    },
   });
 }

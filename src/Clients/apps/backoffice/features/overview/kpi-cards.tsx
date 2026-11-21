@@ -8,9 +8,9 @@ import {
   CardDescription,
   CardHeader,
 } from "@workspace/ui/components/card";
+import { currencyFormatter } from "@workspace/utils/constants";
 
 import { KPICardsSkeleton } from "@/components/loading-skeleton";
-import { currencyFormatter } from "@/lib/constants";
 
 type KPICardsProps = Readonly<{
   totalOrders: number;

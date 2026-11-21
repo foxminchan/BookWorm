@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
 import type {
   ListOrdersQuery,
@@ -23,7 +25,12 @@ export function OrdersTable({ statusFilter }: OrdersTableProps) {
     apiPageIndex,
     handlePaginationChange,
     handleSortingChange,
+    resetPage,
   } = usePaginatedTable();
+
+  useEffect(() => {
+    resetPage();
+  }, [statusFilter, resetPage]);
 
   const query: ListOrdersQuery = {
     pageIndex: apiPageIndex,

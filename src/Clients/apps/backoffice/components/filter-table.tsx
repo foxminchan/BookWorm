@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { ColumnDef, RowData, SortingState } from "@tanstack/react-table";
 import { flexRender, useTable } from "@tanstack/react-table";
@@ -17,6 +17,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -65,20 +66,20 @@ export function FilterTable<TData extends RowData>({
   getRowId,
 }: FilterTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const sortingRef = useRef<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
   >({});
 
   const handleSortingChange = useCallback(
     (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
-      setSorting((prev) => {
-        const newSorting =
-          typeof updaterOrValue === "function"
-            ? updaterOrValue(prev)
-            : updaterOrValue;
-        onSortingChange?.(newSorting);
-        return newSorting;
-      });
+      const newSorting =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(sortingRef.current)
+          : updaterOrValue;
+      sortingRef.current = newSorting;
+      setSorting(newSorting);
+      onSortingChange?.(newSorting);
     },
     [onSortingChange],
   );
@@ -164,7 +165,9 @@ export function FilterTable<TData extends RowData>({
                     return (
                       <TableRow
                         key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
+                        data-state={
+                          row.getIsSelected() ? "selected" : undefined
+                        }
                         className={
                           isHighlighted
                             ? "bg-green-50 dark:bg-green-950/20"
@@ -212,7 +215,7 @@ export function FilterTable<TData extends RowData>({
                   <Select
                     value={pageSize.toString()}
                     onValueChange={(value) =>
-                      handlePageSizeChange(Number.parseInt(value, 10))
+                      handlePageSizeChange(Number.parseInt(String(value), 10))
                     }
                   >
                     <SelectTrigger
@@ -222,11 +225,13 @@ export function FilterTable<TData extends RowData>({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {PAGE_SIZES.map((size) => (
-                        <SelectItem key={size} value={size.toString()}>
-                          {size}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        {PAGE_SIZES.map((size) => (
+                          <SelectItem key={size} value={size.toString()}>
+                            {size}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>

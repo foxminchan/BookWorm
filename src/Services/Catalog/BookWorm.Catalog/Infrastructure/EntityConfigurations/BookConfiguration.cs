@@ -47,6 +47,10 @@ internal sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.Navigation(e => e.Publisher).AutoInclude();
 
+        builder.HasIndex(p => p.Name);
+
+        builder.HasIndex(p => p.Status);
+
         builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

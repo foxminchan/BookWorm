@@ -1,4 +1,5 @@
 import axios, {
+  AxiosHeaders,
   type AxiosInstance,
   type AxiosResponse,
   HttpStatusCode,
@@ -7,6 +8,9 @@ import axiosRetry, { exponentialDelay } from "axios-retry";
 
 import axiosConfig from "./config";
 import type { AxiosRequestConfig } from "./global";
+import { HttpHeaders } from "./headers";
+
+export { HttpHeaders } from "./headers";
 
 const DEFAULT_MAX_RETRIES = Number(process.env.NEXT_PUBLIC_MAX_RETRIES) || 5;
 
@@ -16,6 +20,41 @@ const DEFAULT_MAX_RETRIES = Number(process.env.NEXT_PUBLIC_MAX_RETRIES) || 5;
  * Used by the request interceptor to attach `Authorization: Bearer <token>`.
  */
 export type AccessTokenProvider = () => Promise<string | null> | string | null;
+
+export type ConditionalResponse<T> =
+  | { data: T; etag?: string; notModified: false }
+  | { data: null; etag?: string; notModified: true };
+
+export function formatETag(version?: number | null): string | undefined {
+  if (version === undefined || version === null || !Number.isFinite(version)) {
+    return undefined;
+  }
+
+  return `"${version}"`;
+}
+
+export function getHeaderValue(
+  headers: AxiosResponse["headers"],
+  name: string,
+): string | undefined {
+  const raw =
+    headers instanceof AxiosHeaders
+      ? headers.get(name)
+      : (headers[name] ?? headers[name.toLowerCase()]);
+
+  if (typeof raw !== "string") {
+    return undefined;
+  }
+
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+export function extractETag(
+  headers: AxiosResponse["headers"],
+): string | undefined {
+  return getHeaderValue(headers, HttpHeaders.ETag);
+}
 
 export function isPreconditionFailedError(error: unknown): boolean {
   return (
@@ -41,7 +80,7 @@ export default class ApiClient {
     this.client.interceptors.request.use(async (requestConfig) => {
       const token = await this.tokenProvider?.();
       if (token) {
-        requestConfig.headers.Authorization = `Bearer ${token}`;
+        requestConfig.headers.setAuthorization(`Bearer ${token}`);
       }
       return requestConfig;
     });
@@ -93,6 +132,36 @@ export default class ApiClient {
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
     return this.client.get<T>(url, config);
+  }
+
+  public async getConditional<T>(
+    url: string,
+    options?: { ifNoneMatch?: string; params?: unknown },
+  ): Promise<ConditionalResponse<T>> {
+    const headers = new AxiosHeaders({
+      [HttpHeaders.CacheControl]: "no-cache",
+    });
+
+    if (options?.ifNoneMatch) {
+      headers.set(HttpHeaders.IfNoneMatch, options.ifNoneMatch);
+    }
+
+    const response = await this.get<T>(url, {
+      params: options?.params,
+      headers,
+      validateStatus: (status) =>
+        (status >= HttpStatusCode.Ok &&
+          status < HttpStatusCode.MultipleChoices) ||
+        status === HttpStatusCode.NotModified,
+    });
+
+    const etag = extractETag(response.headers);
+
+    if (response.status === HttpStatusCode.NotModified) {
+      return { data: null, etag, notModified: true };
+    }
+
+    return { data: response.data, etag, notModified: false };
   }
 
   public query<T>(

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+using BookWorm.Chassis.Utilities.Guards;
 
 namespace BookWorm.Catalog.Features.Authors.Delete;
 
@@ -15,6 +15,8 @@ internal sealed class DeleteAuthorHandler(IAuthorRepository repository)
         var author = await repository.GetByIdAsync((Guid)request.Id, cancellationToken);
 
         Guard.Against.NotFound(author, (Guid)request.Id);
+
+        author.Remove();
 
         repository.Delete(author);
 

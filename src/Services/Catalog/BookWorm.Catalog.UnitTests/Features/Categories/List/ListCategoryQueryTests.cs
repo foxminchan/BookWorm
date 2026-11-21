@@ -3,11 +3,13 @@ using BookWorm.Catalog.Features.Categories;
 using BookWorm.Catalog.Features.Categories.List;
 using BookWorm.Catalog.UnitTests.Fakers;
 using Mediator;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.List;
 
-public sealed class ListCategoryQueryTests
+public sealed class ListCategoryQueryTests : IDisposable
 {
+    private readonly FusionCache _cache;
     private readonly CategoryFaker _faker;
     private readonly ListCategoriesHandler _handler;
     private readonly Mock<ICategoryRepository> _repositoryMock;
@@ -15,8 +17,14 @@ public sealed class ListCategoryQueryTests
     public ListCategoryQueryTests()
     {
         _repositoryMock = new();
-        _handler = new(_repositoryMock.Object);
+        _cache = new(new FusionCacheOptions());
+        _handler = new(_repositoryMock.Object, _cache);
         _faker = new();
+    }
+
+    public void Dispose()
+    {
+        _cache.Dispose();
     }
 
     [Test]
@@ -138,5 +146,24 @@ public sealed class ListCategoryQueryTests
         // Assert
         copy.ShouldBe(original);
         copy.ShouldNotBeSameAs(original);
+    }
+
+    [Test]
+    public async Task GivenCachedCategories_WhenHandlingListCategoriesTwice_ThenShouldReturnFromCache()
+    {
+        // Arrange
+        var categories = _faker.Generate();
+        _repositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(categories);
+
+        // Act
+        var first = await _handler.Handle(new(), CancellationToken.None);
+        var second = await _handler.Handle(new(), CancellationToken.None);
+
+        // Assert
+        first.Count.ShouldBe(categories.Length);
+        second.Count.ShouldBe(categories.Length);
+        _repositoryMock.Verify(repo => repo.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

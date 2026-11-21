@@ -22,26 +22,28 @@ export default function NotFound() {
         </div>
         <div className="flex flex-col items-center justify-center gap-4 pt-6 sm:flex-row">
           <Button
-            asChild
+            render={
+              <Link href="/">
+                <Home className="size-5" />
+                Return Home
+              </Link>
+            }
+            nativeButton={false}
             size="lg"
             className="shadow-primary/20 gap-2 rounded-full px-8 shadow-lg"
-          >
-            <Link href="/">
-              <Home className="size-5" />
-              Return Home
-            </Link>
-          </Button>
+          />
           <Button
-            asChild
+            render={
+              <Link href="/shop">
+                <BookOpen className="size-5" />
+                Browse Books
+              </Link>
+            }
+            nativeButton={false}
             variant="outline"
             size="lg"
             className="gap-2 rounded-full bg-transparent px-8"
-          >
-            <Link href="/shop">
-              <BookOpen className="size-5" />
-              Browse Books
-            </Link>
-          </Button>
+          />
         </div>
       </div>
     </div>

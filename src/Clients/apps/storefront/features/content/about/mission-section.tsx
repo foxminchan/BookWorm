@@ -25,9 +25,12 @@ export default function MissionSection() {
                 the transformative power of reading.
               </p>
             </div>
-            <Button size="lg" className="w-fit rounded-full px-8" asChild>
-              <Link href="/shop">Explore Our Collection</Link>
-            </Button>
+            <Button
+              render={<Link href="/shop">Explore Our Collection</Link>}
+              nativeButton={false}
+              size="lg"
+              className="w-fit rounded-full px-8"
+            />
           </div>
           <div className="aspect-square overflow-hidden rounded-2xl shadow-lg">
             <Image

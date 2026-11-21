@@ -5,7 +5,6 @@ import type { Feedback } from "@workspace/types/rating";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 
@@ -50,18 +49,18 @@ function CommentCell({ row }: Readonly<FeedbackCellContext>) {
     return <div className="text-muted-foreground text-sm">No comment</div>;
   }
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
+    <Tooltip>
+      <TooltipTrigger
+        render={
           <div className="text-muted-foreground max-w-xs cursor-help truncate text-sm">
             {comment}
           </div>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-md">
-          <p className="whitespace-pre-wrap">{comment}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        }
+      />
+      <TooltipContent className="max-w-md">
+        <p className="whitespace-pre-wrap">{comment}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -1,5 +1,7 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
+import { HttpHeaders } from "@workspace/api-client/headers";
 import type {
   Order,
   OrderEventHistory,
@@ -7,56 +9,60 @@ import type {
 } from "@workspace/types/ordering/orders";
 import { buildPaginationLinks } from "@workspace/utils/link";
 
-import { ORDERING_API_BASE_URL } from "../constants";
+import {
+  createCorsHeaders,
+  createPreflightResponse,
+  mockUrl,
+} from "../../helpers/index";
 import { ordersStoreManager } from "./data";
 
 export const ordersHandlers = [
-  http.get(
-    `${ORDERING_API_BASE_URL}/api/v1/orders/:id/history`,
-    ({ params }) => {
-      const { id } = params;
-
-      if (!id || typeof id !== "string") {
-        return new HttpResponse(null, { status: 400 });
-      }
-
-      const order = ordersStoreManager.get(id);
-
-      if (!order) {
-        return new HttpResponse(null, { status: 404 });
-      }
-
-      const history: OrderEventHistory[] = [
-        {
-          sequence: 1,
-          version: 1,
-          eventType: "order_placed",
-          timestamp: order.date,
-          status: "New",
-          totalPrice: order.total,
-        },
-      ];
-
-      if (order.status !== "New") {
-        history.push({
-          sequence: 2,
-          version: 2,
-          eventType:
-            order.status === "Completed"
-              ? "order_completed"
-              : "order_cancelled",
-          timestamp: order.date,
-          status: order.status,
-          totalPrice: order.total,
-        });
-      }
-
-      return HttpResponse.json(history, { status: 200 });
-    },
+  http.options(
+    mockUrl(API_ENDPOINTS.ordering.orders.summary()),
+    ({ request }) => createPreflightResponse(request),
   ),
 
+  http.get(mockUrl(API_ENDPOINTS.ordering.orders.history()), ({ params }) => {
+    const { id } = params;
+
+    if (!id || typeof id !== "string") {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const order = ordersStoreManager.get(id);
+
+    if (!order) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    const history: OrderEventHistory[] = [
+      {
+        sequence: 1,
+        version: 1,
+        eventType: "order_placed",
+        timestamp: order.date,
+        status: "New",
+        totalPrice: order.total,
+      },
+    ];
+
+    if (order.status !== "New") {
+      history.push({
+        sequence: 2,
+        version: 2,
+        eventType:
+          order.status === "Completed" ? "order_completed" : "order_cancelled",
+        timestamp: order.date,
+        status: order.status,
+        totalPrice: order.total,
+      });
+    }
+
+    return HttpResponse.json(history, { status: 200 });
+  }),
+
   http.get(
-    `${ORDERING_API_BASE_URL}/api/v1/orders/:id/summary`,
+    mockUrl(API_ENDPOINTS.ordering.orders.summary()),
     ({ params, request }) => {
       const { id } = params;
 
@@ -78,17 +84,17 @@ export const ordersHandlers = [
         : defaultVersion;
 
       const etag = `"${version}"`;
-      const ifNoneMatch = request.headers.get("If-None-Match");
+      const ifNoneMatch = request.headers.get(HttpHeaders.IfNoneMatch);
 
       if (
         ifNoneMatch
           ?.split(",")
-          .map((tag) => tag.trim())
+          .map((tag) => tag.trim().replace(/^W\//, ""))
           .some((tag) => tag === "*" || tag === etag)
       ) {
         return new HttpResponse(null, {
           status: 304,
-          headers: { ETag: etag },
+          headers: createCorsHeaders(request, { [HttpHeaders.ETag]: etag }),
         });
       }
 
@@ -101,12 +107,12 @@ export const ordersHandlers = [
 
       return HttpResponse.json(summary, {
         status: 200,
-        headers: { ETag: etag },
+        headers: createCorsHeaders(request, { [HttpHeaders.ETag]: etag }),
       });
     },
   ),
 
-  http.get(`${ORDERING_API_BASE_URL}/api/v1/orders/:id`, ({ params }) => {
+  http.get(mockUrl(API_ENDPOINTS.ordering.orders.byId()), ({ params }) => {
     const { id } = params;
 
     if (!id || typeof id !== "string") {
@@ -122,7 +128,7 @@ export const ordersHandlers = [
     return HttpResponse.json(order, { status: 200 });
   }),
 
-  http.get(`${ORDERING_API_BASE_URL}/api/v1/orders`, ({ request }) => {
+  http.get(mockUrl(API_ENDPOINTS.ordering.orders.root), ({ request }) => {
     const url = new URL(request.url);
     const pageIndex = Number.parseInt(url.searchParams.get("pageIndex") || "1");
     const pageSize = Number.parseInt(url.searchParams.get("pageSize") || "10");
@@ -160,36 +166,52 @@ export const ordersHandlers = [
     );
 
     const headers = new Headers();
-    headers.set("Link", links.join(","));
-    headers.set("Pagination-Count", totalCount.toString());
+    headers.set(HttpHeaders.Link, links.join(","));
+    headers.set(HttpHeaders.PaginationCount, totalCount.toString());
 
     return HttpResponse.json(orderList, { status: 200, headers });
   }),
 
-  http.post(`${ORDERING_API_BASE_URL}/api/v1/orders`, () => {
+  http.post(mockUrl(API_ENDPOINTS.ordering.orders.root), () => {
     const order = ordersStoreManager.create([
       { id: "mock-item", quantity: 1, price: 29.99, name: "Mock Book" },
     ]);
 
     const headers = new Headers();
     headers.set(
-      "Location",
-      `${ORDERING_API_BASE_URL}/api/v1/orders/${order.id}`,
+      HttpHeaders.Location,
+      mockUrl(API_ENDPOINTS.ordering.orders.byId(order.id)),
     );
 
     return HttpResponse.json(order.id, { status: 201, headers });
   }),
 
-  http.patch(
-    `${ORDERING_API_BASE_URL}/api/v1/orders/:orderId/cancel`,
-    ({ params }) => {
-      const { orderId } = params;
+  http.patch(mockUrl(API_ENDPOINTS.ordering.orders.cancel()), ({ params }) => {
+    const { id } = params;
 
-      if (!orderId || typeof orderId !== "string") {
+    if (!id || typeof id !== "string") {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const order = ordersStoreManager.updateStatus(id, "Cancelled");
+
+    if (!order) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    return HttpResponse.json(order, { status: 200 });
+  }),
+
+  http.patch(
+    mockUrl(API_ENDPOINTS.ordering.orders.complete()),
+    ({ params }) => {
+      const { id } = params;
+
+      if (!id || typeof id !== "string") {
         return new HttpResponse(null, { status: 400 });
       }
 
-      const order = ordersStoreManager.updateStatus(orderId, "Cancelled");
+      const order = ordersStoreManager.updateStatus(id, "Completed");
 
       if (!order) {
         return new HttpResponse(null, { status: 404 });
@@ -199,26 +221,7 @@ export const ordersHandlers = [
     },
   ),
 
-  http.patch(
-    `${ORDERING_API_BASE_URL}/api/v1/orders/:orderId/complete`,
-    ({ params }) => {
-      const { orderId } = params;
-
-      if (!orderId || typeof orderId !== "string") {
-        return new HttpResponse(null, { status: 400 });
-      }
-
-      const order = ordersStoreManager.updateStatus(orderId, "Completed");
-
-      if (!order) {
-        return new HttpResponse(null, { status: 404 });
-      }
-
-      return HttpResponse.json(order, { status: 200 });
-    },
-  ),
-
-  http.delete(`${ORDERING_API_BASE_URL}/api/v1/orders/:id`, ({ params }) => {
+  http.delete(mockUrl(API_ENDPOINTS.ordering.orders.byId()), ({ params }) => {
     const { id } = params;
 
     if (!id || typeof id !== "string") {

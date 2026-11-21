@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 using BookWorm.Catalog.Features.Authors.Create;
 using BookWorm.SharedKernel.SeedWork;

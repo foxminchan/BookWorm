@@ -1,16 +1,14 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import authorsApiClient from "@workspace/api-client/catalog/authors";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { Author } from "@workspace/types/catalog/authors";
 
-import { catalogKeys } from "../../keys";
+import { useQueryFromOptions } from "../../use-query-from-options";
+import { authorQueries } from "../queries";
 
 export default function useAuthors(
   options?: Omit<UseQueryOptions<Author[]>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: catalogKeys.authors.list(),
-    queryFn: () => authorsApiClient.list(),
-    ...options,
-  });
+  return useQueryFromOptions(authorQueries.list(), options);
 }

@@ -1,18 +1,16 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import buyersApiClient from "@workspace/api-client/ordering/buyers";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { Buyer, ListBuyersQuery } from "@workspace/types/ordering/buyers";
 import type { PagedResult } from "@workspace/types/shared";
 
-import { orderingKeys } from "../../keys";
+import { useQueryFromOptions } from "../../use-query-from-options";
+import { buyerQueries } from "../queries";
 
 export default function useBuyers(
   query?: ListBuyersQuery,
   options?: Omit<UseQueryOptions<PagedResult<Buyer>>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: orderingKeys.buyers.list(query),
-    queryFn: () => buyersApiClient.list(query),
-    ...options,
-  });
+  return useQueryFromOptions(buyerQueries.list(query), options);
 }

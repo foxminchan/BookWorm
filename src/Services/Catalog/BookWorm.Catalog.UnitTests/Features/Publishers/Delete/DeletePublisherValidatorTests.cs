@@ -24,8 +24,8 @@ public sealed class DeletePublisherValidatorTests
         var command = new DeletePublisherCommand(publisherId);
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         // Act
         var result = await _validator.ValidateAsync(command);
@@ -43,8 +43,8 @@ public sealed class DeletePublisherValidatorTests
         var command = new DeletePublisherCommand(publisherId);
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _validator.ValidateAsync(command);
@@ -63,15 +63,15 @@ public sealed class DeletePublisherValidatorTests
         var command = new DeletePublisherCommand(Guid.Empty);
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         // Act
         await _validator.ValidateAsync(command);
 
         // Assert
         _mockRepository.Verify(
-            x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -85,7 +85,7 @@ public sealed class DeletePublisherValidatorTests
         var expectedException = new InvalidOperationException("Database error");
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -105,8 +105,8 @@ public sealed class DeletePublisherValidatorTests
         var cancellationToken = new CancellationToken(true);
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), cancellationToken))
-            .ReturnsAsync(0);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), cancellationToken))
+            .ReturnsAsync(false);
 
         // Act & Assert
         await Should.ThrowAsync<OperationCanceledException>(async () =>
@@ -122,8 +122,8 @@ public sealed class DeletePublisherValidatorTests
         var publisherId = Guid.CreateVersion7();
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         // Act
         var result = await _publisherValidator.ValidateAsync(publisherId);
@@ -140,8 +140,8 @@ public sealed class DeletePublisherValidatorTests
         var publisherId = Guid.CreateVersion7();
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _publisherValidator.ValidateAsync(publisherId);
@@ -159,15 +159,15 @@ public sealed class DeletePublisherValidatorTests
         var publisherId = Guid.Empty;
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         // Act
         await _publisherValidator.ValidateAsync(publisherId);
 
         // Assert
         _mockRepository.Verify(
-            x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -180,8 +180,8 @@ public sealed class DeletePublisherValidatorTests
         var publisherId2 = Guid.CreateVersion7();
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         // Act
         await _publisherValidator.ValidateAsync(publisherId1);
@@ -189,7 +189,7 @@ public sealed class DeletePublisherValidatorTests
 
         // Assert
         _mockRepository.Verify(
-            x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2)
         );
     }
@@ -202,12 +202,12 @@ public sealed class DeletePublisherValidatorTests
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         _mockRepository
-            .Setup(x => x.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.AnyAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
             .Returns(
                 async (BookFilterSpec _, CancellationToken ct) =>
                 {
                     await Task.Delay(1000, ct);
-                    return 0L;
+                    return false;
                 }
             );
 

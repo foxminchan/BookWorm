@@ -83,6 +83,8 @@ export default function ReviewForm({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label={`Rate ${star} out of 5 stars`}
+                        aria-pressed={star <= field.value}
                         onClick={() => {
                           field.onChange(star);
                           onChange("rating", star);
@@ -90,6 +92,7 @@ export default function ReviewForm({
                         className="h-8 w-8 p-0 hover:bg-transparent focus-visible:ring-0"
                       >
                         <Star
+                          aria-hidden="true"
                           className={cn(
                             "size-6",
                             star <= field.value

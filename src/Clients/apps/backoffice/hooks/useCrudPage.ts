@@ -44,41 +44,53 @@ export function useCrudPage<
 >) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const { mutateAsync: createMutateAsync, isPending: isCreatePending } =
+    createMutation;
+  const { mutateAsync: updateMutateAsync, isPending: isUpdatePending } =
+    updateMutation;
+  const { mutateAsync: deleteMutateAsync, isPending: isDeletePending } =
+    deleteMutation;
+
   const handleCreate = useCallback(
     async (name: string) => {
-      await createMutation.mutateAsync(buildCreateRequest(name));
-      setIsDialogOpen(false);
-      toast.success(`${entityName} has been created`);
+      try {
+        await createMutateAsync(buildCreateRequest(name));
+        setIsDialogOpen(false);
+        toast.success(`${entityName} has been created`);
+      } catch {
+        toast.error(`Failed to create ${entityName.toLowerCase()}`);
+      }
     },
-    [createMutation, buildCreateRequest, entityName],
+    [createMutateAsync, buildCreateRequest, entityName],
   );
 
   const handleUpdate = useCallback(
     async (id: string, name: string) => {
-      await updateMutation.mutateAsync(buildUpdateRequest(id, name));
-      toast.success(`${entityName} has been updated`);
+      try {
+        await updateMutateAsync(buildUpdateRequest(id, name));
+        toast.success(`${entityName} has been updated`);
+      } catch {
+        toast.error(`Failed to update ${entityName.toLowerCase()}`);
+      }
     },
-    [updateMutation, buildUpdateRequest, entityName],
+    [updateMutateAsync, buildUpdateRequest, entityName],
   );
 
   const handleDelete = useCallback(
     async (id: string) => {
-      await deleteMutation.mutateAsync(id);
-      toast.success(`${entityName} has been deleted`);
+      try {
+        await deleteMutateAsync(id);
+        toast.success(`${entityName} has been deleted`);
+      } catch {
+        toast.error(`Failed to delete ${entityName.toLowerCase()}`);
+      }
     },
-    [deleteMutation, entityName],
+    [deleteMutateAsync, entityName],
   );
 
   const isSubmitting = useMemo(
-    () =>
-      createMutation.isPending ||
-      updateMutation.isPending ||
-      deleteMutation.isPending,
-    [
-      createMutation.isPending,
-      updateMutation.isPending,
-      deleteMutation.isPending,
-    ],
+    () => isCreatePending || isUpdatePending || isDeletePending,
+    [isCreatePending, isUpdatePending, isDeletePending],
   );
 
   return {
@@ -87,7 +99,7 @@ export function useCrudPage<
     isDialogOpen,
     setIsDialogOpen,
     isSubmitting,
-    isCreatePending: createMutation.isPending,
+    isCreatePending,
     handleCreate,
     handleUpdate,
     handleDelete,

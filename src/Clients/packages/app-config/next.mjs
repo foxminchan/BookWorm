@@ -1,11 +1,18 @@
 /**
  * Creates a shared Next.js configuration for BookWorm frontend applications.
  */
-export function createNextConfig({ basePath, optimizePackageImports }) {
+export function createNextConfig({
+  basePath,
+  optimizePackageImports,
+  cacheComponents,
+}) {
   /** @type {import('next').NextConfig} */
   const nextConfig = {
     ...(basePath ? { basePath } : {}),
-    transpilePackages: ["@workspace/ui"],
+    ...(cacheComponents
+      ? { cacheComponents: true, partialPrefetching: true }
+      : {}),
+    transpilePackages: ["@workspace/ui", "@workspace/auth", "@workspace/seo"],
     experimental: {
       optimizePackageImports,
     },

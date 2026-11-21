@@ -13,7 +13,7 @@ export default function CategoriesPageClient() {
   const categoryItems = categories ?? [];
 
   return (
-    <main className="container mx-auto grow px-4 py-16 md:py-24">
+    <div className="container mx-auto grow px-4 py-16 md:py-24">
       <CategoriesHeader />
 
       {!isLoading && categoryItems.length === 0 ? (
@@ -27,6 +27,6 @@ export default function CategoriesPageClient() {
       ) : (
         <CategoriesGrid categories={categoryItems} isLoading={isLoading} />
       )}
-    </main>
+    </div>
   );
 }

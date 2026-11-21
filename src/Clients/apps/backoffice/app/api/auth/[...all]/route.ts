@@ -1,5 +1,5 @@
-import { toNextJsHandler } from "better-auth/next-js";
+import { createAuthRouteHandler } from "@workspace/auth/server";
 
 import { auth } from "@/lib/auth";
 
-export const { GET, POST } = toNextJsHandler(auth);
+export const { GET, POST } = createAuthRouteHandler(auth);

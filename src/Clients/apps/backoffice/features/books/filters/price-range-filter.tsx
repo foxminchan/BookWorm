@@ -43,7 +43,7 @@ export function PriceRangeFilter({
           max={max}
           step={step}
           value={[minPrice, maxPrice]}
-          onValueChange={handleValueChange}
+          onValueChange={(value) => handleValueChange(value as number[])}
           className="w-full"
         />
         <div className="text-muted-foreground flex justify-between text-sm">

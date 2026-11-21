@@ -8,12 +8,14 @@ using BookWorm.Ordering.Features.Orders.GetHistory;
 using BookWorm.Ordering.UnitTests.Fakers;
 using JasperFx.Events;
 using Marten;
+using ZiggyCreatures.Caching.Fusion;
 using IQueryEventStore = Marten.Events.IQueryEventStore;
 
 namespace BookWorm.Ordering.UnitTests.Features.Orders.GetHistory;
 
-public sealed class GetOrderHistoryQueryTests
+public sealed class GetOrderHistoryQueryTests : IDisposable
 {
+    private readonly FusionCache _cache = new(new FusionCacheOptions());
     private readonly Mock<IQueryEventStore> _eventsMock = new();
     private readonly OrderId _orderId = OrderId.From(Guid.CreateVersion7());
     private readonly Mock<IOrderRepository> _orderRepositoryMock = new();
@@ -22,6 +24,11 @@ public sealed class GetOrderHistoryQueryTests
     public GetOrderHistoryQueryTests()
     {
         _querySessionMock.SetupGet(s => s.Events).Returns(_eventsMock.Object);
+    }
+
+    public void Dispose()
+    {
+        _cache.Dispose();
     }
 
     [Test]
@@ -75,25 +82,6 @@ public sealed class GetOrderHistoryQueryTests
     }
 
     [Test]
-    public async Task GivenBuyerRoleAndUnownedOrder_WhenGettingOrderHistory_ThenShouldThrowNotFoundException()
-    {
-        // Arrange
-        var buyerId = Guid.CreateVersion7();
-        var handler = CreateHandler(CreateBuyerPrincipal(buyerId));
-        _orderRepositoryMock
-            .Setup(r =>
-                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync((Order?)null);
-
-        // Act
-        Func<Task> act = async () => await handler.Handle(new(_orderId), CancellationToken.None);
-
-        // Assert
-        await act.ShouldThrowAsync<NotFoundException>();
-    }
-
-    [Test]
     public async Task GivenCancelledAndUnknownEvents_WhenGettingOrderHistory_ThenShouldMapCancelledAndNullForUnknown()
     {
         // Arrange
@@ -134,10 +122,8 @@ public sealed class GetOrderHistoryQueryTests
         var placedEvent = CreateMockEvent(1, 1, "order_placed", new OrderPlacedEvent(order));
 
         _orderRepositoryMock
-            .Setup(r =>
-                r.FirstOrDefaultAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(order);
+            .Setup(r => r.AnyAsync(It.IsAny<OrderFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _eventsMock
             .Setup(e =>
                 e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>())
@@ -154,9 +140,67 @@ public sealed class GetOrderHistoryQueryTests
         result[0].TotalPrice.ShouldBe(order.TotalPrice);
     }
 
-    private GetOrderHistoryHandler CreateHandler(ClaimsPrincipal principal)
+    private GetOrderHistoryHandler CreateHandler(ClaimsPrincipal _)
     {
-        return new(_querySessionMock.Object, _orderRepositoryMock.Object, principal);
+        return new(_querySessionMock.Object, _cache);
+    }
+
+    [Test]
+    public async Task GivenTerminalOrder_WhenGettingOrderHistoryTwice_ThenShouldReturnFromCache()
+    {
+        // Arrange
+        var handler = CreateHandler(CreateAdminPrincipal());
+        var order = new OrderFaker().Generate()[0];
+        var placedEvent = CreateMockEvent(1, 1, "order_placed", new OrderPlacedEvent(order));
+        var completedEvent = CreateMockEvent(
+            2,
+            2,
+            "order_completed",
+            new OrderCompletedEvent(order)
+        );
+
+        _eventsMock
+            .Setup(e =>
+                e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync([placedEvent, completedEvent]);
+
+        // Act
+        var first = await handler.Handle(new(_orderId), CancellationToken.None);
+        var second = await handler.Handle(new(_orderId), CancellationToken.None);
+
+        // Assert
+        first.Count.ShouldBe(2);
+        second.Count.ShouldBe(2);
+        _eventsMock.Verify(
+            e => e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenNonTerminalOrder_WhenGettingOrderHistoryTwice_ThenShouldNotCache()
+    {
+        // Arrange
+        var handler = CreateHandler(CreateAdminPrincipal());
+        var order = new OrderFaker().Generate()[0];
+        var placedEvent = CreateMockEvent(1, 1, "order_placed", new OrderPlacedEvent(order));
+
+        _eventsMock
+            .Setup(e =>
+                e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync([placedEvent]);
+
+        // Act
+        await handler.Handle(new(_orderId), CancellationToken.None);
+        await handler.Handle(new(_orderId), CancellationToken.None);
+
+        // Assert
+        _eventsMock.Verify(
+            e => e.FetchStreamAsync((Guid)_orderId, 0, null, 0, It.IsAny<CancellationToken>()),
+            Times.Exactly(2)
+        );
     }
 
     private static ClaimsPrincipal CreateAdminPrincipal()

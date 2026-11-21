@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Domain.Exceptions;
 
 namespace BookWorm.Catalog.UnitTests.Domain;
@@ -17,6 +18,7 @@ public sealed class AuthorAggregatorTests
         // Assert
         author.Name.ShouldBe(name);
         author.BookAuthors.ShouldBeEmpty();
+        author.DomainEvents.ShouldContain(e => e is AuthorCreatedEvent);
     }
 
     [Test]
@@ -44,6 +46,7 @@ public sealed class AuthorAggregatorTests
 
         // Assert
         author.Name.ShouldBe(newName);
+        author.DomainEvents.ShouldContain(e => e is AuthorUpdatedEvent);
     }
 
     [Test]
@@ -76,5 +79,20 @@ public sealed class AuthorAggregatorTests
 
         // Assert
         result.ShouldBeSameAs(author);
+    }
+
+    [Test]
+    public void GivenExistingAuthor_WhenRemoving_ThenShouldRegisterAuthorDeletedEvent()
+    {
+        // Arrange
+        var author = new Author("Test Author");
+        author.ClearDomainEvents();
+
+        // Act
+        var result = author.Remove();
+
+        // Assert
+        result.ShouldBeSameAs(author);
+        author.DomainEvents.ShouldContain(e => e is AuthorDeletedEvent);
     }
 }

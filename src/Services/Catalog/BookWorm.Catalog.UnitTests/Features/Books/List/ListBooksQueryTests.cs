@@ -5,6 +5,8 @@ using BookWorm.Catalog.Features.Books.List;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.AI.Search;
 using BookWorm.Chassis.Mapper;
+using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 
 namespace BookWorm.Catalog.UnitTests.Features.Books.List;
 
@@ -14,9 +16,10 @@ public sealed class ListBooksQueryTests
     private static readonly string[] _defaultKeyword = [nameof(Book)];
     private BookDto[] _bookDtos = null!;
     private List<Book> _books = null!;
+    private FusionCache _cache = null!;
     private ListBooksHandler _handler = null!;
     private Mock<ISearch> _mockHybridSearch = null!;
-    private Mock<IMapper<Book, BookDto>> _mockMapper = null!;
+    private Mock<IMapper<CachedBook, BookDto>> _mockMapper = null!;
     private Mock<IBookRepository> _mockRepository = null!;
 
     [Before(Test)]
@@ -25,7 +28,13 @@ public sealed class ListBooksQueryTests
         _mockHybridSearch = new();
         _mockRepository = new();
         _mockMapper = new();
-        _handler = new(_mockHybridSearch.Object, _mockRepository.Object, _mockMapper.Object);
+        _cache = new(new FusionCacheOptions());
+        _handler = new(
+            _mockHybridSearch.Object,
+            _mockRepository.Object,
+            _cache,
+            _mockMapper.Object
+        );
 
         // Generate test data
         var bookFaker = new BookFaker();
@@ -50,7 +59,13 @@ public sealed class ListBooksQueryTests
         ];
 
         // Setup mapper mock
-        _mockMapper.Setup(m => m.Map(It.IsAny<IReadOnlyList<Book>>())).Returns(_bookDtos);
+        _mockMapper.Setup(m => m.Map(It.IsAny<IReadOnlyList<CachedBook>>())).Returns(_bookDtos);
+    }
+
+    [After(Test)]
+    public void Teardown()
+    {
+        _cache.Dispose();
     }
 
     [Test]
@@ -329,9 +344,7 @@ public sealed class ListBooksQueryTests
             .Setup(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(totalItems);
 
-        _mockMapper
-            .Setup(m => m.Map((It.IsAny<IEnumerable<Book>>() as IReadOnlyList<Book>)!))
-            .Returns([]);
+        _mockMapper.Setup(m => m.Map(It.IsAny<IReadOnlyList<CachedBook>>())).Returns([]);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -374,5 +387,96 @@ public sealed class ListBooksQueryTests
             r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
+    }
+
+    [Test]
+    public async Task GivenRepeatedBrowseQuery_WhenHandlingListBooksQuery_ThenShouldReturnFromCache()
+    {
+        // Arrange
+        var query = new ListBooksQuery();
+        _mockRepository
+            .Setup(r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_books);
+        _mockRepository
+            .Setup(r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(10L);
+
+        // Act
+        var first = await _handler.Handle(query, CancellationToken.None);
+        var second = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        first.TotalItems.ShouldBe(10L);
+        second.TotalItems.ShouldBe(10L);
+        _mockRepository.Verify(
+            r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _mockRepository.Verify(
+            r => r.CountAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenRepeatedNormalizedSearchQuery_WhenHandlingListBooksQuery_ThenShouldReuseSearchAndPageCache()
+    {
+        // Arrange
+        List<TextSnippet> records =
+        [
+            new() { Id = Guid.CreateVersion7(), Content = "Fantasy Book" },
+        ];
+        _mockHybridSearch
+            .Setup(s =>
+                s.SearchAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<ICollection<string>>(),
+                    MaxResults,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(records);
+        _mockRepository
+            .Setup(r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([_books[0]]);
+
+        // Act
+        await _handler.Handle(new(Search: "  Fantasy Novel  "), CancellationToken.None);
+        await _handler.Handle(new(Search: "fantasy novel"), CancellationToken.None);
+
+        // Assert
+        _mockHybridSearch.Verify(
+            s =>
+                s.SearchAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<ICollection<string>>(),
+                    MaxResults,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _mockRepository.Verify(
+            r => r.ListAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenCachedBookPage_WhenSerializedWithFusionCacheSerializer_ThenShouldRoundTripCleanly()
+    {
+        // Arrange
+        var page = new CachedBookPage([CachedBook.FromBook(_books[0])], 42);
+        var serializer = new FusionCacheSystemTextJsonSerializer();
+
+        // Act
+        var bytes = await serializer.SerializeAsync(page);
+        var deserialized = await serializer.DeserializeAsync<CachedBookPage>(bytes);
+
+        // Assert
+        deserialized.ShouldNotBeNull();
+        deserialized.TotalItems.ShouldBe(42);
+        deserialized.Items.Count.ShouldBe(1);
+        deserialized.Items[0].Id.ShouldBe(_books[0].Id);
+        deserialized.Items[0].Name.ShouldBe(_books[0].Name);
     }
 }

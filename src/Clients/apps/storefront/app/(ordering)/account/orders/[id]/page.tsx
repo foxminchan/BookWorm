@@ -1,61 +1,20 @@
-"use client";
+import type { Metadata } from "next";
 
-import { use } from "react";
+import { createMetadata } from "@workspace/seo/metadata";
 
-import { PackageX } from "lucide-react";
+import OrderDetailPageClient from "@/features/ordering/order-detail/order-detail-page-client";
 
-import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
+export const metadata: Metadata = createMetadata({
+  title: "Order Details",
+  description: "View your order status, items, and delivery timeline.",
+});
 
-import { EmptyState } from "@/components/empty-state";
-import { OrderDetailSkeleton } from "@/components/loading-skeleton";
-import OrderDetailHeader from "@/features/ordering/order-detail/order-detail-header";
-import OrderItemsList from "@/features/ordering/order-detail/order-items-list";
-import OrderSummary from "@/features/ordering/order-detail/order-summary";
-import OrderTimeline from "@/features/ordering/order-detail/order-timeline";
-
-export default function OrderDetailPage({
+export default async function OrderDetailPage({
   params,
 }: Readonly<{
   params: Promise<{ id: string }>;
 }>) {
-  const { id } = use(params);
-  const { data: orderDetail, isLoading, error } = useOrder(id);
+  const { id } = await params;
 
-  if (isLoading) {
-    return (
-      <main className="container mx-auto max-w-4xl flex-1 px-4 py-12">
-        <OrderDetailSkeleton />
-      </main>
-    );
-  }
-
-  if (error || !orderDetail) {
-    return (
-      <main className="container mx-auto max-w-4xl flex-1 px-4 py-12">
-        <EmptyState
-          icon={PackageX}
-          title="Order Not Found"
-          description="We couldn't find the order you're looking for."
-          actionLabel="Back to Orders"
-          actionHref="/account/orders"
-        />
-      </main>
-    );
-  }
-
-  return (
-    <main className="container mx-auto max-w-4xl flex-1 px-4 py-12">
-      <OrderDetailHeader
-        orderId={orderDetail.id}
-        status={orderDetail.status}
-        date={orderDetail.date}
-      />
-
-      <div className="grid gap-6">
-        <OrderItemsList items={orderDetail.items} />
-        <OrderTimeline orderId={orderDetail.id} />
-        <OrderSummary total={orderDetail.total} />
-      </div>
-    </main>
-  );
+  return <OrderDetailPageClient orderId={id} />;
 }

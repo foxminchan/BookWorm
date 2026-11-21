@@ -1,6 +1,5 @@
-using BookWorm.Chassis.Utilities.Guards;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
-using BookWorm.Ordering.Extensions;
+using JasperFx.Events;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Ordering.Features.Orders.GetHistory;
 
@@ -8,27 +7,30 @@ public sealed record GetOrderHistoryQuery(
     [property: Description("Only 'ADMIN' role can retrieve other users' data")] OrderId Id
 ) : IQuery<IReadOnlyList<OrderEventHistoryDto>>;
 
-internal sealed class GetOrderHistoryHandler(
-    IQuerySession querySession,
-    IOrderRepository repository,
-    ClaimsPrincipal claimsPrincipal
-) : IQueryHandler<GetOrderHistoryQuery, IReadOnlyList<OrderEventHistoryDto>>
+internal sealed class GetOrderHistoryHandler(IQuerySession querySession, IFusionCache cache)
+    : IQueryHandler<GetOrderHistoryQuery, IReadOnlyList<OrderEventHistoryDto>>
 {
+    private static readonly FusionCacheEntryOptions _immutableCacheOptions = new()
+    {
+        Duration = TimeSpan.FromHours(1),
+        DistributedCacheDuration = TimeSpan.FromHours(1),
+    };
+
     public async ValueTask<IReadOnlyList<OrderEventHistoryDto>> Handle(
         GetOrderHistoryQuery request,
         CancellationToken cancellationToken
     )
     {
         var orderId = (Guid)request.Id;
+        var key = OrderingCacheKeys.OrderHistoryTerminal(orderId);
 
-        if (!claimsPrincipal.HasRole(Authorization.Roles.Admin))
+        var cached = await cache.TryGetAsync<IReadOnlyList<OrderEventHistoryDto>>(
+            key,
+            token: cancellationToken
+        );
+        if (cached.HasValue && cached.Value is not null)
         {
-            var buyerId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
-            var order = await repository.FirstOrDefaultAsync(
-                new OrderFilterSpec(orderId, (Guid)buyerId),
-                cancellationToken
-            );
-            Guard.Against.NotFound(order, orderId);
+            return cached.Value;
         }
 
         var events = await querySession.Events.FetchStreamAsync(orderId, token: cancellationToken);
@@ -38,27 +40,33 @@ internal sealed class GetOrderHistoryHandler(
             throw new NotFoundException($"Order event stream with id {orderId} not found.");
         }
 
-        return
-        [
-            .. events.Select(e =>
-            {
-                var (status, totalPrice) = e.Data switch
-                {
-                    OrderPlacedEvent placed => (Status.New, placed.Order.TotalPrice),
-                    OrderCompletedEvent completed => (Status.Completed, completed.Order.TotalPrice),
-                    OrderCancelledEvent cancelled => (Status.Cancelled, cancelled.Order.TotalPrice),
-                    _ => ((Status?)null, (decimal?)null),
-                };
+        IReadOnlyList<OrderEventHistoryDto> history = [.. events.Select(MapToDto)];
 
-                return new OrderEventHistoryDto(
-                    e.Sequence,
-                    e.Version,
-                    e.EventTypeName,
-                    e.Timestamp,
-                    status,
-                    totalPrice
-                );
-            }),
-        ];
+        if (history.Any(e => e.Status is Status.Completed or Status.Cancelled))
+        {
+            await cache.SetAsync(key, history, _immutableCacheOptions, cancellationToken);
+        }
+
+        return history;
+    }
+
+    private static OrderEventHistoryDto MapToDto(IEvent @event)
+    {
+        var (status, totalPrice) = @event.Data switch
+        {
+            OrderPlacedEvent placed => (Status.New, placed.Order.TotalPrice),
+            OrderCompletedEvent completed => (Status.Completed, completed.Order.TotalPrice),
+            OrderCancelledEvent cancelled => (Status.Cancelled, cancelled.Order.TotalPrice),
+            _ => ((Status?)null, (decimal?)null),
+        };
+
+        return new(
+            @event.Sequence,
+            @event.Version,
+            @event.EventTypeName,
+            @event.Timestamp,
+            status,
+            totalPrice
+        );
     }
 }

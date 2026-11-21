@@ -10,13 +10,21 @@ internal sealed class BookFilterSpec : Specification<Book>
 
         if (categoryIds is { Length: > 0 })
         {
-            Query.Where(book => categoryIds.AsEnumerable().Contains((Guid)book.Category!.Id));
+            var typedCategoryIds = Array.ConvertAll(categoryIds, CategoryId.From);
+            Query.Where(book =>
+                book.CategoryId != null && typedCategoryIds.Contains(book.CategoryId.Value)
+            );
         }
 
-        if (publisherIds is { Length: > 0 })
+        if (publisherIds is not { Length: > 0 })
         {
-            Query.Where(book => publisherIds.AsEnumerable().Contains((Guid)book.Publisher!.Id));
+            return;
         }
+
+        var typedPublisherIds = Array.ConvertAll(publisherIds, PublisherId.From);
+        Query.Where(book =>
+            book.PublisherId != null && typedPublisherIds.Contains(book.PublisherId.Value)
+        );
     }
 
     public BookFilterSpec(
@@ -31,7 +39,8 @@ internal sealed class BookFilterSpec : Specification<Book>
     {
         if (ids is { Length: > 0 })
         {
-            Query.Where(book => ids.AsEnumerable().Contains((Guid)book.Id));
+            var typedIds = Array.ConvertAll(ids, BookId.From);
+            Query.Where(book => typedIds.Contains(book.Id));
         }
 
         if (minPrice is not null)
@@ -44,14 +53,15 @@ internal sealed class BookFilterSpec : Specification<Book>
             Query.Where(book => book.Price!.OriginalPrice <= maxPrice);
         }
 
-        if (authorIds is { Length: > 0 })
+        if (authorIds is not { Length: > 0 })
         {
-            Query.Where(book =>
-                book.BookAuthors.Any(author =>
-                    authorIds.AsEnumerable().Contains((Guid)author.AuthorId)
-                )
-            );
+            return;
         }
+
+        var typedAuthorIds = Array.ConvertAll(authorIds, AuthorId.From);
+        Query.Where(book =>
+            book.BookAuthors.Any(author => typedAuthorIds.Contains(author.AuthorId))
+        );
     }
 
     public BookFilterSpec(

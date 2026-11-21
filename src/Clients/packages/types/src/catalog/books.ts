@@ -15,6 +15,7 @@ export type Book = {
   authors: Author[];
   averageRating: number;
   totalReviews: number;
+  version?: number;
 };
 
 export type CreateBookRequest = {

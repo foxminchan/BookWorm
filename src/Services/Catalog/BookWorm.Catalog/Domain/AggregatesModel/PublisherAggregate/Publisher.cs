@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Domain.Events;
+
+namespace BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 
 public sealed class Publisher() : Entity<PublisherId>, IAggregateRoot
 {
@@ -6,6 +8,7 @@ public sealed class Publisher() : Entity<PublisherId>, IAggregateRoot
         : this()
     {
         Name = name;
+        RegisterDomainEvent(new PublisherCreatedEvent());
     }
 
     [DisallowNull]
@@ -27,6 +30,17 @@ public sealed class Publisher() : Entity<PublisherId>, IAggregateRoot
     public Publisher UpdateName(string name)
     {
         Name = name;
+        RegisterDomainEvent(new PublisherUpdatedEvent());
+        return this;
+    }
+
+    /// <summary>
+    ///     Marks the publisher for removal and registers a domain event.
+    /// </summary>
+    /// <returns>The current Publisher instance.</returns>
+    public Publisher Remove()
+    {
+        RegisterDomainEvent(new PublisherDeletedEvent());
         return this;
     }
 }

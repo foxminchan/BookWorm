@@ -14,6 +14,7 @@ export default function PublisherCard({
   return (
     <Link
       href={`/shop?publisher=${id}`}
+      prefetch={true}
       className="group from-secondary/10 to-secondary/5 border-border/40 hover:border-primary/40 relative flex aspect-square flex-col justify-between overflow-hidden rounded-lg border bg-linear-to-br p-8 transition-all duration-500 hover:shadow-lg"
     >
       <div className="from-primary/5 absolute inset-0 bg-linear-to-br to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />

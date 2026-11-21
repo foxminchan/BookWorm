@@ -14,7 +14,7 @@ internal sealed class RatingSummarizer(
     )
     {
         var feedback = await feedbackRepository.ListAsync(
-            new FeedbackFilterSpec(bookId, nameof(Feedback.Rating), false, 1, int.MaxValue),
+            new FeedbackFilterSpec(bookId),
             cancellationToken
         );
         var reviewCount = feedback.Count;

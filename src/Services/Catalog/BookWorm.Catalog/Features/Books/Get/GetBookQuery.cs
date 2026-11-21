@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+using BookWorm.Chassis.Utilities.Guards;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.Features.Books.Get;
@@ -8,7 +8,7 @@ public sealed record GetBookQuery(BookId Id) : IQuery<BookDto>;
 internal sealed class GetBookHandler(
     IBookRepository repository,
     IFusionCache cache,
-    IMapper<Book, BookDto> mapper
+    IMapper<CachedBook, BookDto> mapper
 ) : IQueryHandler<GetBookQuery, BookDto>
 {
     public async ValueTask<BookDto> Handle(
@@ -16,19 +16,17 @@ internal sealed class GetBookHandler(
         CancellationToken cancellationToken
     )
     {
-        var tag = nameof(Book).ToLowerInvariant();
-
         var book = await cache.GetOrSetAsync(
-            $"{tag}:{request.Id}",
+            CatalogCacheKeys.BookDetail(request.Id),
             async ctx =>
             {
                 var book = await repository.GetByIdAsync((Guid)request.Id, ctx);
 
                 Guard.Against.NotFound(book, (Guid)request.Id);
 
-                return book;
+                return CachedBook.FromBook(book);
             },
-            tags: [tag],
+            tags: [CatalogCacheKeys.BookTag],
             token: cancellationToken
         );
 

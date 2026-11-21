@@ -23,6 +23,7 @@ export const mockBooks: Book[] = booksData.map((book, index) => {
     authors,
     averageRating: ((index * 7 + 13) % 50) / 10,
     totalReviews: (index * 137 + 42) % 2000,
+    version: 1,
   };
 });
 
@@ -107,6 +108,7 @@ export const booksStore = {
       authors,
       averageRating: 0,
       totalReviews: 0,
+      version: 1,
     });
     return newId;
   },
@@ -146,6 +148,7 @@ export const booksStore = {
       authors,
       averageRating: existingBook.averageRating,
       totalReviews: existingBook.totalReviews,
+      version: (existingBook.version ?? 1) + 1,
     };
     return true;
   },

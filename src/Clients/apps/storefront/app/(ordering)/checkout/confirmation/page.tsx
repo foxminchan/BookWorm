@@ -1,75 +1,16 @@
-"use client";
-
 import { Suspense } from "react";
 
-import { useSearchParams } from "next/navigation";
+import type { Metadata } from "next";
 
-import { AlertCircle } from "lucide-react";
+import { createMetadata } from "@workspace/seo/metadata";
 
-import useBuyer from "@workspace/api-hooks/ordering/buyers/useBuyer";
-import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
-
-import { EmptyState } from "@/components/empty-state";
 import { ConfirmationPageSkeleton } from "@/components/loading-skeleton";
-import ConfirmationActions from "@/features/ordering/checkout/confirmation-actions";
-import ConfirmationHeader from "@/features/ordering/checkout/confirmation-header";
-import OrderDetailsSection from "@/features/ordering/checkout/order-details-section";
+import ConfirmationPageClient from "@/features/ordering/checkout/confirmation-page-client";
 
-function ConfirmationPageContent() {
-  const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId");
-
-  const { data: order, isPending } = useOrder(orderId ?? "", {
-    enabled: !!orderId,
-  });
-  const { data: buyer } = useBuyer();
-
-  if (isPending) {
-    return (
-      <main className="container mx-auto grow px-4 py-24">
-        <ConfirmationPageSkeleton />
-      </main>
-    );
-  }
-
-  if (!order) {
-    return (
-      <main className="container mx-auto grow px-4 py-24">
-        <div className="mx-auto max-w-3xl">
-          <EmptyState
-            icon={AlertCircle}
-            title="Order Not Found"
-            description="Unable to load order details."
-            actionLabel="Return to Basket"
-            actionHref="/basket"
-          />
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main className="container mx-auto grow px-4 py-24">
-      <div className="mx-auto max-w-3xl">
-        <ConfirmationHeader orderId={order.id} />
-        <OrderDetailsSection
-          status={order.status}
-          total={order.total}
-          buyerName={buyer?.name ?? undefined}
-          buyerAddress={buyer?.address ?? undefined}
-        />
-        <div className="bg-secondary/30 mb-12 rounded-xl py-8 text-center">
-          <p className="text-muted-foreground text-sm">
-            <span className="font-medium">
-              Confirmation email sent to your email
-            </span>
-          </p>
-        </div>
-        <ConfirmationActions orderId={order.id} />
-      </div>
-    </main>
-  );
-}
+export const metadata: Metadata = createMetadata({
+  title: "Order Confirmation",
+  description: "Thank you for your BookWorm order.",
+});
 
 export default function ConfirmationPage() {
   return (
@@ -80,7 +21,7 @@ export default function ConfirmationPage() {
         </main>
       }
     >
-      <ConfirmationPageContent />
+      <ConfirmationPageClient />
     </Suspense>
   );
 }

@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using BookWorm.Notification.Domain.Attributes;
@@ -12,6 +14,10 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
 
     private static readonly MjmlRenderer _mjmlCompiler = new();
 
+    private static readonly ConcurrentDictionary<string, string> _templateCache = new(
+        StringComparer.Ordinal
+    );
+
     public async Task<string> RenderAsync<T>(
         T model,
         string templateName,
@@ -23,15 +29,9 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
         var contentMjml = await LoadTemplateAsync(templateName, cancellationToken);
         var layoutMjml = await LoadTemplateAsync("_Layout", cancellationToken);
 
-        // Inject content into the layout
-        var combinedMjml = layoutMjml.Replace("{{Content}}", contentMjml);
-
-        // Substitute model properties and built-in variables
-        combinedMjml = SubstituteModelProperties(combinedMjml, model);
-        combinedMjml = combinedMjml.Replace("{{Year}}", DateTime.UtcNow.Year.ToString());
-
-        // Remove any remaining unreplaced variables (e.g., {{PreviewText}} when not provided)
-        combinedMjml = VariablePattern().Replace(combinedMjml, string.Empty);
+        // Inject content into the layout and substitute variables in a single pass
+        var combinedMjml = layoutMjml.Replace("{{Content}}", contentMjml, StringComparison.Ordinal);
+        combinedMjml = SubstituteVariables(combinedMjml, model);
 
         var result = await _mjmlCompiler.RenderAsync(combinedMjml, ct: cancellationToken);
 
@@ -51,6 +51,11 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
         CancellationToken cancellationToken
     )
     {
+        if (_templateCache.TryGetValue(templateName, out var cached))
+        {
+            return cached;
+        }
+
         var resourceName =
             $"{_assembly.GetName().Name}.Templates.{templateName.Replace('/', '.')}.mjml";
 
@@ -60,34 +65,47 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
             );
 
         using var reader = new StreamReader(stream);
-        return await reader.ReadToEndAsync(cancellationToken);
+        var template = await reader.ReadToEndAsync(cancellationToken);
+        _templateCache.TryAdd(templateName, template);
+
+        return template;
     }
 
-    private static string SubstituteModelProperties<T>(string mjml, T model)
+    private static string SubstituteVariables<T>(string mjml, T model)
         where T : notnull
     {
-        var properties = typeof(T)
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .ToFrozenDictionary(p => p.Name, StringComparer.Ordinal);
+        var properties = ModelPropertyCache<T>.Properties;
+        string? year = null;
 
         return VariablePattern()
             .Replace(mjml, match =>
-                properties.TryGetValue(match.Groups[1].Value, out var property)
-                    ? GetFormattedValue(property, model)
-                    : match.Value
-            );
+            {
+                var key = match.Groups[1].Value;
+
+                if (properties.TryGetValue(key, out var cachedProperty))
+                {
+                    return GetFormattedValue(cachedProperty, model);
+                }
+
+                if (string.Equals(key, "Year", StringComparison.Ordinal))
+                {
+                    return year ??= DateTime.UtcNow.Year.ToString(CultureInfo.InvariantCulture);
+                }
+
+                // Remove any remaining unreplaced variables (e.g., {{PreviewText}} when not provided)
+                return string.Empty;
+            });
     }
 
-    private static string GetFormattedValue(PropertyInfo property, object model)
+    private static string GetFormattedValue(CachedProperty cachedProperty, object model)
     {
-        var value = property.GetValue(model);
+        var value = cachedProperty.Property.GetValue(model);
         if (value is null)
         {
             return string.Empty;
         }
 
-        var formatAttribute = property.GetCustomAttribute<FormatAttribute>();
-        if (formatAttribute is not null && value is IFormattable formattable)
+        if (cachedProperty.Format is { } formatAttribute && value is IFormattable formattable)
         {
             return formattable.ToString(formatAttribute.Format, formatAttribute.FormatProvider);
         }
@@ -97,4 +115,17 @@ internal sealed partial class MjmlTemplateRenderer : IRenderer
 
     [GeneratedRegex(@"\{\{(\w+)\}\}")]
     private static partial Regex VariablePattern();
+
+    private sealed record CachedProperty(PropertyInfo Property, FormatAttribute? Format);
+
+    private static class ModelPropertyCache<T>
+    {
+        public static readonly FrozenDictionary<string, CachedProperty> Properties = typeof(T)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .ToFrozenDictionary(
+                p => p.Name,
+                p => new CachedProperty(p, p.GetCustomAttribute<FormatAttribute>()),
+                StringComparer.Ordinal
+            );
+    }
 }

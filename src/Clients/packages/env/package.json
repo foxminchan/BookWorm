@@ -1,0 +1,48 @@
+{
+  "name": "@workspace/env",
+  "version": "1.0.0",
+  "description": "Composable environment variable validation schemas for BookWorm frontend clients",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/env"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    "./keys": "./src/keys.ts",
+    "./auth": "./src/auth.ts",
+    "./gateway": "./src/gateway.ts",
+    "./otel": "./src/otel.ts",
+    "./copilot": "./src/copilot.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
+  },
+  "dependencies": {
+    "@t3-oss/env-nextjs": "^0.13.11",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^10.15.0",
+    "typescript": "npm:typescript@^6.0.3"
+  }
+}

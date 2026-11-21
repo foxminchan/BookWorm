@@ -1,66 +1,24 @@
-"use client";
+import type { Metadata } from "next";
 
-import { use } from "react";
+import { createMetadata } from "@workspace/seo/metadata";
 
-import { notFound } from "next/navigation";
+import { APP_CONFIG } from "@/config/app-config";
+import { OrderDetailView } from "@/features/orders/order-detail-view";
 
-import { format } from "date-fns";
-
-import useOrder from "@workspace/api-hooks/ordering/orders/useOrder";
-
-import { OrderDetailSkeleton } from "@/components/loading-skeleton";
-import { PageHeader } from "@/components/page-header";
-import { OrderEventHistory } from "@/features/orders/order-event-history";
-import { OrderItemsTable } from "@/features/orders/order-items-table";
-import { OrderSummaryCards } from "@/features/orders/order-summary-cards";
+export const metadata: Metadata = createMetadata({
+  title: "Order Details",
+  description: "Inspect order summary, line items, and event history",
+  appName: APP_CONFIG.name,
+});
 
 type OrderDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-const breadcrumbs = [
-  { label: "Admin", href: "/" },
-  { label: "Orders", href: "/orders" },
-  { label: "Details", isActive: true },
-];
-
-export default function OrderDetailPage({
+export default async function OrderDetailPage({
   params,
 }: Readonly<OrderDetailPageProps>) {
-  const { id } = use(params);
-  const { data: order, isLoading, error } = useOrder(id);
+  const { id } = await params;
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Order Details"
-          description="Loading order details..."
-          breadcrumbs={breadcrumbs}
-        />
-        <OrderDetailSkeleton />
-      </div>
-    );
-  }
-
-  if (error || !order) {
-    notFound();
-  }
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title={`Order #${order.id.slice(0, 8)}`}
-        description={`Order placed on ${format(order.date, "MMM dd, yyyy")}`}
-        breadcrumbs={breadcrumbs}
-      />
-      <OrderSummaryCards
-        status={order.status}
-        total={order.total}
-        itemCount={order.items.length}
-      />
-      <OrderItemsTable items={order.items} total={order.total} />
-      <OrderEventHistory orderId={order.id} />
-    </div>
-  );
+  return <OrderDetailView orderId={id} />;
 }

@@ -2,10 +2,6 @@
 
 import { useEffect } from "react";
 
-import { CopilotKitCore } from "@copilotkit/react-core/v2";
-
-import { getBookDetailsTool, searchBooksTool } from "@/lib/webmcp-tools";
-
 /**
  * Registers public storefront tools with WebMCP (`document.modelContext`)
  * without requiring a CopilotKit runtime or backend agent.
@@ -19,12 +15,28 @@ export function useWebMCPTools(enabled: boolean) {
       return;
     }
 
-    const core = new CopilotKitCore({
-      tools: [searchBooksTool, getBookDetailsTool],
-    });
+    let cancelled = false;
+    let core: { dispose: () => void } | undefined;
+
+    void Promise.all([
+      import("@copilotkit/react-core"),
+      import("@/lib/webmcp-tools"),
+    ])
+      .then(([{ CopilotKitCore }, { getBookDetailsTool, searchBooksTool }]) => {
+        if (cancelled) {
+          return;
+        }
+        core = new CopilotKitCore({
+          tools: [searchBooksTool, getBookDetailsTool],
+        });
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to initialize WebMCP tools:", error);
+      });
 
     return () => {
-      core.dispose();
+      cancelled = true;
+      core?.dispose();
     };
   }, [enabled]);
 }

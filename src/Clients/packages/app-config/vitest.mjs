@@ -41,6 +41,10 @@ const WORKSPACE_PACKAGES = [
   "validations",
   "mocks",
   "utils",
+  "auth",
+  "seo",
+  "env",
+  "otel",
 ];
 
 /**

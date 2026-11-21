@@ -28,6 +28,7 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
         CategoryId = categoryId;
         PublisherId = publisherId;
         _bookAuthors = [.. authorIds.Select(authorId => new BookAuthor(authorId))];
+        RegisterDomainEvent(new BookCreatedEvent());
     }
 
     public string? Name { get; private set; }
@@ -51,7 +52,7 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
     public void Delete()
     {
         IsDeleted = true;
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent(Id));
     }
 
     /// <summary>
@@ -110,7 +111,7 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
         _bookAuthors.Clear();
         _bookAuthors.AddRange(authorIds.Select(authorId => new BookAuthor(authorId)));
 
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent(Id));
         return this;
     }
 
@@ -122,7 +123,7 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
     {
         AverageRating = ((AverageRating * TotalReviews) + rating) / (TotalReviews + 1);
         TotalReviews++;
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent(Id));
         return this;
     }
 
@@ -143,7 +144,7 @@ public sealed class Book() : AuditableEntity<BookId>, IAggregateRoot, ISoftDelet
             TotalReviews--;
         }
 
-        RegisterDomainEvent(new BookChangedEvent($"{nameof(Book).ToLowerInvariant()}:{Id}"));
+        RegisterDomainEvent(new BookChangedEvent(Id));
         return this;
     }
 }

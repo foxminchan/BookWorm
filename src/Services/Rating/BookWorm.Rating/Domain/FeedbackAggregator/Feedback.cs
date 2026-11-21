@@ -34,4 +34,14 @@ public sealed class Feedback() : AuditableEntity<FeedbackId>, IAggregateRoot
         RegisterDomainEvent(new FeedbackDeletedEvent(BookId, Rating, (Guid)Id));
         return this;
     }
+
+    /// <summary>
+    ///     Marks the feedback as reverted due to a downstream failure and raises a domain event.
+    /// </summary>
+    /// <returns>The current instance of <see cref="Feedback" /> after registering the revert event.</returns>
+    public Feedback Revert()
+    {
+        RegisterDomainEvent(new FeedbackRevertedEvent(BookId));
+        return this;
+    }
 }

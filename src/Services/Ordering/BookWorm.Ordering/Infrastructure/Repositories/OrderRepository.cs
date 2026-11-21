@@ -56,6 +56,17 @@ internal sealed class OrderRepository(OrderingDbContext context) : IOrderReposit
         );
     }
 
+    public async Task<bool> AnyAsync(
+        ISpecification<Order> spec,
+        CancellationToken cancellationToken
+    )
+    {
+        return await EntityFrameworkQueryableExtensions.AnyAsync(
+            Specification.GetQuery(_context.Orders.IgnoreAutoIncludes().AsNoTracking(), spec),
+            cancellationToken
+        );
+    }
+
     public void Delete(Order order)
     {
         _context.Orders.Remove(order);
@@ -67,9 +78,21 @@ internal sealed class OrderRepository(OrderingDbContext context) : IOrderReposit
         CancellationToken cancellationToken
     )
     {
-        var totalOrders = await CountAsync(new OrderFilterSpec(), cancellationToken);
-        var completedRevenue = await GetDashboardOrders(new OrderFilterSpec(Status.Completed))
-            .SumAsync(order => order.Total, cancellationToken);
+        var totals = await EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            GetDashboardOrders(new OrderFilterSpec())
+                .GroupBy(_ => 1)
+                .Select(group => new
+                {
+                    TotalOrders = group.LongCount(),
+                    CompletedRevenue = group.Sum(order =>
+                        order.Status == Status.Completed ? order.Total : 0m
+                    ),
+                }),
+            cancellationToken
+        );
+        var totalOrders = totals?.TotalOrders ?? 0L;
+        var completedRevenue = totals?.CompletedRevenue ?? 0m;
+
         var dailyOrders = await EntityFrameworkQueryableExtensions.ToListAsync(
             GetDashboardOrders(new OrderDateRangeSpec(start, end))
                 .GroupBy(order => order.CreatedAt.Date)
@@ -80,6 +103,7 @@ internal sealed class OrderRepository(OrderingDbContext context) : IOrderReposit
                 )),
             cancellationToken
         );
+
         var recentOrders = await EntityFrameworkQueryableExtensions.ToListAsync(
             GetDashboardOrders(new RecentOrdersSpec(5))
                 .Select(order => new RecentOrderSummary(
@@ -90,6 +114,7 @@ internal sealed class OrderRepository(OrderingDbContext context) : IOrderReposit
                 )),
             cancellationToken
         );
+
         return new(totalOrders, completedRevenue, dailyOrders, recentOrders);
     }
 

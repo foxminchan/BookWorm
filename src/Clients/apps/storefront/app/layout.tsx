@@ -4,10 +4,12 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
+import { createMetadata } from "@workspace/seo/metadata";
 import { Button } from "@workspace/ui/components/button";
 import "@workspace/ui/globals.css";
 
 import { JsonLd } from "@/components/json-ld";
+import { APP_CONFIG } from "@/config/app-config";
 import { env } from "@/env.mjs";
 import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 
@@ -24,16 +26,23 @@ export const viewport: Viewport = {
   ],
 };
 
+const appUrl = env.NEXT_PUBLIC_APP_URL || APP_CONFIG.defaultLocalUrl;
+
 export const metadata: Metadata = {
-  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  ...createMetadata({
+    title: "BookWorm - Curated Books & Design Inspiration | Online Bookstore",
+    description:
+      "Discover a carefully curated collection of literature, design books, and inspiration for the modern reader. Shop fiction, non-fiction, design, science, and more.",
+    appName: APP_CONFIG.name,
+    baseUrl: appUrl,
+    creatorName: APP_CONFIG.name,
+    publisherName: APP_CONFIG.name,
+  }),
   title: {
     default: "BookWorm - Curated Books & Design Inspiration | Online Bookstore",
     template: "%s | BookWorm",
   },
-  description:
-    "Discover a carefully curated collection of literature, design books, and inspiration for the modern reader. Shop fiction, non-fiction, design, science, and more.",
   generator: "Next.js",
-  applicationName: "BookWorm",
   keywords: [
     "books",
     "online bookstore",
@@ -44,21 +53,14 @@ export const metadata: Metadata = {
     "book shop",
   ],
   authors: [{ name: "BookWorm Team" }],
-  creator: "BookWorm",
-  publisher: "BookWorm",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
-    url: env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    url: appUrl,
     title: "BookWorm - Curated Books & Design Inspiration",
     description:
       "Discover a carefully curated collection of literature and design books for the modern reader.",
-    siteName: "BookWorm",
+    siteName: APP_CONFIG.name,
     locale: "en_US",
   },
   twitter: {
@@ -88,12 +90,12 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "BookWorm",
+    title: APP_CONFIG.name,
   },
 };
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export default function RootLayout({
   children,
@@ -105,16 +107,19 @@ export default function RootLayout({
   const isCopilotEnabled = env.NEXT_PUBLIC_COPILOT_ENABLED;
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
+    <html
+      lang="en"
+      className={`${geist.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="font-sans antialiased">
         <Button
-          asChild
+          render={<Link href="#main-content">Skip to main content</Link>}
+          nativeButton={false}
           variant="outline"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50"
-        >
-          <Link href="#main-content">Skip to main content</Link>
-        </Button>
-        <div id="main-content">
+        />
+        <div>
           <Providers isCopilotEnabled={isCopilotEnabled}>{children}</Providers>
         </div>
         <JsonLd data={organizationJsonLd} />

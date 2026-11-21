@@ -1,6 +1,5 @@
 using BookWorm.Chassis.Utilities.Guards;
-using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate.Specifications;
-using BookWorm.Ordering.Extensions;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Ordering.Features.Orders.GetSummary;
 
@@ -12,12 +11,15 @@ public sealed record GetOrderSummaryQuery(
         DateTimeOffset? At = null
 ) : IQuery<OrderSummaryDto>;
 
-internal sealed class GetOrderSummaryHandler(
-    IQuerySession querySession,
-    IOrderRepository repository,
-    ClaimsPrincipal claimsPrincipal
-) : IQueryHandler<GetOrderSummaryQuery, OrderSummaryDto>
+internal sealed class GetOrderSummaryHandler(IQuerySession querySession, IFusionCache cache)
+    : IQueryHandler<GetOrderSummaryQuery, OrderSummaryDto>
 {
+    private static readonly FusionCacheEntryOptions _immutableCacheOptions = new()
+    {
+        Duration = TimeSpan.FromHours(1),
+        DistributedCacheDuration = TimeSpan.FromHours(1),
+    };
+
     public async ValueTask<OrderSummaryDto> Handle(
         GetOrderSummaryQuery request,
         CancellationToken cancellationToken
@@ -25,31 +27,65 @@ internal sealed class GetOrderSummaryHandler(
     {
         var orderId = (Guid)request.Id;
 
-        if (!claimsPrincipal.HasRole(Authorization.Roles.Admin))
+        if (request.Version is { } requestedVersion && request.At is null)
         {
-            var buyerId = claimsPrincipal[ClaimTypes.NameIdentifier].ToBuyerId();
-            var order = await repository.FirstOrDefaultAsync(
-                new OrderFilterSpec(orderId, (Guid)buyerId),
+            return await cache.GetOrSetAsync(
+                OrderingCacheKeys.OrderSummaryVersion(orderId, requestedVersion),
+                async ct => await LoadSummaryAsync(orderId, requestedVersion, null, ct),
+                _immutableCacheOptions,
                 cancellationToken
             );
-            Guard.Against.NotFound(order, orderId);
         }
 
+        if (request.Version is null && request.At is null)
+        {
+            var key = OrderingCacheKeys.OrderSummaryTerminal(orderId);
+            var cached = await cache.TryGetAsync<OrderSummaryDto>(key, token: cancellationToken);
+            if (cached.HasValue && cached.Value is not null)
+            {
+                return cached.Value;
+            }
+
+            var dto = await LoadSummaryAsync(orderId, null, null, cancellationToken);
+
+            if (dto.Status is Status.Completed or Status.Cancelled)
+            {
+                await cache.SetAsync(key, dto, _immutableCacheOptions, cancellationToken);
+            }
+
+            return dto;
+        }
+
+        return await LoadSummaryAsync(orderId, request.Version, request.At, cancellationToken);
+    }
+
+    private async Task<OrderSummaryDto> LoadSummaryAsync(
+        Guid orderId,
+        long? requestedVersion,
+        DateTimeOffset? at,
+        CancellationToken cancellationToken
+    )
+    {
         var summary = await querySession.Events.AggregateStreamAsync<OrderSummary>(
             orderId,
-            request.Version ?? 0,
-            request.At,
+            requestedVersion ?? 0,
+            at,
             token: cancellationToken
         );
 
         Guard.Against.NotFound(summary, orderId);
+
+        if (requestedVersion is { } explicitVersion)
+        {
+            return new(summary.Id, summary.Status, summary.TotalPrice, explicitVersion);
+        }
 
         var streamState = await querySession.Events.FetchStreamStateAsync(
             orderId,
             cancellationToken
         );
 
-        var version = request.Version ?? streamState?.Version ?? 0;
+        var version = streamState?.Version ?? 0;
 
         return new(summary.Id, summary.Status, summary.TotalPrice, version);
     }

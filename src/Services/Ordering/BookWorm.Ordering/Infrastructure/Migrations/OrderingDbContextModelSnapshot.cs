@@ -116,6 +116,15 @@ namespace BookWorm.Ordering.Infrastructure.Migrations
                     b.HasIndex("BuyerId")
                         .HasDatabaseName("ix_orders_buyer_id");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_orders_created_at");
+
+                    b.HasIndex("BuyerId", "CreatedAt")
+                        .HasDatabaseName("ix_orders_buyer_id_created_at");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_orders_status_created_at");
+
                     b.ToTable("orders", (string)null);
                 });
 

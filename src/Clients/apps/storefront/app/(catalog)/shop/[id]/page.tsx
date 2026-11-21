@@ -1,18 +1,20 @@
+import { Suspense } from "react";
+
 import type { Metadata } from "next";
 
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
-import booksApiClient from "@workspace/api-client/catalog/books";
-import feedbacksApiClient from "@workspace/api-client/rating/feedbacks";
-import { catalogKeys, ratingKeys } from "@workspace/api-hooks/keys";
+import { bookQueries } from "@workspace/api-hooks/catalog/queries";
+import { ratingKeys } from "@workspace/api-hooks/keys";
 import { formatPrice } from "@workspace/utils/format";
 
+import { ProductLoadingSkeleton } from "@/components/loading-skeleton";
+import { APP_CONFIG, REVIEWS_PER_PAGE } from "@/config/app-config";
 import { env } from "@/env.mjs";
 import BookDetailPageClient from "@/features/catalog/product/book-detail-page-client";
+import { getCachedBook, getCachedFeedbacks } from "@/lib/cached-catalog";
 import { getQueryClient } from "@/lib/query-client";
 import { generateImageObject } from "@/lib/seo";
-
-const REVIEWS_PER_PAGE = 5;
 
 type BookDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -30,10 +32,10 @@ export async function generateMetadata({
   // Try to fetch book data, but don't fail if it's not available
   let book;
   try {
-    book = await booksApiClient.get(id);
+    book = await getCachedBook(id);
   } catch {
     return {
-      title: "Book Details | BookWorm",
+      title: "Book Details",
       description: "View book details at BookWorm online bookstore.",
     };
   }
@@ -42,7 +44,7 @@ export async function generateMetadata({
   const authorNames = book.authors
     .map((a) => a.name)
     .filter((name): name is string => name != null);
-  const title = `${bookName} | BookWorm`;
+  const socialTitle = `${bookName} | ${APP_CONFIG.name}`;
 
   const priceText = book.priceSale
     ? `On sale for ${formatPrice(book.priceSale)}`
@@ -50,7 +52,7 @@ export async function generateMetadata({
   const byLine = authorNames.length > 0 ? ` by ${authorNames.join(", ")}` : "";
   const description =
     book.description ?? `Buy ${bookName}${byLine} at BookWorm. ${priceText}.`;
-  const url = `${env.NEXT_PUBLIC_APP_URL || "https://bookworm.com"}/shop/${id}`;
+  const url = `${env.NEXT_PUBLIC_APP_URL || APP_CONFIG.defaultUrl}/shop/${id}`;
 
   const keywords = [
     bookName,
@@ -73,22 +75,22 @@ export async function generateMetadata({
   const images = imageObject ? [imageObject] : undefined;
 
   return {
-    title,
+    title: bookName,
     description,
     keywords,
     ...(authors && { authors }),
     openGraph: {
       type: "book",
-      title,
+      title: socialTitle,
       description,
       url,
       ...(images && { images }),
-      siteName: "BookWorm",
+      siteName: APP_CONFIG.name,
       locale: "en_US",
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: socialTitle,
       description,
       ...(images && { images }),
     },
@@ -98,9 +100,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function BookDetailPage({
-  params,
-}: Readonly<BookDetailPageProps>) {
+async function BookDetailContent({ params }: Readonly<BookDetailPageProps>) {
   const { id } = await params;
   const queryClient = getQueryClient();
 
@@ -115,13 +115,13 @@ export default async function BookDetailPage({
   // Prefetch book data and initial reviews in parallel
   try {
     await Promise.all([
-      queryClient.prefetchQuery({
-        queryKey: catalogKeys.books.detail(id),
-        queryFn: () => booksApiClient.get(id),
+      queryClient.query({
+        queryKey: bookQueries.detail(id).queryKey,
+        queryFn: () => getCachedBook(id),
       }),
-      queryClient.prefetchQuery({
+      queryClient.query({
         queryKey: ratingKeys.feedbacks.byBook(id, reviewParams),
-        queryFn: () => feedbacksApiClient.list(reviewParams),
+        queryFn: () => getCachedFeedbacks(reviewParams),
       }),
     ]);
   } catch (error) {
@@ -132,5 +132,15 @@ export default async function BookDetailPage({
     <HydrationBoundary state={dehydrate(queryClient)}>
       <BookDetailPageClient id={id} />
     </HydrationBoundary>
+  );
+}
+
+export default function BookDetailPage({
+  params,
+}: Readonly<BookDetailPageProps>) {
+  return (
+    <Suspense fallback={<ProductLoadingSkeleton />}>
+      <BookDetailContent params={params} />
+    </Suspense>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export default function CategoriesSection() {
   // This will use the hydrated data from the server
@@ -42,15 +43,16 @@ export default function CategoriesSection() {
             ? Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={`skeleton-${i.toString()}`}
-                  className="bg-background animate-pulse rounded-lg p-6"
+                  className="bg-background rounded-lg p-6"
                 >
-                  <div className="bg-muted h-5 rounded" />
+                  <Skeleton className="h-5 w-full" />
                 </div>
               ))
             : categories.map((cat) => (
                 <Link
                   key={cat.id}
                   href={`/shop?category=${encodeURIComponent(cat.id)}`}
+                  prefetch={true}
                   className="bg-background group rounded-lg p-6 text-center transition-all hover:-translate-y-1 hover:shadow-md"
                 >
                   <h3 className="group-hover:text-primary mb-1 font-serif font-medium">

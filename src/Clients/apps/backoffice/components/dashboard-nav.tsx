@@ -6,47 +6,11 @@ import { useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import {
-  BookOpen,
-  LayoutDashboard,
-  Package,
-  PenTool,
-  ShoppingCart,
-  Star,
-  Tag,
-  UsersIcon,
-} from "lucide-react";
-
 import { Button } from "@workspace/ui/components/button";
 
+import { APP_CONFIG } from "@/config/app-config";
+import { BACKOFFICE_NAV_GROUPS } from "@/config/nav-config";
 import { useLogout } from "@/hooks/useLogout";
-
-const navigations = [
-  {
-    title: null,
-    items: [{ href: "/", icon: LayoutDashboard, label: "Overview" }],
-  },
-  {
-    title: "Catalog",
-    items: [
-      { href: "/books", icon: BookOpen, label: "Books" },
-      { href: "/categories", icon: Tag, label: "Categories" },
-      { href: "/authors", icon: PenTool, label: "Authors" },
-      { href: "/publishers", icon: Package, label: "Publishers" },
-    ],
-  },
-  {
-    title: "Ordering",
-    items: [
-      { href: "/customers", icon: UsersIcon, label: "Customers" },
-      { href: "/orders", icon: ShoppingCart, label: "Orders" },
-    ],
-  },
-  {
-    title: "Ratings & Reviews",
-    items: [{ href: "/reviews", icon: Star, label: "Reviews" }],
-  },
-] as const;
 
 export function DashboardNav() {
   const pathname = usePathname();
@@ -68,11 +32,13 @@ export function DashboardNav() {
       aria-label="Main navigation"
     >
       <div className="mb-8">
-        <h1 className="text-foreground text-lg font-bold">BookWorm</h1>
+        <h1 className="text-foreground text-lg font-bold">
+          {APP_CONFIG.brandName}
+        </h1>
       </div>
 
       <ul className="flex-1 space-y-2">
-        {navigations.map((section) => (
+        {BACKOFFICE_NAV_GROUPS.map((section) => (
           <li
             key={section.title ?? "root"}
             className={section.title ? "mt-6" : ""}
@@ -124,12 +90,13 @@ function NavLink({ href, icon, label, active }: NavLinkProps) {
     <Button
       variant={active ? "default" : "ghost"}
       className="w-full justify-start gap-3"
-      asChild
-    >
-      <Link href={href} aria-current={active ? "page" : undefined}>
-        {icon}
-        <span>{label}</span>
-      </Link>
-    </Button>
+      nativeButton={false}
+      render={
+        <Link href={href} aria-current={active ? "page" : undefined}>
+          {icon}
+          <span>{label}</span>
+        </Link>
+      }
+    />
   );
 }

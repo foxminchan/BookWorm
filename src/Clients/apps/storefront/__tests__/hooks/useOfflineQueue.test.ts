@@ -92,19 +92,19 @@ describe("useOfflineQueue", () => {
       await result.current.sendMessage("hello", sendFn);
     });
 
-    expect(localStorage.getItem("copilot-message-queue")).not.toBeNull();
+    expect(localStorage.getItem("copilot-message-queue:v1")).not.toBeNull();
 
     act(() => {
       result.current.clearQueue();
     });
 
     expect(result.current.queueSize).toBe(0);
-    expect(localStorage.getItem("copilot-message-queue")).toBe("[]");
+    expect(localStorage.getItem("copilot-message-queue:v1")).toBe("[]");
   });
 
   it("loads queue from localStorage on mount", () => {
     const stored = [{ id: "q1", content: "hi", timestamp: 1, retryCount: 0 }];
-    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify(stored));
 
     const { result } = renderHook(() => useOfflineQueue());
 
@@ -134,7 +134,7 @@ describe("useOfflineQueue", () => {
       await result.current.sendMessage("msg1", vi.fn());
     });
 
-    const stored = localStorage.getItem("copilot-message-queue");
+    const stored = localStorage.getItem("copilot-message-queue:v1");
     expect(stored).toBeTruthy();
     const parsed = JSON.parse(stored!);
     expect(parsed).toHaveLength(1);
@@ -142,7 +142,7 @@ describe("useOfflineQueue", () => {
   });
 
   it("handles malformed localStorage gracefully", () => {
-    localStorage.setItem("copilot-message-queue", "invalid json");
+    localStorage.setItem("copilot-message-queue:v1", "invalid json");
 
     const { result } = renderHook(() => useOfflineQueue());
 
@@ -189,7 +189,7 @@ describe("useOfflineQueue", () => {
     const stored = [
       { id: "sync-msg", content: "hi", timestamp: 1, retryCount: 0 },
     ];
-    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify(stored));
 
     setNavigatorOnline(true);
     const { result } = renderHook(() => useOfflineQueue());
@@ -247,7 +247,7 @@ describe("useOfflineQueue", () => {
     const stored = [
       { id: "retry-msg", content: "hi", timestamp: 1, retryCount: 3 },
     ];
-    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify(stored));
 
     setNavigatorOnline(true);
     const { result } = renderHook(() => useOfflineQueue());
@@ -311,7 +311,7 @@ describe("useOfflineQueue", () => {
       { id: "msg-1", content: "hi", timestamp: 1, retryCount: 0 },
       { id: "msg-2", content: "there", timestamp: 2, retryCount: 0 },
     ];
-    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify(stored));
 
     setNavigatorOnline(true);
     const { result, unmount } = renderHook(() => useOfflineQueue());
@@ -349,7 +349,7 @@ describe("useOfflineQueue", () => {
       { id: "msg-1", content: "first", timestamp: 1, retryCount: 0 },
       { id: "msg-2", content: "second", timestamp: 2, retryCount: 0 },
     ];
-    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify(stored));
 
     setNavigatorOnline(true);
     const { result } = renderHook(() => useOfflineQueue());
@@ -377,7 +377,7 @@ describe("useOfflineQueue", () => {
     const stored = [
       { id: "err-1", content: "retryable", timestamp: 1, retryCount: 0 },
     ];
-    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify(stored));
     setNavigatorOnline(true);
 
     const { result } = renderHook(() => useOfflineQueue());
@@ -398,7 +398,7 @@ describe("useOfflineQueue", () => {
 
     // Now test max-retried message throwing during sync
     localStorage.setItem(
-      "copilot-message-queue",
+      "copilot-message-queue:v1",
       JSON.stringify([
         { id: "err-2", content: "maxed", timestamp: 2, retryCount: 3 },
       ]),
@@ -438,7 +438,7 @@ describe("useOfflineQueue", () => {
   });
 
   it("handles falsy message entry in queue gracefully", async () => {
-    localStorage.setItem("copilot-message-queue", JSON.stringify([null]));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify([null]));
     setNavigatorOnline(true);
 
     const { result } = renderHook(() => useOfflineQueue());
@@ -456,7 +456,7 @@ describe("useOfflineQueue", () => {
     const stored = [
       { id: "retry-msg", content: "retry me", timestamp: 1, retryCount: 0 },
     ];
-    localStorage.setItem("copilot-message-queue", JSON.stringify(stored));
+    localStorage.setItem("copilot-message-queue:v1", JSON.stringify(stored));
     setNavigatorOnline(true);
 
     const { result } = renderHook(() => useOfflineQueue());
@@ -480,5 +480,20 @@ describe("useOfflineQueue", () => {
 
     expect(result.current.isSyncing).toBe(false);
     vi.useRealTimers();
+  });
+
+  it("migrates legacy localStorage key to v1 on mount", () => {
+    const legacy = [
+      { id: "legacy-1", content: "hi", timestamp: 1, retryCount: 0 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(legacy));
+
+    const { result } = renderHook(() => useOfflineQueue());
+
+    expect(result.current.queue).toEqual(legacy);
+    expect(localStorage.getItem("copilot-message-queue:v1")).toBe(
+      JSON.stringify(legacy),
+    );
+    expect(localStorage.getItem("copilot-message-queue")).toBeNull();
   });
 });

@@ -135,40 +135,45 @@ export function CellAction({ order }: CellActionProps) {
   return (
     <>
       <div className="flex items-center justify-end gap-2">
-        {canComplete && canCancel && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1 bg-transparent text-green-600 hover:text-green-700"
-              onClick={() => setOpenComplete(true)}
-              disabled={completeOrderMutation.isPending}
-              aria-label={`Complete order ${orderIdShort}`}
-            >
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              {completeOrderMutation.isPending ? "Processing..." : "Complete"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1 bg-transparent text-orange-600 hover:text-orange-700"
-              onClick={() => setOpenCancel(true)}
-              disabled={cancelOrderMutation.isPending}
-              aria-label={`Cancel order ${orderIdShort}`}
-            >
-              <XCircle className="h-4 w-4" aria-hidden="true" />
-              {cancelOrderMutation.isPending ? "Processing..." : "Cancel"}
-            </Button>
-          </>
-        )}
-        <Button variant="ghost" size="sm" asChild>
-          <Link
-            href={`/orders/${order.id}`}
-            aria-label={`View order details ${orderIdShort}`}
+        {canComplete && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 bg-transparent text-green-600 hover:text-green-700"
+            onClick={() => setOpenComplete(true)}
+            disabled={completeOrderMutation.isPending}
+            aria-label={`Complete order ${orderIdShort}`}
           >
-            <Eye className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </Button>
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            {completeOrderMutation.isPending ? "Processing..." : "Complete"}
+          </Button>
+        )}
+        {canCancel && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 bg-transparent text-orange-600 hover:text-orange-700"
+            onClick={() => setOpenCancel(true)}
+            disabled={cancelOrderMutation.isPending}
+            aria-label={`Cancel order ${orderIdShort}`}
+          >
+            <XCircle className="h-4 w-4" aria-hidden="true" />
+            {cancelOrderMutation.isPending ? "Processing..." : "Cancel"}
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          nativeButton={false}
+          render={
+            <Link
+              href={`/orders/${order.id}`}
+              aria-label={`View order details ${orderIdShort}`}
+            >
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          }
+        />
         <Button
           variant="ghost"
           size="sm"

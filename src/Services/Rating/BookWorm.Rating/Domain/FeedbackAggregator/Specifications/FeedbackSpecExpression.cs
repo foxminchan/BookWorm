@@ -8,7 +8,7 @@ public static class FeedbackSpecExpression
     {
         public ISpecificationBuilder<Feedback> ApplyOrdering(string? orderBy, bool isDescending)
         {
-            return orderBy switch
+            var ordered = orderBy switch
             {
                 nameof(Feedback.Rating) => isDescending
                     ? builder.OrderByDescending(x => x.Rating)
@@ -20,6 +20,8 @@ public static class FeedbackSpecExpression
                     ? builder.OrderByDescending(x => x.Rating)
                     : builder.OrderBy(x => x.Rating),
             };
+
+            return isDescending ? ordered.ThenByDescending(x => x.Id) : ordered.ThenBy(x => x.Id);
         }
 
         public void ApplyPaging(int pageIndex, int pageSize)

@@ -1,14 +1,9 @@
 "use client";
 
+import { useUserSession } from "@workspace/auth/hooks";
+
 import { useSession } from "@/lib/auth-client";
 
 export function useUserContext() {
-  const { data: session, isPending, error } = useSession();
-
-  return {
-    user: session?.user ?? null,
-    isLoading: isPending,
-    isAuthenticated: !!session?.user,
-    error,
-  };
+  return useUserSession(useSession);
 }

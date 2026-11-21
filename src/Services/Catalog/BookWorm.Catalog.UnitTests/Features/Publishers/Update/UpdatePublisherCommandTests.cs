@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
 using BookWorm.Catalog.Features.Publishers.Update;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;

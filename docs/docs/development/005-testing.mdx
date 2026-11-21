@@ -77,12 +77,14 @@ The contract task runs consumer tests first to generate pact files under `tests/
 
 ### Frontend and documentation checks
 
-When changing frontend code under `src/Clients`, run the relevant checks from `src/Clients`:
+When changing frontend code under `src/Clients`, run the relevant checks from `src/Clients` (see [[doc|frontend/004-testing-and-quality-gates]] for details):
 
 ```bash
+bun run boundaries
 bun run lint
 bun run check-types
 bun run test
+bun run build
 bun run e2e
 ```
 

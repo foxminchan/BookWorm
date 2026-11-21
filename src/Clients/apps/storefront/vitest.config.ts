@@ -12,6 +12,8 @@ export default defineConfig(
     plugins: [react()],
     extraCoverageExclude: [
       "**/proxy.ts",
+      "config/**",
+      "lib/cached-catalog.ts",
       "lib/policy-content.ts",
       "**/robots.ts",
       "**/sitemap.ts",
@@ -27,8 +29,14 @@ export default defineConfig(
       "components/mobile-bottom-nav.tsx",
       "components/chat-bot.tsx",
       "components/policy-dialog.tsx",
+      "features/account/account-page-client.tsx",
+      "features/auth/social-auth-redirect.tsx",
+      "features/basket/basket-page-client.tsx",
       "features/content/**",
       "features/home/**",
+      "features/ordering/checkout/confirmation-page-client.tsx",
+      "features/ordering/order-detail/order-detail-page-client.tsx",
+      "features/ordering/orders/orders-page-client.tsx",
     ],
   }),
 );

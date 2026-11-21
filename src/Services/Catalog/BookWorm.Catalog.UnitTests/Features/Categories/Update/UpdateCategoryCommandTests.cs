@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Features.Categories.Update;
 using BookWorm.Chassis.Exceptions;
 using BookWorm.Chassis.Repository;

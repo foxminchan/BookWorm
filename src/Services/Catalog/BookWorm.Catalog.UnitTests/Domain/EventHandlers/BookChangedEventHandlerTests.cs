@@ -1,3 +1,4 @@
+using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate;
 using BookWorm.Catalog.Domain.EventHandlers;
 using BookWorm.Catalog.Domain.Events;
 using ZiggyCreatures.Caching.Fusion;
@@ -15,11 +16,11 @@ public sealed class BookChangedEventHandlerTests
     }
 
     [Test]
-    public async Task GivenBookChangedEvent_WhenHandling_ThenShouldRemoveCacheEntry()
+    public async Task GivenBookChangedEvent_WhenHandling_ThenShouldRemoveAllBookCacheEntriesAndTags()
     {
         // Arrange
-        const string cacheKey = "catalog:books:list";
-        var @event = new BookChangedEvent(cacheKey);
+        var bookId = BookId.From(Guid.CreateVersion7());
+        var @event = new BookChangedEvent(bookId);
 
         // Act
         await _handler.Handle(@event, CancellationToken.None);
@@ -28,7 +29,34 @@ public sealed class BookChangedEventHandlerTests
         _cacheMock.Verify(
             x =>
                 x.RemoveAsync(
-                    cacheKey,
+                    CatalogCacheKeys.BookDetail(bookId),
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _cacheMock.Verify(
+            x =>
+                x.RemoveAsync(
+                    CatalogCacheKeys.BookSummary(bookId),
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _cacheMock.Verify(
+            x =>
+                x.RemoveByTagAsync(
+                    CatalogCacheKeys.BookListTag,
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _cacheMock.Verify(
+            x =>
+                x.RemoveByTagAsync(
+                    CatalogCacheKeys.BookSearchTag,
                     It.IsAny<FusionCacheEntryOptions?>(),
                     It.IsAny<CancellationToken>()
                 ),
@@ -37,11 +65,60 @@ public sealed class BookChangedEventHandlerTests
     }
 
     [Test]
-    public async Task GivenDifferentCacheKeys_WhenHandling_ThenShouldRemoveCorrectKey()
+    public async Task GivenDifferentBookIds_WhenHandling_ThenShouldRemoveCorrectKeys()
     {
         // Arrange
-        const string cacheKey = "catalog:books:detail:abc123";
-        var @event = new BookChangedEvent(cacheKey);
+        var firstBookId = BookId.From(Guid.CreateVersion7());
+        var secondBookId = BookId.From(Guid.CreateVersion7());
+
+        // Act
+        await _handler.Handle(new BookChangedEvent(firstBookId), CancellationToken.None);
+        await _handler.Handle(new BookChangedEvent(secondBookId), CancellationToken.None);
+
+        // Assert
+        _cacheMock.Verify(
+            x =>
+                x.RemoveAsync(
+                    CatalogCacheKeys.BookDetail(firstBookId),
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _cacheMock.Verify(
+            x =>
+                x.RemoveAsync(
+                    CatalogCacheKeys.BookDetail(secondBookId),
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _cacheMock.Verify(
+            x =>
+                x.RemoveAsync(
+                    CatalogCacheKeys.BookSummary(firstBookId),
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _cacheMock.Verify(
+            x =>
+                x.RemoveAsync(
+                    CatalogCacheKeys.BookSummary(secondBookId),
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenBookCreatedEvent_WhenHandling_ThenShouldRemoveListAndSearchTags()
+    {
+        // Arrange
+        var @event = new BookCreatedEvent();
 
         // Act
         await _handler.Handle(@event, CancellationToken.None);
@@ -49,8 +126,17 @@ public sealed class BookChangedEventHandlerTests
         // Assert
         _cacheMock.Verify(
             x =>
-                x.RemoveAsync(
-                    "catalog:books:detail:abc123",
+                x.RemoveByTagAsync(
+                    CatalogCacheKeys.BookListTag,
+                    It.IsAny<FusionCacheEntryOptions?>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+        _cacheMock.Verify(
+            x =>
+                x.RemoveByTagAsync(
+                    CatalogCacheKeys.BookSearchTag,
                     It.IsAny<FusionCacheEntryOptions?>(),
                     It.IsAny<CancellationToken>()
                 ),

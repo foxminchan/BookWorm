@@ -19,7 +19,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
@@ -42,13 +42,17 @@
   "exports": {
     "./keys": "./src/keys.ts",
     "./query-client": "./src/query-client.ts",
+    "./catalog/queries": "./src/catalog/queries.ts",
     "./catalog/authors/*": "./src/catalog/authors/*.ts",
     "./catalog/publishers/*": "./src/catalog/publishers/*.ts",
     "./catalog/categories/*": "./src/catalog/categories/*.ts",
     "./catalog/books/*": "./src/catalog/books/*.ts",
+    "./basket/queries": "./src/basket/queries.ts",
     "./basket/*": "./src/basket/*.ts",
+    "./ordering/queries": "./src/ordering/queries.ts",
     "./ordering/buyers/*": "./src/ordering/buyers/*.ts",
     "./ordering/orders/*": "./src/ordering/orders/*.ts",
+    "./rating/queries": "./src/rating/queries.ts",
     "./rating/*": "./src/rating/*.ts"
   }
 }

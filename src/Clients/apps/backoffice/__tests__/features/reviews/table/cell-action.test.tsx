@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 
 import { createMockFeedback } from "@/__tests__/factories";
@@ -196,5 +197,47 @@ describe("Reviews CellAction", () => {
     await waitFor(() => {
       expect(mutateAsyncFn).toHaveBeenCalled();
     });
+  });
+
+  it("logs error and shows error toast when delete mutation fails", async () => {
+    const user = userEvent.setup();
+    const error = new Error("Delete failed");
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const toastErrorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+    const mutateAsyncFn = vi
+      .fn()
+      .mockImplementation((_feedbackId, { onError }) => {
+        onError?.(error);
+        return Promise.reject(error);
+      });
+    mockUseDeleteFeedback.mockReturnValue({
+      mutateAsync: mutateAsyncFn,
+      isPending: false,
+    });
+
+    const { container } = renderWithQueryClient(
+      <CellAction feedback={mockReview} />,
+    );
+
+    const deleteButton = container.querySelector(
+      'button[class*="destructive"]',
+    );
+    await user.click(deleteButton!);
+
+    const confirmButton = screen.getByRole("button", { name: /delete/i });
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(toastErrorSpy).toHaveBeenCalledWith("Failed to delete review");
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to delete review:",
+        error,
+      );
+    });
+
+    consoleErrorSpy.mockRestore();
+    toastErrorSpy.mockRestore();
   });
 });

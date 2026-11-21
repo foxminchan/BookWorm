@@ -53,9 +53,7 @@ function PriceRangeFilter({
       <h3 className="mb-2 font-serif font-semibold">Price Range</h3>
       <Slider
         value={priceRange}
-        onValueChange={(value) =>
-          setPriceRange([value[0] ?? 0, value[1] ?? 100])
-        }
+        onValueChange={(value) => setPriceRange(value as number[])}
         max={100}
         step={1}
         className="mb-2"

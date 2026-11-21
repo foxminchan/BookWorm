@@ -34,6 +34,8 @@ internal sealed class BookUpdatedRatingFailedIntegrationEventHandler(
             return;
         }
 
+        feedback.Revert();
+
         repository.Delete(feedback);
 
         await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);

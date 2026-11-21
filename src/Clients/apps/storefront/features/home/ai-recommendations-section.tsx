@@ -70,7 +70,6 @@ export default function AiRecommendationsSection({
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transition-transform duration-700 group-hover:scale-105"
-            priority
           />
           <figcaption className="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/60 via-black/0 to-transparent p-8">
             <div className="flex items-center gap-4 text-white">

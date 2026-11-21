@@ -17,7 +17,7 @@ internal sealed class GetDashboardHandler(
     )
     {
         return await cache.GetOrSetAsync(
-            "ordering:dashboard:v1",
+            OrderingCacheKeys.Dashboard,
             async ct =>
             {
                 var catalog = await bookService.GetDashboardAsync(ct);

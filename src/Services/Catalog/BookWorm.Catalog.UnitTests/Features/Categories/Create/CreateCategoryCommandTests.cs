@@ -1,4 +1,4 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 using BookWorm.Catalog.Features.Categories.Create;
 
 namespace BookWorm.Catalog.UnitTests.Features.Categories.Create;

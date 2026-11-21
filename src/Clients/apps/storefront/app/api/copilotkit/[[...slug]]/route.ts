@@ -7,10 +7,12 @@ import {
   createCopilotKitRuntimeHandler,
 } from "@copilotkit/runtime";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import { AUTH } from "@workspace/utils/constants";
 
 import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
+import { COPILOT_RUNTIME_URL } from "@/lib/constants";
 
 const jsonResponse = (status: number, body: Record<string, unknown>) =>
   new Response(JSON.stringify(body), {
@@ -61,7 +63,7 @@ const getRuntime = (accessToken: string) => {
     throw new Error("Gateway URL is not configured");
   }
 
-  const agUiUrl = `${gatewayUrl}/chatting/ag-ui`;
+  const agUiUrl = `${gatewayUrl}${API_ENDPOINTS.chatting.agUi}`;
   const agentName = env.NEXT_PUBLIC_COPILOT_AGENT_NAME;
 
   return new CopilotKitRuntime({
@@ -89,7 +91,7 @@ const handleRequest = async (req: NextRequest) => {
     const runtime = getRuntime(accessToken);
     const handler = createCopilotKitRuntimeHandler({
       runtime,
-      basePath: "/api/copilotkit",
+      basePath: COPILOT_RUNTIME_URL,
     });
 
     return await handler(req);
@@ -97,8 +99,7 @@ const handleRequest = async (req: NextRequest) => {
     console.error("CopilotKit runtime error:", error);
     return jsonResponse(500, {
       error: "Failed to process request",
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: "An unexpected error occurred while processing your request.",
     });
   }
 };

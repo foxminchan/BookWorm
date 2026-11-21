@@ -18,6 +18,11 @@ internal static class Extensions
 
             builder.AddRedaction();
 
+            // Configure Redis Cache
+            builder
+                .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+                .WithAzureAuthentication();
+
             builder.AddCaching();
             services.AddIntegrationEventIdempotency();
 

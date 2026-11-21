@@ -14,7 +14,7 @@ export default function PublishersPageClient() {
   const publisherItems = publishers ?? [];
 
   return (
-    <main className="container mx-auto grow px-4 py-16 md:py-24">
+    <div className="container mx-auto grow px-4 py-16 md:py-24">
       {!isLoading && publisherItems.length === 0 ? (
         <div className="flex min-h-[60vh] items-center justify-center">
           <EmptyState
@@ -32,6 +32,6 @@ export default function PublishersPageClient() {
           <PublishersInfoSection />
         </>
       )}
-    </main>
+    </div>
   );
 }

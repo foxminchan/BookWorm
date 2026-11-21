@@ -1,4 +1,5 @@
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -205,5 +206,42 @@ describe("SimpleDialog", () => {
 
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("should log error and show toast when onSubmit rejects", async () => {
+    const user = userEvent.setup();
+    const error = new Error("Save failed");
+    const onSubmit = vi.fn().mockRejectedValue(error);
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const toastErrorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+
+    renderWithProviders(
+      <SimpleDialog
+        open={true}
+        onOpenChange={() => {}}
+        title="Create Item"
+        description="Enter item name"
+        placeholder="Item name"
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByPlaceholderText("Item name"), "Failing Item");
+    await user.click(screen.getByText("Create"));
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Dialog submission failed:",
+        error,
+      );
+      expect(toastErrorSpy).toHaveBeenCalledWith(
+        "Failed to save changes. Please try again.",
+      );
+    });
+
+    consoleErrorSpy.mockRestore();
+    toastErrorSpy.mockRestore();
   });
 });

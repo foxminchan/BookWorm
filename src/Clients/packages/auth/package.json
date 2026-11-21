@@ -1,0 +1,55 @@
+{
+  "name": "@workspace/auth",
+  "version": "1.0.0",
+  "description": "Shared Microsoft Entra ID Better Auth server, client, and session hooks for BookWorm",
+  "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  ],
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxminchan/BookWorm.git",
+    "directory": "src/Clients/packages/auth"
+  },
+  "bugs": {
+    "url": "https://github.com/foxminchan/BookWorm/issues"
+  },
+  "homepage": "https://foxminchan.github.io/BookWorm/",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    "./server": "./src/server.ts",
+    "./client": "./src/client.ts",
+    "./hooks": "./src/hooks.ts",
+    "./keys": "./src/keys.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
+  },
+  "dependencies": {
+    "@workspace/env": "workspace:*",
+    "@workspace/utils": "workspace:*",
+    "better-auth": "^1.7.27"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^10.15.0",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "typescript": "npm:typescript@^6.0.3"
+  },
+  "peerDependencies": {
+    "next": "^16.4.6",
+    "react": "^19.3.0"
+  }
+}

@@ -29,12 +29,13 @@ export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
       </CardHeader>
       <CardContent>
         <Table>
+          <caption className="sr-only">Order line items</caption>
           <TableHeader>
             <TableRow>
-              <TableHead>Item Name</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead scope="col">Item Name</TableHead>
+              <TableHead scope="col">Quantity</TableHead>
+              <TableHead scope="col">Price</TableHead>
+              <TableHead scope="col">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

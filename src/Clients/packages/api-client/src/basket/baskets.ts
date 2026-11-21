@@ -6,6 +6,7 @@ import type {
 
 import { apiClient } from "../client";
 import type ApiClient from "../client";
+import { API_ENDPOINTS } from "../endpoints";
 
 class BasketApiClient {
   private readonly client: ApiClient;
@@ -16,14 +17,14 @@ class BasketApiClient {
 
   public async get(): Promise<CustomerBasket> {
     const response = await this.client.get<CustomerBasket>(
-      `/basket/api/v1/baskets`,
+      API_ENDPOINTS.basket.root,
     );
     return response.data;
   }
 
   public async create(request: CreateBasketRequest): Promise<CustomerBasket> {
     const response = await this.client.post<CustomerBasket>(
-      `/basket/api/v1/baskets`,
+      API_ENDPOINTS.basket.root,
       request,
     );
     return response.data;
@@ -31,14 +32,14 @@ class BasketApiClient {
 
   public async update(request: UpdateBasketRequest): Promise<CustomerBasket> {
     const response = await this.client.put<CustomerBasket>(
-      `/basket/api/v1/baskets`,
+      API_ENDPOINTS.basket.root,
       request,
     );
     return response.data;
   }
 
   public async delete(): Promise<void> {
-    await this.client.delete<void>(`/basket/api/v1/baskets`);
+    await this.client.delete<void>(API_ENDPOINTS.basket.root);
   }
 }
 

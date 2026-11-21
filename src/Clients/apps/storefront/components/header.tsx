@@ -12,16 +12,10 @@ import { Badge } from "@workspace/ui/components/badge";
 import { basketItemsAtom } from "@/atoms/basket-atom";
 import { HeaderAccountMenu } from "@/components/header-account-menu";
 import { HeaderSearch, MobileSearch } from "@/components/header-search";
+import { APP_CONFIG } from "@/config/app-config";
+import { STOREFRONT_HEADER_NAV } from "@/config/nav-config";
 import { useSession } from "@/lib/auth-client";
-import { APP_CONFIG } from "@/lib/constants";
 import { isNavActive } from "@/lib/nav-utils";
-
-const NAV_LINKS = [
-  { href: "/shop", label: "Shop" },
-  { href: "/categories", label: "Categories" },
-  { href: "/publishers", label: "Publishers" },
-  { href: "/about", label: "Our Story" },
-] as const;
 
 function formatItemCount(count: number): string {
   if (count === 0) return "";
@@ -86,7 +80,7 @@ export function Header() {
             className="hidden flex-1 items-center justify-center gap-8 text-sm font-medium md:flex"
             aria-label="Main navigation"
           >
-            {NAV_LINKS.map((link) => (
+            {STOREFRONT_HEADER_NAV.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

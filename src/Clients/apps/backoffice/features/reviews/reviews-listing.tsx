@@ -1,0 +1,41 @@
+"use client";
+
+import { useState } from "react";
+
+import { PageContainer } from "@/components/page-container";
+import { BookSelector } from "@/features/reviews/book-selector";
+import { ReviewsTable } from "@/features/reviews/table/table";
+
+const breadcrumbs = [
+  { label: "Admin", href: "/" },
+  { label: "Reviews", isActive: true },
+];
+
+export function ReviewsListing() {
+  const [selectedBookId, setSelectedBookId] = useState("");
+
+  return (
+    <PageContainer
+      title="Reviews Management"
+      description="Moderate customer reviews for your books"
+      breadcrumbs={breadcrumbs}
+    >
+      <div className="border-border bg-card rounded-lg border p-6">
+        <BookSelector
+          onBookSelect={setSelectedBookId}
+          selectedBookId={selectedBookId}
+        />
+      </div>
+
+      {selectedBookId ? (
+        <ReviewsTable bookId={selectedBookId} />
+      ) : (
+        <div className="border-border bg-muted/50 flex items-center justify-center rounded-lg border border-dashed p-12 text-center">
+          <p className="text-muted-foreground">
+            Select a book above to view and manage its reviews
+          </p>
+        </div>
+      )}
+    </PageContainer>
+  );
+}

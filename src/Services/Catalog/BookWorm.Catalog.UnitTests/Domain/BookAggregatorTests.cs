@@ -48,6 +48,7 @@ public sealed class BookAggregatorTests
         book.CategoryId.ShouldBe(categoryId);
         book.PublisherId.ShouldBe(publisherId);
         book.BookAuthors.ShouldNotBeNull();
+        book.DomainEvents.ShouldContain(e => e is BookCreatedEvent);
     }
 
     [Test]

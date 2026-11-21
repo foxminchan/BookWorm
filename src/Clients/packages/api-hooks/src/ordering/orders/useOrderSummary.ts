@@ -1,11 +1,19 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
+import {
+  type UseQueryOptions,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+
+import { formatETag } from "@workspace/api-client/client";
 import ordersApiClient from "@workspace/api-client/ordering/orders";
 import type {
   OrderSummaryQuery,
   OrderSummarySnapshot,
 } from "@workspace/types/ordering/orders";
 
+import { fetchWithETag, getCachedETag } from "../../etag-cache";
 import { orderingKeys } from "../../keys";
 
 export default function useOrderSummary(
@@ -13,9 +21,23 @@ export default function useOrderSummary(
   query?: OrderSummaryQuery,
   options?: Omit<UseQueryOptions<OrderSummarySnapshot>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: orderingKeys.orders.summary(id, query),
-    queryFn: () => ordersApiClient.getSummary(id, query),
+  const queryClient = useQueryClient();
+  const queryKey = orderingKeys.orders.summary(id, query);
+
+  const result = useQuery({
+    queryKey,
+    queryFn: () =>
+      fetchWithETag(
+        queryClient,
+        queryKey,
+        (opts) => ordersApiClient.getSummaryConditional(id, query, opts),
+        `order summary ${id}`,
+      ),
     ...options,
   });
+
+  const etag =
+    getCachedETag(queryClient, queryKey) ?? formatETag(result.data?.version);
+
+  return { ...result, etag };
 }

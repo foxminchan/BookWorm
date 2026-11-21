@@ -1,19 +1,14 @@
+import { Suspense } from "react";
+
 import Link from "next/link";
 
+import { CopyrightYear } from "@/components/copyright-year";
 import { FooterPolicies } from "@/components/footer-policies";
-import { APP_CONFIG } from "@/lib/constants";
-
-const QUICK_LINKS = [
-  { href: "/shop", label: "Books" },
-  { href: "/categories", label: "Categories" },
-  { href: "/publishers", label: "Publishers" },
-] as const;
-
-const HELP_LINKS = [
-  { href: "/shipping", label: "Shipping Info" },
-  { href: "/returns", label: "Returns" },
-  { href: "/about", label: "Our Story" },
-] as const;
+import { APP_CONFIG } from "@/config/app-config";
+import {
+  STOREFRONT_FOOTER_HELP_LINKS,
+  STOREFRONT_FOOTER_QUICK_LINKS,
+} from "@/config/nav-config";
 
 type FooterNavProps = {
   readonly label: string;
@@ -59,13 +54,19 @@ export function Footer() {
               for the modern reader.
             </p>
           </div>
-          <FooterNav label="Quick Links" links={QUICK_LINKS} />
-          <FooterNav label="Help" links={HELP_LINKS} />
+          <FooterNav
+            label="Quick Links"
+            links={STOREFRONT_FOOTER_QUICK_LINKS}
+          />
+          <FooterNav label="Help" links={STOREFRONT_FOOTER_HELP_LINKS} />
         </div>
         <div className="border-border text-muted-foreground mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 text-xs md:flex-row">
           <p>
-            &copy; {new Date().getFullYear()} {APP_CONFIG.name}. All rights
-            reserved.
+            &copy;{" "}
+            <Suspense fallback={<span>2026</span>}>
+              <CopyrightYear />
+            </Suspense>{" "}
+            {APP_CONFIG.name}. All rights reserved.
           </p>
           <FooterPolicies />
         </div>

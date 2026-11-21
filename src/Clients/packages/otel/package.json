@@ -25,16 +25,19 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./keys": "./src/keys.ts",
+    "./instrumentation": "./src/instrumentation.ts",
     "./*": "./src/*.ts"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
     "@opentelemetry/exporter-trace-otlp-proto": "^0.301.2",
     "@opentelemetry/sdk-node": "^0.301.2",
-    "@opentelemetry/sdk-trace-node": "^2.12.1"
+    "@opentelemetry/sdk-trace-node": "^2.12.1",
+    "@workspace/env": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

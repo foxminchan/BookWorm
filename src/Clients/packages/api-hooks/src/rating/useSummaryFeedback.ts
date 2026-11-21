@@ -1,17 +1,15 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+"use client";
 
-import ratingApiClient from "@workspace/api-client/rating/feedbacks";
+import type { UseQueryOptions } from "@tanstack/react-query";
+
 import type { FeedbackSummary } from "@workspace/types/rating";
 
-import { ratingKeys } from "../keys";
+import { useQueryFromOptions } from "../use-query-from-options";
+import { feedbackQueries } from "./queries";
 
 export default function useSummaryFeedback(
   bookId: string,
   options?: Omit<UseQueryOptions<FeedbackSummary>, "queryKey" | "queryFn">,
 ) {
-  return useQuery({
-    queryKey: ratingKeys.feedbacks.summary(bookId),
-    queryFn: () => ratingApiClient.summary(bookId),
-    ...options,
-  });
+  return useQueryFromOptions(feedbackQueries.summary(bookId), options);
 }

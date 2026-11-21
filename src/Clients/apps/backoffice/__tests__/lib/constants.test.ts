@@ -1,22 +1,46 @@
 import { describe, expect, it } from "vitest";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
+import { currencyFormatter } from "@workspace/utils/constants";
+
 import {
-  API,
   CHART_COLORS,
   CHART_THEME,
   DEFAULT_BOOKS_PAGE_SIZE,
   DEFAULT_PAGE_SIZE,
   PAGE_SIZES,
-  currencyFormatter,
 } from "@/lib/constants";
 
-describe("API constants", () => {
-  it("should have default retry count of 3", () => {
-    expect(API.DEFAULT_RETRY).toBe(3);
+describe("API_ENDPOINTS", () => {
+  it("exposes default parameterized routes for MSW handlers", () => {
+    expect(API_ENDPOINTS.catalog.books.root).toBe("/catalog/api/v1/books");
+    expect(API_ENDPOINTS.catalog.books.byId()).toBe(
+      "/catalog/api/v1/books/:id",
+    );
+    expect(API_ENDPOINTS.ordering.orders.cancel()).toBe(
+      "/ordering/api/v1/orders/:id/cancel",
+    );
+    expect(API_ENDPOINTS.ordering.orders.complete()).toBe(
+      "/ordering/api/v1/orders/:id/complete",
+    );
+    expect(API_ENDPOINTS.rating.feedbacks.summarize()).toBe(
+      "/rating/api/v1/feedbacks/:bookId/summarize",
+    );
   });
 
-  it("should have default timeout of 30000ms", () => {
-    expect(API.DEFAULT_TIMEOUT).toBe(30000);
+  it("builds concrete resource paths when an ID is supplied", () => {
+    expect(API_ENDPOINTS.catalog.books.byId("book-123")).toBe(
+      "/catalog/api/v1/books/book-123",
+    );
+    expect(API_ENDPOINTS.ordering.orders.history("order-456")).toBe(
+      "/ordering/api/v1/orders/order-456/history",
+    );
+    expect(API_ENDPOINTS.ordering.orders.summary("order-456")).toBe(
+      "/ordering/api/v1/orders/order-456/summary",
+    );
+    expect(API_ENDPOINTS.rating.feedbacks.summarize("book-789")).toBe(
+      "/rating/api/v1/feedbacks/book-789/summarize",
+    );
   });
 });
 

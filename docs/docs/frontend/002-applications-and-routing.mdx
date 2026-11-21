@@ -1,0 +1,145 @@
+---
+title: Storefront & Backoffice Applications
+summary: Next.js 16 App Router structure, thin route conventions, feature slices, authentication, and SEO across Storefront and Backoffice.
+owners:
+  - contributor-team
+badges:
+  - content: Frontend Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+## 1. Context & Problem
+
+Both `@bookworm/storefront` and `@bookworm/backoffice` run on Next.js 16 (App Router) and React 19 behind the YARP API gateway. When App Router `page.tsx` files accumulate client hooks, filter state, API mutations, and complex layouts directly inside `app/`, routes become hard to test, server/client boundaries blur, and navigation or branding constants scatter across unrelated components.
+
+Following clean App Router feature-slice practices keeps `app/` files lightweight as thin routing entrypoints while encapsulating domain UI, state, and queries in focused `features/` modules.
+
+## 2. Business Value
+
+- **Clean server/client separation:** Thin Server Component routes own page metadata, Suspense fallbacks, and React Query prefetching without leaking interactive hooks into server entrypoints.
+- **Maintainable domain slices:** Grouping components and views under `features/<domain>/` aligns frontend directories directly with BookWorm's backend capabilities ([[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]]).
+- **Consistent security and navigation governance:** Centralized navigation and app metadata configurations in `config/` prevent broken paths, duplicate constants, and inconsistent authorization enforcement.
+
+## 3. How It Works
+
+Each Next.js application is routed behind the YARP gateway configured in `BookWorm.AppHost` and follows a consistent three-layer internal layout:
+
+1. **Gateway routing & base paths:** In Aspire and Azure Container Apps ([[doc|platform/002-compute-and-container-apps]]), `storefront` handles the root path (`/`) and `backoffice` serves from `/backoffice` (configured via `basePath: "/backoffice"` in [next.config.mjs](https://github.com/foxminchan/BookWorm/blob/main/src/Clients/apps/backoffice/next.config.mjs)).
+2. **Thin `app/` routes:** Route files handle `metadata` / `generateMetadata` (via `@workspace/seo`), server-side prefetching into `HydrationBoundary` (for Storefront catalog pages), or layout framing (`<PageContainer>` in Backoffice), then render one dedicated view component from `features/`.
+3. **Centralized `config/` + shared `@workspace/auth` and `@workspace/seo`:** App constants (`APP_CONFIG`), pagination defaults, and structured navigation trees live in `config/app-config.ts` and `config/nav-config.ts`. Authentication integrates Better Auth with [[system|identity-provider]] via `@workspace/auth`, passing service-specific Entra ID scopes.
+
+## 4. Trade-offs & Lessons Learned
+
+- **Preserving app-root layout over moving into `src/`:** Keeping `app/`, `features/`, `components/`, `config/`, `hooks/`, and `lib/` directly under `apps/<app>/` avoids churning CI paths, Vitest aliases, and Playwright fixtures while delivering the same modularity benefits.
+- **Thin routes excluded from line-coverage distortion:** Because `app/**/page.tsx`, `config/`, and thin wrapper modules hold declarative wiring rather than branching logic, both apps register `extraCoverageExclude` patterns in `vitest.config.ts` so coverage metrics focus on tested features, hooks, and components.
+- **Role-based scope separation at authentication time:** `@bookworm/storefront` and `@bookworm/backoffice` pass distinct Entra ID delegated scopes to `createEntraAuth` instead of sharing one over-privileged token configuration, though route authorization checks remain independently enforced on each backend API.
+
+## 5. Technical Reference
+
+### Application Comparison
+
+| Attribute               | `@bookworm/storefront`                                                                                                                             | `@bookworm/backoffice`                                                                            |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **Target Audience**     | Online bookstore customers                                                                                                                         | Store administrators and staff                                                                    |
+| **Gateway Path Prefix** | `/` (root)                                                                                                                                         | `/backoffice` (`basePath`)                                                                        |
+| **Default Local Port**  | `3000` (`http://localhost:3000`)                                                                                                                   | `3001` (`http://localhost:3001/backoffice`)                                                       |
+| **Next.js Features**    | App Router, `cacheComponents: true` (Partial Prerendering), Turbopack                                                                              | App Router, `basePath: "/backoffice"`, Turbopack                                                  |
+| **Entra ID Scopes**     | `catalog_read`, `basket_read`, `basket_write`, `ordering_read`, `ordering_write`, `rating_read`, `rating_write`, `chatting_read`, `chatting_write` | `catalog_read`, `catalog_write`, `ordering_read`, `ordering_write`, `rating_read`, `rating_write` |
+| **Conversational UI**   | CopilotKit + AG-UI runtime (`/api/copilotkit/[[...slug]]`)                                                                                         | None                                                                                              |
+
+### Standard App-Root Folder Structure
+
+```text
+apps/<app>/
+├── app/                # Thin App Router layouts, route groups, pages, and API routes
+├── components/         # App-wide layout chrome, header/nav, skeletons, and PageContainer (backoffice)
+├── config/
+│   ├── app-config.ts   # APP_CONFIG, pagination defaults, chart/feature constants
+│   └── nav-config.ts   # Typed navigation sections and route link definitions
+├── features/           # Domain-grouped client views, tables, filters, and forms
+├── hooks/              # App-specific hooks delegating to @workspace/auth or @workspace/api-hooks
+├── lib/                # Auth instantiation, query client helpers, SEO helpers, constants re-exports
+├── env.mjs             # Composed @t3-oss/env-nextjs schema using @workspace/env
+├── instrumentation.ts  # 1-line re-export from @workspace/otel/instrumentation
+├── __tests__/          # Vitest unit/component tests and MSW setup
+└── e2e/                # Playwright BDD feature files, steps, and page objects
+```
+
+### Thin Route Pattern Examples
+
+In `apps/backoffice`, routes compose `createMetadata` and `<PageContainer>` (or `<Suspense>`) around a feature component:
+
+```tsx
+import type { Metadata } from "next";
+
+import { createMetadata } from "@workspace/seo/metadata";
+
+import { PageContainer } from "@/components/page-container";
+import { APP_CONFIG } from "@/config/app-config";
+import { BookForm } from "@/features/books/book-form";
+
+export const metadata: Metadata = createMetadata({
+	title: "Create Book",
+	description: "Add a new book to your inventory",
+	appName: APP_CONFIG.name,
+});
+
+export default function NewBookPage() {
+	return (
+		<PageContainer
+			title="Create New Book"
+			description="Add a new book to your inventory"
+			breadcrumbs={[
+				{ label: "Admin", href: "/" },
+				{ label: "Books", href: "/books" },
+				{ label: "Create New Book", isActive: true },
+			]}
+		>
+			<BookForm />
+		</PageContainer>
+	);
+}
+```
+
+### Storefront Route Map
+
+| Route Group / Path                                         | Feature Slice(s)                                          | Primary Backing Domain & Service                                                                  |
+| :--------------------------------------------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| `(main)/`                                                  | Landing showcase sections & discovery                     | [[domain\|catalog]] (`[[service\|catalog-api]]`)                                                  |
+| `(catalog)/shop`, `(catalog)/shop/[id]`                    | `features/catalog/shop/`, `features/catalog/product/`     | [[domain\|catalog]] (`[[service\|catalog-api]]`), [[domain\|reviews]] (`[[service\|rating-api]]`) |
+| `(catalog)/categories`, `(catalog)/publishers`             | `features/catalog/` taxonomy listings                     | [[domain\|catalog]] (`[[service\|catalog-api]]`)                                                  |
+| `(basket)/basket`                                          | `features/basket/basket-page-client.tsx`                  | [[domain\|shopping]] (`[[service\|basket-api]]`)                                                  |
+| `(ordering)/checkout/confirmation`                         | `features/ordering/checkout/confirmation-page-client.tsx` | [[domain\|ordering]] (`[[service\|order-api]]`)                                                   |
+| `(ordering)/account`, `(ordering)/account/orders`, `/[id]` | `features/account/`, `features/ordering/`                 | [[domain\|ordering]] (`[[service\|order-api]]`)                                                   |
+| `(auth)/login`, `(auth)/register`                          | `features/auth/social-auth-redirect.tsx`                  | [[system\|identity-provider]]                                                                     |
+| `(content)/about`, `/shipping`, `/returns`                 | Static informational pages                                | —                                                                                                 |
+| `/api/auth/[...all]`                                       | `@workspace/auth/server` (`createAuthRouteHandler`)       | Better Auth + Microsoft Entra ID                                                                  |
+| `/api/copilotkit/[[...slug]]`                              | CopilotKit runtime with `HttpAgent`                       | [[domain\|conversational]] (`[[service\|chat-api]]`)                                              |
+
+### Backoffice Route Map
+
+| Route Group / Path                                        | Feature Slice(s)                                                     | Primary Backing Domain & Service                                     |
+| :-------------------------------------------------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------- |
+| `(admin)/`                                                | `features/overview/overview-dashboard.tsx`                           | [[domain\|ordering]] (`[[service\|order-api]]`), [[domain\|catalog]] |
+| `(admin)/(catalog)/books`, `/new`, `/[id]`                | `features/books/books-listing.tsx`, `features/books/book-form.tsx`   | [[domain\|catalog]] (`[[service\|catalog-api]]`)                     |
+| `(admin)/(catalog)/categories`, `/authors`, `/publishers` | `features/catalog/{categories,authors,publishers}-listing.tsx`       | [[domain\|catalog]] (`[[service\|catalog-api]]`)                     |
+| `(admin)/(ordering)/customers`, `/orders`, `/orders/[id]` | Customers & `features/orders/{orders-listing,order-detail-view}.tsx` | [[domain\|ordering]] (`[[service\|order-api]]`)                      |
+| `(admin)/(rating)/reviews`                                | `features/reviews/reviews-listing.tsx`                               | [[domain\|reviews]] (`[[service\|rating-api]]`)                      |
+| `/api/auth/[...all]`                                      | `@workspace/auth/server` (`createAuthRouteHandler`)                  | Better Auth + Microsoft Entra ID                                     |
+
+### Authentication & SEO Integration
+
+- **Authentication (`@workspace/auth`)**:
+  - `lib/auth.ts` initializes `createEntraAuth({ env, defaultBaseUrl, scopes })`.
+  - `app/api/auth/[...all]/route.ts` exports `GET` and `POST` from `createAuthRouteHandler(auth)`.
+  - `lib/auth-client.ts` exposes `createAppAuthClient(basePath)` alongside `hooks/useUserContext.ts` (`useUserSession`) and `hooks/useLogout.ts` (`useAuthLogout`).
+- **SEO & Structured Data (`@workspace/seo`)**:
+  - `createMetadata()` supplies shared Open Graph, Twitter Card, and site title defaults across layouts and App Router pages.
+  - `<JsonLd />` and `generateOrganizationJsonLd()` (along with Storefront helpers in `lib/seo.ts`) emit Schema.org JSON-LD for books, breadcrumbs, collections, and organization metadata.
+
+### Related Documentation
+
+- [[doc|frontend/001-monorepo-architecture]] — Workspace boundary tiers and `@workspace/*` package inventory
+- [[doc|frontend/003-data-fetching-and-state]] — How feature slices prefetch and query data via `@workspace/api-hooks`
+- [[doc|platform/004-identity-and-rbac-matrix]] — Microsoft Entra ID identity and gateway configuration

@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import type {
   Author,
   CreateAuthorRequest,
@@ -14,13 +15,13 @@ import {
 import {
   createNotFoundResponse,
   createValidationErrorResponse,
+  mockUrl,
 } from "../../helpers/index";
-import { CATALOG_API_BASE_URL } from "../constants";
 import { authorsStore } from "./data";
 
 export const authorsHandlers = [
   http.get<never, never, Author[]>(
-    `${CATALOG_API_BASE_URL}/api/v1/authors`,
+    mockUrl(API_ENDPOINTS.catalog.authors.root),
     () => {
       const authors = authorsStore.list();
       return HttpResponse.json(authors, { status: 200 });
@@ -28,7 +29,7 @@ export const authorsHandlers = [
   ),
 
   http.post<never, CreateAuthorRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/authors`,
+    mockUrl(API_ENDPOINTS.catalog.authors.root),
     async ({ request }) => {
       const body = await request.json();
       const result = createAuthorSchema.safeParse(body);
@@ -45,7 +46,7 @@ export const authorsHandlers = [
   ),
 
   http.put<never, UpdateAuthorRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/authors`,
+    mockUrl(API_ENDPOINTS.catalog.authors.root),
     async ({ request }) => {
       const body = await request.json();
       const result = updateAuthorSchema.safeParse(body);
@@ -67,7 +68,7 @@ export const authorsHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${CATALOG_API_BASE_URL}/api/v1/authors/:id`,
+    mockUrl(API_ENDPOINTS.catalog.authors.byId()),
     ({ params }) => {
       const { id } = params;
 

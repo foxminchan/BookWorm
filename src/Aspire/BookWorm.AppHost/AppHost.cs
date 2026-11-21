@@ -185,6 +185,8 @@ builder
     .WithEmailProvider()
     .WithReference(broker)
     .WaitFor(broker)
+    .WithReference(redis)
+    .WaitFor(redis)
     .WithSecret("hmac-key", "HMAC__Key")
     .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath)
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);

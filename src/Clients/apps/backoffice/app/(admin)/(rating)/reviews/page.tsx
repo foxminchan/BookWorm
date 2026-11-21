@@ -1,43 +1,16 @@
-"use client";
+import type { Metadata } from "next";
 
-import { useState } from "react";
+import { createMetadata } from "@workspace/seo/metadata";
 
-import { PageHeader } from "@/components/page-header";
-import { BookSelector } from "@/features/reviews/book-selector";
-import { ReviewsTable } from "@/features/reviews/table/table";
+import { APP_CONFIG } from "@/config/app-config";
+import { ReviewsListing } from "@/features/reviews/reviews-listing";
 
-const breadcrumbs = [
-  { label: "Admin", href: "/" },
-  { label: "Reviews", isActive: true },
-];
+export const metadata: Metadata = createMetadata({
+  title: "Reviews",
+  description: "Moderate customer reviews for your books",
+  appName: APP_CONFIG.name,
+});
 
 export default function ReviewsPage() {
-  const [selectedBookId, setSelectedBookId] = useState("");
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Reviews Management"
-        description="Moderate customer reviews for your books"
-        breadcrumbs={breadcrumbs}
-      />
-
-      <div className="border-border bg-card rounded-lg border p-6">
-        <BookSelector
-          onBookSelect={setSelectedBookId}
-          selectedBookId={selectedBookId}
-        />
-      </div>
-
-      {selectedBookId ? (
-        <ReviewsTable bookId={selectedBookId} />
-      ) : (
-        <div className="border-border bg-muted/50 flex items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground">
-            Select a book above to view and manage its reviews
-          </p>
-        </div>
-      )}
-    </div>
-  );
+  return <ReviewsListing />;
 }

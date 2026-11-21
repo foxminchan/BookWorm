@@ -20,13 +20,12 @@ export default function HeroSection() {
       </p>
       <div className="flex flex-col justify-center gap-4 sm:flex-row">
         <Button
+          render={<Link href="/shop">Browse Collection</Link>}
+          nativeButton={false}
           size="lg"
           className="rounded-full px-8"
           aria-label="Browse book collection"
-          asChild
-        >
-          <Link href="/shop">Browse Collection</Link>
-        </Button>
+        />
       </div>
     </section>
   );

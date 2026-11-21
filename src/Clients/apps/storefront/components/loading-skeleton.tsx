@@ -123,7 +123,7 @@ export function ConfirmationPageSkeleton() {
       </div>
 
       <div className="border-border mb-24 grid gap-8 border-y py-12 md:grid-cols-3">
-        {Array.from({ length: 3 }, () => crypto.randomUUID()).map((i) => (
+        {Array.from({ length: 3 }, (_, idx) => idx).map((i) => (
           <div key={i} className="space-y-4">
             <Skeleton className="h-6 w-32" />
             <div className="space-y-2">
@@ -148,7 +148,7 @@ export function ConfirmationPageSkeleton() {
 export function OrdersSkeleton() {
   return (
     <div className="border-border/40 bg-border/40 space-y-px border">
-      {Array.from({ length: 5 }, () => crypto.randomUUID()).map((i) => (
+      {Array.from({ length: 5 }, (_, idx) => idx).map((i) => (
         <div
           key={i}
           className="bg-background border-border/40 border-b p-8 last:border-b-0"
@@ -185,7 +185,7 @@ export function OrderDetailSkeleton() {
           <Skeleton className="h-6 w-32" />
         </div>
         <div className="divide-border/40 divide-y">
-          {Array.from({ length: 3 }, () => crypto.randomUUID()).map((i) => (
+          {Array.from({ length: 3 }, (_, idx) => idx).map((i) => (
             <div key={i} className="space-y-3 px-6 py-4">
               <Skeleton className="h-5 w-48" />
               <Skeleton className="h-4 w-32" />
@@ -265,18 +265,16 @@ export function ReviewsLoadingSkeleton() {
       <Skeleton className="h-10 w-1/3 rounded-lg" />
       <Skeleton className="h-6 w-1/2 rounded-lg" />
       <div className="space-y-8">
-        {Array.from({ length: 3 }, () => crypto.randomUUID()).map((i) => (
+        {Array.from({ length: 3 }, (_, idx) => idx).map((i) => (
           <div key={i} className="space-y-4">
             <div className="flex gap-3">
               <Skeleton className="size-10 shrink-0 rounded-full" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-1/4 rounded" />
                 <div className="flex gap-1">
-                  {Array.from({ length: 5 }, () => crypto.randomUUID()).map(
-                    (j) => (
-                      <Skeleton key={j} className="size-3 rounded" />
-                    ),
-                  )}
+                  {Array.from({ length: 5 }, (_, idx) => idx).map((j) => (
+                    <Skeleton key={j} className="size-3 rounded" />
+                  ))}
                 </div>
               </div>
             </div>

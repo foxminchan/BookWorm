@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import type {
   CreatePublisherRequest,
   Publisher,
@@ -14,13 +15,13 @@ import {
 import {
   createNotFoundResponse,
   createValidationErrorResponse,
+  mockUrl,
 } from "../../helpers/index";
-import { CATALOG_API_BASE_URL } from "../constants";
 import { publishersStore } from "./data";
 
 export const publishersHandlers = [
   http.get<never, never, Publisher[]>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
+    mockUrl(API_ENDPOINTS.catalog.publishers.root),
     () => {
       const publishers = publishersStore.list();
       return HttpResponse.json(publishers, { status: 200 });
@@ -28,7 +29,7 @@ export const publishersHandlers = [
   ),
 
   http.post<never, CreatePublisherRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
+    mockUrl(API_ENDPOINTS.catalog.publishers.root),
     async ({ request }) => {
       const body = await request.json();
       const result = createPublisherSchema.safeParse(body);
@@ -45,7 +46,7 @@ export const publishersHandlers = [
   ),
 
   http.put<never, UpdatePublisherRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers`,
+    mockUrl(API_ENDPOINTS.catalog.publishers.root),
     async ({ request }) => {
       const body = await request.json();
       const result = updatePublisherSchema.safeParse(body);
@@ -67,7 +68,7 @@ export const publishersHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${CATALOG_API_BASE_URL}/api/v1/publishers/:id`,
+    mockUrl(API_ENDPOINTS.catalog.publishers.byId()),
     ({ params }) => {
       const { id } = params;
 

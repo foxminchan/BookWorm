@@ -6,15 +6,25 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
+import {
+  formatETag,
+  isPreconditionFailedError,
+} from "@workspace/api-client/client";
 import useAuthors from "@workspace/api-hooks/catalog/authors/useAuthors";
 import useBook from "@workspace/api-hooks/catalog/books/useBook";
 import useCreateBook from "@workspace/api-hooks/catalog/books/useCreateBook";
 import useUpdateBook from "@workspace/api-hooks/catalog/books/useUpdateBook";
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
 import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
 import { Form } from "@workspace/ui/components/form";
 import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
@@ -39,10 +49,16 @@ export function BookForm({ bookId }: BookFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | undefined>(undefined);
   const [isRemoveImage, setIsRemoveImage] = useState(false);
+  const [hasVersionConflict, setHasVersionConflict] = useState(false);
 
   const createMutation = useCreateBook();
   const updateMutation = useUpdateBook();
-  const { data: bookData, isLoading: isLoadingBook } = useBook(bookId ?? "", {
+  const {
+    data: bookData,
+    isLoading: isLoadingBook,
+    etag: bookEtag,
+    refetch: refetchBook,
+  } = useBook(bookId ?? "", {
     enabled: !!bookId,
   });
 
@@ -84,11 +100,18 @@ export function BookForm({ bookId }: BookFormProps) {
       if (bookData.imageUrl) {
         setImagePreview(bookData.imageUrl);
       }
+      setHasVersionConflict(false);
     }
   }, [bookData, bookId, form]);
 
+  const handleReloadLatest = () => {
+    setHasVersionConflict(false);
+    void refetchBook?.();
+  };
+
   const onSubmit = (data: CreateBookInput) => {
     if (bookId) {
+      const ifMatch = bookEtag ?? formatETag(bookData?.version);
       updateMutation.mutate(
         {
           request: {
@@ -98,9 +121,23 @@ export function BookForm({ bookId }: BookFormProps) {
             image: imageFile,
             isRemoveImage,
           },
+          ...(ifMatch && { ifMatch }),
         },
         {
-          onSuccess: () => router.push("/books"),
+          onSuccess: () => {
+            setHasVersionConflict(false);
+            router.push("/books");
+          },
+          onError: (error) => {
+            if (isPreconditionFailedError(error)) {
+              setHasVersionConflict(true);
+              toast.error(
+                "This book was modified by another user. Reload the latest version to save your changes.",
+              );
+            } else {
+              toast.error("Failed to update book");
+            }
+          },
         },
       );
     } else {
@@ -112,6 +149,9 @@ export function BookForm({ bookId }: BookFormProps) {
         },
         {
           onSuccess: (response) => router.push(`/books?new=${response.id}`),
+          onError: () => {
+            toast.error("Failed to create book");
+          },
         },
       );
     }
@@ -120,6 +160,15 @@ export function BookForm({ bookId }: BookFormProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        toast.error("Image size must be 5 MB or smaller");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === "string") {
@@ -154,6 +203,28 @@ export function BookForm({ bookId }: BookFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {hasVersionConflict && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Version conflict detected</AlertTitle>
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                This book was updated elsewhere since you opened it. Reload the
+                latest version before saving your changes.
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleReloadLatest}
+              >
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                Reload latest version
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <BookInfoCard form={form} />
 
         <ClassificationCard

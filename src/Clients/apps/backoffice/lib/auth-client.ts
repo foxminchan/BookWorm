@@ -1,15 +1,10 @@
 "use client";
 
-import type { createAuthClient as CreateAuthClient } from "better-auth/react";
-import { createAuthClient } from "better-auth/react";
+import { createAppAuthClient } from "@workspace/auth/client";
 
-export const authClient: ReturnType<typeof CreateAuthClient> = createAuthClient(
-  {
-    baseURL:
-      globalThis.window === undefined
-        ? "http://localhost:3001/backoffice"
-        : `${globalThis.location.origin}/backoffice`,
-  },
-);
+export const authClient = createAppAuthClient({
+  basePath: "/backoffice",
+  defaultOrigin: "http://localhost:3001",
+});
 
 export const { signIn, signOut, useSession } = authClient;

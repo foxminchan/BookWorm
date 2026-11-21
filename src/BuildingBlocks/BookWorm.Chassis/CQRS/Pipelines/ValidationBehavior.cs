@@ -1,6 +1,7 @@
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.OpenTelemetry.ActivityScope;
 using FluentValidation;
+using FluentValidation.Results;
 using Mediator;
 using Microsoft.Extensions.Logging;
 
@@ -22,25 +23,36 @@ internal sealed partial class ValidationBehavior<TMessage, TResponse>(
     {
         LogHandlingRequest(logger, Behavior, _messageType, _responseType);
 
-        if (!validators.Any())
+        var resolvedValidators = validators as IValidator<TMessage>[] ?? [.. validators];
+
+        if (resolvedValidators.Length == 0)
         {
             return;
         }
 
         var context = new ValidationContext<TMessage>(message);
 
-        var validationResult = await Task.WhenAll(
-            validators.Select(v => v.ValidateAsync(context, cancellationToken))
-        );
+        ValidationResult[] validationResults =
+            resolvedValidators.Length == 1
+                ? [await resolvedValidators[0].ValidateAsync(context, cancellationToken)]
+                : await Task.WhenAll(
+                    resolvedValidators.Select(v => v.ValidateAsync(context, cancellationToken))
+                );
 
-        var errors = validationResult.SelectMany(result => result.Errors).ToList();
-
-        if (errors.Count != 0)
+        if (Array.Exists(validationResults, static result => !result.IsValid))
         {
+            var errors = validationResults
+                .Where(static result => !result.IsValid)
+                .SelectMany(static result => result.Errors)
+                .ToList();
+
             throw new ValidationException(errors);
         }
 
-        var validatorNames = string.Join(", ", validators.Select(v => v.GetType().Name));
+        var validatorNames = string.Join(
+            ", ",
+            resolvedValidators.Select(static v => v.GetType().Name)
+        );
         var activityName = $"{_messageType}-{validatorNames}";
 
         await activityScope.Run(

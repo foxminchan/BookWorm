@@ -6,6 +6,7 @@ import useBooks from "@workspace/api-hooks/catalog/books/useBooks";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -44,18 +45,24 @@ export function BookSelector({
       </label>
       <Select
         value={selectedBookId}
-        onValueChange={onBookSelect}
+        onValueChange={(value) => onBookSelect(value as string)}
+        items={books.map((book) => ({
+          value: book.id,
+          label: book.name ?? book.id,
+        }))}
         disabled={isLoading}
       >
         <SelectTrigger id="book-select">
           <SelectValue placeholder="Choose a book to view reviews..." />
         </SelectTrigger>
         <SelectContent>
-          {books.map((book) => (
-            <SelectItem key={book.id} value={book.id}>
-              {book.name}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {books.map((book) => (
+              <SelectItem key={book.id} value={book.id}>
+                {book.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>

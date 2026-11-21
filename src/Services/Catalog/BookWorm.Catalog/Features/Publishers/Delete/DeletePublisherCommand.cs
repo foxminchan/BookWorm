@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+using BookWorm.Chassis.Utilities.Guards;
 
 namespace BookWorm.Catalog.Features.Publishers.Delete;
 
@@ -15,6 +15,8 @@ internal sealed class DeletePublisherHandler(IPublisherRepository repository)
         var publisher = await repository.GetByIdAsync(request.Id, cancellationToken);
 
         Guard.Against.NotFound(publisher, request.Id);
+
+        publisher.Remove();
 
         repository.Delete(publisher);
 

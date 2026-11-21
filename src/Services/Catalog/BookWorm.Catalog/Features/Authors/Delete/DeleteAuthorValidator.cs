@@ -17,11 +17,10 @@ internal sealed class AuthorValidator : AbstractValidator<AuthorId>
         RuleFor(x => x)
             .MustAsync(
                 async (authorId, cancellationToken) =>
-                    await repository.FirstOrDefaultAsync(
+                    !await repository.AnyAsync(
                         new BookAuthorFilterSpec((Guid)authorId),
                         cancellationToken
                     )
-                        is null
             )
             .WithMessage("Author has books and cannot be deleted");
     }

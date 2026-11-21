@@ -7,6 +7,7 @@ using BookWorm.Catalog.Features.Categories.List;
 using BookWorm.Catalog.Features.Dashboard;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
+using ZiggyCreatures.Caching.Fusion;
 using Status = BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Status;
 
 namespace BookWorm.Catalog.Grpc.Services;
@@ -14,7 +15,8 @@ namespace BookWorm.Catalog.Grpc.Services;
 internal sealed class BookService(
     IBookRepository repository,
     ILogger<BookService> logger,
-    ISender sender
+    ISender sender,
+    IFusionCache cache
 ) : BookGrpcService.BookGrpcServiceBase
 {
     [Authorize(Policy = Authorization.Policies.Admin)]
@@ -53,13 +55,17 @@ internal sealed class BookService(
             );
         }
 
-        var book = await repository.GetByIdAsync(
-            Guid.Parse(request.BookId),
-            context.CancellationToken
-        )
-            ?? throw new RpcException(
-                new(StatusCode.NotFound, $"Book with id {request.BookId} not found.")
-            );
+        var bookId = Guid.Parse(request.BookId);
+        var book = await cache.GetOrSetAsync(
+            CatalogCacheKeys.BookSummary(bookId),
+            async ct =>
+                await repository.GetSummaryByIdAsync(bookId, ct)
+                ?? throw new RpcException(
+                    new(StatusCode.NotFound, $"Book with id {request.BookId} not found.")
+                ),
+            tags: [CatalogCacheKeys.BookTag],
+            token: context.CancellationToken
+        );
 
         return MapToBookResponse(book);
     }
@@ -79,12 +85,55 @@ internal sealed class BookService(
             );
         }
 
-        var books = await repository.ListAsync(
-            new BookFilterSpec([.. request.BookIds.Select(Guid.Parse)]),
-            context.CancellationToken
-        );
+        var bookIds = request.BookIds.Select(Guid.Parse).Distinct().ToArray();
 
-        return MapToBookResponse(books);
+        if (bookIds.Length == 0)
+        {
+            return new();
+        }
+
+        Dictionary<Guid, BookSummary> summaries = new(bookIds.Length);
+        List<Guid> missingIds = [];
+
+        foreach (var bookId in bookIds)
+        {
+            var cached = await cache.TryGetAsync<BookSummary>(
+                CatalogCacheKeys.BookSummary(bookId),
+                token: context.CancellationToken
+            );
+
+            if (cached.HasValue && cached.Value is not null)
+            {
+                summaries[bookId] = cached.Value;
+            }
+            else
+            {
+                missingIds.Add(bookId);
+            }
+        }
+
+        if (missingIds.Count > 0)
+        {
+            var fetched = await repository.ListSummariesAsync(
+                new BookFilterSpec([.. missingIds]),
+                context.CancellationToken
+            );
+
+            foreach (var summary in fetched)
+            {
+                summaries[(Guid)summary.Id] = summary;
+                await cache.SetAsync(
+                    CatalogCacheKeys.BookSummary(summary.Id),
+                    summary,
+                    tags: [CatalogCacheKeys.BookTag],
+                    token: context.CancellationToken
+                );
+            }
+        }
+
+        var ordered = bookIds.Where(summaries.ContainsKey).Select(id => summaries[id]).ToArray();
+
+        return MapToBookResponse(ordered);
     }
 
     [AllowAnonymous]
@@ -212,19 +261,19 @@ internal sealed class BookService(
         };
     }
 
-    private static GetBookResponse MapToBookResponse(Book book)
+    private static GetBookResponse MapToBookResponse(BookSummary book)
     {
         return new()
         {
             Id = book.Id.ToString(),
             Name = book.Name,
-            Price = book.Price?.OriginalPrice,
-            PriceSale = book.Price?.DiscountPrice,
+            Price = book.OriginalPrice,
+            PriceSale = book.DiscountPrice,
             Status = book.Status == Status.InStock ? BookStatus.InStock : BookStatus.OutOfStock,
         };
     }
 
-    private static GetBooksResponse MapToBookResponse(IReadOnlyList<Book> books)
+    private static GetBooksResponse MapToBookResponse(IReadOnlyList<BookSummary> books)
     {
         return new() { Books = { books.Select(MapToBookResponse) } };
     }

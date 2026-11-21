@@ -13,7 +13,7 @@ internal sealed class SummarizeFeedbackHandler(ISummarizer summarizer, IFusionCa
         CancellationToken cancellationToken
     )
     {
-        var cacheKey = $"rating:summary:v1:{request.BookId}";
+        var cacheKey = RatingCacheKeys.Summary(request.BookId);
 
         return await cache.GetOrSetAsync<SummarizeResult>(
             cacheKey,
