@@ -655,4 +655,64 @@ describe("BookForm", () => {
 
     toastErrorSpy.mockRestore();
   });
+
+  it("shows error toast when create book fails", async () => {
+    const user = userEvent.setup();
+    const toastErrorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+    const createMutate = vi.fn((_vars, options) => {
+      options?.onError?.(new Error("Create failed"));
+    });
+    mockUseCreateBook.mockReturnValue({
+      mutate: createMutate,
+      isPending: false,
+    });
+
+    const { container } = render(<BookForm />);
+
+    await user.type(screen.getByLabelText(/Book Name/i), "Fail Book");
+    await user.type(screen.getByLabelText(/Description/i), "Fail Description");
+    const priceInputs = screen.getAllByPlaceholderText("0.00");
+    await user.type(priceInputs[0]!, "19.99");
+
+    await user.click(screen.getByLabelText(/Category/i));
+    await user.click(screen.getByRole("option", { name: "Fiction" }));
+
+    await user.click(screen.getByLabelText(/Publisher/i));
+    await user.click(
+      screen.getByRole("option", { name: mockPublishers[0]!.name! }),
+    );
+
+    await user.click(screen.getByLabelText(mockAuthors[0]!.name!));
+
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(toastErrorSpy).toHaveBeenCalledWith("Failed to create book");
+    });
+
+    toastErrorSpy.mockRestore();
+  });
+
+  it("shows error toast for non-image or oversized cover files", () => {
+    const toastErrorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+
+    render(<BookForm />);
+
+    const fileInput = screen.getByLabelText(/Upload book cover/i);
+
+    const textFile = new File(["hello"], "notes.txt", { type: "text/plain" });
+    fireEvent.change(fileInput, { target: { files: [textFile] } });
+    expect(toastErrorSpy).toHaveBeenCalledWith(
+      "Please select a valid image file",
+    );
+
+    const bigFile = new File(["x"], "large.png", { type: "image/png" });
+    Object.defineProperty(bigFile, "size", { value: 5 * 1024 * 1024 + 1 });
+    fireEvent.change(fileInput, { target: { files: [bigFile] } });
+    expect(toastErrorSpy).toHaveBeenCalledWith(
+      "Image size must be 5 MB or smaller",
+    );
+
+    toastErrorSpy.mockRestore();
+  });
 });

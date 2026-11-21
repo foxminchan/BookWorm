@@ -45,9 +45,7 @@ export function BookSelector({
       </label>
       <Select
         value={selectedBookId}
-        onValueChange={(value) => {
-          if (value) onBookSelect(value);
-        }}
+        onValueChange={(value) => onBookSelect(value as string)}
         items={books.map((book) => ({
           value: book.id,
           label: book.name ?? book.id,

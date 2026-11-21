@@ -262,4 +262,32 @@ describe("FilterTable", () => {
     await user.click(screen.getByRole("option", { name: "10" }));
     expect(mockOnPaginationChange).toHaveBeenCalledWith(0, 10);
   });
+
+  it("should set data-state to selected when a row is selected", async () => {
+    const user = userEvent.setup();
+    const selectableColumns = [
+      {
+        id: "select",
+        header: "Select",
+        cell: ({
+          row,
+        }: {
+          row: { original: TestData; toggleSelected: () => void };
+        }) => (
+          <button type="button" onClick={() => row.toggleSelected()}>
+            Select {row.original.name}
+          </button>
+        ),
+      },
+      ...columns,
+    ];
+
+    render(<FilterTable {...defaultProps} columns={selectableColumns} />);
+
+    await user.click(screen.getByRole("button", { name: "Select Item 1" }));
+
+    const rows = screen.getAllByRole("row");
+    const selectedRow = rows.find((row) => row.textContent?.includes("Item 1"));
+    expect(selectedRow).toHaveAttribute("data-state", "selected");
+  });
 });

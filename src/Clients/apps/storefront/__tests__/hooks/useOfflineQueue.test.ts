@@ -481,4 +481,19 @@ describe("useOfflineQueue", () => {
     expect(result.current.isSyncing).toBe(false);
     vi.useRealTimers();
   });
+
+  it("migrates legacy localStorage key to v1 on mount", () => {
+    const legacy = [
+      { id: "legacy-1", content: "hi", timestamp: 1, retryCount: 0 },
+    ];
+    localStorage.setItem("copilot-message-queue", JSON.stringify(legacy));
+
+    const { result } = renderHook(() => useOfflineQueue());
+
+    expect(result.current.queue).toEqual(legacy);
+    expect(localStorage.getItem("copilot-message-queue:v1")).toBe(
+      JSON.stringify(legacy),
+    );
+    expect(localStorage.getItem("copilot-message-queue")).toBeNull();
+  });
 });

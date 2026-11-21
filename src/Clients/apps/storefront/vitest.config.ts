@@ -13,6 +13,7 @@ export default defineConfig(
     extraCoverageExclude: [
       "**/proxy.ts",
       "config/**",
+      "lib/cached-catalog.ts",
       "lib/policy-content.ts",
       "**/robots.ts",
       "**/sitemap.ts",

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { createMockBook } from "@/__tests__/factories";
@@ -93,5 +94,26 @@ describe("BookSelector", () => {
     expect(
       screen.getByText("Choose a book to view reviews..."),
     ).toBeInTheDocument();
+  });
+
+  it("falls back to book id when book name is null and calls onBookSelect on selection", async () => {
+    const user = userEvent.setup();
+    const onBookSelect = vi.fn();
+    mockUseBooks.mockReturnValue({
+      data: {
+        items: [
+          { ...mockBooks[0]!, id: "book-fallback-id", name: null },
+          mockBooks[1]!,
+        ],
+      },
+      isLoading: false,
+    });
+
+    render(<BookSelector onBookSelect={onBookSelect} />);
+
+    await user.click(screen.getByRole("combobox"));
+    await user.keyboard("{ArrowDown}{Enter}");
+
+    expect(onBookSelect).toHaveBeenCalledWith(expect.any(String));
   });
 });

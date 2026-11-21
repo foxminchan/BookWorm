@@ -63,9 +63,9 @@ export default function OrdersHeader({
         </Label>
         <Select
           value={selectedStatus}
-          onValueChange={(value) => {
-            if (value) onStatusChange(value);
-          }}
+          onValueChange={(value) =>
+            onStatusChange(value as OrderStatus | "All")
+          }
         >
           <SelectTrigger
             id="order-status-filter"

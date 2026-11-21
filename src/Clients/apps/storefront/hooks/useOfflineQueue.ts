@@ -28,7 +28,6 @@ export function useOfflineQueue() {
   });
   const syncTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const syncQueueRef = useRef<(() => Promise<void>) | null>(null);
-  const hasHydratedRef = useRef(false);
 
   const removeFromQueue = useCallback((messageId: string) => {
     setState((prev) => ({
@@ -144,14 +143,11 @@ export function useOfflineQueue() {
       }
     } catch {
       console.error("Failed to load message queue");
-    } finally {
-      hasHydratedRef.current = true;
     }
   }, []);
 
-  // Save queue to localStorage whenever it changes after initial hydration
+  // Save queue to localStorage whenever it changes
   useEffect(() => {
-    if (!hasHydratedRef.current) return;
     try {
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(state.queue));
     } catch {

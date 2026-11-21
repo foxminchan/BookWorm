@@ -86,9 +86,7 @@ export default function ShopToolbar({
         </Button>
         <Select
           value={sortBy}
-          onValueChange={(value) => {
-            if (value) onSortChange(value);
-          }}
+          onValueChange={(value) => onSortChange(value as string)}
           items={{
             name: "Name (A-Z)",
             "price-low": "Price (Low to High)",

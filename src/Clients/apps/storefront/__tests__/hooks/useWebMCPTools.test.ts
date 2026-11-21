@@ -60,4 +60,35 @@ describe("useWebMCPTools", () => {
 
     expect(mockDispose).toHaveBeenCalledTimes(1);
   });
+
+  it("does not initialize CopilotKitCore if unmounted before dynamic imports resolve", async () => {
+    const { unmount } = renderHook(() => useWebMCPTools(true));
+    unmount();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockCoreConstructor).not.toHaveBeenCalled();
+    expect(mockDispose).not.toHaveBeenCalled();
+  });
+
+  it("logs an error when initializing CopilotKitCore fails", async () => {
+    const error = new Error("init failed");
+    mockCoreConstructor.mockImplementationOnce(() => {
+      throw error;
+    });
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    renderHook(() => useWebMCPTools(true));
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to initialize WebMCP tools:",
+        error,
+      );
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
 });

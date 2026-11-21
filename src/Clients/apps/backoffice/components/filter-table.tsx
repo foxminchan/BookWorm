@@ -214,10 +214,9 @@ export function FilterTable<TData extends RowData>({
                   </p>
                   <Select
                     value={pageSize.toString()}
-                    onValueChange={(value) => {
-                      if (value)
-                        handlePageSizeChange(Number.parseInt(value, 10));
-                    }}
+                    onValueChange={(value) =>
+                      handlePageSizeChange(Number.parseInt(String(value), 10))
+                    }
                   >
                     <SelectTrigger
                       className="h-8 w-17.5"

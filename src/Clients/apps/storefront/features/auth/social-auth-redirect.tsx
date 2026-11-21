@@ -24,17 +24,19 @@ function getSafeCallbackUrl(raw: string | null): string {
   return AUTH.CALLBACK_URL;
 }
 
+type RedirectTriggerProps = Readonly<{
+  callbackURL: string;
+  title: string;
+  description: string;
+  errorContext: string;
+}>;
+
 function RedirectTrigger({
   callbackURL,
   title,
   description,
   errorContext,
-}: {
-  callbackURL: string;
-  title: string;
-  description: string;
-  errorContext: string;
-}) {
+}: RedirectTriggerProps) {
   useEffect(() => {
     void signIn
       .social({
@@ -59,7 +61,7 @@ function RedirectTrigger({
 }
 
 function QueryRedirectContent(
-  props: Omit<SocialAuthRedirectProps, "readCallbackFromQuery">,
+  props: Readonly<Omit<SocialAuthRedirectProps, "readCallbackFromQuery">>,
 ) {
   const searchParams = useSearchParams();
   const callbackURL = getSafeCallbackUrl(searchParams.get("callbackUrl"));

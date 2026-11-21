@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import OrdersHeader from "@/features/ordering/orders/orders-header";
@@ -64,5 +65,15 @@ describe("OrdersHeader", () => {
     );
 
     expect(screen.getByText("Completed")).toBeInTheDocument();
+  });
+
+  it("should call onStatusChange when status option is selected", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrdersHeader {...defaultProps} />);
+
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "Completed" }));
+
+    expect(mockOnStatusChange).toHaveBeenCalledWith("Completed");
   });
 });

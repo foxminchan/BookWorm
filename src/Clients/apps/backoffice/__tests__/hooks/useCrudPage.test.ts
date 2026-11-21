@@ -219,4 +219,30 @@ describe("useCrudPage", () => {
 
     expect(result.current.isCreatePending).toBe(true);
   });
+
+  it("should show error toasts when create, update, or delete fail", async () => {
+    const { toast } = await import("sonner");
+    const options = createDefaultOptions();
+    const rejection = vi.fn().mockRejectedValue(new Error("fail"));
+    options.createMutation = createMockMutation({ mutateAsync: rejection });
+    options.updateMutation = createMockMutation({ mutateAsync: rejection });
+    options.deleteMutation = createMockMutation({ mutateAsync: rejection });
+
+    const { result } = renderHook(() => useCrudPage(options));
+
+    await act(async () => {
+      await result.current.handleCreate("Bad Author");
+    });
+    expect(toast.error).toHaveBeenCalledWith("Failed to create author");
+
+    await act(async () => {
+      await result.current.handleUpdate("id-1", "Bad Author");
+    });
+    expect(toast.error).toHaveBeenCalledWith("Failed to update author");
+
+    await act(async () => {
+      await result.current.handleDelete("id-1");
+    });
+    expect(toast.error).toHaveBeenCalledWith("Failed to delete author");
+  });
 });

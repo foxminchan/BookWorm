@@ -43,10 +43,7 @@ export function PriceRangeSlider({
         max={max}
         step={step}
         value={[minPrice, maxPrice]}
-        onValueChange={(value) => {
-          const arr = Array.isArray(value) ? [...value] : [value];
-          handleValueChange(arr);
-        }}
+        onValueChange={(value) => handleValueChange(value as number[])}
         className="w-full"
       />
 

@@ -12,40 +12,40 @@ export async function getCachedBooks(params?: ListBooksQuery) {
   "use cache";
   cacheLife("minutes");
   cacheTag("books");
-  return booksApiClient.list(params);
+  return await booksApiClient.list(params);
 }
 
 export async function getCachedBook(id: string) {
   "use cache";
   cacheLife("minutes");
   cacheTag("books", `book-${id}`);
-  return booksApiClient.get(id);
+  return await booksApiClient.get(id);
 }
 
 export async function getCachedCategories() {
   "use cache";
   cacheLife("hours");
   cacheTag("categories");
-  return categoriesApiClient.list();
+  return await categoriesApiClient.list();
 }
 
 export async function getCachedPublishers() {
   "use cache";
   cacheLife("hours");
   cacheTag("publishers");
-  return publishersApiClient.list();
+  return await publishersApiClient.list();
 }
 
 export async function getCachedAuthors() {
   "use cache";
   cacheLife("hours");
   cacheTag("authors");
-  return authorsApiClient.list();
+  return await authorsApiClient.list();
 }
 
 export async function getCachedFeedbacks(params: ListFeedbacksQuery) {
   "use cache";
   cacheLife("minutes");
   cacheTag(`feedbacks-${params.bookId}`);
-  return feedbacksApiClient.list(params);
+  return await feedbacksApiClient.list(params);
 }

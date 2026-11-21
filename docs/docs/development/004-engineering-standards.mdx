@@ -112,9 +112,13 @@ Avoid circular dependencies and keep services independently deployable. Use `sna
 
 ### Frontend (`src/Clients`)
 
-The client applications live in a Bun + Turborepo monorepo under `src/Clients` (`apps/storefront`, `apps/backoffice`, and shared `packages/*`):
+The client applications live in a Bun + Turborepo monorepo under `src/Clients` (`apps/storefront`, `apps/backoffice`, and 15 shared `packages/*` packages):
 
 - Use `bun` and `bun run` from `src/Clients`; do not introduce `npm`, `pnpm`, or `yarn` lockfiles.
-- Target Next.js 16 (App Router) and idiomatic React 19 with explicit server/client boundaries.
+- Enforce the 4-tier Turborepo dependency hierarchy (`config` -> `foundation` -> `domain` -> `app`) with `bun run boundaries`.
+- Target Next.js 16 (App Router) and idiomatic React 19 with explicit server/client boundaries; keep `app/**/page.tsx` routes thin and delegate interactive views to `features/<domain>/`.
+- Centralize data fetching in `@workspace/api-hooks` `queryOptions` factories and typed HTTP/SSE clients in `@workspace/api-client`.
 - Keep TypeScript strict; avoid `any` and prefer typed interfaces and discriminated unions.
-- Reuse shared UI primitives and utilities from `@workspace/*` packages instead of duplicating code across apps.
+- Reuse shared UI primitives, environment schemas, auth factories, telemetry setup, and SEO utilities from `@workspace/*` packages instead of duplicating code across apps.
+
+For the complete client architecture reference, see [[doc|frontend/001-monorepo-architecture]], [[doc|frontend/002-applications-and-routing]], [[doc|frontend/003-data-fetching-and-state]], and [[doc|frontend/004-testing-and-quality-gates]].

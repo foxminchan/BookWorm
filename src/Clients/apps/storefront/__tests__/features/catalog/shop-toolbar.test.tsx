@@ -80,4 +80,14 @@ describe("ShopToolbar", () => {
 
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
+
+  it("should call onSortChange when sort option is selected", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ShopToolbar {...defaultProps} />);
+
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "Rating" }));
+
+    expect(mockOnSortChange).toHaveBeenCalledWith("rating");
+  });
 });
