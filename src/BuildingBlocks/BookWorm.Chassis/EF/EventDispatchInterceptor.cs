@@ -102,21 +102,8 @@ internal sealed class EventDispatchInterceptor(IDomainEventDispatcher dispatcher
         var seen = new HashSet<object>(ReferenceEqualityComparer.Instance);
         var builder = ImmutableList.CreateBuilder<IHasDomainEvents>();
 
-        foreach (var entity in pending)
-        {
-            if (seen.Add(entity))
-            {
-                builder.Add(entity);
-            }
-        }
-
-        foreach (var entity in current)
-        {
-            if (seen.Add(entity))
-            {
-                builder.Add(entity);
-            }
-        }
+        builder.AddRange(pending.Where(seen.Add));
+        builder.AddRange(current.Where(seen.Add));
 
         return builder.ToImmutable();
     }

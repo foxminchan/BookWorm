@@ -664,4 +664,42 @@ public sealed class BookServiceTests : IDisposable
         // Assert
         deserialized.ShouldBe(summary);
     }
+
+    [Test]
+    public async Task GivenEmptyBookIds_WhenGetBooksCalled_ThenShouldReturnEmptyResponseDirectly()
+    {
+        // Arrange
+        var request = new GetBooksRequest();
+
+        // Act
+        var result = await _bookService.GetBooks(request, new TestServerCallContext());
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Books.ShouldBeEmpty();
+        _bookRepositoryMock.Verify(
+            repo =>
+                repo.ListSummariesAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
+
+    [Test]
+    public async Task GivenEmptyBookIds_WhenGetBooksCalled_ThenShouldReturnEmptyResponseDirectly()
+    {
+        // Arrange
+        var request = new GetBooksRequest();
+
+        // Act
+        var result = await _bookService.GetBooks(request, new TestServerCallContext());
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Books.ShouldBeEmpty();
+        _bookRepositoryMock.Verify(
+            repo =>
+                repo.ListSummariesAsync(It.IsAny<BookFilterSpec>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+    }
 }
