@@ -1,18 +1,20 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
+import { HttpHeaders } from "@workspace/api-client/headers";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import {
   createBasketSchema,
   updateBasketSchema,
 } from "@workspace/validations/basket";
 
-import { BASKET_API_BASE_URL } from "./constants";
+import { mockUrl } from "../helpers/index";
 import { MOCK_USER_ID, basketStore } from "./data";
 
 // Support both direct basket URL and gateway pattern
 const basketPaths = [
-  `${BASKET_API_BASE_URL}/api/v1/baskets`,
-  "*/basket/api/v1/baskets", // Gateway pattern
+  mockUrl(API_ENDPOINTS.basket.root),
+  `*${API_ENDPOINTS.basket.root}`, // Gateway pattern
 ];
 
 const corsHeaders = {
@@ -64,7 +66,7 @@ export const basketHandlers = [
       );
 
       const headers = new Headers();
-      headers.set("Location", `${BASKET_API_BASE_URL}/api/v1/baskets`);
+      headers.set(HttpHeaders.Location, mockUrl(API_ENDPOINTS.basket.root));
 
       return HttpResponse.json(basket.id, { status: 201, headers });
     }),

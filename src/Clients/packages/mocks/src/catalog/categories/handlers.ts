@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import type {
   Category,
   CreateCategoryRequest,
@@ -14,13 +15,13 @@ import {
 import {
   createNotFoundResponse,
   createValidationErrorResponse,
+  mockUrl,
 } from "../../helpers/index";
-import { CATALOG_API_BASE_URL } from "../constants";
 import { categoriesStore } from "./data";
 
 export const categoriesHandlers = [
   http.get<never, never, Category[]>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories`,
+    mockUrl(API_ENDPOINTS.catalog.categories.root),
     () => {
       const categories = categoriesStore.list();
       return HttpResponse.json(categories, { status: 200 });
@@ -28,7 +29,7 @@ export const categoriesHandlers = [
   ),
 
   http.post<never, CreateCategoryRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories`,
+    mockUrl(API_ENDPOINTS.catalog.categories.root),
     async ({ request }) => {
       const body = await request.json();
       const result = createCategorySchema.safeParse(body);
@@ -45,7 +46,7 @@ export const categoriesHandlers = [
   ),
 
   http.put<never, UpdateCategoryRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories`,
+    mockUrl(API_ENDPOINTS.catalog.categories.root),
     async ({ request }) => {
       const body = await request.json();
       const result = updateCategorySchema.safeParse(body);
@@ -67,7 +68,7 @@ export const categoriesHandlers = [
   ),
 
   http.delete<{ id: string }>(
-    `${CATALOG_API_BASE_URL}/api/v1/categories/:id`,
+    mockUrl(API_ENDPOINTS.catalog.categories.byId()),
     ({ params }) => {
       const { id } = params;
 

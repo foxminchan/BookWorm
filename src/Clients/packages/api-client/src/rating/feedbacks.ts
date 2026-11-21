@@ -6,8 +6,9 @@ import type {
 } from "@workspace/types/rating";
 import type { PagedResult } from "@workspace/types/shared";
 
-import { apiClient } from "../client";
+import { HttpHeaders, apiClient, getHeaderValue } from "../client";
 import type ApiClient from "../client";
+import { API_ENDPOINTS } from "../endpoints";
 
 class RatingApiClient {
   private readonly client: ApiClient;
@@ -20,7 +21,7 @@ class RatingApiClient {
     query?: ListFeedbacksQuery,
   ): Promise<PagedResult<Feedback>> {
     const response = await this.client.get<Feedback[]>(
-      "/rating/api/v1/feedbacks",
+      API_ENDPOINTS.rating.feedbacks.root,
       {
         params: query,
       },
@@ -28,26 +29,28 @@ class RatingApiClient {
 
     return {
       items: response.data,
-      totalCount: Number(response.headers["pagination-count"] || 0),
-      link: response.headers["link"],
+      totalCount: Number(
+        getHeaderValue(response.headers, HttpHeaders.PaginationCount) || 0,
+      ),
+      link: getHeaderValue(response.headers, HttpHeaders.Link),
     };
   }
 
   public async create(request: CreateFeedbackRequest): Promise<Feedback> {
     const response = await this.client.post<Feedback>(
-      "/rating/api/v1/feedbacks",
+      API_ENDPOINTS.rating.feedbacks.root,
       request,
     );
     return response.data;
   }
 
   public async delete(id: string): Promise<void> {
-    await this.client.delete<void>(`/rating/api/v1/feedbacks/${id}`);
+    await this.client.delete<void>(API_ENDPOINTS.rating.feedbacks.byId(id));
   }
 
   public async summary(bookId: string): Promise<FeedbackSummary> {
     const response = await this.client.get<FeedbackSummary>(
-      `/rating/api/v1/feedbacks/${bookId}/summarize`,
+      API_ENDPOINTS.rating.feedbacks.summarize(bookId),
     );
     return response.data;
   }

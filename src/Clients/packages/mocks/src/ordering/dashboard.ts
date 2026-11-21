@@ -1,10 +1,12 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
+import { HttpHeaders } from "@workspace/api-client/headers";
 import type { Dashboard } from "@workspace/types/ordering/dashboard";
 
 import { booksStore } from "../catalog/books/data";
+import { mockUrl } from "../helpers/index";
 import { buyersStoreManager } from "./buyers/data";
-import { ORDERING_API_BASE_URL } from "./constants";
 import { ordersStoreManager } from "./orders/data";
 
 function getDashboard(): Dashboard {
@@ -55,35 +57,32 @@ function getDashboard(): Dashboard {
 }
 
 export const dashboardHandlers = [
-  http.get(`${ORDERING_API_BASE_URL}/api/v1/dashboard`, () =>
+  http.get(mockUrl(API_ENDPOINTS.ordering.dashboard.root), () =>
     HttpResponse.json(getDashboard()),
   ),
-  http.get(
-    `${ORDERING_API_BASE_URL}/api/v1/dashboard/stream`,
-    ({ request }) => {
-      let timer: ReturnType<typeof setInterval>;
-      const encoder = new TextEncoder();
-      const cleanup = () => {
-        clearInterval(timer);
-        request.signal.removeEventListener("abort", cleanup);
-      };
-      const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
-          const send = () =>
-            controller.enqueue(
-              encoder.encode(
-                `event: dashboard\ndata: ${JSON.stringify(getDashboard())}\n\n`,
-              ),
-            );
-          send();
-          timer = setInterval(send, 15_000);
-          request.signal.addEventListener("abort", cleanup, { once: true });
-        },
-        cancel: cleanup,
-      });
-      return new HttpResponse(stream, {
-        headers: { "Content-Type": "text/event-stream" },
-      });
-    },
-  ),
+  http.get(mockUrl(API_ENDPOINTS.ordering.dashboard.stream), ({ request }) => {
+    let timer: ReturnType<typeof setInterval>;
+    const encoder = new TextEncoder();
+    const cleanup = () => {
+      clearInterval(timer);
+      request.signal.removeEventListener("abort", cleanup);
+    };
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const send = () =>
+          controller.enqueue(
+            encoder.encode(
+              `event: dashboard\ndata: ${JSON.stringify(getDashboard())}\n\n`,
+            ),
+          );
+        send();
+        timer = setInterval(send, 15_000);
+        request.signal.addEventListener("abort", cleanup, { once: true });
+      },
+      cancel: cleanup,
+    });
+    return new HttpResponse(stream, {
+      headers: { [HttpHeaders.ContentType]: "text/event-stream" },
+    });
+  }),
 ];

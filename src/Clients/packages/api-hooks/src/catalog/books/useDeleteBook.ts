@@ -6,6 +6,7 @@ import {
 
 import booksApiClient from "@workspace/api-client/catalog/books";
 
+import { deleteCachedETag } from "../../etag-cache";
 import { catalogKeys } from "../../keys";
 
 export default function useDeleteBook(
@@ -16,6 +17,7 @@ export default function useDeleteBook(
   return useMutation({
     mutationFn: (id) => booksApiClient.delete(id),
     onSuccess: (_, id) => {
+      deleteCachedETag(queryClient, catalogKeys.books.detail(id));
       queryClient.removeQueries({ queryKey: catalogKeys.books.detail(id) });
       queryClient.invalidateQueries({ queryKey: catalogKeys.books.lists() });
     },

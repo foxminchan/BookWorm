@@ -1,9 +1,3 @@
-// API
-export const API = {
-  DEFAULT_RETRY: 3,
-  DEFAULT_TIMEOUT: 30000,
-} as const;
-
 // Pagination
 export const PAGE_SIZES = [10, 20, 50] as const;
 export const DEFAULT_PAGE_SIZE = 10;
@@ -17,12 +11,6 @@ export const CHART_COLORS = [
   "#8b5cf6",
   "#ec4899",
 ] as const;
-
-// Currency
-export const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 // Chart theme
 export const CHART_THEME = {

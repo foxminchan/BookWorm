@@ -28,6 +28,7 @@
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
+    "@workspace/utils": "workspace:*",
     "axios": "^1.21.1",
     "axios-retry": "^4.5.0"
   },
@@ -44,6 +45,8 @@
   "exports": {
     "./client": "./src/client.ts",
     "./config": "./src/config.ts",
+    "./endpoints": "./src/endpoints.ts",
+    "./headers": "./src/headers.ts",
     "./catalog/*": "./src/catalog/*.ts",
     "./ordering/*": "./src/ordering/*.ts",
     "./basket/*": "./src/basket/*.ts",

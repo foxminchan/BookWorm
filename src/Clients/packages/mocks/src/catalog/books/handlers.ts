@@ -1,5 +1,7 @@
 import { HttpResponse, http, passthrough } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
+import { HttpHeaders } from "@workspace/api-client/headers";
 import type {
   Book,
   CreateBookRequest,
@@ -15,15 +17,32 @@ import {
 } from "@workspace/validations/catalog/books";
 
 import {
+  createCorsHeaders,
   createNotFoundResponse,
   createPreconditionFailedResponse,
+  createPreflightResponse,
   createValidationErrorResponse,
+  mockUrl,
+  withCorsHeaders,
 } from "../../helpers/index";
-import { CATALOG_API_BASE_URL } from "../constants";
 import { booksStore } from "./data";
 
+function matchesETagHeader(
+  headerValue: string | null,
+  currentETag: string,
+): boolean {
+  if (!headerValue) {
+    return false;
+  }
+
+  return headerValue
+    .split(",")
+    .map((tag) => tag.trim().replace(/^W\//, ""))
+    .some((tag) => tag === "*" || tag === currentETag);
+}
+
 async function parseBookFormData(request: Request) {
-  const contentType = request.headers.get("Content-Type");
+  const contentType = request.headers.get(HttpHeaders.ContentType);
   if (!contentType?.includes("multipart/form-data")) {
     return {
       error: createValidationErrorResponse({
@@ -53,8 +72,124 @@ async function parseBookFormData(request: Request) {
 }
 
 export const booksHandlers = [
+  http.options(mockUrl(API_ENDPOINTS.catalog.books.root), ({ request }) =>
+    createPreflightResponse(request),
+  ),
+
+  http.options(mockUrl(API_ENDPOINTS.catalog.books.byId()), ({ request }) =>
+    createPreflightResponse(request),
+  ),
+
+  http.get<{ id: string }>(
+    mockUrl(API_ENDPOINTS.catalog.books.byId()),
+    ({ params, request }) => {
+      const { id } = params;
+
+      if (!id) {
+        return createValidationErrorResponse({
+          Id: ["'Id' must not be empty."],
+        });
+      }
+
+      const book = booksStore.get(id);
+
+      if (!book) {
+        return createNotFoundResponse("Book");
+      }
+
+      const etag = `"${book.version ?? 1}"`;
+
+      if (
+        matchesETagHeader(request.headers.get(HttpHeaders.IfNoneMatch), etag)
+      ) {
+        return new HttpResponse(null, {
+          status: 304,
+          headers: createCorsHeaders(request, { [HttpHeaders.ETag]: etag }),
+        });
+      }
+
+      return HttpResponse.json(book, {
+        status: 200,
+        headers: createCorsHeaders(request, { [HttpHeaders.ETag]: etag }),
+      });
+    },
+  ),
+
+  http.post<never, CreateBookRequest>(
+    mockUrl(API_ENDPOINTS.catalog.books.root),
+    async ({ request }) => {
+      const parsed = await parseBookFormData(request);
+      if ("error" in parsed) {
+        return parsed.error;
+      }
+
+      const result = createBookSchema.safeParse(parsed.baseBody);
+
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
+      }
+
+      const newBookId = booksStore.create(result.data);
+      const createdBook = booksStore.get(newBookId);
+
+      const headers = new Headers();
+      headers.set(
+        HttpHeaders.Location,
+        mockUrl(API_ENDPOINTS.catalog.books.byId(newBookId)),
+      );
+
+      return HttpResponse.json(createdBook, { status: 201, headers });
+    },
+  ),
+
+  http.put<never, UpdateBookRequest>(
+    mockUrl(API_ENDPOINTS.catalog.books.root),
+    async ({ request }) => {
+      const parsed = await parseBookFormData(request);
+      if (parsed.error) {
+        return withCorsHeaders(request, parsed.error);
+      }
+
+      const body: UpdateBookRequest = {
+        ...parsed.baseBody,
+        id: parsed.formData.get("id") as string,
+        isRemoveImage: parsed.formData.get("isRemoveImage") === "true",
+      };
+
+      const result = updateBookSchema.safeParse(body);
+
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+          headers: createCorsHeaders(request),
+        });
+      }
+
+      const existingBook = booksStore.get(result.data.id);
+
+      if (!existingBook) {
+        return withCorsHeaders(request, createNotFoundResponse("Book"));
+      }
+
+      const currentETag = `"${existingBook.version ?? 1}"`;
+      const ifMatch = request.headers.get(HttpHeaders.IfMatch)?.trim();
+      if (ifMatch && !matchesETagHeader(ifMatch, currentETag)) {
+        return withCorsHeaders(request, createPreconditionFailedResponse());
+      }
+
+      booksStore.update(result.data);
+
+      return new HttpResponse(null, {
+        status: 204,
+        headers: createCorsHeaders(request),
+      });
+    },
+  ),
+
   http.all<never, ListBooksQuery, PagedResult<Book>>(
-    `${CATALOG_API_BASE_URL}/api/v1/books`,
+    mockUrl(API_ENDPOINTS.catalog.books.root),
     async ({ request }) => {
       if (request.method !== "QUERY") {
         return passthrough();
@@ -81,9 +216,9 @@ export const booksHandlers = [
         result.hasNextPage,
       );
 
-      const headers = new Headers();
-      headers.set("Link", links.join(","));
-      headers.set("Pagination-Count", result.totalCount.toString());
+      const headers = new Headers(createCorsHeaders(request));
+      headers.set(HttpHeaders.Link, links.join(","));
+      headers.set(HttpHeaders.PaginationCount, result.totalCount.toString());
 
       const response: PagedResult<Book> = {
         items: result.items,
@@ -95,98 +230,8 @@ export const booksHandlers = [
     },
   ),
 
-  http.get<{ id: string }>(
-    `${CATALOG_API_BASE_URL}/api/v1/books/:id`,
-    ({ params }) => {
-      const { id } = params;
-
-      if (!id) {
-        return createValidationErrorResponse({
-          Id: ["'Id' must not be empty."],
-        });
-      }
-
-      const book = booksStore.get(id);
-
-      if (!book) {
-        return createNotFoundResponse("Book");
-      }
-
-      return HttpResponse.json(book, { status: 200 });
-    },
-  ),
-
-  http.post<never, CreateBookRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/books`,
-    async ({ request }) => {
-      const parsed = await parseBookFormData(request);
-      if ("error" in parsed) {
-        return parsed.error;
-      }
-
-      const result = createBookSchema.safeParse(parsed.baseBody);
-
-      if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
-      }
-
-      const newBookId = booksStore.create(result.data);
-      const createdBook = booksStore.get(newBookId);
-
-      const headers = new Headers();
-      headers.set("Location", `/api/v1/books/${newBookId}`);
-
-      return HttpResponse.json(createdBook, { status: 201, headers });
-    },
-  ),
-
-  http.put<never, UpdateBookRequest>(
-    `${CATALOG_API_BASE_URL}/api/v1/books`,
-    async ({ request }) => {
-      const parsed = await parseBookFormData(request);
-      if ("error" in parsed) {
-        return parsed.error;
-      }
-
-      const body: UpdateBookRequest = {
-        ...parsed.baseBody,
-        id: parsed.formData.get("id") as string,
-        isRemoveImage: parsed.formData.get("isRemoveImage") === "true",
-      };
-
-      const result = updateBookSchema.safeParse(body);
-
-      if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
-      }
-
-      const ifMatch = request.headers.get("If-Match")?.trim();
-      if (
-        ifMatch &&
-        ifMatch !== "*" &&
-        ifMatch !== '"1"' &&
-        ifMatch !== 'W/"1"' &&
-        ifMatch !== "1"
-      ) {
-        return createPreconditionFailedResponse();
-      }
-
-      const updated = booksStore.update(result.data);
-
-      if (!updated) {
-        return createNotFoundResponse("Book");
-      }
-
-      return new HttpResponse(null, { status: 204 });
-    },
-  ),
-
   http.delete<{ id: string }>(
-    `${CATALOG_API_BASE_URL}/api/v1/books/:id`,
+    mockUrl(API_ENDPOINTS.catalog.books.byId()),
     ({ params }) => {
       const { id } = params;
 

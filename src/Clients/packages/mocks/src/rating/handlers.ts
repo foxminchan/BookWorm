@@ -1,5 +1,7 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
+import { HttpHeaders } from "@workspace/api-client/headers";
 import type { Feedback } from "@workspace/types/rating";
 import { buildPaginationLinks } from "@workspace/utils/link";
 import { formatValidationErrors } from "@workspace/utils/validation";
@@ -8,12 +10,11 @@ import {
   listFeedbacksSchema,
 } from "@workspace/validations/rating";
 
-import { createValidationErrorResponse } from "../helpers/index";
-import { RATING_API_BASE_URL } from "./constants";
+import { createValidationErrorResponse, mockUrl } from "../helpers/index";
 import { feedbacksStoreManager } from "./data";
 
 export const feedbacksHandlers = [
-  http.get(`${RATING_API_BASE_URL}/api/v1/feedbacks`, ({ request }) => {
+  http.get(mockUrl(API_ENDPOINTS.rating.feedbacks.root), ({ request }) => {
     const url = new URL(request.url);
     const bookId = url.searchParams.get("bookId");
     const pageIndex = Number.parseInt(url.searchParams.get("pageIndex") || "1");
@@ -73,29 +74,32 @@ export const feedbacksHandlers = [
     );
 
     const headers = new Headers();
-    headers.set("Link", links.join(","));
-    headers.set("Pagination-Count", totalCount.toString());
+    headers.set(HttpHeaders.Link, links.join(","));
+    headers.set(HttpHeaders.PaginationCount, totalCount.toString());
 
     return HttpResponse.json(items, { status: 200, headers });
   }),
 
-  http.post(`${RATING_API_BASE_URL}/api/v1/feedbacks`, async ({ request }) => {
-    const body = await request.json();
+  http.post(
+    mockUrl(API_ENDPOINTS.rating.feedbacks.root),
+    async ({ request }) => {
+      const body = await request.json();
 
-    const validation = createFeedbackSchema.safeParse(body);
+      const validation = createFeedbackSchema.safeParse(body);
 
-    if (!validation.success) {
-      return HttpResponse.json(formatValidationErrors(validation.error), {
-        status: 400,
-      });
-    }
+      if (!validation.success) {
+        return HttpResponse.json(formatValidationErrors(validation.error), {
+          status: 400,
+        });
+      }
 
-    const feedback = feedbacksStoreManager.create(validation.data);
+      const feedback = feedbacksStoreManager.create(validation.data);
 
-    return HttpResponse.json(feedback.id, { status: 200 });
-  }),
+      return HttpResponse.json(feedback.id, { status: 200 });
+    },
+  ),
 
-  http.delete(`${RATING_API_BASE_URL}/api/v1/feedbacks/:id`, ({ params }) => {
+  http.delete(mockUrl(API_ENDPOINTS.rating.feedbacks.byId()), ({ params }) => {
     const { id } = params;
 
     if (!id || typeof id !== "string") {
@@ -112,7 +116,7 @@ export const feedbacksHandlers = [
   }),
 
   http.get(
-    `${RATING_API_BASE_URL}/api/v1/feedbacks/:bookId/summarize`,
+    mockUrl(API_ENDPOINTS.rating.feedbacks.summarize()),
     ({ params }) => {
       const { bookId } = params;
 

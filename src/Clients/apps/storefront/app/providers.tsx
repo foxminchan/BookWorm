@@ -18,6 +18,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { env } from "@/env.mjs";
 import { useWebMCPTools } from "@/hooks/useWebMCPTools";
 import { authClient, useSession } from "@/lib/auth-client";
+import { COPILOT_RUNTIME_URL } from "@/lib/constants";
 import { getQueryClient } from "@/lib/query-client";
 
 export function Providers({
@@ -64,7 +65,7 @@ export function Providers({
         enableColorScheme
       >
         {shouldShowCopilot ? (
-          <CopilotKitProvider runtimeUrl="/api/copilotkit">
+          <CopilotKitProvider runtimeUrl={COPILOT_RUNTIME_URL}>
             <div className="pb-16 md:pb-0">{children}</div>
           </CopilotKitProvider>
         ) : (

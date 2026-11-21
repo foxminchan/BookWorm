@@ -2,6 +2,7 @@ import { useRouter } from "next/navigation";
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -486,5 +487,172 @@ describe("BookForm", () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     fileReaderSpy.mockRestore();
+  });
+
+  it("passes ifMatch derived from useBook etag when submitting an edit", async () => {
+    const updateMutate = vi.fn();
+    mockUseUpdateBook.mockReturnValue({
+      mutate: updateMutate,
+      isPending: false,
+    });
+    const mockBook = createMockBook({
+      name: "ETag Book",
+      description: "ETag Description",
+      price: 25,
+      category: mockCategories[0],
+      publisher: mockPublishers[0],
+      authors: [mockAuthors[0]!],
+      version: 7,
+    });
+    mockUseBook.mockReturnValue({
+      data: mockBook,
+      isLoading: false,
+      etag: '"7"',
+      refetch: vi.fn(),
+    });
+
+    const { container } = render(<BookForm bookId={mockBook.id} />);
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(updateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          request: expect.objectContaining({ id: mockBook.id }),
+          ifMatch: '"7"',
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it("falls back to formatted book version when useBook etag is omitted", async () => {
+    const updateMutate = vi.fn();
+    mockUseUpdateBook.mockReturnValue({
+      mutate: updateMutate,
+      isPending: false,
+    });
+    const mockBook = createMockBook({
+      name: "Fallback Version Book",
+      description: "Fallback Version Description",
+      price: 30,
+      category: mockCategories[0],
+      publisher: mockPublishers[0],
+      authors: [mockAuthors[0]!],
+      version: 3,
+    });
+    mockUseBook.mockReturnValue({
+      data: mockBook,
+      isLoading: false,
+    });
+
+    const { container } = render(<BookForm bookId={mockBook.id} />);
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(updateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          request: expect.objectContaining({ id: mockBook.id }),
+          ifMatch: '"3"',
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it("shows version conflict alert on 412 error and reloads latest book when clicked", async () => {
+    const user = userEvent.setup();
+    const toastErrorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+    const refetchMock = vi.fn().mockResolvedValue({});
+    const conflictError = Object.assign(new Error("Precondition Failed"), {
+      isAxiosError: true,
+      response: { status: 412 },
+    });
+    const updateMutate = vi.fn((_vars, options) => {
+      options?.onError?.(conflictError);
+    });
+
+    mockUseUpdateBook.mockReturnValue({
+      mutate: updateMutate,
+      isPending: false,
+    });
+    const mockBook = createMockBook({
+      name: "Conflict Book",
+      description: "Conflict Description",
+      price: 25,
+      category: mockCategories[0],
+      publisher: mockPublishers[0],
+      authors: [mockAuthors[0]!],
+      version: 1,
+    });
+    mockUseBook.mockReturnValue({
+      data: mockBook,
+      isLoading: false,
+      etag: '"1"',
+      refetch: refetchMock,
+    });
+
+    const { container } = render(<BookForm bookId={mockBook.id} />);
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(screen.getByText("Version conflict detected")).toBeInTheDocument();
+    });
+
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(toastErrorSpy).toHaveBeenCalledWith(
+      "This book was modified by another user. Reload the latest version to save your changes.",
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Reload latest version/i }),
+    );
+
+    expect(refetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByText("Version conflict detected"),
+    ).not.toBeInTheDocument();
+
+    toastErrorSpy.mockRestore();
+  });
+
+  it("shows generic error toast on non-412 update failure", async () => {
+    const toastErrorSpy = vi.spyOn(toast, "error").mockImplementation(() => "");
+    const updateMutate = vi.fn((_vars, options) => {
+      options?.onError?.(new Error("Network error"));
+    });
+
+    mockUseUpdateBook.mockReturnValue({
+      mutate: updateMutate,
+      isPending: false,
+    });
+    const mockBook = createMockBook({
+      name: "Error Book",
+      description: "Error Description",
+      price: 25,
+      category: mockCategories[0],
+      publisher: mockPublishers[0],
+      authors: [mockAuthors[0]!],
+      version: 1,
+    });
+    mockUseBook.mockReturnValue({
+      data: mockBook,
+      isLoading: false,
+      etag: '"1"',
+      refetch: vi.fn(),
+    });
+
+    const { container } = render(<BookForm bookId={mockBook.id} />);
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      expect(toastErrorSpy).toHaveBeenCalledWith("Failed to update book");
+    });
+
+    expect(
+      screen.queryByText("Version conflict detected"),
+    ).not.toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+
+    toastErrorSpy.mockRestore();
   });
 });

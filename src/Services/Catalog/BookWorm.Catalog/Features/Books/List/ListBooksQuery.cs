@@ -1,4 +1,4 @@
-using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
+﻿using BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Specifications;
 using BookWorm.Chassis.AI.Search;
 using BookWorm.SharedKernel.Results;
 

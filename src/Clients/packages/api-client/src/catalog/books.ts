@@ -1,3 +1,5 @@
+import { AxiosHeaders } from "axios";
+
 import type {
   Book,
   CreateBookRequest,
@@ -6,8 +8,9 @@ import type {
 } from "@workspace/types/catalog/books";
 import type { PagedResult } from "@workspace/types/shared";
 
-import { apiClient } from "../client";
+import { type ConditionalResponse, HttpHeaders, apiClient } from "../client";
 import type ApiClient from "../client";
+import { API_ENDPOINTS } from "../endpoints";
 
 class BooksApiClient {
   private readonly client: ApiClient;
@@ -18,7 +21,7 @@ class BooksApiClient {
 
   public async list(query?: ListBooksQuery): Promise<PagedResult<Book>> {
     const response = await this.client.query<PagedResult<Book>>(
-      "/catalog/api/v1/books",
+      API_ENDPOINTS.catalog.books.root,
       query ?? {},
     );
 
@@ -26,8 +29,20 @@ class BooksApiClient {
   }
 
   public async get(id: string): Promise<Book> {
-    const response = await this.client.get<Book>(`/catalog/api/v1/books/${id}`);
+    const response = await this.client.get<Book>(
+      API_ENDPOINTS.catalog.books.byId(id),
+    );
     return response.data;
+  }
+
+  public async getConditional(
+    id: string,
+    options?: { ifNoneMatch?: string },
+  ): Promise<ConditionalResponse<Book>> {
+    return this.client.getConditional<Book>(
+      API_ENDPOINTS.catalog.books.byId(id),
+      options,
+    );
   }
 
   private buildFormData(
@@ -66,32 +81,10 @@ class BooksApiClient {
   }
 
   public async create(request: CreateBookRequest): Promise<Book> {
+    const headers = new AxiosHeaders().setContentType("multipart/form-data");
+
     const response = await this.client.post<Book>(
-      "/catalog/api/v1/books",
-      this.buildFormData(request),
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
-    return response.data;
-  }
-
-  public async update(
-    request: UpdateBookRequest,
-    options?: { ifMatch?: string },
-  ): Promise<Book> {
-    const headers: Record<string, string> = {
-      "Content-Type": "multipart/form-data",
-    };
-
-    if (options?.ifMatch) {
-      headers["If-Match"] = options.ifMatch;
-    }
-
-    const response = await this.client.put<Book>(
-      `/catalog/api/v1/books`,
+      API_ENDPOINTS.catalog.books.root,
       this.buildFormData(request),
       {
         headers,
@@ -100,8 +93,27 @@ class BooksApiClient {
     return response.data;
   }
 
+  public async update(
+    request: UpdateBookRequest,
+    options?: { ifMatch?: string },
+  ): Promise<void> {
+    const headers = new AxiosHeaders().setContentType("multipart/form-data");
+
+    if (options?.ifMatch) {
+      headers.set(HttpHeaders.IfMatch, options.ifMatch);
+    }
+
+    await this.client.put<void>(
+      API_ENDPOINTS.catalog.books.root,
+      this.buildFormData(request),
+      {
+        headers,
+      },
+    );
+  }
+
   public async delete(id: string): Promise<void> {
-    await this.client.delete<void>(`/catalog/api/v1/books/${id}`);
+    await this.client.delete<void>(API_ENDPOINTS.catalog.books.byId(id));
   }
 }
 

@@ -86,6 +86,7 @@
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
+    "@workspace/api-client": "workspace:*",
     "@workspace/utils": "workspace:*",
     "@workspace/validations": "workspace:*",
     "date-fns": "^4.4.0",
@@ -100,6 +101,7 @@
     "typescript": "npm:typescript@^6.0.3"
   },
   "peerDependencies": {
+    "@workspace/api-client": "workspace:*",
     "@workspace/types": "workspace:*",
     "@workspace/utils": "workspace:*",
     "@workspace/validations": "workspace:*"

@@ -1,10 +1,18 @@
-﻿using BookWorm.Chassis.Utilities.Configurations;
+using BookWorm.Chassis.Utilities.Configurations;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Net.Http.Headers;
 
 namespace BookWorm.ServiceDefaults.Cors;
 
 public static class CorsExtensions
 {
+    private static readonly string[] _defaultExposedHeaders =
+    [
+        HeaderNames.ETag,
+        "Pagination-Count",
+        HeaderNames.Link,
+    ];
+
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
@@ -26,6 +34,7 @@ public static class CorsExtensions
                             .SetIsOriginAllowed(IsLocalhostOrigin)
                             .AllowAnyHeader()
                             .AllowAnyMethod()
+                            .WithExposedHeaders(_defaultExposedHeaders)
                             .AllowCredentials();
                     });
                 });
@@ -48,7 +57,12 @@ public static class CorsExtensions
                         policyBuilder
                             .WithOrigins([.. corsSettings.Origins])
                             .WithHeaders([.. corsSettings.Headers])
-                            .WithMethods([.. corsSettings.Methods]);
+                            .WithMethods([.. corsSettings.Methods])
+                            .WithExposedHeaders(
+                                corsSettings.ExposedHeaders.Count > 0
+                                    ? [.. corsSettings.ExposedHeaders]
+                                    : _defaultExposedHeaders
+                            );
 
                         if (corsSettings.MaxAge is not null)
                         {

@@ -8,6 +8,7 @@ import {
   setupTestLifecycle,
 } from "@workspace/app-config/vitest-setup";
 import { server } from "@workspace/mocks/node";
+import { DEFAULT_GATEWAY_URL } from "@workspace/utils/constants";
 
 setupTestLifecycle({
   faker,
@@ -17,7 +18,7 @@ setupTestLifecycle({
   afterEach,
   afterAll,
   onUnhandledFrame: "warn",
-  httpsGatewayUrl: "http://localhost:5000",
+  httpsGatewayUrl: DEFAULT_GATEWAY_URL,
 });
 
 vi.mock("next/navigation", () => createNextNavigationMock(vi));

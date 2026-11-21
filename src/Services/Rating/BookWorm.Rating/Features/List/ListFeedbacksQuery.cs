@@ -1,4 +1,4 @@
-using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
+﻿using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.SharedKernel.Results;
 
 namespace BookWorm.Rating.Features.List;

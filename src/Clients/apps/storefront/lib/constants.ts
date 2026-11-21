@@ -1,3 +1,5 @@
+export const COPILOT_RUNTIME_URL = "/api/copilotkit";
+
 export const APP_CONFIG = {
   name: "BookWorm",
   email: {

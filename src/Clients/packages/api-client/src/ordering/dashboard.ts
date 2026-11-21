@@ -1,9 +1,8 @@
 import type { Dashboard } from "@workspace/types/ordering/dashboard";
 
-import { apiClient } from "../client";
+import { HttpHeaders, apiClient } from "../client";
 import axiosConfig from "../config";
-
-const DASHBOARD_PATH = "/ordering/api/v1/dashboard";
+import { API_ENDPOINTS } from "../endpoints";
 
 /** Consume complete SSE frames, including frames split across network chunks. */
 export async function readDashboardStream(
@@ -57,7 +56,11 @@ async function getDashboardStreamBody(
     await response.body?.cancel();
     throw new Error("Dashboard stream unavailable");
   }
-  if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+  if (
+    !response.headers
+      .get(HttpHeaders.ContentType)
+      ?.includes("text/event-stream")
+  ) {
     await response.body.cancel();
     throw new Error("Invalid dashboard stream response");
   }
@@ -79,7 +82,10 @@ function waitForRetry(delay: number, signal: AbortSignal): Promise<void> {
 
 const dashboardApiClient = {
   async get(signal?: AbortSignal): Promise<Dashboard> {
-    const response = await apiClient.get<Dashboard>(DASHBOARD_PATH, { signal });
+    const response = await apiClient.get<Dashboard>(
+      API_ENDPOINTS.ordering.dashboard.root,
+      { signal },
+    );
     return response.data;
   },
 
@@ -96,11 +102,13 @@ const dashboardApiClient = {
         const token = await apiClient.getAccessToken();
         if (signal.aborted) return;
         const response = await fetch(
-          new URL(`${DASHBOARD_PATH}/stream`, axiosConfig.baseURL),
+          new URL(API_ENDPOINTS.ordering.dashboard.stream, axiosConfig.baseURL),
           {
             headers: {
-              Accept: "text/event-stream",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              [HttpHeaders.Accept]: "text/event-stream",
+              ...(token
+                ? { [HttpHeaders.Authorization]: `Bearer ${token}` }
+                : {}),
             },
             credentials: "include",
             cache: "no-store",

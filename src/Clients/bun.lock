@@ -148,6 +148,7 @@
       "name": "@workspace/api-client",
       "version": "1.0.0",
       "dependencies": {
+        "@workspace/utils": "workspace:*",
         "axios": "^1.21.1",
         "axios-retry": "^4.5.0",
       },
@@ -208,6 +209,7 @@
       "name": "@workspace/mocks",
       "version": "1.0.0",
       "dependencies": {
+        "@workspace/api-client": "workspace:*",
         "@workspace/utils": "workspace:*",
         "@workspace/validations": "workspace:*",
         "date-fns": "^4.4.0",
@@ -222,6 +224,7 @@
         "typescript": "npm:typescript@^6.0.3",
       },
       "peerDependencies": {
+        "@workspace/api-client": "workspace:*",
         "@workspace/types": "workspace:*",
         "@workspace/utils": "workspace:*",
         "@workspace/validations": "workspace:*",

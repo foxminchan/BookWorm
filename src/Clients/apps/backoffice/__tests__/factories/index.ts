@@ -48,6 +48,7 @@ export function createMockBook(overrides = {}) {
     authors: [createMockAuthor(), createMockAuthor()],
     averageRating: faker.number.float({ min: 0, max: 5, fractionDigits: 1 }),
     totalReviews: faker.number.int({ min: 0, max: 500 }),
+    version: 1,
     ...overrides,
   };
 }

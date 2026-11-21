@@ -1,5 +1,7 @@
 import { HttpResponse, http } from "msw";
 
+import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
+import { HttpHeaders } from "@workspace/api-client/headers";
 import { buildPaginationLinks } from "@workspace/utils/link";
 import { formatValidationErrors } from "@workspace/utils/validation";
 import {
@@ -7,11 +9,11 @@ import {
   updateAddressSchema,
 } from "@workspace/validations/ordering/buyers";
 
-import { ORDERING_API_BASE_URL } from "../constants";
+import { mockUrl } from "../../helpers/index";
 import { MOCK_USER_ID, buyersStoreManager } from "./data";
 
 export const buyersHandlers = [
-  http.get(`${ORDERING_API_BASE_URL}/api/v1/buyers/me`, () => {
+  http.get(mockUrl(API_ENDPOINTS.ordering.buyers.me), () => {
     const buyer = buyersStoreManager.getCurrent();
 
     if (!buyer) {
@@ -21,7 +23,7 @@ export const buyersHandlers = [
     return HttpResponse.json(buyer, { status: 200 });
   }),
 
-  http.get(`${ORDERING_API_BASE_URL}/api/v1/buyers`, ({ request }) => {
+  http.get(mockUrl(API_ENDPOINTS.ordering.buyers.root), ({ request }) => {
     const url = new URL(request.url);
     const pageIndex = Number.parseInt(url.searchParams.get("pageIndex") || "1");
     const pageSize = Number.parseInt(url.searchParams.get("pageSize") || "10");
@@ -46,40 +48,43 @@ export const buyersHandlers = [
     );
 
     const headers = new Headers();
-    headers.set("Link", links.join(","));
-    headers.set("Pagination-Count", totalCount.toString());
+    headers.set(HttpHeaders.Link, links.join(","));
+    headers.set(HttpHeaders.PaginationCount, totalCount.toString());
 
     return HttpResponse.json(items, { status: 200, headers });
   }),
 
-  http.post(`${ORDERING_API_BASE_URL}/api/v1/buyers`, async ({ request }) => {
-    const body = await request.json();
-    const result = createBuyerSchema.safeParse(body);
+  http.post(
+    mockUrl(API_ENDPOINTS.ordering.buyers.root),
+    async ({ request }) => {
+      const body = await request.json();
+      const result = createBuyerSchema.safeParse(body);
 
-    if (!result.success) {
-      return HttpResponse.json(formatValidationErrors(result.error), {
-        status: 400,
-      });
-    }
+      if (!result.success) {
+        return HttpResponse.json(formatValidationErrors(result.error), {
+          status: 400,
+        });
+      }
 
-    const buyer = buyersStoreManager.create(
-      "Anonymous",
-      result.data.street,
-      result.data.city,
-      result.data.province,
-    );
+      const buyer = buyersStoreManager.create(
+        "Anonymous",
+        result.data.street,
+        result.data.city,
+        result.data.province,
+      );
 
-    const headers = new Headers();
-    headers.set(
-      "Location",
-      `${ORDERING_API_BASE_URL}/api/v1/buyers/${buyer.id}`,
-    );
+      const headers = new Headers();
+      headers.set(
+        HttpHeaders.Location,
+        mockUrl(API_ENDPOINTS.ordering.buyers.byId(buyer.id)),
+      );
 
-    return HttpResponse.json(buyer.id, { status: 201, headers });
-  }),
+      return HttpResponse.json(buyer.id, { status: 201, headers });
+    },
+  ),
 
   http.patch(
-    `${ORDERING_API_BASE_URL}/api/v1/buyers/address`,
+    mockUrl(API_ENDPOINTS.ordering.buyers.address),
     async ({ request }) => {
       const body = await request.json();
       const result = updateAddressSchema.safeParse(body);
@@ -105,7 +110,7 @@ export const buyersHandlers = [
     },
   ),
 
-  http.delete(`${ORDERING_API_BASE_URL}/api/v1/buyers/:id`, ({ params }) => {
+  http.delete(mockUrl(API_ENDPOINTS.ordering.buyers.byId()), ({ params }) => {
     const { id } = params;
 
     if (!id || typeof id !== "string") {

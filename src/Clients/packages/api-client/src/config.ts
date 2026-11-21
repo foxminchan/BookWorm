@@ -1,10 +1,12 @@
+import { DEFAULT_GATEWAY_URL } from "@workspace/utils/constants";
+
 import type { AxiosRequestConfig } from "./global";
 
 const getBaseURL = (): string => {
   return (
     process.env.NEXT_PUBLIC_GATEWAY_HTTPS ||
     process.env.NEXT_PUBLIC_GATEWAY_HTTP ||
-    "http://localhost:5000"
+    DEFAULT_GATEWAY_URL
   );
 };
 

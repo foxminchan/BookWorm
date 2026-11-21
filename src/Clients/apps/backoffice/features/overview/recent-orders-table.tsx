@@ -27,10 +27,10 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { currencyFormatter } from "@workspace/utils/constants";
 import { getOrderStatusStyle } from "@workspace/utils/order";
 
 import { RecentOrdersTableSkeleton } from "@/components/loading-skeleton";
-import { currencyFormatter } from "@/lib/constants";
 import { backofficeTableFeatures } from "@/lib/table";
 
 type RecentOrdersTableProps = Readonly<{

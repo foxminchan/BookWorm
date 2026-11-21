@@ -8,8 +8,14 @@ import type {
 } from "@workspace/types/ordering/orders";
 import type { PagedResult } from "@workspace/types/shared";
 
-import { apiClient } from "../client";
+import {
+  type ConditionalResponse,
+  HttpHeaders,
+  apiClient,
+  getHeaderValue,
+} from "../client";
 import type ApiClient from "../client";
+import { API_ENDPOINTS } from "../endpoints";
 
 class OrdersApiClient {
   private readonly client: ApiClient;
@@ -19,27 +25,32 @@ class OrdersApiClient {
   }
 
   public async list(query?: ListOrdersQuery): Promise<PagedResult<Order>> {
-    const response = await this.client.get<Order[]>("/ordering/api/v1/orders", {
-      params: query,
-    });
+    const response = await this.client.get<Order[]>(
+      API_ENDPOINTS.ordering.orders.root,
+      {
+        params: query,
+      },
+    );
 
     return {
       items: response.data,
-      totalCount: Number(response.headers["pagination-count"] || 0),
-      link: response.headers["link"],
+      totalCount: Number(
+        getHeaderValue(response.headers, HttpHeaders.PaginationCount) || 0,
+      ),
+      link: getHeaderValue(response.headers, HttpHeaders.Link),
     };
   }
 
   public async get(id: string): Promise<OrderDetail> {
     const response = await this.client.get<OrderDetail>(
-      `/ordering/api/v1/orders/${id}`,
+      API_ENDPOINTS.ordering.orders.byId(id),
     );
     return response.data;
   }
 
   public async getHistory(id: string): Promise<OrderEventHistory[]> {
     const response = await this.client.get<OrderEventHistory[]>(
-      `/ordering/api/v1/orders/${id}/history`,
+      API_ENDPOINTS.ordering.orders.history(id),
     );
     return response.data;
   }
@@ -49,7 +60,7 @@ class OrdersApiClient {
     query?: OrderSummaryQuery,
   ): Promise<OrderSummarySnapshot> {
     const response = await this.client.get<OrderSummarySnapshot>(
-      `/ordering/api/v1/orders/${id}/summary`,
+      API_ENDPOINTS.ordering.orders.summary(id),
       { params: query },
     );
     return response.data;
@@ -59,54 +70,31 @@ class OrdersApiClient {
     id: string,
     query?: OrderSummaryQuery,
     options?: { ifNoneMatch?: string },
-  ): Promise<{
-    data: OrderSummarySnapshot | null;
-    etag?: string;
-    notModified: boolean;
-  }> {
-    const headers: Record<string, string> = {};
-
-    if (options?.ifNoneMatch) {
-      headers["If-None-Match"] = options.ifNoneMatch;
-    }
-
-    const response = await this.client.get<OrderSummarySnapshot>(
-      `/ordering/api/v1/orders/${id}/summary`,
+  ): Promise<ConditionalResponse<OrderSummarySnapshot>> {
+    return this.client.getConditional<OrderSummarySnapshot>(
+      API_ENDPOINTS.ordering.orders.summary(id),
       {
         params: query,
-        headers,
-        validateStatus: (status) =>
-          (status >= 200 && status < 300) || status === 304,
+        ifNoneMatch: options?.ifNoneMatch,
       },
     );
-
-    const etag =
-      typeof response.headers["etag"] === "string"
-        ? response.headers["etag"]
-        : undefined;
-
-    if (response.status === 304) {
-      return { data: null, etag, notModified: true };
-    }
-
-    return { data: response.data, etag, notModified: false };
   }
 
   public async create(basketId: string): Promise<string> {
     const response = await this.client.post<string>(
-      "/ordering/api/v1/orders",
+      API_ENDPOINTS.ordering.orders.root,
       { basketId },
-      { headers: { "x-request-id": crypto.randomUUID() } },
+      { headers: { [HttpHeaders.RequestId]: crypto.randomUUID() } },
     );
     return response.data;
   }
 
   public async cancel(id: string): Promise<Order> {
     const response = await this.client.patch<Order>(
-      `/ordering/api/v1/orders/${id}/cancel`,
+      API_ENDPOINTS.ordering.orders.cancel(id),
       undefined,
       {
-        headers: { "x-request-id": crypto.randomUUID() },
+        headers: { [HttpHeaders.RequestId]: crypto.randomUUID() },
       },
     );
 
@@ -115,10 +103,10 @@ class OrdersApiClient {
 
   public async complete(id: string): Promise<Order> {
     const response = await this.client.patch<Order>(
-      `/ordering/api/v1/orders/${id}/complete`,
+      API_ENDPOINTS.ordering.orders.complete(id),
       undefined,
       {
-        headers: { "x-request-id": crypto.randomUUID() },
+        headers: { [HttpHeaders.RequestId]: crypto.randomUUID() },
       },
     );
 
@@ -126,7 +114,7 @@ class OrdersApiClient {
   }
 
   public async delete(id: string): Promise<void> {
-    await this.client.delete<void>(`/ordering/api/v1/orders/${id}`);
+    await this.client.delete<void>(API_ENDPOINTS.ordering.orders.byId(id));
   }
 }
 

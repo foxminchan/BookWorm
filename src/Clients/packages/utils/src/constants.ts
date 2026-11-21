@@ -9,6 +9,11 @@
 export const DEFAULT_BOOK_IMAGE = "/book-placeholder.svg";
 
 /**
+ * Default API gateway URL used when gateway environment variables are unset
+ */
+export const DEFAULT_GATEWAY_URL = "http://localhost:5000";
+
+/**
  * Price range configuration for book filtering
  */
 export const PRICE_RANGE = {

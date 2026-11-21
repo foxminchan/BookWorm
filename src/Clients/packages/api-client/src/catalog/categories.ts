@@ -6,6 +6,7 @@ import type {
 
 import { apiClient } from "../client";
 import type ApiClient from "../client";
+import { API_ENDPOINTS } from "../endpoints";
 
 class CategoriesApiClient {
   private readonly client: ApiClient;
@@ -16,21 +17,21 @@ class CategoriesApiClient {
 
   public async list(): Promise<Category[]> {
     const response = await this.client.get<Category[]>(
-      "/catalog/api/v1/categories",
+      API_ENDPOINTS.catalog.categories.root,
     );
     return response.data;
   }
 
   public async get(id: string): Promise<Category> {
     const response = await this.client.get<Category>(
-      `/catalog/api/v1/categories/${id}`,
+      API_ENDPOINTS.catalog.categories.byId(id),
     );
     return response.data;
   }
 
   public async create(request: CreateCategoryRequest): Promise<Category> {
     const response = await this.client.post<Category>(
-      "/catalog/api/v1/categories",
+      API_ENDPOINTS.catalog.categories.root,
       request,
     );
     return response.data;
@@ -38,14 +39,14 @@ class CategoriesApiClient {
 
   public async update(request: UpdateCategoryRequest): Promise<Category> {
     const response = await this.client.put<Category>(
-      `/catalog/api/v1/categories`,
+      API_ENDPOINTS.catalog.categories.root,
       request,
     );
     return response.data;
   }
 
   public async delete(id: string): Promise<void> {
-    await this.client.delete<void>(`/catalog/api/v1/categories/${id}`);
+    await this.client.delete<void>(API_ENDPOINTS.catalog.categories.byId(id));
   }
 }
 
