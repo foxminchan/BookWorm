@@ -81,17 +81,14 @@ file static class ActivityBehaviorMetadata
     {
         return _cache.GetOrAdd(messageType, static type =>
         {
-            var messageType = type.Name;
-            var handlerName = $"{messageType}Handler";
-            var isCommand = messageType.EndsWith(
-                nameof(Command),
-                StringComparison.OrdinalIgnoreCase
-            );
+            var typeName = type.Name;
+            var handlerName = $"{typeName}Handler";
+            var isCommand = typeName.EndsWith(nameof(Command), StringComparison.OrdinalIgnoreCase);
 
             return new(
-                messageType,
+                typeName,
                 handlerName,
-                $"{handlerName}/{messageType}",
+                $"{handlerName}/{typeName}",
                 type.GetCustomAttribute<IgnoreOTelOnHandlerAttribute>() is not null,
                 isCommand,
                 isCommand ? TelemetryTags.Commands.Command : TelemetryTags.Queries.Query

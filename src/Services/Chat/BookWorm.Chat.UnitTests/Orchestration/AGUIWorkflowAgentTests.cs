@@ -122,4 +122,57 @@ public sealed class AGUIWorkflowAgentTests
         toolResult.CallId.ShouldBe("call-123");
         toolResult.Result?.ToString().ShouldBe(Constants.Other.Agents.QAAgent);
     }
+
+    [Test]
+    public void GivenEdgeCases_WhenNormalizeDisambiguationResume_ThenReturnsMessagesUnchanged()
+    {
+        ChatMessage[] tooFew = [new(ChatRole.User, "Store policies")];
+        ChatMessage[] lastNotUser =
+        [
+            new(
+                ChatRole.Assistant,
+                [new FunctionCallContent("call-1", RouteDisambiguationConstants.ToolName)]
+            ),
+            new(ChatRole.Assistant, "qa"),
+        ];
+        ChatMessage[] blankUserReply =
+        [
+            new(
+                ChatRole.Assistant,
+                [new FunctionCallContent("call-1", RouteDisambiguationConstants.ToolName)]
+            ),
+            new(ChatRole.User, "   "),
+        ];
+        ChatMessage[] alreadyAnswered =
+        [
+            new(
+                ChatRole.Assistant,
+                [new FunctionCallContent("call-1", RouteDisambiguationConstants.ToolName)]
+            ),
+            new(ChatRole.Tool, [new FunctionResultContent("call-1", "qa")]),
+            new(ChatRole.User, "reviews"),
+        ];
+        ChatMessage[] unparseableReply =
+        [
+            new(
+                ChatRole.Assistant,
+                [new FunctionCallContent("call-1", RouteDisambiguationConstants.ToolName)]
+            ),
+            new(ChatRole.User, "something unrelated"),
+        ];
+
+        AGUIWorkflowAgent.NormalizeDisambiguationResume(tooFew).Count.ShouldBe(1);
+        AGUIWorkflowAgent
+            .NormalizeDisambiguationResume(lastNotUser)[^1]
+            .Role.ShouldBe(ChatRole.Assistant);
+        AGUIWorkflowAgent
+            .NormalizeDisambiguationResume(blankUserReply)[^1]
+            .Role.ShouldBe(ChatRole.User);
+        AGUIWorkflowAgent
+            .NormalizeDisambiguationResume(alreadyAnswered)[^1]
+            .Role.ShouldBe(ChatRole.User);
+        AGUIWorkflowAgent
+            .NormalizeDisambiguationResume(unparseableReply)[^1]
+            .Role.ShouldBe(ChatRole.User);
+    }
 }
