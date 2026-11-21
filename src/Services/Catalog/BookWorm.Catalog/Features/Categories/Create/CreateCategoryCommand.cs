@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Categories.Create;
+namespace BookWorm.Catalog.Features.Categories.Create;
 
 public sealed record CreateCategoryCommand(string Name) : ICommand<Guid>;
 

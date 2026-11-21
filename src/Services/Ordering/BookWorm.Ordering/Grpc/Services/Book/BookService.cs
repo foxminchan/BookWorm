@@ -1,12 +1,10 @@
 using BookWorm.Catalog.Grpc.Services;
 using Grpc.Net.ClientFactory;
-using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Ordering.Grpc.Services.Book;
 
 [ExcludeFromCodeCoverage]
-internal sealed class BookService(IFusionCache cache, GrpcClientFactory clientFactory)
-    : IBookService
+internal sealed class BookService(GrpcClientFactory clientFactory) : IBookService
 {
     internal const string BooksClientName = "catalog-books";
     internal const string DashboardClientName = "dashboard-catalog";
@@ -45,25 +43,19 @@ internal sealed class BookService(IFusionCache cache, GrpcClientFactory clientFa
         CancellationToken cancellationToken = default
     )
     {
-        var sortedIds = ids.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var distinctIds = ids.Distinct(StringComparer.Ordinal).ToArray();
 
-        var result = await cache.GetOrSetAsync(
-            $"books:{string.Join(",", sortedIds)}",
-            async ct =>
-            {
-                var response = await clientFactory
-                    .CreateClient<BookGrpcService.BookGrpcServiceClient>(BooksClientName)
-                    .GetBooksAsync(
-                        new() { BookIds = { sortedIds } },
-                        deadline: DateTime.UtcNow.AddSeconds(10),
-                        cancellationToken: ct
-                    );
-                return response;
-            },
-            tags: ["books", nameof(Catalog).ToLowerInvariant()],
-            token: cancellationToken
-        );
+        if (distinctIds.Length == 0)
+        {
+            return new();
+        }
 
-        return result;
+        return await clientFactory
+            .CreateClient<BookGrpcService.BookGrpcServiceClient>(BooksClientName)
+            .GetBooksAsync(
+                new() { BookIds = { distinctIds } },
+                deadline: DateTime.UtcNow.AddSeconds(10),
+                cancellationToken: cancellationToken
+            );
     }
 }

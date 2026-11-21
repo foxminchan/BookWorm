@@ -1,6 +1,7 @@
 using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Chassis.Repository;
 using BookWorm.Contracts;
+using BookWorm.Rating.Domain.Events;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.IntegrationEvents.EventHandlers;
 
@@ -92,6 +93,29 @@ public sealed class BookUpdatedRatingFailedIntegrationEventHandlerTests
         _unitOfWorkMock.Verify(
             x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()),
             Times.Never
+        );
+    }
+
+    [Test]
+    public async Task GivenFeedbackExists_WhenHandling_ThenShouldRegisterFeedbackRevertedEvent()
+    {
+        var bookId = Guid.CreateVersion7();
+        var feedbackId = Guid.CreateVersion7();
+        var @event = new BookUpdatedRatingFailedIntegrationEvent(feedbackId);
+        var feedback = new Feedback(bookId, "John", "Doe", "Great book", 5);
+        feedback.ClearDomainEvents();
+
+        _repositoryMock
+            .Setup(x => x.GetByIdAsync(feedbackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(feedback);
+        _unitOfWorkMock
+            .Setup(x => x.SaveEntitiesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        await _handler.Handle(@event, CancellationToken.None);
+
+        feedback.DomainEvents.ShouldContain(e =>
+            e is FeedbackRevertedEvent && ((FeedbackRevertedEvent)e).BookId == bookId
         );
     }
 }

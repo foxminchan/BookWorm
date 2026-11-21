@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Features.Authors.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
@@ -41,6 +42,7 @@ public sealed class DeleteAuthorCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
+        author.DomainEvents.ShouldContain(e => e is AuthorDeletedEvent);
         _repositoryMock.Verify(r => r.Delete(author), Times.Once);
         _repositoryMock.Verify(
             r => r.UnitOfWork.SaveEntitiesAsync(It.IsAny<CancellationToken>()),

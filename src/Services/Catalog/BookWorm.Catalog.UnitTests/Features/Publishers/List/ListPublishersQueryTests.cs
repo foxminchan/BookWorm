@@ -3,11 +3,13 @@ using BookWorm.Catalog.Features.Publishers;
 using BookWorm.Catalog.Features.Publishers.List;
 using BookWorm.Catalog.UnitTests.Fakers;
 using Mediator;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Catalog.UnitTests.Features.Publishers.List;
 
-public sealed class ListPublishersQueryTests
+public sealed class ListPublishersQueryTests : IDisposable
 {
+    private readonly FusionCache _cache;
     private readonly PublisherFaker _faker;
     private readonly ListPublishersHandler _handler;
     private readonly Mock<IPublisherRepository> _repositoryMock;
@@ -15,8 +17,14 @@ public sealed class ListPublishersQueryTests
     public ListPublishersQueryTests()
     {
         _repositoryMock = new();
-        _handler = new(_repositoryMock.Object);
+        _cache = new(new FusionCacheOptions());
+        _handler = new(_repositoryMock.Object, _cache);
         _faker = new();
+    }
+
+    public void Dispose()
+    {
+        _cache.Dispose();
     }
 
     [Test]
@@ -145,5 +153,24 @@ public sealed class ListPublishersQueryTests
         // Assert
         copy.ShouldBe(original);
         copy.ShouldNotBeSameAs(original);
+    }
+
+    [Test]
+    public async Task GivenCachedPublishers_WhenHandlingListPublishersTwice_ThenShouldReturnFromCache()
+    {
+        // Arrange
+        var publishers = _faker.Generate();
+        _repositoryMock
+            .Setup(repo => repo.ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(publishers);
+
+        // Act
+        var first = await _handler.Handle(new(), CancellationToken.None);
+        var second = await _handler.Handle(new(), CancellationToken.None);
+
+        // Assert
+        first.Count.ShouldBe(publishers.Length);
+        second.Count.ShouldBe(publishers.Length);
+        _repositoryMock.Verify(repo => repo.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+using BookWorm.Chassis.Utilities.Guards;
 
 namespace BookWorm.Catalog.Features.Categories.Delete;
 
@@ -15,6 +15,8 @@ internal sealed class DeleteCategoryHandler(ICategoryRepository repository)
         var category = await repository.GetByIdAsync(request.Id, cancellationToken);
 
         Guard.Against.NotFound(category, request.Id);
+
+        category.Remove();
 
         repository.Delete(category);
 

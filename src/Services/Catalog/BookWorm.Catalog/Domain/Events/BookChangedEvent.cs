@@ -1,6 +1,6 @@
-﻿namespace BookWorm.Catalog.Domain.Events;
+namespace BookWorm.Catalog.Domain.Events;
 
-internal sealed class BookChangedEvent(string key) : DomainEvent
+internal sealed class BookChangedEvent(BookId bookId) : DomainEvent
 {
-    public string Key { get; init; } = key;
+    public BookId BookId { get; init; } = bookId;
 }

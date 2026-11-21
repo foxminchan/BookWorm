@@ -31,6 +31,7 @@ public static class CachingExtensions
         public void AddCaching(Action<IFusionCacheBuilder>? configure = null)
         {
             var services = builder.Services;
+            var servicePrefix = builder.Environment.ApplicationName;
 
             builder.Configure<CachingOptions>(CachingOptions.ConfigurationSection);
 
@@ -43,6 +44,19 @@ public static class CachingExtensions
                 .Configure<CachingOptions>(
                     (options, cachingOptions) =>
                     {
+                        if (!string.IsNullOrWhiteSpace(servicePrefix))
+                        {
+                            if (string.IsNullOrEmpty(options.CacheKeyPrefix))
+                            {
+                                options.CacheKeyPrefix = $"{servicePrefix}:";
+                            }
+
+                            if (string.IsNullOrEmpty(options.BackplaneChannelPrefix))
+                            {
+                                options.BackplaneChannelPrefix = servicePrefix;
+                            }
+                        }
+
                         options.DefaultEntryOptions.Duration = cachingOptions.Expiration;
                         options.DefaultEntryOptions.DistributedCacheDuration =
                             cachingOptions.Expiration;

@@ -1,4 +1,4 @@
-﻿namespace BookWorm.Catalog.Features.Authors.Create;
+namespace BookWorm.Catalog.Features.Authors.Create;
 
 public sealed record CreateAuthorCommand(string Name) : ICommand<AuthorId>;
 

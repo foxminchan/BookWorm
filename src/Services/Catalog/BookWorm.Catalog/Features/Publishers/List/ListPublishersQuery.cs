@@ -1,8 +1,10 @@
-﻿namespace BookWorm.Catalog.Features.Publishers.List;
+using ZiggyCreatures.Caching.Fusion;
+
+namespace BookWorm.Catalog.Features.Publishers.List;
 
 public sealed record ListPublishersQuery : IQuery<IReadOnlyList<PublisherDto>>;
 
-internal sealed class ListPublishersHandler(IPublisherRepository repository)
+internal sealed class ListPublishersHandler(IPublisherRepository repository, IFusionCache cache)
     : IQueryHandler<ListPublishersQuery, IReadOnlyList<PublisherDto>>
 {
     public async ValueTask<IReadOnlyList<PublisherDto>> Handle(
@@ -10,8 +12,15 @@ internal sealed class ListPublishersHandler(IPublisherRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var publishers = await repository.ListAsync(cancellationToken);
+        return await cache.GetOrSetAsync(
+            CatalogCacheKeys.Publishers,
+            async ct =>
+            {
+                var publishers = await repository.ListAsync(ct);
 
-        return publishers.ToPublisherDtos();
+                return publishers.ToPublisherDtos();
+            },
+            token: cancellationToken
+        );
     }
 }

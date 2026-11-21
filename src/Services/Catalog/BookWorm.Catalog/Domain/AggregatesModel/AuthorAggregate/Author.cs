@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
+using BookWorm.Catalog.Domain.Events;
+
+namespace BookWorm.Catalog.Domain.AggregatesModel.AuthorAggregate;
 
 public sealed class Author() : Entity<AuthorId>, IAggregateRoot
 {
@@ -8,6 +10,7 @@ public sealed class Author() : Entity<AuthorId>, IAggregateRoot
         : this()
     {
         Name = name;
+        RegisterDomainEvent(new AuthorCreatedEvent());
     }
 
     [DisallowNull]
@@ -31,6 +34,17 @@ public sealed class Author() : Entity<AuthorId>, IAggregateRoot
     public Author UpdateName(string name)
     {
         Name = name;
+        RegisterDomainEvent(new AuthorUpdatedEvent());
+        return this;
+    }
+
+    /// <summary>
+    ///     Marks the author for removal and registers a domain event.
+    /// </summary>
+    /// <returns>The current Author instance.</returns>
+    public Author Remove()
+    {
+        RegisterDomainEvent(new AuthorDeletedEvent());
         return this;
     }
 }

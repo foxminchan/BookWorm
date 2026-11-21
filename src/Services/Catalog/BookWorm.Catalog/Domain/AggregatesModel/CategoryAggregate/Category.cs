@@ -1,4 +1,6 @@
-﻿namespace BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.Events;
+
+namespace BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
 
 public sealed class Category() : Entity<CategoryId>, IAggregateRoot
 {
@@ -6,6 +8,7 @@ public sealed class Category() : Entity<CategoryId>, IAggregateRoot
         : this()
     {
         Name = name;
+        RegisterDomainEvent(new CategoryCreatedEvent());
     }
 
     [DisallowNull]
@@ -27,6 +30,17 @@ public sealed class Category() : Entity<CategoryId>, IAggregateRoot
     public Category UpdateName(string name)
     {
         Name = name;
+        RegisterDomainEvent(new CategoryUpdatedEvent());
+        return this;
+    }
+
+    /// <summary>
+    ///     Marks the category for removal and registers a domain event.
+    /// </summary>
+    /// <returns>The current category instance.</returns>
+    public Category Remove()
+    {
+        RegisterDomainEvent(new CategoryDeletedEvent());
         return this;
     }
 }

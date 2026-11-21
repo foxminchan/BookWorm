@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Features.Categories.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
@@ -44,6 +45,7 @@ public sealed class DeleteCategoryCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
+        category.DomainEvents.ShouldContain(e => e is CategoryDeletedEvent);
         _repositoryMock.Verify(
             r => r.GetByIdAsync((Guid)category.Id, It.IsAny<CancellationToken>()),
             Times.Once

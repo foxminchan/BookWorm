@@ -1,4 +1,4 @@
-﻿using BookWorm.Rating.Domain.Events;
+using BookWorm.Rating.Domain.Events;
 using BookWorm.Rating.Domain.Exceptions;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.SharedKernel.SeedWork;
@@ -201,5 +201,24 @@ public sealed class FeedbackAggregatorTests
 
         // Assert
         result.ShouldBeSameAs(feedback);
+    }
+
+    [Test]
+    public void GivenExistingFeedback_WhenReverting_ThenShouldRegisterFeedbackRevertedEvent()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var feedback = new Feedback(bookId, "John", "Doe", "Test feedback", 4);
+        feedback.ClearDomainEvents();
+
+        // Act
+        var result = feedback.Revert();
+
+        // Assert
+        result.ShouldBeSameAs(feedback);
+        feedback.DomainEvents.Count.ShouldBe(1);
+        var revertedEvent = feedback.DomainEvents.Single() as FeedbackRevertedEvent;
+        revertedEvent.ShouldNotBeNull();
+        revertedEvent.BookId.ShouldBe(bookId);
     }
 }

@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Domain.Exceptions;
 
 namespace BookWorm.Catalog.UnitTests.Domain;
@@ -16,6 +17,7 @@ public sealed class PublisherAggregatorTests
 
         // Assert
         publisher.Name.ShouldBe(name);
+        publisher.DomainEvents.ShouldContain(e => e is PublisherCreatedEvent);
     }
 
     [Test]
@@ -43,6 +45,7 @@ public sealed class PublisherAggregatorTests
 
         // Assert
         publisher.Name.ShouldBe(newName);
+        publisher.DomainEvents.ShouldContain(e => e is PublisherUpdatedEvent);
     }
 
     [Test]
@@ -75,5 +78,20 @@ public sealed class PublisherAggregatorTests
 
         // Assert
         result.ShouldBeSameAs(publisher);
+    }
+
+    [Test]
+    public void GivenExistingPublisher_WhenRemoving_ThenShouldRegisterPublisherDeletedEvent()
+    {
+        // Arrange
+        var publisher = new Publisher("Test Publisher");
+        publisher.ClearDomainEvents();
+
+        // Act
+        var result = publisher.Remove();
+
+        // Assert
+        result.ShouldBeSameAs(publisher);
+        publisher.DomainEvents.ShouldContain(e => e is PublisherDeletedEvent);
     }
 }

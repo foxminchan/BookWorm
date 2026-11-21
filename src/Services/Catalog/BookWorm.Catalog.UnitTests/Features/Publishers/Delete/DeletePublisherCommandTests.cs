@@ -1,4 +1,5 @@
 ﻿using BookWorm.Catalog.Domain.AggregatesModel.PublisherAggregate;
+using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Features.Publishers.Delete;
 using BookWorm.Catalog.UnitTests.Fakers;
 using BookWorm.Chassis.Exceptions;
@@ -40,6 +41,7 @@ public sealed class DeletePublisherCommandTests
 
         // Assert
         result.ShouldBe(Unit.Value);
+        publisher.DomainEvents.ShouldContain(e => e is PublisherDeletedEvent);
         _repositoryMock.Verify(
             r => r.GetByIdAsync(publisherId, It.IsAny<CancellationToken>()),
             Times.Once

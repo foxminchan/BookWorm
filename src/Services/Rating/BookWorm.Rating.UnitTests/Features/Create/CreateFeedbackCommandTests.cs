@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using BookWorm.Rating.Domain.FeedbackAggregator;
 using BookWorm.Rating.Features.Create;
 using BookWorm.SharedKernel.SeedWork;

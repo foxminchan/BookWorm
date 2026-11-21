@@ -18,22 +18,36 @@ using BookWorm.SharedKernel.Results;
 using Grpc.Core;
 using Mediator;
 using Microsoft.Extensions.Logging;
+using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 using Status = BookWorm.Catalog.Domain.AggregatesModel.BookAggregate.Status;
 
 namespace BookWorm.Catalog.UnitTests.Grpc.Services;
 
-public sealed class BookServiceTests
+public sealed class BookServiceTests : IDisposable
 {
     private readonly Mock<IBookRepository> _bookRepositoryMock;
     private readonly BookService _bookService;
+    private readonly FusionCache _cache;
     private readonly Mock<ISender> _senderMock;
 
     public BookServiceTests()
     {
         _bookRepositoryMock = new();
         _senderMock = new();
+        _cache = new(new FusionCacheOptions());
         var loggerMock = new Mock<ILogger<BookService>>();
-        _bookService = new(_bookRepositoryMock.Object, loggerMock.Object, _senderMock.Object);
+        _bookService = new(
+            _bookRepositoryMock.Object,
+            loggerMock.Object,
+            _senderMock.Object,
+            _cache
+        );
+    }
+
+    public void Dispose()
+    {
+        _cache.Dispose();
     }
 
     [Test]
@@ -265,7 +279,8 @@ public sealed class BookServiceTests
         var bookService = new BookService(
             _bookRepositoryMock.Object,
             loggerMock.Object,
-            Mock.Of<ISender>()
+            Mock.Of<ISender>(),
+            _cache
         );
 
         var book = new BookSummary(
@@ -320,7 +335,8 @@ public sealed class BookServiceTests
         var bookService = new BookService(
             _bookRepositoryMock.Object,
             loggerMock.Object,
-            Mock.Of<ISender>()
+            Mock.Of<ISender>(),
+            _cache
         );
 
         List<BookSummary> books =
@@ -524,5 +540,128 @@ public sealed class BookServiceTests
         result.Authors.Count.ShouldBe(1);
         result.Authors[0].Id.ShouldBe(authorId.ToString());
         result.Authors[0].Name.ShouldBe("Robert C. Martin");
+    }
+
+    [Test]
+    public async Task GivenCachedBookSummary_WhenGetBookCalledTwice_ThenShouldReturnFromCache()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var request = new GetBookRequest { BookId = bookId.ToString() };
+        var summary = new BookSummary(BookId.From(bookId), "Cached Book", 20m, 15m, Status.InStock);
+
+        _bookRepositoryMock
+            .Setup(repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None))
+            .ReturnsAsync(summary);
+
+        // Act
+        var first = await _bookService.GetBook(request, new TestServerCallContext());
+        var second = await _bookService.GetBook(request, new TestServerCallContext());
+
+        // Assert
+        first.Name.ShouldBe("Cached Book");
+        second.Name.ShouldBe("Cached Book");
+        _bookRepositoryMock.Verify(
+            repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenMissingBook_WhenGetBookCalledTwice_ThenShouldNotCacheNotFound()
+    {
+        // Arrange
+        var bookId = Guid.CreateVersion7();
+        var request = new GetBookRequest { BookId = bookId.ToString() };
+
+        _bookRepositoryMock
+            .Setup(repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None))
+            .ReturnsAsync((BookSummary)null!);
+
+        // Act & Assert
+        await Should.ThrowAsync<RpcException>(() =>
+            _bookService.GetBook(request, new TestServerCallContext())
+        );
+        await Should.ThrowAsync<RpcException>(() =>
+            _bookService.GetBook(request, new TestServerCallContext())
+        );
+
+        _bookRepositoryMock.Verify(
+            repo => repo.GetSummaryByIdAsync(bookId, CancellationToken.None),
+            Times.Exactly(2)
+        );
+    }
+
+    [Test]
+    public async Task GivenPartialCacheHit_WhenGetBooksCalled_ThenShouldFetchOnlyMissingIdsAndPreserveOrder()
+    {
+        // Arrange
+        var firstId = Guid.CreateVersion7();
+        var secondId = Guid.CreateVersion7();
+        var firstSummary = new BookSummary(
+            BookId.From(firstId),
+            "First Book",
+            25m,
+            null,
+            Status.InStock
+        );
+        var secondSummary = new BookSummary(
+            BookId.From(secondId),
+            "Second Book",
+            35m,
+            30m,
+            Status.InStock
+        );
+
+        await _cache.SetAsync(
+            CatalogCacheKeys.BookSummary(firstId),
+            firstSummary,
+            tags: [CatalogCacheKeys.BookTag]
+        );
+
+        _bookRepositoryMock
+            .Setup(repo =>
+                repo.ListSummariesAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None)
+            )
+            .ReturnsAsync([secondSummary]);
+
+        // Act
+        var firstResult = await _bookService.GetBooks(
+            new() { BookIds = { firstId.ToString(), secondId.ToString(), firstId.ToString() } },
+            new TestServerCallContext()
+        );
+        var secondResult = await _bookService.GetBooks(
+            new() { BookIds = { secondId.ToString(), firstId.ToString() } },
+            new TestServerCallContext()
+        );
+
+        // Assert
+        firstResult.Books.Select(b => b.Id).ShouldBe([firstId.ToString(), secondId.ToString()]);
+        secondResult.Books.Select(b => b.Id).ShouldBe([secondId.ToString(), firstId.ToString()]);
+        _bookRepositoryMock.Verify(
+            repo => repo.ListSummariesAsync(It.IsAny<BookFilterSpec>(), CancellationToken.None),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenBookSummary_WhenSerializedWithFusionCacheSerializer_ThenShouldRoundTripAllFields()
+    {
+        // Arrange
+        var summary = new BookSummary(
+            BookId.From(Guid.CreateVersion7()),
+            "Refactoring",
+            55.00m,
+            44.00m,
+            Status.InStock
+        );
+        var serializer = new FusionCacheSystemTextJsonSerializer();
+
+        // Act
+        var bytes = await serializer.SerializeAsync(summary);
+        var deserialized = await serializer.DeserializeAsync<BookSummary>(bytes);
+
+        // Assert
+        deserialized.ShouldBe(summary);
     }
 }

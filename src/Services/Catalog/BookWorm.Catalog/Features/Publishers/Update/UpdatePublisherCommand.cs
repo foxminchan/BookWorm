@@ -1,4 +1,4 @@
-﻿using BookWorm.Chassis.Utilities.Guards;
+using BookWorm.Chassis.Utilities.Guards;
 
 namespace BookWorm.Catalog.Features.Publishers.Update;
 

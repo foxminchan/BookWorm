@@ -13,7 +13,7 @@ internal sealed class GetCatalogDashboardHandler(IBookRepository repository, IFu
     )
     {
         return await cache.GetOrSetAsync(
-            "catalog:dashboard:v1",
+            CatalogCacheKeys.Dashboard,
             async ct =>
             {
                 var categories = await repository.CountByCategoryAsync(ct);

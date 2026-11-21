@@ -1,5 +1,6 @@
-﻿using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
+using BookWorm.Rating.Domain.FeedbackAggregator.Specifications;
 using BookWorm.SharedKernel.Results;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace BookWorm.Rating.Features.List;
 
@@ -19,7 +20,9 @@ public sealed record ListFeedbacksQuery(
         bool IsDescending = false
 ) : IQuery<PagedResult<FeedbackDto>>;
 
-internal sealed class ListFeedbacksHandler(IFeedbackRepository repository)
+internal sealed record CachedFeedbackPage(IReadOnlyList<FeedbackDto> Items, long TotalItems);
+
+internal sealed class ListFeedbacksHandler(IFeedbackRepository repository, IFusionCache cache)
     : IQueryHandler<ListFeedbacksQuery, PagedResult<FeedbackDto>>
 {
     public async ValueTask<PagedResult<FeedbackDto>> Handle(
@@ -27,20 +30,43 @@ internal sealed class ListFeedbacksHandler(IFeedbackRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var filterSpec = new FeedbackFilterSpec(
+        var cacheKey = RatingCacheKeys.FeedbackList(
             request.BookId,
-            request.OrderBy,
-            request.IsDescending,
             request.PageIndex,
-            request.PageSize
+            request.PageSize,
+            request.OrderBy,
+            request.IsDescending
         );
 
-        var feedbacks = await repository.ListAsync(filterSpec, cancellationToken);
+        var page = await cache.GetOrSetAsync(
+            cacheKey,
+            async ct =>
+            {
+                var filterSpec = new FeedbackFilterSpec(
+                    request.BookId,
+                    request.OrderBy,
+                    request.IsDescending,
+                    request.PageIndex,
+                    request.PageSize
+                );
 
-        var countSpec = new FeedbackFilterSpec(request.BookId);
+                var feedbacks = await repository.ListAsync(filterSpec, ct);
 
-        var totalItems = await repository.CountAsync(countSpec, cancellationToken);
+                var countSpec = new FeedbackFilterSpec(request.BookId);
 
-        return [with(feedbacks.ToFeedbackDtos(), request.PageIndex, request.PageSize, totalItems)];
+                var totalItems = await repository.CountAsync(countSpec, ct);
+
+                return new CachedFeedbackPage(feedbacks.ToFeedbackDtos(), totalItems);
+            },
+            new FusionCacheEntryOptions
+            {
+                Duration = TimeSpan.FromMinutes(10),
+                DistributedCacheDuration = TimeSpan.FromMinutes(10),
+            },
+            [RatingCacheKeys.FeedbackTag(request.BookId)],
+            cancellationToken
+        );
+
+        return [with(page.Items, request.PageIndex, request.PageSize, page.TotalItems)];
     }
 }

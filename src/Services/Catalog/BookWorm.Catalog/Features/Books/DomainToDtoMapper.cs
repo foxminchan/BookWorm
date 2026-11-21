@@ -1,13 +1,21 @@
-using BookWorm.Catalog.Features.Authors;
-using BookWorm.Catalog.Features.Categories;
-using BookWorm.Catalog.Features.Publishers;
-
 namespace BookWorm.Catalog.Features.Books;
 
 [ExcludeFromCodeCoverage]
-internal sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book, BookDto>
+internal sealed class DomainToDtoMapper(IBlobService blobService)
+    : IMapper<Book, BookDto>,
+        IMapper<CachedBook, BookDto>
 {
     public BookDto Map(Book book)
+    {
+        return Map(CachedBook.FromBook(book));
+    }
+
+    public IReadOnlyList<BookDto> Map(IReadOnlyList<Book> models)
+    {
+        return models.Count == 0 ? [] : [.. models.Select(Map)];
+    }
+
+    public BookDto Map(CachedBook book)
     {
         var imageUrl = book.Image is not null ? blobService.GetFileSasUrl(book.Image) : null;
 
@@ -16,19 +24,19 @@ internal sealed class DomainToDtoMapper(IBlobService blobService) : IMapper<Book
             book.Name,
             book.Description,
             imageUrl,
-            book.Price?.OriginalPrice ?? 0,
-            book.Price?.DiscountPrice,
+            book.Price,
+            book.PriceSale,
             book.Status,
-            book.Category?.ToCategoryDto(),
-            book.Publisher?.ToPublisherDto(),
-            [.. book.BookAuthors.Select(x => x.Author.ToAuthorDto())],
+            book.Category,
+            book.Publisher,
+            book.Authors,
             book.AverageRating,
             book.TotalReviews,
-            book.RowVersion
+            book.Version
         );
     }
 
-    public IReadOnlyList<BookDto> Map(IReadOnlyList<Book> models)
+    public IReadOnlyList<BookDto> Map(IReadOnlyList<CachedBook> models)
     {
         return models.Count == 0 ? [] : [.. models.Select(Map)];
     }

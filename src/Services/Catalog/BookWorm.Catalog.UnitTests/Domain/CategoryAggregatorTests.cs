@@ -1,4 +1,5 @@
-﻿using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.AggregatesModel.CategoryAggregate;
+using BookWorm.Catalog.Domain.Events;
 using BookWorm.Catalog.Domain.Exceptions;
 
 namespace BookWorm.Catalog.UnitTests.Domain;
@@ -16,6 +17,7 @@ public sealed class CategoryAggregatorTests
 
         // Assert
         category.Name.ShouldBe(name);
+        category.DomainEvents.ShouldContain(e => e is CategoryCreatedEvent);
     }
 
     [Test]
@@ -43,6 +45,7 @@ public sealed class CategoryAggregatorTests
 
         // Assert
         category.Name.ShouldBe(newName);
+        category.DomainEvents.ShouldContain(e => e is CategoryUpdatedEvent);
     }
 
     [Test]
@@ -75,5 +78,20 @@ public sealed class CategoryAggregatorTests
 
         // Assert
         result.ShouldBeSameAs(category);
+    }
+
+    [Test]
+    public void GivenExistingCategory_WhenRemoving_ThenShouldRegisterCategoryDeletedEvent()
+    {
+        // Arrange
+        var category = new Category("Test Category");
+        category.ClearDomainEvents();
+
+        // Act
+        var result = category.Remove();
+
+        // Assert
+        result.ShouldBeSameAs(category);
+        category.DomainEvents.ShouldContain(e => e is CategoryDeletedEvent);
     }
 }
