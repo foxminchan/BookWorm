@@ -21,24 +21,15 @@ internal sealed class EventDispatchInterceptor(IDomainEventDispatcher dispatcher
             return await base.SavedChangesAsync(eventData, result, cancellationToken);
         }
 
-        ImmutableList<IHasDomainEvents>.Builder? entitiesWithEvents = null;
+        var entitiesWithEvents = ctx
+            .ChangeTracker.Entries<IHasDomainEvents>()
+            .Where(static entry => entry.Entity.DomainEvents.Count != 0)
+            .Select(static entry => entry.Entity)
+            .ToImmutableList();
 
-        foreach (var entry in ctx.ChangeTracker.Entries<IHasDomainEvents>())
+        if (!entitiesWithEvents.IsEmpty)
         {
-            if (entry.Entity.DomainEvents.Count != 0)
-            {
-                (entitiesWithEvents ??= ImmutableList.CreateBuilder<IHasDomainEvents>()).Add(
-                    entry.Entity
-                );
-            }
-        }
-
-        if (entitiesWithEvents is not null)
-        {
-            await dispatcher.DispatchAndClearEvents(
-                entitiesWithEvents.ToImmutable(),
-                cancellationToken
-            );
+            await dispatcher.DispatchAndClearEvents(entitiesWithEvents, cancellationToken);
         }
 
         return await base.SavedChangesAsync(eventData, result, cancellationToken);

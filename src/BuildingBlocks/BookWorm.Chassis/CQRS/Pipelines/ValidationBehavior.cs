@@ -39,18 +39,13 @@ internal sealed partial class ValidationBehavior<TMessage, TResponse>(
                     resolvedValidators.Select(v => v.ValidateAsync(context, cancellationToken))
                 );
 
-        List<ValidationFailure>? errors = null;
-
-        foreach (var result in validationResults)
+        if (Array.Exists(validationResults, static result => !result.IsValid))
         {
-            if (result.Errors.Count != 0)
-            {
-                (errors ??= []).AddRange(result.Errors);
-            }
-        }
+            var errors = validationResults
+                .Where(static result => !result.IsValid)
+                .SelectMany(static result => result.Errors)
+                .ToList();
 
-        if (errors is not null)
-        {
             throw new ValidationException(errors);
         }
 
