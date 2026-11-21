@@ -3,7 +3,8 @@ using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chassis.AI.Decisions.Abstractions.Answers;
 using BookWorm.Chat.Infrastructure.Decisions;
 using BookWorm.Chat.Orchestration;
-using BookWorm.Chat.Orchestration.Executors;
+using BookWorm.Chat.Orchestration.Executors.Routing;
+using BookWorm.Chat.Orchestration.Executors.Validation;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
@@ -79,7 +80,24 @@ public sealed class DecisionRouterExecutorTests
         decision.Target.ShouldBe(expectedTarget);
         decision.RejectionReason.ShouldBeNull();
         decision.Confidence.ShouldBe(0.91);
+        decision.NeedsDisambiguation.ShouldBeFalse();
         decision.Message.ShouldBe(message);
+    }
+
+    [Test]
+    public async Task GivenLowConfidenceInScopeMessage_WhenHandling_ThenFlagsNeedsDisambiguation()
+    {
+        // Arrange
+        SetupDecision(0.99, 0.95, Constants.Other.Agents.BookAgent, 0.42);
+        var message = new ChatMessage(ChatRole.User, "Can you help me with my book order?");
+
+        // Act
+        var decision = await _sut.HandleAsync(message);
+
+        // Assert
+        decision.Target.ShouldBe(RouteTarget.Book);
+        decision.Confidence.ShouldBe(0.42);
+        decision.NeedsDisambiguation.ShouldBeTrue();
     }
 
     [Test]

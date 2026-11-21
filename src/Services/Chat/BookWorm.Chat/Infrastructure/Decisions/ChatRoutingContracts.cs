@@ -70,6 +70,11 @@ internal sealed record RoutingDecision(
 {
     public IReadOnlyList<ChatMessage> EffectiveMessages =>
         Messages is { Count: > 0 } ? Messages : [Message];
+
+    public bool NeedsDisambiguation =>
+        RejectionReason is null
+        && Confidence < ChatRoutingDecisionService.RouteConfidenceThreshold
+        && Target is RouteTarget.Book or RouteTarget.QA or RouteTarget.Rating;
 }
 
 [JsonSerializable(typeof(string))]

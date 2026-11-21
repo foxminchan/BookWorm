@@ -1,6 +1,8 @@
 using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chassis.AI.Decisions.Abstractions.Answers;
+using BookWorm.Chat.Infrastructure.Decisions;
 using BookWorm.Chat.Orchestration;
+using BookWorm.Chat.Orchestration.Executors.Disambiguation;
 using BookWorm.Constants.Other;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
@@ -381,6 +383,167 @@ public sealed class WorkflowRegistrationTests
         // Assert
         bookCalled.ShouldBeFalse();
         string.Concat(chunks).ShouldContain("can't process that request");
+    }
+
+    [Test]
+    public async Task GivenLowConfidenceDecision_WhenRunningWorkflow_ThenPausesAtRequestPortAndResumesWithSelectedAgent()
+    {
+        // Arrange
+        var bookCalled = false;
+        var qaCalled = false;
+        var bookAgent = CreateStubAgent("book", () => bookCalled = true, "book-reply");
+        var qaAgent = CreateStubAgent("qa", () => qaCalled = true, "qa-reply");
+        var ratingAgent = CreateStubAgent("rating", null, "rating-reply");
+
+        var decisionClient = new Mock<IDecisionClient>();
+        decisionClient
+            .Setup(c =>
+                c.GetDecisionAsync(
+                    It.IsAny<DecisionRequest>(),
+                    It.IsAny<DecisionOptions?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                new DecisionResponse([
+                    new BinaryDecisionAnswer("is_safe", 0.99),
+                    new BinaryDecisionAnswer("is_english", 0.99),
+                    new BinaryDecisionAnswer("is_in_scope", 0.92),
+                    new ChoiceDecisionAnswer(
+                        "route",
+                        Constants.Other.Agents.BookAgent,
+                        [new(Constants.Other.Agents.BookAgent, 0.41)]
+                    ),
+                ])
+            );
+
+        var workflow = WorkflowRegistration.BuildChatWorkflow(
+            bookAgent,
+            qaAgent,
+            ratingAgent,
+            new(),
+            decisionClient.Object
+        );
+
+        // Act - first superstep pauses at RequestPort
+        await using var run = await InProcessExecution.RunAsync(
+            workflow,
+            new ChatMessage(ChatRole.User, "Can you help with my book order?")
+        );
+
+        var requestEvent = run.OutgoingEvents.OfType<RequestInfoEvent>().SingleOrDefault();
+
+        // Assert - paused before any specialist runs
+        requestEvent.ShouldNotBeNull();
+        bookCalled.ShouldBeFalse();
+        qaCalled.ShouldBeFalse();
+
+        requestEvent
+            .Request.TryGetDataAs<RouteDisambiguationRequest>(out var disambiguationRequest)
+            .ShouldBeTrue();
+        disambiguationRequest.ShouldNotBeNull();
+        disambiguationRequest.SuggestedTarget.ShouldBe(RouteTarget.Book);
+
+        // Act - resume with user choosing QA
+        var externalResponse = requestEvent.Request.CreateResponse(
+            new RouteDisambiguationResponse(RouteTarget.QA, disambiguationRequest.Messages)
+        );
+        await run.ResumeAsync([externalResponse]);
+
+        var outputs = run
+            .OutgoingEvents.OfType<WorkflowOutputEvent>()
+            .Select(e => e.Data?.ToString())
+            .ToList();
+
+        // Assert - resumed with QA agent
+        qaCalled.ShouldBeTrue();
+        bookCalled.ShouldBeFalse();
+        outputs.ShouldContain(o => o != null && o.Contains("qa-reply"));
+    }
+
+    [Test]
+    public async Task GivenWorkflowAsAIAgent_WhenLowConfidenceDecisionOccurs_ThenEmitsDisambiguationToolCallAndResumesOnResponse()
+    {
+        // Arrange
+        var bookCalled = false;
+        var ratingCalled = false;
+        var bookAgent = CreateStubAgent("book", () => bookCalled = true, "book-reply");
+        var qaAgent = CreateStubAgent("qa", null, "qa-reply");
+        var ratingAgent = CreateStubAgent("rating", () => ratingCalled = true, "rating-reply");
+
+        var decisionClient = new Mock<IDecisionClient>();
+        decisionClient
+            .Setup(c =>
+                c.GetDecisionAsync(
+                    It.IsAny<DecisionRequest>(),
+                    It.IsAny<DecisionOptions?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                new DecisionResponse([
+                    new BinaryDecisionAnswer("is_safe", 0.99),
+                    new BinaryDecisionAnswer("is_english", 0.99),
+                    new BinaryDecisionAnswer("is_in_scope", 0.90),
+                    new ChoiceDecisionAnswer(
+                        "route",
+                        Constants.Other.Agents.BookAgent,
+                        [new(Constants.Other.Agents.BookAgent, 0.38)]
+                    ),
+                ])
+            );
+
+        var workflow = WorkflowRegistration.BuildChatWorkflow(
+            bookAgent,
+            qaAgent,
+            ratingAgent,
+            new(),
+            decisionClient.Object
+        );
+        var hostAgent = workflow.AsAIAgent(
+            Workflows.Chat,
+            Workflows.Chat,
+            "BookWorm chat workflow",
+            includeExceptionDetails: true
+        );
+        var session = await hostAgent.CreateSessionAsync();
+
+        // Act - turn 1 triggers HITL disambiguation tool call
+        var interruptResponse = await hostAgent.RunAsync(
+            [new(ChatRole.User, "Tell me about Dune")],
+            session
+        );
+
+        var disambiguateCall = interruptResponse
+            .Messages.SelectMany(m => m.Contents)
+            .OfType<FunctionCallContent>()
+            .FirstOrDefault(c => c.Name == RouteDisambiguationConstants.ToolName);
+
+        // Assert - paused with disambiguateRoute call
+        disambiguateCall.ShouldNotBeNull();
+        bookCalled.ShouldBeFalse();
+        ratingCalled.ShouldBeFalse();
+
+        // Act - turn 2 resumes with user's choice of RatingAgent
+        var resumedResponse = await hostAgent.RunAsync(
+            [
+                new(
+                    ChatRole.Tool,
+                    [
+                        new FunctionResultContent(
+                            disambiguateCall.CallId,
+                            Constants.Other.Agents.RatingAgent
+                        ),
+                    ]
+                ),
+            ],
+            session
+        );
+
+        // Assert
+        ratingCalled.ShouldBeTrue();
+        bookCalled.ShouldBeFalse();
+        resumedResponse.Text.ShouldBe("rating-reply.");
     }
 
     private static ChatClientAgent CreateStubAgent(string name, Action? onInvoked, string replyText)

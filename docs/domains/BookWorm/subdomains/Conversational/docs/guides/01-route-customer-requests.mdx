@@ -28,10 +28,11 @@ Every incoming customer message passes through a structured screening and routin
 
 1. **Initial Input Screening**: Empty or suspicious messages can be rejected right away, and accepted messages that exceed the maximum allowed length are shortened before moving forward.
 2. **Language and Scope Check**: A dedicated routing check verifies whether the message is written in English and falls within BookWorm's domain. Non-English messages receive a prompt asking the customer to resend in English; unrelated requests receive a brief boundary response.
-3. **Specialist Selection**: Valid, in-scope English requests are directed to the appropriate specialist:
+3. **Specialist Selection & Low-Confidence Disambiguation (HITL)**: Valid, in-scope English requests are directed to the appropriate specialist:
    - **Book discovery and general book feedback**: Handles book searches, recommendations, general book information, conversational feedback, or review questions that do not include a specific book identifier.
    - **Store and customer support**: Handles store policies, services, accounts, orders, and billing guidance.
    - **Ratings and reviews analysis**: Handles review summaries and rating analysis when a specific book identifier is already available.
+   - **Ambiguous requests (confidence below `0.6`)**: Instead of guessing, the workflow pauses and presents an interactive specialist-selection prompt (`disambiguateRoute`) highlighting the suggested specialist so the customer can confirm where to route the request.
 4. **Handoffs and Mixed Requests**: Specialists collaborate when a question spans domains. The store support specialist can hand book-specific follow-up work to the book discovery specialist, and the book discovery specialist can hand off review or rating analysis to the rating specialist once it resolves the book's identifier. For mixed requests, the workflow handles the supported portions clearly—without implying it has checked a live customer account, basket, or order—and directs the customer to support when required details are unavailable.
 
 ## 4. Trade-offs & Lessons Learned
@@ -50,13 +51,14 @@ Every incoming customer message passes through a structured screening and routin
 
 ### Specialist routing matrix
 
-| Customer intent                                                                    | Route                                    |
-| ---------------------------------------------------------------------------------- | ---------------------------------------- |
-| Book search, recommendations, book information, feedback, or reviews without an ID | [[agent\|book-agent]]                    |
-| Store policies, services, accounts, orders, or billing                             | [[agent\|qa-agent]]                      |
-| Review summaries or rating analysis when a book catalog ID (UUID/GUID) is present  | [[agent\|rating-agent]]                  |
-| Request unrelated to BookWorm                                                      | Return a brief boundary response         |
-| Request is not in English                                                          | Ask the customer to resend it in English |
+| Customer intent                                                                    | Route                                                    |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Book search, recommendations, book information, feedback, or reviews without an ID | [[agent\|book-agent]]                                    |
+| Store policies, services, accounts, orders, or billing                             | [[agent\|qa-agent]]                                      |
+| Review summaries or rating analysis when a book catalog ID (UUID/GUID) is present  | [[agent\|rating-agent]]                                  |
+| In-scope request with low router confidence (`< 0.6`)                              | Pause at `RouteDisambiguationPort` (`disambiguateRoute`) |
+| Request unrelated to BookWorm                                                      | Return a brief boundary response                         |
+| Request is not in English                                                          | Ask the customer to resend it in English                 |
 
 ### Handoffs and full request path
 

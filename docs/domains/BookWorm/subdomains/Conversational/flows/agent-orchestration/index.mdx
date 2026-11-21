@@ -57,15 +57,60 @@ steps:
     summary: >-
       Evaluates English language, BookWorm scope, and target specialist via
       Microsoft-Decision-1 (IDecisionClient) without invoking an LLM agent.
+      Low-confidence in-scope routes trigger human-in-the-loop disambiguation.
     next_steps:
-      - id: BookAgent
+      - id: RouteDisambiguationPrepExecutor
+        label: Low-confidence in-scope route (needs disambiguation)
+      - id: BookRouteForwarder
         label: Book discovery, feedback, or reviews without catalog ID
-      - id: QAAgent
+      - id: QARouteForwarder
         label: Store and account questions
-      - id: RatingAgent
+      - id: RatingRouteForwarder
         label: Review summaries with book catalog ID
       - id: DecisionRejectedOutputExtractor
         label: Non-English or out-of-scope boundary response
+  - id: RouteDisambiguationPrepExecutor
+    title: RouteDisambiguationPrepExecutor
+    summary: >-
+      Prepares the RouteDisambiguationRequest options (BookAgent, QAAgent,
+      RatingAgent) when DecisionRouterExecutor returns NeedsDisambiguation.
+    next_step:
+      id: RouteDisambiguationPort
+      label: Pause for customer route selection
+  - id: RouteDisambiguationPort
+    title: RouteDisambiguationPort (RequestPort)
+    summary: >-
+      Human-in-the-loop RequestPort that pauses the workflow until the customer
+      selects the intended specialist via AG-UI (disambiguateRoute).
+    next_step:
+      id: RouteDisambiguationResolutionExecutor
+      label: Resume with RouteDisambiguationResponse
+  - id: RouteDisambiguationResolutionExecutor
+    title: RouteDisambiguationResolutionExecutor
+    summary: >-
+      Resolves the customer's disambiguation response into a final RoutingDecision
+      and forwards it to the chosen specialist or rejection boundary.
+    next_steps:
+      - id: BookRouteForwarder
+        label: Selected BookAgent
+      - id: QARouteForwarder
+        label: Selected QAAgent
+      - id: RatingRouteForwarder
+        label: Selected RatingAgent
+      - id: DecisionRejectedOutputExtractor
+        label: Rejected or unresolved boundary response
+  - id: BookRouteForwarder
+    title: BookRouteForwarder
+    summary: Forwards effective messages and a TurnToken to BookWorkflowExecutor.
+    next_step: BookAgent
+  - id: QARouteForwarder
+    title: QARouteForwarder
+    summary: Forwards effective messages and a TurnToken to QAWorkflowExecutor.
+    next_step: QAAgent
+  - id: RatingRouteForwarder
+    title: RatingRouteForwarder
+    summary: Forwards effective messages and a TurnToken to RatingWorkflowExecutor.
+    next_step: RatingAgent
   - id: DecisionRejectedOutputExtractor
     title: DecisionRejectedOutputExtractor (Output)
     summary: >-
@@ -82,6 +127,8 @@ steps:
         label: Handle book request
       - id: RatingAgent
         label: Summarize reviews or analyze ratings
+      - id: QAAgent
+        label: Store policies, shipping, returns, accounts, or orders
   - id: QAAgent
     title: QAAgent
     summary: >-
@@ -93,7 +140,7 @@ steps:
     next_steps:
       - id: BookAgent
         label: Request also needs book information
-      - id: HandoffEnd
+      - id: ResponseFormatterExecutor
         label: Customer-support response ready
   - id: RatingAgent
     title: RatingAgent
@@ -103,7 +150,7 @@ steps:
     agent:
       id: rating-agent
       version: 1.0.0
-    next_step: HandoffEnd
+    next_step: ResponseFormatterExecutor
   - id: BookResearchDecision
     title: Complex request with independent research tasks?
     summary: >-
@@ -117,7 +164,7 @@ steps:
   - id: DirectBookResponse
     title: Book Agent handles the request directly
     summary: Answers directly or asks for missing preferences when needed.
-    next_step: HandoffEnd
+    next_step: ResponseFormatterExecutor
   - id: ParallelBookResearch
     title: Delegate both research tasks in parallel
     summary: Both independent research branches run before the Book Agent responds.
@@ -146,10 +193,6 @@ steps:
     agent:
       id: book-agent
       version: 1.0.0
-    next_step: HandoffEnd
-  - id: HandoffEnd
-    title: HandoffEnd
-    summary: Passes the handoff workflow's messages to the response formatter.
     next_step: ResponseFormatterExecutor
   - id: ResponseFormatterExecutor
     title: ResponseFormatterExecutor (Output)
@@ -180,10 +223,11 @@ Owned by [[system|chat-system]] and hosted by [[service|chat-api]], this orchest
 2. **Screen the incoming message**: Blank messages and messages containing suspicious manipulation patterns are rejected immediately with a clear explanation. Accepted messages that exceed the maximum length are trimmed to a safe prefix with a notice appended before proceeding.
 3. **Classify language, scope, and specialist**: A fast classification gate checks whether the message is in English and relevant to BookWorm without invoking a full conversational assistant:
    - Non-English or out-of-scope requests stop immediately with a brief boundary message.
+   - Ambiguous or low-confidence in-scope requests pause for human-in-the-loop route disambiguation so the customer can choose between [[agent|book-agent]], [[agent|qa-agent]], and [[agent|rating-agent]] before execution continues.
    - Store policy, service, account, order, or billing questions route to [[agent|qa-agent]], which answers from supplied store-policy guidance and directs customers to support when live account or order details are unavailable. If the question also needs book information, it can hand off to [[agent|book-agent]].
    - Book discovery, recommendations, book information, feedback, or review questions without a specific book identifier route to [[agent|book-agent]].
    - Review summaries or rating analyses that already identify a specific book route directly to [[agent|rating-agent]].
-4. **Handle directly or delegate parallel book research**: [[agent|book-agent]] answers straightforward requests directly (or asks for missing preferences), and can hand off review or rating analysis to [[agent|rating-agent]]. For complex inquiries requiring independent factual research and preference-based recommendations, it delegates concurrently to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]], then combines their findings and removes duplicates. When operating in planning mode, it presents a plan and waits for customer approval before running multi-step work.
+4. **Handle directly or delegate parallel book research**: [[agent|book-agent]] answers straightforward requests directly (or asks for missing preferences), and can hand off review or rating analysis to [[agent|rating-agent]] or store-policy and order questions to [[agent|qa-agent]]. For complex inquiries requiring independent factual research and preference-based recommendations, it delegates concurrently to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]], then combines their findings and removes duplicates. When operating in planning mode, it presents a plan and waits for customer approval before running multi-step work.
 5. **Normalize and return the response**: The selected specialist's final reply passes through a cleanup step that trims extra whitespace, strips any accidental internal prompt fragments, ensures proper sentence-ending punctuation, and collapses excessive blank lines. If no usable text remains, the customer is asked to rephrase.
 
 ### Participants and Responsibilities
@@ -204,7 +248,7 @@ Owned by [[system|chat-system]] and hosted by [[service|chat-api]], this orchest
 ### Key Behavioral Rules
 
 - **Screening and routing are separate gates**: Passing initial input screening does not guarantee a message is in English or within BookWorm's scope.
-- **Specialist handoffs differ from delegated research**: Book, QA, and Rating collaborate through specialist handoffs (QA can hand off to Book; Book can hand off to Rating), whereas the two research assistants are invoked in parallel by Book Agent for complex discovery tasks.
+- **Specialist handoffs differ from delegated research**: Book, QA, and Rating collaborate through specialist handoffs (QA can hand off to Book; Book can hand off to Rating or QA), whereas the two research assistants are invoked in parallel by Book Agent for complex discovery tasks.
 - **No invented book facts**: Assistants must distinguish verified catalog facts from unavailable information.
 
 ## 4. Trade-offs & Lessons Learned
@@ -221,7 +265,7 @@ Owned by [[system|chat-system]] and hosted by [[service|chat-api]], this orchest
 
 <NodeGraph />
 
-The outer validation, handoff, and formatting stages reflect the composed workflow. The two branches from **Delegate both research tasks in parallel** execute concurrently, and Book Agent resumes after both researchers return.
+The outer validation, disambiguation, specialist sub-workflow, and formatting stages reflect the composed workflow. The two branches from **Delegate both research tasks in parallel** execute concurrently, and Book Agent resumes after both researchers return.
 
 ### Endpoints, Executors & Configuration
 
@@ -237,26 +281,29 @@ The outer validation, handoff, and formatting stages reflect the composed workfl
 
 - **Decision routing (`DecisionRouterExecutor`)**: Delegates to `ChatRoutingDecisionService` (`Microsoft-Decision-1` via `IDecisionClient`) to evaluate `is_english`, `is_in_scope`, and `route` with a `0.5` probability threshold without invoking an LLM agent:
 
-| Decision outcome                                                                       | Route or response                                                                                                                 |
-| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `is_english < 0.5` (`NonEnglish`)                                                      | Short-circuit via `DecisionRejectedOutputExtractor` with an English-only message.                                                 |
-| `is_in_scope < 0.5` (`OutOfScope`)                                                     | Short-circuit via `DecisionRejectedOutputExtractor` with a brief boundary response.                                               |
-| Store policies, services, accounts, orders, or billing (`QA`)                          | Route to [[agent\|qa-agent]] sub-workflow (`store-policies` context; no live account, Basket, or Order lookup).                   |
-| Book search, recommendations, info, feedback, or reviews without a catalog ID (`Book`) | Route to [[agent\|book-agent]] sub-workflow (Plan Mode waits for approval before multi-step work, then switches to Execute Mode). |
-| Review summaries or rating analysis with a book catalog ID already present (`Rating`)  | Route to [[agent\|rating-agent]] sub-workflow via A2A.                                                                            |
+| Decision outcome                                                                       | Route or response                                                                                                                                           |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `is_english < 0.5` (`NonEnglish`)                                                      | Short-circuit via `DecisionRejectedOutputExtractor` with an English-only message.                                                                           |
+| `is_in_scope < 0.5` (`OutOfScope`)                                                     | Short-circuit via `DecisionRejectedOutputExtractor` with a brief boundary response.                                                                         |
+| `NeedsDisambiguation == true`                                                          | Pause via `RouteDisambiguationPrepExecutor` and `RouteDisambiguationPort` (`RequestPort`), then resolve in `RouteDisambiguationResolutionExecutor`.         |
+| Store policies, services, accounts, orders, or billing (`QA`)                          | Forward via `QARouteForwarder` to `QAWorkflowExecutor` ([[agent\|qa-agent]] with `store-policies` context; no live account, Basket, or Order lookup).       |
+| Book search, recommendations, info, feedback, or reviews without a catalog ID (`Book`) | Forward via `BookRouteForwarder` to `BookWorkflowExecutor` ([[agent\|book-agent]]; Plan Mode waits for approval before multi-step work, then Execute Mode). |
+| Review summaries or rating analysis with a book catalog ID already present (`Rating`)  | Forward via `RatingRouteForwarder` to `RatingWorkflowExecutor` ([[agent\|rating-agent]] via A2A).                                                           |
 
-- **Response formatting (`ResponseFormatterExecutor`)**: Receives messages from `HandoffEnd`, selects the last assistant message, trims whitespace, removes detected system-prompt fragments, ensures sentence-ending punctuation, and reduces runs of three or more newlines to two. Returns a rephrasing prompt if no usable assistant text remains.
+- **Human-in-the-loop route disambiguation (`RouteDisambiguationPrepExecutor` → `RouteDisambiguationPort` → `RouteDisambiguationResolutionExecutor`)**: When `DecisionRouterExecutor` flags `NeedsDisambiguation`, `RouteDisambiguationPrepExecutor` builds a `RouteDisambiguationRequest` with the three specialist options (`BookAgent`, `QAAgent`, `RatingAgent`) and pauses at `RequestPort` (`RouteDisambiguationPort`). Once the customer responds via AG-UI (`disambiguateRoute`), `RouteDisambiguationResolutionExecutor` maps the selection to a `RoutingDecision` and forwards it to the chosen specialist's `RouteForwarderExecutor` (or `DecisionRejectedOutputExtractor`).
+- **Response formatting (`ResponseFormatterExecutor`)**: Receives messages from `BookWorkflowExecutor`, `QAWorkflowExecutor`, or `RatingWorkflowExecutor`, selects the last assistant message, trims whitespace, removes detected system-prompt fragments, ensures sentence-ending punctuation, and reduces runs of three or more newlines to two. Returns a rephrasing prompt if no usable assistant text remains.
 
 ### Outcomes and Recovery
 
-| Outcome                                   | Behavior                                                                      | Operational interpretation                                                 |
-| ----------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Input rejected                            | Rejection text returns without agent invocation or response formatting.       | Check validation findings before investigating routing.                    |
-| Unsupported language or unrelated request | `DecisionRouterExecutor` short-circuits to `DecisionRejectedOutputExtractor`. | Distinguish an intentional decision-routing boundary from input rejection. |
-| Direct book response or clarification     | Book Agent responds without delegated research.                               | A direct response is a valid outcome.                                      |
-| Parallel research completes               | Both researcher results return to Book Agent for synthesis.                   | Check both branches before diagnosing an incomplete answer.                |
-| Policy or account details are unavailable | QA states the limitation and directs the customer to support.                 | This flow has no live account, Basket, or Order lookup.                    |
-| No usable assistant text remains          | The formatter returns its rephrasing prompt.                                  | Inspect the handoff message list and formatting outcome.                   |
+| Outcome                                   | Behavior                                                                              | Operational interpretation                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Input rejected                            | Rejection text returns without agent invocation or response formatting.               | Check validation findings before investigating routing.                          |
+| Unsupported language or unrelated request | `DecisionRouterExecutor` short-circuits to `DecisionRejectedOutputExtractor`.         | Distinguish an intentional decision-routing boundary from input rejection.       |
+| Low-confidence in-scope route             | Workflow pauses at `RouteDisambiguationPort` until the customer selects a specialist. | Check `RouteDisambiguationPrepExecutor` and AG-UI `disambiguateRoute` responses. |
+| Direct book response or clarification     | Book Agent responds without delegated research.                                       | A direct response is a valid outcome.                                            |
+| Parallel research completes               | Both researcher results return to Book Agent for synthesis.                           | Check both branches before diagnosing an incomplete answer.                      |
+| Policy or account details are unavailable | QA states the limitation and directs the customer to support.                         | This flow has no live account, Basket, or Order lookup.                          |
+| No usable assistant text remains          | The formatter returns its rephrasing prompt.                                          | Inspect the handoff message list and formatting outcome.                         |
 
 ### Operational Checks
 
@@ -264,6 +311,6 @@ When a conversation appears incomplete or routes unexpectedly:
 
 1. Confirm that the client invoked `/ag-ui` and the composed `Workflows.Chat` workflow, not an individual agent's `/a2a/{agentName}` endpoint.
 2. Check whether input was rejected, truncated, or passed to `DecisionRouterExecutor`.
-3. Inspect the selected route and the specialist context available to it.
+3. Inspect the selected route (or whether the workflow paused at `RouteDisambiguationPort` awaiting `RouteDisambiguationResponse`) and the specialist context available to it.
 4. For delegated work, check the current agent mode (Plan Mode vs. Execute Mode), any required approval, both researcher results, and Book Agent's synthesis.
 5. Check the last assistant message and `ResponseFormatterExecutor` output separately. Verify Azure Blob Storage session persistence under the `ag-ui/` prefix if session continuity across turns fails.

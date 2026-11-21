@@ -26,6 +26,7 @@ import { useChatAgentState } from "@/hooks/useChatAgentState";
 import { useChatSuggestions } from "@/hooks/useChatSuggestions";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { useRateLimit } from "@/hooks/useRateLimit";
+import { useRouteDisambiguation } from "@/hooks/useRouteDisambiguation";
 import { useUserContext } from "@/hooks/useUserContext";
 import "@/styles/copilot.css";
 
@@ -109,6 +110,7 @@ export const ChatBotContent = forwardRef<ChatBotRef>(
     useUserContext();
     useBookSearchActions();
     useA2UIComponents();
+    useRouteDisambiguation();
     const { ConfirmationDialog, liveRegion } = useBasketActions();
 
     // Rate limiting and offline support

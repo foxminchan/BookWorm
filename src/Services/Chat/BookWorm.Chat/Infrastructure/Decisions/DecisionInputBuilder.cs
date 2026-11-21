@@ -70,13 +70,12 @@ internal static class DecisionInputBuilder
         return priorMessages;
     }
 
-    private static bool IsRelevantPriorMessage(
-        ChatMessage candidate,
-        ChatMessage latestUserMessage
-    ) =>
-        !ReferenceEquals(candidate, latestUserMessage)
-        && candidate.Role != ChatRole.System
-        && !string.IsNullOrWhiteSpace(candidate.Text);
+    private static bool IsRelevantPriorMessage(ChatMessage candidate, ChatMessage latestUserMessage)
+    {
+        return !ReferenceEquals(candidate, latestUserMessage)
+            && candidate.Role != ChatRole.System
+            && !string.IsNullOrWhiteSpace(candidate.Text);
+    }
 
     private static void AppendPriorMessages(StringBuilder sb, List<ChatMessage> priorMessages)
     {
@@ -88,8 +87,10 @@ internal static class DecisionInputBuilder
         }
     }
 
-    private static bool HasJsonValue(JsonElement? element) =>
-        element is { ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null };
+    private static bool HasJsonValue(JsonElement? element)
+    {
+        return element is { ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null };
+    }
 
     private static bool HasStorefrontContext()
     {

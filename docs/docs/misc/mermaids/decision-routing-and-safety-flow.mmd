@@ -10,7 +10,10 @@ flowchart TD
 	F -->|"is_safe < 0.5"| R2["UnsafeInput boundary response"]
 	F -->|"is_english < 0.5"| R3["NonEnglish boundary response"]
 	F -->|"is_in_scope < 0.5"| R4["OutOfScope boundary response"]
-	F -->|"All guardrails >= 0.5"| H{"route Choice"}
-	H -->|"book-agent"| I["BookAgent"]
-	H -->|"qa-agent"| J["QAAgent"]
-	H -->|"rating-agent (catalog ID present)"| K["RatingAgent (A2A)"]
+	F -->|"All guardrails >= 0.5"| H{"route confidence >= 0.6?"}
+	H --> |"No (< 0.6)"| P["RouteDisambiguationPort<br/>(HITL: disambiguateRoute)"]
+	P -->|"User selects specialist"| R{"route Choice"}
+	H -->|"Yes (>= 0.6)"| R
+	R -->|"book-agent"| I["BookAgent"]
+	R -->|"qa-agent"| J["QAAgent"]
+	R -->|"rating-agent (catalog ID present)"| K["RatingAgent (A2A)"]

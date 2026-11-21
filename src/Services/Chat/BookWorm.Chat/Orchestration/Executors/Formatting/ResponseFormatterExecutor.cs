@@ -1,6 +1,6 @@
 using BookWorm.Chat.Domain.Services;
 
-namespace BookWorm.Chat.Orchestration.Executors;
+namespace BookWorm.Chat.Orchestration.Executors.Formatting;
 
 internal sealed class ResponseFormatterExecutor()
     : Executor<List<ChatMessage>, string>(nameof(ResponseFormatterExecutor))

@@ -51,7 +51,7 @@ Before any specialist agent is invoked, a dedicated decision model evaluates eve
 3. **Domain scope check:** Confirms the request relates to the BookWorm bookstore domain.
 4. **Specialist selection:** Chooses between the book specialist ([[agent|book-agent]]), general Q&A ([[agent|qa-agent]]), or the ratings specialist ([[agent|rating-agent]], selected only when a specific book identifier is already present).
 
-If any of the safety, language, or scope checks falls below the 50% confidence threshold, the request is stopped immediately with a clear, deterministic boundary message. If the decision call returns only a partial answer, any completed guardrail checks are still enforced, and an unanswered route safely defaults to the book specialist.
+If any of the safety, language, or scope checks falls below the 50% confidence threshold, the request is stopped immediately with a clear, deterministic boundary message. If all guardrails pass but the selected specialist's routing confidence falls below 60%, the workflow pauses for human-in-the-loop (HITL) disambiguation so the customer can confirm which specialist should handle the request before resuming. If the decision call returns only a partial answer, any completed guardrail checks are still enforced, and an unanswered route safely defaults to the book specialist.
 
 ### Dynamic per-turn tool selection
 
@@ -83,7 +83,7 @@ For the book and Q&A specialists, a pre-turn filter reviews the recent conversat
   - `is_english` (`BinaryProbability`): English language check.
   - `is_in_scope` (`BinaryProbability`): BookWorm bookstore domain scope check.
   - `route` (`Choice`): selects `book-agent`, `qa-agent`, or `rating-agent` (only when a specific book catalog ID is already present).
-- **Threshold & error handling:** Rejects requests below `ProbabilityThreshold` (`0.5`) for `is_safe`, `is_english`, or `is_in_scope` with deterministic boundary messages (`UnsafeInput`, `NonEnglish`, `OutOfScope`). Handles `DecisionUnansweredException` via `HandlePartialResponse`, enforcing answered guardrail checks and defaulting safely to `Book` when `route` is unanswered.
+- **Threshold, HITL disambiguation & error handling:** Rejects requests below `ProbabilityThreshold` (`0.5`) for `is_safe`, `is_english`, or `is_in_scope` with deterministic boundary messages (`UnsafeInput`, `NonEnglish`, `OutOfScope`). When an in-scope request's `route` confidence is below `RouteConfidenceThreshold` (`0.6`), `RoutingDecision.NeedsDisambiguation` routes to `RouteDisambiguationPrepExecutor` and pauses at `RequestPort` (`RouteDisambiguationPort`, emitting `disambiguateRoute` via `IExternalRequestEnvelope`). Storefront renders the selector via `useRouteDisambiguation`, `AGUIWorkflowAgent` normalizes plain-text replies to `FunctionResultContent`, and `RouteDisambiguationResolutionExecutor` resumes routing to the chosen specialist. Handles `DecisionUnansweredException` via `HandlePartialResponse`, enforcing answered guardrail checks and defaulting safely to `Book` when `route` is unanswered.
 
 ### 3. Dynamic per-turn tool selection (`DecisionToolSelectionMiddleware`)
 

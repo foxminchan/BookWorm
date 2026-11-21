@@ -2,7 +2,10 @@ using Azure.Storage.Blobs;
 using BookWorm.Chassis.AI.Decisions.Abstractions;
 using BookWorm.Chat.Domain.Services;
 using BookWorm.Chat.Infrastructure.Decisions;
-using BookWorm.Chat.Orchestration.Executors;
+using BookWorm.Chat.Orchestration.Executors.Disambiguation;
+using BookWorm.Chat.Orchestration.Executors.Formatting;
+using BookWorm.Chat.Orchestration.Executors.Routing;
+using BookWorm.Chat.Orchestration.Executors.Validation;
 using BookWorm.Constants.Other;
 
 namespace BookWorm.Chat.Orchestration;
@@ -102,15 +105,22 @@ internal static class WorkflowRegistration
             "DecisionRejectedOutputExtractor"
         );
 
-        // Create custom executors
-        InputValidationExecutor inputValidator = new(validationService);
+        // Create custom executors and human in the loop disambiguation port
+        InputValidationExecutor inputValidator = new(validationService, true);
         DecisionRouterExecutor decisionRouter = new(decisionClient, routerLogger);
+        RouteDisambiguationPrepExecutor disambiguationPrep = new();
+        var disambiguationPort = RequestPort.Create<
+            RouteDisambiguationRequest,
+            RouteDisambiguationResponse
+        >(RouteDisambiguationConstants.PortName);
+        RouteDisambiguationResolutionExecutor disambiguationResolver = new();
         ResponseFormatterExecutor responseFormatter = new();
 
-        // Build workflow with 3-layer architecture:
+        // Build workflow with 3-layer architecture + human in the loop route disambiguation:
         // 1. Input Validation - Validates and preprocesses user input
         // 2. Decision Routing - Routes via Microsoft-Decision-1 (IDecisionClient) instead of an LLM
-        //    (rejected or out-of-scope/non-English input short-circuits to output)
+        //    (rejected or out-of-scope/non-English input short-circuits to output;
+        //     low-confidence in-scope routes pause at RequestPort for human disambiguation)
         // 3. Response Formatting - Ensures consistent, well-formatted responses
         return new WorkflowBuilder(inputValidator)
             // Layer 1: Switch-case on validation result
@@ -126,6 +136,29 @@ internal static class WorkflowRegistration
             .AddEdge(acceptedExtractor, decisionRouter)
             // Layer 2: Switch-case on Microsoft-Decision-1 routing decision
             .AddSwitch(decisionRouter, switchBuilder =>
+                switchBuilder
+                    .AddCase<RoutingDecision>(
+                        decision => decision is { NeedsDisambiguation: true },
+                        disambiguationPrep
+                    )
+                    .AddCase<RoutingDecision>(
+                        decision => decision?.Target == RouteTarget.Book,
+                        bookRouteForwarder
+                    )
+                    .AddCase<RoutingDecision>(
+                        decision => decision?.Target == RouteTarget.QA,
+                        qaRouteForwarder
+                    )
+                    .AddCase<RoutingDecision>(
+                        decision => decision?.Target == RouteTarget.Rating,
+                        ratingRouteForwarder
+                    )
+                    .WithDefault(decisionRejectedExtractor)
+            )
+            // Layer 2 human in the loop: Pause for human route disambiguation and resume to selected specialist
+            .AddEdge(disambiguationPrep, disambiguationPort)
+            .AddEdge(disambiguationPort, disambiguationResolver)
+            .AddSwitch(disambiguationResolver, switchBuilder =>
                 switchBuilder
                     .AddCase<RoutingDecision>(
                         decision => decision?.Target == RouteTarget.Book,
@@ -174,6 +207,7 @@ internal static class WorkflowRegistration
                     cancellationToken
                 )
                 .ConfigureAwait(false);
+
             await context
                 .SendMessageAsync(new TurnToken(true), cancellationToken)
                 .ConfigureAwait(false);
