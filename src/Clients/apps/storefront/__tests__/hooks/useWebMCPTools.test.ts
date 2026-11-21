@@ -9,7 +9,7 @@ const { mockDispose, mockCoreConstructor } = vi.hoisted(() => ({
   mockCoreConstructor: vi.fn(),
 }));
 
-vi.mock("@copilotkit/react-core", () => ({
+vi.mock("@copilotkit/react-core/v2", () => ({
   CopilotKitCore: vi.fn(function MockCopilotKitCore(config: unknown) {
     mockCoreConstructor(config);
     return {

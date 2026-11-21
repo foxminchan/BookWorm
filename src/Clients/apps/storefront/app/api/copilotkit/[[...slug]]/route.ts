@@ -5,7 +5,7 @@ import { HttpAgent } from "@ag-ui/client";
 import {
   CopilotKitRuntime,
   createCopilotKitRuntimeHandler,
-} from "@copilotkit/runtime";
+} from "@copilotkit/runtime/v2";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import { AUTH } from "@workspace/utils/constants";

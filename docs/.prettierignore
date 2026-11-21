@@ -4,3 +4,6 @@ dist
 build
 .astro
 bun.lock
+# mermaid-formatter strips indentation from treeView-beta diagrams
+docs/frontend/mermaids/monorepo-layout.mmd
+docs/frontend/mermaids/app-folder-structure.mmd

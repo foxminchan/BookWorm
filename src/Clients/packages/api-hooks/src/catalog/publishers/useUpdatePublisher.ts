@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationOptions, useQueryClient } from "@tanstack/react-query";
 
 import publishersApiClient from "@workspace/api-client/catalog/publishers";
 import type {
@@ -13,6 +9,7 @@ import type {
 } from "@workspace/types/catalog/publishers";
 
 import { catalogKeys } from "../../keys";
+import { useMutationFromOptions } from "../../use-mutation-from-options";
 
 export default function useUpdatePublisher(
   options?: UseMutationOptions<
@@ -23,17 +20,19 @@ export default function useUpdatePublisher(
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ request }) => publishersApiClient.update(request),
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(
-        catalogKeys.publishers.detail(variables.request.id),
-        data,
-      );
-      queryClient.invalidateQueries({
-        queryKey: catalogKeys.publishers.lists(),
-      });
+  return useMutationFromOptions(
+    {
+      mutationFn: ({ request }) => publishersApiClient.update(request),
+      onSuccess: (data, variables) => {
+        queryClient.setQueryData(
+          catalogKeys.publishers.detail(variables.request.id),
+          data,
+        );
+        queryClient.invalidateQueries({
+          queryKey: catalogKeys.publishers.lists(),
+        });
+      },
     },
-    ...options,
-  });
+    options,
+  );
 }

@@ -32,7 +32,7 @@ type RegisteredHook = {
 
 const registeredHooks: RegisteredHook[] = [];
 
-vi.mock("@copilotkit/react-core", () => ({
+vi.mock("@copilotkit/react-core/v2", () => ({
   useHumanInTheLoop: vi.fn((config: RegisteredHook) => {
     registeredHooks.push(config);
   }),

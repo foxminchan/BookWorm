@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import { ShoppingBag } from "lucide-react";
 
 import useBasket from "@workspace/api-hooks/basket/useBasket";
@@ -31,7 +31,7 @@ function getDisplayQuantity(
 
 export default function BasketPageClient() {
   useBasket();
-  const [{ isPending: isLoadingBasket, data: basket }] = useAtom(basketAtom);
+  const { isPending: isLoadingBasket, data: basket } = useAtomValue(basketAtom);
   const items = useAtomValue(basketItemsAtom);
   const [modifiedItems, setModifiedItems] = useState<Record<string, number>>(
     {},

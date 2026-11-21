@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationOptions, useQueryClient } from "@tanstack/react-query";
 
 import buyersApiClient from "@workspace/api-client/ordering/buyers";
 import type {
@@ -13,17 +9,22 @@ import type {
 } from "@workspace/types/ordering/buyers";
 
 import { orderingKeys } from "../../keys";
+import { useMutationFromOptions } from "../../use-mutation-from-options";
 
 export default function useCreateBuyer(
   options?: UseMutationOptions<Buyer, Error, CreateBuyerRequest>,
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (request) => buyersApiClient.create(request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: orderingKeys.buyers.lists() });
+  return useMutationFromOptions(
+    {
+      mutationFn: (request) => buyersApiClient.create(request),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: orderingKeys.buyers.lists(),
+        });
+      },
     },
-    ...options,
-  });
+    options,
+  );
 }

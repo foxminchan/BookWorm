@@ -19,25 +19,30 @@ class BooksApiClient {
     this.client = apiClient;
   }
 
-  public async list(query?: ListBooksQuery): Promise<PagedResult<Book>> {
+  public async list(
+    query?: ListBooksQuery,
+    signal?: AbortSignal,
+  ): Promise<PagedResult<Book>> {
     const response = await this.client.query<PagedResult<Book>>(
       API_ENDPOINTS.catalog.books.root,
       query ?? {},
+      signal ? { signal } : undefined,
     );
 
     return response.data;
   }
 
-  public async get(id: string): Promise<Book> {
+  public async get(id: string, signal?: AbortSignal): Promise<Book> {
     const response = await this.client.get<Book>(
       API_ENDPOINTS.catalog.books.byId(id),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }
 
   public async getConditional(
     id: string,
-    options?: { ifNoneMatch?: string },
+    options?: { ifNoneMatch?: string; signal?: AbortSignal },
   ): Promise<ConditionalResponse<Book>> {
     return this.client.getConditional<Book>(
       API_ENDPOINTS.catalog.books.byId(id),

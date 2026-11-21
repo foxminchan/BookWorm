@@ -1,76 +1,95 @@
 ---
-title: Frontend Testing, Accessibility & Quality Gates
-summary: Verification commands, Vitest and MSW unit testing, Playwright BDD E2E suites, WCAG 2.1 AA accessibility checks, and Allure reporting.
+title: Frontend Testing & Quality Gates
+summary: How to run formatting, boundary, type, lint, unit, and Playwright BDD checks across the frontend workspace, plus E2E coverage reference.
 owners:
   - contributor-team
 badges:
-  - content: Frontend Reference
-    backgroundColor: teal
-    textColor: teal
+  - content: How-to Guide
+    backgroundColor: green
+    textColor: green
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
 ---
 
-## 1. Context & Problem
+## How to Run Frontend Quality Checks
 
-BookWorm's frontend monorepo spans 17 workspace packages, App Router server and client boundaries, `@base-ui/react` / shadcn components, optimistic ETag concurrency flows, and real-time SSE/AI streams. Without fast, deterministic unit tests, static boundary and type verification, accessibility checks, and end-to-end user-journey validation, regressions in shared packages or UI components can silently break both apps.
+BookWorm verifies frontend changes across four layers: static checks (formatting, boundaries, types, and linting), offline unit/component tests (Vitest + MSW), browser end-to-end tests (Playwright BDD + `axe-core`), and production Next.js builds.
 
-## 2. Business Value
+### Before Opening a Pull Request
 
-- **Fast local iteration without live backend infrastructure:** Deterministic Faker factories and MSW v2 request handlers validate components, hooks, and ETag flows completely offline in Happy DOM.
-- **Early structural regression detection:** Turborepo boundary enforcement (`boundaries`), TypeScript strict type checking (`check-types`), ESLint with `jsx-a11y` (`--max-warnings 0`), and production builds run cleanly across affected workspace packages.
-- **Accessible, journey-level confidence:** BDD Playwright specs verify complete Storefront and Backoffice workflows alongside automated WCAG 2.1 AA accessibility assertions via `@axe-core/playwright`.
+1. **Format modified files** from the repository root:
 
-## 3. How It Works
+   ```bash
+   mise run format:fe
+   ```
 
-Frontend verification operates across four complementary gates configured once in `@workspace/app-config`, `@workspace/eslint-config`, `@workspace/mocks`, and `@workspace/allure-config`:
+2. **Run static checks** from `src/Clients` to verify workspace boundaries, TypeScript types, and ESLint (`--max-warnings 0`, including `jsx-a11y` rules):
 
-1. **Static & structural verification:** `bun run boundaries`, `bun run check-types`, `bun run lint`, and Prettier formatting verify import tier compliance, TypeScript types, React/hooks/a11y rules, and formatting consistency.
-2. **Unit & component suites (Vitest + Happy DOM + MSW v2):** Both apps inherit settings from [vitest.mjs](https://github.com/foxminchan/BookWorm/blob/main/src/Clients/packages/app-config/vitest.mjs) (`createVitestConfig`) and [vitest-setup.mjs](https://github.com/foxminchan/BookWorm/blob/main/src/Clients/packages/app-config/vitest-setup.mjs) (`createNextNavigationMock`, `setupTestLifecycle`). Tests run in `forks` pool mode with `isolate: false`, deterministic Faker seeds (`FAKER_SEED`), unique per-process MSW cookie stores (`MSW_COOKIE_STORE_PATH`), and V8 code coverage.
-3. **End-to-end BDD & accessibility verification (Playwright + `playwright-bdd`):** Gherkin `.feature` files under `apps/*/e2e/features/` compile via `bddgen` into Playwright tests using `@axe-core/playwright` for accessibility scans.
-4. **Unified test reporting (Allure 3):** Vitest (`allure-vitest`) and Playwright (`allure-playwright`) emit test results into `allure-results/`, aggregated via [allurerc.mjs](https://github.com/foxminchan/BookWorm/blob/main/src/Clients/allurerc.mjs) into an interactive Allure report.
+   ```bash
+   bun run boundaries
+   bun run check-types
+   bun run lint
+   ```
 
-## 4. Trade-offs & Lessons Learned
+3. **Run unit and component tests** from `src/Clients` (uses deterministic mock data and requires no running backend):
 
-- **Non-isolated Vitest forks (`isolate: false`) vs. full per-file isolation:** Running Vitest with `isolate: false` keeps full-suite execution fast (~30s for 1,300+ frontend tests), but requires module mocks reused across files to preserve stable object references. `createNextNavigationMock` in `packages/app-config/vitest-setup.mjs` mutates a singleton `navigationMock` object (with `refresh` and `forward` stubs included) so `vi.spyOn(NextNavigation, ...)` never drifts from cached workspace modules such as `@workspace/auth/hooks`.
-- **Excluding thin route wiring from line coverage:** App Router `page.tsx`, `layout.tsx`, `env.mjs`, `instrumentation.ts`, and `config/` re-exports are excluded in `vitest.config.ts` so coverage percentages reflect executable logic in `features/`, `components/`, and `hooks/`.
-- **Production Next.js build as a mandatory gate:** Next.js 16 Turbopack builds catch RSC boundary violations (such as missing `"use client";` directives on interactive UI primitives) that unit tests in Happy DOM cannot detect.
+   ```bash
+   bun run test
+   ```
 
-## 5. Technical Reference
+4. **Verify the production build** when changing layouts, routes, or Server/Client Component boundaries:
+
+   ```bash
+   bun run build
+   ```
+
+5. **Run browser E2E tests** when modifying user journeys, navigation, or accessibility behavior:
+
+   ```bash
+   bun run e2e
+   ```
+
+### Generating Test Reports
+
+To aggregate Vitest and Playwright results into an Allure report from `src/Clients`:
+
+```bash
+bun run allure:report
+```
+
+---
+
+## Reference
 
 ### Verification Command Matrix
 
-Run formatting from the repository root (`mise.toml`), and run Turborepo workspace checks from `src/Clients`:
+| Check                      | Working Directory | Command                 | Scope                                                            |
+| :------------------------- | :---------------- | :---------------------- | :--------------------------------------------------------------- |
+| Format frontend files      | Repo root         | `mise run format:fe`    | Prettier across `src/Clients` (`*.{ts,tsx,md,feature}`)          |
+| Verify package boundaries  | `src/Clients`     | `bun run boundaries`    | Enforces `config` / `foundation` / `domain` / `app` import rules |
+| Type check all packages    | `src/Clients`     | `bun run check-types`   | Strict TypeScript check across workspace packages                |
+| Lint all packages          | `src/Clients`     | `bun run lint`          | ESLint (`--max-warnings 0`) including `eslint-plugin-jsx-a11y`   |
+| Run unit & component tests | `src/Clients`     | `bun run test`          | Vitest + Happy DOM + MSW v2 across both apps                     |
+| Collect code coverage      | `src/Clients`     | `bun run test:coverage` | V8 coverage reports (`lcov`, `json-summary`, `html`) per app     |
+| Build production apps      | `src/Clients`     | `bun run build`         | Next.js production builds with Turbopack                         |
+| Run BDD E2E tests          | `src/Clients`     | `bun run e2e`           | Compiles Gherkin specs and runs Playwright tests                 |
+| Generate Allure report     | `src/Clients`     | `bun run allure:report` | Combines unit and E2E results into `allure-report/`              |
 
-| Check                      | Working Directory | Command                 | Scope & Notes                                                                 |
-| :------------------------- | :---------------- | :---------------------- | :---------------------------------------------------------------------------- |
-| Format all frontend files  | Repo root         | `mise run format:fe`    | Runs Prettier (`*.{ts,tsx,md,feature}`) across `src/Clients`                  |
-| Verify package boundaries  | `src/Clients`     | `bun run boundaries`    | Enforces `config` / `foundation` / `domain` / `app` tags (`turbo boundaries`) |
-| Type check all packages    | `src/Clients`     | `bun run check-types`   | Runs `tsc --noEmit` via `@typescript/native` across workspace packages        |
-| Lint all packages          | `src/Clients`     | `bun run lint`          | Runs ESLint with `--max-warnings 0` including `eslint-plugin-jsx-a11y`        |
-| Run unit & component tests | `src/Clients`     | `bun run test`          | Runs Vitest across `@bookworm/storefront` and `@bookworm/backoffice`          |
-| Collect coverage           | `src/Clients`     | `bun run test:coverage` | Outputs V8 coverage (`lcov`, `json-summary`, `html`) per app                  |
-| Build production apps      | `src/Clients`     | `bun run build`         | Builds Next.js 16 apps with Turbopack (`next build`)                          |
-| Run BDD E2E tests          | `src/Clients`     | `bun run e2e`           | Generates Playwright BDD tests (`bddgen`) and runs `playwright test`          |
-| Generate Allure report     | `src/Clients`     | `bun run allure:report` | Aggregates results via `allurerc.mjs` into `allure-report/`                   |
+### Shared Test Infrastructure
 
-### Vitest Shared Harness (`@workspace/app-config`)
+- **Configuration (`@workspace/app-config`):** Centralizes Vitest, Playwright BDD, and Next.js settings so both apps share deterministic Faker seeds, isolated MSW mock lifecycles, and router stubs without per-app duplication.
+- **Coverage exclusions:** Thin declarative files (`page.tsx`, `layout.tsx`, `env.mjs`, `instrumentation.ts`, `config/`) are excluded from coverage metrics so percentages reflect executable logic in `features/`, `components/`, and `hooks/`.
 
-- `createVitestConfig`:
-  - Aliases `@/` to the app root and `@workspace/<pkg>` directly to each package's `src/` folder (`ui`, `api-hooks`, `types`, `api-client`, `validations`, `mocks`, `utils`, `auth`, `seo`, `env`, `otel`).
-  - Isolates MSW cookie storage per worker process via `MSW_COOKIE_STORE_PATH`.
-  - Configures `allure-vitest/setup` and each app's `__tests__/setup.ts`.
-- `vitest-setup.mjs`:
-  - `createNextNavigationMock(vi)`: Maintains a singleton `navigationMock` object with `useRouter()` (`push`, `replace`, `prefetch`, `back`, `forward`, `refresh`), `useSearchParams()`, `usePathname()`, `useParams()`, `redirect`, and `notFound`.
-  - `setupTestLifecycle(...)`: Seeds Faker deterministically (`FAKER_SEED`, default `12345`) and registers `beforeAll`, `afterEach`, and `afterAll` hooks for the MSW server and Testing Library `cleanup()`.
+### E2E BDD Feature Coverage
 
-### E2E BDD Feature Coverage (`playwright-bdd`)
-
-| Application            | Default E2E Port | Feature Files (`e2e/features/*.feature`)                                                                                                                       |
-| :--------------------- | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@bookworm/storefront` | `3000`           | `accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery` |
-| `@bookworm/backoffice` | `3001`           | `authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`                                           |
+| Application            | Default Port | Feature Suites (`e2e/features/*.feature`)                                                                                                                      |
+| :--------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@bookworm/storefront` | `3000`       | `accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery` |
+| `@bookworm/backoffice` | `3001`       | `authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`                                           |
 
 ### Related Documentation
 
 - [[doc|development/005-testing]] — Repository-wide backend, contract, frontend, and EventCatalog checks
-- [[doc|frontend/001-monorepo-architecture]] — Turborepo package boundary rules checked by `bun run boundaries`
-- [[doc|frontend/002-applications-and-routing]] — Routes and feature slices covered by unit and E2E suites
+- [[doc|frontend/001-monorepo-architecture]] — Workspace boundary tiers checked by `bun run boundaries`
+- [[doc|frontend/005-accessibility]] — Accessibility standards, contributor checklist, and E2E checks

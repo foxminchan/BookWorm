@@ -9,6 +9,6 @@ export const basketQueries = {
   detail: () =>
     queryOptions({
       queryKey: basketKeys.detail(),
-      queryFn: () => basketApiClient.get(),
+      queryFn: ({ signal }) => basketApiClient.get(signal),
     }),
 };

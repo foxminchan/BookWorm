@@ -17,11 +17,15 @@ class BuyersApiClient {
     this.client = apiClient;
   }
 
-  public async list(query?: ListBuyersQuery): Promise<PagedResult<Buyer>> {
+  public async list(
+    query?: ListBuyersQuery,
+    signal?: AbortSignal,
+  ): Promise<PagedResult<Buyer>> {
     const response = await this.client.get<Buyer[]>(
       API_ENDPOINTS.ordering.buyers.root,
       {
         params: query,
+        signal,
       },
     );
 
@@ -34,16 +38,18 @@ class BuyersApiClient {
     };
   }
 
-  public async getCurrentBuyer(): Promise<Buyer> {
+  public async getCurrentBuyer(signal?: AbortSignal): Promise<Buyer> {
     const response = await this.client.get<Buyer>(
       API_ENDPOINTS.ordering.buyers.me,
+      signal ? { signal } : undefined,
     );
     return response.data;
   }
 
-  public async get(id: string): Promise<Buyer> {
+  public async get(id: string, signal?: AbortSignal): Promise<Buyer> {
     const response = await this.client.get<Buyer>(
       API_ENDPOINTS.ordering.buyers.byId(id),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }

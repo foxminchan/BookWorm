@@ -1,0 +1,30 @@
+eventmodeling
+
+tf 01 ui AdminPortal
+tf 02 cmd UpdateBook [[UpdateBookData]]
+tf 03 evt BookCommitted [[BookCommittedData]]
+tf 04 rmo PendingVectorQueue
+
+rf 05 evt Scheduler.ProcessVectorBatchIntegrationEvent
+tf 06 pcr CatalogIngestion ->> 04 ->> 05
+tf 07 cmd UpsertOrDeleteVector
+tf 08 evt VectorIndexSynced
+
+rf 09 evt Reviews.FeedbackCreatedIntegrationEvent
+tf 10 pcr RatingProjectionHandler
+tf 11 cmd UpdateBookRating
+tf 12 evt BookRatingUpdated
+
+rf 13 rmo BookDetailView ->> 03 ->> 08 ->> 12
+tf 14 ui StorefrontUI
+
+data UpdateBookData {
+bookId: string
+price: number
+discountPrice: number
+}
+
+data BookCommittedData {
+bookId: string
+revision: number
+}

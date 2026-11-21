@@ -1,0 +1,21 @@
+eventmodeling
+
+tf 01 ui AdminPortal
+tf 02 cmd CreateOrUpdateBook
+tf 03 evt BookPersisted
+
+rf 04 evt Scheduler.ProcessVectorBatchIntegrationEvent
+tf 05 pcr CatalogIngestion ->> 03 ->> 04
+tf 06 cmd UpsertBookVector
+tf 07 evt VectorRecordUpserted
+
+rf 08 ui AdminPortal
+tf 09 cmd DeleteBook
+tf 10 evt BookSoftDeleted
+tf 11 pcr CatalogIngestionCleanup ->> 04 ->> 10
+tf 12 cmd RemoveBookVector
+tf 13 evt VectorRecordDeleted
+
+rf 14 rmo QdrantCandidateView ->> 07 ->> 13
+rf 15 rmo BookCatalogView ->> 03 ->> 10 ->> 14
+tf 16 ui StorefrontSearchUI

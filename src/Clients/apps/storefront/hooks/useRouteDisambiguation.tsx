@@ -1,6 +1,6 @@
 "use client";
 
-import { useHumanInTheLoop } from "@copilotkit/react-core";
+import { useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import { HelpCircle } from "lucide-react";
 import { z } from "zod";
 

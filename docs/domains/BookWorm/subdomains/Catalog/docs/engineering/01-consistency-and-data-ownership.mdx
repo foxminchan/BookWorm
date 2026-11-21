@@ -61,6 +61,8 @@ Catalog separates its information into permanent sources of truth and disposable
 
 ### Change propagation pipeline
 
+<MermaidFileLoader file="mermaids/catalog-change-propagation.mmd" />
+
 1. API validates and commits the change to PostgreSQL ([[container|catalog-database]]).
 2. A domain event invalidates `book:{id}` in [[container|catalog-cache]].
 3. Database triggers upsert the [[entity|book]] into `pending_vector_updates`, coalescing repeated changes by `book_id` with a new `revision`.

@@ -1,6 +1,9 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { useAtomValue, useSetAtom } from "jotai";
 import { describe, expect, it } from "vitest";
+
+import { basketKeys } from "@workspace/api-hooks/keys";
 
 import {
   basketAtom,
@@ -56,6 +59,52 @@ describe("basket atoms", () => {
 
     await waitFor(() => {
       expect(Array.isArray(result.current)).toBe(true);
+    });
+  });
+
+  it("should return a stable empty array reference when basket has no items", () => {
+    const { result, rerender } = renderHook(
+      () => useAtomValue(basketItemsAtom),
+      {
+        wrapper: createWrapper(),
+      },
+    );
+
+    const firstResult = result.current;
+    rerender();
+    expect(result.current).toBe(firstResult);
+    expect(result.current).toEqual([]);
+  });
+
+  it("should share QueryClient cache with jotai-tanstack-query via queryClientAtom", async () => {
+    const { result } = renderHook(
+      () => ({
+        queryClient: useQueryClient(),
+        items: useAtomValue(basketItemsAtom),
+        itemCount: useAtomValue(basketItemCountAtom),
+      }),
+      {
+        wrapper: createWrapper(),
+      },
+    );
+
+    act(() => {
+      result.current.queryClient.setQueryData(basketKeys.detail(), {
+        id: "basket-1",
+        items: [
+          {
+            id: "book-1",
+            name: "Clean Code",
+            quantity: 2,
+            price: 30,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.items).toHaveLength(1);
+      expect(result.current.itemCount).toBe(2);
     });
   });
 });

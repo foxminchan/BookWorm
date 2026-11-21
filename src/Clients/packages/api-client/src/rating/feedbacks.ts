@@ -19,11 +19,13 @@ class RatingApiClient {
 
   public async list(
     query?: ListFeedbacksQuery,
+    signal?: AbortSignal,
   ): Promise<PagedResult<Feedback>> {
     const response = await this.client.get<Feedback[]>(
       API_ENDPOINTS.rating.feedbacks.root,
       {
         params: query,
+        signal,
       },
     );
 
@@ -48,9 +50,13 @@ class RatingApiClient {
     await this.client.delete<void>(API_ENDPOINTS.rating.feedbacks.byId(id));
   }
 
-  public async summary(bookId: string): Promise<FeedbackSummary> {
+  public async summary(
+    bookId: string,
+    signal?: AbortSignal,
+  ): Promise<FeedbackSummary> {
     const response = await this.client.get<FeedbackSummary>(
       API_ENDPOINTS.rating.feedbacks.summarize(bookId),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }

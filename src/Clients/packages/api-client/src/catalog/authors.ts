@@ -15,16 +15,18 @@ class AuthorsApiClient {
     this.client = apiClient;
   }
 
-  public async list(): Promise<Author[]> {
+  public async list(signal?: AbortSignal): Promise<Author[]> {
     const response = await this.client.get<Author[]>(
       API_ENDPOINTS.catalog.authors.root,
+      signal ? { signal } : undefined,
     );
     return response.data;
   }
 
-  public async get(id: string): Promise<Author> {
+  public async get(id: string, signal?: AbortSignal): Promise<Author> {
     const response = await this.client.get<Author>(
       API_ENDPOINTS.catalog.authors.byId(id),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }

@@ -13,12 +13,12 @@ export const bookQueries = {
   list: (query?: ListBooksQuery) =>
     queryOptions({
       queryKey: catalogKeys.books.list(query),
-      queryFn: () => booksApiClient.list(query),
+      queryFn: ({ signal }) => booksApiClient.list(query, signal),
     }),
   detail: (id: string) =>
     queryOptions({
       queryKey: catalogKeys.books.detail(id),
-      queryFn: () => booksApiClient.get(id),
+      queryFn: ({ signal }) => booksApiClient.get(id, signal),
     }),
 };
 
@@ -27,12 +27,12 @@ export const authorQueries = {
   list: () =>
     queryOptions({
       queryKey: catalogKeys.authors.list(),
-      queryFn: () => authorsApiClient.list(),
+      queryFn: ({ signal }) => authorsApiClient.list(signal),
     }),
   detail: (id: string) =>
     queryOptions({
       queryKey: catalogKeys.authors.detail(id),
-      queryFn: () => authorsApiClient.get(id),
+      queryFn: ({ signal }) => authorsApiClient.get(id, signal),
     }),
 };
 
@@ -41,12 +41,12 @@ export const categoryQueries = {
   list: () =>
     queryOptions({
       queryKey: catalogKeys.categories.list(),
-      queryFn: () => categoriesApiClient.list(),
+      queryFn: ({ signal }) => categoriesApiClient.list(signal),
     }),
   detail: (id: string) =>
     queryOptions({
       queryKey: catalogKeys.categories.detail(id),
-      queryFn: () => categoriesApiClient.get(id),
+      queryFn: ({ signal }) => categoriesApiClient.get(id, signal),
     }),
 };
 
@@ -55,11 +55,11 @@ export const publisherQueries = {
   list: () =>
     queryOptions({
       queryKey: catalogKeys.publishers.list(),
-      queryFn: () => publishersApiClient.list(),
+      queryFn: ({ signal }) => publishersApiClient.list(signal),
     }),
   detail: (id: string) =>
     queryOptions({
       queryKey: catalogKeys.publishers.detail(id),
-      queryFn: () => publishersApiClient.get(id),
+      queryFn: ({ signal }) => publishersApiClient.get(id, signal),
     }),
 };

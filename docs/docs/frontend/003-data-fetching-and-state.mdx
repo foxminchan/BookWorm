@@ -1,112 +1,63 @@
 ---
 title: API Client, Query Factories & State Management
-summary: Typed HTTP clients, TanStack Query queryOptions factories, ETag optimistic concurrency, SSE streaming, and Jotai state in BookWorm clients.
+summary: How BookWorm clients fetch data, synchronize server/client caches, prevent conflicting edits with ETags, and handle real-time streams.
 owners:
   - contributor-team
 badges:
-  - content: Frontend Reference
+  - content: Explanation
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
     backgroundColor: blue
     textColor: blue
 ---
 
-## 1. Context & Problem
+## Explanation: Predictable Data Flow & Concurrency
 
-BookWorm's frontend applications communicate with five backend HTTP/streaming capabilities ([[service|catalog-api]], [[service|basket-api]], [[service|order-api]], [[service|rating-api]], [[service|chat-api]]) through the YARP API gateway while coordinating server-side prefetching, client-side caching, optimistic concurrency control, live admin telemetry, and UI state.
+BookWorm's frontend applications communicate with five backend services ([[service|catalog-api]], [[service|basket-api]], [[service|order-api]], [[service|rating-api]], [[service|chat-api]]) through the YARP API gateway. Rather than scattering raw `fetch` calls across components, data flows through a layered pipeline:
 
-Ad-hoc `fetch` calls or duplicated query keys between Server Components and client hooks lead to cache misses on hydration, stale mutations overwriting concurrent admin edits, and runtime schema mismatches between forms and backend payloads.
+1. **Shared contracts first:** Request/response types and Zod validation schemas are defined once and reused by both form validation and HTTP clients.
+2. **Single source of truth for cache keys:** Query keys and fetchers are paired in `@workspace/api-hooks` so server-side prefetching and client-side subscriptions always match without cache misses on hydration.
+3. **Optimistic concurrency with ETags:** Editable backoffice resources (books and order summaries) use conditional HTTP headers (`If-None-Match` and `If-Match`). If another user modifies a record first, the update fails safely with `412 Precondition Failed` instead of silently overwriting newer data.
+4. **Targeted real-time updates:**
+   - The backoffice dashboard loads an initial snapshot and listens to a Server-Sent Events (SSE) stream, ignoring out-of-order events older than the current snapshot.
+   - The storefront AI assistant streams responses over CopilotKit's AG-UI runtime, forwarding authenticated user tokens to [[service|chat-api]].
+5. **Minimal client-only state:** Lightweight Jotai atoms hold ephemeral UI and session-derived state (such as basket count and feature flags), short-circuiting basket requests when a shopper is not signed in.
 
-## 2. Business Value
+---
 
-- **Single source of truth for keys & fetchers:** Defining query keys and fetchers once in `@workspace/api-hooks` guarantees Server Component prefetching matches Client Component subscriptions seamlessly.
-- **Data integrity on concurrent updates:** Conditional HTTP headers (`If-None-Match` and `If-Match`) prevent administrators from silently overwriting newer book or order state.
-- **Resilient real-time & AI updates:** Dedicated Server-Sent Events (SSE) subscriptions and CopilotKit AG-UI streaming deliver live dashboard telemetry and conversational book discovery without aggressive polling.
+## Reference
 
-## 3. How It Works
+### Data Pipeline Packages
 
-Data moves through a strict four-package pipeline (`@workspace/types` -> `@workspace/validations` -> `@workspace/api-client` -> `@workspace/api-hooks`):
+| Package                  | Tier         | Responsibility                                                        |
+| :----------------------- | :----------- | :-------------------------------------------------------------------- |
+| `@workspace/types`       | `foundation` | Domain DTO interfaces and pagination wrappers                         |
+| `@workspace/validations` | `domain`     | Shared Zod v4 schemas for forms and API payloads                      |
+| `@workspace/api-client`  | `domain`     | Typed Axios clients, retries, conditional ETag transport, SSE streams |
+| `@workspace/api-hooks`   | `domain`     | TanStack Query key/options factories, hooks, mutations, ETag cache    |
 
-1. **Shared types and Zod v4 contracts:** `@workspace/types` holds DTO interfaces, while `@workspace/validations` supplies reusable Zod schemas used by React Hook Form resolvers and API payloads.
-2. **Typed Axios + conditional transport (`@workspace/api-client`):** Domain clients encapsulate service paths (`/catalog`, `/basket`, `/ordering`, `/rating`) with `axios-retry`, gateway URL resolution, conditional `If-None-Match` reads returning `304 Not Modified`, `If-Match` mutations guarding against `412 Precondition Failed`, and an SSE subscription helper (`dashboardApiClient.subscribe`).
-3. **Composable `queryOptions` factories (`@workspace/api-hooks`):** Domain query objects (`bookQueries`, `authorQueries`, `categoryQueries`, `publisherQueries`, `basketQueries`, `orderQueries`, `buyerQueries`, `feedbackQueries`) bind hierarchical query keys (`catalogKeys`, `basketKeys`, `orderingKeys`, `ratingKeys`) directly to their fetch functions. Client hooks wrap them with `useQueryFromOptions`.
-4. **Targeted client state & streaming:** Ephemeral or derived client state uses lightweight Jotai atoms (`basketAtom`, `isCopilotEnabledAtom`) in Storefront, while Backoffice pairs initial TanStack Query snapshots with live SSE cache updates (`useDashboardStats`).
+### Query Factory Exports (`@workspace/api-hooks`)
 
-## 4. Trade-offs & Lessons Learned
-
-- **Direct `queryOptions` factories vs. ETag-aware hooks:** Standard non-ETag reads share `queryOptions` factories cleanly between server hydration and `useQueryFromOptions`, whereas ETag-guarded resources (`useBook`, `useOrderSummary`) intentionally use custom hooks backed by `fetchWithETag` and `etag-cache` to track conditional response headers.
-- **Timestamp ordering on SSE snapshots:** When subscribing to `dashboardApiClient.subscribe` in Backoffice (`useDashboardStats`), incoming SSE snapshots compare `updatedAt` timestamps before calling `queryClient.setQueryData` so out-of-order messages never revert fresher dashboard totals.
-- **Short-circuiting initial basket queries for guests:** Keeping an explicit `isAuthenticatedAtom` alongside `basketAtom` (`atomWithQuery`) prevents unnecessary unauthenticated requests to [[service|basket-api]] before a shopper signs in.
-
-## 5. Technical Reference
-
-### Layered Package Responsibilities
-
-| Package                  | Boundary Tag | Key Responsibilities                                                                                 |
-| :----------------------- | :----------- | :--------------------------------------------------------------------------------------------------- |
-| `@workspace/types`       | `foundation` | Domain DTO interfaces and shared pagination wrappers (`PagedResult`)                                 |
-| `@workspace/validations` | `domain`     | Zod v4 validation schemas shared between forms and request validation                                |
-| `@workspace/api-client`  | `domain`     | Axios client, retry policy, endpoint registry, conditional ETag transport, SSE client                |
-| `@workspace/api-hooks`   | `domain`     | TanStack Query key factories, `queryOptions` factories, `useQueryFromOptions`, mutations, ETag cache |
-
-### TanStack Query `queryOptions` Factories (`@workspace/api-hooks`)
-
-Domain factories exported from `@workspace/api-hooks`:
-
-| Subpath Export                          | Exported Factory Objects                                              | Backing Service          |
+| Subpath Export                          | Factory Objects                                                       | Backing Service          |
 | :-------------------------------------- | :-------------------------------------------------------------------- | :----------------------- |
 | `@workspace/api-hooks/catalog/queries`  | `bookQueries`, `authorQueries`, `categoryQueries`, `publisherQueries` | [[service\|catalog-api]] |
 | `@workspace/api-hooks/basket/queries`   | `basketQueries`                                                       | [[service\|basket-api]]  |
 | `@workspace/api-hooks/ordering/queries` | `orderQueries`, `buyerQueries`                                        | [[service\|order-api]]   |
 | `@workspace/api-hooks/rating/queries`   | `feedbackQueries`                                                     | [[service\|rating-api]]  |
 
-#### Shared Usage Across Server & Client Boundaries
+### Client State & Real-Time Channels
 
-Server Components reuse factory query keys for hydration prefetching, while client hooks delegate to `useQueryFromOptions`:
-
-```ts
-// packages/api-hooks/src/catalog/queries.ts
-export const bookQueries = {
-	all: () => catalogKeys.books.all,
-	list: (query?: ListBooksQuery) =>
-		queryOptions({
-			queryKey: catalogKeys.books.list(query),
-			queryFn: () => booksApiClient.list(query),
-		}),
-	detail: (id: string) =>
-		queryOptions({
-			queryKey: catalogKeys.books.detail(id),
-			queryFn: () => booksApiClient.get(id),
-		}),
-};
-
-// packages/api-hooks/src/catalog/books/useBooks.ts
-export default function useBooks(
-	query?: ListBooksQuery,
-	options?: Omit<UseQueryOptions<PagedResult<Book>>, "queryKey" | "queryFn">
-) {
-	return useQueryFromOptions(bookQueries.list(query), options);
-}
-```
-
-In Storefront App Router Server Components (`apps/storefront/app/(catalog)/categories/page.tsx`, `shop/[id]/page.tsx`), `getQueryClient()` creates a request-scoped `QueryClient` configured to dehydrate pending or completed queries into `<HydrationBoundary>` while pairing `bookQueries.detail(id).queryKey` / `categoryQueries.list().queryKey` with server cached catalog loaders.
-
-### ETag Optimistic Concurrency
-
-Mutable entities edited in Backoffice use conditional requests (`fetchWithETag` + `formatETag`):
-
-- `useBook` (`@workspace/api-hooks/catalog/books/useBook`) queries `booksApiClient.getConditional` and returns `{ ...query, etag }`.
-- `useOrderSummary` (`@workspace/api-hooks/ordering/orders/useOrderSummary`) queries `ordersApiClient.getSummaryConditional` and returns `{ ...result, etag }`.
-- Subsequent updates include the `etag` token so concurrent modifications fail safely (`412 Precondition Failed`) rather than silently clobbering newer state.
-
-### Real-Time Streams & Client Atoms
-
-- **Backoffice Live Overview (`useDashboardStats`)**: Loads an initial snapshot from `@workspace/api-client/ordering/dashboard` (`staleTime: Infinity`) and subscribes via `dashboardApiClient.subscribe` to update `orderingKeys.dashboard(userId)` in the TanStack Query cache when newer `updatedAt` timestamps arrive.
-- **Storefront AI Chat Runtime (`/api/copilotkit/[[...slug]]`)**: Uses `CopilotKitRuntime` paired with `@ag-ui/client` (`HttpAgent`) forwarding authenticated user access tokens from Better Auth sessions to [[service|chat-api]].
-- **Jotai State (`apps/storefront/atoms/`)**:
-  - `basket-atom.ts`: `isAuthenticatedAtom`, `basketAtom` (`atomWithQuery`), `basketItemCountAtom`, `basketItemsAtom`.
-  - `feature-flags-atom.ts`: `isCopilotEnabledAtom` initialized from `env.NEXT_PUBLIC_COPILOT_ENABLED`.
+| Mechanism            | Application  | Purpose                                                          |
+| :------------------- | :----------- | :--------------------------------------------------------------- |
+| TanStack Query + SSR | Both apps    | Server prefetching via `HydrationBoundary` and client caching    |
+| Conditional ETags    | `backoffice` | Optimistic concurrency on book and order-summary updates         |
+| SSE (`dashboard`)    | `backoffice` | Live overview metrics pushed into the query cache                |
+| CopilotKit AG-UI     | `storefront` | Authenticated streaming AI chat (`/api/copilotkit/[[...slug]]`)  |
+| Jotai atoms          | `storefront` | Authentication flag, derived basket state, and AI feature toggle |
 
 ### Related Documentation
 
-- [[doc|frontend/001-monorepo-architecture]] — Dependency direction rules between `@workspace/types`, `@workspace/api-client`, and `@workspace/api-hooks`
-- [[doc|frontend/002-applications-and-routing]] — Server routes that prefetch queries into `HydrationBoundary`
+- [[doc|frontend/001-monorepo-architecture]] — Dependency direction rules across shared packages
+- [[doc|frontend/002-applications-and-routing]] — Route structure and server prefetching entrypoints
 - [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] — Platform-wide validation, retries, and resilience patterns

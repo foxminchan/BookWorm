@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { getSessionCookie } from "better-auth/cookies";
+
 const protectedRoutes = ["/basket", "/checkout", "/account"];
 const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const sessionToken = request.cookies.get("better-auth.session_token")?.value;
+  const sessionToken = getSessionCookie(request);
 
   if (authRoutes.some((route) => path.startsWith(route)) && sessionToken) {
     return NextResponse.redirect(new URL("/", request.url));

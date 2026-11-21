@@ -19,7 +19,7 @@ export function useWebMCPTools(enabled: boolean) {
     let core: { dispose: () => void } | undefined;
 
     void Promise.all([
-      import("@copilotkit/react-core"),
+      import("@copilotkit/react-core/v2"),
       import("@/lib/webmcp-tools"),
     ])
       .then(([{ CopilotKitCore }, { getBookDetailsTool, searchBooksTool }]) => {

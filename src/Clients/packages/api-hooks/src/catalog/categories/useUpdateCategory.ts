@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationOptions, useQueryClient } from "@tanstack/react-query";
 
 import categoriesApiClient from "@workspace/api-client/catalog/categories";
 import type {
@@ -13,6 +9,7 @@ import type {
 } from "@workspace/types/catalog/categories";
 
 import { catalogKeys } from "../../keys";
+import { useMutationFromOptions } from "../../use-mutation-from-options";
 
 export default function useUpdateCategory(
   options?: UseMutationOptions<
@@ -23,17 +20,19 @@ export default function useUpdateCategory(
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ request }) => categoriesApiClient.update(request),
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(
-        catalogKeys.categories.detail(variables.request.id),
-        data,
-      );
-      queryClient.invalidateQueries({
-        queryKey: catalogKeys.categories.lists(),
-      });
+  return useMutationFromOptions(
+    {
+      mutationFn: ({ request }) => categoriesApiClient.update(request),
+      onSuccess: (data, variables) => {
+        queryClient.setQueryData(
+          catalogKeys.categories.detail(variables.request.id),
+          data,
+        );
+        queryClient.invalidateQueries({
+          queryKey: catalogKeys.categories.lists(),
+        });
+      },
     },
-    ...options,
-  });
+    options,
+  );
 }

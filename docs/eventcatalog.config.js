@@ -245,7 +245,7 @@ export default {
 
 	mermaid: {
 		enableSupportForElkLayout: true,
-		iconPacks: ["logos"],
+		iconPacks: ["logos", "material-icon-theme"],
 	},
 
 	rss: {
