@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "storefront": {
+      "packageName": "@bookworm/storefront",
+      "development": {
+        "fallback": "https://localhost:3000"
+      }
+    },
+    "commerce": {
+      "packageName": "@bookworm/commerce",
+      "assetPrefix": "commerce-assets",
+      "routing": [
+        {
+          "group": "commerce",
+          "paths": [
+            "/basket",
+            "/checkout/:path*",
+            "/account",
+            "/account/:path*",
+            "/commerce-assets/:path*"
+          ]
+        }
+      ]
+    }
+  }
+}

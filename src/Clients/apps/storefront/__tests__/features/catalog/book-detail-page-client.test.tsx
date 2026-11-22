@@ -81,7 +81,7 @@ vi.mock("@/components/loading-skeleton", () => ({
   ),
 }));
 
-vi.mock("@/components/remove-item-dialog", () => ({
+vi.mock("@workspace/storefront-shell/components/remove-item-dialog", () => ({
   RemoveItemDialog: ({
     open,
     onOpenChange,

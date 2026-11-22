@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 
-import Link from "next/link";
-
+import { Link } from "@vercel/microfrontends/next/client";
 import { Home, RotateCcw } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";

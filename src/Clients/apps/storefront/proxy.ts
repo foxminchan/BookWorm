@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 
 import { getSessionCookie } from "better-auth/cookies";
 
-const protectedRoutes = ["/basket", "/checkout", "/account"];
+import { resolvePublicOrigin } from "@workspace/storefront-shell/lib/proxy";
+
 const authRoutes = ["/login", "/register"];
 
 export function proxy(request: NextRequest) {
@@ -11,16 +12,7 @@ export function proxy(request: NextRequest) {
   const sessionToken = getSessionCookie(request);
 
   if (authRoutes.some((route) => path.startsWith(route)) && sessionToken) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (
-    protectedRoutes.some((route) => path.startsWith(route)) &&
-    !sessionToken
-  ) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", path);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/", resolvePublicOrigin(request)));
   }
 
   return NextResponse.next();

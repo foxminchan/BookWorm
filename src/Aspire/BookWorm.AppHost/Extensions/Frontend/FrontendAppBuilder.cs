@@ -1,4 +1,6 @@
-﻿namespace BookWorm.AppHost.Extensions.Frontend;
+﻿using BookWorm.AppHost.Extensions.Proxy;
+
+namespace BookWorm.AppHost.Extensions.Frontend;
 
 internal sealed class FrontendAppBuilder(
     FrontendWorkspaceBuilder workspace,
@@ -9,7 +11,9 @@ internal sealed class FrontendAppBuilder(
     private const string AppUrlEnvironmentVariable = "NEXT_PUBLIC_APP_URL";
     private const string BuildStage = "build";
 
+    private string _healthCheckPath = "/";
     private bool _includeCopilot;
+    private bool _includeEntraId = true;
     private string? _pathPrefix;
 
     public FrontendAppBuilder WithCopilot()
@@ -18,9 +22,22 @@ internal sealed class FrontendAppBuilder(
         return this;
     }
 
+    public FrontendAppBuilder WithHealthCheckPath(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        _healthCheckPath = path;
+        return this;
+    }
+
     public FrontendAppBuilder WithPathPrefix(string pathPrefix)
     {
         _pathPrefix = pathPrefix;
+        return this;
+    }
+
+    public FrontendAppBuilder WithoutEntraId()
+    {
+        _includeEntraId = false;
         return this;
     }
 
@@ -46,7 +63,7 @@ internal sealed class FrontendAppBuilder(
 
         frontend
             .WithOtlpExporter()
-            .WithHttpHealthCheck()
+            .WithHttpHealthCheck(_healthCheckPath)
             .WithEnvironment(
                 "NEXT_PUBLIC_GATEWAY_HTTPS",
                 isRunMode ? workspace.Gateway.GetEndpoint(Uri.UriSchemeHttps) : gatewayOrigin
@@ -67,7 +84,12 @@ internal sealed class FrontendAppBuilder(
             frontend.WithEnvironment("NEXT_PUBLIC_COPILOT_ENABLED", "true");
         }
 
-        return frontend.WithEntraId(workspace.EntraId, workspace.Gateway, _pathPrefix);
+        if (_includeEntraId)
+        {
+            frontend.WithEntraId(workspace.EntraId, workspace.Gateway, _pathPrefix);
+        }
+
+        return frontend;
     }
 
     private IResourceBuilder<ContainerResource> AddContainer()

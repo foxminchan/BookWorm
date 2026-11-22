@@ -18,6 +18,8 @@ export interface CreateUseLogoutOptions {
   redirectTo?: string;
   refreshOnSignOut?: boolean;
   useFetchOptionsCallback?: boolean;
+  /** Performs a full browser navigation (e.g. across microfrontend zones) instead of `router.push`. */
+  hardNavigate?: boolean;
 }
 
 /**
@@ -29,9 +31,22 @@ export function useAuthLogout({
   redirectTo = "/",
   refreshOnSignOut = false,
   useFetchOptionsCallback = false,
+  hardNavigate = false,
 }: CreateUseLogoutOptions): UseLogoutResult {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
+
+  const navigateAfterSignOut = useCallback(() => {
+    if (hardNavigate && globalThis.window !== undefined) {
+      globalThis.location.assign(redirectTo);
+      return;
+    }
+
+    router.push(redirectTo);
+    if (refreshOnSignOut) {
+      router.refresh();
+    }
+  }, [hardNavigate, redirectTo, refreshOnSignOut, router]);
 
   const logout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -40,24 +55,19 @@ export function useAuthLogout({
       if (useFetchOptionsCallback) {
         await signOut({
           fetchOptions: {
-            onSuccess: () => {
-              router.push(redirectTo);
-            },
+            onSuccess: navigateAfterSignOut,
           },
         });
       } else {
         await signOut();
-        router.push(redirectTo);
-        if (refreshOnSignOut) {
-          router.refresh();
-        }
+        navigateAfterSignOut();
       }
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
       setIsLoggingOut(false);
     }
-  }, [signOut, redirectTo, refreshOnSignOut, useFetchOptionsCallback, router]);
+  }, [signOut, useFetchOptionsCallback, navigateAfterSignOut]);
 
   return { logout, isLoggingOut };
 }

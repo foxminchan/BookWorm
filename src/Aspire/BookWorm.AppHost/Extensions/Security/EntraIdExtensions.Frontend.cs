@@ -1,4 +1,5 @@
 using Aspire.Hosting.Yarp;
+using BookWorm.AppHost.Extensions.Proxy;
 
 namespace BookWorm.AppHost.Extensions.Security;
 

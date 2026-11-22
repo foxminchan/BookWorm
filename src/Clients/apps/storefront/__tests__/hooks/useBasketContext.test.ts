@@ -1,7 +1,11 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { basketItemCountAtom, basketItemsAtom } from "@/atoms/basket-atom";
+import {
+  basketItemCountAtom,
+  basketItemsAtom,
+} from "@workspace/storefront-shell/atoms/basket-atom";
+
 import { useBasketContext } from "@/hooks/useBasketContext";
 
 const { mockUseAtomValue, mockUseAgentContext } = vi.hoisted(() => ({

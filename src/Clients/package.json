@@ -27,7 +27,7 @@
     "test": "turbo run test",
     "e2e": "turbo run test:e2e",
     "allure:generate": "turbo run allure:generate",
-    "allure:report": "allure generate --clean --config ./allurerc.mjs --output allure-report apps/backoffice/allure-results apps/storefront/allure-results",
+    "allure:report": "allure generate --clean --config ./allurerc.mjs --output allure-report apps/backoffice/allure-results apps/storefront/allure-results apps/commerce/allure-results",
     "boundaries": "turbo boundaries",
     "format": "prettier --write \"**/*.{ts,tsx,md,feature}\""
   },

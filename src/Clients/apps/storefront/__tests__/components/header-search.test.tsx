@@ -3,8 +3,12 @@ import React from "react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  HeaderSearch,
+  MobileSearch,
+} from "@workspace/storefront-shell/components/header-search";
+
 import { renderWithProviders, screen } from "@/__tests__/utils/test-utils";
-import { HeaderSearch, MobileSearch } from "@/components/header-search";
 
 // Hoisted mocks
 const mockPush = vi.hoisted(() => vi.fn());
@@ -26,7 +30,7 @@ vi.mock("next/navigation", async () => {
   };
 });
 
-vi.mock("@/hooks/useDelayedToggle", () => ({
+vi.mock("@workspace/storefront-shell/hooks/useDelayedToggle", () => ({
   useDelayedToggle: mockUseDelayedToggle,
 }));
 
@@ -125,6 +129,22 @@ describe("HeaderSearch", () => {
     expect(mockPush).toHaveBeenCalledWith(
       `/shop?search=${encodeURIComponent("fantasy novels")}`,
     );
+  });
+
+  it("performs hard navigation on search submit when hardNavigate is true", async () => {
+    const mockAssign = vi.fn();
+    vi.stubGlobal("location", { ...globalThis.location, assign: mockAssign });
+    setupDelayedToggle({ isOpen: true });
+    renderWithProviders(<HeaderSearch hardNavigate />);
+
+    const input = screen.getByPlaceholderText("Search books...");
+    await user.type(input, "clean architecture{enter}");
+
+    expect(mockAssign).toHaveBeenCalledWith(
+      `/shop?search=${encodeURIComponent("clean architecture")}`,
+    );
+    expect(mockPush).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it("does not navigate on empty search", async () => {

@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RemoveItemDialog } from "@/components/remove-item-dialog";
+import { RemoveItemDialog } from "@workspace/storefront-shell/components/remove-item-dialog";
 
 import { renderWithProviders } from "../utils/test-utils";
 

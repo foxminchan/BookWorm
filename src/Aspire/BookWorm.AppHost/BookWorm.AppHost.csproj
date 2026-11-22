@@ -34,4 +34,7 @@
     <ProjectReference Include="..\..\BuildingBlocks\BookWorm.Constants\BookWorm.Constants.csproj" />
     <ProjectReference Include="..\..\Integrations\BookWorm.Hosting.Presidio\BookWorm.Hosting.Presidio.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
+  </ItemGroup>
 </Project>

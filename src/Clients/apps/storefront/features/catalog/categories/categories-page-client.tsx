@@ -3,8 +3,8 @@
 import { FolderOpen } from "lucide-react";
 
 import useCategories from "@workspace/api-hooks/catalog/categories/useCategories";
+import { EmptyState } from "@workspace/storefront-shell/components/empty-state";
 
-import { EmptyState } from "@/components/empty-state";
 import CategoriesGrid from "@/features/catalog/categories/categories-grid";
 import CategoriesHeader from "@/features/catalog/categories/categories-header";
 

@@ -6,17 +6,18 @@ import { useEffect } from "react";
 import dynamic from "next/dynamic";
 
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PrefetchCrossZoneLinksProvider } from "@vercel/microfrontends/next/client";
 import { Provider as JotaiProvider, useSetAtom } from "jotai";
 import { queryClientAtom } from "jotai-tanstack-query";
 import { useHydrateAtoms } from "jotai/utils";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
+import { isAuthenticatedAtom } from "@workspace/storefront-shell/atoms/basket-atom";
+import { BackToTop } from "@workspace/storefront-shell/components/back-to-top";
 import { useAccessToken } from "@workspace/ui/hooks/useAccessToken";
 
 import { bookwormCatalog } from "@/a2ui/catalog";
-import { isAuthenticatedAtom } from "@/atoms/basket-atom";
 import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
-import { BackToTop } from "@/components/back-to-top";
 import { env } from "@/env.mjs";
 import { useWebMCPTools } from "@/hooks/useWebMCPTools";
 import { authClient, useSession } from "@/lib/auth-client";
@@ -53,6 +54,9 @@ function ProvidersContent({
   const { data: session } = useSession();
   const gatewayUrl =
     env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
+  const hasGateway = Boolean(
+    gatewayUrl || process.env.NODE_ENV === "production",
+  );
 
   useEffect(() => {
     if (!gatewayUrl && process.env.NODE_ENV === "development") {
@@ -72,8 +76,7 @@ function ProvidersContent({
   useAccessToken(authClient, useSession);
 
   // The chat agent (AG-UI) requires an authenticated user
-  const shouldShowCopilot =
-    !!isCopilotEnabled && !!gatewayUrl && !!session?.user;
+  const shouldShowCopilot = !!isCopilotEnabled && hasGateway && !!session?.user;
 
   useWebMCPTools(!shouldShowCopilot);
 
@@ -85,17 +88,19 @@ function ProvidersContent({
         disableTransitionOnChange
         enableColorScheme
       >
-        {shouldShowCopilot ? (
-          <CopilotKitProvider
-            runtimeUrl={COPILOT_RUNTIME_URL}
-            generativeUI={{ ui: bookwormCatalog }}
-          >
+        <PrefetchCrossZoneLinksProvider>
+          {shouldShowCopilot ? (
+            <CopilotKitProvider
+              runtimeUrl={COPILOT_RUNTIME_URL}
+              generativeUI={{ ui: bookwormCatalog }}
+            >
+              <div className="pb-16 md:pb-0">{children}</div>
+            </CopilotKitProvider>
+          ) : (
             <div className="pb-16 md:pb-0">{children}</div>
-          </CopilotKitProvider>
-        ) : (
-          <div className="pb-16 md:pb-0">{children}</div>
-        )}
-        <BackToTop />
+          )}
+          <BackToTop />
+        </PrefetchCrossZoneLinksProvider>
       </NextThemesProvider>
     </QueryClientProvider>
   );

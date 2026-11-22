@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Loader2, ShoppingBasket } from "lucide-react";
 
+import { QuantityControl } from "@workspace/storefront-shell/components/quantity-control";
 import { Button } from "@workspace/ui/components/button";
 import {
   Dialog,
@@ -16,7 +17,6 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog";
 
-import { QuantityControl } from "@/components/quantity-control";
 import { useSession } from "@/lib/auth-client";
 
 type ProductActionsProps = {

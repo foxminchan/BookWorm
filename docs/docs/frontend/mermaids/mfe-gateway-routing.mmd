@@ -1,0 +1,15 @@
+---
+title: Microfrontend Gateway & Zone Routing
+---
+flowchart LR
+	Browser["Customer Browser<br/>(Unified Origin)"] --> Gateway["YARP API Gateway<br/>(X-Mfe-Zone)"]
+
+	Gateway -->|"/catalog/*, /basket/*, /ordering/*, ..."| Backends["Backend Microservices"]
+	Gateway -->|"/entra/*"| Entra["Microsoft Entra ID"]
+	Gateway --> |"/backoffice/*"| Backoffice["@bookworm/backoffice<br/>(zone: backoffice)"]
+	Gateway --> |"/basket, /checkout/*, /account/*,<br/>/commerce-assets/*"| Commerce["@bookworm/commerce<br/>(zone: commerce)"]
+	Gateway --> |"/{**remainder} (fallback)"| Storefront["@bookworm/storefront<br/>(zone: storefront)"]
+
+	Config["microfrontends.config.json"] -.->|"MicrofrontendsConfigLoader"| Gateway
+	Config -.->|"withMicrofrontends()"| Storefront
+	Config -.->|"withMicrofrontends()"| Commerce

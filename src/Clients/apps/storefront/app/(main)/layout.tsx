@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { StorefrontShell } from "@/components/storefront-shell";
+import { StorefrontShell } from "@workspace/storefront-shell/components/storefront-shell";
 
 export default function MainLayout({
   children,

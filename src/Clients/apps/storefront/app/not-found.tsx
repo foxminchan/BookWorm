@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { Link } from "@vercel/microfrontends/next/client";
 import { BookOpen, Home } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";

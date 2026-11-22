@@ -15,12 +15,12 @@ import useBook from "@workspace/api-hooks/catalog/books/useBook";
 import useCreateFeedback from "@workspace/api-hooks/rating/useCreateFeedback";
 import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
 import useSummaryFeedback from "@workspace/api-hooks/rating/useSummaryFeedback";
+import { RemoveItemDialog } from "@workspace/storefront-shell/components/remove-item-dialog";
 import { Separator } from "@workspace/ui/components/separator";
 import { useDebounceCallback } from "@workspace/ui/hooks/useDebounceCallback";
 
 import { JsonLd } from "@/components/json-ld";
 import { ProductLoadingSkeleton } from "@/components/loading-skeleton";
-import { RemoveItemDialog } from "@/components/remove-item-dialog";
 import ProductSection from "@/features/catalog/product/product-section";
 import ReviewsContainer from "@/features/catalog/product/reviews-container";
 import { getReviewSortParams } from "@/lib/pattern";

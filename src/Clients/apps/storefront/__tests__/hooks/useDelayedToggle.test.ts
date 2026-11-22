@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useDelayedToggle } from "@/hooks/useDelayedToggle";
+import { useDelayedToggle } from "@workspace/storefront-shell/hooks/useDelayedToggle";
 
 describe("useDelayedToggle", () => {
   beforeEach(() => {

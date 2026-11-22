@@ -38,6 +38,7 @@ export function Providers({
       <NextThemesProvider
         attribute="class"
         defaultTheme="dark"
+        storageKey="backoffice-theme"
         enableSystem
         enableColorScheme
         disableTransitionOnChange

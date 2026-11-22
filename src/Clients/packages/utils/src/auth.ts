@@ -18,6 +18,7 @@ export interface CreateEntraAuthOptions {
   env: EntraAuthEnv;
   defaultBaseUrl: string;
   scopes: readonly string[];
+  cookiePrefix?: string;
 }
 
 function stripTrailingSlashes(value: string): string {
@@ -33,6 +34,7 @@ export function createEntraAuth({
   env,
   defaultBaseUrl,
   scopes,
+  cookiePrefix,
 }: CreateEntraAuthOptions) {
   const isDev = process.env.NODE_ENV === "development";
   const entraInstance = stripTrailingSlashes(
@@ -78,6 +80,7 @@ export function createEntraAuth({
       encryptOAuthTokens: true,
     },
     advanced: {
+      ...(cookiePrefix ? { cookiePrefix } : {}),
       ipAddress: {
         ipAddressHeaders: ["x-forwarded-for", "x-real-ip"],
       },

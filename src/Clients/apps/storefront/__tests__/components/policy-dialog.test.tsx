@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { PolicyDialog } from "@/components/policy-dialog";
+import { PolicyDialog } from "@workspace/storefront-shell/components/policy-dialog";
 
 import { renderWithProviders } from "../utils/test-utils";
 

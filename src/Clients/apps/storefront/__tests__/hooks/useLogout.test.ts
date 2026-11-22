@@ -1,8 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useLogout } from "@/hooks/useLogout";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@workspace/storefront-shell/auth-client";
+import { useLogout } from "@workspace/storefront-shell/hooks/useLogout";
 
 // Mock next/navigation
 const mockPush = vi.fn();
@@ -13,18 +13,24 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock auth-client
-vi.mock("@/lib/auth-client", () => ({
+vi.mock("@workspace/storefront-shell/auth-client", () => ({
   authClient: {
     signOut: vi.fn(),
   },
 }));
 
 const mockSignOut = authClient.signOut as ReturnType<typeof vi.fn>;
+const mockAssign = vi.fn();
 
 describe("useLogout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSignOut.mockResolvedValue({});
+    vi.stubGlobal("location", { ...globalThis.location, assign: mockAssign });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("should return logout function and isLoggingOut state", () => {
@@ -50,9 +56,7 @@ describe("useLogout", () => {
 
     const logoutPromise = result.current.logout();
 
-    // Check if isLoggingOut is true immediately after calling logout
     await waitFor(() => {
-      // Note: Due to async nature, we just verify the function was called
       expect(mockSignOut).toHaveBeenCalled();
     });
 
@@ -77,7 +81,7 @@ describe("useLogout", () => {
     });
   });
 
-  it("should redirect to home page after successful logout", async () => {
+  it("should perform cross-zone hard navigation to home page after successful logout", async () => {
     mockSignOut.mockImplementation(({ fetchOptions }) => {
       fetchOptions?.onSuccess?.();
       return Promise.resolve({});
@@ -88,8 +92,9 @@ describe("useLogout", () => {
     await result.current.logout();
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/");
+      expect(mockAssign).toHaveBeenCalledWith("/");
     });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it("should log error and reset isLoggingOut when signOut fails", async () => {

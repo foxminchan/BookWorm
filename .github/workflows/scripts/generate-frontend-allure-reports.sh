@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-mkdir -p apps/backoffice/.allure apps/storefront/.allure
-curl -sfL --proto '=https' --tlsv1.2 "https://foxminchan.github.io/BookWorm/reports/backoffice/history.jsonl" -o apps/backoffice/.allure/history.jsonl || rm -f apps/backoffice/.allure/history.jsonl
-curl -sfL --proto '=https' --tlsv1.2 "https://foxminchan.github.io/BookWorm/reports/storefront/history.jsonl" -o apps/storefront/.allure/history.jsonl || rm -f apps/storefront/.allure/history.jsonl
+apps=(backoffice storefront commerce)
+
+for app in "${apps[@]}"; do
+  if [[ -d "apps/${app}" ]]; then
+    mkdir -p "apps/${app}/.allure"
+    curl -sfL --proto '=https' --tlsv1.2 "https://foxminchan.github.io/BookWorm/reports/${app}/history.jsonl" -o "apps/${app}/.allure/history.jsonl" || rm -f "apps/${app}/.allure/history.jsonl"
+  fi
+done
+
 ./node_modules/.bin/turbo run allure:generate --affected --continue
-if [[ -d apps/backoffice/allure-report && -f apps/backoffice/.allure/history.jsonl ]]; then
-  cp apps/backoffice/.allure/history.jsonl apps/backoffice/allure-report/history.jsonl
-fi
-if [[ -d apps/storefront/allure-report && -f apps/storefront/.allure/history.jsonl ]]; then
-  cp apps/storefront/.allure/history.jsonl apps/storefront/allure-report/history.jsonl
-fi
+
+for app in "${apps[@]}"; do
+  if [[ -d "apps/${app}/allure-report" && -f "apps/${app}/.allure/history.jsonl" ]]; then
+    cp "apps/${app}/.allure/history.jsonl" "apps/${app}/allure-report/history.jsonl"
+  fi
+done

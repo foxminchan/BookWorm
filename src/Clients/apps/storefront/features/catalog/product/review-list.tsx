@@ -2,11 +2,10 @@
 
 import { Star, User } from "lucide-react";
 
+import { Pagination } from "@workspace/storefront-shell/components/pagination";
 import type { Feedback } from "@workspace/types/rating";
 import { Separator } from "@workspace/ui/components/separator";
 import { cn } from "@workspace/ui/lib/utils";
-
-import { Pagination } from "@/components/pagination";
 
 type ReviewListProps = {
   reviews: Feedback[];

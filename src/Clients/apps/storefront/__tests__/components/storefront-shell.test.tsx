@@ -1,17 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { StorefrontShell } from "@/components/storefront-shell";
+import { StorefrontShell } from "@workspace/storefront-shell/components/storefront-shell";
 
-vi.mock("@/components/header", () => ({
+vi.mock("@workspace/storefront-shell/components/header", () => ({
   Header: () => <header data-testid="mock-header">Header</header>,
 }));
 
-vi.mock("@/components/footer", () => ({
+vi.mock("@workspace/storefront-shell/components/footer", () => ({
   Footer: () => <footer data-testid="mock-footer">Footer</footer>,
 }));
 
-vi.mock("@/components/mobile-bottom-nav", () => ({
+vi.mock("@workspace/storefront-shell/components/mobile-bottom-nav", () => ({
   MobileBottomNav: () => (
     <nav data-testid="mock-mobile-bottom-nav">Mobile Bottom Nav</nav>
   ),

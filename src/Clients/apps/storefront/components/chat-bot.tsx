@@ -144,8 +144,10 @@ export const ChatBot = forwardRef<ChatBotRef>(function ChatBot(_, ref) {
   const isCopilotEnabled = useAtomValue(isCopilotEnabledAtom);
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
-  const hasGateway = !!(
-    env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP
+  const hasGateway = Boolean(
+    env.NEXT_PUBLIC_GATEWAY_HTTPS ||
+    env.NEXT_PUBLIC_GATEWAY_HTTP ||
+    process.env.NODE_ENV === "production",
   );
   const [isUnavailableChatOpen, setIsUnavailableChatOpen] = useState(false);
 

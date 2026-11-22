@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { Pagination } from "@/components/pagination";
+import { Pagination } from "@workspace/storefront-shell/components/pagination";
 
 import { renderWithProviders } from "../utils/test-utils";
 

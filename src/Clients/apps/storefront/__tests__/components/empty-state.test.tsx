@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import { PackageX } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState } from "@workspace/storefront-shell/components/empty-state";
 
 import { renderWithProviders } from "../utils/test-utils";
 
