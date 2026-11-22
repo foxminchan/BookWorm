@@ -107,4 +107,72 @@ public sealed class PlaceOrderCommandHandlerTests
         publishedEvent.TotalMoney.ShouldBe(totalMoney);
         _repositoryMock.Verify(x => x.DeleteBasketAsync(It.IsAny<string>()), Times.Never);
     }
+
+    [Test]
+    public async Task GivenRepositoryThrowsWithIdempotencyGuard_WhenConsuming_ThenShouldReleaseGuardAndRethrow()
+    {
+        // Arrange
+        var basketId = Guid.CreateVersion7();
+        var orderId = Guid.CreateVersion7();
+        var command = new PlaceOrderCommand(
+            basketId,
+            "John Doe",
+            "john@example.com",
+            orderId,
+            99.99m
+        );
+
+        var guardMock = new Mock<IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    orderId,
+                    nameof(PlaceOrderCommandHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(true);
+
+        _repositoryMock
+            .Setup(x => x.DeleteBasketAsync(basketId.ToString()))
+            .ThrowsAsync(new InvalidOperationException("Redis failure"));
+
+        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object, guardMock.Object);
+
+        // Act
+        var act = () => handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.ShouldThrowAsync<InvalidOperationException>();
+        guardMock.Verify(
+            x => x.ReleaseAsync(orderId, nameof(PlaceOrderCommandHandler), CancellationToken.None),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GivenRepositoryThrowsWithoutIdempotencyGuard_WhenConsuming_ThenShouldRethrow()
+    {
+        // Arrange
+        var basketId = Guid.CreateVersion7();
+        var orderId = Guid.CreateVersion7();
+        var command = new PlaceOrderCommand(
+            basketId,
+            "John Doe",
+            "john@example.com",
+            orderId,
+            99.99m
+        );
+
+        _repositoryMock
+            .Setup(x => x.DeleteBasketAsync(basketId.ToString()))
+            .ThrowsAsync(new InvalidOperationException("Redis failure"));
+
+        // Act
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.ShouldThrowAsync<InvalidOperationException>();
+    }
 }
