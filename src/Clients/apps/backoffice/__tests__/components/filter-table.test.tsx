@@ -317,4 +317,34 @@ describe("FilterTable", () => {
       { id: "name", desc: true },
     ]);
   });
+
+  it("should render grouped columns with placeholder headers", () => {
+    const groupedColumns = [
+      {
+        accessorKey: "id",
+        header: "ID",
+      },
+      {
+        id: "details",
+        header: "Details",
+        columns: [
+          {
+            accessorKey: "name",
+            header: "Name",
+          },
+          {
+            accessorKey: "value",
+            header: "Value",
+          },
+        ],
+      },
+    ];
+
+    render(<FilterTable {...defaultProps} columns={groupedColumns} />);
+
+    expect(screen.getByText("Details")).toBeInTheDocument();
+    expect(screen.getByText("ID")).toBeInTheDocument();
+    expect(screen.getByText("Name")).toBeInTheDocument();
+    expect(screen.getByText("Value")).toBeInTheDocument();
+  });
 });

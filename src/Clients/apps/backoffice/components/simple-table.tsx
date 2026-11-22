@@ -206,9 +206,7 @@ export function SimpleTable<T extends BaseItem>({
                         className={header.id === "actions" ? "w-30" : ""}
                         scope="col"
                       >
-                        {header.isPlaceholder ? null : (
-                          <table.FlexRender header={header} />
-                        )}
+                        <table.FlexRender header={header} />
                       </TableHead>
                     ))}
                   </TableRow>
