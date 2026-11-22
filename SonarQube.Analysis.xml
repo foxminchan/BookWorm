@@ -23,6 +23,6 @@
     test-results/*.xml
   </Property>
   <Property Name="sonar.javascript.lcov.reportPaths">
-    src/Clients/apps/storefront/coverage/lcov.info,src/Clients/apps/backoffice/coverage/lcov.info
+    src/Clients/apps/storefront/coverage/lcov.info,src/Clients/apps/backoffice/coverage/lcov.info,src/Clients/apps/commerce/coverage/lcov.info
   </Property>
 </SonarQubeAnalysisProperties>

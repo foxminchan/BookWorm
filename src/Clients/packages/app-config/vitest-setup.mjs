@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 const navigationMock = {};
 
 /**
@@ -30,6 +32,51 @@ export function createNextNavigationMock(vi) {
     redirect: vi.fn(),
     notFound: vi.fn(),
   });
+}
+
+/**
+ * Configures Vercel Microfrontends environment variables for Vitest tests.
+ */
+export function setupMfeTestEnv({ MicrofrontendsServer, configPath, appName }) {
+  const mfeServer = MicrofrontendsServer.fromFile({ filePath: configPath });
+  process.env.NEXT_PUBLIC_MFE_CURRENT_APPLICATION = appName;
+  process.env.NEXT_PUBLIC_MFE_CURRENT_APPLICATION_HASH = crypto
+    .createHash("md5")
+    .update(appName)
+    .digest("hex")
+    .slice(0, 6);
+  process.env.NEXT_PUBLIC_MFE_CLIENT_CONFIG = JSON.stringify(
+    mfeServer.config.toClientConfig({ removeFlaggedPaths: true }).serialize(),
+  );
+}
+
+/**
+ * Creates a `next/image` mock that strips Next-specific props in Happy DOM.
+ */
+export function createNextImageMock(createElement) {
+  return {
+    __esModule: true,
+    default: (props) => {
+      const {
+        src,
+        alt,
+        fill: _fill,
+        priority: _priority,
+        quality: _quality,
+        sizes: _sizes,
+        loader: _loader,
+        ...rest
+      } = props;
+      const resolvedSrc =
+        typeof src === "string" ? src : (src?.src ?? "");
+
+      return createElement("img", {
+        src: resolvedSrc,
+        alt: alt ?? "",
+        ...rest,
+      });
+    },
+  };
 }
 
 /**

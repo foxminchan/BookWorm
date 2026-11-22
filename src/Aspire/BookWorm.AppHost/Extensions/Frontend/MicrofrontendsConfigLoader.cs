@@ -64,48 +64,66 @@ internal static partial class MicrofrontendsConfigLoader
                 continue;
             }
 
-            if (appConfig.Routing is not null)
-            {
-                foreach (var group in appConfig.Routing)
-                {
-                    if (group.Paths is null)
-                    {
-                        continue;
-                    }
-
-                    foreach (var rawPath in group.Paths)
-                    {
-                        var (pattern, isExact) = TranslatePathPattern(rawPath);
-
-                        if (seen.Add((appName, pattern)))
-                        {
-                            routes.Add(new(appName, pattern, isExact));
-                        }
-                    }
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(appConfig.AssetPrefix))
-            {
-                continue;
-            }
-
-            var trimmedPrefix = appConfig.AssetPrefix.Trim().Trim('/');
-
-            if (string.IsNullOrEmpty(trimmedPrefix))
-            {
-                continue;
-            }
-
-            var assetPattern = $"/{trimmedPrefix}/{CatchAllSuffix}";
-
-            if (seen.Add((appName, assetPattern)))
-            {
-                routes.Add(new(appName, assetPattern, false));
-            }
+            appName.AddRoutingRoutes(appConfig.Routing, seen, routes);
+            appName.AddAssetPrefixRoute(appConfig.AssetPrefix, seen, routes);
         }
 
         return routes;
+    }
+
+    extension(string appName)
+    {
+        private void AddRoutingRoutes(
+            IReadOnlyList<MicrofrontendRoutingGroup>? routing,
+            HashSet<(string ZoneName, string Pattern)> seen,
+            List<MicrofrontendRouteDefinition> routes
+        )
+        {
+            if (routing is null)
+            {
+                return;
+            }
+
+            foreach (var rawPath in routing.SelectMany(static group => group.Paths ?? []))
+            {
+                var (pattern, isExact) = TranslatePathPattern(rawPath);
+                appName.TryAddRoute(pattern, isExact, seen, routes);
+            }
+        }
+
+        private void AddAssetPrefixRoute(
+            string? assetPrefix,
+            HashSet<(string ZoneName, string Pattern)> seen,
+            List<MicrofrontendRouteDefinition> routes
+        )
+        {
+            if (string.IsNullOrWhiteSpace(assetPrefix))
+            {
+                return;
+            }
+
+            var trimmedPrefix = assetPrefix.Trim().Trim('/');
+
+            if (string.IsNullOrEmpty(trimmedPrefix))
+            {
+                return;
+            }
+
+            appName.TryAddRoute($"/{trimmedPrefix}/{CatchAllSuffix}", false, seen, routes);
+        }
+
+        private void TryAddRoute(
+            string pattern,
+            bool isExact,
+            HashSet<(string ZoneName, string Pattern)> seen,
+            List<MicrofrontendRouteDefinition> routes
+        )
+        {
+            if (seen.Add((appName, pattern)))
+            {
+                routes.Add(new(appName, pattern, isExact));
+            }
+        }
     }
 
     /// <summary>

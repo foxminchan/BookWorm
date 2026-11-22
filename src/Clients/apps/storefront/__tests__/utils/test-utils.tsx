@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, createElement } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -11,115 +11,31 @@ import { queryClientAtom } from "jotai-tanstack-query";
 import { useHydrateAtoms } from "jotai/utils";
 import { vi } from "vitest";
 
-/**
- * Create a new QueryClient for testing with default options
- * that disable retries and set cache time to 0
- */
-export function createTestQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: 0,
-        staleTime: 0,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
-}
+import { createTestUtils } from "@workspace/app-config/test-utils";
 
-type AllTheProvidersProps = {
-  children: ReactNode;
-};
+const utils = createTestUtils({
+  createElement,
+  QueryClient,
+  QueryClientProvider,
+  render,
+  JotaiProvider,
+  queryClientAtom,
+  useHydrateAtoms,
+  vi,
+});
 
-function HydrateTestAtoms({
-  queryClient,
-  children,
-}: Readonly<{
-  queryClient: QueryClient;
-  children: ReactNode;
-}>) {
-  useHydrateAtoms([[queryClientAtom, queryClient]]);
-  return children;
-}
+export const {
+  createTestQueryClient,
+  createWrapper,
+  mockSession,
+  mockAuthClient,
+} = utils;
 
-/**
- * Wrapper component that provides all necessary contexts for testing
- */
-function AllTheProviders({ children }: Readonly<AllTheProvidersProps>) {
-  const queryClient = createTestQueryClient();
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <JotaiProvider>
-        <HydrateTestAtoms queryClient={queryClient}>
-          {children}
-        </HydrateTestAtoms>
-      </JotaiProvider>
-    </QueryClientProvider>
-  );
-}
-
-/**
- * Create wrapper for hook testing with renderHook
- */
-export function createWrapper() {
-  return AllTheProviders;
-}
-
-/**
- * Custom render function that wraps components with necessary providers
- */
 export function renderWithProviders(
   ui: ReactElement,
   options?: Omit<RenderOptions, "wrapper">,
 ): RenderResult {
-  return render(ui, { wrapper: AllTheProviders, ...options });
+  return utils.renderWithProviders(ui, options);
 }
 
-/**
- * Mock session object for testing authenticated components
- */
-export const mockSession = {
-  user: {
-    id: "test-user-id",
-    email: "test@example.com",
-    name: "Test User",
-  },
-  session: {
-    token: "mock-token",
-    expiresAt: new Date(Date.now() + 3600000).toISOString(),
-  },
-} as const;
-
-type MockAuthClient = {
-  useSession: () => {
-    data: typeof mockSession;
-    isPending: boolean;
-    error: null;
-  };
-  signIn: {
-    social: ReturnType<typeof vi.fn>;
-  };
-  signOut: ReturnType<typeof vi.fn>;
-};
-
-/**
- * Mock auth client for testing
- */
-export const mockAuthClient: MockAuthClient = {
-  useSession: () => ({
-    data: mockSession,
-    isPending: false,
-    error: null,
-  }),
-  signIn: {
-    social: vi.fn(),
-  },
-  signOut: vi.fn(),
-};
-
-// Re-export everything from React Testing Library
 export * from "@testing-library/react";
