@@ -5,7 +5,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
 import { createMetadata } from "@workspace/seo/metadata";
-import { STOREFRONT_VIEWPORT } from "@workspace/storefront-shell/config/app-config";
 import { Button } from "@workspace/ui/components/button";
 import "@workspace/ui/globals.css";
 
@@ -16,7 +15,7 @@ import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 
 import { Providers } from "./providers";
 
-export const viewport = STOREFRONT_VIEWPORT;
+export { STOREFRONT_VIEWPORT as viewport } from "@workspace/storefront-shell/config/app-config";
 
 const appUrl = env.NEXT_PUBLIC_APP_URL || APP_CONFIG.defaultLocalUrl;
 

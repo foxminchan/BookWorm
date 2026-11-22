@@ -50,6 +50,14 @@ export function setupMfeTestEnv({ MicrofrontendsServer, configPath, appName }) {
   );
 }
 
+const NEXT_IMAGE_PROPS = new Set([
+  "fill",
+  "priority",
+  "quality",
+  "sizes",
+  "loader",
+]);
+
 /**
  * Creates a `next/image` mock that strips Next-specific props in Happy DOM.
  */
@@ -57,16 +65,10 @@ export function createNextImageMock(createElement) {
   return {
     __esModule: true,
     default: (props) => {
-      const {
-        src,
-        alt,
-        fill: _fill,
-        priority: _priority,
-        quality: _quality,
-        sizes: _sizes,
-        loader: _loader,
-        ...rest
-      } = props;
+      const { src, alt, ...rawRest } = props;
+      const rest = Object.fromEntries(
+        Object.entries(rawRest).filter(([key]) => !NEXT_IMAGE_PROPS.has(key)),
+      );
       const resolvedSrc =
         typeof src === "string" ? src : (src?.src ?? "");
 

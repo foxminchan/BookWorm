@@ -8,22 +8,39 @@ import { renderWithProviders } from "../../utils/test-utils";
 
 // Mock the useLogout hook
 const mockLogout = vi.fn();
+const mockUseLogout = vi.fn(() => ({
+  logout: mockLogout,
+  isLoggingOut: false,
+}));
 vi.mock("@workspace/storefront-shell/hooks/useLogout", () => ({
-  useLogout: () => ({
-    logout: mockLogout,
-    isLoggingOut: false,
-  }),
+  useLogout: () => mockUseLogout(),
 }));
 
 describe("LogoutButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseLogout.mockReturnValue({
+      logout: mockLogout,
+      isLoggingOut: false,
+    });
   });
 
   it("should render logout button", () => {
     renderWithProviders(<LogoutButton />);
 
     expect(screen.getByRole("button", { name: /logout/i })).toBeInTheDocument();
+  });
+
+  it("should show loading state and disable button when logging out", () => {
+    mockUseLogout.mockReturnValue({
+      logout: mockLogout,
+      isLoggingOut: true,
+    });
+
+    renderWithProviders(<LogoutButton />);
+
+    const button = screen.getByRole("button", { name: /logging out/i });
+    expect(button).toBeDisabled();
   });
 
   it("should call logout function when clicked", async () => {

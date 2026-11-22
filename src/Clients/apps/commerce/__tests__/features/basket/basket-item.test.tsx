@@ -199,4 +199,28 @@ describe("BasketItem", () => {
     // Original price: 29.99 * 3 = 89.97
     expect(screen.getByText("$89.97")).toBeInTheDocument();
   });
+
+  it("should fall back to 'Unnamed Item' in remove dialog when item name is empty", async () => {
+    const user = userEvent.setup();
+    const itemWithEmptyName: BasketItemType = {
+      ...mockItem,
+      name: "",
+    };
+
+    renderWithProviders(
+      <BasketItem
+        item={itemWithEmptyName}
+        displayQuantity={1}
+        onUpdateQuantity={vi.fn()}
+        onRemoveItem={vi.fn()}
+      />,
+    );
+
+    const trashButton = screen.getByRole("button", {
+      name: /remove\s+from basket/i,
+    });
+    await user.click(trashButton);
+
+    expect(screen.getByText(/Unnamed Item/)).toBeInTheDocument();
+  });
 });
