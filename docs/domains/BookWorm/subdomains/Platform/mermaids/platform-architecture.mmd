@@ -1,0 +1,24 @@
+architecture-beta
+	group aca(logos:microsoft-azure)[Azure Container Apps]
+	group data(database)[Azure Managed Data]
+	group ext(internet)[External Services]
+
+	service quartz(logos:dotnet)[Quartz Dashboard] in aca
+	service scheduler(logos:dotnet)[Scheduler Service] in aca
+	service notification(material-icon-theme:email)[Notification Worker] in aca
+
+	service pg(logos:postgresql)[PostgreSQL schedulerdb] in data
+	service redis(logos:redis)[Azure Managed Redis] in data
+
+	service kafka(logos:kafka-icon)[Kafka Broker] in ext
+	service smtp(logos:sendgrid-icon)[SMTP SendGrid] in ext
+	service entra(logos:microsoft-icon)[Microsoft Entra ID] in ext
+
+	quartz:R --> L: scheduler
+	quartz:T --> B: entra
+	scheduler:B --> T: pg
+	scheduler:R --> L: kafka
+
+	kafka:B --> T: notification
+	notification:B --> T: redis
+	notification:R --> L: smtp
