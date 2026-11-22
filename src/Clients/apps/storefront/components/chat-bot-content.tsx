@@ -29,6 +29,7 @@ import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { useRouteDisambiguation } from "@/hooks/useRouteDisambiguation";
 import { useUserContext } from "@/hooks/useUserContext";
+import { copilotSidebarTheme } from "@/lib/copilot-theme";
 import "@/styles/copilot.css";
 
 import type { ChatBotRef } from "./chat-bot";
@@ -310,6 +311,7 @@ const ChatBotContentInner = forwardRef<ChatBotRef>(
           </div>
         ) : (
           <CopilotSidebar
+            {...copilotSidebarTheme}
             agentId={env.NEXT_PUBLIC_COPILOT_AGENT_NAME}
             labels={{
               modalHeaderTitle: "BookWorm Literary Guide",

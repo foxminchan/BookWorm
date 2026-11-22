@@ -3,11 +3,7 @@ import * as v from "valibot";
 
 // ─── Valibot Schemas (shared between A2UI catalog & useComponent hooks) ─────
 
-export const a2uiBookCardSchema = v.object({
-  bookId: v.pipe(
-    v.optional(v.string()),
-    v.description("Unique identifier for the book"),
-  ),
+const bookCardSharedEntries = {
   title: v.pipe(v.string(), v.description("Title of the book")),
   authors: v.pipe(v.array(v.string()), v.description("List of author names")),
   price: v.pipe(v.number(), v.description("Original price")),
@@ -28,32 +24,21 @@ export const a2uiBookCardSchema = v.object({
     v.nullish(v.string()),
     v.description("Short description or blurb"),
   ),
+};
+
+export const a2uiBookCardSchema = v.object({
+  bookId: v.pipe(
+    v.optional(v.string()),
+    v.description("Unique identifier for the book"),
+  ),
+  ...bookCardSharedEntries,
 });
 
 export type A2UIBookCardProps = v.InferOutput<typeof a2uiBookCardSchema>;
 
 export const bookCardSchema = v.object({
   id: v.pipe(v.string(), v.description("Unique identifier for the book")),
-  title: v.pipe(v.string(), v.description("Title of the book")),
-  authors: v.pipe(v.array(v.string()), v.description("List of author names")),
-  price: v.pipe(v.number(), v.description("Original price")),
-  priceSale: v.pipe(
-    v.nullish(v.number()),
-    v.description("Sale price if on discount"),
-  ),
-  imageUrl: v.pipe(v.nullish(v.string()), v.description("Cover image URL")),
-  averageRating: v.pipe(
-    v.optional(v.number()),
-    v.description("Average star rating (0–5)"),
-  ),
-  status: v.pipe(
-    v.picklist(["InStock", "OutOfStock"]),
-    v.description("Availability status"),
-  ),
-  description: v.pipe(
-    v.nullish(v.string()),
-    v.description("Short description or blurb"),
-  ),
+  ...bookCardSharedEntries,
 });
 
 export type BookCardProps = v.InferOutput<typeof bookCardSchema>;

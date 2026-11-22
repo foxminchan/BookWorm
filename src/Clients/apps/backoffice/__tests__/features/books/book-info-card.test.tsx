@@ -1,5 +1,5 @@
 import { Form, useForm } from "@formisch/react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -129,5 +129,17 @@ describe("BookInfoCard", () => {
     expect(screen.getByText("Description")).toBeInTheDocument();
     expect(screen.getByText("Price")).toBeInTheDocument();
     expect(screen.getByText("Sale Price (Optional)")).toBeInTheDocument();
+  });
+
+  it("renders field validation errors when submitted with invalid values", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<BookInfoCardWrapper />);
+
+    const priceInputs = screen.getAllByPlaceholderText("0.00");
+    await user.type(priceInputs[1] as HTMLInputElement, "-5");
+
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(await screen.findAllByRole("alert")).not.toHaveLength(0);
   });
 });

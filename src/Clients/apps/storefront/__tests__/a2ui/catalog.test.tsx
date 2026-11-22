@@ -48,9 +48,64 @@ describe("bookwormCatalog", () => {
     expect(getByText("4.7")).toBeInTheDocument();
   });
 
+  it("renders BookCardView without authors, with sale price, description, and OutOfStock status", () => {
+    const { getByText, queryByText } = render(
+      <BookCardView
+        id="book-2"
+        title="Clean Architecture"
+        authors={[]}
+        price={50}
+        priceSale={40}
+        status="OutOfStock"
+        description="A handbook of software structure"
+      />,
+    );
+
+    expect(getByText("Clean Architecture")).toBeInTheDocument();
+    expect(getByText("Out of Stock")).toBeInTheDocument();
+    expect(getByText("A handbook of software structure")).toBeInTheDocument();
+    expect(getByText("$40.00")).toBeInTheDocument();
+    expect(getByText("$50.00")).toBeInTheDocument();
+    expect(getByText("-20%")).toBeInTheDocument();
+    expect(queryByText("Eric Evans")).not.toBeInTheDocument();
+  });
+
   it("renders BookListView and empty state", () => {
     const { getByText } = render(<BookListView query="ddd" books={[]} />);
     expect(getByText("No books found.")).toBeInTheDocument();
+  });
+
+  it("renders BookListView with books and without query", () => {
+    const { getByText, queryByText } = render(
+      <BookListView
+        books={[
+          {
+            id: "b1",
+            title: "Refactoring",
+            authors: ["Martin Fowler"],
+            price: 49.99,
+            priceSale: 39.99,
+            status: "InStock",
+          },
+          {
+            id: "b2",
+            title: "Anonymous Book",
+            authors: [],
+            price: 19.99,
+            priceSale: null,
+            status: "OutOfStock",
+          },
+        ]}
+      />,
+    );
+
+    expect(queryByText(/Results for/)).not.toBeInTheDocument();
+    expect(getByText("Refactoring")).toBeInTheDocument();
+    expect(getByText("Martin Fowler")).toBeInTheDocument();
+    expect(getByText("$39.99")).toBeInTheDocument();
+    expect(getByText("$49.99")).toBeInTheDocument();
+    expect(getByText("Anonymous Book")).toBeInTheDocument();
+    expect(getByText("$19.99")).toBeInTheDocument();
   });
 
   it("renders BasketSummaryView with items and total", () => {
@@ -65,5 +120,25 @@ describe("bookwormCatalog", () => {
     expect(getByText("Your Basket (2 items)")).toBeInTheDocument();
     expect(getByText("Clean Code × 2")).toBeInTheDocument();
     expect(getAllByText("$59.98")).toHaveLength(2);
+  });
+
+  it("renders BasketSummaryView empty state and singular item with sale price and null name", () => {
+    const { getByText, rerender } = render(
+      <BasketSummaryView itemCount={0} totalPrice={0} items={[]} />,
+    );
+    expect(getByText("Your Basket (0 items)")).toBeInTheDocument();
+    expect(getByText("Your basket is empty.")).toBeInTheDocument();
+
+    rerender(
+      <BasketSummaryView
+        itemCount={1}
+        totalPrice={15}
+        items={[
+          { id: "b1", name: null, quantity: 1, price: 25, priceSale: 15 },
+        ]}
+      />,
+    );
+    expect(getByText("Your Basket (1 item)")).toBeInTheDocument();
+    expect(getByText("Unknown × 1")).toBeInTheDocument();
   });
 });

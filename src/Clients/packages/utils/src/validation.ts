@@ -28,7 +28,12 @@ export function formatValidationErrors(error: {
       "key" in firstSegment
         ? firstSegment.key
         : firstSegment;
-    const field = (rawKey != null ? String(rawKey) : "") || "Unknown";
+    const field =
+      (typeof rawKey === "string" ||
+      typeof rawKey === "number" ||
+      typeof rawKey === "symbol"
+        ? String(rawKey)
+        : "") || "Unknown";
     const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
     errors[fieldName] = [issue.message];
   }

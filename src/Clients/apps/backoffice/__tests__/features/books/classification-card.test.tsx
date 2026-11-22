@@ -30,24 +30,33 @@ const mockAuthors = [
 
 type WrapperProps = {
   initialAuthors?: string[];
+  omitOptionalFields?: boolean;
   isLoading?: boolean;
 };
 
 function ClassificationCardWrapper({
   initialAuthors = [],
+  omitOptionalFields = false,
   isLoading = false,
 }: WrapperProps) {
   const form = useForm({
     schema: createBookSchema,
-    initialInput: {
-      name: "",
-      description: "",
-      price: undefined,
-      priceSale: null,
-      categoryId: "",
-      publisherId: "",
-      authorIds: initialAuthors,
-    },
+    initialInput: omitOptionalFields
+      ? {
+          name: "",
+          description: "",
+          price: undefined,
+          priceSale: null,
+        }
+      : {
+          name: "",
+          description: "",
+          price: undefined,
+          priceSale: null,
+          categoryId: "",
+          publisherId: "",
+          authorIds: initialAuthors,
+        },
   });
 
   return (
@@ -162,5 +171,25 @@ describe("ClassificationCard", () => {
     expect(screen.getByText("Category")).toBeInTheDocument();
     expect(screen.getByText("Publisher")).toBeInTheDocument();
     expect(screen.getByText("Authors")).toBeInTheDocument();
+  });
+
+  it("handles omitted classification fields and selects category and publisher", async () => {
+    const user = userEvent.setup();
+    render(<ClassificationCardWrapper omitOptionalFields={true} />);
+
+    await user.click(screen.getByRole("combobox", { name: /category/i }));
+    await user.click(await screen.findByRole("option", { name: "Fiction" }));
+
+    await user.click(screen.getByRole("combobox", { name: /publisher/i }));
+    await user.click(
+      await screen.findByRole("option", { name: "Publisher A" }),
+    );
+
+    expect(
+      screen.getByRole("combobox", { name: /category/i }),
+    ).toHaveTextContent(mockCategories[0]!.id);
+    expect(
+      screen.getByRole("combobox", { name: /publisher/i }),
+    ).toHaveTextContent(mockPublishers[0]!.id);
   });
 });
