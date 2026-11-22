@@ -9,4 +9,9 @@ public interface IRequestManager
         ClientRequest clientRequest,
         CancellationToken cancellationToken = default
     );
+
+    async Task DeleteAsync(string idempotencyKey, CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+    }
 }

@@ -40,6 +40,7 @@ internal sealed class VectorBatchProcessor(
         }
 
         var index = 0;
+        List<TextSnippet> snippetsToUpsert = [];
         foreach (var item in batch.Updates)
         {
             if (item.Content is null)
@@ -48,16 +49,20 @@ internal sealed class VectorBatchProcessor(
             }
             else
             {
-                await collection.UpsertAsync(
-                    new TextSnippet
+                snippetsToUpsert.Add(
+                    new()
                     {
                         Id = item.BookId,
                         Content = item.Content,
                         Vector = embeddings![index++].Vector,
-                    },
-                    cancellationToken
+                    }
                 );
             }
+        }
+
+        if (snippetsToUpsert.Count > 0)
+        {
+            await collection.UpsertAsync(snippetsToUpsert, cancellationToken);
         }
     }
 
@@ -85,17 +90,15 @@ internal sealed class VectorBatchProcessor(
 
             var batch = new VectorUpdateBatch(pending);
             await IngestDataAsync(batch, cancellationToken);
-            foreach (var item in pending)
-            {
-                // Concurrent edits change revision and must survive this acknowledgement.
-                await using var acknowledge = new NpgsqlCommand(
-                    "DELETE FROM pending_vector_updates WHERE book_id = $1 AND revision = $2",
-                    connection
-                );
-                acknowledge.Parameters.AddWithValue(item.BookId);
-                acknowledge.Parameters.AddWithValue(item.Revision);
-                await acknowledge.ExecuteNonQueryAsync(cancellationToken);
-            }
+
+            // Concurrent edits change revision and must survive this acknowledgement.
+            await using var acknowledge = new NpgsqlCommand(
+                "DELETE FROM pending_vector_updates AS p USING unnest($1::uuid[], $2::uuid[]) AS u(book_id, revision) WHERE p.book_id = u.book_id AND p.revision = u.revision",
+                connection
+            );
+            acknowledge.Parameters.AddWithValue(pending.Select(item => item.BookId).ToArray());
+            acknowledge.Parameters.AddWithValue(pending.Select(item => item.Revision).ToArray());
+            await acknowledge.ExecuteNonQueryAsync(cancellationToken);
 
             logger.LogInformation("Processed {Count} pending vector updates", pending.Count);
             return pending.Count;

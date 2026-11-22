@@ -256,21 +256,9 @@ gatewayBuilder.Resource.WithComputeEnvironment(containerAppEnvironment);
 
 var (storefront, commerce, backoffice) = builder.AddFrontendApps(gatewayBuilder.Resource, entraId);
 
-var microfrontendsConfigPath = Path.GetFullPath(
-    "../../Clients/apps/storefront/microfrontends.config.json",
-    builder.AppHostDirectory
-);
-
 gatewayBuilder
     .WithFrontend(backoffice, "/backoffice", zoneName: Clients.BackOffice)
-    .WithMicrofrontends(
-        microfrontendsConfigPath,
-        new Dictionary<string, IResourceBuilder<IResourceWithEndpoints>>
-        {
-            [Clients.Commerce] = commerce,
-        }
-    )
-    .WithFrontend(storefront, zoneName: Clients.StoreFront)
+    .WithMicrofrontends(storefront, commerce)
     .Build()
     .InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
 
@@ -279,7 +267,7 @@ commerce.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
 backoffice.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
 
 // MCP tools are not routed through the gateway but still need a CORS policy outside Development
-mcp.WithGatewayCors(gatewayBuilder.Resource);
+mcp.WithMcpCors(gatewayBuilder.Resource);
 
 // Add Scalar and MCP Inspector in run mode, or provision storage in publish mode
 if (builder.ExecutionContext.IsRunMode)

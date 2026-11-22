@@ -17,10 +17,7 @@ import { server } from "@workspace/mocks/node";
 
 setupMfeTestEnv({
   MicrofrontendsServer,
-  configPath: path.resolve(
-    import.meta.dirname,
-    "../microfrontends.config.json",
-  ),
+  configPath: path.resolve(import.meta.dirname, "../microfrontends.json"),
   appName: "storefront",
 });
 

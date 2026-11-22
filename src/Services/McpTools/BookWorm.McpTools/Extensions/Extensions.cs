@@ -4,7 +4,6 @@ using BookWorm.Chassis.Utilities.Configurations;
 using BookWorm.Constants.Aspire;
 using BookWorm.Constants.Core;
 using BookWorm.McpTools.Options;
-using BookWorm.ServiceDefaults.Cors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
@@ -23,7 +22,7 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            builder.AddDefaultCors();
+            builder.AddMcpCors();
 
             builder.AddDefaultAuthentication();
 
@@ -41,6 +40,8 @@ internal static class Extensions
             // Add exception handlers
             services.AddGlobalExceptionHandler();
             services.AddProblemDetails();
+
+            builder.AddRateLimiting();
 
             // Configure gRPC clients
             builder.AddGrpcServices();

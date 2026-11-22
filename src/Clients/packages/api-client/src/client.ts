@@ -13,6 +13,7 @@ import { HttpHeaders } from "./headers";
 export { HttpHeaders } from "./headers";
 
 const DEFAULT_MAX_RETRIES = Number(process.env.NEXT_PUBLIC_MAX_RETRIES) || 5;
+const MAX_RETRY_AFTER_MS = 60_000;
 const IDEMPOTENT_HTTP_METHODS = new Set([
   "get",
   "head",
@@ -62,6 +63,54 @@ export function extractETag(
   headers: AxiosResponse["headers"],
 ): string | undefined {
   return getHeaderValue(headers, HttpHeaders.ETag);
+}
+
+/**
+ * Parses an HTTP `Retry-After` header (delay-seconds or HTTP-date) into
+ * milliseconds, clamped to {@link MAX_RETRY_AFTER_MS}.
+ */
+export function parseRetryAfterMs(
+  headers: AxiosResponse["headers"],
+  now = Date.now(),
+): number | undefined {
+  const value = getHeaderValue(headers, HttpHeaders.RetryAfter);
+  if (!value) {
+    return undefined;
+  }
+
+  if (/^\d+$/.test(value)) {
+    const seconds = Number(value);
+    return Math.min(seconds * 1000, MAX_RETRY_AFTER_MS);
+  }
+
+  const retryAtMs = Date.parse(value);
+  if (Number.isNaN(retryAtMs)) {
+    return undefined;
+  }
+
+  return Math.min(Math.max(0, retryAtMs - now), MAX_RETRY_AFTER_MS);
+}
+
+function waitForDelay(ms: number, signal?: AbortSignal): Promise<void> {
+  if (ms <= 0) {
+    return Promise.resolve();
+  }
+
+  signal?.throwIfAborted();
+
+  return new Promise((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal?.reason);
+    };
+
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 export function isPreconditionFailedError(error: unknown): boolean {
@@ -123,17 +172,45 @@ export default class ApiClient {
     }
 
     const method = error.config?.method?.toLowerCase();
-    return method !== undefined && IDEMPOTENT_HTTP_METHODS.has(method);
+    if (method !== undefined && IDEMPOTENT_HTTP_METHODS.has(method)) {
+      return true;
+    }
+
+    const headers = error.config?.headers;
+    const hasIdempotencyKey =
+      headers instanceof AxiosHeaders
+        ? Boolean(headers.get(HttpHeaders.RequestId))
+        : Boolean(
+            headers?.[HttpHeaders.RequestId] ??
+            headers?.[HttpHeaders.RequestId.toLowerCase()],
+          );
+
+    return hasIdempotencyKey;
   }
 
   private requestWithRetry<T>(
     operation: () => Promise<AxiosResponse<T>>,
     signal?: AxiosRequestConfig["signal"],
   ): Promise<AxiosResponse<T>> {
+    const abortSignal = signal instanceof AbortSignal ? signal : undefined;
+
     return pRetry(operation, {
       retries: this.maxRetries,
-      signal: signal instanceof AbortSignal ? signal : undefined,
-      shouldRetry: ({ error }) => this.shouldRetryRequest(error),
+      signal: abortSignal,
+      shouldRetry: async ({ error, retryDelay }) => {
+        if (!this.shouldRetryRequest(error)) {
+          return false;
+        }
+
+        if (axios.isAxiosError(error) && error.response) {
+          const retryAfterMs = parseRetryAfterMs(error.response.headers);
+          if (retryAfterMs !== undefined && retryAfterMs > retryDelay) {
+            await waitForDelay(retryAfterMs - retryDelay, abortSignal);
+          }
+        }
+
+        return true;
+      },
     });
   }
 

@@ -11,24 +11,18 @@ internal sealed class PlaceOrderCommandHandler(
     [WolverineHandler]
     public async Task Handle(PlaceOrderCommand message, CancellationToken cancellationToken)
     {
-        if (
-            idempotencyGuard is not null
-            && !await idempotencyGuard.TryAcquireAsync(
-                message.Id,
-                nameof(PlaceOrderCommandHandler),
-                cancellationToken: cancellationToken
-            )
-        )
-        {
-            return;
-        }
-
-        await OrderNotificationHelper.SendAsync(
-            sender,
-            renderer,
-            message.ToOrder(),
-            message.Email,
-            cancellationToken
+        await idempotencyGuard.ExecuteAsync(
+            message.Id,
+            nameof(PlaceOrderCommandHandler),
+            ct =>
+                OrderNotificationHelper.SendAsync(
+                    sender,
+                    renderer,
+                    message.ToOrder(),
+                    message.Email,
+                    ct
+                ),
+            cancellationToken: cancellationToken
         );
     }
 }

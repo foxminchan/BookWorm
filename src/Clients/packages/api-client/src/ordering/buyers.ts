@@ -58,6 +58,7 @@ class BuyersApiClient {
     const response = await this.client.post<Buyer>(
       API_ENDPOINTS.ordering.buyers.root,
       request,
+      { headers: { [HttpHeaders.RequestId]: crypto.randomUUID() } },
     );
     return response.data;
   }

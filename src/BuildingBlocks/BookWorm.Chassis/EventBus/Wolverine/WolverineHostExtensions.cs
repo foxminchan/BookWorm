@@ -168,7 +168,7 @@ public static class WolverineHostExtensions
                 .WithFullJitter()
                 .Then.MoveToErrorQueue();
 
-            opts.OnException<JsonException>().MoveToErrorQueue();
+            opts.OnException<JsonException>().Or<FormatException>().MoveToErrorQueue();
         }
 
         /// <summary>

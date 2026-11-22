@@ -1,5 +1,6 @@
 using BookWorm.Basket.Domain;
 using BookWorm.Basket.IntegrationEvents.EventHandlers;
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Contracts;
 
 namespace BookWorm.Basket.UnitTests.IntegrationEvents;
@@ -64,5 +65,46 @@ public sealed class PlaceOrderCommandHandlerTests
         publishedEvent.BasketId.ShouldBe(basketId);
         publishedEvent.Email.ShouldBe(email);
         publishedEvent.TotalMoney.ShouldBe(totalMoney);
+    }
+
+    [Test]
+    public async Task GivenDuplicatePlaceOrderCommand_WhenConsuming_ThenShouldReturnCompleteEventWithoutDeletingAgain()
+    {
+        // Arrange
+        var basketId = Guid.CreateVersion7();
+        var orderId = Guid.CreateVersion7();
+        const decimal totalMoney = 99.99m;
+
+        var command = new PlaceOrderCommand(
+            basketId,
+            "John Doe",
+            "john@example.com",
+            orderId,
+            totalMoney
+        );
+
+        var guardMock = new Mock<IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    orderId,
+                    nameof(PlaceOrderCommandHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(false);
+
+        var handler = new PlaceOrderCommandHandler(_repositoryMock.Object, guardMock.Object);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var publishedEvent = result.ShouldBeOfType<BasketDeletedCompleteIntegrationEvent>();
+        publishedEvent.OrderId.ShouldBe(orderId);
+        publishedEvent.BasketId.ShouldBe(basketId);
+        publishedEvent.TotalMoney.ShouldBe(totalMoney);
+        _repositoryMock.Verify(x => x.DeleteBasketAsync(It.IsAny<string>()), Times.Never);
     }
 }

@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using BookWorm.Chassis.Utilities.Configurations;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
@@ -41,6 +42,14 @@ public static class RateLimiterExtensions
         {
             var services = builder.Services;
 
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownIPNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             // Registers ASP.NET Core rate limiting services.
             services.AddRateLimiter();
 
@@ -69,6 +78,17 @@ public static class RateLimiterExtensions
                 }
             );
 
+            // Configures server-side load shedding via concurrency limiter options.
+            builder.Configure<ConcurrencyLimiterOptions>(
+                $"{nameof(RateLimiter)}:{nameof(ConcurrencyLimiter)}",
+                configure: options =>
+                {
+                    options.PermitLimit = 100;
+                    options.QueueLimit = 0;
+                    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                }
+            );
+
             // Applies rate limiter pipeline behavior and policy wiring.
             services
                 .AddOptions<RateLimiterOptions>()
@@ -76,14 +96,18 @@ public static class RateLimiterExtensions
                     (
                         RateLimiterOptions options,
                         IOptionsMonitor<TokenBucketRateLimiterOptions> userRateLimitingOptions,
-                        IOptionsMonitor<FixedWindowRateLimiterOptions> windowRateLimiterOptions
+                        IOptionsMonitor<FixedWindowRateLimiterOptions> windowRateLimiterOptions,
+                        IOptionsMonitor<ConcurrencyLimiterOptions> concurrencyLimiterOptions
                     ) =>
                     {
                         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
                         options.AddRejectBehavior();
 
-                        options.AddDefaultLimiter(windowRateLimiterOptions);
+                        options.AddDefaultLimiter(
+                            windowRateLimiterOptions,
+                            concurrencyLimiterOptions
+                        );
 
                         options.AddUserRateLimiter(userRateLimitingOptions);
                     }
@@ -106,15 +130,25 @@ public static class RateLimiterExtensions
     extension(RateLimiterOptions option)
     {
         private void AddDefaultLimiter(
-            IOptionsMonitor<FixedWindowRateLimiterOptions> fixedWindowRateLimiterOptions
+            IOptionsMonitor<FixedWindowRateLimiterOptions> fixedWindowRateLimiterOptions,
+            IOptionsMonitor<ConcurrencyLimiterOptions> concurrencyLimiterOptions
         )
         {
-            option.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    context.Connection.RemoteIpAddress?.ToString()
-                        ?? context.Request.Headers.Host.ToString(),
-                    _ => fixedWindowRateLimiterOptions.CurrentValue
+            var fixedWindowLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                RateLimitPartition.GetFixedWindowLimiter(ResolveClientPartitionKey(context), _ =>
+                    fixedWindowRateLimiterOptions.CurrentValue
                 )
+            );
+
+            var loadSheddingLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
+                RateLimitPartition.GetConcurrencyLimiter("load-shedding", _ =>
+                    concurrencyLimiterOptions.CurrentValue
+                )
+            );
+
+            option.GlobalLimiter = PartitionedRateLimiter.CreateChained(
+                loadSheddingLimiter,
+                fixedWindowLimiter
             );
         }
 
@@ -124,16 +158,10 @@ public static class RateLimiterExtensions
         {
             option.AddPolicy(PerUserPolicy, context =>
             {
-                var username = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var partitionKey = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? ResolveClientPartitionKey(context);
 
-                if (string.IsNullOrEmpty(username))
-                {
-                    throw new UnauthorizedAccessException(
-                        "User is not authenticated. Rate limiting requires an authenticated user."
-                    );
-                }
-
-                return RateLimitPartition.GetTokenBucketLimiter(username, _ =>
+                return RateLimitPartition.GetTokenBucketLimiter(partitionKey, _ =>
                     userRateLimitingOptions.CurrentValue
                 );
             });
@@ -146,32 +174,41 @@ public static class RateLimiterExtensions
                 var httpContext = context.HttpContext;
                 var serviceProvider = httpContext.RequestServices;
 
+                var detail = "The server is currently shedding load. Please try again shortly.";
+
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                 {
-                    var milliseconds = retryAfter.TotalMilliseconds.ToString(
-                        CultureInfo.InvariantCulture
-                    );
+                    var retryAfterSeconds = Math.Max(1, (int)Math.Ceiling(retryAfter.TotalSeconds))
+                        .ToString(CultureInfo.InvariantCulture);
 
-                    httpContext.Response.Headers.RetryAfter = milliseconds;
-
-                    var problemDetailsFactory =
-                        serviceProvider.GetRequiredService<ProblemDetailsFactory>();
-
-                    var problemDetails = problemDetailsFactory.CreateProblemDetails(
-                        httpContext,
-                        StatusCodes.Status429TooManyRequests,
-                        "Rate limit exceeded",
-                        $"You have exceeded the rate limit. Try again in {milliseconds} ms."
-                    );
-
-                    await httpContext.Response.WriteAsJsonAsync(
-                        problemDetails,
-                        RateLimiterSerializationContext.Default.ProblemDetails,
-                        cancellationToken: cancellationToken
-                    );
+                    httpContext.Response.Headers.RetryAfter = retryAfterSeconds;
+                    detail =
+                        $"You have exceeded the rate limit. Try again in {retryAfterSeconds} seconds.";
                 }
+
+                var problemDetailsFactory =
+                    serviceProvider.GetRequiredService<ProblemDetailsFactory>();
+
+                var problemDetails = problemDetailsFactory.CreateProblemDetails(
+                    httpContext,
+                    StatusCodes.Status429TooManyRequests,
+                    "Rate limit exceeded",
+                    detail
+                );
+
+                await httpContext.Response.WriteAsJsonAsync(
+                    problemDetails,
+                    RateLimiterSerializationContext.Default.ProblemDetails,
+                    cancellationToken: cancellationToken
+                );
             };
         }
+    }
+
+    private static string ResolveClientPartitionKey(HttpContext context)
+    {
+        return context.Connection.RemoteIpAddress?.ToString()
+            ?? context.Request.Headers.Host.ToString();
     }
 }
 

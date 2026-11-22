@@ -1,3 +1,5 @@
+using BookWorm.Chassis.EventBus.Wolverine;
+
 namespace BookWorm.Scheduler.Extensions;
 
 internal static class Extensions
@@ -8,7 +10,9 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            builder.AddEventBus<ISchedulerApiMarker>();
+            builder.AddEventBus<ISchedulerApiMarker>(opts =>
+                opts.UsePostgresOutbox(builder.Configuration, Components.Database.Scheduler)
+            );
 
             services.AddQuartz(builder.Configuration.GetSection("Quartz"), q =>
             {

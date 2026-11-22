@@ -54,7 +54,30 @@ internal sealed class IdempotencyEndpointFilter : IEndpointFilter
             );
         }
 
-        return await next(context);
+        try
+        {
+            var response = await next(context);
+
+            if (
+                response
+                    is IStatusCodeHttpResult
+                    {
+                        StatusCode: >= StatusCodes.Status500InternalServerError
+                    }
+                || context.HttpContext.Response.StatusCode
+                    >= StatusCodes.Status500InternalServerError
+            )
+            {
+                await requestManager.DeleteAsync(idempotencyKey, CancellationToken.None);
+            }
+
+            return response;
+        }
+        catch
+        {
+            await requestManager.DeleteAsync(idempotencyKey, CancellationToken.None);
+            throw;
+        }
     }
 
     private static bool IsIdempotentMethod(string method)

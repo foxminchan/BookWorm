@@ -16,7 +16,7 @@ internal sealed class MailKitClientFactory(MailKitSettings settings)
             throw new InvalidOperationException("SMTP endpoint is not configured.");
         }
 
-        var client = new SmtpClient();
+        var client = new SmtpClient { Timeout = 10_000 };
 
         try
         {

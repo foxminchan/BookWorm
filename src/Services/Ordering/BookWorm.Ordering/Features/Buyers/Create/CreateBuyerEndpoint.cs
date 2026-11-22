@@ -1,4 +1,5 @@
 ﻿using BookWorm.Ordering.Features.Buyers.Get;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookWorm.Ordering.Features.Buyers.Create;
 
@@ -9,10 +10,17 @@ internal sealed class CreateBuyerEndpoint
     {
         app.MapPost(
                 "/buyers",
-                async (CreateBuyerCommand command, ISender sender, LinkGenerator linker) =>
-                    await HandleAsync(command, sender, linker)
+                async (
+                    [FromHeader(Name = Http.RequestIdHeader)]
+                    [Description("The idempotency key of the buyer to be created")]
+                        string key,
+                    CreateBuyerCommand command,
+                    ISender sender,
+                    LinkGenerator linker
+                ) => await HandleAsync(command, sender, linker)
             )
             .ProducesPost<BuyerId>()
+            .WithIdempotency()
             .WithTags(nameof(Buyer))
             .WithName(nameof(CreateBuyerEndpoint))
             .WithSummary("Create Buyer")

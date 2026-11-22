@@ -11,24 +11,18 @@ internal sealed class CompleteOrderCommandHandler(
     [WolverineHandler]
     public async Task Handle(CompleteOrderCommand message, CancellationToken cancellationToken)
     {
-        if (
-            idempotencyGuard is not null
-            && !await idempotencyGuard.TryAcquireAsync(
-                message.Id,
-                nameof(CompleteOrderCommandHandler),
-                cancellationToken: cancellationToken
-            )
-        )
-        {
-            return;
-        }
-
-        await OrderNotificationHelper.SendAsync(
-            sender,
-            renderer,
-            message.ToOrder(),
-            message.Email,
-            cancellationToken
+        await idempotencyGuard.ExecuteAsync(
+            message.Id,
+            nameof(CompleteOrderCommandHandler),
+            ct =>
+                OrderNotificationHelper.SendAsync(
+                    sender,
+                    renderer,
+                    message.ToOrder(),
+                    message.Email,
+                    ct
+                ),
+            cancellationToken: cancellationToken
         );
     }
 }

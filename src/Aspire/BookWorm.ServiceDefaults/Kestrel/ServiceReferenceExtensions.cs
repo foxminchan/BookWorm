@@ -74,17 +74,27 @@ public static class ServiceReferenceExtensions
             var builder = clientName is null
                 ? services.AddGrpcClient<TClient>(o => o.Address = uri)
                 : services.AddGrpcClient<TClient>(clientName, o => o.Address = uri);
-            builder.ConfigurePrimaryHttpMessageHandler(() =>
-                new SocketsHttpHandler
-                {
-                    PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
-                    KeepAlivePingDelay = TimeSpan.FromSeconds(60),
-                    KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
-                    EnableMultipleHttp2Connections = true,
-                }
-            );
 
-            builder.AddStandardResilienceHandler().UseBudgetedRetries();
+            builder
+                .EnableCallContextPropagation(o => o.SuppressContextNotFoundErrors = true)
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                    new SocketsHttpHandler
+                    {
+                        PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
+                        KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+                        KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
+                        EnableMultipleHttp2Connections = true,
+                    }
+                );
+
+            builder
+                .AddStandardResilienceHandler(options =>
+                {
+                    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(3);
+                    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(10);
+                    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+                })
+                .UseBudgetedRetries();
 
             AddGrpcHealthChecks(
                 services,

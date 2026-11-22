@@ -15,27 +15,23 @@ internal sealed class FeedbackDeletedIntegrationEventHandler(
         CancellationToken cancellationToken
     )
     {
-        if (
-            idempotencyGuard is not null
-            && !await idempotencyGuard.TryAcquireAsync(
-                @event.Id,
-                nameof(FeedbackDeletedIntegrationEventHandler),
-                cancellationToken: cancellationToken
-            )
-        )
-        {
-            return;
-        }
+        await idempotencyGuard.ExecuteAsync(
+            @event.Id,
+            nameof(FeedbackDeletedIntegrationEventHandler),
+            async ct =>
+            {
+                var book = await repository.GetByIdAsync(@event.BookId, ct);
 
-        var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
+                if (book is null)
+                {
+                    return;
+                }
 
-        if (book is null)
-        {
-            return;
-        }
+                book.RemoveRating(@event.Rating);
 
-        book.RemoveRating(@event.Rating);
-
-        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+                await repository.UnitOfWork.SaveEntitiesAsync(ct);
+            },
+            cancellationToken: cancellationToken
+        );
     }
 }

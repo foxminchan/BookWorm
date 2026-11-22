@@ -22,6 +22,8 @@ app.UseExceptionHandler();
 
 app.UseStatusCodePages();
 
+app.UseForwardedHeaders();
+
 app.UseDefaultCors();
 
 app.UseRateLimiter();

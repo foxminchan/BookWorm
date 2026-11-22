@@ -45,7 +45,9 @@ public static class DbContextExtensions
                         .UseNpgsql(
                             builder.Configuration.GetConnectionString(name),
                             npgsqlDbContextOptionsBuilder =>
-                                npgsqlDbContextOptionsBuilder.EnableRetryOnFailure()
+                                npgsqlDbContextOptionsBuilder
+                                    .CommandTimeout(10)
+                                    .EnableRetryOnFailure()
                         )
                         .UseSnakeCaseNamingConvention()
                         .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)

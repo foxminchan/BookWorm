@@ -12,27 +12,23 @@ internal sealed class DeleteBasketFailedCommandHandler(
     [WolverineHandler]
     public async Task Handle(DeleteBasketFailedCommand message, CancellationToken cancellationToken)
     {
-        if (
-            idempotencyGuard is not null
-            && !await idempotencyGuard.TryAcquireAsync(
-                message.Id,
-                nameof(DeleteBasketFailedCommandHandler),
-                cancellationToken: cancellationToken
-            )
-        )
-        {
-            return;
-        }
+        await idempotencyGuard.ExecuteAsync(
+            message.Id,
+            nameof(DeleteBasketFailedCommandHandler),
+            async ct =>
+            {
+                var order = await repository.GetByIdAsync(message.OrderId, ct);
 
-        var order = await repository.GetByIdAsync(message.OrderId, cancellationToken);
+                if (order is null)
+                {
+                    return;
+                }
 
-        if (order is null)
-        {
-            return;
-        }
+                order.Delete();
 
-        order.Delete();
-
-        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+                await repository.UnitOfWork.SaveEntitiesAsync(ct);
+            },
+            cancellationToken: cancellationToken
+        );
     }
 }

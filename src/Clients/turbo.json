@@ -48,7 +48,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env*",
-        "$TURBO_ROOT$/apps/storefront/microfrontends.config.json"
+        "$TURBO_ROOT$/apps/storefront/microfrontends.json"
       ],
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
     },

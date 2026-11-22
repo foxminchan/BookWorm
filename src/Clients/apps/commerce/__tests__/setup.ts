@@ -19,7 +19,7 @@ setupMfeTestEnv({
   MicrofrontendsServer,
   configPath: path.resolve(
     import.meta.dirname,
-    "../../storefront/microfrontends.config.json",
+    "../../storefront/microfrontends.json",
   ),
   appName: "commerce",
 });

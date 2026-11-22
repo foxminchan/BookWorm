@@ -11,4 +11,5 @@ export const HttpHeaders = {
   Location: "Location",
   PaginationCount: "Pagination-Count",
   RequestId: "x-request-id",
+  RetryAfter: "Retry-After",
 } as const;

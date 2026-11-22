@@ -4,17 +4,22 @@
     "storefront": {
       "packageName": "@bookworm/storefront",
       "development": {
+        "local": 3000,
         "fallback": "https://localhost:3000"
       }
     },
     "commerce": {
       "packageName": "@bookworm/commerce",
       "assetPrefix": "commerce-assets",
+      "development": {
+        "local": 3001
+      },
       "routing": [
         {
           "group": "commerce",
           "paths": [
             "/basket",
+            "/checkout",
             "/checkout/:path*",
             "/account",
             "/account/:path*",
