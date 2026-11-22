@@ -1,8 +1,9 @@
 "use client";
 
 import { useHumanInTheLoop } from "@copilotkit/react-core/v2";
+import { toStandardJsonSchema } from "@valibot/to-json-schema";
 import { HelpCircle } from "lucide-react";
-import { z } from "zod";
+import * as v from "valibot";
 
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -13,24 +14,32 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 
-const routeOptionSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  description: z.string(),
+const routeOptionSchema = v.object({
+  id: v.string(),
+  label: v.string(),
+  description: v.string(),
 });
 
-const disambiguateRouteParameters = z.object({
-  question: z.string().describe("Clarifying question to present to the user"),
-  suggestedRoute: z
-    .string()
-    .describe("The top-scoring candidate route identifier"),
-  confidence: z
-    .number()
-    .describe("Router confidence score for the suggested route"),
-  options: z
-    .array(routeOptionSchema)
-    .describe("Available specialist route options"),
-});
+const disambiguateRouteParameters = toStandardJsonSchema(
+  v.object({
+    question: v.pipe(
+      v.string(),
+      v.description("Clarifying question to present to the user"),
+    ),
+    suggestedRoute: v.pipe(
+      v.string(),
+      v.description("The top-scoring candidate route identifier"),
+    ),
+    confidence: v.pipe(
+      v.number(),
+      v.description("Router confidence score for the suggested route"),
+    ),
+    options: v.pipe(
+      v.array(routeOptionSchema),
+      v.description("Available specialist route options"),
+    ),
+  }),
+);
 
 export function useRouteDisambiguation() {
   useHumanInTheLoop({

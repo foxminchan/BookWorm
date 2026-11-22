@@ -1,15 +1,15 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import * as v from "valibot";
 
 /** Validates CopilotKit chat assistant environment variables. */
 export const copilotKeys = () =>
   createEnv({
     client: {
-      NEXT_PUBLIC_COPILOT_AGENT_NAME: z.string().default("chat-workflow"),
-      NEXT_PUBLIC_COPILOT_ENABLED: z
-        .string()
-        .default("false")
-        .transform((val) => val === "true"),
+      NEXT_PUBLIC_COPILOT_AGENT_NAME: v.optional(v.string(), "chat-workflow"),
+      NEXT_PUBLIC_COPILOT_ENABLED: v.pipe(
+        v.optional(v.string(), "false"),
+        v.transform((val) => val === "true"),
+      ),
     },
     runtimeEnv: {
       NEXT_PUBLIC_COPILOT_AGENT_NAME:

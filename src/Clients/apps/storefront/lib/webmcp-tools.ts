@@ -1,20 +1,24 @@
-import { z } from "zod";
+import { toStandardJsonSchema } from "@valibot/to-json-schema";
+import * as v from "valibot";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
 
-export const searchBooksParameters = z.object({
-  query: z.string().describe("The search query (title, author, or keywords)"),
-  category: z
-    .string()
-    .optional()
-    .describe("Optional category filter (fiction, non-fiction, etc.)"),
-  maxResults: z
-    .number()
-    .optional()
-    .describe("Maximum number of results to return (default 10)"),
+export const searchBooksParameters = v.object({
+  query: v.pipe(
+    v.string(),
+    v.description("The search query (title, author, or keywords)"),
+  ),
+  category: v.pipe(
+    v.optional(v.string()),
+    v.description("Optional category filter (fiction, non-fiction, etc.)"),
+  ),
+  maxResults: v.pipe(
+    v.optional(v.number()),
+    v.description("Maximum number of results to return (default 10)"),
+  ),
 });
 
-export type SearchBooksArgs = z.infer<typeof searchBooksParameters>;
+export type SearchBooksArgs = v.InferOutput<typeof searchBooksParameters>;
 
 /**
  * Shared `searchBooks` tool definition used by both `useBookSearchActions`
@@ -25,7 +29,7 @@ export const searchBooksTool = {
   name: "searchBooks",
   description:
     "Search for books by title, author, category, or keywords. Returns a list of matching books.",
-  parameters: searchBooksParameters,
+  parameters: toStandardJsonSchema(searchBooksParameters),
   handler: async ({
     query,
     category,
@@ -50,11 +54,14 @@ export const searchBooksTool = {
   },
 } as const;
 
-export const getBookDetailsParameters = z.object({
-  bookId: z.string().describe("The unique identifier of the book to retrieve"),
+export const getBookDetailsParameters = v.object({
+  bookId: v.pipe(
+    v.string(),
+    v.description("The unique identifier of the book to retrieve"),
+  ),
 });
 
-export type GetBookDetailsArgs = z.infer<typeof getBookDetailsParameters>;
+export type GetBookDetailsArgs = v.InferOutput<typeof getBookDetailsParameters>;
 
 /**
  * Shared `getBookDetails` tool definition used by both `useBookSearchActions`
@@ -65,7 +72,7 @@ export const getBookDetailsTool = {
   name: "getBookDetails",
   description:
     "Retrieve detailed information about a specific book by its ID, including description, price, authors, and rating.",
-  parameters: getBookDetailsParameters,
+  parameters: toStandardJsonSchema(getBookDetailsParameters),
   handler: async ({ bookId }: GetBookDetailsArgs): Promise<string> => {
     const book = await booksApiClient.get(bookId);
     return JSON.stringify(book);

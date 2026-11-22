@@ -1,42 +1,51 @@
-import { z } from "zod";
+import * as v from "valibot";
 
 const MAX_BOOK_DESCRIPTION_LENGTH = 500;
 const MAX_BOOK_NAME_LENGTH = 50;
 
-const baseBookSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .max(
+const baseBookEntries = {
+  name: v.pipe(
+    v.string(),
+    v.minLength(1, "Name is required"),
+    v.maxLength(
       MAX_BOOK_NAME_LENGTH,
       `Name must be ${MAX_BOOK_NAME_LENGTH} characters or less`,
     ),
-  description: z
-    .string()
-    .min(1, "Description is required")
-    .max(
+  ),
+  description: v.pipe(
+    v.string(),
+    v.minLength(1, "Description is required"),
+    v.maxLength(
       MAX_BOOK_DESCRIPTION_LENGTH,
       `Description must be ${MAX_BOOK_DESCRIPTION_LENGTH} characters or less`,
     ),
-  price: z.number().positive("Price must be greater than 0"),
-  priceSale: z.number().nullable().optional(),
-  categoryId: z.string().min(1, "Category is required"),
-  publisherId: z.string().min(1, "Publisher is required"),
+  ),
+  price: v.pipe(
+    v.number("Price must be a number"),
+    v.gtValue(0, "Price must be greater than 0"),
+  ),
+  priceSale: v.nullish(v.number()),
+  categoryId: v.pipe(v.string(), v.minLength(1, "Category is required")),
+  publisherId: v.pipe(v.string(), v.minLength(1, "Publisher is required")),
+};
+
+export const createBookSchema = v.object({
+  ...baseBookEntries,
+  authorIds: v.pipe(
+    v.array(v.pipe(v.string(), v.minLength(1, "Invalid author ID format"))),
+    v.minLength(1, "At least one author is required"),
+  ),
 });
 
-export const createBookSchema = baseBookSchema.extend({
-  authorIds: z
-    .array(z.string().min(1, "Invalid author ID format"))
-    .min(1, "At least one author is required"),
+export const updateBookSchema = v.object({
+  ...baseBookEntries,
+  id: v.pipe(v.string(), v.uuid("Invalid ID format")),
+  authorIds: v.pipe(
+    v.array(v.pipe(v.string(), v.uuid("Invalid author ID format"))),
+    v.minLength(1, "At least one author is required"),
+  ),
+  isRemoveImage: v.optional(v.boolean()),
 });
 
-export const updateBookSchema = baseBookSchema.extend({
-  id: z.uuid({ error: "Invalid ID format" }),
-  authorIds: z
-    .array(z.uuid({ error: "Invalid author ID format" }))
-    .min(1, "At least one author is required"),
-  isRemoveImage: z.boolean().optional(),
-});
-
-export type CreateBookInput = z.infer<typeof createBookSchema>;
-export type UpdateBookInput = z.infer<typeof updateBookSchema>;
+export type CreateBookInput = v.InferOutput<typeof createBookSchema>;
+export type UpdateBookInput = v.InferOutput<typeof updateBookSchema>;

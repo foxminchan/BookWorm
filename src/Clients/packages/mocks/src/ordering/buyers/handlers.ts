@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import { HttpHeaders } from "@workspace/api-client/headers";
@@ -58,19 +59,22 @@ export const buyersHandlers = [
     mockUrl(API_ENDPOINTS.ordering.buyers.root),
     async ({ request }) => {
       const body = await request.json();
-      const result = createBuyerSchema.safeParse(body);
+      const result = v.safeParse(createBuyerSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
       const buyer = buyersStoreManager.create(
         "Anonymous",
-        result.data.street,
-        result.data.city,
-        result.data.province,
+        result.output.street,
+        result.output.city,
+        result.output.province,
       );
 
       const headers = new Headers();
@@ -87,19 +91,22 @@ export const buyersHandlers = [
     mockUrl(API_ENDPOINTS.ordering.buyers.address),
     async ({ request }) => {
       const body = await request.json();
-      const result = updateAddressSchema.safeParse(body);
+      const result = v.safeParse(updateAddressSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
       const buyer = buyersStoreManager.updateAddress(
         MOCK_USER_ID,
-        result.data.street,
-        result.data.city,
-        result.data.province,
+        result.output.street,
+        result.output.city,
+        result.output.province,
       );
 
       if (!buyer) {

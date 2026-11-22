@@ -1,8 +1,9 @@
 "use client";
 
 import { useComponent } from "@copilotkit/react-core/v2";
+import { toStandardJsonSchema } from "@valibot/to-json-schema";
 import { ShoppingCart, Star } from "lucide-react";
-import { z } from "zod";
+import * as v from "valibot";
 
 import type { BasketItem } from "@workspace/types/basket";
 import { Badge } from "@workspace/ui/components/badge";
@@ -16,67 +17,76 @@ import { calculateDiscount, formatPrice } from "@workspace/utils/format";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
-const bookCardSchema = z.object({
-  id: z.string().describe("Unique identifier for the book"),
-  title: z.string().describe("Title of the book"),
-  authors: z.array(z.string()).describe("List of author names"),
-  price: z.number().describe("Original price"),
-  priceSale: z
-    .number()
-    .nullable()
-    .optional()
-    .describe("Sale price if on discount"),
-  imageUrl: z.string().nullable().optional().describe("Cover image URL"),
-  averageRating: z.number().optional().describe("Average star rating (0–5)"),
-  status: z.enum(["InStock", "OutOfStock"]).describe("Availability status"),
-  description: z
-    .string()
-    .nullable()
-    .optional()
-    .describe("Short description or blurb"),
+const bookCardSchema = v.object({
+  id: v.pipe(v.string(), v.description("Unique identifier for the book")),
+  title: v.pipe(v.string(), v.description("Title of the book")),
+  authors: v.pipe(v.array(v.string()), v.description("List of author names")),
+  price: v.pipe(v.number(), v.description("Original price")),
+  priceSale: v.pipe(
+    v.nullish(v.number()),
+    v.description("Sale price if on discount"),
+  ),
+  imageUrl: v.pipe(v.nullish(v.string()), v.description("Cover image URL")),
+  averageRating: v.pipe(
+    v.optional(v.number()),
+    v.description("Average star rating (0–5)"),
+  ),
+  status: v.pipe(
+    v.picklist(["InStock", "OutOfStock"]),
+    v.description("Availability status"),
+  ),
+  description: v.pipe(
+    v.nullish(v.string()),
+    v.description("Short description or blurb"),
+  ),
 });
 
-type BookCardProps = z.infer<typeof bookCardSchema>;
+type BookCardProps = v.InferOutput<typeof bookCardSchema>;
 
-const bookListSchema = z.object({
-  query: z
-    .string()
-    .optional()
-    .describe("Search query that produced these results"),
-  books: z
-    .array(
-      z.object({
-        id: z.string(),
-        title: z.string(),
-        authors: z.array(z.string()),
-        price: z.number(),
-        priceSale: z.number().nullable().optional(),
-        averageRating: z.number().optional(),
-        status: z.enum(["InStock", "OutOfStock"]),
+const bookListSchema = v.object({
+  query: v.pipe(
+    v.optional(v.string()),
+    v.description("Search query that produced these results"),
+  ),
+  books: v.pipe(
+    v.array(
+      v.object({
+        id: v.string(),
+        title: v.string(),
+        authors: v.array(v.string()),
+        price: v.number(),
+        priceSale: v.nullish(v.number()),
+        averageRating: v.optional(v.number()),
+        status: v.picklist(["InStock", "OutOfStock"]),
       }),
-    )
-    .describe("List of books to display"),
+    ),
+    v.description("List of books to display"),
+  ),
 });
 
-type BookListProps = z.infer<typeof bookListSchema>;
+type BookListProps = v.InferOutput<typeof bookListSchema>;
 
-const basketSummarySchema = z.object({
-  itemCount: z.number().describe("Total number of distinct items in basket"),
-  totalPrice: z.number().describe("Aggregated total price"),
-  items: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string().nullable().optional(),
-        quantity: z.number(),
-        price: z.number(),
-        priceSale: z.number().nullable().optional(),
+const basketSummarySchema = v.object({
+  itemCount: v.pipe(
+    v.number(),
+    v.description("Total number of distinct items in basket"),
+  ),
+  totalPrice: v.pipe(v.number(), v.description("Aggregated total price")),
+  items: v.pipe(
+    v.array(
+      v.object({
+        id: v.string(),
+        name: v.nullish(v.string()),
+        quantity: v.number(),
+        price: v.number(),
+        priceSale: v.nullish(v.number()),
       }),
-    )
-    .describe("Individual basket lines"),
+    ),
+    v.description("Individual basket lines"),
+  ),
 });
 
-type BasketSummaryProps = z.infer<typeof basketSummarySchema>;
+type BasketSummaryProps = v.InferOutput<typeof basketSummarySchema>;
 
 // ─── Components ─────────────────────────────────────────────────────────────
 
@@ -251,7 +261,7 @@ export function useA2UIComponents() {
       name: "showBookCard",
       description:
         "Render a rich book detail card in chat showing title, authors, price, rating, availability, and an optional description.",
-      parameters: bookCardSchema,
+      parameters: toStandardJsonSchema(bookCardSchema),
       render: BookCardComponent,
     },
     [],
@@ -262,7 +272,7 @@ export function useA2UIComponents() {
       name: "showBookList",
       description:
         "Render a compact list of books in chat, e.g. for search results or recommendations. Each row shows title, authors, and price.",
-      parameters: bookListSchema,
+      parameters: toStandardJsonSchema(bookListSchema),
       render: BookListComponent,
     },
     [],
@@ -273,7 +283,7 @@ export function useA2UIComponents() {
       name: "showBasketSummary",
       description:
         "Render an inline basket summary in chat showing all current basket items, quantities, and the total price.",
-      parameters: basketSummarySchema,
+      parameters: toStandardJsonSchema(basketSummarySchema),
       render: BasketSummaryComponent,
     },
     [],

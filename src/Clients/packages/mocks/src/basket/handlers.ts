@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import { HttpHeaders } from "@workspace/api-client/headers";
@@ -46,17 +47,20 @@ export const basketHandlers = [
   ...basketPaths.map((path) =>
     http.post(path, async ({ request }) => {
       const body = await request.json();
-      const result = createBasketSchema.safeParse(body);
+      const result = v.safeParse(createBasketSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
       const basket = basketStore.createOrUpdate(
         MOCK_USER_ID,
-        result.data.items.map((item) => ({
+        result.output.items.map((item) => ({
           id: item.id,
           quantity: item.quantity,
           name: `Book ${item.id.substring(0, 8)}`,
@@ -75,12 +79,15 @@ export const basketHandlers = [
   ...basketPaths.map((path) =>
     http.put(path, async ({ request }) => {
       const body = await request.json();
-      const result = updateBasketSchema.safeParse(body);
+      const result = v.safeParse(updateBasketSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
       const existingBasket = basketStore.get(MOCK_USER_ID);
@@ -91,7 +98,7 @@ export const basketHandlers = [
 
       basketStore.createOrUpdate(
         MOCK_USER_ID,
-        result.data.items.map((item) => ({
+        result.output.items.map((item) => ({
           id: item.id,
           quantity: item.quantity,
           name: `Book ${item.id.substring(0, 8)}`,

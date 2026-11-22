@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import type {
@@ -32,15 +33,18 @@ export const publishersHandlers = [
     mockUrl(API_ENDPOINTS.catalog.publishers.root),
     async ({ request }) => {
       const body = await request.json();
-      const result = createPublisherSchema.safeParse(body);
+      const result = v.safeParse(createPublisherSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const newPublisherId = publishersStore.create(result.data.name);
+      const newPublisherId = publishersStore.create(result.output.name);
       return HttpResponse.json(newPublisherId, { status: 200 });
     },
   ),
@@ -49,15 +53,21 @@ export const publishersHandlers = [
     mockUrl(API_ENDPOINTS.catalog.publishers.root),
     async ({ request }) => {
       const body = await request.json();
-      const result = updatePublisherSchema.safeParse(body);
+      const result = v.safeParse(updatePublisherSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const updated = publishersStore.update(result.data.id, result.data.name);
+      const updated = publishersStore.update(
+        result.output.id,
+        result.output.name,
+      );
 
       if (!updated) {
         return createNotFoundResponse("Publisher");

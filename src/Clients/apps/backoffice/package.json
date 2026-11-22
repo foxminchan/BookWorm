@@ -48,7 +48,7 @@
     "allure:serve": "allure serve --config ./allurerc.mjs allure-results"
   },
   "dependencies": {
-    "@hookform/resolvers": "^7.0.8",
+    "@formisch/react": "^1.2.0",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-query": "^5.108.2",
     "@tanstack/react-table": "^9.3.1",
@@ -70,11 +70,10 @@
     "next-themes": "^0.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-hook-form": "^7.92.0",
     "recharts": "^3.11.0",
     "sonner": "^2.0.8",
     "ts-pattern": "^5.9.2",
-    "zod": "^4.6.7"
+    "valibot": "^1.5.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

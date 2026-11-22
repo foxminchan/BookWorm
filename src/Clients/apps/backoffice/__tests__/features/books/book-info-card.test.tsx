@@ -1,21 +1,16 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, useForm } from "@formisch/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useForm } from "react-hook-form";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { Form } from "@workspace/ui/components/form";
-import {
-  type CreateBookInput,
-  createBookSchema,
-} from "@workspace/validations/catalog/books";
+import { createBookSchema } from "@workspace/validations/catalog/books";
 
 import { BookInfoCard } from "@/features/books/book-info-card";
 
 function BookInfoCardWrapper() {
-  const form = useForm<CreateBookInput>({
-    resolver: zodResolver(createBookSchema),
-    defaultValues: {
+  const form = useForm({
+    schema: createBookSchema,
+    initialInput: {
       name: "",
       description: "",
       price: undefined,
@@ -27,7 +22,7 @@ function BookInfoCardWrapper() {
   });
 
   return (
-    <Form {...form}>
+    <Form of={form} onSubmit={vi.fn()}>
       <BookInfoCard form={form} />
     </Form>
   );

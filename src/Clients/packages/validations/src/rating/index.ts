@@ -1,33 +1,39 @@
-import { z } from "zod";
+import * as v from "valibot";
 
 const MAX_COMMENT_LENGTH = 1000;
 
-export const createFeedbackSchema = z.object({
-  bookId: z.string().min(1, "Book ID is required"),
-  firstName: z.string().min(1, "First name is required").optional().nullable(),
-  lastName: z.string().min(1, "Last name is required").optional().nullable(),
-  comment: z
-    .string()
-    .max(
-      MAX_COMMENT_LENGTH,
-      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
-    )
-    .optional()
-    .nullable(),
-  rating: z
-    .number()
-    .int("Rating must be an integer")
-    .min(0, "Rating must be between 0 and 5")
-    .max(5, "Rating must be between 0 and 5"),
+export const createFeedbackSchema = v.object({
+  bookId: v.pipe(v.string(), v.minLength(1, "Book ID is required")),
+  firstName: v.nullish(
+    v.pipe(v.string(), v.minLength(1, "First name is required")),
+  ),
+  lastName: v.nullish(
+    v.pipe(v.string(), v.minLength(1, "Last name is required")),
+  ),
+  comment: v.nullish(
+    v.pipe(
+      v.string(),
+      v.maxLength(
+        MAX_COMMENT_LENGTH,
+        `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
+      ),
+    ),
+  ),
+  rating: v.pipe(
+    v.number(),
+    v.integer("Rating must be an integer"),
+    v.minValue(0, "Rating must be between 0 and 5"),
+    v.maxValue(5, "Rating must be between 0 and 5"),
+  ),
 });
 
-export const listFeedbacksSchema = z.object({
-  bookId: z.string().min(1, "Book ID is required"),
-  pageIndex: z.number().int().positive().default(1).optional(),
-  pageSize: z.number().int().positive().default(10).optional(),
-  orderBy: z.string().default("rating").optional(),
-  isDescending: z.boolean().default(false).optional(),
+export const listFeedbacksSchema = v.object({
+  bookId: v.pipe(v.string(), v.minLength(1, "Book ID is required")),
+  pageIndex: v.optional(v.pipe(v.number(), v.integer(), v.gtValue(0)), 1),
+  pageSize: v.optional(v.pipe(v.number(), v.integer(), v.gtValue(0)), 10),
+  orderBy: v.optional(v.string(), "rating"),
+  isDescending: v.optional(v.boolean(), false),
 });
 
-export type CreateFeedbackInput = z.infer<typeof createFeedbackSchema>;
-export type ListFeedbacksInput = z.infer<typeof listFeedbacksSchema>;
+export type CreateFeedbackInput = v.InferOutput<typeof createFeedbackSchema>;
+export type ListFeedbacksInput = v.InferOutput<typeof listFeedbacksSchema>;

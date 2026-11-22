@@ -1,4 +1,4 @@
-import type { UseFormReturn } from "react-hook-form";
+import { type FormStore, Field as FormischField } from "@formisch/react";
 
 import {
   Card,
@@ -8,18 +8,17 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@workspace/ui/components/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import { Textarea } from "@workspace/ui/components/textarea";
-import type { CreateBookInput } from "@workspace/validations/catalog/books";
+import type { createBookSchema } from "@workspace/validations/catalog/books";
 
 type BookInfoCardProps = Readonly<{
-  form: UseFormReturn<CreateBookInput>;
+  form: FormStore<typeof createBookSchema>;
 }>;
 
 export function BookInfoCard({ form }: BookInfoCardProps) {
@@ -31,50 +30,57 @@ export function BookInfoCard({ form }: BookInfoCardProps) {
           Enter the basic details about the book
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Book Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter book name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <CardContent>
+        <FieldGroup className="gap-4">
+          <FormischField of={form} path={["name"]}>
+            {(field) => (
+              <Field data-invalid={!!field.errors}>
+                <FieldLabel htmlFor="book-name">Book Name</FieldLabel>
+                <Input
+                  {...field.props}
+                  id="book-name"
+                  placeholder="Enter book name"
+                  value={field.input ?? ""}
+                  aria-invalid={!!field.errors}
+                />
+                <FieldError
+                  errors={field.errors?.map((message) => ({ message }))}
+                />
+              </Field>
+            )}
+          </FormischField>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Enter book description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormischField of={form} path={["description"]}>
+            {(field) => (
+              <Field data-invalid={!!field.errors}>
+                <FieldLabel htmlFor="book-description">Description</FieldLabel>
+                <Textarea
+                  {...field.props}
+                  id="book-description"
+                  placeholder="Enter book description"
+                  value={field.input ?? ""}
+                  aria-invalid={!!field.errors}
+                />
+                <FieldError
+                  errors={field.errors?.map((message) => ({ message }))}
+                />
+              </Field>
+            )}
+          </FormischField>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price</FormLabel>
-                <FormControl>
+          <div className="grid grid-cols-2 gap-4">
+            <FormischField of={form} path={["price"]}>
+              {(field) => (
+                <Field data-invalid={!!field.errors}>
+                  <FieldLabel htmlFor="book-price">Price</FieldLabel>
                   <Input
+                    {...field.props}
+                    id="book-price"
                     type="number"
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    {...field}
-                    value={field.value ?? ""}
+                    value={field.input ?? ""}
                     onChange={(e) =>
                       field.onChange(
                         e.target.value
@@ -82,26 +88,29 @@ export function BookInfoCard({ form }: BookInfoCardProps) {
                           : undefined,
                       )
                     }
+                    aria-invalid={!!field.errors}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="priceSale"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sale Price (Optional)</FormLabel>
-                <FormControl>
+                  <FieldError
+                    errors={field.errors?.map((message) => ({ message }))}
+                  />
+                </Field>
+              )}
+            </FormischField>
+
+            <FormischField of={form} path={["priceSale"]}>
+              {(field) => (
+                <Field data-invalid={!!field.errors}>
+                  <FieldLabel htmlFor="book-price-sale">
+                    Sale Price (Optional)
+                  </FieldLabel>
                   <Input
+                    {...field.props}
+                    id="book-price-sale"
                     type="number"
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    {...field}
-                    value={field.value ?? ""}
+                    value={field.input ?? ""}
                     onChange={(e) =>
                       field.onChange(
                         e.target.value
@@ -109,13 +118,16 @@ export function BookInfoCard({ form }: BookInfoCardProps) {
                           : null,
                       )
                     }
+                    aria-invalid={!!field.errors}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                  <FieldError
+                    errors={field.errors?.map((message) => ({ message }))}
+                  />
+                </Field>
+              )}
+            </FormischField>
+          </div>
+        </FieldGroup>
       </CardContent>
     </Card>
   );

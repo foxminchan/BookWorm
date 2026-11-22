@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import { HttpHeaders } from "@workspace/api-client/headers";
@@ -28,7 +29,7 @@ export const feedbacksHandlers = [
       });
     }
 
-    const validation = listFeedbacksSchema.safeParse({
+    const validation = v.safeParse(listFeedbacksSchema, {
       bookId,
       pageIndex,
       pageSize,
@@ -37,9 +38,12 @@ export const feedbacksHandlers = [
     });
 
     if (!validation.success) {
-      return HttpResponse.json(formatValidationErrors(validation.error), {
-        status: 400,
-      });
+      return HttpResponse.json(
+        formatValidationErrors({ issues: validation.issues }),
+        {
+          status: 400,
+        },
+      );
     }
 
     const allFeedbacks = feedbacksStoreManager.get(bookId);
@@ -85,15 +89,18 @@ export const feedbacksHandlers = [
     async ({ request }) => {
       const body = await request.json();
 
-      const validation = createFeedbackSchema.safeParse(body);
+      const validation = v.safeParse(createFeedbackSchema, body);
 
       if (!validation.success) {
-        return HttpResponse.json(formatValidationErrors(validation.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: validation.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const feedback = feedbacksStoreManager.create(validation.data);
+      const feedback = feedbacksStoreManager.create(validation.output);
 
       return HttpResponse.json(feedback.id, { status: 200 });
     },

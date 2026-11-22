@@ -1,4 +1,5 @@
 import { HttpResponse, http, passthrough } from "msw";
+import * as v from "valibot";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import { HttpHeaders } from "@workspace/api-client/headers";
@@ -123,15 +124,18 @@ export const booksHandlers = [
         return parsed.error;
       }
 
-      const result = createBookSchema.safeParse(parsed.baseBody);
+      const result = v.safeParse(createBookSchema, parsed.baseBody);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const newBookId = booksStore.create(result.data);
+      const newBookId = booksStore.create(result.output);
       const createdBook = booksStore.get(newBookId);
 
       const headers = new Headers();
@@ -158,16 +162,19 @@ export const booksHandlers = [
         isRemoveImage: parsed.formData.get("isRemoveImage") === "true",
       };
 
-      const result = updateBookSchema.safeParse(body);
+      const result = v.safeParse(updateBookSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-          headers: createCorsHeaders(request),
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+            headers: createCorsHeaders(request),
+          },
+        );
       }
 
-      const existingBook = booksStore.get(result.data.id);
+      const existingBook = booksStore.get(result.output.id);
 
       if (!existingBook) {
         return withCorsHeaders(request, createNotFoundResponse("Book"));
@@ -179,7 +186,7 @@ export const booksHandlers = [
         return withCorsHeaders(request, createPreconditionFailedResponse());
       }
 
-      booksStore.update(result.data);
+      booksStore.update(result.output);
 
       return new HttpResponse(null, {
         status: 204,

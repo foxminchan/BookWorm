@@ -1,7 +1,7 @@
 {
   "name": "@workspace/validations",
   "version": "1.0.0",
-  "description": "Zod validation schemas for BookWorm API types",
+  "description": "Valibot validation schemas for BookWorm API types",
   "author": "Nhan Nguyen <nguyenxuannhan407@gmail.com> (https://github.com/foxminchan)",
   "licenses": [
     {
@@ -65,12 +65,12 @@
     "lint": "eslint . --max-warnings 0",
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
-  "dependencies": {
-    "zod": "^4.6.7"
-  },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^10.15.0"
+  },
+  "dependencies": {
+    "valibot": "^1.5.0"
   }
 }

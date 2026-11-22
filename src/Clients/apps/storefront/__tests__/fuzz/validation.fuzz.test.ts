@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 
 import { basketItemRequestSchema } from "@workspace/validations/basket";
@@ -28,7 +29,7 @@ describe("validation schemas (property-based)", () => {
             authorIds: fc.array(fc.string()),
           }),
           (input) => {
-            const result = createBookSchema.safeParse(input);
+            const result = v.safeParse(createBookSchema, input);
             expect(typeof result.success).toBe("boolean");
           },
         ),
@@ -48,7 +49,7 @@ describe("validation schemas (property-based)", () => {
             authorIds: fc.array(fc.uuid(), { minLength: 1, maxLength: 5 }),
           }),
           (input) => {
-            const result = createBookSchema.safeParse(input);
+            const result = v.safeParse(createBookSchema, input);
             expect(result.success).toBe(true);
           },
         ),
@@ -60,7 +61,7 @@ describe("validation schemas (property-based)", () => {
         fc.property(
           fc.double({ min: -100_000, max: -0.01, noNaN: true }),
           (price) => {
-            const result = createBookSchema.safeParse({
+            const result = v.safeParse(createBookSchema, {
               name: "Test Book",
               description: "A test description",
               price,
@@ -85,7 +86,7 @@ describe("validation schemas (property-based)", () => {
             publisherId: fc.uuid(),
           }),
           (input) => {
-            const result = createBookSchema.safeParse({
+            const result = v.safeParse(createBookSchema, {
               ...input,
               authorIds: [],
             });
@@ -100,7 +101,7 @@ describe("validation schemas (property-based)", () => {
     it("should never throw on arbitrary input", () => {
       fc.assert(
         fc.property(fc.anything(), (input) => {
-          const result = updateBookSchema.safeParse(input);
+          const result = v.safeParse(updateBookSchema, input);
           expect(typeof result.success).toBe("boolean");
         }),
       );
@@ -111,7 +112,7 @@ describe("validation schemas (property-based)", () => {
         fc.property(
           fc.string().filter((s) => !isUuid(s)),
           (id) => {
-            const result = updateBookSchema.safeParse({
+            const result = v.safeParse(updateBookSchema, {
               id,
               name: "Test",
               description: "Test desc",
@@ -131,7 +132,7 @@ describe("validation schemas (property-based)", () => {
     it("should never throw on arbitrary input", () => {
       fc.assert(
         fc.property(fc.anything(), (input) => {
-          const result = createAuthorSchema.safeParse(input);
+          const result = v.safeParse(createAuthorSchema, input);
           expect(typeof result.success).toBe("boolean");
         }),
       );
@@ -140,7 +141,7 @@ describe("validation schemas (property-based)", () => {
     it("should reject names exceeding max length", () => {
       fc.assert(
         fc.property(fc.string({ minLength: 101, maxLength: 500 }), (name) => {
-          const result = createAuthorSchema.safeParse({ name });
+          const result = v.safeParse(createAuthorSchema, { name });
           expect(result.success).toBe(false);
         }),
       );
@@ -154,7 +155,7 @@ describe("validation schemas (property-based)", () => {
           fc.uuid(),
           fc.string({ minLength: 1, maxLength: 100 }),
           (id, name) => {
-            const result = updateAuthorSchema.safeParse({ id, name });
+            const result = v.safeParse(updateAuthorSchema, { id, name });
             expect(result.success).toBe(true);
           },
         ),
@@ -166,7 +167,7 @@ describe("validation schemas (property-based)", () => {
     it("should never throw on arbitrary input", () => {
       fc.assert(
         fc.property(fc.anything(), (input) => {
-          const result = basketItemRequestSchema.safeParse(input);
+          const result = v.safeParse(basketItemRequestSchema, input);
           expect(typeof result.success).toBe("boolean");
         }),
       );
@@ -175,7 +176,7 @@ describe("validation schemas (property-based)", () => {
     it("should reject non-positive quantities", () => {
       fc.assert(
         fc.property(fc.integer({ min: -1000, max: 0 }), (quantity) => {
-          const result = basketItemRequestSchema.safeParse({
+          const result = v.safeParse(basketItemRequestSchema, {
             id: "item-1",
             quantity,
           });
@@ -190,7 +191,10 @@ describe("validation schemas (property-based)", () => {
           fc.string({ minLength: 1 }),
           fc.integer({ min: 1, max: 10_000 }),
           (id, quantity) => {
-            const result = basketItemRequestSchema.safeParse({ id, quantity });
+            const result = v.safeParse(basketItemRequestSchema, {
+              id,
+              quantity,
+            });
             expect(result.success).toBe(true);
           },
         ),
