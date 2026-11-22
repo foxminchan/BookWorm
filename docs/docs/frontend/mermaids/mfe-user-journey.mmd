@@ -1,0 +1,29 @@
+---
+title: Shopper Journey Across Microfrontends
+---
+swimlane-beta LR
+
+subgraph Shopper
+	Browse["Browse books"]
+	OpenBasket["Open /basket"]
+	SignIn["Sign in"]
+	Checkout["Complete checkout"]
+end
+
+subgraph Storefront App
+	Catalog["Home & catalog pages"]
+	LoginPage["/login page"]
+end
+
+subgraph Commerce App
+	AuthCheck{"Signed in?"}
+	BasketCheckout["/basket, /checkout & /account"]
+end
+
+Browse --> Catalog
+OpenBasket --> AuthCheck
+AuthCheck -->|"No"| LoginPage
+LoginPage --> SignIn
+SignIn --> BasketCheckout
+AuthCheck -->|"Yes"| BasketCheckout
+BasketCheckout --> Checkout

@@ -1,6 +1,6 @@
 ---
-title: Microfrontend (MFE) Architecture
-summary: How BookWorm splits the customer storefront into vertical Next.js multi-zone microfrontends (storefront and commerce) with YARP gateway routing, shared shell chrome, and cross-zone authentication.
+title: Microfrontend Architecture
+summary: Why BookWorm splits the customer website into two focused apps behind one gateway, how to add a new page, and which app owns which routes.
 owners:
   - contributor-team
 badges:
@@ -15,69 +15,76 @@ badges:
     textColor: blue
 ---
 
-## Explanation: Why Vertical Multi-Zone Microfrontends?
+## Explanation: Why Split the Customer Website?
 
-BookWorm's customer-facing experience spans two very different runtime profiles:
+BookWorm's customer-facing website serves two very different kinds of pages:
 
-- **Public discovery (`@bookworm/storefront`):** Landing pages, catalog browsing, book details, reviews, informational pages, authentication entrypoints, and the CopilotKit AI assistant. These routes benefit from Next.js `cacheComponents` (Partial Prerendering), SEO metadata, and public caching.
-- **Authenticated commerce (`@bookworm/commerce`):** Shopping basket, checkout confirmation, customer profile, and order history. These routes are strictly user-specific, dynamic (`cacheComponents: false`), and excluded from search indexing (`robots: { index: false, follow: false }`).
+- **Public browsing (`@bookworm/storefront`):** The home page, book catalog, book details, reviews, info pages, sign-in pages, and the AI assistant. These pages are the same for most visitors, so they can be cached for speed and indexed by search engines.
+- **Personal shopping (`@bookworm/commerce`):** The shopping basket, checkout, customer profile, and order history. These pages belong to a specific signed-in shopper, so they must stay private, always show fresh data, and stay hidden from search engines.
 
-Separating these into vertical Next.js multi-zones using `@vercel/microfrontends` lets each zone tune its rendering, caching, and deployment lifecycle independently while presenting a single unified origin to the customer through the YARP API gateway.
+Splitting these into two separate apps lets each side be tuned, updated, and deployed on its own—while customers still experience one single website.
 
-### Gateway Routing & Single Source of Truth
+### One Entry Point, One Routing File
 
 <MermaidFileLoader file="mermaids/mfe-gateway-routing.mmd" />
 
-Both Next.js zones and the Aspire AppHost read from the same `src/Clients/apps/storefront/microfrontends.config.json` file:
+Customers never see two separate websites. Everything goes through a single gateway, and both the gateway and the frontend apps read from the same configuration file (`src/Clients/apps/storefront/microfrontends.config.json`):
 
-1. **Next.js build/runtime (`withMicrofrontends`):** Both `storefront` and `commerce` wrap their `next.config.mjs` with `withMicrofrontends(...)` from `@vercel/microfrontends/next/config` (with `skipTransforms: ["redirects"]`). `commerce` declares `assetPrefix: "commerce-assets"` so its static assets never collide with `storefront`'s `/_next/static` paths.
-2. **YARP gateway translation (`MicrofrontendsConfigLoader`):** In `BookWorm.AppHost`, `ApiGatewayProxyBuilder.WithMicrofrontends(...)` parses `microfrontends.config.json`, translates Vercel `path-to-regexp` expressions (such as `/checkout/:path*` and `/account/:path*`) and `assetPrefix` paths into ASP.NET Core/YARP patterns, and attaches an `X-Mfe-Zone` response header (`storefront`, `commerce`, or `backoffice`) for observability.
-3. **Deterministic route ordering:** Backend service prefixes (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chat`) and `/entra` are registered ahead of frontend zones. `MicrofrontendsConfigLoader.CollidesWithService` guards against accidental leading-segment collisions, and `storefront` serves as the catch-all fallback (`/{**remainder}` at `int.MaxValue`).
+- **No URL conflicts:** Backend API routes (like `/catalog` or `/ordering`) and sign-in routes are matched first, so frontend pages can never accidentally override them.
+- **Separate asset paths:** The commerce app serves its own static files under `/commerce-assets/*` so they never clash with the storefront's files.
+- **Storefront as the default:** Any customer route that does not match a backend service or a commerce path goes to the storefront app.
 
-### Shared Shell & Cross-Zone Navigation
+### Seamless Look and Navigation
 
-To keep navigation seamless across zones without duplicating layout code, shared customer chrome lives in `@workspace/storefront-shell` (`domain` tier):
+Even though the storefront and commerce pages live in separate apps, shoppers should not feel like they are jumping between different sites. Both apps use a shared layout package (`@workspace/storefront-shell`) that provides:
 
-- **Shared layout & navigation:** `StorefrontShell` composes `Header`, `Footer`, and `MobileBottomNav` using centralized routes from `nav-config.ts` and `app-config.ts`.
-- **Cross-zone links & prefetching:** `mfe-link.tsx` re-exports `Link`, `PrefetchCrossZoneLinks`, and `PrefetchCrossZoneLinksProvider` from `@vercel/microfrontends/next/client` so transitions between `storefront` and `commerce` prefetch cleanly across zone boundaries.
-- **Shared ephemeral state:** `basket-atom.ts` holds the Jotai basket state in the shared shell package so the header badge stays consistent across both zones.
+- The same header, footer, and mobile navigation bar.
+- Cross-app links that preload pages smoothly when moving between browsing and checkout.
+- A shared basket counter so the header badge stays up to date everywhere.
 
-### Cross-Zone Authentication & Proxy Origin Resolution
+### Single Sign-In Across Both Apps
 
-Authentication remains centralized in `storefront` so there is only one OAuth callback and Better Auth route handler:
+<MermaidFileLoader file="mermaids/mfe-user-journey.mmd" />
 
-- **Single auth owner:** `storefront` exposes `/api/auth/[...all]` and is wired with Microsoft Entra ID in `FrontendExtensions`. `commerce` calls `.WithoutEntraId()` in `FrontendExtensions` and exposes `/api/health` for Aspire health checks.
-- **Shared auth client:** `@workspace/storefront-shell/auth-client` configures `createAppAuthClient` against the unified gateway origin, allowing `commerce` components and hooks (`useSession`, `useLogout`) to read the shared session cookie.
-- **Edge protection (`proxy.ts`) & origin resolution:** Both `storefront` and `commerce` use `resolvePublicOrigin` from `@workspace/storefront-shell/lib/proxy`, which honors `x-forwarded-proto` and `x-forwarded-host` headers so internal HTTP hops behind Azure Container Apps never downgrade redirect `Location` headers to `http://`. In `commerce`, `proxy.ts` checks `getSessionCookie` for `/basket`, `/checkout`, and `/account` and redirects unauthenticated requests to `/login?callbackUrl=...` on the `storefront` zone.
+Sign-in is handled in one place—the storefront app—so there is only one login flow to maintain. Because both apps sit behind the same website address, they share the same login session. If an unauthenticated shopper visits a protected page like `/basket`, `/checkout`, or `/account`, they are sent to the login page and returned to where they started once signed in.
 
 ---
 
-## How-to Guide: Adding a Route to a Microfrontend Zone
+## How-to Guide: Add a New Customer Page
 
-When adding a new customer-facing route:
+Follow these steps when adding a new page for shoppers:
 
-1. **Choose the owning zone:** Place public, cacheable, or SEO-indexed routes in `apps/storefront/app/`, and authenticated, user-specific routes in `apps/commerce/app/`.
-2. **Register child zone paths:** If the route belongs to `commerce` (or a new child zone), add its path pattern to `routing[].paths` in `src/Clients/apps/storefront/microfrontends.config.json`.
-3. **Avoid backend prefix collisions:** Ensure the leading path segment does not match a backend service prefix registered on the YARP gateway (such as `/catalog`, `/basket`, `/ordering`, `/rating`, `/chat`, or `/entra`).
-4. **Update route protection if needed:** If the new `commerce` route requires authentication, verify it is covered by `protectedRoutes` in `src/Clients/apps/commerce/proxy.ts`.
-5. **Verify gateway & frontend checks:** Run `bun run boundaries`, `bun run check-types`, `bun run lint`, `bun run test`, and `bun run build` from `src/Clients`.
+1. **Pick the right app:**
+   - Put public, shareable, or search-indexed pages in `src/Clients/apps/storefront/app/`.
+   - Put personal or signed-in pages in `src/Clients/apps/commerce/app/`.
+2. **Register commerce routes:** If you added the page to `commerce`, add its URL pattern to `routing[].paths` in `src/Clients/apps/storefront/microfrontends.config.json`. (Storefront pages are matched automatically as the default fallback.)
+3. **Avoid backend path names:** Make sure the first part of your new URL does not match an existing backend prefix (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chat`, or `/entra`).
+4. **Require sign-in if needed:** If the new `commerce` page is only for signed-in users, check that its path is listed under `protectedRoutes` in `src/Clients/apps/commerce/proxy.ts`.
+5. **Run the checks:** From `src/Clients`, verify boundaries, types, linting, tests, and the build:
+   ```sh
+   bun run boundaries
+   bun run check-types
+   bun run lint
+   bun run test
+   bun run build
+   ```
 
 ---
 
 ## Reference
 
-### Zone Ownership Matrix
+### App Ownership
 
-| Zone         | Package                | Gateway Routes                                               | `cacheComponents` | Auth Handler                    | Health Check  |
-| :----------- | :--------------------- | :----------------------------------------------------------- | :---------------- | :------------------------------ | :------------ |
-| `storefront` | `@bookworm/storefront` | `/{**remainder}` (fallback)                                  | `true`            | `/api/auth/[...all]`            | `/`           |
-| `commerce`   | `@bookworm/commerce`   | `/basket`, `/checkout/*`, `/account/*`, `/commerce-assets/*` | `false`           | Shared via gateway              | `/api/health` |
-| `backoffice` | `@bookworm/backoffice` | `/backoffice/{**remainder}`                                  | `false`           | `/backoffice/api/auth/[...all]` | `/backoffice` |
+| App          | Package                | Routes                                                       | Cached & Public | Sign-In Owner                   | Health Check  |
+| :----------- | :--------------------- | :----------------------------------------------------------- | :-------------- | :------------------------------ | :------------ |
+| `storefront` | `@bookworm/storefront` | `/{**remainder}` (default)                                   | Yes             | `/api/auth/[...all]`            | `/`           |
+| `commerce`   | `@bookworm/commerce`   | `/basket`, `/checkout/*`, `/account/*`, `/commerce-assets/*` | No              | Shared via gateway              | `/api/health` |
+| `backoffice` | `@bookworm/backoffice` | `/backoffice/{**remainder}`                                  | No              | `/backoffice/api/auth/[...all]` | `/backoffice` |
 
 ### Related Documentation
 
-- [[doc|frontend/001-monorepo-architecture]] — Workspace boundary tiers and package inventory
+- [[doc|frontend/001-monorepo-architecture]] — Workspace structure and package list
 - [[doc|frontend/002-applications-and-routing]] — Full route maps across `storefront`, `commerce`, and `backoffice`
-- [[doc|frontend/003-data-fetching-and-state]] — Query factories, ETags, and shared Jotai state
-- [[doc|frontend/004-testing-and-quality-gates]] — Unit, E2E BDD, and build verification
-- [[doc|platform/004-identity-and-rbac-matrix]] — Microsoft Entra ID identity and gateway configuration
+- [[doc|frontend/003-data-fetching-and-state]] — Data fetching, caching, and shared state
+- [[doc|frontend/004-testing-and-quality-gates]] — Unit, end-to-end, and build checks
+- [[doc|platform/004-identity-and-rbac-matrix]] — Identity and gateway configuration

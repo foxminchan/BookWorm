@@ -1,15 +1,34 @@
 ---
 title: Microfrontend Gateway & Zone Routing
 ---
-flowchart LR
-	Browser["Customer Browser<br/>(Unified Origin)"] --> Gateway["YARP API Gateway<br/>(X-Mfe-Zone)"]
+swimlane-beta LR
 
-	Gateway -->|"/catalog/*, /basket/*, /ordering/*, ..."| Backends["Backend Microservices"]
-	Gateway -->|"/entra/*"| Entra["Microsoft Entra ID"]
-	Gateway --> |"/backoffice/*"| Backoffice["@bookworm/backoffice<br/>(zone: backoffice)"]
-	Gateway --> |"/basket, /checkout/*, /account/*,<br/>/commerce-assets/*"| Commerce["@bookworm/commerce<br/>(zone: commerce)"]
-	Gateway --> |"/{**remainder} (fallback)"| Storefront["@bookworm/storefront<br/>(zone: storefront)"]
+subgraph Customer
+	Browser["Customer Browser<br/>(Single Website Address)"]
+end
 
-	Config["microfrontends.config.json"] -.->|"MicrofrontendsConfigLoader"| Gateway
-	Config -.->|"withMicrofrontends()"| Storefront
-	Config -.->|"withMicrofrontends()"| Commerce
+subgraph Routing Config
+	Config["microfrontends.config.json"]
+end
+
+subgraph API Gateway
+	Gateway["YARP API Gateway<br/>(Routes Requests)"]
+end
+
+subgraph Apps & Services
+	Backends["Backend Services<br/>(/catalog, /basket, /ordering, /rating, /chat)"]
+	Entra["Microsoft Entra ID<br/>(/entra/*)"]
+	Backoffice["Backoffice App<br/>(/backoffice/*)"]
+	Commerce["Commerce App<br/>(/basket, /checkout/*, /account/*, /commerce-assets/*)"]
+	Storefront["Storefront App<br/>(All Other Pages)"]
+end
+
+Browser --> Gateway
+Config -.->|"Loaded by"| Gateway
+Config -.->|"Loaded by"| Storefront
+Config -.->|"Loaded by"| Commerce
+Gateway -->|"/catalog/*, ..."| Backends
+Gateway -->|"/entra/*"| Entra
+Gateway -->|"/backoffice/*"| Backoffice
+Gateway -->|"/basket, /checkout/*, /account/*"| Commerce
+Gateway -->|"Default fallback"| Storefront
