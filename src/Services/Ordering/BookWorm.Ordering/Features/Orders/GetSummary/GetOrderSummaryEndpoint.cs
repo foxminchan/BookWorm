@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace BookWorm.Ordering.Features.Orders.GetSummary;
 
 internal sealed class GetOrderSummaryEndpoint
@@ -9,7 +11,10 @@ internal sealed class GetOrderSummaryEndpoint
                 "/orders/{id}/summary",
                 async (
                     [Description("The unique identifier of the order")] OrderId id,
-                    [Description("Optional stream version for point-in-time replay")] long? version,
+                    [FromQuery]
+                    [Description("Optional stream version for point-in-time replay")]
+                        long? version,
+                    [FromQuery]
                     [Description("Optional UTC timestamp for point-in-time replay")]
                         DateTimeOffset? at,
                     ISender sender,

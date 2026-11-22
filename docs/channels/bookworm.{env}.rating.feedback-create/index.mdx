@@ -21,8 +21,12 @@ parameters:
       - production
     description: Environment to use.
 deliveryGuarantee: at-least-once
+type: stream
 protocols:
   - kafka
+deadLetterChannel:
+  id: bookworm.{env}.catalog.dead-letter-queue
+  version: 1.0.0
 ---
 
 ## Overview
@@ -64,6 +68,8 @@ camelCase JSON inside the BookWorm CloudEvents-compatible Kafka envelope.
 - Delivery is at least once. Consumers must tolerate duplicate deliveries.
 - Kafka message keys use the Wolverine partition key/group ID when available.
 - Trace context is propagated through the `traceparent` Kafka header.
+- Messages that exhaust Wolverine's retry policy in [[service|catalog-api]] are
+  routed to [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]].
 
 ## Architecture diagram
 

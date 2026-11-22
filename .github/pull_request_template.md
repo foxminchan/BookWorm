@@ -1,6 +1,8 @@
 ## Proposed changes
 
-<!-- Use GitHub Copilot to summarize your changes -->
+<!-- Describe your changes or use GitHub Copilot to summarize them -->
+
+Closes #
 
 ## Types of changes
 
@@ -15,6 +17,6 @@
 
 - [ ] Code compiles correctly
 - [ ] All tests passing
-- [ ] Follows DDD principles
-- [ ] Service boundaries maintained
-- [ ] C# 15 & `.editorconfig` followed
+- [ ] Tests added/updated (if applicable)
+- [ ] Follows DDD principles & service boundaries
+- [ ] Code style & formatting followed

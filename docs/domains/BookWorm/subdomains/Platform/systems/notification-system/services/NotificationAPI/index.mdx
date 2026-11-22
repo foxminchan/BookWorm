@@ -119,7 +119,7 @@ with MailPit in development and SendGrid when configured as the provider.
   command-level email syntax validation.
 - A missing broker connection disables event-bus registration. Exhausted
   Wolverine listener retries go to the native
-  `bookworm.{env}.notification.dead-letter-queue` topic.
+  [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] topic.
 - Repeated commands and Finance's placement retries can produce additional
   emails. Notification is stateless and does not maintain a PostgreSQL outbox.
 

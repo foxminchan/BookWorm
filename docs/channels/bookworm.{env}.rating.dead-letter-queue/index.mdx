@@ -1,0 +1,68 @@
+---
+id: bookworm.{env}.rating.dead-letter-queue
+name: Rating Dead Letter Queue
+version: 1.0.0
+type: stream
+summary: |
+  Native Kafka dead-letter stream where Wolverine routes rating-projection
+  failure events that exhaust Rating API listener retry policies or fail JSON
+  deserialization.
+owners:
+  - contributor-team
+address: bookworm.{env}.rating.dead-letter-queue
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: "Environment to use"
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel is the native Kafka dead-letter topic configured for
+[[service|rating-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName` and
+`EnableNativeDeadLetterQueue()`. When [[service|rating-api]] cannot process
+incoming [[event|BookUpdatedRatingFailedIntegrationEvent]] messages from
+[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]],
+Wolverine routes the failed envelopes to
+`bookworm.<environment>.rating.dead-letter-queue`.
+
+<ChannelInformation />
+
+## Failure policy and routing
+
+- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
+  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
+  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
+  `50ms`, `250ms`, `1s` cooldown intervals with full jitter before calling
+  `MoveToErrorQueue()`.
+- **Immediate dead-lettering:** `JsonException` deserialization failures route
+  directly to the error queue without retries.
+- **Persistence & expiration:** [[service|rating-api]] uses Wolverine Cosmos DB
+  persistence alongside [[container|rating-database]], with 7-day
+  `DeadLetterQueueExpiration`.
+
+## Operational triage and recovery
+
+- Confirm in [[service|catalog-api]] whether the referenced book is truly absent
+  before compensating; if the book exists, stop and escalate as a contract or
+  projection defect.
+- Once any transient [[container|rating-database]] or broker outage is resolved,
+  dead-lettered [[event|BookUpdatedRatingFailedIntegrationEvent]] messages can
+  be replayed safely because `BookUpdatedRatingFailedIntegrationEventHandler`
+  deletes by `feedbackId` and treats an already-missing feedback record as an
+  idempotent no-op.
+
+## Architecture diagram
+
+<NodeGraph />

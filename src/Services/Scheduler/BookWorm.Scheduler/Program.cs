@@ -10,18 +10,6 @@ builder.AddApplicationServices();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
-}
-
-app.UseRouting();
-
-app.UseAntiforgery();
-app.MapStaticAssets();
-app.MapQuartzHttpApi();
-app.MapQuartzDashboard();
-
 app.MapDefaultEndpoints();
 
-app.Run();
+await app.RunAsync();

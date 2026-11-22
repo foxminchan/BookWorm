@@ -1,0 +1,67 @@
+---
+id: bookworm.{env}.basket.dead-letter-queue
+name: Basket Dead Letter Queue
+version: 1.0.0
+type: stream
+summary: |
+  Native Kafka dead-letter stream where Wolverine routes integration messages
+  that exhaust Basket API listener retry policies or fail JSON
+  deserialization.
+owners:
+  - contributor-team
+address: bookworm.{env}.basket.dead-letter-queue
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: "Environment to use"
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel is the native Kafka dead-letter topic configured for
+[[service|basket-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName` and
+`EnableNativeDeadLetterQueue()`. When [[service|basket-api]] cannot process an
+incoming [[command|PlaceOrderCommand]] from
+[[channel|bookworm.&#123;env&#125;.finance.place-order]] after exhausting its
+Wolverine retry policy—or when payload deserialization fails—Wolverine moves
+the envelope to `bookworm.<environment>.basket.dead-letter-queue`.
+
+<ChannelInformation />
+
+## Failure policy and routing
+
+- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
+  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
+  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
+  `50ms`, `250ms`, and `1s` cooldown intervals with full jitter before calling
+  `MoveToErrorQueue()`.
+- **Immediate dead-lettering:** `JsonException` deserialization failures route
+  directly to the error queue without retries.
+- **Retention & expiration:** Wolverine configures durable dead-letter storage
+  expiration to 7 days (`DeadLetterQueueExpiration`).
+
+## Operational triage and recovery
+
+- Confirm the Order's status and soft-deletion state in [[service|order-api]]
+  before deleting a basket or replaying a failed [[command|PlaceOrderCommand]].
+- Check [[service|basket-api]] logs and [[container|basket-database]] health
+  to determine whether the failure stemmed from a transient Redis outage or a
+  payload contract mismatch.
+- Follow the [[domain|shopping]] basket cleanup failure recovery procedure
+  before triggering an idempotent replay; avoid blind replays because
+  `PlaceOrderCommand` is shared on `bookworm.{env}.finance.place-order`.
+
+## Architecture diagram
+
+<NodeGraph />

@@ -1,0 +1,73 @@
+---
+id: bookworm.{env}.notification.dead-letter-queue
+name: Notification Dead Letter Queue
+version: 1.0.0
+type: stream
+summary: |
+  Native Kafka dead-letter stream where Wolverine routes order-notification
+  commands that exhaust Notification API listener retry policies or fail JSON
+  deserialization.
+owners:
+  - contributor-team
+address: bookworm.{env}.notification.dead-letter-queue
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: "Environment to use"
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel is the native Kafka dead-letter topic configured for
+[[service|notification-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName`
+and `EnableNativeDeadLetterQueue()`. Exhausted Wolverine listener failures from
+[[channel|bookworm.&#123;env&#125;.finance.place-order]]
+([[command|PlaceOrderCommand]]),
+[[channel|bookworm.&#123;env&#125;.finance.cancel-order]]
+([[command|CancelOrderCommand]]), and
+[[channel|bookworm.&#123;env&#125;.finance.complete-order]]
+([[command|CompleteOrderCommand]]) are routed to
+`bookworm.<environment>.notification.dead-letter-queue`.
+
+<ChannelInformation />
+
+## Failure policy and routing
+
+- **MailKit + Wolverine retries:** MailKit applies its configured resilience
+  pipeline (`AddMailResiliencePipeline`) during SMTP submission; uncaught
+  rendering or sender failures propagate to Wolverine.
+- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
+  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
+  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
+  `50ms`, `250ms`, and `1s` cooldown intervals with full jitter before calling
+  `MoveToErrorQueue()`.
+- **Immediate dead-lettering:** `JsonException` deserialization failures route
+  directly to the error queue without retries.
+- **Retention & expiration:** Wolverine configures durable dead-letter storage
+  expiration to 7 days (`DeadLetterQueueExpiration`).
+
+## Operational triage and recovery
+
+- **Privacy hygiene:** Never copy recipient email addresses, customer names, or
+  rendered message bodies from dead-lettered payloads into incident notes or
+  logs; correlate by order ID, message ID, and `traceparent`.
+- **Duplicate risk:** Because [[service|notification-api]] has no command-level
+  deduplication and SMTP timeouts can leave ambiguous submission outcomes,
+  verify SMTP provider health and prior email records before replaying.
+- Escalate application or rendering failures to [[team|contributor-team]] and
+  broker or SMTP connectivity failures to [[team|platform-team]].
+
+## Architecture diagram
+
+<NodeGraph />

@@ -1,0 +1,69 @@
+---
+id: bookworm.{env}.ordering.dead-letter-queue
+name: Ordering Dead Letter Queue
+version: 1.0.0
+type: stream
+summary: |
+  Native Kafka dead-letter stream where Wolverine routes basket-cleanup outcome
+  commands that exhaust Order API listener retry policies or fail JSON
+  deserialization.
+owners:
+  - business-strategy
+address: bookworm.{env}.ordering.dead-letter-queue
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: "Environment to use"
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel is the native Kafka dead-letter topic configured for
+[[service|order-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName` and
+`EnableNativeDeadLetterQueue()`. When [[service|order-api]] cannot process
+incoming [[command|DeleteBasketCompleteCommand]] messages from
+[[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] or
+[[command|DeleteBasketFailedCommand]] messages from
+[[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]], Wolverine
+routes the failed envelopes to
+`bookworm.<environment>.ordering.dead-letter-queue`.
+
+<ChannelInformation />
+
+## Failure policy and routing
+
+- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
+  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
+  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
+  `50ms`, `250ms`, `1s` cooldown intervals with full jitter before calling
+  `MoveToErrorQueue()`.
+- **Immediate dead-lettering:** `JsonException` deserialization failures route
+  directly to the error queue without retries.
+- **Durable persistence:** [[service|order-api]] pairs Kafka listening with
+  PostgreSQL durable inbox/outbox storage in [[container|order-database]] and
+  a 7-day `DeadLetterQueueExpiration`.
+
+## Operational triage and recovery
+
+- Inspect [[service|order-api]] logs and [[container|order-database]] health,
+  correlating by `orderId` and `traceparent`.
+- Remember that neither [[command|DeleteBasketCompleteCommand]] nor
+  [[command|DeleteBasketFailedCommand]] transitions an Order's business status
+  (`New`, `Completed`, `Cancelled`); verify Order state in
+  [[service|order-api]] before replaying `DeleteBasketFailedCommand`, which
+  soft-deletes the Order record.
+
+## Architecture diagram
+
+<NodeGraph />

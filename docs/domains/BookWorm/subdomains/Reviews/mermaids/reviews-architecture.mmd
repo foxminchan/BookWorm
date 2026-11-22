@@ -1,0 +1,29 @@
+architecture-beta
+	group aca(logos:microsoft-azure)[Azure Container Apps]
+	group data(database)[Azure Managed Data]
+	group ai(logos:microsoft-icon)[Microsoft Foundry]
+	group ext(internet)[External Services]
+
+	service gateway(logos:dotnet)[YARP Gateway] in aca
+	service rating(logos:dotnet)[Rating API] in aca
+	service mcptools(logos:dotnet)[MCP Tools Server] in aca
+	service presidioA(material-icon-theme:robot)[Presidio Analyzer] in aca
+	service presidioB(material-icon-theme:robot)[Presidio Anonymizer] in aca
+
+	service cosmos(database)[Cosmos DB feedbacks] in data
+	service redis(logos:redis)[Azure Managed Redis] in data
+
+	service foundry(logos:microsoft-azure)[Foundry Project] in ai
+
+	service kafka(logos:kafka-icon)[Kafka Broker] in ext
+	service entra(logos:microsoft-icon)[Entra ID and Agent ID] in ext
+
+	gateway:R --> L: rating
+	rating:T --> B: entra
+	rating:B --> T: mcptools
+	rating:R --> L: presidioA
+	rating:R --> L: presidioB
+	rating:B --> T: cosmos
+	rating:B --> T: redis
+	rating:R --> L: foundry
+	rating:R < --> L: kafka

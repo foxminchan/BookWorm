@@ -1,0 +1,70 @@
+---
+id: bookworm.{env}.catalog.dead-letter-queue
+name: Catalog Dead Letter Queue
+version: 1.0.0
+type: stream
+summary: |
+  Native Kafka dead-letter stream where Wolverine routes integration messages
+  that exhaust Catalog API listener retry policies or fail JSON
+  deserialization.
+owners:
+  - contributor-team
+address: bookworm.{env}.catalog.dead-letter-queue
+parameters:
+  env:
+    enum:
+      - development
+      - staging
+      - production
+    default: development
+    examples:
+      - development
+      - staging
+      - production
+    description: "Environment to use"
+deliveryGuarantee: at-least-once
+protocols:
+  - kafka
+---
+
+## Overview
+
+This channel is the native Kafka dead-letter topic configured for
+[[service|catalog-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName` and
+`EnableNativeDeadLetterQueue()`. When [[service|catalog-api]] cannot process
+incoming [[event|FeedbackCreatedIntegrationEvent]] messages from
+[[channel|bookworm.&#123;env&#125;.rating.feedback-create]] or
+[[event|FeedbackDeletedIntegrationEvent]] messages from
+[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]], Wolverine routes
+the failed envelopes to `bookworm.<environment>.catalog.dead-letter-queue`.
+
+<ChannelInformation />
+
+## Failure policy and routing
+
+- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
+  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
+  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
+  `50ms`, `250ms`, and `1s` cooldown intervals with full jitter before calling
+  `MoveToErrorQueue()`.
+- **Immediate dead-lettering:** `JsonException` deserialization failures route
+  directly to the error queue without retries.
+- **Domain compensation vs. DLQ:** Missing-book conflicts during
+  `FeedbackCreatedIntegrationEvent` handling do not go to this DLQ; instead,
+  Catalog publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] on
+  [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]].
+- **Retention & expiration:** Wolverine configures durable dead-letter storage
+  expiration to 7 days (`DeadLetterQueueExpiration`).
+
+## Operational triage and recovery
+
+- Inspect [[service|catalog-api]] handler logs and [[container|catalog-database]]
+  connectivity when messages land here to separate transient database/broker
+  outages from schema contract errors.
+- Restore the unhealthy dependency and replay failed messages from authoritative
+  [[domain|reviews]] feedback state rather than patching `average_rating` or
+  `total_reviews` directly in [[container|catalog-database]].
+
+## Architecture diagram
+
+<NodeGraph />

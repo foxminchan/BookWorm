@@ -17,8 +17,12 @@ parameters:
     default: development
     description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
+type: stream
 protocols:
   - kafka
+deadLetterChannel:
+  id: bookworm.{env}.notification.dead-letter-queue
+  version: 1.0.0
 ---
 
 ## Overview
@@ -40,8 +44,11 @@ across lifecycle topics.
 
 Notification skips blank email addresses. Otherwise it persists an email outbox
 record before SMTP submission and marks it sent after success. Rendering,
-persistence, and sender failures propagate. At-least-once transport and repeated
-commands can produce duplicate emails; no delivery result event is published.
+persistence, and sender failures propagate. Exhausted Wolverine listener retries
+in [[service|notification-api]] route to
+[[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]]. At-least-once
+transport and repeated commands can produce duplicate emails; no delivery result
+event is published.
 
 ## Architecture
 

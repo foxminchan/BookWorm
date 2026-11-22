@@ -191,14 +191,20 @@ builder
     .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath)
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 
+var quartzDashboard = builder
+    .AddQuartzDashboard(Components.QuartzDashboard)
+    .WithExternalHttpEndpoints()
+    .WithEntraId(entraId)
+    .InGroup(ResourceGroups.Tooling, ResourceDisplayOrder.Tooling);
+
 builder
     .AddDotnetProject(Services.Scheduler, RepositoryPaths.ServiceProjectPath("Scheduler"))
-    .WithEntraId(entraId)
     .WithReference(broker)
     .WaitFor(broker)
     .WithReference(schedulerDb)
     .WaitFor(schedulerDb)
-    .WithDisplayUrls("Quartz Dashboard", path: Http.Endpoints.QuartzDashboardEndpointPath)
+    .WithReference(quartzDashboard)
+    .WithDisplayUrls(path: Http.Endpoints.AlivenessEndpointPath)
     .WithExplicitStart()
     .InGroup(ResourceGroups.Services, ResourceDisplayOrder.Services);
 

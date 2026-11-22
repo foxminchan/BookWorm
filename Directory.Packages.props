@@ -55,6 +55,7 @@
     />
     <!-- Extra -->
     <PackageVersion Include="Scalar.Aspire" Version="1.1.1" />
+    <PackageVersion Include="Quartz.Aspire.Hosting" Version="$(QuartzVersion)" />
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
@@ -153,7 +154,7 @@
     <!-- Quartz -->
     <PackageVersion Include="Quartz.Aspire" Version="$(QuartzVersion)" />
     <PackageVersion Include="Quartz.Plugins" Version="$(QuartzVersion)" />
-    <PackageVersion Include="Quartz.Dashboard" Version="$(QuartzVersion)" />
+    <PackageVersion Include="Quartz.Dashboard.Agent" Version="$(QuartzVersion)" />
     <!-- Email & Messaging -->
     <PackageVersion Include="MailKit" Version="5.0.0" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />

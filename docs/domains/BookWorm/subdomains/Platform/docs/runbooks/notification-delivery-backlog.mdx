@@ -84,7 +84,7 @@ Email notifications may be delayed or submitted more than once. The outbox does 
    </CodeGroup>
 
 2. In [[service|sheduler-dashboard]], inspect the `ResendErrorEmailJob` trigger, UTC schedule, firing history, and completion status. A successful Scheduler execution confirms that the request was published; it does not confirm that Notification delivered email.
-3. Check Kafka and Notification consumer health, including the configured dead-letter path `bookworm.{env}.notification.dead-letter-queue`. Use the environment's approved broker and telemetry tools; do not copy message payloads into routine incident notes.
+3. Check Kafka and Notification consumer health, including the configured dead-letter path [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]]. Use the environment's approved broker and telemetry tools; do not copy message payloads into routine incident notes.
 4. Check SMTP provider connectivity, authentication configuration, and rate-limit or rejection errors. Do not print or paste credentials.
 5. Confirm that the original Finance command supplied a nonblank email address. Notification intentionally skips blank addresses.
 
