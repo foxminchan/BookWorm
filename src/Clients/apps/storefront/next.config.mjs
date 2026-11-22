@@ -13,6 +13,6 @@ const nextConfig = createNextConfig({
 
 export default withMicrofrontends(nextConfig, {
   appName: "storefront",
-  configPath: path.resolve(import.meta.dirname, "./microfrontends.config.json"),
+  configPath: path.resolve(import.meta.dirname, "./microfrontends.json"),
   skipTransforms: ["redirects"],
 });

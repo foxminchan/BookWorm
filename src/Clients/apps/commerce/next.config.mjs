@@ -15,7 +15,7 @@ export default withMicrofrontends(nextConfig, {
   appName: "commerce",
   configPath: path.resolve(
     import.meta.dirname,
-    "../storefront/microfrontends.config.json",
+    "../storefront/microfrontends.json",
   ),
   skipTransforms: ["redirects"],
 });

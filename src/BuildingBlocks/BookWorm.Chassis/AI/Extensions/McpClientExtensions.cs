@@ -30,8 +30,10 @@ public static class McpClientExtensions
                 throw new InvalidDataException("Agent definition must declare MCP tools.");
             }
 
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
             var tools = mcpClient
-                .ListToolsAsync()
+                .ListToolsAsync(cancellationToken: cts.Token)
                 .Preserve()
                 .GetAwaiter()
                 .GetResult()
@@ -99,8 +101,14 @@ public static class McpClientExtensions
                     true
                 );
 
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
                 return McpClient
-                    .CreateAsync(transport, loggerFactory: loggerFactory)
+                    .CreateAsync(
+                        transport,
+                        loggerFactory: loggerFactory,
+                        cancellationToken: cts.Token
+                    )
                     .GetAwaiter()
                     .GetResult();
             });

@@ -1,6 +1,8 @@
 using BookWorm.Basket.Configurations;
 using BookWorm.Basket.Features.Get;
+using BookWorm.Chassis.Caching;
 using BookWorm.Chassis.CQRS;
+using BookWorm.Chassis.EventBus.Idempotency;
 using BookWorm.Chassis.Logging;
 using BookWorm.Chassis.OpenTelemetry;
 using BookWorm.Chassis.Security.Extensions;
@@ -61,6 +63,9 @@ internal static class Extensions
             builder
                 .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
                 .WithAzureAuthentication();
+
+            builder.AddCaching();
+            services.AddIntegrationEventIdempotency();
 
             services.AddSingleton<IBasketRepository, BasketRepository>();
 

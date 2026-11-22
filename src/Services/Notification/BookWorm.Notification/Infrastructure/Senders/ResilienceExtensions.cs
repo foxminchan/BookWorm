@@ -34,6 +34,10 @@ internal static class ResilienceExtensions
                 options.UseJitter = true;
             });
 
+            services.Configure<TimeoutStrategyOptions>(nameof(TimeoutStrategyOptions), options =>
+                options.Timeout = TimeSpan.FromSeconds(30)
+            );
+
             services.Configure<TimeoutStrategyOptions>(
                 nameof(TimeoutStrategyOptions),
                 builder.Configuration.GetSection(nameof(TimeoutStrategyOptions))
@@ -43,7 +47,6 @@ internal static class ResilienceExtensions
                 nameof(TimeoutStrategyOptions),
                 options =>
                 {
-                    options.Timeout = TimeSpan.FromSeconds(30);
                     options.TimeoutGenerator = null;
                     options.OnTimeout = null;
                 }

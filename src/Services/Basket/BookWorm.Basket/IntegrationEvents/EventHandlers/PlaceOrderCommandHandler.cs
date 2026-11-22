@@ -1,9 +1,13 @@
-﻿using BookWorm.Contracts;
+﻿using BookWorm.Chassis.EventBus.Idempotency;
+using BookWorm.Contracts;
 using Wolverine.Attributes;
 
 namespace BookWorm.Basket.IntegrationEvents.EventHandlers;
 
-internal sealed class PlaceOrderCommandHandler(IBasketRepository repository)
+internal sealed class PlaceOrderCommandHandler(
+    IBasketRepository repository,
+    IIntegrationEventIdempotencyGuard? idempotencyGuard = null
+)
 {
     [WolverineHandler]
     public async Task<IntegrationEvent> Handle(
@@ -11,19 +15,51 @@ internal sealed class PlaceOrderCommandHandler(IBasketRepository repository)
         CancellationToken cancellationToken
     )
     {
-        var basketDeleted = await repository.DeleteBasketAsync(command.BasketId.ToString());
-
-        return basketDeleted
-            ? new BasketDeletedCompleteIntegrationEvent(
+        if (
+            idempotencyGuard is not null
+            && !await idempotencyGuard.TryAcquireAsync(
                 command.OrderId,
-                command.BasketId,
-                command.TotalMoney
+                nameof(PlaceOrderCommandHandler),
+                cancellationToken: cancellationToken
             )
-            : new BasketDeletedFailedIntegrationEvent(
+        )
+        {
+            return new BasketDeletedCompleteIntegrationEvent(
                 command.OrderId,
                 command.BasketId,
-                command.Email,
                 command.TotalMoney
             );
+        }
+
+        try
+        {
+            var basketDeleted = await repository.DeleteBasketAsync(command.BasketId.ToString());
+
+            return basketDeleted
+                ? new BasketDeletedCompleteIntegrationEvent(
+                    command.OrderId,
+                    command.BasketId,
+                    command.TotalMoney
+                )
+                : new BasketDeletedFailedIntegrationEvent(
+                    command.OrderId,
+                    command.BasketId,
+                    command.Email,
+                    command.TotalMoney
+                );
+        }
+        catch
+        {
+            if (idempotencyGuard is not null)
+            {
+                await idempotencyGuard.ReleaseAsync(
+                    command.OrderId,
+                    nameof(PlaceOrderCommandHandler),
+                    CancellationToken.None
+                );
+            }
+
+            throw;
+        }
     }
 }

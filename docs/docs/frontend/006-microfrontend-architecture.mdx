@@ -28,7 +28,7 @@ Splitting these into two separate apps lets each side be tuned, updated, and dep
 
 <MermaidFileLoader file="mermaids/mfe-gateway-routing.mmd" />
 
-Customers never see two separate websites. Everything goes through a single gateway, and both the gateway and the frontend apps read from the same configuration file (`src/Clients/apps/storefront/microfrontends.config.json`):
+Customers never see two separate websites. Everything goes through a single gateway, and both the gateway and the frontend apps read from the same configuration file (`src/Clients/apps/storefront/microfrontends.json`):
 
 - **No URL conflicts:** Backend API routes (like `/catalog` or `/ordering`) and sign-in routes are matched first, so frontend pages can never accidentally override them.
 - **Separate asset paths:** The commerce app serves its own static files under `/commerce-assets/*` so they never clash with the storefront's files.
@@ -57,7 +57,7 @@ Follow these steps when adding a new page for shoppers:
 1. **Pick the right app:**
    - Put public, shareable, or search-indexed pages in `src/Clients/apps/storefront/app/`.
    - Put personal or signed-in pages in `src/Clients/apps/commerce/app/`.
-2. **Register commerce routes:** If you added the page to `commerce`, add its URL pattern to `routing[].paths` in `src/Clients/apps/storefront/microfrontends.config.json`. (Storefront pages are matched automatically as the default fallback.)
+2. **Register commerce routes:** If you added the page to `commerce`, add its URL pattern to `routing[].paths` in `src/Clients/apps/storefront/microfrontends.json`. (Storefront pages are matched automatically as the default fallback.)
 3. **Avoid backend path names:** Make sure the first part of your new URL does not match an existing backend prefix (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chat`, or `/entra`).
 4. **Require sign-in if needed:** If the new `commerce` page is only for signed-in users, check that its path is listed under `protectedRoutes` in `src/Clients/apps/commerce/proxy.ts`.
 5. **Run the checks:** From `src/Clients`, verify boundaries, types, linting, tests, and the build:

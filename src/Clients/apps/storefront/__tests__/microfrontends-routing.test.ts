@@ -2,10 +2,7 @@ import { validateRouting } from "@vercel/microfrontends/next/testing";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const configPath = path.resolve(
-  import.meta.dirname,
-  "../microfrontends.config.json",
-);
+const configPath = path.resolve(import.meta.dirname, "../microfrontends.json");
 
 describe("microfrontends routing contract", () => {
   it("routes commerce pages and asset prefix to commerce and discovery/auth/api routes to storefront", () => {
@@ -27,6 +24,7 @@ describe("microfrontends routing contract", () => {
         ],
         commerce: [
           "/basket",
+          "/checkout",
           "/checkout/confirmation",
           "/account",
           "/account/orders",

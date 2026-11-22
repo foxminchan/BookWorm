@@ -51,5 +51,22 @@ internal static class CorsExtensions
 
             return builder;
         }
+
+        /// <summary>
+        ///     Injects the <c>Cors:Origins</c> configuration consumed by
+        ///     <c>BookWorm.McpTools</c> in non-development environments,
+        ///     allowing the browser-facing origin of the API gateway.
+        /// </summary>
+        /// <param name="gateway">The YARP gateway that serves the frontends and proxies API requests.</param>
+        /// <returns>The resource builder for method chaining.</returns>
+        public IResourceBuilder<DotnetProjectResource> WithMcpCors(
+            IResourceBuilder<YarpResource> gateway
+        )
+        {
+            return builder.WithEnvironment(
+                $"{CorsSection}__Origins__0",
+                gateway.GetBrowserEndpoint().PrimaryBrowserOrigin
+            );
+        }
     }
 }

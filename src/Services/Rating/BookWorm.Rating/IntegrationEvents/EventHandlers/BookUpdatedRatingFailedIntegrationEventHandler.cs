@@ -15,29 +15,25 @@ internal sealed class BookUpdatedRatingFailedIntegrationEventHandler(
         CancellationToken cancellationToken
     )
     {
-        if (
-            idempotencyGuard is not null
-            && !await idempotencyGuard.TryAcquireAsync(
-                @event.Id,
-                nameof(BookUpdatedRatingFailedIntegrationEventHandler),
-                cancellationToken: cancellationToken
-            )
-        )
-        {
-            return;
-        }
+        await idempotencyGuard.ExecuteAsync(
+            @event.Id,
+            nameof(BookUpdatedRatingFailedIntegrationEventHandler),
+            async ct =>
+            {
+                var feedback = await repository.GetByIdAsync(@event.FeedbackId, ct);
 
-        var feedback = await repository.GetByIdAsync(@event.FeedbackId, cancellationToken);
+                if (feedback is null)
+                {
+                    return;
+                }
 
-        if (feedback is null)
-        {
-            return;
-        }
+                feedback.Revert();
 
-        feedback.Revert();
+                repository.Delete(feedback);
 
-        repository.Delete(feedback);
-
-        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+                await repository.UnitOfWork.SaveEntitiesAsync(ct);
+            },
+            cancellationToken: cancellationToken
+        );
     }
 }

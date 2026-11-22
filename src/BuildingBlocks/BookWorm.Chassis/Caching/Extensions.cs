@@ -60,6 +60,21 @@ public static class CachingExtensions
                         options.DefaultEntryOptions.Duration = cachingOptions.Expiration;
                         options.DefaultEntryOptions.DistributedCacheDuration =
                             cachingOptions.Expiration;
+                        options.DefaultEntryOptions.IsFailSafeEnabled = true;
+                        options.DefaultEntryOptions.FailSafeMaxDuration = TimeSpan.FromHours(2);
+                        options.DefaultEntryOptions.FailSafeThrottleDuration = TimeSpan.FromSeconds(
+                            30
+                        );
+                        options.DefaultEntryOptions.FactorySoftTimeout = TimeSpan.FromMilliseconds(
+                            500
+                        );
+                        options.DefaultEntryOptions.DistributedCacheSoftTimeout =
+                            TimeSpan.FromMilliseconds(200);
+                        options.DefaultEntryOptions.DistributedCacheHardTimeout =
+                            TimeSpan.FromSeconds(2);
+                        options.DefaultEntryOptions.AllowBackgroundDistributedCacheOperations =
+                            true;
+                        options.DefaultEntryOptions.JitterMaxDuration = TimeSpan.FromSeconds(5);
                     }
                 );
 

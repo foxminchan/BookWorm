@@ -13,7 +13,7 @@ internal static partial class MicrofrontendsConfigLoader
     /// <summary>
     ///     Loads and translates microfrontend routing definitions from a Vercel-style microfrontends JSON file.
     /// </summary>
-    /// <param name="configPath">Absolute or relative path to <c>microfrontends.config.json</c>.</param>
+    /// <param name="configPath">Absolute or relative path to <c>microfrontends.json</c>.</param>
     /// <returns>The ordered list of YARP route definitions derived from the configuration.</returns>
     public static IReadOnlyList<MicrofrontendRouteDefinition> Load(string configPath)
     {
@@ -35,7 +35,7 @@ internal static partial class MicrofrontendsConfigLoader
     /// <summary>
     ///     Parses Vercel-style microfrontends JSON content into YARP route definitions.
     /// </summary>
-    /// <param name="json">Raw JSON content of <c>microfrontends.config.json</c>.</param>
+    /// <param name="json">Raw JSON content of <c>microfrontends.json</c>.</param>
     /// <returns>The ordered list of YARP route definitions derived from the configuration.</returns>
     private static IReadOnlyList<MicrofrontendRouteDefinition> Parse(string json)
     {
@@ -129,7 +129,7 @@ internal static partial class MicrofrontendsConfigLoader
     /// <summary>
     ///     Translates a Vercel <c>path-to-regexp</c> route expression into an ASP.NET Core / YARP route pattern.
     /// </summary>
-    /// <param name="vercelPath">A path expression from <c>microfrontends.config.json</c>.</param>
+    /// <param name="vercelPath">A path expression from <c>microfrontends.json</c>.</param>
     /// <returns>A tuple containing the YARP route template and whether it is an exact (non-catch-all) route.</returns>
     private static (string Pattern, bool IsExact) TranslatePathPattern(string vercelPath)
     {

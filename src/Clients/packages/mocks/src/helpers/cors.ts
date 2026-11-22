@@ -15,6 +15,7 @@ const DEFAULT_EXPOSE_HEADERS = [
   HttpHeaders.ETag,
   HttpHeaders.PaginationCount,
   HttpHeaders.Link,
+  HttpHeaders.RetryAfter,
 ].join(", ");
 
 export function createCorsHeaders(

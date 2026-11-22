@@ -73,10 +73,10 @@ internal sealed class ApiGatewayProxyBuilder
     }
 
     /// <summary>
-    ///     Loads child microfrontend routes from a Vercel-style <c>microfrontends.config.json</c> file
+    ///     Loads child microfrontend routes from a Vercel-style <c>microfrontends.json</c> file
     ///     and registers them on the YARP gateway with <c>X-Mfe-Zone</c> response headers.
     /// </summary>
-    /// <param name="configPath">Path to <c>microfrontends.config.json</c>.</param>
+    /// <param name="configPath">Path to <c>microfrontends.json</c>.</param>
     /// <param name="apps">Map from application key in the config file to its Aspire frontend resource.</param>
     /// <returns>The builder instance for method chaining.</returns>
     public ApiGatewayProxyBuilder WithMicrofrontends(

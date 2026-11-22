@@ -57,6 +57,16 @@ internal sealed class RequestManager(IConnectionMultiplexer redis) : IRequestMan
             When.NotExists
         );
     }
+
+    public async Task DeleteAsync(
+        string idempotencyKey,
+        CancellationToken cancellationToken = default
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var database = redis.GetDatabase();
+        await database.KeyDeleteAsync(idempotencyKey);
+    }
 }
 
 [JsonSerializable(typeof(ClientRequest))]

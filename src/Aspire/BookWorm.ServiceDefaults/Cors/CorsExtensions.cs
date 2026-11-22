@@ -11,6 +11,7 @@ public static class CorsExtensions
         HeaderNames.ETag,
         "Pagination-Count",
         HeaderNames.Link,
+        HeaderNames.RetryAfter,
     ];
 
     extension(IHostApplicationBuilder builder)
@@ -31,7 +32,7 @@ public static class CorsExtensions
                     options.AddPolicy(CorsConstants.AllowAllCorsPolicy, policyBuilder =>
                     {
                         policyBuilder
-                            .SetIsOriginAllowed(IsLocalhostOrigin)
+                            .SetIsOriginAllowed(Network.IsLocalhostOrigin)
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .WithExposedHeaders(_defaultExposedHeaders)
@@ -79,21 +80,6 @@ public static class CorsExtensions
                 });
             }
         }
-    }
-
-    /// <summary>
-    ///     Determines whether the origin is a loopback host, including Aspire friendly
-    ///     <c>*.dev.localhost</c> hosts (RFC 6761 reserves every <c>*.localhost</c> name for loopback).
-    /// </summary>
-    private static bool IsLocalhostOrigin(string origin)
-    {
-        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-        {
-            return false;
-        }
-
-        return uri.Host.Equals(Network.Localhost, StringComparison.OrdinalIgnoreCase)
-            || uri.Host.EndsWith($".{Network.Localhost}", StringComparison.OrdinalIgnoreCase);
     }
 
     extension(WebApplication app)

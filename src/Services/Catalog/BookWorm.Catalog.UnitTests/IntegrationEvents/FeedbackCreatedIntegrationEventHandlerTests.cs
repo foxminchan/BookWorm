@@ -122,4 +122,48 @@ public sealed class FeedbackCreatedIntegrationEventHandlerTests
             Times.Never
         );
     }
+
+    [Test]
+    public async Task GivenRepositoryThrowsException_WhenHandling_ThenShouldReleaseIdempotencyGuardAndRethrow()
+    {
+        var @event = new FeedbackCreatedIntegrationEvent(
+            Guid.CreateVersion7(),
+            5,
+            Guid.CreateVersion7()
+        );
+
+        var guardMock = new Mock<IIntegrationEventIdempotencyGuard>();
+        guardMock
+            .Setup(x =>
+                x.TryAcquireAsync(
+                    @event.Id,
+                    nameof(FeedbackCreatedIntegrationEventHandler),
+                    null,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(true);
+
+        _repositoryMock
+            .Setup(x => x.GetByIdAsync(@event.BookId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Database transient failure"));
+
+        var handler = new FeedbackCreatedIntegrationEventHandler(
+            _repositoryMock.Object,
+            guardMock.Object
+        );
+
+        var act = async () => await handler.Handle(@event, CancellationToken.None);
+
+        await act.ShouldThrowAsync<InvalidOperationException>();
+        guardMock.Verify(
+            x =>
+                x.ReleaseAsync(
+                    @event.Id,
+                    nameof(FeedbackCreatedIntegrationEventHandler),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
 }
