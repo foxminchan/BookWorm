@@ -13,7 +13,7 @@ internal sealed partial class FixHttpRouteProcessor : BaseProcessor<Activity>
     private const string NameTag = "name";
     private const string RequestNameTag = "request.name";
 
-    [GeneratedRegex(@"\{version:apiVersion\}", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\{(?:apiVersion|version):apiVersion\}", RegexOptions.IgnoreCase)]
     private static partial Regex ApiVersionTokenRegex();
 
     [GeneratedRegex(

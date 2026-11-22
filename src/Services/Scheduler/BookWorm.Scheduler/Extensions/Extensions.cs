@@ -1,5 +1,3 @@
-using BookWorm.Chassis.Security.Extensions;
-
 namespace BookWorm.Scheduler.Extensions;
 
 internal static class Extensions
@@ -10,11 +8,7 @@ internal static class Extensions
         {
             var services = builder.Services;
 
-            builder.AddDefaultAuthentication();
-
             builder.AddEventBus<ISchedulerApiMarker>();
-
-            services.AddAntiforgery();
 
             services.AddQuartz(builder.Configuration.GetSection("Quartz"), q =>
             {
@@ -30,6 +24,18 @@ internal static class Extensions
                     x.FailOnFileNotFound = true;
                     x.FailOnSchedulingError = true;
                 });
+
+                if (
+                    !string.IsNullOrWhiteSpace(
+                        builder.Configuration["Quartz:DashboardAgent:Endpoint"]
+                    )
+                )
+                {
+                    q.UseDashboardAgent(agent =>
+                        agent.IsJobTypeAllowed = name =>
+                            name.StartsWith("BookWorm.Scheduler.Jobs.", StringComparison.Ordinal)
+                    );
+                }
             });
 
             services.AddQuartzExecutionHistory(options =>
@@ -38,8 +44,9 @@ internal static class Extensions
                 options.MaxEntriesPerScheduler = 100_000;
             });
 
+            builder.AddAzureNpgsqlDataSource(Components.Database.Scheduler);
+
             builder.AddQuartzPersistentStore(Components.Database.Scheduler);
-            services.AddQuartzDashboard();
 
             services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
         }

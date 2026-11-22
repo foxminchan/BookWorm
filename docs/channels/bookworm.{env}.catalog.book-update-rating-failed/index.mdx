@@ -21,8 +21,12 @@ parameters:
       - production
     description: Environment to use.
 deliveryGuarantee: at-least-once
+type: stream
 protocols:
   - kafka
+deadLetterChannel:
+  id: bookworm.{env}.rating.dead-letter-queue
+  version: 1.0.0
 ---
 
 ## Overview
@@ -62,8 +66,9 @@ camelCase JSON inside the BookWorm CloudEvents-compatible Kafka envelope.
   checks whether the feedback still exists before deleting it.
 - Kafka message keys use the Wolverine partition key/group ID when available.
 - Trace context is propagated through the `traceparent` Kafka header.
-- Messages that exhaust Wolverine's retry policy are routed to the service's
-  native dead-letter topic.
+- Messages that exhaust Wolverine's retry policy are routed to the Rating
+  service's native dead-letter topic,
+  [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]].
 
 ## Architecture diagram
 

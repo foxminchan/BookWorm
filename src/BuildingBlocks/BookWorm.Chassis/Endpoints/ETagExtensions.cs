@@ -1,6 +1,10 @@
 using System.Globalization;
+using System.Net.Mime;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 
 namespace BookWorm.Chassis.Endpoints;
@@ -14,6 +18,8 @@ public interface IHasExpectedVersion
 {
     uint? ExpectedVersion { get; set; }
 }
+
+public sealed record ETagMetadata(bool SupportsResponseETag, bool SupportsIfMatch);
 
 internal sealed class ETagEndpointFilter : IEndpointFilter
 {
@@ -78,9 +84,62 @@ public static class ETagExtensions
         /// </summary>
         public RouteHandlerBuilder WithETag()
         {
-            return builder
-                .AddEndpointFilter<ETagEndpointFilter>()
-                .Produces(StatusCodes.Status304NotModified);
+            builder.AddEndpointFilter<ETagEndpointFilter>();
+            builder.Finally(endpointBuilder =>
+            {
+                var supportsResponseETag = endpointBuilder
+                    .Metadata.OfType<IProducesResponseTypeMetadata>()
+                    .Any(m => m.Type is not null && typeof(IHasVersion).IsAssignableFrom(m.Type));
+
+                var supportsIfMatch =
+                    endpointBuilder
+                        .Metadata.OfType<IAcceptsMetadata>()
+                        .Any(m =>
+                            m.RequestType is not null
+                            && typeof(IHasExpectedVersion).IsAssignableFrom(m.RequestType)
+                        )
+                    || endpointBuilder
+                        .Metadata.OfType<MethodInfo>()
+                        .SelectMany(m => m.GetParameters())
+                        .Any(p => typeof(IHasExpectedVersion).IsAssignableFrom(p.ParameterType));
+
+                endpointBuilder.Metadata.Add(
+                    new ETagMetadata(supportsResponseETag, supportsIfMatch)
+                );
+
+                if (
+                    supportsResponseETag
+                    && !endpointBuilder
+                        .Metadata.OfType<IProducesResponseTypeMetadata>()
+                        .Any(m => m.StatusCode == StatusCodes.Status304NotModified)
+                )
+                {
+                    endpointBuilder.Metadata.Add(
+                        new ProducesResponseTypeMetadata(
+                            StatusCodes.Status304NotModified,
+                            typeof(void)
+                        )
+                    );
+                }
+
+                if (
+                    supportsIfMatch
+                    && !endpointBuilder
+                        .Metadata.OfType<IProducesResponseTypeMetadata>()
+                        .Any(m => m.StatusCode == StatusCodes.Status412PreconditionFailed)
+                )
+                {
+                    endpointBuilder.Metadata.Add(
+                        new ProducesResponseTypeMetadata(
+                            StatusCodes.Status412PreconditionFailed,
+                            typeof(ProblemDetails),
+                            [MediaTypeNames.Application.ProblemJson]
+                        )
+                    );
+                }
+            });
+
+            return builder;
         }
     }
 

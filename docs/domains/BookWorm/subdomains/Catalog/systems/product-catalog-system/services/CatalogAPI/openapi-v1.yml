@@ -199,6 +199,12 @@ paths:
       summary: Update Book
       description: Update a book if it exists
       operationId: UpdateBookEndpoint
+      parameters:
+        - name: If-Match
+          in: header
+          description: Expected entity tag for optimistic concurrency control; returns 412 Precondition Failed when stale
+          schema:
+            type: string
       requestBody:
         content:
           multipart/form-data:
@@ -208,8 +214,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "304":
-          description: Not Modified
         "400":
           description: Bad Request
           content:
@@ -218,6 +222,12 @@ paths:
                 $ref: "#/components/schemas/HttpValidationProblemDetails"
         "404":
           description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "412":
+          description: Precondition Failed
           content:
             application/problem+json:
               schema:
@@ -286,13 +296,30 @@ paths:
           description: The unique identifier of the book to be retrieved
           required: true
           schema: {}
+        - name: If-None-Match
+          in: header
+          description: Entity tag for conditional requests; returns 304 Not Modified when the resource has not changed
+          schema:
+            type: string
       responses:
         "200":
           description: OK
+          headers:
+            ETag:
+              description: Entity tag representing the current resource version
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/BookDto"
+        "304":
+          description: Not Modified
+          headers:
+            ETag:
+              description: Entity tag representing the current resource version
+              schema:
+                type: string
         "404":
           description: Not Found
           content:
@@ -475,6 +502,13 @@ components:
             - integer
             - string
           format: int32
+        version:
+          pattern: "^-?(?:0|[1-9]\\d*)$"
+          type:
+            - integer
+            - string
+          format: int64
+          default: 0
     BookId:
       type: string
       format: uuid

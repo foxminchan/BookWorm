@@ -1,9 +1,14 @@
+using System.Reflection;
+using BookWorm.Chassis.Endpoints;
 using BookWorm.Ordering.Domain.AggregatesModel.OrderAggregate;
 using BookWorm.Ordering.Features.Orders;
 using BookWorm.Ordering.Features.Orders.GetSummary;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,9 +36,20 @@ public sealed class GetOrderSummaryEndpointTests
             .OfType<RouteEndpoint>()
             .ToList();
 
-        endpoints.ShouldContain(e =>
+        var endpoint = endpoints.SingleOrDefault(e =>
             e.RoutePattern.RawText == "/api/v{version:apiVersion}/orders/{id}/summary"
         );
+        endpoint.ShouldNotBeNull();
+        endpoint.Metadata.OfType<ETagMetadata>().SingleOrDefault().ShouldBe(new(true, false));
+        endpoint
+            .Metadata.OfType<IProducesResponseTypeMetadata>()
+            .ShouldContain(m => m.StatusCode == StatusCodes.Status304NotModified);
+
+        var method = endpoint.Metadata.OfType<MethodInfo>().Single();
+        var versionParam = method.GetParameters().Single(p => p.Name == "version");
+        versionParam.GetCustomAttribute<FromQueryAttribute>().ShouldNotBeNull();
+        var atParam = method.GetParameters().Single(p => p.Name == "at");
+        atParam.GetCustomAttribute<FromQueryAttribute>().ShouldNotBeNull();
     }
 
     [Test]

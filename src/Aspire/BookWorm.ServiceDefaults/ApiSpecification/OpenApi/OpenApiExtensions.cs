@@ -42,6 +42,7 @@ public static class OpenApiExtensions
             services.AddOpenApi(options =>
             {
                 options.AddOperationTransformer<AuthorizationChecksTransformer>();
+                options.AddOperationTransformer<ETagOperationTransformer>();
                 options.AddDocumentTransformer<SecuritySchemeDefinitionsTransformer>();
                 configure?.Invoke(options);
             });

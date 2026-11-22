@@ -8,7 +8,6 @@ public static class Http
     {
         public const string HealthEndpointPath = "/health";
         public const string AlivenessEndpointPath = "/alive";
-        public const string QuartzDashboardEndpointPath = "/quartz";
     }
 
     public static class Schemes

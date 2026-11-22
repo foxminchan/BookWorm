@@ -10,6 +10,7 @@ public static class Components
     public const string Postgres = "postgres";
     public const string Cosmos = "cosmos";
     public const string Inspector = "inspector";
+    public const string QuartzDashboard = "quartz-dashboard";
     public const string VectorDb = "vectordb";
     public const string TurboRepo = "turborepo";
 

@@ -58,8 +58,8 @@ public static class RegisterEndpointExtensions
 
             var builder = app.MapGroup(
                     resourceName is null or { Length: 0 }
-                        ? "/api/v{version:apiVersion}"
-                        : $"/api/v{{version:apiVersion}}/{resourceName}"
+                        ? "/api/v{apiVersion:apiVersion}"
+                        : $"/api/v{{apiVersion:apiVersion}}/{resourceName}"
                 )
                 .WithApiVersionSet(apiVersionSet);
 

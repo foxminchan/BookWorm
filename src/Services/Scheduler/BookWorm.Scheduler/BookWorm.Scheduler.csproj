@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
     <NoWarn>$(NoWarn);EXTEXP0001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="OCI Labels">
@@ -11,9 +10,10 @@
     <ContainerLabel Include="org.opencontainers.image.authors" Value="Nhan Nguyen" />
   </ItemGroup>
   <ItemGroup Label="Quartz">
+    <PackageReference Include="Aspire.Azure.Npgsql" />
     <PackageReference Include="Quartz.Aspire" />
     <PackageReference Include="Quartz.Plugins" />
-    <PackageReference Include="Quartz.Dashboard" />
+    <PackageReference Include="Quartz.Dashboard.Agent" />
   </ItemGroup>
   <ItemGroup Label="Quartz JSON Config">
     <None Update="jobs.json" CopyToOutputDirectory="PreserveNewest" />

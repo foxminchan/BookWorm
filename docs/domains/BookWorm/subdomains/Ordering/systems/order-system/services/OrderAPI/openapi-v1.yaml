@@ -135,7 +135,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-  "/api/v{version}/orders/{id}/summary":
+  "/api/v1/orders/{id}/summary":
     get:
       tags:
         - Order
@@ -150,26 +150,44 @@ paths:
           schema:
             type: string
         - name: version
-          in: path
+          in: query
           description: Optional stream version for point-in-time replay
-          required: true
           schema:
-            type: string
+            pattern: "^-?(?:0|[1-9]\\d*)$"
+            type:
+              - integer
+              - string
+            format: int64
         - name: at
           in: query
           description: Optional UTC timestamp for point-in-time replay
           schema:
             type: string
             format: date-time
+        - name: If-None-Match
+          in: header
+          description: Entity tag for conditional requests; returns 304 Not Modified when the resource has not changed
+          schema:
+            type: string
       responses:
         "200":
           description: OK
+          headers:
+            ETag:
+              description: Entity tag representing the current resource version
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrderSummaryDto"
         "304":
           description: Not Modified
+          headers:
+            ETag:
+              description: Entity tag representing the current resource version
+              schema:
+                type: string
         "404":
           description: Not Found
           content:

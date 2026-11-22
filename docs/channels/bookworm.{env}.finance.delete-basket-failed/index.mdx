@@ -16,8 +16,13 @@ parameters:
       - production
     default: development
     description: BookWorm deployment environment.
+deliveryGuarantee: at-least-once
+type: stream
 protocols:
   - kafka
+deadLetterChannel:
+  id: bookworm.{env}.ordering.dead-letter-queue
+  version: 1.0.0
 ---
 
 ## Overview
@@ -29,7 +34,8 @@ own deletion failure event.
 
 The camelCase JSON payload contains `id`, `creationDate`, `basketId`, nullable
 `email`, `orderId`, and `totalMoney` inside the BookWorm CloudEvents-compatible
-envelope.
+envelope. Messages exhausting Wolverine's retry policy in [[service|order-api]]
+route to [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]].
 
 <ChannelInformation />
 
