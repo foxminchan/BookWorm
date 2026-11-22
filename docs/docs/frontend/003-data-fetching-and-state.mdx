@@ -16,12 +16,12 @@ badges:
 
 BookWorm's frontend applications communicate with five backend services ([[service|catalog-api]], [[service|basket-api]], [[service|order-api]], [[service|rating-api]], [[service|chat-api]]) through the YARP API gateway. Rather than scattering raw `fetch` calls across components, data flows through a layered pipeline:
 
-1. **Shared contracts first:** Request/response types and Zod validation schemas are defined once and reused by both form validation and HTTP clients.
+1. **Shared contracts first:** Request/response types and Valibot validation schemas are defined once and reused by both Formisch form validation and HTTP clients.
 2. **Single source of truth for cache keys:** Query keys and fetchers are paired in `@workspace/api-hooks` so server-side prefetching and client-side subscriptions always match without cache misses on hydration.
 3. **Optimistic concurrency with ETags:** Editable backoffice resources (books and order summaries) use conditional HTTP headers (`If-None-Match` and `If-Match`). If another user modifies a record first, the update fails safely with `412 Precondition Failed` instead of silently overwriting newer data.
 4. **Targeted real-time updates:**
    - The backoffice dashboard loads an initial snapshot and listens to a Server-Sent Events (SSE) stream, ignoring out-of-order events older than the current snapshot.
-   - The storefront AI assistant streams responses over CopilotKit's AG-UI runtime, forwarding authenticated user tokens to [[service|chat-api]].
+   - The storefront AI assistant streams responses over CopilotKit's AG-UI runtime, forwarding authenticated user tokens to [[service|chat-api]] and rendering declarative A2UI components from the storefront catalog.
 5. **Minimal client-only state:** Lightweight Jotai atoms hold ephemeral UI and session-derived state (such as basket count and feature flags), short-circuiting basket requests when a shopper is not signed in.
 
 ---
@@ -33,7 +33,7 @@ BookWorm's frontend applications communicate with five backend services ([[servi
 | Package                  | Tier         | Responsibility                                                        |
 | :----------------------- | :----------- | :-------------------------------------------------------------------- |
 | `@workspace/types`       | `foundation` | Domain DTO interfaces and pagination wrappers                         |
-| `@workspace/validations` | `domain`     | Shared Zod v4 schemas for forms and API payloads                      |
+| `@workspace/validations` | `domain`     | Shared Valibot schemas for forms and API payloads                     |
 | `@workspace/api-client`  | `domain`     | Typed Axios clients, retries, conditional ETag transport, SSE streams |
 | `@workspace/api-hooks`   | `domain`     | TanStack Query key/options factories, hooks, mutations, ETag cache    |
 
@@ -48,13 +48,13 @@ BookWorm's frontend applications communicate with five backend services ([[servi
 
 ### Client State & Real-Time Channels
 
-| Mechanism            | Application  | Purpose                                                          |
-| :------------------- | :----------- | :--------------------------------------------------------------- |
-| TanStack Query + SSR | Both apps    | Server prefetching via `HydrationBoundary` and client caching    |
-| Conditional ETags    | `backoffice` | Optimistic concurrency on book and order-summary updates         |
-| SSE (`dashboard`)    | `backoffice` | Live overview metrics pushed into the query cache                |
-| CopilotKit AG-UI     | `storefront` | Authenticated streaming AI chat (`/api/copilotkit/[[...slug]]`)  |
-| Jotai atoms          | `storefront` | Authentication flag, derived basket state, and AI feature toggle |
+| Mechanism               | Application  | Purpose                                                                         |
+| :---------------------- | :----------- | :------------------------------------------------------------------------------ |
+| TanStack Query + SSR    | Both apps    | Server prefetching via `HydrationBoundary` and client caching                   |
+| Conditional ETags       | `backoffice` | Optimistic concurrency on book and order-summary updates                        |
+| SSE (`dashboard`)       | `backoffice` | Live overview metrics pushed into the query cache                               |
+| CopilotKit AG-UI & A2UI | `storefront` | Authenticated streaming AI chat & generative UI (`/api/copilotkit/[[...slug]]`) |
+| Jotai atoms             | `storefront` | Authentication flag, derived basket state, and AI feature toggle                |
 
 ### Related Documentation
 

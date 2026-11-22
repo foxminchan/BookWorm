@@ -154,6 +154,13 @@ describe("ClassificationCard", () => {
     expect(
       screen.queryByText("At least one author is required"),
     ).not.toBeInTheDocument();
+
+    await user.click(authorOneCheckbox);
+
+    expect(authorOneCheckbox).not.toBeChecked();
+    expect(
+      screen.getByText("At least one author is required"),
+    ).toBeInTheDocument();
   });
 
   it("renders skeleton when loading", () => {

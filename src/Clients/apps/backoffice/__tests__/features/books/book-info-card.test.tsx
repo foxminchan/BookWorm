@@ -1,4 +1,4 @@
-import { Form, useForm } from "@formisch/react";
+import { Form, setInput, useForm } from "@formisch/react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -7,23 +7,44 @@ import { createBookSchema } from "@workspace/validations/catalog/books";
 
 import { BookInfoCard } from "@/features/books/book-info-card";
 
-function BookInfoCardWrapper() {
+function BookInfoCardWrapper({
+  omitInitialInput = false,
+  invalidSalePrice = false,
+}: {
+  omitInitialInput?: boolean;
+  invalidSalePrice?: boolean;
+} = {}) {
   const form = useForm({
     schema: createBookSchema,
-    initialInput: {
-      name: "",
-      description: "",
-      price: undefined,
-      priceSale: null,
-      categoryId: "",
-      publisherId: "",
-      authorIds: [],
-    },
+    initialInput: omitInitialInput
+      ? {}
+      : {
+          name: "",
+          description: "",
+          price: undefined,
+          priceSale: null,
+          categoryId: "",
+          publisherId: "",
+          authorIds: [],
+        },
   });
 
   return (
     <Form of={form} onSubmit={vi.fn()}>
       <BookInfoCard form={form} />
+      {invalidSalePrice && (
+        <button
+          type="button"
+          onClick={() =>
+            setInput(form, {
+              path: ["priceSale"],
+              input: "invalid" as unknown as number,
+            })
+          }
+        >
+          Invalidate Sale Price
+        </button>
+      )}
     </Form>
   );
 }
@@ -138,6 +159,25 @@ describe("BookInfoCard", () => {
     const priceInputs = screen.getAllByPlaceholderText("0.00");
     await user.type(priceInputs[1] as HTMLInputElement, "-5");
 
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(await screen.findAllByRole("alert")).not.toHaveLength(0);
+  });
+
+  it("renders with omitted initial input and shows sale price validation error", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <BookInfoCardWrapper omitInitialInput={true} invalidSalePrice={true} />,
+    );
+
+    expect(screen.getByPlaceholderText("Enter book name")).toHaveValue("");
+    expect(screen.getByPlaceholderText("Enter book description")).toHaveValue(
+      "",
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Invalidate Sale Price" }),
+    );
     fireEvent.submit(container.querySelector("form")!);
 
     expect(await screen.findAllByRole("alert")).not.toHaveLength(0);

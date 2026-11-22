@@ -220,4 +220,22 @@ describe("ReviewForm", () => {
       expect(invalidFields.length).toBeGreaterThan(0);
     });
   });
+
+  it("should display comment validation error when comment exceeds max length", async () => {
+    const { container } = renderWithProviders(
+      <ReviewForm
+        {...defaultProps}
+        firstName="John"
+        lastName="Doe"
+        comment={"a".repeat(1001)}
+        rating={5}
+      />,
+    );
+
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(
+      await screen.findByText("Comment must be 1000 characters or less"),
+    ).toBeInTheDocument();
+  });
 });
