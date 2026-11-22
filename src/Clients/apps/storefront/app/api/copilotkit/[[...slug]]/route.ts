@@ -10,6 +10,7 @@ import {
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import { AUTH } from "@workspace/utils/constants";
 
+import { BOOKWORM_CATALOG_ID } from "@/a2ui/constants";
 import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
 import { COPILOT_RUNTIME_URL } from "@/lib/constants";
@@ -73,7 +74,10 @@ const getRuntime = (accessToken: string) => {
         headers: { authorization: `Bearer ${accessToken}` },
       }),
     },
-    generativeUI: { a2uiVersion: "0.9" },
+    generativeUI: {
+      a2uiVersion: "0.9",
+      defaultCatalogId: BOOKWORM_CATALOG_ID,
+    },
   });
 };
 

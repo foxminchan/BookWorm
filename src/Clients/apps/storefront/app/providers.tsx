@@ -13,6 +13,7 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import { useAccessToken } from "@workspace/ui/hooks/useAccessToken";
 
+import { bookwormCatalog } from "@/a2ui/catalog";
 import { isAuthenticatedAtom } from "@/atoms/basket-atom";
 import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { BackToTop } from "@/components/back-to-top";
@@ -85,7 +86,10 @@ function ProvidersContent({
         enableColorScheme
       >
         {shouldShowCopilot ? (
-          <CopilotKitProvider runtimeUrl={COPILOT_RUNTIME_URL}>
+          <CopilotKitProvider
+            runtimeUrl={COPILOT_RUNTIME_URL}
+            generativeUI={{ ui: bookwormCatalog }}
+          >
             <div className="pb-16 md:pb-0">{children}</div>
           </CopilotKitProvider>
         ) : (

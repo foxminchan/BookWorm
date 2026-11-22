@@ -67,6 +67,7 @@ rules:
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'showBookCard' or
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'showBookList' or
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'showBasketSummary' or
+      agent_did == 'did:mesh:bookworm:book' and tool_name == 'render_a2ui' or
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'addToBasket' or
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'viewBasket' or
       agent_did == 'did:mesh:bookworm:book' and tool_name == 'searchBooks' or

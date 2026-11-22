@@ -296,3 +296,20 @@
     max-width: 90%;
   }
 }
+
+/* A2UI Surface Theme Tokens */
+.a2ui-surface {
+  --a2ui-color-surface: var(--card);
+  --a2ui-color-border: var(--border);
+  --a2ui-color-muted: var(--muted-foreground);
+  --a2ui-color-error: var(--destructive);
+  --a2ui-primary-color: var(--primary);
+}
+
+.dark .a2ui-surface {
+  --a2ui-color-surface: var(--card);
+  --a2ui-color-border: var(--border);
+  --a2ui-color-muted: var(--muted-foreground);
+  --a2ui-color-error: var(--destructive);
+  --a2ui-primary-color: var(--primary);
+}
