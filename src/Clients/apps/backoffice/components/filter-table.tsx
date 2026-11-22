@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import type { ColumnDef, RowData, SortingState } from "@tanstack/react-table";
-import { flexRender, useTable } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  RowData,
+  SortingState,
+  Updater,
+} from "@tanstack/react-table";
+import { functionalUpdate, useTable } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
@@ -46,6 +51,7 @@ type FilterTableProps<TData extends RowData> = Readonly<{
   pageSize: number;
   isLoading: boolean;
   onPaginationChange: (pageIndex: number, pageSize: number) => void;
+  sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
   highlightedId?: string | null;
   getRowId?: (row: TData) => string;
@@ -61,38 +67,33 @@ export function FilterTable<TData extends RowData>({
   pageSize,
   isLoading,
   onPaginationChange,
+  sorting,
   onSortingChange,
   highlightedId,
   getRowId,
 }: FilterTableProps<TData>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const sortingRef = useRef<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<
-    Record<string, boolean>
-  >({});
+  const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+  const activeSorting = sorting ?? internalSorting;
 
   const handleSortingChange = useCallback(
-    (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
-      const newSorting =
-        typeof updaterOrValue === "function"
-          ? updaterOrValue(sortingRef.current)
-          : updaterOrValue;
-      sortingRef.current = newSorting;
-      setSorting(newSorting);
-      onSortingChange?.(newSorting);
+    (updaterOrValue: Updater<SortingState>) => {
+      const nextSorting = functionalUpdate(updaterOrValue, activeSorting);
+      if (sorting === undefined) {
+        setInternalSorting(nextSorting);
+      }
+      onSortingChange?.(nextSorting);
     },
-    [onSortingChange],
+    [activeSorting, sorting, onSortingChange],
   );
 
   const table = useTable({
     features: backofficeTableFeatures,
     data,
     columns,
+    getRowId,
     onSortingChange: handleSortingChange,
-    onColumnVisibilityChange: setColumnVisibility,
     state: {
-      sorting,
-      columnVisibility,
+      sorting: activeSorting,
     },
     manualSorting: true,
   });
@@ -145,12 +146,9 @@ export function FilterTable<TData extends RowData>({
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                       <TableHead key={header.id} scope="col">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
+                        {header.isPlaceholder ? null : (
+                          <table.FlexRender header={header} />
+                        )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -176,10 +174,7 @@ export function FilterTable<TData extends RowData>({
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
+                            <table.FlexRender cell={cell} />
                           </TableCell>
                         ))}
                       </TableRow>

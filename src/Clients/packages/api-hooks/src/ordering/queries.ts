@@ -12,17 +12,17 @@ export const orderQueries = {
   list: (query?: ListOrdersQuery) =>
     queryOptions({
       queryKey: orderingKeys.orders.list(query),
-      queryFn: () => ordersApiClient.list(query),
+      queryFn: ({ signal }) => ordersApiClient.list(query, signal),
     }),
   detail: (id: string) =>
     queryOptions({
       queryKey: orderingKeys.orders.detail(id),
-      queryFn: () => ordersApiClient.get(id),
+      queryFn: ({ signal }) => ordersApiClient.get(id, signal),
     }),
   history: (id: string) =>
     queryOptions({
       queryKey: orderingKeys.orders.history(id),
-      queryFn: () => ordersApiClient.getHistory(id),
+      queryFn: ({ signal }) => ordersApiClient.getHistory(id, signal),
     }),
 };
 
@@ -31,11 +31,11 @@ export const buyerQueries = {
   current: () =>
     queryOptions({
       queryKey: orderingKeys.buyers.current(),
-      queryFn: () => buyersApiClient.getCurrentBuyer(),
+      queryFn: ({ signal }) => buyersApiClient.getCurrentBuyer(signal),
     }),
   list: (query?: ListBuyersQuery) =>
     queryOptions({
       queryKey: orderingKeys.buyers.list(query),
-      queryFn: () => buyersApiClient.list(query),
+      queryFn: ({ signal }) => buyersApiClient.list(query, signal),
     }),
 };

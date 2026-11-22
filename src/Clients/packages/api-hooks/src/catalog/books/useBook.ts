@@ -22,11 +22,11 @@ export default function useBook(
 
   const query = useQuery({
     queryKey,
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       fetchWithETag(
         queryClient,
         queryKey,
-        (opts) => booksApiClient.getConditional(id, opts),
+        (opts) => booksApiClient.getConditional(id, { ...opts, signal }),
         `book ${id}`,
       ),
     ...options,

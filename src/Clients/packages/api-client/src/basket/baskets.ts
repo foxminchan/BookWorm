@@ -15,9 +15,10 @@ class BasketApiClient {
     this.client = apiClient;
   }
 
-  public async get(): Promise<CustomerBasket> {
+  public async get(signal?: AbortSignal): Promise<CustomerBasket> {
     const response = await this.client.get<CustomerBasket>(
       API_ENDPOINTS.basket.root,
+      signal ? { signal } : undefined,
     );
     return response.data;
   }

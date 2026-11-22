@@ -1,8 +1,11 @@
-export function JsonLd({ data }: Readonly<{ data: object }>) {
-  const jsonString = JSON.stringify(data);
+export function JsonLd({
+  data,
+  nonce,
+}: Readonly<{ data: object; nonce?: string }>) {
+  const jsonString = JSON.stringify(data).replaceAll("<", String.raw`\u003c`);
 
   return (
-    <script type="application/ld+json" suppressHydrationWarning>
+    <script type="application/ld+json" nonce={nonce} suppressHydrationWarning>
       {jsonString}
     </script>
   );

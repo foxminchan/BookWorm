@@ -1,0 +1,65 @@
+---
+title: Frontend Accessibility Architecture & Practices
+summary: Why BookWorm targets WCAG 2.1 Level AA, how contributors verify UI changes, and where accessibility barriers are reported.
+owners:
+  - contributor-team
+badges:
+  - content: How-to Guide
+    backgroundColor: green
+    textColor: green
+  - content: Explanation
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Explanation: Accessibility by Layer
+
+BookWorm targets the **Web Content Accessibility Guidelines (WCAG) 2.1 Level AA** across both `storefront` and `backoffice`. Because BookWorm is a demonstration project, this target is an ongoing engineering practice rather than a claim of full conformance across every third-party dependency.
+
+Automated tools alone cannot guarantee an accessible experience—especially for keyboard navigation and streaming AI chat responses—so BookWorm combines four layers:
+
+1. **Accessible UI primitives & linting:** Shared components use semantic HTML and accessible headless primitives, checked on every lint run with `eslint-plugin-jsx-a11y`.
+2. **Automated browser audits:** Playwright E2E suites run `axe-core` scans, and Lighthouse CI enforces a minimum accessibility score of `0.9`.
+3. **Keyboard & focus management:** Interactive dialogs and drawers trap focus while open, close on `Escape`, and return focus to the button that opened them.
+4. **Live screen-reader announcements:** Status indicators (offline, rate-limit, syncing, basket updates) use `aria-live` regions, while `storefront` connects its AI chat stream to `@generative-a11y/react` and `@generative-a11y/ag-ui` so screen readers announce streaming text, tool calls, and prompts at a readable pace.
+
+---
+
+## How-to Guide: Contributor Accessibility Checklist
+
+When making user-interface changes:
+
+1. **Run automated checks** from `src/Clients` (`bun run lint` and relevant Playwright accessibility specs—see [[doc|frontend/004-testing-and-quality-gates]]).
+2. **Perform a keyboard-only pass** for any interactive control: verify visible focus indicators, logical `Tab` order, keyboard activation, and `Escape` dismissal for dialogs and menus.
+3. **Use semantic HTML** and native controls where possible, with descriptive link text and meaningful `alt` text for images.
+4. **Avoid color-only cues** when communicating status, required fields, or validation errors.
+5. **Document your checks** and any known limitations in your pull request description.
+
+---
+
+## Reference
+
+### Accessibility Priorities
+
+- Keyboard access to all interactive functionality
+- Clear focus indicators and logical focus order
+- Semantic HTML and compatibility with assistive technologies
+- Sufficient color contrast and non-color indicators
+- Text alternatives for meaningful images and other non-text content
+- Clear labels, instructions, and error messages
+- Responsive layouts and readable content at increased text sizes
+
+### Supported Environments & Known Limitations
+
+- **Supported environments:** Modern desktop and mobile browsers, keyboard-only navigation, and common screen-reader workflows. Behavior may vary across browser, OS, and assistive-technology combinations; third-party embeds and dependencies are supported on a best-effort basis.
+- **Known limitations:** No formally tracked barriers are listed at this time; confirmed barriers are triaged and documented as prioritized.
+
+### Reporting an Accessibility Barrier
+
+- Open an issue using the [accessibility issue template](https://github.com/foxminchan/BookWorm/issues/new?template=accessibility.yml) with the affected page, reproduction steps, environment/assistive technology details, and severity.
+- Alternatively, email [nguyenxuannhan407@gmail.com](mailto:nguyenxuannhan407@gmail.com) (you do not need to disclose personal or medical information).
+- Do **not** include passwords, private data, or security-sensitive details in public issues; report security vulnerabilities via [SECURITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/SECURITY.md).
+- See [ACCESSIBILITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/ACCESSIBILITY.md) for the repository entrypoint.

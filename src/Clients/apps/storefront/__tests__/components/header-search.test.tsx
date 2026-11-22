@@ -30,19 +30,6 @@ vi.mock("@/hooks/useDelayedToggle", () => ({
   useDelayedToggle: mockUseDelayedToggle,
 }));
 
-// Mock Radix-based form components to avoid Slot single-child issues in test env
-vi.mock("@workspace/ui/components/form", async () => {
-  const actual = await vi.importActual<
-    typeof import("@workspace/ui/components/form")
-  >("@workspace/ui/components/form");
-  return {
-    ...actual,
-    FormControl: ({ children }: { children: React.ReactNode }) => (
-      <div data-slot="form-control">{children}</div>
-    ),
-  };
-});
-
 function setupDelayedToggle(
   overrides: Partial<{
     isOpen: boolean;

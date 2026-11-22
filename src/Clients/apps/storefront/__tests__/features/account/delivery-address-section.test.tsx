@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -252,5 +252,20 @@ describe("DeliveryAddressSection", () => {
     expect(
       screen.getByRole("button", { name: /saving\.\.\./i }),
     ).toBeDisabled();
+  });
+
+  it("should show validation errors when submitting empty address fields", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(
+      <DeliveryAddressSection buyer={{ ...mockBuyer, address: null }} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      const invalidFields = container.querySelectorAll('[data-invalid="true"]');
+      expect(invalidFields.length).toBeGreaterThan(0);
+    });
   });
 });

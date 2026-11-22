@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import useOrders from "@workspace/api-hooks/ordering/orders/useOrders";
 import type {
   ListOrdersQuery,
+  Order,
   OrderStatus,
 } from "@workspace/types/ordering/orders";
 
@@ -12,6 +13,8 @@ import { FilterTable } from "@/components/filter-table";
 import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 import { columns } from "./columns";
+
+const EMPTY_ORDERS: Order[] = [];
 
 type OrdersTableProps = Readonly<{
   statusFilter?: OrderStatus;
@@ -21,6 +24,7 @@ export function OrdersTable({ statusFilter }: OrdersTableProps) {
   const {
     pageIndex,
     pageSize,
+    sorting,
     sortingQuery,
     apiPageIndex,
     handlePaginationChange,
@@ -41,7 +45,7 @@ export function OrdersTable({ statusFilter }: OrdersTableProps) {
 
   const { data, isLoading } = useOrders(query);
 
-  const orders = data?.items ?? [];
+  const orders = data?.items ?? EMPTY_ORDERS;
   const totalCount = data?.totalCount ?? 0;
 
   return (
@@ -55,6 +59,7 @@ export function OrdersTable({ statusFilter }: OrdersTableProps) {
       pageSize={pageSize}
       isLoading={isLoading}
       onPaginationChange={handlePaginationChange}
+      sorting={sorting}
       onSortingChange={handleSortingChange}
     />
   );

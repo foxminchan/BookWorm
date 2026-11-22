@@ -5,12 +5,15 @@ import { useEffect } from "react";
 
 import dynamic from "next/dynamic";
 
-import { QueryClientProvider } from "@tanstack/react-query";
-import { useSetAtom } from "jotai";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider as JotaiProvider, useSetAtom } from "jotai";
+import { queryClientAtom } from "jotai-tanstack-query";
+import { useHydrateAtoms } from "jotai/utils";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import { useAccessToken } from "@workspace/ui/hooks/useAccessToken";
 
+import { bookwormCatalog } from "@/a2ui/catalog";
 import { isAuthenticatedAtom } from "@/atoms/basket-atom";
 import { isCopilotEnabledAtom } from "@/atoms/feature-flags-atom";
 import { BackToTop } from "@/components/back-to-top";
@@ -25,17 +28,29 @@ const CopilotKitProvider = dynamic(
   { ssr: false },
 );
 
-export function Providers({
+function HydrateAtoms({
+  queryClient,
+  children,
+}: Readonly<{
+  queryClient: QueryClient;
+  children: React.ReactNode;
+}>) {
+  useHydrateAtoms([[queryClientAtom, queryClient]]);
+  return children;
+}
+
+function ProvidersContent({
   children,
   isCopilotEnabled,
+  queryClient,
 }: Readonly<{
   children: React.ReactNode;
   isCopilotEnabled: boolean;
+  queryClient: QueryClient;
 }>) {
   const setIsCopilotEnabled = useSetAtom(isCopilotEnabledAtom);
   const setIsAuthenticated = useSetAtom(isAuthenticatedAtom);
   const { data: session } = useSession();
-  const queryClient = getQueryClient();
   const gatewayUrl =
     env.NEXT_PUBLIC_GATEWAY_HTTPS || env.NEXT_PUBLIC_GATEWAY_HTTP;
 
@@ -71,7 +86,10 @@ export function Providers({
         enableColorScheme
       >
         {shouldShowCopilot ? (
-          <CopilotKitProvider runtimeUrl={COPILOT_RUNTIME_URL}>
+          <CopilotKitProvider
+            runtimeUrl={COPILOT_RUNTIME_URL}
+            generativeUI={{ ui: bookwormCatalog }}
+          >
             <div className="pb-16 md:pb-0">{children}</div>
           </CopilotKitProvider>
         ) : (
@@ -80,5 +98,28 @@ export function Providers({
         <BackToTop />
       </NextThemesProvider>
     </QueryClientProvider>
+  );
+}
+
+export function Providers({
+  children,
+  isCopilotEnabled,
+}: Readonly<{
+  children: React.ReactNode;
+  isCopilotEnabled: boolean;
+}>) {
+  const queryClient = getQueryClient();
+
+  return (
+    <JotaiProvider>
+      <HydrateAtoms queryClient={queryClient}>
+        <ProvidersContent
+          isCopilotEnabled={isCopilotEnabled}
+          queryClient={queryClient}
+        >
+          {children}
+        </ProvidersContent>
+      </HydrateAtoms>
+    </JotaiProvider>
   );
 }

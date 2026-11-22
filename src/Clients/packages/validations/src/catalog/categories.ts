@@ -1,27 +1,29 @@
-import { z } from "zod";
+import * as v from "valibot";
 
 const MAX_CATEGORY_NAME_LENGTH = 50;
 
-export const createCategorySchema = z.object({
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .max(
+export const createCategorySchema = v.object({
+  name: v.pipe(
+    v.string(),
+    v.minLength(1, "Name is required"),
+    v.maxLength(
       MAX_CATEGORY_NAME_LENGTH,
       `Name must be ${MAX_CATEGORY_NAME_LENGTH} characters or less`,
     ),
+  ),
 });
 
-export const updateCategorySchema = z.object({
-  id: z.uuid({ error: "Invalid ID format" }),
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .max(
+export const updateCategorySchema = v.object({
+  id: v.pipe(v.string(), v.uuid("Invalid ID format")),
+  name: v.pipe(
+    v.string(),
+    v.minLength(1, "Name is required"),
+    v.maxLength(
       MAX_CATEGORY_NAME_LENGTH,
       `Name must be ${MAX_CATEGORY_NAME_LENGTH} characters or less`,
     ),
+  ),
 });
 
-export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
-export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
+export type CreateCategoryInput = v.InferOutput<typeof createCategorySchema>;
+export type UpdateCategoryInput = v.InferOutput<typeof updateCategorySchema>;

@@ -11,6 +11,7 @@ import {
 
 import { CopilotSidebar } from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
+import { A11yProvider } from "@generative-a11y/react";
 import { AlertCircle, Clock, RefreshCw, WifiOff } from "lucide-react";
 import { match } from "ts-pattern";
 
@@ -28,9 +29,11 @@ import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { useRouteDisambiguation } from "@/hooks/useRouteDisambiguation";
 import { useUserContext } from "@/hooks/useUserContext";
+import { copilotSidebarTheme } from "@/lib/copilot-theme";
 import "@/styles/copilot.css";
 
 import type { ChatBotRef } from "./chat-bot";
+import { CopilotKitAccessibility } from "./copilot-accessibility";
 
 const ChatBotErrorFallback = ({ onReset }: { onReset: () => void }) => (
   <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
@@ -93,8 +96,8 @@ function chatUIReducer(state: ChatUIState, action: ChatUIAction): ChatUIState {
     .exhaustive();
 }
 
-export const ChatBotContent = forwardRef<ChatBotRef>(
-  function ChatBotContent(_, ref) {
+const ChatBotContentInner = forwardRef<ChatBotRef>(
+  function ChatBotContentInner(_, ref) {
     const [uiState, dispatch] = useReducer(chatUIReducer, {
       isOpen: false,
       hasError: false,
@@ -308,6 +311,7 @@ export const ChatBotContent = forwardRef<ChatBotRef>(
           </div>
         ) : (
           <CopilotSidebar
+            {...copilotSidebarTheme}
             agentId={env.NEXT_PUBLIC_COPILOT_AGENT_NAME}
             labels={{
               modalHeaderTitle: "BookWorm Literary Guide",
@@ -320,6 +324,17 @@ export const ChatBotContent = forwardRef<ChatBotRef>(
           />
         )}
       </dialog>
+    );
+  },
+);
+
+export const ChatBotContent = forwardRef<ChatBotRef>(
+  function ChatBotContent(_, ref) {
+    return (
+      <A11yProvider>
+        <CopilotKitAccessibility agentId={env.NEXT_PUBLIC_COPILOT_AGENT_NAME} />
+        <ChatBotContentInner ref={ref} />
+      </A11yProvider>
     );
   },
 );

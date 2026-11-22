@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -180,5 +180,62 @@ describe("ReviewForm", () => {
 
     const formContainer = container.querySelector(".rounded-2xl");
     expect(formContainer).toBeInTheDocument();
+  });
+
+  it("should reset form when props change via rerender", async () => {
+    const { rerender } = renderWithProviders(<ReviewForm {...defaultProps} />);
+
+    rerender(
+      <ReviewForm
+        {...defaultProps}
+        firstName="Alice"
+        lastName="Smith"
+        comment="Updated comment"
+        rating={5}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Alice")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Smith")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Updated comment")).toBeInTheDocument();
+    });
+  });
+
+  it("should display field validation errors when submitted with invalid values", async () => {
+    const { container } = renderWithProviders(
+      <ReviewForm
+        {...defaultProps}
+        firstName=""
+        lastName=""
+        comment=""
+        rating={0}
+      />,
+    );
+
+    fireEvent.submit(container.querySelector("form")!);
+
+    await waitFor(() => {
+      const invalidFields = container.querySelectorAll('[data-invalid="true"]');
+      expect(invalidFields.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("should display comment validation error when comment exceeds max length", async () => {
+    const { container } = renderWithProviders(
+      <ReviewForm
+        {...defaultProps}
+        firstName="John"
+        lastName="Doe"
+        comment={"a".repeat(1001)}
+        rating={5}
+      />,
+    );
+
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(
+      await screen.findByText("Comment must be 1000 characters or less"),
+    ).toBeInTheDocument();
   });
 });

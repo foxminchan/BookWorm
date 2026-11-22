@@ -12,6 +12,11 @@ const mockUseRateLimit = vi.hoisted(() => vi.fn());
 const mockUseOfflineQueue = vi.hoisted(() => vi.fn());
 
 vi.mock("@copilotkit/react-core/v2", () => ({
+  useAgent: () => ({
+    agent: {
+      subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
+    },
+  }),
   CopilotSidebar: ({
     agentId,
     defaultOpen,

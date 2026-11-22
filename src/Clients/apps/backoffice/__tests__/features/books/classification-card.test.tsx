@@ -1,14 +1,9 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { render, screen } from "@testing-library/react";
+import { Form, useForm } from "@formisch/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
-import { Form } from "@workspace/ui/components/form";
-import {
-  type CreateBookInput,
-  createBookSchema,
-} from "@workspace/validations/catalog/books";
+import { createBookSchema } from "@workspace/validations/catalog/books";
 
 import {
   createMockAuthor,
@@ -34,39 +29,44 @@ const mockAuthors = [
 ];
 
 type WrapperProps = {
-  selectedAuthors?: string[];
+  initialAuthors?: string[];
+  omitOptionalFields?: boolean;
   isLoading?: boolean;
-  onToggleAuthor?: (authorId: string) => void;
 };
 
 function ClassificationCardWrapper({
-  selectedAuthors = [],
+  initialAuthors = [],
+  omitOptionalFields = false,
   isLoading = false,
-  onToggleAuthor = vi.fn(),
 }: WrapperProps) {
-  const form = useForm<CreateBookInput>({
-    resolver: zodResolver(createBookSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      price: undefined,
-      priceSale: null,
-      categoryId: "",
-      publisherId: "",
-      authorIds: [],
-    },
+  const form = useForm({
+    schema: createBookSchema,
+    initialInput: omitOptionalFields
+      ? {
+          name: "",
+          description: "",
+          price: undefined,
+          priceSale: null,
+        }
+      : {
+          name: "",
+          description: "",
+          price: undefined,
+          priceSale: null,
+          categoryId: "",
+          publisherId: "",
+          authorIds: initialAuthors,
+        },
   });
 
   return (
-    <Form {...form}>
+    <Form of={form} onSubmit={vi.fn()}>
       <ClassificationCard
         form={form}
         categories={mockCategories}
         publishers={mockPublishers}
         authors={mockAuthors}
-        selectedAuthors={selectedAuthors}
         isLoading={isLoading}
-        onToggleAuthor={onToggleAuthor}
       />
     </Form>
   );
@@ -109,18 +109,20 @@ describe("ClassificationCard", () => {
     expect(screen.getByLabelText("Author Three")).toBeInTheDocument();
   });
 
-  it("shows validation message when no authors selected", () => {
-    render(<ClassificationCardWrapper selectedAuthors={[]} />);
+  it("shows validation message when no authors selected", async () => {
+    const { container } = render(
+      <ClassificationCardWrapper initialAuthors={[]} />,
+    );
+
+    fireEvent.submit(container.querySelector("form")!);
 
     expect(
-      screen.getByText("At least one author is required"),
+      await screen.findByText("At least one author is required"),
     ).toBeInTheDocument();
   });
 
   it("hides validation message when authors are selected", () => {
-    render(
-      <ClassificationCardWrapper selectedAuthors={[mockAuthors[0]!.id]} />,
-    );
+    render(<ClassificationCardWrapper initialAuthors={[mockAuthors[0]!.id]} />);
 
     expect(
       screen.queryByText("At least one author is required"),
@@ -130,7 +132,7 @@ describe("ClassificationCard", () => {
   it("marks selected author checkboxes as checked", () => {
     render(
       <ClassificationCardWrapper
-        selectedAuthors={[mockAuthors[0]!.id, mockAuthors[2]!.id]}
+        initialAuthors={[mockAuthors[0]!.id, mockAuthors[2]!.id]}
       />,
     );
 
@@ -139,14 +141,26 @@ describe("ClassificationCard", () => {
     expect(screen.getByLabelText("Author Three")).toBeChecked();
   });
 
-  it("calls onToggleAuthor when clicking an author checkbox", async () => {
-    const onToggleAuthor = vi.fn();
+  it("toggles author selection in form state when clicking an author checkbox", async () => {
     const user = userEvent.setup();
-    render(<ClassificationCardWrapper onToggleAuthor={onToggleAuthor} />);
+    render(<ClassificationCardWrapper />);
 
-    await user.click(screen.getByLabelText("Author One"));
+    const authorOneCheckbox = screen.getByLabelText("Author One");
+    expect(authorOneCheckbox).not.toBeChecked();
 
-    expect(onToggleAuthor).toHaveBeenCalledWith(mockAuthors[0]!.id);
+    await user.click(authorOneCheckbox);
+
+    expect(authorOneCheckbox).toBeChecked();
+    expect(
+      screen.queryByText("At least one author is required"),
+    ).not.toBeInTheDocument();
+
+    await user.click(authorOneCheckbox);
+
+    expect(authorOneCheckbox).not.toBeChecked();
+    expect(
+      screen.getByText("At least one author is required"),
+    ).toBeInTheDocument();
   });
 
   it("renders skeleton when loading", () => {
@@ -164,5 +178,25 @@ describe("ClassificationCard", () => {
     expect(screen.getByText("Category")).toBeInTheDocument();
     expect(screen.getByText("Publisher")).toBeInTheDocument();
     expect(screen.getByText("Authors")).toBeInTheDocument();
+  });
+
+  it("handles omitted classification fields and selects category and publisher", async () => {
+    const user = userEvent.setup();
+    render(<ClassificationCardWrapper omitOptionalFields={true} />);
+
+    await user.click(screen.getByRole("combobox", { name: /category/i }));
+    await user.click(await screen.findByRole("option", { name: "Fiction" }));
+
+    await user.click(screen.getByRole("combobox", { name: /publisher/i }));
+    await user.click(
+      await screen.findByRole("option", { name: "Publisher A" }),
+    );
+
+    expect(
+      screen.getByRole("combobox", { name: /category/i }),
+    ).toHaveTextContent(mockCategories[0]!.id);
+    expect(
+      screen.getByRole("combobox", { name: /publisher/i }),
+    ).toHaveTextContent(mockPublishers[0]!.id);
   });
 });

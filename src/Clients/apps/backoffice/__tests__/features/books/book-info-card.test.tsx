@@ -1,34 +1,50 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { render, screen } from "@testing-library/react";
+import { Form, setInput, useForm } from "@formisch/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useForm } from "react-hook-form";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { Form } from "@workspace/ui/components/form";
-import {
-  type CreateBookInput,
-  createBookSchema,
-} from "@workspace/validations/catalog/books";
+import { createBookSchema } from "@workspace/validations/catalog/books";
 
 import { BookInfoCard } from "@/features/books/book-info-card";
 
-function BookInfoCardWrapper() {
-  const form = useForm<CreateBookInput>({
-    resolver: zodResolver(createBookSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      price: undefined,
-      priceSale: null,
-      categoryId: "",
-      publisherId: "",
-      authorIds: [],
-    },
+function BookInfoCardWrapper({
+  omitInitialInput = false,
+  invalidSalePrice = false,
+}: {
+  omitInitialInput?: boolean;
+  invalidSalePrice?: boolean;
+} = {}) {
+  const form = useForm({
+    schema: createBookSchema,
+    initialInput: omitInitialInput
+      ? {}
+      : {
+          name: "",
+          description: "",
+          price: undefined,
+          priceSale: null,
+          categoryId: "",
+          publisherId: "",
+          authorIds: [],
+        },
   });
 
   return (
-    <Form {...form}>
+    <Form of={form} onSubmit={vi.fn()}>
       <BookInfoCard form={form} />
+      {invalidSalePrice && (
+        <button
+          type="button"
+          onClick={() =>
+            setInput(form, {
+              path: ["priceSale"],
+              input: "invalid" as unknown as number,
+            })
+          }
+        >
+          Invalidate Sale Price
+        </button>
+      )}
     </Form>
   );
 }
@@ -134,5 +150,36 @@ describe("BookInfoCard", () => {
     expect(screen.getByText("Description")).toBeInTheDocument();
     expect(screen.getByText("Price")).toBeInTheDocument();
     expect(screen.getByText("Sale Price (Optional)")).toBeInTheDocument();
+  });
+
+  it("renders field validation errors when submitted with invalid values", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<BookInfoCardWrapper />);
+
+    const priceInputs = screen.getAllByPlaceholderText("0.00");
+    await user.type(priceInputs[1] as HTMLInputElement, "-5");
+
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(await screen.findAllByRole("alert")).not.toHaveLength(0);
+  });
+
+  it("renders with omitted initial input and shows sale price validation error", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <BookInfoCardWrapper omitInitialInput={true} invalidSalePrice={true} />,
+    );
+
+    expect(screen.getByPlaceholderText("Enter book name")).toHaveValue("");
+    expect(screen.getByPlaceholderText("Enter book description")).toHaveValue(
+      "",
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Invalidate Sale Price" }),
+    );
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(await screen.findAllByRole("alert")).not.toHaveLength(0);
   });
 });

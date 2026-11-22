@@ -24,11 +24,15 @@ class OrdersApiClient {
     this.client = apiClient;
   }
 
-  public async list(query?: ListOrdersQuery): Promise<PagedResult<Order>> {
+  public async list(
+    query?: ListOrdersQuery,
+    signal?: AbortSignal,
+  ): Promise<PagedResult<Order>> {
     const response = await this.client.get<Order[]>(
       API_ENDPOINTS.ordering.orders.root,
       {
         params: query,
+        signal,
       },
     );
 
@@ -41,16 +45,21 @@ class OrdersApiClient {
     };
   }
 
-  public async get(id: string): Promise<OrderDetail> {
+  public async get(id: string, signal?: AbortSignal): Promise<OrderDetail> {
     const response = await this.client.get<OrderDetail>(
       API_ENDPOINTS.ordering.orders.byId(id),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }
 
-  public async getHistory(id: string): Promise<OrderEventHistory[]> {
+  public async getHistory(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<OrderEventHistory[]> {
     const response = await this.client.get<OrderEventHistory[]>(
       API_ENDPOINTS.ordering.orders.history(id),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }
@@ -58,10 +67,11 @@ class OrdersApiClient {
   public async getSummary(
     id: string,
     query?: OrderSummaryQuery,
+    signal?: AbortSignal,
   ): Promise<OrderSummarySnapshot> {
     const response = await this.client.get<OrderSummarySnapshot>(
       API_ENDPOINTS.ordering.orders.summary(id),
-      { params: query },
+      { params: query, signal },
     );
     return response.data;
   }
@@ -69,13 +79,14 @@ class OrdersApiClient {
   public async getSummaryConditional(
     id: string,
     query?: OrderSummaryQuery,
-    options?: { ifNoneMatch?: string },
+    options?: { ifNoneMatch?: string; signal?: AbortSignal },
   ): Promise<ConditionalResponse<OrderSummarySnapshot>> {
     return this.client.getConditional<OrderSummarySnapshot>(
       API_ENDPOINTS.ordering.orders.summary(id),
       {
         params: query,
         ifNoneMatch: options?.ifNoneMatch,
+        signal: options?.signal,
       },
     );
   }

@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import type {
@@ -32,15 +33,18 @@ export const authorsHandlers = [
     mockUrl(API_ENDPOINTS.catalog.authors.root),
     async ({ request }) => {
       const body = await request.json();
-      const result = createAuthorSchema.safeParse(body);
+      const result = v.safeParse(createAuthorSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const newAuthorId = authorsStore.create(result.data.name);
+      const newAuthorId = authorsStore.create(result.output.name);
       return HttpResponse.json(newAuthorId, { status: 200 });
     },
   ),
@@ -49,15 +53,18 @@ export const authorsHandlers = [
     mockUrl(API_ENDPOINTS.catalog.authors.root),
     async ({ request }) => {
       const body = await request.json();
-      const result = updateAuthorSchema.safeParse(body);
+      const result = v.safeParse(updateAuthorSchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const updated = authorsStore.update(result.data.id, result.data.name);
+      const updated = authorsStore.update(result.output.id, result.output.name);
 
       if (!updated) {
         return createNotFoundResponse("Author");

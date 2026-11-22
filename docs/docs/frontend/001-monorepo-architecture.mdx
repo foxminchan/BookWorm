@@ -1,122 +1,77 @@
 ---
 title: Frontend Monorepo & Workspace Boundaries
-summary: Architecture of BookWorm's Bun and Turborepo frontend monorepo, package boundary tiers, and shared workspace modules.
+summary: How BookWorm organizes its frontend applications and shared packages into layered workspace tiers, and why dependencies flow in one direction.
 owners:
   - contributor-team
 badges:
-  - content: Frontend Reference
+  - content: Explanation
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
     backgroundColor: blue
     textColor: blue
 ---
 
-## 1. Context & Problem
+## Explanation: Why a Layered Monorepo?
 
-BookWorm serves two distinct web experiences—the customer-facing storefront (`@bookworm/storefront`) and the staff administration dashboard (`@bookworm/backoffice`). Both applications share authentication flows against [[system|identity-provider]], typed backend API clients, Zod validation schemas, OpenTelemetry setup, UI primitives, and test harnesses.
+BookWorm serves two separate web experiences: a customer-facing storefront and a staff administration dashboard. Both applications share authentication against [[system|identity-provider]], typed backend API clients, form validation rules, telemetry, UI components, and test configuration.
 
-Without explicit package boundaries and centralized workspace tooling, shared modules quickly accumulate circular imports, duplicate configuration code, or direct coupling between foundation helpers and application UI code. Organizing `src/Clients` as a layered Bun + Turborepo monorepo keeps cross-cutting concerns reusable while enforcing dependency direction automatically.
-
-## 2. Business Value
-
-- **Enforced architectural hygiene:** Turborepo package tags block invalid upward dependencies (`config` -> `foundation` -> `domain` -> `app`) before code is merged.
-- **Zero-duplication cross-cutting capabilities:** Environment validation, Entra ID authentication, OpenTelemetry registration, and SEO metadata live once in `@workspace/*` packages instead of drifting between apps.
-- **Consistent developer & CI workflows:** Shared TypeScript, ESLint, Next.js, Vitest, Playwright, and Allure presets reduce boilerplate and guarantee consistent quality checks across all 17 workspace packages.
-
-## 3. How It Works
-
-The frontend workspace lives under `src/Clients` and uses Bun workspaces (`apps/*`, `packages/*`) orchestrated by Turborepo:
+Without clear boundaries, shared code tends to accumulate circular dependencies, duplicated configuration, and direct coupling between low-level helpers and application screens. Organizing `src/Clients` as a Bun and Turborepo workspace enforces a strict, one-way dependency flow:
 
 <MermaidFileLoader file="mermaids/monorepo-package-layers.mmd" />
 
-1. **Strict unidirectional dependency flow:** Configuration packages sit at the base with no upward dependencies; foundation packages hold framework-agnostic schemas, environment validators, telemetry, and domain types; domain packages compose API clients, query hooks, authentication, SEO, mocks, and UI components; application packages assemble routes and features for end users.
-2. **Composable environment validation:** Each domain capability (`authKeys`, `gatewayKeys`, `otelKeys`, `copilotKeys`) declares and validates its own environment variables in `@workspace/env`. Each Next.js app composes only the slices it requires in `env.mjs` using `@t3-oss/env-nextjs` `extends`.
-3. **Unified OpenTelemetry startup:** Next.js instrumentation entrypoints (`instrumentation.ts`) in both apps delegate directly to `@workspace/otel/instrumentation` so service naming and trace export stay uniform across local runs and Azure Container Apps.
-4. **Workspace package resolution without build fragility:** Both [next.mjs](https://github.com/foxminchan/BookWorm/blob/main/src/Clients/packages/app-config/next.mjs) (`transpilePackages`) and [vitest.mjs](https://github.com/foxminchan/BookWorm/blob/main/src/Clients/packages/app-config/vitest.mjs) (`resolve.alias`) resolve workspace source modules consistently across production builds and unit tests.
+### Design Principles
 
-## 4. Trade-offs & Lessons Learned
+- **One-way dependency tiers:** Every package belongs to one of four tiers (`config`, `foundation`, `domain`, or `app`). Lower tiers never import from higher tiers, which prevents circular dependencies and keeps shared utilities reusable.
+- **Composable configuration:** Shared linting, TypeScript, Next.js, and test presets live once in configuration packages so both applications stay aligned without copy-pasting setup files.
+- **Scoped environment validation:** Each capability (authentication, API gateway, telemetry, AI chat) defines its own environment schema, and each application composes only the variables it actually needs.
+- **Direct workspace resolution:** Next.js and Vitest resolve workspace packages directly from source during builds and tests, avoiding slow cascading pre-build steps while still enforcing boundaries.
+- **Single package manager:** Standardizing on Bun and a single root lockfile avoids lockfile drift between local development and CI.
 
-- **Tag-based boundary checks vs. ad-hoc imports:** Requiring every package to declare a `turbo.json` boundary tag adds minor setup when creating a new package, yet catches accidental layering violations immediately with `bun run boundaries`.
-- **Direct workspace TypeScript consumption vs. per-package build artifacts:** Transpiling `@workspace/*` packages directly from `src/` via Next.js `transpilePackages` and Vitest aliases avoids cascading pre-build steps in local development, though Node-evaluated configs such as `env.mjs` must reference explicit subpath exports in `package.json`.
-- **Bun as a single JS package manager:** Standardizing on `bun@1.4.4` and a single root `bun.lock` eliminates npm/pnpm lockfile drift while speeding up dependency installation and workspace task execution.
+---
 
-## 5. Technical Reference
+## Reference
 
-### Repository Root Layout (`src/Clients`)
+### Repository Layout (`src/Clients`)
 
-```text
-src/Clients/
-├── apps/
-│   ├── backoffice/         # Next.js 16 Admin dashboard (@bookworm/backoffice)
-│   └── storefront/         # Next.js 16 Customer storefront (@bookworm/storefront)
-├── packages/               # 15 internal @workspace/* packages
-├── allurerc.mjs            # Unified Allure test reporting configuration
-├── eslint.config.js        # Root ESLint flat config entrypoint
-├── package.json            # Bun workspaces and Turborepo task scripts
-└── turbo.json              # Task pipeline graph and package boundary rules
-```
+<MermaidFileLoader file="mermaids/monorepo-layout.mmd" />
 
-### Package Boundary Tiers (`turbo.json`)
+### Package Boundary Tiers
 
-The root `turbo.json` defines `boundaries.tags` so `bun run boundaries` inspects every import across all 17 workspace packages:
+Turborepo validates imports across all 17 workspace packages using boundary tags in `turbo.json`:
 
-| Tier Tag     | Allowed Dependencies             | Denied Dependencies           | Purpose                                                                              |
-| :----------- | :------------------------------- | :---------------------------- | :----------------------------------------------------------------------------------- |
-| `config`     | None within workspace            | `app`, `domain`, `foundation` | Shared ESLint, TypeScript, Next.js, Vitest, Playwright, and Allure presets           |
-| `foundation` | `config`, `foundation`           | `app`, `domain`               | Pure types, utility helpers, env schemas, and OpenTelemetry registration             |
-| `domain`     | `config`, `foundation`, `domain` | `app`                         | UI design system, API clients, query hooks, auth, SEO, validation schemas, MSW mocks |
-| `app`        | All tiers                        | —                             | End-user Next.js applications (`storefront`, `backoffice`)                           |
+| Tier Tag     | Allowed Dependencies             | Denied Dependencies           | Purpose                                                               |
+| :----------- | :------------------------------- | :---------------------------- | :-------------------------------------------------------------------- |
+| `config`     | None within workspace            | `app`, `domain`, `foundation` | Shared ESLint, TypeScript, Next.js, Vitest, Playwright, and Allure    |
+| `foundation` | `config`, `foundation`           | `app`, `domain`               | Pure types, helpers, environment schemas, and telemetry registration  |
+| `domain`     | `config`, `foundation`, `domain` | `app`                         | UI design system, API clients, query hooks, auth, SEO, schemas, mocks |
+| `app`        | All tiers                        | —                             | End-user Next.js applications (`storefront`, `backoffice`)            |
 
-### Workspace Package Inventory (17 Packages)
+### Workspace Package Inventory
 
-| Package                        | Path                         | Boundary Tag | Responsibility                                                                                                      |
-| :----------------------------- | :--------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
-| `@bookworm/storefront`         | `apps/storefront`            | `app`        | Customer storefront with catalog discovery, shopping basket, checkout, reviews, and AI chat                         |
-| `@bookworm/backoffice`         | `apps/backoffice`            | `app`        | Staff admin dashboard for books, authors, categories, publishers, customers, orders, and reviews                    |
-| `@workspace/api-hooks`         | `packages/api-hooks`         | `domain`     | TanStack Query `queryOptions` factories, `useQueryFromOptions`, ETag hooks, and mutations                           |
-| `@workspace/api-client`        | `packages/api-client`        | `domain`     | Typed HTTP/SSE clients, conditional `If-None-Match` / `If-Match` requests, and endpoint registry                    |
-| `@workspace/auth`              | `packages/auth`              | `domain`     | Better Auth + Microsoft Entra ID server factory (`createEntraAuth`), route handler, client factory, and React hooks |
-| `@workspace/seo`               | `packages/seo`               | `domain`     | Shared Next.js metadata builder (`createMetadata`), `<JsonLd />`, and Schema.org structured-data generators         |
-| `@workspace/ui`                | `packages/ui`                | `domain`     | Base UI (`@base-ui/react`) and shadcn/ui component library styled with Tailwind CSS                                 |
-| `@workspace/validations`       | `packages/validations`       | `domain`     | Shared Zod v4 validation schemas for forms and request payloads                                                     |
-| `@workspace/mocks`             | `packages/mocks`             | `domain`     | MSW v2 request handlers and deterministic Faker factories shared by Vitest and browser mocks                        |
-| `@workspace/env`               | `packages/env`               | `foundation` | Composable `@t3-oss/env-nextjs` `keys()` builders (`authKeys`, `gatewayKeys`, `otelKeys`, `copilotKeys`)            |
-| `@workspace/otel`              | `packages/otel`              | `foundation` | Shared Next.js `register()` OpenTelemetry instrumentation and `otelKeys` re-export                                  |
-| `@workspace/types`             | `packages/types`             | `foundation` | Shared domain TypeScript interfaces and DTO definitions                                                             |
-| `@workspace/utils`             | `packages/utils`             | `foundation` | Auth token-exchange utilities, formatting helpers, URL/pattern helpers, and shared constants                        |
-| `@workspace/app-config`        | `packages/app-config`        | `config`     | Shared builders for `next.config.mjs`, `vitest.config.ts`, Vitest setup lifecycle, and Playwright BDD config        |
-| `@workspace/allure-config`     | `packages/allure-config`     | `config`     | Allure 3 report categories and enrichment plugins                                                                   |
-| `@workspace/eslint-config`     | `packages/eslint-config`     | `config`     | Shared ESLint flat configs (`base`, Next.js, jsx-a11y)                                                              |
-| `@workspace/typescript-config` | `packages/typescript-config` | `config`     | Strict TypeScript compiler bases for Next.js apps and React libraries                                               |
-
-### Environment & Instrumentation Wiring
-
-Apps compose only the environment slices they use in `env.mjs`:
-
-```ts
-import { createEnv } from "@t3-oss/env-nextjs";
-
-import { authKeys } from "@workspace/env/auth";
-import { gatewayKeys } from "@workspace/env/gateway";
-import { otelKeys } from "@workspace/env/otel";
-
-export const env = createEnv({
-	extends: [authKeys(), gatewayKeys(), otelKeys()],
-	server: {},
-	client: {},
-	runtimeEnv: {},
-	skipValidation: !!process.env.SKIP_ENV_VALIDATION,
-	emptyStringAsUndefined: true,
-});
-```
-
-Both `apps/storefront/instrumentation.ts` and `apps/backoffice/instrumentation.ts` re-export telemetry initialization in one line:
-
-```ts
-export { register } from "@workspace/otel/instrumentation";
-```
+| Package                        | Path                         | Tier         | Responsibility                                                 |
+| :----------------------------- | :--------------------------- | :----------- | :------------------------------------------------------------- |
+| `@bookworm/storefront`         | `apps/storefront`            | `app`        | Customer storefront (catalog, basket, checkout, reviews, chat) |
+| `@bookworm/backoffice`         | `apps/backoffice`            | `app`        | Staff dashboard (books, taxonomy, customers, orders, reviews)  |
+| `@workspace/api-hooks`         | `packages/api-hooks`         | `domain`     | TanStack Query options, hooks, mutations, and ETag handling    |
+| `@workspace/api-client`        | `packages/api-client`        | `domain`     | Typed HTTP/SSE clients and conditional request transport       |
+| `@workspace/auth`              | `packages/auth`              | `domain`     | Better Auth and Microsoft Entra ID integration                 |
+| `@workspace/seo`               | `packages/seo`               | `domain`     | Page metadata builders and Schema.org JSON-LD helpers          |
+| `@workspace/ui`                | `packages/ui`                | `domain`     | Base UI and shadcn/ui component library with Tailwind CSS      |
+| `@workspace/validations`       | `packages/validations`       | `domain`     | Shared Valibot validation schemas for forms and payloads       |
+| `@workspace/mocks`             | `packages/mocks`             | `domain`     | MSW v2 request handlers and deterministic Faker factories      |
+| `@workspace/env`               | `packages/env`               | `foundation` | Composable environment variable schemas                        |
+| `@workspace/otel`              | `packages/otel`              | `foundation` | Shared OpenTelemetry startup instrumentation                   |
+| `@workspace/types`             | `packages/types`             | `foundation` | Shared domain TypeScript interfaces and DTOs                   |
+| `@workspace/utils`             | `packages/utils`             | `foundation` | Token-exchange, formatting, URL helpers, and shared constants  |
+| `@workspace/app-config`        | `packages/app-config`        | `config`     | Shared Next.js, Vitest, and Playwright BDD configuration       |
+| `@workspace/allure-config`     | `packages/allure-config`     | `config`     | Allure 3 report categories and enrichment plugins              |
+| `@workspace/eslint-config`     | `packages/eslint-config`     | `config`     | Shared ESLint flat configs (base, Next.js, `jsx-a11y`)         |
+| `@workspace/typescript-config` | `packages/typescript-config` | `config`     | Strict TypeScript compiler bases                               |
 
 ### Related Documentation
 
-- [[doc|frontend/002-applications-and-routing]] — Next.js 16 route architecture, feature slices, auth, and SEO in Storefront and Backoffice
-- [[doc|frontend/003-data-fetching-and-state]] — API clients, `queryOptions` factories, ETag concurrency, SSE streams, and Jotai state
-- [[doc|frontend/004-testing-and-quality-gates]] — Vitest, MSW, Playwright BDD, accessibility checks, and Turborepo verification commands
-- [[doc|development/004-engineering-standards]] — Repository-wide coding and frontend conventions
+- [[doc|frontend/002-applications-and-routing]] — Route architecture, feature slices, auth, and SEO in both apps
+- [[doc|frontend/003-data-fetching-and-state]] — Data flow, caching, optimistic concurrency, and real-time updates
+- [[doc|frontend/004-testing-and-quality-gates]] — How to run frontend checks, unit tests, and E2E suites
+- [[doc|frontend/005-accessibility]] — Accessibility practices, contributor checklist, and barrier reporting

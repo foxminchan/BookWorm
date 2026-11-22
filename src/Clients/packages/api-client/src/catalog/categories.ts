@@ -15,16 +15,18 @@ class CategoriesApiClient {
     this.client = apiClient;
   }
 
-  public async list(): Promise<Category[]> {
+  public async list(signal?: AbortSignal): Promise<Category[]> {
     const response = await this.client.get<Category[]>(
       API_ENDPOINTS.catalog.categories.root,
+      signal ? { signal } : undefined,
     );
     return response.data;
   }
 
-  public async get(id: string): Promise<Category> {
+  public async get(id: string, signal?: AbortSignal): Promise<Category> {
     const response = await this.client.get<Category>(
       API_ENDPOINTS.catalog.categories.byId(id),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }

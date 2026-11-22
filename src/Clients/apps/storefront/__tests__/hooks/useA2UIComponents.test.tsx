@@ -3,6 +3,7 @@ import { JSX } from "react";
 import { render, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { withA2UIAccessibility } from "@/a2ui/renderers";
 import { useA2UIComponents } from "@/hooks/useA2UIComponents";
 
 type RegisteredComponent = {
@@ -164,6 +165,55 @@ describe("useA2UIComponents", () => {
       const { getByText } = render(component!.render({ books: [] }));
 
       expect(getByText(/No books found/i)).toBeInTheDocument();
+    });
+
+    it("renders singular book label when exactly one book is returned", () => {
+      renderHook(() => useA2UIComponents());
+
+      const component = registeredComponents.find(
+        (c) => c.name === "showBookList",
+      );
+
+      const { getByText } = render(
+        component!.render({
+          query: "clean",
+          books: [
+            {
+              id: "b1",
+              title: "Clean Code",
+              authors: ["Uncle Bob"],
+              price: 29.99,
+              priceSale: null,
+              status: "InStock",
+            },
+          ],
+        }),
+      );
+
+      expect(getByText(/1 book$/)).toBeInTheDocument();
+    });
+  });
+
+  describe("withA2UIAccessibility", () => {
+    it("injects ariaProps into the wrapped component", () => {
+      function SampleComponent({
+        label,
+        ariaProps,
+      }: {
+        label: string;
+        ariaProps?: Record<string, unknown>;
+      }) {
+        return (
+          <div data-testid="wrapped" {...ariaProps}>
+            {label}
+          </div>
+        );
+      }
+
+      const AccessibleSample = withA2UIAccessibility(SampleComponent);
+      const { getByTestId } = render(<AccessibleSample label="Hello" />);
+
+      expect(getByTestId("wrapped")).toHaveTextContent("Hello");
     });
   });
 

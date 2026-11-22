@@ -1,6 +1,7 @@
 import { DEFAULT_GATEWAY_URL } from "@workspace/utils/constants";
 
 import type { AxiosRequestConfig } from "./global";
+import { HttpHeaders } from "./headers";
 
 const getBaseURL = (): string => {
   return (
@@ -14,13 +15,18 @@ const defaultConfig: AxiosRequestConfig = {
   baseURL: getBaseURL(),
   withCredentials: true,
   timeout: 30000,
+  headers: {
+    [HttpHeaders.Accept]: "application/json",
+  },
+  paramsSerializer: {
+    indexes: null,
+  },
 };
 
 const axiosConfigs: Record<string, AxiosRequestConfig> = {
   default: defaultConfig,
   test: {
-    baseURL: getBaseURL(),
-    withCredentials: true,
+    ...defaultConfig,
     timeout: 10000,
   },
 };

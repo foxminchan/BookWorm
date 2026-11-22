@@ -10,11 +10,11 @@ export const feedbackQueries = {
   list: (query?: ListFeedbacksQuery) =>
     queryOptions({
       queryKey: ratingKeys.feedbacks.list(query),
-      queryFn: () => ratingApiClient.list(query),
+      queryFn: ({ signal }) => ratingApiClient.list(query, signal),
     }),
   summary: (bookId: string) =>
     queryOptions({
       queryKey: ratingKeys.feedbacks.summary(bookId),
-      queryFn: () => ratingApiClient.summary(bookId),
+      queryFn: ({ signal }) => ratingApiClient.summary(bookId, signal),
     }),
 };

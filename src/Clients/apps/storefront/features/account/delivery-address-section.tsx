@@ -2,21 +2,18 @@
 
 import { useCallback, useState } from "react";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, Field as FormischField, reset, useForm } from "@formisch/react";
 import { Edit2, Loader2, MapPin, Save, X } from "lucide-react";
-import { useForm } from "react-hook-form";
 
 import useUpdateBuyerAddress from "@workspace/api-hooks/ordering/buyers/useUpdateBuyerAddress";
 import type { Buyer } from "@workspace/types/ordering/buyers";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@workspace/ui/components/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import {
   type UpdateAddressInput,
@@ -52,9 +49,9 @@ export default function DeliveryAddressSection({
 }: Readonly<DeliveryAddressSectionProps>) {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
 
-  const form = useForm<UpdateAddressInput>({
-    resolver: zodResolver(updateAddressSchema),
-    defaultValues: {
+  const form = useForm({
+    schema: updateAddressSchema,
+    initialInput: {
       street: "",
       city: "",
       province: "",
@@ -64,13 +61,13 @@ export default function DeliveryAddressSection({
   const updateAddressMutation = useUpdateBuyerAddress();
 
   const handleEditAddress = useCallback(() => {
-    form.reset(parseAddress(buyer.address));
+    reset(form, { initialInput: parseAddress(buyer.address) });
     setIsEditingAddress(true);
   }, [buyer.address, form]);
 
   const handleCancelEdit = useCallback(() => {
     setIsEditingAddress(false);
-    form.reset();
+    reset(form);
   }, [form]);
 
   const handleSaveAddress = useCallback(
@@ -108,75 +105,81 @@ export default function DeliveryAddressSection({
       </div>
 
       {isEditingAddress ? (
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSaveAddress)}
-            className="mt-6 space-y-4 pl-13"
-          >
-            <FormField
-              control={form.control}
-              name="street"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Street Address</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter street address"
-                      className="border-border/40"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+        <Form
+          of={form}
+          onSubmit={handleSaveAddress}
+          className="mt-6 space-y-4 pl-13"
+        >
+          <FieldGroup className="gap-4">
+            <FormischField of={form} path={["street"]}>
+              {(field) => (
+                <Field data-invalid={!!field.errors}>
+                  <FieldLabel htmlFor="address-street">
+                    Street Address
+                  </FieldLabel>
+                  <Input
+                    {...field.props}
+                    id="address-street"
+                    value={field.input ?? ""}
+                    placeholder="Enter street address"
+                    className="border-border/40"
+                    aria-invalid={!!field.errors}
+                  />
+                  <FieldError
+                    errors={field.errors?.map((message) => ({ message }))}
+                  />
+                </Field>
               )}
-            />
+            </FormischField>
             <div className="grid grid-cols-2 gap-4">
               {ADDRESS_FIELDS.map(({ name, label, placeholder }) => (
-                <FormField
-                  key={name}
-                  control={form.control}
-                  name={name}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{label}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={placeholder}
-                          className="border-border/40"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <FormischField key={name} of={form} path={[name]}>
+                  {(field) => (
+                    <Field data-invalid={!!field.errors}>
+                      <FieldLabel htmlFor={`address-${name}`}>
+                        {label}
+                      </FieldLabel>
+                      <Input
+                        {...field.props}
+                        id={`address-${name}`}
+                        value={field.input ?? ""}
+                        placeholder={placeholder}
+                        className="border-border/40"
+                        aria-invalid={!!field.errors}
+                      />
+                      <FieldError
+                        errors={field.errors?.map((message) => ({ message }))}
+                      />
+                    </Field>
                   )}
-                />
+                </FormischField>
               ))}
             </div>
-            <div className="flex gap-3 pt-2">
-              <Button
-                type="submit"
-                className="bg-primary hover:bg-primary/90 flex-1 gap-2"
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Save className="size-4" aria-hidden="true" />
-                )}
-                {isPending ? "Saving..." : "Save Address"}
-              </Button>
-              <Button
-                type="button"
-                onClick={handleCancelEdit}
-                variant="outline"
-                className="gap-2 bg-transparent"
-                disabled={isPending}
-              >
-                <X className="size-4" aria-hidden="true" />
-                Cancel
-              </Button>
-            </div>
-          </form>
+          </FieldGroup>
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="submit"
+              className="bg-primary hover:bg-primary/90 flex-1 gap-2"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Save className="size-4" aria-hidden="true" />
+              )}
+              {isPending ? "Saving..." : "Save Address"}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCancelEdit}
+              variant="outline"
+              className="gap-2 bg-transparent"
+              disabled={isPending}
+            >
+              <X className="size-4" aria-hidden="true" />
+              Cancel
+            </Button>
+          </div>
         </Form>
       ) : (
         <p className="text-muted-foreground pl-13 text-base leading-relaxed">

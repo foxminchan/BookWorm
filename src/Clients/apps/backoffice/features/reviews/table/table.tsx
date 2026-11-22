@@ -3,13 +3,15 @@
 import { useEffect } from "react";
 
 import useFeedbacks from "@workspace/api-hooks/rating/useFeedbacks";
-import type { ListFeedbacksQuery } from "@workspace/types/rating";
+import type { Feedback, ListFeedbacksQuery } from "@workspace/types/rating";
 import { TooltipProvider } from "@workspace/ui/components/tooltip";
 
 import { FilterTable } from "@/components/filter-table";
 import { usePaginatedTable } from "@/hooks/usePaginatedTable";
 
 import { reviewsColumns } from "./columns";
+
+const EMPTY_REVIEWS: Feedback[] = [];
 
 type ReviewsTableProps = Readonly<{
   bookId: string;
@@ -19,6 +21,7 @@ export function ReviewsTable({ bookId }: ReviewsTableProps) {
   const {
     pageIndex,
     pageSize,
+    sorting,
     sortingQuery,
     apiPageIndex,
     handlePaginationChange,
@@ -39,7 +42,7 @@ export function ReviewsTable({ bookId }: ReviewsTableProps) {
 
   const { data, isLoading } = useFeedbacks(query);
 
-  const reviews = data?.items ?? [];
+  const reviews = data?.items ?? EMPTY_REVIEWS;
   const totalCount = data?.totalCount ?? 0;
 
   return (
@@ -54,6 +57,7 @@ export function ReviewsTable({ bookId }: ReviewsTableProps) {
         pageSize={pageSize}
         isLoading={isLoading}
         onPaginationChange={handlePaginationChange}
+        sorting={sorting}
         onSortingChange={handleSortingChange}
       />
     </TooltipProvider>

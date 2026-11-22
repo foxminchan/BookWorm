@@ -1,3 +1,4 @@
+import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
@@ -83,11 +84,11 @@ describe("searchBooksTool", () => {
   });
 
   it("validates parameters with searchBooksParameters", () => {
-    expect(searchBooksParameters.parse({ query: "ddd" })).toEqual({
+    expect(v.parse(searchBooksParameters, { query: "ddd" })).toEqual({
       query: "ddd",
     });
     expect(
-      searchBooksParameters.parse({
+      v.parse(searchBooksParameters, {
         query: "ddd",
         category: "architecture",
         maxResults: 20,
@@ -97,7 +98,7 @@ describe("searchBooksTool", () => {
       category: "architecture",
       maxResults: 20,
     });
-    expect(() => searchBooksParameters.parse({})).toThrow();
+    expect(() => v.parse(searchBooksParameters, {})).toThrow();
   });
 });
 
@@ -124,9 +125,9 @@ describe("getBookDetailsTool", () => {
   });
 
   it("validates parameters with getBookDetailsParameters", () => {
-    expect(getBookDetailsParameters.parse({ bookId: "book-1" })).toEqual({
+    expect(v.parse(getBookDetailsParameters, { bookId: "book-1" })).toEqual({
       bookId: "book-1",
     });
-    expect(() => getBookDetailsParameters.parse({})).toThrow();
+    expect(() => v.parse(getBookDetailsParameters, {})).toThrow();
   });
 });

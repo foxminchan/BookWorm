@@ -1,5 +1,8 @@
 import { betterAuth } from "better-auth";
-import { genericOAuth, microsoftEntraId } from "better-auth/plugins";
+import {
+  genericOAuth,
+  microsoftEntraId,
+} from "better-auth/plugins/generic-oauth";
 
 export interface EntraAuthEnv {
   BETTER_AUTH_SECRET?: string;
@@ -70,6 +73,14 @@ export function createEntraAuth({
     ].filter((origin): origin is string => Boolean(origin)),
     emailAndPassword: {
       enabled: false,
+    },
+    account: {
+      encryptOAuthTokens: true,
+    },
+    advanced: {
+      ipAddress: {
+        ipAddressHeaders: ["x-forwarded-for", "x-real-ip"],
+      },
     },
     plugins: [
       genericOAuth({

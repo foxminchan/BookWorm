@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationOptions, useQueryClient } from "@tanstack/react-query";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
 import type {
@@ -13,6 +9,7 @@ import type {
 } from "@workspace/types/basket";
 
 import { basketKeys } from "../keys";
+import { useMutationFromOptions } from "../use-mutation-from-options";
 
 export default function useUpdateBasket(
   options?: UseMutationOptions<
@@ -23,11 +20,13 @@ export default function useUpdateBasket(
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ request }) => basketApiClient.update(request),
-    onSuccess: (data) => {
-      queryClient.setQueryData(basketKeys.detail(), data);
+  return useMutationFromOptions(
+    {
+      mutationFn: ({ request }) => basketApiClient.update(request),
+      onSuccess: (data) => {
+        queryClient.setQueryData(basketKeys.detail(), data);
+      },
     },
-    ...options,
-  });
+    options,
+  );
 }

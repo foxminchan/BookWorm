@@ -26,11 +26,12 @@ export default function useOrderSummary(
 
   const result = useQuery({
     queryKey,
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       fetchWithETag(
         queryClient,
         queryKey,
-        (opts) => ordersApiClient.getSummaryConditional(id, query, opts),
+        (opts) =>
+          ordersApiClient.getSummaryConditional(id, query, { ...opts, signal }),
         `order summary ${id}`,
       ),
     ...options,

@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, getInput, reset, useForm } from "@formisch/react";
 import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import {
@@ -26,7 +25,6 @@ import {
   AlertTitle,
 } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
-import { Form } from "@workspace/ui/components/form";
 import { DEFAULT_BOOK_IMAGE } from "@workspace/utils/constants";
 import {
   type CreateBookInput,
@@ -45,7 +43,6 @@ type BookFormProps = Readonly<{
 
 export function BookForm({ bookId }: BookFormProps) {
   const router = useRouter();
-  const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | undefined>(undefined);
   const [isRemoveImage, setIsRemoveImage] = useState(false);
@@ -72,9 +69,9 @@ export function BookForm({ bookId }: BookFormProps) {
   const categories = categoriesData ?? [];
   const publishers = publishersData ?? [];
 
-  const form = useForm<CreateBookInput>({
-    resolver: zodResolver(createBookSchema),
-    defaultValues: {
+  const form = useForm({
+    schema: createBookSchema,
+    initialInput: {
       name: "",
       description: "",
       price: undefined,
@@ -87,16 +84,17 @@ export function BookForm({ bookId }: BookFormProps) {
 
   useEffect(() => {
     if (bookData && bookId) {
-      form.reset({
-        name: bookData.name ?? "",
-        description: bookData.description ?? "",
-        price: bookData.price,
-        priceSale: bookData.priceSale,
-        categoryId: bookData.category?.id ?? "",
-        publisherId: bookData.publisher?.id ?? "",
-        authorIds: bookData.authors.map((a) => a.id),
+      reset(form, {
+        initialInput: {
+          name: bookData.name ?? "",
+          description: bookData.description ?? "",
+          price: bookData.price,
+          priceSale: bookData.priceSale,
+          categoryId: bookData.category?.id ?? "",
+          publisherId: bookData.publisher?.id ?? "",
+          authorIds: bookData.authors.map((a) => a.id),
+        },
       });
-      setSelectedAuthors(bookData.authors.map((a) => a.id));
       if (bookData.imageUrl) {
         setImagePreview(bookData.imageUrl);
       }
@@ -117,7 +115,6 @@ export function BookForm({ bookId }: BookFormProps) {
           request: {
             id: bookId,
             ...data,
-            authorIds: selectedAuthors,
             image: imageFile,
             isRemoveImage,
           },
@@ -144,7 +141,6 @@ export function BookForm({ bookId }: BookFormProps) {
       createMutation.mutate(
         {
           ...data,
-          authorIds: selectedAuthors,
           image: imageFile,
         },
         {
@@ -181,14 +177,6 @@ export function BookForm({ bookId }: BookFormProps) {
     }
   };
 
-  const toggleAuthor = (authorId: string) => {
-    const newAuthors = selectedAuthors.includes(authorId)
-      ? selectedAuthors.filter((id) => id !== authorId)
-      : [...selectedAuthors, authorId];
-    setSelectedAuthors(newAuthors);
-    form.setValue("authorIds", newAuthors, { shouldValidate: true });
-  };
-
   if (bookId && isLoadingBook) {
     return <BookFormSkeleton />;
   }
@@ -199,81 +187,78 @@ export function BookForm({ bookId }: BookFormProps) {
 
   const submitLabel = bookId ? "Update Book" : "Create Book";
   const submittingLabel = bookId ? "Updating..." : "Creating...";
+  const currentInput = getInput(form);
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {hasVersionConflict && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Version conflict detected</AlertTitle>
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>
-                This book was updated elsewhere since you opened it. Reload the
-                latest version before saving your changes.
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleReloadLatest}
-              >
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                Reload latest version
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+    <Form of={form} onSubmit={onSubmit} className="space-y-6">
+      {hasVersionConflict && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Version conflict detected</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+            <span>
+              This book was updated elsewhere since you opened it. Reload the
+              latest version before saving your changes.
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleReloadLatest}
+            >
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              Reload latest version
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
-        <BookInfoCard form={form} />
+      <BookInfoCard form={form} />
 
-        <ClassificationCard
-          form={form}
-          categories={categories}
-          publishers={publishers}
-          authors={authors}
-          selectedAuthors={selectedAuthors}
-          isLoading={isLoadingClassificationData}
-          onToggleAuthor={toggleAuthor}
-        />
+      <ClassificationCard
+        form={form}
+        categories={categories}
+        publishers={publishers}
+        authors={authors}
+        isLoading={isLoadingClassificationData}
+      />
 
-        <ImageCard
-          bookId={bookId}
-          bookName={bookData?.name ?? undefined}
-          imagePreview={imagePreview}
-          onImageChange={handleImageChange}
-          onImageRemove={() => {
-            setImagePreview(null);
-            setImageFile(undefined);
-            setIsRemoveImage(true);
-          }}
-          onImageError={() => setImagePreview(DEFAULT_BOOK_IMAGE)}
-        />
+      <ImageCard
+        bookId={bookId}
+        bookName={bookData?.name ?? undefined}
+        imagePreview={imagePreview}
+        onImageChange={handleImageChange}
+        onImageRemove={() => {
+          setImagePreview(null);
+          setImageFile(undefined);
+          setIsRemoveImage(true);
+        }}
+        onImageError={() => setImagePreview(DEFAULT_BOOK_IMAGE)}
+      />
 
-        <div className="flex gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={
-              isLoading ||
-              selectedAuthors.length === 0 ||
-              !form.watch("categoryId") ||
-              !form.watch("publisherId")
-            }
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {submittingLabel}
-              </>
-            ) : (
-              submitLabel
-            )}
-          </Button>
-        </div>
-      </form>
+      <div className="flex gap-4">
+        <Button type="button" variant="outline" onClick={() => router.back()}>
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={
+            isLoading ||
+            (currentInput.authorIds?.length ?? 0) === 0 ||
+            !currentInput.categoryId ||
+            !currentInput.publisherId
+          }
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {submittingLabel}
+            </>
+          ) : (
+            submitLabel
+          )}
+        </Button>
+      </div>
     </Form>
   );
 }

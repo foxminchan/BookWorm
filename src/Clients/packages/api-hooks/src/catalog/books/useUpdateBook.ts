@@ -1,15 +1,12 @@
 "use client";
 
-import {
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type UseMutationOptions, useQueryClient } from "@tanstack/react-query";
 
 import booksApiClient from "@workspace/api-client/catalog/books";
 import type { UpdateBookRequest } from "@workspace/types/catalog/books";
 
 import { catalogKeys } from "../../keys";
+import { useMutationFromOptions } from "../../use-mutation-from-options";
 
 export type UpdateBookVariables = {
   request: UpdateBookRequest;
@@ -21,15 +18,17 @@ export default function useUpdateBook(
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ request, ifMatch }) =>
-      booksApiClient.update(request, ifMatch ? { ifMatch } : undefined),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: catalogKeys.books.detail(variables.request.id),
-      });
-      queryClient.invalidateQueries({ queryKey: catalogKeys.books.lists() });
+  return useMutationFromOptions(
+    {
+      mutationFn: ({ request, ifMatch }) =>
+        booksApiClient.update(request, ifMatch ? { ifMatch } : undefined),
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries({
+          queryKey: catalogKeys.books.detail(variables.request.id),
+        });
+        queryClient.invalidateQueries({ queryKey: catalogKeys.books.lists() });
+      },
     },
-    ...options,
-  });
+    options,
+  );
 }

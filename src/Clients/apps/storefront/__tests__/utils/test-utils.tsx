@@ -7,6 +7,8 @@ import {
   render,
 } from "@testing-library/react";
 import { Provider as JotaiProvider } from "jotai";
+import { queryClientAtom } from "jotai-tanstack-query";
+import { useHydrateAtoms } from "jotai/utils";
 import { vi } from "vitest";
 
 /**
@@ -32,6 +34,17 @@ type AllTheProvidersProps = {
   children: ReactNode;
 };
 
+function HydrateTestAtoms({
+  queryClient,
+  children,
+}: Readonly<{
+  queryClient: QueryClient;
+  children: ReactNode;
+}>) {
+  useHydrateAtoms([[queryClientAtom, queryClient]]);
+  return children;
+}
+
 /**
  * Wrapper component that provides all necessary contexts for testing
  */
@@ -40,7 +53,11 @@ function AllTheProviders({ children }: Readonly<AllTheProvidersProps>) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <JotaiProvider>{children}</JotaiProvider>
+      <JotaiProvider>
+        <HydrateTestAtoms queryClient={queryClient}>
+          {children}
+        </HydrateTestAtoms>
+      </JotaiProvider>
     </QueryClientProvider>
   );
 }

@@ -15,16 +15,18 @@ class PublishersApiClient {
     this.client = apiClient;
   }
 
-  public async list(): Promise<Publisher[]> {
+  public async list(signal?: AbortSignal): Promise<Publisher[]> {
     const response = await this.client.get<Publisher[]>(
       API_ENDPOINTS.catalog.publishers.root,
+      signal ? { signal } : undefined,
     );
     return response.data;
   }
 
-  public async get(id: string): Promise<Publisher> {
+  public async get(id: string, signal?: AbortSignal): Promise<Publisher> {
     const response = await this.client.get<Publisher>(
       API_ENDPOINTS.catalog.publishers.byId(id),
+      signal ? { signal } : undefined,
     );
     return response.data;
   }

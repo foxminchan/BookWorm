@@ -1,36 +1,42 @@
-import { z } from "zod";
+import * as v from "valibot";
 
 const MAX_LENGTH_MEDIUM = 50;
 
-const addressSchema = z.object({
-  street: z
-    .string()
-    .min(1, { error: "Street is required" })
-    .max(MAX_LENGTH_MEDIUM, {
-      error: `Street must not exceed ${MAX_LENGTH_MEDIUM} characters`,
-    }),
-  city: z
-    .string()
-    .min(1, { error: "City is required" })
-    .max(MAX_LENGTH_MEDIUM, {
-      error: `City must not exceed ${MAX_LENGTH_MEDIUM} characters`,
-    }),
-  province: z
-    .string()
-    .min(1, { error: "Province is required" })
-    .max(MAX_LENGTH_MEDIUM, {
-      error: `Province must not exceed ${MAX_LENGTH_MEDIUM} characters`,
-    }),
+const addressSchema = v.object({
+  street: v.pipe(
+    v.string(),
+    v.minLength(1, "Street is required"),
+    v.maxLength(
+      MAX_LENGTH_MEDIUM,
+      `Street must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+    ),
+  ),
+  city: v.pipe(
+    v.string(),
+    v.minLength(1, "City is required"),
+    v.maxLength(
+      MAX_LENGTH_MEDIUM,
+      `City must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+    ),
+  ),
+  province: v.pipe(
+    v.string(),
+    v.minLength(1, "Province is required"),
+    v.maxLength(
+      MAX_LENGTH_MEDIUM,
+      `Province must not exceed ${MAX_LENGTH_MEDIUM} characters`,
+    ),
+  ),
 });
 
 export const createBuyerSchema = addressSchema;
 export const updateAddressSchema = addressSchema;
 
-export const listBuyersSchema = z.object({
-  pageIndex: z.number().int().positive().default(1).optional(),
-  pageSize: z.number().int().positive().default(10).optional(),
+export const listBuyersSchema = v.object({
+  pageIndex: v.optional(v.pipe(v.number(), v.integer(), v.gtValue(0)), 1),
+  pageSize: v.optional(v.pipe(v.number(), v.integer(), v.gtValue(0)), 10),
 });
 
-export type CreateBuyerInput = z.infer<typeof createBuyerSchema>;
-export type UpdateAddressInput = z.infer<typeof updateAddressSchema>;
-export type ListBuyersInput = z.infer<typeof listBuyersSchema>;
+export type CreateBuyerInput = v.InferOutput<typeof createBuyerSchema>;
+export type UpdateAddressInput = v.InferOutput<typeof updateAddressSchema>;
+export type ListBuyersInput = v.InferOutput<typeof listBuyersSchema>;

@@ -4,7 +4,7 @@ import axios, {
   type AxiosResponse,
   HttpStatusCode,
 } from "axios";
-import axiosRetry, { exponentialDelay } from "axios-retry";
+import pRetry from "p-retry";
 
 import axiosConfig from "./config";
 import type { AxiosRequestConfig } from "./global";
@@ -13,6 +13,14 @@ import { HttpHeaders } from "./headers";
 export { HttpHeaders } from "./headers";
 
 const DEFAULT_MAX_RETRIES = Number(process.env.NEXT_PUBLIC_MAX_RETRIES) || 5;
+const IDEMPOTENT_HTTP_METHODS = new Set([
+  "get",
+  "head",
+  "options",
+  "put",
+  "delete",
+  "query",
+]);
 
 /**
  * A function that resolves the current access token, or `null` if unavailable.
@@ -65,10 +73,12 @@ export function isPreconditionFailedError(error: unknown): boolean {
 
 export default class ApiClient {
   private readonly client: AxiosInstance;
+  private readonly maxRetries: number;
   private tokenProvider: AccessTokenProvider | null = null;
 
   constructor(config = axiosConfig, maxRetries = DEFAULT_MAX_RETRIES) {
     const axiosConfigs = "baseURL" in config ? config : axiosConfig;
+    this.maxRetries = maxRetries;
 
     this.client = axios.create({
       ...axiosConfigs,
@@ -84,33 +94,46 @@ export default class ApiClient {
       }
       return requestConfig;
     });
+  }
 
-    axiosRetry(this.client, {
-      retries: maxRetries,
-      retryDelay: exponentialDelay,
-      retryCondition: (error) => {
-        if (!error.response) {
-          return axiosRetry.isNetworkError(error);
-        }
+  private shouldRetryRequest(error: unknown): boolean {
+    if (!axios.isAxiosError(error) || axios.isCancel(error)) {
+      return false;
+    }
 
-        const status = error.response.status;
+    if (!error.response) {
+      return Boolean(error.code) && error.code !== "ECONNABORTED";
+    }
 
-        // Never retry permanent client errors (4xx except 408 and 429)
-        if (
-          status >= HttpStatusCode.BadRequest &&
-          status < HttpStatusCode.InternalServerError &&
-          status !== HttpStatusCode.RequestTimeout &&
-          status !== HttpStatusCode.TooManyRequests
-        ) {
-          return false;
-        }
+    const status = error.response.status;
 
-        return (
-          axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-          status === HttpStatusCode.RequestTimeout ||
-          status === HttpStatusCode.TooManyRequests
-        );
-      },
+    if (
+      status === HttpStatusCode.RequestTimeout ||
+      status === HttpStatusCode.TooManyRequests
+    ) {
+      return true;
+    }
+
+    // Never retry permanent client errors (4xx except 408 and 429)
+    if (
+      status >= HttpStatusCode.BadRequest &&
+      status < HttpStatusCode.InternalServerError
+    ) {
+      return false;
+    }
+
+    const method = error.config?.method?.toLowerCase();
+    return method !== undefined && IDEMPOTENT_HTTP_METHODS.has(method);
+  }
+
+  private requestWithRetry<T>(
+    operation: () => Promise<AxiosResponse<T>>,
+    signal?: AxiosRequestConfig["signal"],
+  ): Promise<AxiosResponse<T>> {
+    return pRetry(operation, {
+      retries: this.maxRetries,
+      signal: signal instanceof AbortSignal ? signal : undefined,
+      shouldRetry: ({ error }) => this.shouldRetryRequest(error),
     });
   }
 
@@ -131,12 +154,15 @@ export default class ApiClient {
     url: string,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
-    return this.client.get<T>(url, config);
+    return this.requestWithRetry(
+      () => this.client.get<T>(url, config),
+      config?.signal,
+    );
   }
 
   public async getConditional<T>(
     url: string,
-    options?: { ifNoneMatch?: string; params?: unknown },
+    options?: { ifNoneMatch?: string; params?: unknown; signal?: AbortSignal },
   ): Promise<ConditionalResponse<T>> {
     const headers = new AxiosHeaders({
       [HttpHeaders.CacheControl]: "no-cache",
@@ -149,6 +175,7 @@ export default class ApiClient {
     const response = await this.get<T>(url, {
       params: options?.params,
       headers,
+      signal: options?.signal,
       validateStatus: (status) =>
         (status >= HttpStatusCode.Ok &&
           status < HttpStatusCode.MultipleChoices) ||
@@ -169,12 +196,16 @@ export default class ApiClient {
     data?: unknown,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
-    return this.client.request<T>({
-      ...config,
-      method: "QUERY",
-      url,
-      data,
-    });
+    return this.requestWithRetry(
+      () =>
+        this.client.request<T>({
+          ...config,
+          method: "QUERY",
+          url,
+          data,
+        }),
+      config?.signal,
+    );
   }
 
   public post<T>(
@@ -182,7 +213,10 @@ export default class ApiClient {
     data?: unknown,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
-    return this.client.post<T>(url, data, config);
+    return this.requestWithRetry(
+      () => this.client.post<T>(url, data, config),
+      config?.signal,
+    );
   }
 
   public put<T>(
@@ -190,7 +224,10 @@ export default class ApiClient {
     data?: unknown,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
-    return this.client.put<T>(url, data, config);
+    return this.requestWithRetry(
+      () => this.client.put<T>(url, data, config),
+      config?.signal,
+    );
   }
 
   public patch<T>(
@@ -198,14 +235,20 @@ export default class ApiClient {
     data?: unknown,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
-    return this.client.patch<T>(url, data, config);
+    return this.requestWithRetry(
+      () => this.client.patch<T>(url, data, config),
+      config?.signal,
+    );
   }
 
   public delete<T>(
     url: string,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
-    return this.client.delete<T>(url, config);
+    return this.requestWithRetry(
+      () => this.client.delete<T>(url, config),
+      config?.signal,
+    );
   }
 }
 

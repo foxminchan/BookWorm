@@ -1,13 +1,16 @@
 import { generateTraceId } from "./trace";
 
 /**
- * Convert Zod validation errors to FluentValidation-compatible error response
- * @param error - Zod error object containing validation issues
+ * Convert Valibot validation errors to FluentValidation-compatible error response
+ * @param error - Validation error object containing issues
  * @returns A FluentValidation-formatted error response with RFC9110 reference
  * @see https://tools.ietf.org/html/rfc9110#section-15.5.1
  */
 export function formatValidationErrors(error: {
-  issues: Array<{ path: PropertyKey[]; message: string }>;
+  issues: ReadonlyArray<{
+    path?: ReadonlyArray<PropertyKey | { key: unknown }>;
+    message: string;
+  }>;
 }): {
   type: string;
   title: string;
@@ -18,7 +21,19 @@ export function formatValidationErrors(error: {
   const errors: Record<string, string[]> = {};
 
   for (const issue of error.issues) {
-    const field = issue.path[0]?.toString() || "Unknown";
+    const firstSegment = issue.path?.[0];
+    const rawKey =
+      firstSegment !== null &&
+      typeof firstSegment === "object" &&
+      "key" in firstSegment
+        ? firstSegment.key
+        : firstSegment;
+    const field =
+      (typeof rawKey === "string" ||
+      typeof rawKey === "number" ||
+      typeof rawKey === "symbol"
+        ? String(rawKey)
+        : "") || "Unknown";
     const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
     errors[fieldName] = [issue.message];
   }

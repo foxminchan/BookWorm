@@ -1,12 +1,12 @@
-import { z } from "zod";
+import * as v from "valibot";
 
-export const orderStatusSchema = z.enum(["New", "Cancelled", "Completed"]);
+export const orderStatusSchema = v.picklist(["New", "Cancelled", "Completed"]);
 
-export const listOrdersSchema = z.object({
-  pageIndex: z.number().int().positive().default(1).optional(),
-  pageSize: z.number().int().positive().default(10).optional(),
-  status: orderStatusSchema.optional(),
-  buyerId: z.uuid({ error: "Invalid buyer ID format" }).optional(),
+export const listOrdersSchema = v.object({
+  pageIndex: v.optional(v.pipe(v.number(), v.integer(), v.gtValue(0)), 1),
+  pageSize: v.optional(v.pipe(v.number(), v.integer(), v.gtValue(0)), 10),
+  status: v.optional(orderStatusSchema),
+  buyerId: v.optional(v.pipe(v.string(), v.uuid("Invalid buyer ID format"))),
 });
 
-export type ListOrdersInput = z.infer<typeof listOrdersSchema>;
+export type ListOrdersInput = v.InferOutput<typeof listOrdersSchema>;

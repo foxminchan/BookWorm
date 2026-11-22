@@ -1,15 +1,15 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import * as v from "valibot";
 
 /** Validates OpenTelemetry exporter and Next.js runtime environment variables. */
 export const otelKeys = () =>
   createEnv({
     server: {
-      OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
-      OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
+      OTEL_EXPORTER_OTLP_ENDPOINT: v.optional(v.string()),
+      OTEL_EXPORTER_OTLP_HEADERS: v.optional(v.string()),
     },
     shared: {
-      NEXT_RUNTIME: z.enum(["nodejs", "edge"]).optional(),
+      NEXT_RUNTIME: v.optional(v.picklist(["nodejs", "edge"])),
     },
     runtimeEnv: {
       OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,

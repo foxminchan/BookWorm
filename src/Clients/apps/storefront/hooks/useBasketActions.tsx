@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState } from "react";
 
 import { useFrontendTool } from "@copilotkit/react-core/v2";
+import { toStandardJsonSchema } from "@valibot/to-json-schema";
 import { Check } from "lucide-react";
-import { z } from "zod";
+import * as v from "valibot";
 
 import basketApiClient from "@workspace/api-client/basket/baskets";
 import type { BasketItem } from "@workspace/types/basket";
@@ -27,21 +28,26 @@ export function useBasketActions() {
     name: "addToBasket",
     description:
       "Add a book to the user's shopping basket. Use this when the user expresses interest in purchasing a book. Always requires user confirmation before adding.",
-    parameters: z.object({
-      bookId: z.string().describe("The unique identifier of the book to add"),
-      quantity: z
-        .number()
-        .optional()
-        .describe("Number of copies to add (default 1)"),
-      bookTitle: z
-        .string()
-        .optional()
-        .describe("The title of the book (for confirmation display)"),
-      price: z
-        .number()
-        .optional()
-        .describe("The price of the book (for confirmation display)"),
-    }),
+    parameters: toStandardJsonSchema(
+      v.object({
+        bookId: v.pipe(
+          v.string(),
+          v.description("The unique identifier of the book to add"),
+        ),
+        quantity: v.pipe(
+          v.optional(v.number()),
+          v.description("Number of copies to add (default 1)"),
+        ),
+        bookTitle: v.pipe(
+          v.optional(v.string()),
+          v.description("The title of the book (for confirmation display)"),
+        ),
+        price: v.pipe(
+          v.optional(v.number()),
+          v.description("The price of the book (for confirmation display)"),
+        ),
+      }),
+    ),
     handler: async ({ bookId, quantity = 1, bookTitle, price }) => {
       // Request user confirmation before adding to basket (Human-in-the-Loop)
       const confirmed = await requestConfirmation(
@@ -95,7 +101,7 @@ export function useBasketActions() {
     name: "viewBasket",
     description:
       "Show the current contents of the user's shopping basket with all items and total price",
-    parameters: z.object({}),
+    parameters: toStandardJsonSchema(v.object({})),
     handler: async () => {
       const data = await basketApiClient.get();
 

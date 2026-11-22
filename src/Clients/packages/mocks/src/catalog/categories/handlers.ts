@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 
 import { API_ENDPOINTS } from "@workspace/api-client/endpoints";
 import type {
@@ -32,15 +33,18 @@ export const categoriesHandlers = [
     mockUrl(API_ENDPOINTS.catalog.categories.root),
     async ({ request }) => {
       const body = await request.json();
-      const result = createCategorySchema.safeParse(body);
+      const result = v.safeParse(createCategorySchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const newCategoryId = categoriesStore.create(result.data.name);
+      const newCategoryId = categoriesStore.create(result.output.name);
       return HttpResponse.json(newCategoryId, { status: 200 });
     },
   ),
@@ -49,15 +53,21 @@ export const categoriesHandlers = [
     mockUrl(API_ENDPOINTS.catalog.categories.root),
     async ({ request }) => {
       const body = await request.json();
-      const result = updateCategorySchema.safeParse(body);
+      const result = v.safeParse(updateCategorySchema, body);
 
       if (!result.success) {
-        return HttpResponse.json(formatValidationErrors(result.error), {
-          status: 400,
-        });
+        return HttpResponse.json(
+          formatValidationErrors({ issues: result.issues }),
+          {
+            status: 400,
+          },
+        );
       }
 
-      const updated = categoriesStore.update(result.data.id, result.data.name);
+      const updated = categoriesStore.update(
+        result.output.id,
+        result.output.name,
+      );
 
       if (!updated) {
         return createNotFoundResponse("Category");
