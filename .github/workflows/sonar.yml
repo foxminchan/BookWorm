@@ -81,6 +81,7 @@ jobs:
           path: |
             src/Clients/apps/storefront/coverage/lcov.info
             src/Clients/apps/backoffice/coverage/lcov.info
+            src/Clients/apps/commerce/coverage/lcov.info
           retention-days: 1
           if-no-files-found: warn
 

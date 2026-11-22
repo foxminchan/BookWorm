@@ -84,6 +84,15 @@ jobs:
           retention-days: ${{ inputs.retention-days }}
           if-no-files-found: ignore
 
+      - name: ⬆️ Upload Allure Results (Commerce)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-fe-cm
+          path: ${{ env.FRONTEND_APPS_DIR }}/commerce/allure-results/
+          retention-days: ${{ inputs.retention-days }}
+          if-no-files-found: ignore
+
       - name: ⬆️ Upload Allure Report (Backoffice)
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
@@ -99,6 +108,15 @@ jobs:
         with:
           name: allure-report-storefront
           path: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report/
+          retention-days: ${{ inputs.retention-days }}
+          if-no-files-found: ignore
+
+      - name: ⬆️ Upload Allure Report (Commerce)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-report-commerce
+          path: ${{ env.FRONTEND_APPS_DIR }}/commerce/allure-report/
           retention-days: ${{ inputs.retention-days }}
           if-no-files-found: ignore
 
@@ -118,4 +136,13 @@ jobs:
         with:
           report-directory: ${{ env.FRONTEND_APPS_DIR }}/storefront/allure-report
           remote-href: https://foxminchan.github.io/BookWorm/reports/storefront
+          github-token: ${{ github.token }}
+
+      - name: 📊 Post Allure Summary (Commerce)
+        if: |
+          ${{ !cancelled() && hashFiles('src/Clients/apps/commerce/allure-report/index.html') != '' }}
+        uses: allure-framework/allure-action@v0.12.0
+        with:
+          report-directory: ${{ env.FRONTEND_APPS_DIR }}/commerce/allure-report
+          remote-href: https://foxminchan.github.io/BookWorm/reports/commerce
           github-token: ${{ github.token }}

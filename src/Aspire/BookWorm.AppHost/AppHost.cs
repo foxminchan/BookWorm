@@ -1,3 +1,5 @@
+using BookWorm.AppHost.Extensions.Proxy;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var containerAppEnvironment = builder
@@ -252,15 +254,28 @@ var gatewayBuilder = builder
 
 gatewayBuilder.Resource.WithComputeEnvironment(containerAppEnvironment);
 
-var (storefront, backoffice) = builder.AddFrontendApps(gatewayBuilder.Resource, entraId);
+var (storefront, commerce, backoffice) = builder.AddFrontendApps(gatewayBuilder.Resource, entraId);
+
+var microfrontendsConfigPath = Path.GetFullPath(
+    "../../Clients/apps/storefront/microfrontends.config.json",
+    builder.AppHostDirectory
+);
 
 gatewayBuilder
-    .WithFrontend(backoffice, "/backoffice")
-    .WithFrontend(storefront)
+    .WithFrontend(backoffice, "/backoffice", zoneName: Clients.BackOffice)
+    .WithMicrofrontends(
+        microfrontendsConfigPath,
+        new Dictionary<string, IResourceBuilder<IResourceWithEndpoints>>
+        {
+            [Clients.Commerce] = commerce,
+        }
+    )
+    .WithFrontend(storefront, zoneName: Clients.StoreFront)
     .Build()
     .InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
 
 storefront.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
+commerce.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
 backoffice.InGroup(ResourceGroups.Edge, ResourceDisplayOrder.Edge);
 
 // MCP tools are not routed through the gateway but still need a CORS policy outside Development

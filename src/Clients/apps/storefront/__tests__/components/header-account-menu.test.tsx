@@ -1,27 +1,28 @@
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { HeaderAccountMenu } from "@workspace/storefront-shell/components/header-account-menu";
+
 import {
   mockSession,
   renderWithProviders,
   screen,
 } from "@/__tests__/utils/test-utils";
-import { HeaderAccountMenu } from "@/components/header-account-menu";
 
 // Hoisted mocks
 const mockUseDelayedToggle = vi.hoisted(() => vi.fn());
 const mockUseLogout = vi.hoisted(() => vi.fn());
 const mockUseSession = vi.hoisted(() => vi.fn());
 
-vi.mock("@/hooks/useDelayedToggle", () => ({
+vi.mock("@workspace/storefront-shell/hooks/useDelayedToggle", () => ({
   useDelayedToggle: mockUseDelayedToggle,
 }));
 
-vi.mock("@/hooks/useLogout", () => ({
+vi.mock("@workspace/storefront-shell/hooks/useLogout", () => ({
   useLogout: mockUseLogout,
 }));
 
-vi.mock("@/lib/auth-client", () => ({
+vi.mock("@workspace/storefront-shell/auth-client", () => ({
   useSession: mockUseSession,
 }));
 

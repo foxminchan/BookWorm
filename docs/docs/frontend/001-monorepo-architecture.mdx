@@ -14,7 +14,7 @@ badges:
 
 ## Explanation: Why a Layered Monorepo?
 
-BookWorm serves two separate web experiences: a customer-facing storefront and a staff administration dashboard. Both applications share authentication against [[system|identity-provider]], typed backend API clients, form validation rules, telemetry, UI components, and test configuration.
+BookWorm serves two web experiences: a customer-facing storefront composed of two Next.js microfrontends (`storefront` for public discovery and `commerce` for authenticated basket, checkout, and account flows) and a staff administration dashboard (`backoffice`). All applications share authentication against [[system|identity-provider]], typed backend API clients, form validation rules, telemetry, UI components, and test configuration.
 
 Without clear boundaries, shared code tends to accumulate circular dependencies, duplicated configuration, and direct coupling between low-level helpers and application screens. Organizing `src/Clients` as a Bun and Turborepo workspace enforces a strict, one-way dependency flow:
 
@@ -38,40 +38,43 @@ Without clear boundaries, shared code tends to accumulate circular dependencies,
 
 ### Package Boundary Tiers
 
-Turborepo validates imports across all 17 workspace packages using boundary tags in `turbo.json`:
+Turborepo validates imports across all 19 workspace packages using boundary tags in `turbo.json`:
 
-| Tier Tag     | Allowed Dependencies             | Denied Dependencies           | Purpose                                                               |
-| :----------- | :------------------------------- | :---------------------------- | :-------------------------------------------------------------------- |
-| `config`     | None within workspace            | `app`, `domain`, `foundation` | Shared ESLint, TypeScript, Next.js, Vitest, Playwright, and Allure    |
-| `foundation` | `config`, `foundation`           | `app`, `domain`               | Pure types, helpers, environment schemas, and telemetry registration  |
-| `domain`     | `config`, `foundation`, `domain` | `app`                         | UI design system, API clients, query hooks, auth, SEO, schemas, mocks |
-| `app`        | All tiers                        | —                             | End-user Next.js applications (`storefront`, `backoffice`)            |
+| Tier Tag     | Allowed Dependencies             | Denied Dependencies           | Purpose                                                                    |
+| :----------- | :------------------------------- | :---------------------------- | :------------------------------------------------------------------------- |
+| `config`     | None within workspace            | `app`, `domain`, `foundation` | Shared ESLint, TypeScript, Next.js, Vitest, Playwright, and Allure         |
+| `foundation` | `config`, `foundation`           | `app`, `domain`               | Pure types, helpers, environment schemas, and telemetry registration       |
+| `domain`     | `config`, `foundation`, `domain` | `app`                         | UI design system, shared shell, API clients, query hooks, auth, SEO, mocks |
+| `app`        | All tiers                        | —                             | End-user Next.js applications (`storefront`, `commerce`, `backoffice`)     |
 
 ### Workspace Package Inventory
 
-| Package                        | Path                         | Tier         | Responsibility                                                 |
-| :----------------------------- | :--------------------------- | :----------- | :------------------------------------------------------------- |
-| `@bookworm/storefront`         | `apps/storefront`            | `app`        | Customer storefront (catalog, basket, checkout, reviews, chat) |
-| `@bookworm/backoffice`         | `apps/backoffice`            | `app`        | Staff dashboard (books, taxonomy, customers, orders, reviews)  |
-| `@workspace/api-hooks`         | `packages/api-hooks`         | `domain`     | TanStack Query options, hooks, mutations, and ETag handling    |
-| `@workspace/api-client`        | `packages/api-client`        | `domain`     | Typed HTTP/SSE clients and conditional request transport       |
-| `@workspace/auth`              | `packages/auth`              | `domain`     | Better Auth and Microsoft Entra ID integration                 |
-| `@workspace/seo`               | `packages/seo`               | `domain`     | Page metadata builders and Schema.org JSON-LD helpers          |
-| `@workspace/ui`                | `packages/ui`                | `domain`     | Base UI and shadcn/ui component library with Tailwind CSS      |
-| `@workspace/validations`       | `packages/validations`       | `domain`     | Shared Valibot validation schemas for forms and payloads       |
-| `@workspace/mocks`             | `packages/mocks`             | `domain`     | MSW v2 request handlers and deterministic Faker factories      |
-| `@workspace/env`               | `packages/env`               | `foundation` | Composable environment variable schemas                        |
-| `@workspace/otel`              | `packages/otel`              | `foundation` | Shared OpenTelemetry startup instrumentation                   |
-| `@workspace/types`             | `packages/types`             | `foundation` | Shared domain TypeScript interfaces and DTOs                   |
-| `@workspace/utils`             | `packages/utils`             | `foundation` | Token-exchange, formatting, URL helpers, and shared constants  |
-| `@workspace/app-config`        | `packages/app-config`        | `config`     | Shared Next.js, Vitest, and Playwright BDD configuration       |
-| `@workspace/allure-config`     | `packages/allure-config`     | `config`     | Allure 3 report categories and enrichment plugins              |
-| `@workspace/eslint-config`     | `packages/eslint-config`     | `config`     | Shared ESLint flat configs (base, Next.js, `jsx-a11y`)         |
-| `@workspace/typescript-config` | `packages/typescript-config` | `config`     | Strict TypeScript compiler bases                               |
+| Package                        | Path                         | Tier         | Responsibility                                                          |
+| :----------------------------- | :--------------------------- | :----------- | :---------------------------------------------------------------------- |
+| `@bookworm/storefront`         | `apps/storefront`            | `app`        | Public customer storefront (landing, catalog, auth, reviews, AI chat)   |
+| `@bookworm/commerce`           | `apps/commerce`              | `app`        | Authenticated customer microfrontend (basket, checkout, account)        |
+| `@bookworm/backoffice`         | `apps/backoffice`            | `app`        | Staff dashboard (books, taxonomy, customers, orders, reviews)           |
+| `@workspace/storefront-shell`  | `packages/storefront-shell`  | `domain`     | Shared customer chrome, cross-zone links, auth client, and basket state |
+| `@workspace/api-hooks`         | `packages/api-hooks`         | `domain`     | TanStack Query options, hooks, mutations, and ETag handling             |
+| `@workspace/api-client`        | `packages/api-client`        | `domain`     | Typed HTTP/SSE clients and conditional request transport                |
+| `@workspace/auth`              | `packages/auth`              | `domain`     | Better Auth and Microsoft Entra ID integration                          |
+| `@workspace/seo`               | `packages/seo`               | `domain`     | Page metadata builders and Schema.org JSON-LD helpers                   |
+| `@workspace/ui`                | `packages/ui`                | `domain`     | Base UI and shadcn/ui component library with Tailwind CSS               |
+| `@workspace/validations`       | `packages/validations`       | `domain`     | Shared Valibot validation schemas for forms and payloads                |
+| `@workspace/mocks`             | `packages/mocks`             | `domain`     | MSW v2 request handlers and deterministic Faker factories               |
+| `@workspace/env`               | `packages/env`               | `foundation` | Composable environment variable schemas                                 |
+| `@workspace/otel`              | `packages/otel`              | `foundation` | Shared OpenTelemetry startup instrumentation                            |
+| `@workspace/types`             | `packages/types`             | `foundation` | Shared domain TypeScript interfaces and DTOs                            |
+| `@workspace/utils`             | `packages/utils`             | `foundation` | Token-exchange, formatting, URL helpers, and shared constants           |
+| `@workspace/app-config`        | `packages/app-config`        | `config`     | Shared Next.js, Vitest, and Playwright BDD configuration                |
+| `@workspace/allure-config`     | `packages/allure-config`     | `config`     | Allure 3 report categories and enrichment plugins                       |
+| `@workspace/eslint-config`     | `packages/eslint-config`     | `config`     | Shared ESLint flat configs (base, Next.js, `jsx-a11y`)                  |
+| `@workspace/typescript-config` | `packages/typescript-config` | `config`     | Strict TypeScript compiler bases                                        |
 
 ### Related Documentation
 
-- [[doc|frontend/002-applications-and-routing]] — Route architecture, feature slices, auth, and SEO in both apps
+- [[doc|frontend/002-applications-and-routing]] — Route architecture, feature slices, auth, and SEO across all apps
 - [[doc|frontend/003-data-fetching-and-state]] — Data flow, caching, optimistic concurrency, and real-time updates
 - [[doc|frontend/004-testing-and-quality-gates]] — How to run frontend checks, unit tests, and E2E suites
 - [[doc|frontend/005-accessibility]] — Accessibility practices, contributor checklist, and barrier reporting
+- [[doc|frontend/006-microfrontend-architecture]] — Multi-zone microfrontend routing, shared shell, and cross-zone auth

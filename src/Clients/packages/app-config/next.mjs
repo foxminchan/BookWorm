@@ -3,16 +3,23 @@
  */
 export function createNextConfig({
   basePath,
+  assetPrefix,
   optimizePackageImports,
   cacheComponents,
 }) {
   /** @type {import('next').NextConfig} */
   const nextConfig = {
     ...(basePath ? { basePath } : {}),
+    ...(assetPrefix ? { assetPrefix } : {}),
     ...(cacheComponents
       ? { cacheComponents: true, partialPrefetching: true }
       : {}),
-    transpilePackages: ["@workspace/ui", "@workspace/auth", "@workspace/seo"],
+    transpilePackages: [
+      "@workspace/ui",
+      "@workspace/auth",
+      "@workspace/seo",
+      "@workspace/storefront-shell",
+    ],
     experimental: {
       optimizePackageImports,
     },

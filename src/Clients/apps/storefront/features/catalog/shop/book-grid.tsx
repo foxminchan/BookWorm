@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 
+import { Pagination } from "@workspace/storefront-shell/components/pagination";
 import type { Book } from "@workspace/types/catalog/books";
 import { Button } from "@workspace/ui/components/button";
 
 import { BookCard } from "@/components/book-card";
 import { BookCardSkeleton } from "@/components/loading-skeleton";
-import { Pagination } from "@/components/pagination";
 
 const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`);
 

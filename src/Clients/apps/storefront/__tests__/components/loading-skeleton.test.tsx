@@ -2,7 +2,6 @@ import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import {
-  BasketItemSkeleton,
   BookCardSkeleton,
   CategoryCardSkeleton,
   PublisherCardSkeleton,
@@ -56,20 +55,6 @@ describe("Loading Skeletons", () => {
       expect(
         screen.getByText("Loading publisher information..."),
       ).toBeInTheDocument();
-    });
-  });
-
-  describe("BasketItemSkeleton", () => {
-    it("should render with loading aria-label", () => {
-      renderWithProviders(<BasketItemSkeleton />);
-
-      expect(screen.getByLabelText("Loading basket item")).toBeInTheDocument();
-    });
-
-    it("should include screen reader text", () => {
-      renderWithProviders(<BasketItemSkeleton />);
-
-      expect(screen.getByText("Loading basket item...")).toBeInTheDocument();
     });
   });
 });

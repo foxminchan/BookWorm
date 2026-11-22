@@ -214,6 +214,19 @@ jobs:
           search_artifacts: true
           if_no_artifact_found: warn
 
+      - name: ⬇️ Download Allure Report (Commerce)
+        if: github.event_name != 'pull_request'
+        uses: dawidd6/action-download-artifact@v28
+        with:
+          name: allure-report-commerce
+          path: docs/dist/reports/commerce
+          workflow: frontend-ci.yml
+          workflow_search: true
+          branch: main
+          event: push
+          search_artifacts: true
+          if_no_artifact_found: warn
+
       - name: ⬇️ Download TUnit HTML Reports (Backend)
         if: github.event_name != 'pull_request'
         uses: dawidd6/action-download-artifact@v28

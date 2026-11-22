@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { CopyrightYear } from "@/components/copyright-year";
+import { CopyrightYear } from "@workspace/storefront-shell/components/copyright-year";
 
 describe("CopyrightYear", () => {
   it("renders the current year", () => {

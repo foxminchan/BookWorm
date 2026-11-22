@@ -64,29 +64,29 @@ bun run allure:report
 
 ### Verification Command Matrix
 
-| Check                      | Working Directory | Command                 | Scope                                                            |
-| :------------------------- | :---------------- | :---------------------- | :--------------------------------------------------------------- |
-| Format frontend files      | Repo root         | `mise run format:fe`    | Prettier across `src/Clients` (`*.{ts,tsx,md,feature}`)          |
-| Verify package boundaries  | `src/Clients`     | `bun run boundaries`    | Enforces `config` / `foundation` / `domain` / `app` import rules |
-| Type check all packages    | `src/Clients`     | `bun run check-types`   | Strict TypeScript check across workspace packages                |
-| Lint all packages          | `src/Clients`     | `bun run lint`          | ESLint (`--max-warnings 0`) including `eslint-plugin-jsx-a11y`   |
-| Run unit & component tests | `src/Clients`     | `bun run test`          | Vitest + Happy DOM + MSW v2 across both apps                     |
-| Collect code coverage      | `src/Clients`     | `bun run test:coverage` | V8 coverage reports (`lcov`, `json-summary`, `html`) per app     |
-| Build production apps      | `src/Clients`     | `bun run build`         | Next.js production builds with Turbopack                         |
-| Run BDD E2E tests          | `src/Clients`     | `bun run e2e`           | Compiles Gherkin specs and runs Playwright tests                 |
-| Generate Allure report     | `src/Clients`     | `bun run allure:report` | Combines unit and E2E results into `allure-report/`              |
+| Check                      | Working Directory | Command                 | Scope                                                                                                 |
+| :------------------------- | :---------------- | :---------------------- | :---------------------------------------------------------------------------------------------------- |
+| Format frontend files      | Repo root         | `mise run format:fe`    | Prettier across `src/Clients` (`*.{ts,tsx,md,feature}`)                                               |
+| Verify package boundaries  | `src/Clients`     | `bun run boundaries`    | Enforces `config` / `foundation` / `domain` / `app` import rules                                      |
+| Type check all packages    | `src/Clients`     | `bun run check-types`   | Strict TypeScript check across workspace packages                                                     |
+| Lint all packages          | `src/Clients`     | `bun run lint`          | ESLint (`--max-warnings 0`) including `eslint-plugin-jsx-a11y`                                        |
+| Run unit & component tests | `src/Clients`     | `bun run test`          | Vitest + Happy DOM + MSW v2 across all three apps                                                     |
+| Collect code coverage      | `src/Clients`     | `bun run test:coverage` | V8 coverage reports (`lcov`, `json-summary`, `html`) per app                                          |
+| Build production apps      | `src/Clients`     | `bun run build`         | Next.js production builds with Turbopack                                                              |
+| Run BDD E2E tests          | `src/Clients`     | `bun run e2e`           | Compiles Gherkin specs and runs Playwright tests                                                      |
+| Generate Allure report     | `src/Clients`     | `bun run allure:report` | Combines unit and E2E results across `backoffice`, `storefront`, and `commerce` into `allure-report/` |
 
 ### Shared Test Infrastructure
 
-- **Configuration (`@workspace/app-config`):** Centralizes Vitest, Playwright BDD, and Next.js settings so both apps share deterministic Faker seeds, isolated MSW mock lifecycles, and router stubs without per-app duplication.
-- **Coverage exclusions:** Thin declarative files (`page.tsx`, `layout.tsx`, `env.mjs`, `instrumentation.ts`, `config/`) are excluded from coverage metrics so percentages reflect executable logic in `features/`, `components/`, and `hooks/`.
+- **Configuration (`@workspace/app-config`):** Centralizes Vitest, Playwright BDD, and Next.js settings so all apps share deterministic Faker seeds, isolated MSW mock lifecycles, and router stubs without per-app duplication.
+- **Coverage exclusions:** Thin declarative files (`page.tsx`, `layout.tsx`, `env.mjs`, `instrumentation.ts`, `proxy.ts`, `config/`) are excluded from coverage metrics so percentages reflect executable logic in `features/`, `components/`, and `hooks/`.
 
 ### E2E BDD Feature Coverage
 
-| Application            | Default Port | Feature Suites (`e2e/features/*.feature`)                                                                                                                      |
-| :--------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@bookworm/storefront` | `3000`       | `accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery` |
-| `@bookworm/backoffice` | `3001`       | `authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`                                           |
+| Application            | Default Port | Feature Suites (`e2e/features/*.feature`)                                                                                                                                                                                               |
+| :--------------------- | :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@bookworm/storefront` | `3000`       | `accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery` (covers `storefront` + `commerce` customer journeys through the gateway) |
+| `@bookworm/backoffice` | `3001`       | `authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`                                                                                                                    |
 
 ### Related Documentation
 

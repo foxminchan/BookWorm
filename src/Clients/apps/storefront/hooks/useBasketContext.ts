@@ -3,7 +3,10 @@
 import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAtomValue } from "jotai";
 
-import { basketItemCountAtom, basketItemsAtom } from "@/atoms/basket-atom";
+import {
+  basketItemCountAtom,
+  basketItemsAtom,
+} from "@workspace/storefront-shell/atoms/basket-atom";
 
 export function useBasketContext() {
   const basketItems = useAtomValue(basketItemsAtom);

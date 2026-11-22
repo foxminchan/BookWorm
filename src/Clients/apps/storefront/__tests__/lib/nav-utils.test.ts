@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isNavActive } from "@/lib/nav-utils";
+import { isNavActive } from "@workspace/storefront-shell/lib/nav-utils";
 
 describe("isNavActive", () => {
   it("should return true for exact path match", () => {

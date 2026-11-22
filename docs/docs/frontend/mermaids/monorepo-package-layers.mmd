@@ -5,10 +5,12 @@ flowchart TB
 
 	subgraph Apps["App Tier (tag: app)"]
 		Storefront["@bookworm/storefront"]
+		Commerce["@bookworm/commerce"]
 		Backoffice["@bookworm/backoffice"]
 	end
 
 	subgraph Domain["Domain Tier (tag: domain)"]
+		StorefrontShell["@workspace/storefront-shell"]
 		ApiHooks["@workspace/api-hooks"]
 		ApiClient["@workspace/api-client"]
 		Auth["@workspace/auth"]

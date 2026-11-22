@@ -4,13 +4,12 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { describe, expect, it } from "vitest";
 
 import { basketKeys } from "@workspace/api-hooks/keys";
-
 import {
   basketAtom,
   basketItemCountAtom,
   basketItemsAtom,
   isAuthenticatedAtom,
-} from "@/atoms/basket-atom";
+} from "@workspace/storefront-shell/atoms/basket-atom";
 
 import { createWrapper } from "../utils/test-utils";
 

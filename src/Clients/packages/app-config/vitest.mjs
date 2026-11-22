@@ -45,6 +45,7 @@ const WORKSPACE_PACKAGES = [
   "seo",
   "env",
   "otel",
+  "storefront-shell",
 ];
 
 /**

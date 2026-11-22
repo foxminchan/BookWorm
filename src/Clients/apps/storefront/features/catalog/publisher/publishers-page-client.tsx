@@ -3,8 +3,8 @@
 import { Building2 } from "lucide-react";
 
 import usePublishers from "@workspace/api-hooks/catalog/publishers/usePublishers";
+import { EmptyState } from "@workspace/storefront-shell/components/empty-state";
 
-import { EmptyState } from "@/components/empty-state";
 import PublishersGrid from "@/features/catalog/publisher/publishers-grid";
 import PublishersHeader from "@/features/catalog/publisher/publishers-header";
 import PublishersInfoSection from "@/features/catalog/publisher/publishers-info-section";

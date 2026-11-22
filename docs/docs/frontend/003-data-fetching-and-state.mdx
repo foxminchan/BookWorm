@@ -48,16 +48,17 @@ BookWorm's frontend applications communicate with five backend services ([[servi
 
 ### Client State & Real-Time Channels
 
-| Mechanism               | Application  | Purpose                                                                         |
-| :---------------------- | :----------- | :------------------------------------------------------------------------------ |
-| TanStack Query + SSR    | Both apps    | Server prefetching via `HydrationBoundary` and client caching                   |
-| Conditional ETags       | `backoffice` | Optimistic concurrency on book and order-summary updates                        |
-| SSE (`dashboard`)       | `backoffice` | Live overview metrics pushed into the query cache                               |
-| CopilotKit AG-UI & A2UI | `storefront` | Authenticated streaming AI chat & generative UI (`/api/copilotkit/[[...slug]]`) |
-| Jotai atoms             | `storefront` | Authentication flag, derived basket state, and AI feature toggle                |
+| Mechanism               | Application              | Purpose                                                                                                 |
+| :---------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------ |
+| TanStack Query + SSR    | All apps                 | Server prefetching via `HydrationBoundary` and client caching                                           |
+| Conditional ETags       | `backoffice`             | Optimistic concurrency on book and order-summary updates                                                |
+| SSE (`dashboard`)       | `backoffice`             | Live overview metrics pushed into the query cache                                                       |
+| CopilotKit AG-UI & A2UI | `storefront`             | Authenticated streaming AI chat & generative UI (`/api/copilotkit/[[...slug]]`)                         |
+| Jotai atoms             | `storefront`, `commerce` | Shared authentication flag, derived basket state (`@workspace/storefront-shell`), and AI feature toggle |
 
 ### Related Documentation
 
 - [[doc|frontend/001-monorepo-architecture]] — Dependency direction rules across shared packages
 - [[doc|frontend/002-applications-and-routing]] — Route structure and server prefetching entrypoints
+- [[doc|frontend/006-microfrontend-architecture]] — Cross-zone state and navigation between `storefront` and `commerce`
 - [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] — Platform-wide validation, retries, and resilience patterns

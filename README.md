@@ -63,6 +63,7 @@
   - [x] Utilized EventCatalog for centralized architecture documentation
 - [x] Built modern client applications:
   - [x] Monorepo architecture powered by `Turborepo`
+  - [x] Microfrontend (MFE) architecture using `Next.js` multi-zones
   - [x] Customer-facing storefront and admin backoffice dashboard with `Next.js`
   - [x] Targeted WCAG 2.1 AA accessibility standards ([accessibility statement](.github/ACCESSIBILITY.md))
 - [x] Established a testing strategy:

@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { QuantityControl } from "@/components/quantity-control";
+import { QuantityControl } from "@workspace/storefront-shell/components/quantity-control";
 
 import { renderWithProviders } from "../utils/test-utils";
 

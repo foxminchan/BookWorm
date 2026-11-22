@@ -1,6 +1,6 @@
 import type React from "react";
 
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
@@ -15,16 +15,7 @@ import { generateOrganizationJsonLd, generateWebsiteJsonLd } from "@/lib/seo";
 
 import { Providers } from "./providers";
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbf8f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
-  ],
-};
+export { STOREFRONT_VIEWPORT as viewport } from "@workspace/storefront-shell/config/app-config";
 
 const appUrl = env.NEXT_PUBLIC_APP_URL || APP_CONFIG.defaultLocalUrl;
 
