@@ -25,7 +25,7 @@ internal sealed class EventDispatcher(IMessageBus bus, IEventMapper eventMapper)
 
         if (string.IsNullOrEmpty(userId))
         {
-            await bus.PublishAsync((object)integrationEvent);
+            await bus.PublishAsync<object>(integrationEvent);
             return;
         }
 
@@ -36,6 +36,6 @@ internal sealed class EventDispatcher(IMessageBus bus, IEventMapper eventMapper)
         deliveryOptions.Headers.Add(EventBusHeaders.UserId, userId);
         deliveryOptions.Headers.Add("userid", userId);
 
-        await bus.PublishAsync((object)integrationEvent, deliveryOptions);
+        await bus.PublishAsync<object>(integrationEvent, deliveryOptions);
     }
 }

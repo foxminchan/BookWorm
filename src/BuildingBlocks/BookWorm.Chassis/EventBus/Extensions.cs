@@ -11,21 +11,6 @@ public static class Extensions
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
-        ///     Registers and configures the event bus infrastructure for the current host
-        ///     by delegating to WolverineFx via <c>UseWolverineEventFramework</c>. When the
-        ///     broker connection string is absent the call is a no-op (FR-015).
-        /// </summary>
-        /// <param name="configure">
-        ///     Optional callback for additional <see cref="WolverineOptions" />
-        ///     customization (e.g. service-specific handler discovery, Postgres
-        ///     persistence wiring, or Kafka listener registration).
-        /// </param>
-        public void AddEventBus(Action<WolverineOptions>? configure = null)
-        {
-            builder.UseEventFramework(configure);
-        }
-
-        /// <summary>
         ///     Registers and configures the event bus infrastructure, including handler
         ///     discovery and integration event Kafka topics for <typeparamref name="TAssemblyMarker" />'s assembly.
         /// </summary>

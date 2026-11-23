@@ -54,13 +54,8 @@ internal sealed class CloudEventsOnlyKafkaMapper(CloudEventsMapper cloudEvents)
 
     private static string? TryReadHeader(Message<string, byte[]> message, string key)
     {
-        if (message.Headers is null)
-        {
-            return null;
-        }
-
         return message
-            .Headers.Where(h => string.Equals(h.Key, key, StringComparison.OrdinalIgnoreCase))
+            .Headers?.Where(h => string.Equals(h.Key, key, StringComparison.OrdinalIgnoreCase))
             .Select(h =>
             {
                 var bytes = h.GetValueBytes();
