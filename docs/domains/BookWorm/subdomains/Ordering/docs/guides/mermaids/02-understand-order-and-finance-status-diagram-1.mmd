@@ -1,0 +1,12 @@
+flowchart LR
+	ordering["Ordering API\n(.NET 11 + orderingdb)"]
+	finance["Finance\n(Azure Functions + finance-taskhub)"]
+	basket["Basket API\n(.NET 11 + Redis)"]
+	notification["Notification\n(Stateless Kafka + MailKit Worker)"]
+
+	ordering --> |"Kafka: ordering.user-checked-out"| finance
+	ordering --> |"Kafka: ordering.order-status-change-to-*"| finance
+	finance --> |"Kafka: finance.place-order"| basket
+	finance --> |"Kafka: finance.place-order / complete / cancel"| notification
+	basket --> |"Kafka: basket.delete-complete / delete-failed"| finance
+	finance --> |"Kafka: finance.delete-basket-complete / failed"| ordering

@@ -18,38 +18,62 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`GetBook` queries **Catalog API** (`GET /api/v1/books/{id}`) to retrieve a single book's full projection, including pricing, stock status, category, publisher, authors, and derived rating summary. The endpoint is publicly readable, supports HTTP `ETag` conditional requests, and caches book details in FusionCache.
 
-Storefront applications and external consumers need a straightforward way to load the complete profile of a single [[entity|book]]—such as when a shopper opens a product detail page or follows a direct link—without having to fetch the [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating details in separate requests.
+## Overview
 
-## 2. Business Value
+| Property                         | Value                                                                                                                                                                    |
+| :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                        | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                     |
+| **Source**                       | `src/Services/Catalog/BookWorm.Catalog/Features/Books/Get/GetBookEndpoint.cs`, `GetBookQuery.cs`, `src/Services/Catalog/BookWorm.Catalog/Features/Books/BookDto.cs`      |
+| **Protocol / format**            | HTTP `GET /api/v1/books/{id}` (via API Gateway: `GET /catalog/api/v1/books/{id}`), `ApiVersions.V1`, JSON (`application/json`)                                           |
+| **Authentication**               | None required (public read endpoint)                                                                                                                                     |
+| **HTTP caching & rate limiting** | `.WithETag()` conditional requests (`ETag` / `If-None-Match` → `304 Not Modified`); `PerUserRateLimit` token bucket (30 limit, 20 per 10s, queue 5) plus global limiters |
+| **Persistence & caching**        | PostgreSQL (`catalogdb`, EF Core) cached in FusionCache (L1 + Redis L2, tagged with `BookTag`)                                                                           |
+| **Contract version**             | `1.0.0`                                                                                                                                                                  |
 
-- **Faster product pages**: Delivers description, pricing, availability, catalog relationships, and customer ratings in a single round trip.
-- **Consistent product presentation**: Keeps pricing, stock state, and descriptive metadata aligned from one authoritative catalog source.
-- **Clear missing-item signaling**: Distinguishes between a valid product and an unknown identifier so storefronts can present accurate messages to shoppers.
+## Parameters and fields
 
-## 3. How It Works
+### Path parameters
 
-1. A caller requests details for a single [[entity|book]] by providing its unique identifier.
-2. The catalog service looks up the [[entity|book]] together with its description, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary.
-3. If the book exists, the complete book record is returned; optional relationships such as [[entity|category]] or [[entity|publisher]] may be absent if unassigned, while [[entity|author]]s are always returned as a list.
-4. If no book matches the supplied identifier, the service responds that the book could not be found.
+| Name | Type                | Required | Default | Constraints | Description                               |
+| :--- | :------------------ | :------- | :------ | :---------- | :---------------------------------------- |
+| `id` | `string` (`BookId`) | Yes      | —       | Valid UUID  | Unique identifier of the book to retrieve |
 
-## 4. Trade-offs & Lessons Learned
+### Response schema (`BookDto`)
 
-- **Consolidated read model vs. granular endpoints**: Combining core book attributes, related entities, and rating summaries into one response simplifies client rendering and reduces network latency, at the cost of returning a larger payload even when a caller only needs a few fields.
-- **Optional relationships**: Allowing [[entity|category]] and [[entity|publisher]] to be omitted when unassigned gives catalog administrators flexibility while requiring consumers to handle missing relationship metadata gracefully.
+A `200 OK` response returns a `BookDto` JSON object.
 
-## 5. Technical Reference
+| Field           | Type             | Required | Constraints                                    | Description                                              |
+| :-------------- | :--------------- | :------- | :--------------------------------------------- | :------------------------------------------------------- |
+| `id`            | `string`         | Yes      | UUID                                           | Unique identifier of the book                            |
+| `name`          | `string \| null` | Yes      | Nullable                                       | Book title                                               |
+| `description`   | `string \| null` | Yes      | Nullable                                       | Book description                                         |
+| `imageUrl`      | `string \| null` | Yes      | URI or `null`                                  | Publicly accessible cover image URI                      |
+| `price`         | `number`         | Yes      | Decimal                                        | Regular unit price                                       |
+| `priceSale`     | `number \| null` | Yes      | Decimal or `null`                              | Promotional sale price (`null` when no discount applies) |
+| `status`        | `string`         | Yes      | Enum: `InStock`, `OutOfStock`                  | Current stock availability status                        |
+| `category`      | `object \| null` | Yes      | `{ id: uuid, name: string \| null }` or `null` | Assigned book category                                   |
+| `publisher`     | `object \| null` | Yes      | `{ id: uuid, name: string \| null }` or `null` | Assigned publisher                                       |
+| `authors`       | `object[]`       | Yes      | Array of `{ id: uuid, name: string \| null }`  | Authors associated with the book                         |
+| `averageRating` | `number`         | Yes      | `>= 0`                                         | Derived average customer rating projected from Reviews   |
+| `totalReviews`  | `integer`        | Yes      | `>= 0`                                         | Derived total feedback count projected from Reviews      |
 
-- **Endpoint**: `GET /api/v1/books/{id}`
-- **Parameters**: Required `id` path parameter containing the book UUID. No request body.
-- **Responses**:
-  - `200`: Returns a `BookDto` JSON object containing the [[entity|book]] identity, description, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary. Related category and publisher values may be `null`; `authors` is an array.
-  - `404`: Indicates that no book exists with the supplied UUID.
+## Error responses
+
+| Code / status           | Condition                                                                                                   | Recovery behavior                                             |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------ |
+| `304 Not Modified`      | Request included a matching `If-None-Match` ETag header                                                     | Reuse the client's cached `BookDto`                           |
+| `404 Not Found`         | No book exists for the supplied UUID (`application/problem+json`)                                           | Render a not-found state; do not fabricate an empty `BookDto` |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying           |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL/Qdrant persistence, and endpoints.
+- [[query|ListBooks]] — Search, filter, and paginate books with `QUERY /api/v1/books`.
+- [[query|GetBookDetailsGrpc]] — Internal gRPC contract returning full `BookItem` details.
+- [[entity|book]] — Domain model for catalog books.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

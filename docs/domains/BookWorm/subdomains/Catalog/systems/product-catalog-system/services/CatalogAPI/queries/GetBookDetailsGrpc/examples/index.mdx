@@ -1,0 +1,27 @@
+---
+summary: Usage examples for Get book details over gRPC.
+---
+
+## Call `GetBookDetails` from a .NET gRPC client
+
+<CodeGroup>
+
+```csharp
+using BookWorm.Catalog.Grpc.Services;
+using Grpc.Net.Client;
+
+using var channel = GrpcChannel.ForAddress("<catalog-grpc-url>");
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.GetBookDetailsAsync(
+    new GetBookDetailsRequest { BookId = "0192f4d8-5f3c-7a11-b5dd-2c9e4a6f8b20" }
+);
+
+Console.WriteLine($"{response.Book.Name}: {response.Book.Description}");
+```
+
+</CodeGroup>
+
+Where:
+
+- `<catalog-grpc-url>`: Base URL of Catalog API (resolved via Aspire service discovery as `catalog`, or `https://localhost:7187` locally).

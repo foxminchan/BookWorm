@@ -14,67 +14,83 @@ sidebar:
   badge: "gRPC"
 ---
 
-## 1. Context & Problem
+`GetBasketGrpc` invokes the internal `basket.v1.BasketGrpcService/GetBasket` gRPC unary RPC on **Basket API** to retrieve the authenticated customer's basket items and quantities. **Ordering API** calls this RPC synchronously during order creation using an On-Behalf-Of (OBO) Microsoft Entra ID access token exchanged for Basket API.
 
-When a customer submits an order, the ordering capability needs an authoritative, real-time view of the items and quantities currently in the customer's [[entity|basket]]. Relying on the storefront client to resubmit item quantities during order placement risks stale or tampered cart data, while duplicating basket storage inside the ordering domain would break service boundaries.
+## Overview
 
-This internal query provides a direct, service-to-service way for ordering to read the customer's active basket during order creation.
+| Property              | Value                                                                                                                                                             |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                               |
+| **Primary caller**    | **Ordering API** (`ordering`) during checkout                                                                                                                     |
+| **Source**            | `src/Services/Basket/BookWorm.Basket/Grpc/Protos/basket/v1/basket.proto`, `src/Services/Basket/BookWorm.Basket/Grpc/Services/Basket/BasketService.cs`             |
+| **Protocol / format** | gRPC unary RPC (`basket.v1.BasketGrpcService/GetBasket`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Basket.Grpc.Services"`                       |
+| **Authentication**    | `[Authorize]` — Microsoft Entra ID JWT propagated via gRPC `Authorization: Bearer <token>` metadata (customer OBO token with `basket_read`/`basket_write` scopes) |
+| **Rate limiting**     | `[EnableRateLimiting("PerUserRateLimit")]` (30 token limit, 20 tokens per 10 seconds, queue limit 5)                                                              |
+| **Contract version**  | `1.0.0`                                                                                                                                                           |
 
-## 2. Business Value
+## Parameters and fields
 
-- **Accurate order creation:** Ensures every new order is constructed from the customer's actual stored basket contents and quantities rather than unverified client-supplied data.
-- **Fast checkout execution:** Retrieves basket state immediately on demand without waiting for asynchronous event round-trips during live order placement.
-- **Strong customer isolation:** Relies on a delegated customer security context so internal services can only access the active customer's own basket.
-- **Clear domain ownership:** Keeps basket persistence owned exclusively by the shopping cart capability while allowing ordering to consume what it needs at checkout.
+### Request message (`google.protobuf.Empty`)
 
-## 3. How It Works
+`GetBasket` takes an empty `google.protobuf.Empty` message. Basket API derives the customer identity from the authenticated gRPC call context (`context.GetUserIdentity()`).
 
-1. During order creation, the ordering service obtains an internal security token scoped to act on behalf of the customer for basket access.
-2. It sends an empty internal lookup request directly to the basket service without specifying a basket identifier in the payload.
-3. The basket service resolves the customer's active [[entity|basket]] from the delegated identity and returns the basket identifier alongside its list of item identifiers and quantities.
-4. Because this is a direct synchronous service-to-service lookup, it does not publish or consume asynchronous integration events.
+### Response message (`GetBasketResponse`)
 
-## 4. Trade-offs & Lessons Learned
+| Field              | Protobuf type   | Tag | Description                                                           |
+| :----------------- | :-------------- | :-- | :-------------------------------------------------------------------- |
+| `id`               | `string`        | `1` | Basket identifier (empty string if no basket exists for the customer) |
+| `items`            | `repeated Item` | `2` | Items currently stored in the basket (empty list if no basket exists) |
+| `items[].id`       | `string`        | `1` | Catalog book identifier                                               |
+| `items[].quantity` | `int32`         | `2` | Quantity of the book in the basket                                    |
 
-- **Synchronous availability dependency:** Reading the basket synchronously keeps order creation straightforward and immediate, meaning the basket service must be reachable when an order is created.
-- **Minimal item contract:** Returning only item identifiers and quantities keeps the internal response compact and avoids passing catalog titles or prices through the shopping basket layer.
-- **Token-scoped lookup:** Deriving the target basket from an exchanged customer token prevents callers from requesting arbitrary baskets, while requiring calling services to propagate delegated customer credentials.
+:::note
+When no basket exists in Redis for the authenticated customer, `BasketService.GetBasket` returns an empty `GetBasketResponse` (`id = ""`, `items = []`) rather than throwing `StatusCode.NotFound`. Callers must check `response.Items.Count` before proceeding.
+:::
 
-## 5. Technical Reference
+### Protobuf contract
 
-The `BasketGrpcService.GetBasket` RPC retrieves the current customer's [[entity|basket]] for internal service-to-service clients under the `basket.v1` contract (`csharp_namespace = "BookWorm.Basket.Grpc.Services"`).
+<CodeGroup>
 
-[[service|order-api]] produces this query during Order creation using a token exchanged for Basket. [[service|basket-api]] consumes it over a synchronous service-to-service gRPC call; it does not use an integration-event channel.
+```protobuf
+edition = "2023";
 
-<NodeGraph />
+import "google/protobuf/empty.proto";
 
-### Contract
+option csharp_namespace = "BookWorm.Basket.Grpc.Services";
 
-- **Service & RPC:** `basket.v1.BasketGrpcService/GetBasket`
-- **Request:** `google.protobuf.Empty`
-- **Response (`GetBasketResponse`):**
-  - `id` (`string`): The basket identifier.
-  - `items` (`repeated Item`): Collection of basket items, each containing `id` (`string`) and `quantity` (`int32`).
+package basket.v1;
 
-### Schema
+service BasketGrpcService {
+  rpc GetBasket (google.protobuf.Empty) returns (GetBasketResponse);
+}
 
-<Schema file="schema.proto" lang="protobuf" title="GetBasket gRPC schema" />
+message GetBasketResponse {
+  string id = 1;
+  repeated Item items = 2;
+}
 
-### Example
-
-<CodeGroup dropdown>
-
-```csharp title="GetBasket gRPC example"
-using Grpc.Net.Client;
-using Google.Protobuf.WellKnownTypes;
-using BookWorm.Basket.Grpc.Services;
-
-using var channel = GrpcChannel.ForAddress(Services.BasketApi);
-var client = new BasketGrpcService.BasketGrpcServiceClient(channel);
-
-var response = await client.GetBasketAsync(new Empty());
-
-Console.WriteLine($"Basket {response.Id} contains {response.Items.Count} item(s)");
+message Item {
+  string id = 1;
+  int32  quantity = 2;
+}
 ```
 
 </CodeGroup>
+
+## Error responses
+
+| Code / status             | Condition                                                                              | Recovery behavior                                                     |
+| :------------------------ | :------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| `Unauthenticated` (`16`)  | Missing/invalid Entra ID token or empty user identity (`"User is not authenticated."`) | Exchange a valid customer OBO token for Basket API and retry          |
+| `PermissionDenied` (`7`)  | Authenticated principal fails Basket API authorization policy                          | Verify customer role and `basket_read`/`basket_write` scopes          |
+| `ResourceExhausted` (`8`) | Caller exceeded `PerUserRateLimit`                                                     | Retry with exponential backoff                                        |
+| `Unavailable` (`14`)      | Basket API or backing Redis instance is unreachable                                    | Retry within budgeted resilience policy; fail checkout if unavailable |
+
+## Related documentation
+
+- [[service|basket-api]] — Service overview, Redis persistence, and endpoints.
+- [[query|GetBasket]] — Public HTTP endpoint that enriches basket items with Catalog API details.
+- [[command|CreateOrder]] — Ordering API checkout flow that calls `GetBasket`.
+- [[entity|basket]] — Domain model for stored customer baskets.
+
+<NodeGraph />

@@ -1,0 +1,16 @@
+sequenceDiagram
+	participant Customer as Customer (Storefront / Commerce)
+	participant Gateway as API Gateway (YARP)
+	participant Ordering as Ordering API (.NET 11)
+	participant Basket as Basket API (.NET 11 gRPC)
+	participant Catalog as Catalog API (.NET 11 gRPC)
+	participant Postgres as PostgreSQL (orderingdb)
+
+	Customer ->> Gateway: HTTPS POST /ordering/api/v1/orders (x-request-id)
+	Gateway ->> Ordering: Forward authenticated request (Entra ID JWT)
+	Ordering ->> Basket: gRPC BasketGrpcService.GetBasket
+	Basket -->> Ordering: Persisted basket items & quantities
+	Ordering ->> Catalog: gRPC BookGrpcService.GetBooks
+	Catalog -->> Ordering: Authoritative book sale/regular prices
+	Ordering ->> Postgres: Lock per-Buyer, save New Order + outbox event
+	Ordering -->> Customer: 201 Created (orderId)

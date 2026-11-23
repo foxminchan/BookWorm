@@ -27,43 +27,89 @@ protocols:
   - kafka
 ---
 
-## Overview
+`bookworm.{env}.ordering.dead-letter-queue` (v1.0.0) is the native Kafka dead-letter topic for Ordering API. Wolverine routes incoming Finance basket-cleanup commands here when Ordering API exhausts its retry policy or cannot deserialize the payload. Ordering API pairs this Kafka DLQ with PostgreSQL durable inbox/outbox storage in `orderingdb`.
 
-This channel is the native Kafka dead-letter topic configured for
-[[service|order-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName` and
-`EnableNativeDeadLetterQueue()`. When [[service|order-api]] cannot process
-incoming [[command|DeleteBasketCompleteCommand]] messages from
-[[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] or
-[[command|DeleteBasketFailedCommand]] messages from
-[[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]], Wolverine
-routes the failed envelopes to
-`bookworm.<environment>.ordering.dead-letter-queue`.
+## Channel information
 
 <ChannelInformation />
 
-## Failure policy and routing
+## Overview
 
-- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
-  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
-  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
-  `50ms`, `250ms`, `1s` cooldown intervals with full jitter before calling
-  `MoveToErrorQueue()`.
-- **Immediate dead-lettering:** `JsonException` deserialization failures route
-  directly to the error queue without retries.
-- **Durable persistence:** [[service|order-api]] pairs Kafka listening with
-  PostgreSQL durable inbox/outbox storage in [[container|order-database]] and
-  a 7-day `DeadLetterQueueExpiration`.
+| Property              | Value                                                                                                                                                                                                  |
+| :-------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                                                                |
+| **Topic pattern**     | `bookworm.{env}.ordering.dead-letter-queue`                                                                                                                                                            |
+| **Name derivation**   | `KafkaTopicRouter.CreateDeadLetterTopicName(applicationName, environmentName)`                                                                                                                         |
+| **Writer**            | Wolverine Kafka transport in Ordering API (`EnableNativeDeadLetterQueue()`)                                                                                                                            |
+| **Source listeners**  | [[channel\|bookworm.&#123;env&#125;.finance.delete-basket-complete]] (`DeleteBasketCompleteCommand`); [[channel\|bookworm.&#123;env&#125;.finance.delete-basket-failed]] (`DeleteBasketFailedCommand`) |
+| **Reader**            | None in code; operators inspect the topic manually                                                                                                                                                     |
+| **Protocol / format** | Kafka stream; original CloudEvents JSON record                                                                                                                                                         |
+| **Message store**     | Wolverine PostgreSQL durable inbox/outbox (`orderingdb`, `wolverine` schema)                                                                                                                           |
+| **Source**            | `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/EventHandlers/`                                        |
 
-## Operational triage and recovery
+## Parameters and fields
 
-- Inspect [[service|order-api]] logs and [[container|order-database]] health,
-  correlating by `orderId` and `traceparent`.
-- Remember that neither [[command|DeleteBasketCompleteCommand]] nor
-  [[command|DeleteBasketFailedCommand]] transitions an Order's business status
-  (`New`, `Completed`, `Cancelled`); verify Order state in
-  [[service|order-api]] before replaying `DeleteBasketFailedCommand`, which
-  soft-deletes the Order record.
+| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
+| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
+| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
 
-## Architecture diagram
+A dead-lettered record preserves the original CloudEvents value (`DeleteBasketCompleteCommand` or `DeleteBasketFailedCommand`) and Kafka key (`orderId`).
+
+Wolverine 6.65.1 adds `exception-type`, `exception-message`, `exception-stack` (truncated to 8,192 characters), `failed-at` (Unix milliseconds), and `original-destination` to native dead-letter records; Kafka records also include `original-partition` and `original-offset`. The delivery-attempt count is in the `attempts` header. See the [version-pinned diagnostic header reference](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#diagnostic-headers-on-dead-letter-messages).
+
+## Routing rules
+
+| Exception                                                                                               | Retries before DLQ                                              | Source                          |
+| :------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------- | :------------------------------ |
+| `TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException` | `3` retries at `50ms`, `250ms`, `1s` with full jitter, then DLQ | `ConfigureDefaultErrorHandling` |
+| `JsonException`, `FormatException`                                                                      | None (immediate DLQ)                                            | `ConfigureDefaultErrorHandling` |
+
+:::note
+`DeadLetterQueueExpiration = 7 days` applies to Wolverine's PostgreSQL durable storage in `orderingdb` (`wolverine` schema). Kafka topic retention for `bookworm.{env}.ordering.dead-letter-queue` is governed by broker configuration.
+:::
+
+## Replay safety
+
+| Check                                   | Why it matters                                                                                                                                                                                                                                                                                                    |
+| :-------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`orderingdb` health and correlation** | Inspect Ordering API logs and `orderingdb` connectivity using `orderId` and `traceparent` to separate transient database outages from contract mismatches.                                                                                                                                                        |
+| **Soft-delete side effect**             | Neither command changes an order's business `Status` (`New`, `Completed`, `Cancelled`). Verify order state before replaying `DeleteBasketFailedCommand`, because it soft-deletes the `Order` record (`order.Delete()`).                                                                                           |
+| **Idempotency behavior**                | `DeleteBasketCompleteCommandHandler` only logs and is inherently safe to replay. `DeleteBasketFailedCommandHandler` uses `IIntegrationEventIdempotencyGuard` (`idempotency:DeleteBasketFailedCommandHandler:{id:N}`, 24-hour TTL), releases the key on failure, and treats an already-missing `Order` as a no-op. |
+
+## Examples
+
+### Dead-lettered record value
+
+Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
+
+<CodeGroup>
+
+```json
+{
+	"specversion": "1.0",
+	"id": "0193f1a2-7c20-7d8e-9f01-23456789abcd",
+	"type": "BookWorm.Contracts.DeleteBasketFailedCommand",
+	"source": "urn:bookworm:book-worm.finance",
+	"time": "2026-11-25T16:15:10Z",
+	"datacontenttype": "application/json",
+	"messagetype": "BookWorm.Contracts.DeleteBasketFailedCommand",
+	"data": {
+		"id": "0193f1a2-7c20-7d8e-9f01-23456789abcd",
+		"creationDate": "2026-11-25T16:15:10Z",
+		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
+		"email": "reader@example.com",
+		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
+		"totalMoney": 59.98
+	}
+}
+```
+
+</CodeGroup>
+
+## Related documentation
+
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] — Source topic for successful basket cleanup.
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]] — Source topic for failed basket cleanup recovery.
+- [[service|order-api]] — Service architecture, `orderingdb`, and Marten/EF Core persistence.
 
 <NodeGraph />

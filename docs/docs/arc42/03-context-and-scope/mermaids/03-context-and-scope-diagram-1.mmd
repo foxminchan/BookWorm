@@ -1,0 +1,15 @@
+flowchart LR
+    customer["Customer\n(Browser)"]
+    admin["Store Administrator\n(Browser)"]
+    bookworm["BookWorm Platform\n(YARP Gateway, 3 Next.js MFEs,\n10 .NET 11 Services)"]
+    entra["Microsoft Entra ID\n(AuthN, RBAC & Agent IDs)"]
+    foundry["Microsoft Foundry\n(LLM, Decision & Embeddings)"]
+    smtp["SendGrid / Mailpit\n(SMTP Email Delivery)"]
+    clouddata["Managed Cloud Infra\n(Confluent Kafka & Qdrant Cloud)"]
+
+    customer -->|"HTTPS: Browse, shop, chat"| bookworm
+    admin -->|"HTTPS: Manage catalog & orders"| bookworm
+    bookworm <-->|"OAuth2 / OIDC / OBO"| entra
+    bookworm -->|"HTTPS: Model & embedding calls"| foundry
+    bookworm -->|"SMTP (Port 587): Order emails"| smtp
+    bookworm <-->|"Kafka & gRPC/HTTP: Events & vectors"| clouddata

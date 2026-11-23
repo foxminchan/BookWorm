@@ -10,59 +10,149 @@ badges:
     textColor: orange
 ---
 
-import Footer from "@catalog/components/footer.astro";
+Use this runbook when a Book Agent answer in BookWorm Chat API (`chatting`) drops stated preferences, returns only facts or only a shortlist, repeats titles, or makes claims that Catalog data does not support. It helps you tell expected direct handling and pending Plan Mode approval apart from real failures in delegated research, governance, MCP Tools (`mcptools`), or Catalog API.
 
-## 1. Context & Problem
+For requests that never reach Book Agent, use How to diagnose unexpected chat routing or rejection. For empty or fallback replies, use How to triage a chat request that returns no usable response.
 
-When customers ask complex book discovery or recommendation questions, BookWorm's book specialist can either respond directly for straightforward lookups or coordinate two parallel research streams—one gathering factual catalog details and another curating preference-matched recommendations. When an answer omits preferences, feels half-complete, repeats titles, or skips expected research, operations and support teams need a structured way to distinguish normal direct handling from incomplete or conflicting delegated research.
+## Prerequisites
 
-## 2. Business Value
+- Access to OpenTelemetry traces and structured logs for `chatting`, `mcptools`, and `catalog`:
+  - **Local:** the Aspire dashboard (`https://localhost:17290` with the HTTPS profile, or `http://localhost:15061` with the HTTP profile).
+  - **Azure:** the Log Analytics workspace attached to the `aca` Azure Container Apps environment.
+- The approximate time of the failing conversation, and the customer's request category (not the raw prompt).
+- Read access to `src/Services/Chat/BookWorm.Chat/Policies/chat-agents.yaml` and `src/Services/Chat/BookWorm.Chat/Agents/BookSearch/`.
+- Background on the expected behavior in How BookWorm handles book discovery and recommendations.
 
-- **Protects factual accuracy and trust**: Reinforces the rule that missing catalog facts remain explicitly unknown rather than being filled with invented details.
-- **Reduces false-positive escalations**: Helps teams quickly separate intentional direct answers and pending customer approvals from genuine research-branch failures.
-- **Preserves partial value safely**: Enables teams to deliver verified portions of an answer transparently when one research stream is unavailable or conflicting.
+## Steps
 
-## 3. How It Works
+<Steps>
+<Step title="Confirm the request reached Book Agent">
 
-### Symptoms to Watch For
+Open the `chat-workflow` trace for the conversation. Find the `DecisionRouterExecutor` log entry and confirm it reads `Decision router selected Book`, or that a `RouteDisambiguationPort` selection or a `handoff_to_book` from QA Agent sent the turn to `BookWorkflowExecutor`.
 
-- A recommendation leaves out part of the customer's stated preferences.
-- A complex request returns only factual book details or only a recommendation shortlist.
-- The response includes duplicate book recommendations or unsupported claims.
-- A direct answer was expected to include deeper research that did not happen.
+If the turn went to `QAWorkflowExecutor` or `RatingWorkflowExecutor`, stop here and follow How to diagnose unexpected chat routing or rejection.
 
-### Diagnosis Steps
+</Step>
+<Step title="Decide whether the turn was direct or delegated">
 
-1. Confirm the request reached the book specialist and determine whether it was handled directly or delegated for deeper research.
-2. For delegated requests, verify that both the factual catalog research branch and the preference-recommendation research branch completed and returned findings.
-3. Check whether planning mode required customer approval before multi-step work and whether that approval was granted.
-4. Compare the final response against the available findings. Missing catalog evidence must remain unknown and must never be replaced with invented facts.
-5. Remember that simple lookups and preference clarifications are handled directly; the absence of delegated research alone does not indicate a failure.
+In the Book Agent spans, look for tool calls named `delegate_book_catalog_researcher` and `delegate_book_recommendation_researcher`.
 
-### Recovery Actions
+- **No delegate calls:** Book Agent handled the turn directly with `search_catalog`, `get_book`, `list_categories`, or `list_authors`. Simple lookups and clarifying questions are designed to skip delegation, so missing delegation alone is not a failure.
+- **Delegate calls present:** continue to step 4 to check both research branches.
 
-- If a research branch did not return, retry the relevant work after confirming the request is still valid and any required approval is present.
-- If findings conflict, avoid making a definitive claim until the underlying source facts are confirmed.
-- If one branch is unavailable, provide only the verified portion of the answer and state clearly what could not be confirmed.
-- Capture the request category, selected handling mode, individual branch outcomes, and sanitized findings before escalating.
+</Step>
+<Step title="Check the agent mode and plan approval">
 
-## 4. Trade-offs & Lessons Learned
+Look for `mode_get`, `mode_set`, and `todos_add` calls. If Book Agent is in Plan Mode, it presents a plan and waits for customer approval before multi-step research. A plan with no later `mode_set` call to Execute Mode means research has not started yet. This is expected behavior, not a stall.
 
-- **Direct replies vs. parallel research overhead**: Answering simple lookups directly keeps latency low, while delegating complex queries improves breadth—at the cost of needing two independent branches to complete and merge cleanly.
-- **Approval gates vs. seamless execution**: Waiting for customer approval before multi-step research keeps complex workflows transparent, but an unapproved plan can resemble stalled research during triage.
-- **Accuracy over completeness**: Leaving gaps explicit when catalog evidence is missing avoids hallucinated product claims, even when it means delivering a narrower response.
+</Step>
+<Step title="Verify both research branches completed">
 
-## 5. Technical Reference
+For delegated turns, confirm that each researcher span finished and returned findings with book IDs:
 
-- **Primary specialist**: [[agent\|book-agent]] (handles direct lookups/clarifications or delegates multi-step research; in Plan Mode, waits for customer approval before starting multi-step work).
-- **Delegated research subagents**:
-  - [[agent\|book-catalog-researcher]]
-  - [[agent\|book-recommendation-researcher]]
-- **Grounding rule**: Missing Catalog evidence must remain unknown and must not be replaced with invented facts.
-- **Escalation**: Contact [[team\|contributor-team]] with:
-  - Environment and approximate time
-  - Request category and whether handling was direct or delegated (including selected mode)
-  - Status and outcomes of both [[agent\|book-catalog-researcher]] and [[agent\|book-recommendation-researcher]]
-  - Sanitized findings and the final response outcome
+- `book-catalog-researcher` returns confirmed catalog facts.
+- `book-recommendation-researcher` returns a preference-matched shortlist.
 
-<Footer />
+Record which branch failed, timed out, or returned no results.
+
+</Step>
+<Step title="Check for governance denials">
+
+`Policies/chat-agents.yaml` uses `default_action: deny`. Do not expect a standard governance-denial log line: the Microsoft Agent Governance 5.0.0 Agent Framework adapter terminates the function invocation and returns `Blocked by governance policy: {reason}` as a tool result. Its middleware emits `ToolCallBlocked` and `PolicyViolation` audit events, but BookWorm does not subscribe an application logger to `AuditEmitter`, so those events have no configured log sink. If the trace includes the denied tool result, inspect it; otherwise, use the response behavior or add an audit-event subscriber for durable denial logs. See the [version-pinned adapter](https://github.com/microsoft/agent-governance-toolkit/blob/v5.0.0/agent-governance-dotnet/src/AgentGovernance.Extensions.Microsoft.Agents/AgentFrameworkGovernanceAdapter.cs) and [middleware](https://github.com/microsoft/agent-governance-toolkit/blob/v5.0.0/agent-governance-dotnet/src/AgentGovernance/Integration/GovernanceMiddleware.cs).
+
+Compare any denied tool name against these rules in `Policies/chat-agents.yaml`:
+
+- `book-agent-catalog-tools`
+- `book-agent-catalog-researcher-delegation`
+- `book-agent-recommendation-researcher-delegation`
+- `book-catalog-researcher-catalog-tools`
+- `book-recommendation-researcher-catalog-tools`
+
+</Step>
+<Step title="Check MCP Tools and Catalog API">
+
+In the trace, follow the `search_catalog` or `get_book` call from `chatting` to `mcptools` (`/mcp`), and then to Catalog API over gRPC (`book.v1.BookGrpcService`). Look for `401`/`403` responses from `mcptools` (the default policy requires the `mcptools_read` scope), gRPC errors from `catalog`, or empty search results.
+
+In Azure, stream recent `mcptools` logs:
+
+<CodeGroup>
+
+```bash
+az containerapp logs show --name <mcptools-app-name> --resource-group <resource-group> --tail 200
+```
+
+</CodeGroup>
+
+Where:
+
+- `<mcptools-app-name>`: The Azure Container Apps name for the `mcptools` resource in your environment.
+- `<resource-group>`: The resource group that `aspire deploy` deployed BookWorm into (`AZURE_RESOURCE_GROUP`).
+
+The generated Bicep snapshot uses the Container App names `mcptools`, `chatting`, and `catalog`.
+
+</Step>
+<Step title="Compare the final answer with the findings">
+
+Compare the final assistant message against the researcher outputs and tool results:
+
+- Every price, rating, availability, and author claim must appear in tool output. Book Agent must state missing facts as unavailable.
+- Duplicate titles across the two shortlists must be merged into one entry.
+- Each recommendation must link back to a preference the customer stated.
+
+</Step>
+<Step title="Recover or escalate">
+
+- **Missing branch with a valid request:** ask the customer to retry once the failing dependency (`mcptools`, `catalog`, or Microsoft Foundry) is healthy and any required plan approval is in place.
+- **Conflicting findings:** tell the customer which facts could not be confirmed instead of picking one value.
+- **One branch unavailable:** deliver only the verified part of the answer and state what could not be confirmed.
+- **Repeated failures:** escalate to the contributor team with the details in [Verification](#verification).
+
+</Step>
+</Steps>
+
+## Verification
+
+Confirm the issue is resolved by replaying an equivalent sanitized request locally or in a non-production environment and checking the trace:
+
+<CodeGroup>
+
+```text
+1. DecisionRouterExecutor -> "Decision router selected Book"
+2. Book Agent -> delegate_book_catalog_researcher + delegate_book_recommendation_researcher (complex request only)
+3. Both researcher spans complete with findings
+4. ResponseFormatterExecutor returns non-fallback assistant text
+```
+
+</CodeGroup>
+
+Before escalating, capture these sanitized details:
+
+- Environment and approximate time.
+- Request category, and whether handling was direct or delegated (including the agent mode).
+- Outcome of `book-catalog-researcher` and `book-recommendation-researcher`.
+- Any governance denial, `mcptools` error, or Catalog API gRPC error.
+- A sanitized summary of the findings and the final response.
+
+:::danger
+Do not paste raw customer prompts, names, email addresses, or order details into tickets. Chat API redacts PII with Presidio before model calls, so keep escalation data at the same level.
+:::
+
+## Troubleshooting
+
+| Symptom                                                           | Cause                                                                                                             | Fix                                                                                                                  |
+| :---------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| Answer has no delegated research, but the customer expected depth | Book Agent judged the request a single-step lookup and handled it directly                                        | No action needed if the answer is grounded. Ask the customer to state extra preferences to start multi-step research |
+| Book Agent presents a plan and then nothing happens               | Book Agent is in Plan Mode and is waiting for customer approval                                                   | Ask the customer to approve the plan. Research starts after `mode_set` switches to Execute Mode                      |
+| Only facts or only a shortlist is returned                        | One researcher failed, timed out, or returned no results                                                          | Check the failing researcher span (step 4) and its `mcptools` and `catalog` calls (step 6)                           |
+| Tool call fails with a governance denial                          | The tool or delegate name is missing from the agent's allowlist in `Policies/chat-agents.yaml`                    | Add an explicit `allow` rule for the agent DID and tool name, then redeploy Chat API                                 |
+| `search_catalog` returns `401` or `403`                           | The `chatting` token for `mcptools` lacks the `mcptools_read` scope or Entra ID configuration drifted             | Check the Microsoft Entra ID app registration and scopes for `mcptools`                                              |
+| `search_catalog` returns no results for a known title             | Catalog API hybrid search (Qdrant `vectordb`) is stale or Catalog Ingestion lagged                                | Check Catalog Ingestion and the Scheduler `ProcessVectorBatchJob` (every 5 minutes)                                  |
+| The same book appears twice                                       | Book Agent did not merge overlapping researcher shortlists                                                        | Capture both researcher outputs and escalate as a prompt defect in `book-agent.yaml`                                 |
+| Answer includes a price or rating missing from tool output        | Grounding failure in Book Agent or a researcher                                                                   | Capture the tool outputs and the final answer, then escalate as a high-priority prompt defect                        |
+| Findings from earlier steps are missing after a long conversation | Context compaction (`CompactionPipelineFactory.CreateFull()`) dropped findings that were not saved to file memory | Check for `file_memory_write` calls. File memory is container-local and does not survive a container restart         |
+
+## Related documentation
+
+- How BookWorm handles book discovery and recommendations — Direct handling, delegation, and Plan Mode design.
+- Conversational architecture and domain boundaries reference — Executor, memory, and governance specifications.
+- Conversational agent and workflow change checklist reference — Checks to run before changing Book Agent prompts or tools.

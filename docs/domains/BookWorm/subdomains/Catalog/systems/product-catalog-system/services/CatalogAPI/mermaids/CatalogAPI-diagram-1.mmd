@@ -1,0 +1,8 @@
+flowchart LR
+    gateway["API Gateway\n(YARP)"] -->|"HTTP: /api/v1/*"| catalog["Catalog API\n(.NET 11 + gRPC)"]
+    clients["Basket, Ordering,\nMCP Tools"] -->|"gRPC: book.v1.BookGrpcService"| catalog
+    catalog -->|"SQL + Outbox"| pg["Catalog Database\n(PostgreSQL catalogdb)"]
+    catalog -->|"Cache + Idempotency"| redis["Catalog Cache\n(Redis)"]
+    catalog -->|"Cover Images"| blob["Catalog Blob\n(Azure Blob Storage)"]
+    catalog -->|"Hybrid Search"| qdrant["Catalog Vector\n(Qdrant)"]
+    catalog <-->|"Kafka: Feedback / Failure Events"| kafka["Kafka Broker\n(Wolverine)"]

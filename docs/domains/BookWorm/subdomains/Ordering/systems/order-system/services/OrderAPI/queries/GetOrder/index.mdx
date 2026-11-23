@@ -18,53 +18,62 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`GetOrder` queries **Ordering API** (`GET /api/v1/orders/{id}`) to retrieve a single order's header metadata, purchase-time unit prices, quantities, and book display names. Standard customers can retrieve only their own orders, while administrators (`admin` role) can retrieve any order; nonexistent and out-of-scope orders both return `404 Not Found`.
 
-Once an [[entity|order]] is placed, customers need to review their confirmation details, itemized prices, and fulfillment status, while administrators need to inspect orders across buyers for support and operational oversight. Exposing this detail requires strict ownership enforcement alongside reliable, purchase-time pricing records.
+## Overview
 
-## 2. Business Value
+| Property                     | Value                                                                                                                                                                              |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                    | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                                            |
+| **Source**                   | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Get/GetOrderEndpoint.cs`, `GetOrderQuery.cs`                                                                              |
+| **Protocol / format**        | HTTP `GET /api/v1/orders/{id}` (via API Gateway: `GET /ordering/api/v1/orders/{id}`), `ApiVersions.V1`, JSON (`application/json`)                                                  |
+| **Authentication**           | Microsoft Entra ID JWT required (`customer` or `admin` role; scopes `ordering_read`, `ordering_write`)                                                                             |
+| **Rate limiting**            | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                                                      |
+| **Persistence & enrichment** | Reads order and purchase-time prices from PostgreSQL (`orderingdb`, EF Core); enriches `items[].name` via **Catalog API** gRPC `book.v1.BookGrpcService/GetBooks` when items exist |
+| **Contract version**         | `1.0.0`                                                                                                                                                                            |
 
-- **Clear purchase transparency:** Gives customers and support teams an accurate breakdown of each order's date, total, status, and recorded item quantities and prices.
-- **Customer data protection:** Restricts standard callers to their own orders while allowing administrators to inspect orders across all buyers.
-- **Audit-ready pricing:** Preserves the exact unit prices and quantities recorded at checkout so customers always see what they actually agreed to pay.
+## Parameters and fields
 
-## 3. How It Works
+### Path parameters
 
-1. An authenticated caller requests details for a specific [[entity|order]] using its identifier.
-2. The service verifies the caller's role and ownership: customers can retrieve orders they placed, whereas administrators can retrieve orders for any buyer.
-3. If the order exists and falls within the caller's permitted scope, the service returns the order identifier, date, total amount, current status, and line-item details (quantities, recorded prices, and item names).
-4. If the order does not exist or belongs to another buyer outside the caller's access scope, the service reports that the order could not be found.
+| Name | Type                 | Required | Default | Constraints | Description                                |
+| :--- | :------------------- | :------- | :------ | :---------- | :----------------------------------------- |
+| `id` | `string` (`OrderId`) | Yes      | —       | Valid UUID  | Unique identifier of the order to retrieve |
 
-## 4. Trade-offs & Lessons Learned
+### Response schema (`OrderDetailDto`)
 
-- **Indistinguishable missing vs. unauthorized responses:** Reporting the same not-found outcome for both nonexistent orders and out-of-scope orders prevents callers from guessing or enumerating other customers' order identifiers.
-- **Recorded checkout pricing:** Relying on stored item quantities and prices guarantees financial consistency after checkout, even if current catalog prices change later.
+A `200 OK` response returns an `OrderDetailDto` JSON object.
 
-## 5. Technical Reference
+| Field              | Type             | Required | Constraints                           | Description                                                                    |
+| :----------------- | :--------------- | :------- | :------------------------------------ | :----------------------------------------------------------------------------- |
+| `id`               | `string`         | Yes      | UUID                                  | Unique identifier of the order                                                 |
+| `date`             | `string`         | Yes      | ISO 8601 `date-time`                  | UTC timestamp when the order was placed                                        |
+| `total`            | `number`         | Yes      | Decimal currency amount               | Total order amount computed from recorded item prices and quantities           |
+| `status`           | `string`         | Yes      | Enum: `New`, `Cancelled`, `Completed` | Current lifecycle status of the order                                          |
+| `items`            | `OrderItemDto[]` | Yes      | Array                                 | Line items recorded at checkout                                                |
+| `items[].id`       | `string`         | Yes      | UUID                                  | Catalog book identifier                                                        |
+| `items[].quantity` | `integer`        | Yes      | `int32`                               | Purchased unit quantity                                                        |
+| `items[].price`    | `number`         | Yes      | Decimal currency amount               | Unit price locked at checkout (does not change if Catalog prices update later) |
+| `items[].name`     | `string \| null` | No       | Nullable                              | Book title enriched via Catalog API gRPC `GetBooks` (`null` if unavailable)    |
 
-Retrieves an [[entity|order]] by identifier (`GET /api/v1/orders/{id}`). Customers can retrieve their own Orders, while administrators can retrieve Orders across Buyers.
+## Error responses
 
-### Query parameters and response
+| Code / status           | Condition                                                                                                     | Recovery behavior                                                                   |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------- |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                            | Re-authenticate and retry                                                           |
+| `403 Forbidden`         | Authenticated principal lacks Ordering API roles or scopes                                                    | Request a token with `customer` or `admin` role and Ordering scopes                 |
+| `404 Not Found`         | Order does not exist or belongs to another buyer outside the caller's role scope (`application/problem+json`) | Display a not-found state; do not assume whether the ID belongs to another customer |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)   | Wait for the `Retry-After` duration before retrying                                 |
 
-- **Path parameter:** Provide the Order identifier in the `{id}` path parameter.
-- **`200 OK`:** Returns an `OrderDetailDto` with the Order ID, date, total, status, and item details.
-- **`404 Not Found`:** Returns `ProblemDetails` when the Order does not exist or is outside the caller's permitted scope.
+## Related documentation
 
-### Query using CURL
-
-<CodeGroup dropdown>
-
-```sh get-order.sh
-curl -H "Authorization: Bearer <access-token>" \
-  "https://api.example.com/api/v1/orders/<order-id>"
-```
-
-</CodeGroup>
-
-### Schema
-
-<SchemaViewer file="schema.json" title="OrderDetailDto JSON Schema" maxHeight="500" search="true" />
-
-### Architecture
+- [[service|order-api]] — Service overview, PostgreSQL/Marten persistence, and endpoints.
+- [[query|ListOrders]] — Paginated and filterable order summary listing.
+- [[query|GetBooksGrpc]] — Catalog API gRPC query used to enrich line-item names.
+- [[command|CancelOrder]] — Transition an order to `Cancelled`.
+- [[command|CompleteOrder]] — Transition an order to `Completed`.
+- [[entity|order]] — Domain model for accepted orders.
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="OrderDetailDto JSON Schema" maxHeight="500" search="true" />

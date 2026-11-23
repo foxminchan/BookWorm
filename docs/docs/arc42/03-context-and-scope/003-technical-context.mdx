@@ -9,107 +9,48 @@ badges:
     textColor: blue
 ---
 
-BookWorm is structured around independently deployable capabilities rather than a single shared business component. This page maps the high-level technical boundaries between user-facing applications, internal capabilities, and neighboring systems, while clearly distinguishing confirmed mechanisms from details that remain open.
+BookWorm realizes its business context through an **Aspire** 17 distributed application consisting of a YARP **API Gateway**, three Next.js 16 microfrontends (MFEs), ten independently deployable .NET 11 backend projects, and managed cloud integrations. This page maps every verified protocol, transport, and technical neighbor across the platform boundary and flags remaining production network decisions.
 
-## 1. Context & Problem
+## Technical context diagram
 
-Once stakeholders agree on the business exchanges at BookWorm's boundary, teams need a clear picture of how those interactions are realized technically—without inventing or assuming deployment layouts, vendor protocols, or infrastructure choices that have not been decided. Making both the known communication patterns and the open technical questions explicit keeps architecture aligned with reality.
+The diagram below maps the verified technical protocols connecting user browsers, BookWorm's edge and internal services, and external cloud providers.
 
-## 2. Business Value
+<MermaidFileLoader file="mermaids/003-technical-context-diagram-1.mmd" />
 
-- **Independent capability delivery:** Organizing the platform into separately deployable capabilities lets teams build, test, and evolve domains with minimal interference.
-- **Controlled external dependencies:** Isolating identity, payment, fulfillment, email, and AI model interactions at clear boundaries protects core commerce logic from external provider churn.
-- **Honest risk visibility:** Explicitly flagging undecided transport channels, delivery guarantees, and deployment topologies prevents teams from building brittle assumptions into schedules or designs.
+## Technical neighbors and communication mechanisms
 
-## 3. How It Works
+| Neighbor or mechanism                    | Verified technology and role                                                                                                                                | Protocol / channel                                                                                                                 | Scope notes                                                                                                                                                                                          |
+| :--------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API Gateway** (`gateway`)              | YARP reverse proxy (`Aspire.Hosting.Yarp`), sole externally exposed ingress                                                                                 | HTTPS externally; HTTP internally; injects `X-Powered-By: BookWorm Gateway` and `X-Mfe-Zone`                                       | Routes 5 APIs (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chatting`), `/entra`, and all 3 MFEs. Does **not** route `mcptools`, `notification`, `scheduler`, `finance`, or `catalog-ingestion`. |
+| **Web microfrontends**                   | **Storefront** (`/`), **Commerce** (`/basket`, `/checkout/*`, `/account/*`), **Backoffice** (`/backoffice/*`) on Next.js 16 + React 19 + Bun 1.4.4          | HTTPS via **API Gateway**; Better Auth OAuth2 callback `/api/auth/oauth2/callback/microsoft-entra-id`; AG-UI streaming for AI chat | **Storefront** and **Backoffice** own Entra ID auth sessions; **Commerce** shares the Storefront auth session (`WithoutEntraId()` in AppHost).                                                       |
+| **Synchronous service-to-service calls** | **Catalog API** (`book.v1.BookGrpcService`), **Basket API** (`basket.v1.BasketGrpcService`), **Rating API** (A2A gRPC `MapGrpcA2A`), **MCP Tools** (`/mcp`) | HTTP/2 gRPC (`edition = "2023"`), A2A gRPC, and MCP Streamable HTTP                                                                | **Basket**, **Ordering**, and **MCP Tools** call **Catalog** over gRPC; **Ordering** calls **Basket** over gRPC; **Chat** calls **Rating** over A2A gRPC and **MCP Tools** over MCP HTTP.            |
+| **Asynchronous messaging**               | **Wolverine** + **Kafka** (local Kafka container in dev; **Confluent Cloud** in Azure deploy)                                                               | CloudEvents JSON; topics `bookworm.{env}.{owner}.{topic}` (unprefixed `scheduler.process-vector-batch`); per-service native DLQs   | Retry cooldown `50ms / 250ms / 1s` with full jitter before DLQ; propagates W3C traceparent, `requestid`, and `UserId`.                                                                               |
+| **Microsoft Entra ID**                   | Identity provider and Entra Agent Identities (`blueprintAppId`, `chatAgentId`, `ratingAgentId`)                                                             | OAuth2 / OIDC, JWT bearer validation, User & Agent On-Behalf-Of (OBO) token exchange, Federated Managed Identity in Azure          | Protects APIs, **Storefront**, **Backoffice**, and Quartz Dashboard (`/quartz`, `admin` role).                                                                                                       |
+| **Microsoft Foundry**                    | Hosted AI models (`ModelRouter`, `MicrosoftDecision1`, Cohere `EmbedV40`)                                                                                   | HTTPS REST/SDK via `Aspire.Hosting.Foundry` with `CognitiveServicesUser` RBAC                                                      | Consumed by **Catalog API**, **Catalog Ingestion**, **Chat API**, and **Rating API**.                                                                                                                |
+| **Presidio sidecars**                    | Internal `presidio-analyzer` and `presidio-anonymizer` containers (`BookWorm.Hosting.Presidio`)                                                             | Container port `3000` (HTTPS with dev cert locally; internal HTTP in publish mode; `/health`)                                      | Internal PII detection and anonymization invoked by **Chat API** and **Rating API**.                                                                                                                 |
+| **SendGrid / Mailpit**                   | Outbound SMTP email relay (**Mailpit** locally; **SendGrid** `smtp://smtp.sendgrid.net:587` in cloud)                                                       | SMTP (port `587`) via `MailKit` + `Mjml.Net`                                                                                       | Consumed exclusively by stateless **Notification** worker.                                                                                                                                           |
+| **Qdrant vector store**                  | `vectordb` (local Qdrant container in dev; **Qdrant Cloud** connection string in Azure)                                                                     | Qdrant client API                                                                                                                  | Consumed by **Catalog API** (hybrid search) and **Catalog Ingestion** (batch vector upserts/deletes).                                                                                                |
+| **Payment & shipping providers**         | Not implemented in repository                                                                                                                               | —                                                                                                                                  | Conceptual external boundaries only; **Finance** executes post-checkout Durable Task orchestration, not payment processing.                                                                          |
 
-At a high level, BookWorm separates how customers access the store from how internal capabilities collaborate and how external partners are reached:
+## Business interface to technical channel mapping
 
-1. **Customer access:** Customers interact through a web-based storefront that initiates product discovery, shopping, ordering, reviews, and conversational support journeys.
-2. **Modular internal capabilities:** Behind the storefront, BookWorm separates Catalog, Shopping, Ordering, Reviews, Conversational assistance, and shared Platform capabilities (such as notifications and scheduling) instead of lumping all business rules into one component.
-3. **Structured internal communication:** Capabilities collaborate across boundaries through two primary mechanisms—explicit service agreements for direct capability calls, and business notifications (integration events) for cross-capability updates.
-4. **External partner boundaries:** Specialized responsibilities—authentication ([[system|identity-provider]]), payment settlement, order fulfillment, email delivery ([[system|sendgrid]]), and AI model hosting—sit outside BookWorm's boundary as conceptual partner interfaces whose concrete providers and channels are finalized per capability.
+| Business interaction                                         | Technical realization                                                                                                                                                                                                    |
+| :----------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Customer browsing, search, basket, checkout, orders, reviews | Browser → HTTPS → YARP **API Gateway** → **Storefront** / **Commerce** → REST `/api/v1/*` (`ApiVersions.V1`) on **Catalog**, **Basket**, **Ordering**, **Rating**                                                        |
+| Store administration and job monitoring                      | Browser → HTTPS → YARP **API Gateway** → **Backoffice** (`/backoffice/*`) → REST `/api/v1/*` (incl. SSE order dashboard); Quartz Dashboard (`/quartz`) via Entra ID OIDC (`admin` role)                                  |
+| Checkout validation and order enrichment                     | **Ordering API** → gRPC `basket.v1.BasketGrpcService.GetBasket` (**Basket API**) and `book.v1.BookGrpcService.GetBooks` (**Catalog API**)                                                                                |
+| Post-checkout orchestration and transactional email          | **Ordering API** → Kafka (`ordering.user-checked-out`) → **Finance** (Durable Task Scheduler) → Kafka (`finance.place-order` / `complete-order` / `cancel-order`) → **Basket** & **Notification** → SMTP (`587`)         |
+| Conversational AI book discovery and review synthesis        | **Storefront** → YARP `/chatting` → **Chat API** AG-UI (`/ag-ui`) → **Presidio** + **Microsoft Foundry** (`ModelRouter`, `MicrosoftDecision1`) + **MCP Tools** (`/mcp` → **Catalog** gRPC) + **Rating API** (A2A gRPC)   |
+| Rating summary projection and vector refresh                 | **Rating API** → Kafka (`rating.feedback-create` / `delete`) → **Catalog API**; **Scheduler** (cron every 5 min) → Kafka (`scheduler.process-vector-batch`) → **Catalog Ingestion** → **Microsoft Foundry** + **Qdrant** |
 
-## 4. Trade-offs & Lessons Learned
+## Open production network boundaries
 
-- **Modular boundaries vs. coordination effort:** Splitting the platform into independently deployable services avoids single-component bottlenecks, but introduces cross-service contracts and messaging that require explicit ownership and testing.
-- **Targeted standardization vs. blanket rules:** Standardized structured contracts are used for defined service interfaces rather than forced onto every interaction, balancing consistency with flexibility—teams should never assume every call uses the same mechanism.
-- **Deferring topology and broker specifics:** Repository-level sources intentionally do not prescribe a complete external-system inventory, network layout, messaging broker, delivery guarantees, or production deployment view; those belong in dedicated service and operational documentation as interfaces are confirmed.
+While `AppHost.cs` and `.github/workflows/apphost-cd.yml` define the Azure Container Apps deployment model (`aspire deploy`), the following environment-specific edge controls remain outside repository code:
 
-## 5. Technical Reference
+## Related architecture documentation
 
-The platform is documented as a service-oriented application using .NET Aspire and independently deployable services. The diagram and tables below separate internal boundaries from neighboring systems and distinguish known communication mechanisms from details not established in the available architecture sources.
-
-```plantuml
-@startuml
-left to right direction
-skinparam componentStyle rectangle
-
-node "Customer device" as customerDevice <<device>> {
-    node "Web browser" as browser <<executionEnvironment>> {
-        component "BookWorm client" as client
-    }
-}
-
-node "BookWorm application environment\nLogical boundary; production topology not specified" as bookwormEnvironment <<executionEnvironment>> {
-    component ".NET Aspire application" as aspire
-
-    package "Independently deployable services" as services {
-        component "Catalog service" as catalog
-        component "Shopping service" as shopping
-        component "Ordering service" as ordering
-        component "Reviews service" as reviews
-        component "Conversational service" as assistance
-        component "Platform services" as platform
-    }
-
-    artifact "Protocol Buffer contracts\nwhere defined" as contracts
-    artifact "Integration event contracts" as events
-
-    services -- contracts : Service interfaces\n(transport unspecified)
-    services -- events : Integration events\n(broker unspecified)
-}
-
-cloud "Identity provider" as identity
-cloud "Payment provider" as payment
-cloud "Fulfillment execution" as fulfillment
-cloud "Email delivery" as email
-cloud "AI model hosting" as model
-
-client <--> services : User-facing communication\n(protocol unspecified)
-services <--> identity : Authentication interface\n(channel unspecified)
-ordering <--> payment : Payment interface\n(channel unspecified)
-ordering --> fulfillment : Fulfillment handoff\n(channel unspecified)
-platform --> email : Notification delivery\n(channel unspecified)
-assistance <--> model : Model requests and responses\n(channel unspecified)
-@enduml
-```
-
-### Technical Neighbors and Mechanisms
-
-| Neighbor or mechanism                                           | Relationship and known interaction                                                       | Details not established here                                            |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| User-facing clients                                             | Initiate customer journeys and consume platform capabilities                             | Complete client inventory, protocols, and endpoint definitions          |
-| Independently deployable services                               | Implement platform capabilities and interact through owned contracts                     | Complete service topology and all pairwise interactions                 |
-| Integration messaging                                           | Carries integration events between capabilities                                          | Broker, transport, event schemas, routing, and delivery guarantees      |
-| Protocol Buffer interfaces                                      | Used for defined service communication contracts                                         | Which interfaces use them and their endpoint or transport configuration |
-| Identity provider ([[system\|identity-provider]])               | Supports authentication and token verification                                           | Provider, protocol, and deployment arrangement                          |
-| Payment provider                                                | Supports payment settlement                                                              | Provider, protocol, and transaction details                             |
-| Fulfillment, email ([[system\|sendgrid]]), and AI model hosting | External capabilities used for fulfillment, notifications, and conversational assistance | Provider inventory, protocols, and operational guarantees               |
-| Shared platform infrastructure                                  | Supplies cross-cutting capabilities; .NET Aspire is part of the documented platform      | Full component inventory and production deployment topology             |
-
-### Business Interface to Technical Channel
-
-| Business interaction                                                   | Technical realization documented so far                                                                     |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Customer search, shopping, ordering, reviews, and assistance           | User-facing clients call platform capabilities; exact channels and protocols are not specified              |
-| Communication between service capabilities                             | Explicit service contracts, including Protocol Buffers where defined                                        |
-| Cross-capability integration                                           | Integration events; broker and event-level details are not specified                                        |
-| Authentication, payment, fulfillment, notification, and model requests | Neighboring-system interfaces exist at the conceptual level; their channels and protocols are not specified |
-
-### Technical Operating Model Notes
-
-- BookWorm's technical context is structured around service boundaries rather than a single shared business component.
-- Explicit contracts and integration events support communication across those boundaries, while shared infrastructure provides cross-cutting capabilities such as notifications and scheduling.
-- Protocol Buffers are used for defined service interfaces; their use should not be assumed for every interaction.
-- The repository-level sources do not establish a complete external-system inventory, network topology, or production deployment view. Document those details in the relevant service and operational entries as interfaces are confirmed.
+- [[doc|arc42/03-context-and-scope/001-overview]] — Whole-platform scope and external neighbor boundaries.
+- [[doc|arc42/03-context-and-scope/002-business-context]] — Domain-level business exchanges.
+- [[doc|arc42/00-c4-overview]] — C4 Context and Container visual summary.
+- [[doc|arc42/07-deployment-view]] — Local containers and Azure Container Apps infrastructure mapping.
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Detailed gRPC, REST, and Kafka topic specifications.

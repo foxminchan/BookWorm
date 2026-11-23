@@ -1,0 +1,21 @@
+sequenceDiagram
+	participant Commerce as Commerce MFE
+	participant Ordering as Ordering API
+	participant Basket as Basket API
+	participant Catalog as Catalog API
+	participant Finance as Finance (Durable Task)
+
+	Commerce ->> Ordering: HTTPS POST /ordering/api/v1/orders (idempotency key)
+	Ordering ->> Basket: gRPC basket.v1.GetBasket
+	Ordering ->> Catalog: gRPC book.v1.GetBooks (resolve sale/regular prices)
+	Ordering -->> Commerce: 201 Created (orderId, status: New)
+	Ordering ->> Finance: Kafka UserCheckedOutIntegrationEvent
+	Finance ->> Basket: Kafka PlaceOrderCommand (delete basket, bounded retries)
+
+	alt Basket deleted
+		Basket ->> Finance: Kafka BasketDeletedCompleteIntegrationEvent
+		Finance ->> Ordering: Kafka DeleteBasketCompleteCommand (logged, status stays New)
+	else Basket deletion failed
+		Basket ->> Finance: Kafka BasketDeletedFailedIntegrationEvent
+		Finance ->> Ordering: Kafka DeleteBasketFailedCommand (soft-deletes Order, no email)
+	end

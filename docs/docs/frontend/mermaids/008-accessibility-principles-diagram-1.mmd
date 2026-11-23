@@ -1,0 +1,9 @@
+flowchart LR
+	primitives["Layer 1: Primitives & Lint\n(@workspace/ui Base UI + jsx-a11y)"]
+	browser["Layer 2: Browser Audits\n(Playwright BDD + axe-core)"]
+	focus["Layer 3: Keyboard & Focus\n(Skip links, focus trap, Escape return)"]
+	live["Layer 4: Live Announcements\n(aria-live + @generative-a11y)"]
+
+	primitives -->|"CI gate (--max-warnings 0)"| browser
+	browser -->|"Verifies DOM & contrast"| focus
+	focus -->|"Ensures operable flows"| live

@@ -1,0 +1,13 @@
+flowchart LR
+	fe["Storefront, Commerce, Backoffice\n(Next.js 16 + @workspace/otel)"]
+	apis["Backend APIs & Workers\n(.NET 11 + ServiceDefaults)"]
+	fns["Finance & Catalog Ingestion\n(Azure Functions + OTel 1.2.0)"]
+	otlp["OTLP Collector / Endpoint\n(OTEL_EXPORTER_OTLP_ENDPOINT)"]
+	local["Aspire Dashboard\n(Local: https://localhost:17290)"]
+	cloud["Azure Log Analytics & ACA Dashboard\n(90d Prod / 30d non-Prod)"]
+
+	fe -->|"OTLP Proto Traces"| otlp
+	apis -->|"OTLP Traces, Metrics, Logs"| otlp
+	fns -->|"OTLP Traces & Logs"| otlp
+	otlp -->|"Local Run Mode"| local
+	otlp -->|"Publish / Azure Mode"| cloud

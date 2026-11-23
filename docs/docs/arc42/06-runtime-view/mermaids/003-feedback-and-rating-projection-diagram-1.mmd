@@ -1,0 +1,23 @@
+sequenceDiagram
+	participant Client as Storefront / Backoffice\n(Next.js 16)
+	participant GW as API Gateway\n(YARP)
+	participant Rating as Rating API\n(.NET 11 + Cosmos DB)
+	participant Kafka as Kafka Broker\n(CloudEvents JSON)
+	participant Cat as Catalog API\n(.NET 11 + PostgreSQL)
+
+	Client ->> GW: HTTPS POST /rating/api/v1/feedbacks (Entra ID JWT)
+	GW ->> Rating: Forward POST /api/v1/feedbacks
+	Rating ->> Rating: Validate & persist Feedback in Cosmos DB (ratingdb/feedbacks, /bookId)
+	Rating -->> Client: 201 Created
+	Rating ->> Kafka: FeedbackCreatedIntegrationEvent (key: BookId/FeedbackId)
+	Kafka ->> Cat: Deliver to Catalog API (PostgreSQL inbox + Redis idempotency)
+
+	alt Book exists in catalogdb
+		Cat ->> Cat: Recalculate derived average rating & review count on Book
+	else Book does not exist
+		Cat ->> Kafka: BookUpdatedRatingFailedIntegrationEvent
+		Kafka ->> Rating: Deliver compensation event
+		Rating ->> Rating: Delete invalid Feedback from Cosmos DB
+	end
+
+	Note over Client,Cat: Deletion path: DELETE /rating/api/v1/feedbacks/{id} -> FeedbackDeletedIntegrationEvent -> Catalog decrements derived summary

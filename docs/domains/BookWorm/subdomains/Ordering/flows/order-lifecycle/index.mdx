@@ -88,56 +88,56 @@ steps:
       version: 1.0.0
 ---
 
-## 1. Context & Problem
+**Ordering API** is the single system of record for accepted customer orders and owns every business status transition (`New`, `Completed`, and `Cancelled`). After Ordering API persists a `New` order snapshot in PostgreSQL (`orderingdb`), **Finance** (`OrderOrchestrator` on Azure Durable Functions) coordinates asynchronous basket cleanup and routes order-status notifications to **Notification** over Kafka. Neither Finance nor Notification ever modifies an order's business status.
 
-Checkout is the backbone of BookWorm's commerce journey, bridging a customer's temporary shopping experience with a permanent purchase record. Because basket cleanup, order tracking, and customer emails happen across separate capabilities, chaining everything into one tightly coupled step—or letting multiple teams modify order status—would create fragile checkouts and conflicting records.
+## Context and motivation
 
-[[domain|ordering]] solves this by separating the authoritative purchase record from the operational follow-up work triggered after checkout.
+Checkout turns mutable shopping intent in **Basket API** into an immutable purchase snapshot in **Ordering API**, then triggers downstream basket deletion and customer emails. Combining those steps into one synchronous call or allowing downstream workers to mutate order status would create brittle checkouts and conflicting records.
 
-## 2. Business Value
+BookWorm separates responsibilities across four bounded contexts:
 
-- **Auditability and trust:** Preserves a single, authoritative record of what the customer bought and its final business outcome.
-- **Clear team accountability:** Separates shopping intent, order ownership, post-checkout coordination, and customer communication so each capability operates safely.
-- **Isolated failure recovery:** If a confirmation email fails to send, the underlying order remains valid—support and operations teams immediately know the issue is in delivery rather than the purchase record itself.
+- **Shopping (`Basket API`):** Holds mutable pre-order items in Redis and deletes the basket after checkout.
+- **Ordering (`Ordering API`):** Owns the accepted order, its item-price snapshot, event-sourced `OrderSummary` projections (Marten + EF Core in PostgreSQL `orderingdb`), and explicit status transitions (`New`, `Completed`, `Cancelled`).
+- **Ordering (`Finance`):** Runs the Azure Durable Functions `OrderOrchestrator` on Azure Durable Task Scheduler (`finance-taskhub`) to coordinate basket cleanup, bounded retry timeouts, and notification commands. Finance has no PostgreSQL database and does not process card payments.
+- **Platform (`Notification`):** Renders and sends order emails over SMTP as a pure downstream side effect.
 
-## 3. How It Works
+## How it works
 
-The lifecycle of an accepted purchase follows a clear sequence across well-defined boundaries:
+An order moves through explicit business states owned by **Ordering API**, while **Finance** orchestrates asynchronous follow-up commands on Kafka.
 
-1. **Checkout submission:** A customer submits their shopping basket at checkout.
-2. **Order creation:** [[domain|ordering]] verifies the buyer, resolves current catalog prices for the basket items, and records a **New** order snapshot.
-3. **Post-checkout coordination:** Once the purchase is recorded, Finance begins coordinating follow-up work—such as cleaning up the old basket—while waiting for explicit order status updates.
-4. **Explicit business outcome:** According to business rules and process outcomes, Ordering transitions the order from **New** to a final **Completed** or **Cancelled** status.
-5. **Customer notification:** When Ordering announces completion or cancellation, the notification capability sends the corresponding customer email.
+This sequence diagram shows order creation, Finance coordination, explicit completion or cancellation transitions, and Notification delivery.
 
-### Boundary rules
+<MermaidFileLoader file="mermaids/order-lifecycle-diagram-1.mmd" />
 
-- Shopping creates the purchase intent and hands it to Ordering.
-- Ordering owns the order record and its lifecycle transitions.
-- Finance triggers cleanup and notification work, but does not own order state.
-- Notification delivery is a downstream effect, never the source of truth for the actual order outcome.
+### State transitions and soft deletion
 
-## 4. Trade-offs & Lessons Learned
+This state diagram clarifies the difference between Ordering API's explicit business statuses (`New`, `Completed`, `Cancelled`) and technical soft deletion after failed basket cleanup.
 
-- **Explicit transitions over inferred outcomes:** Requiring Ordering to explicitly move orders to **Completed** or **Cancelled** eliminates ambiguity during reconciliation, though downstream participants must wait for Ordering's status updates rather than assuming completion from cleanup steps.
-- **Decoupled side effects:** Running basket cleanup and email delivery asynchronously keeps checkout responsive and resilient, at the trade-off of eventual consistency between the purchase record and customer notifications.
-- **Localized troubleshooting:** Keeping notification delivery outside order state ensures delivery errors do not corrupt purchase history, provided operational monitoring tracks both order outcomes and notification delivery.
+<MermaidFileLoader file="mermaids/order-lifecycle-diagram-2.mmd" />
 
-## 5. Technical Reference
+- **Creation (`New`):** **Ordering API** authenticates the buyer via Microsoft Entra ID, reads the persisted basket over gRPC (`basket.v1.BasketGrpcService`), resolves authoritative prices over gRPC (`book.v1.BookGrpcService`), persists the order in `orderingdb` (EF Core + Marten event store + Wolverine PostgreSQL outbox), and publishes `UserCheckedOutIntegrationEvent` (`bookworm.{env}.ordering.user-checked-out`).
+- **Post-checkout coordination:** **Finance** consumes `UserCheckedOutIntegrationEvent` and starts an `OrderOrchestrator` instance correlated by `OrderId` in Azure Durable Task Scheduler (`finance-taskhub`). Finance publishes `PlaceOrderCommand` (`bookworm.{env}.finance.place-order`), consumed independently by **Basket API** (to delete the basket) and **Notification** (to send the placement email).
+- **Explicit completion or cancellation:** When an authorized business operation marks an order `Completed` or `Cancelled`, **Ordering API** commits the new status and publishes `OrderStatusChangedToCompleteIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-complete`) or `OrderStatusChangedToCancelIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-cancel`). **Finance** consumes the status event, completes its orchestration, and publishes `CompleteOrderCommand` (`bookworm.{env}.finance.complete-order`) or `CancelOrderCommand` (`bookworm.{env}.finance.cancel-order`) for **Notification**.
+- **Basket cleanup failure vs. cancellation:** If **Basket API** returns `false` on deletion, Finance sends `DeleteBasketFailedCommand` (`bookworm.{env}.finance.delete-basket-failed`) to **Ordering API**, which soft-deletes the order (`IsDeleted = true`) without changing its business status to `Cancelled` and without publishing `OrderStatusChangedToCancelIntegrationEvent`.
 
-### Participants and responsibilities
+## Design trade-offs
 
-| Participant                      | Responsibility                                                                                                     |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Customer                         | Completes checkout and expects an accepted purchase to transition through a clear lifecycle.                       |
-| [[service\|order-api]]           | Creates the Order from the current basket and stores the accepted purchase in the ordering system.                 |
-| [[database\|order-database]]     | Keeps the authoritative order record and its status transitions.                                                   |
-| [[service\|order-orchestration]] | Coordinates Finance-side follow-up work such as cleanup and order notifications.                                   |
-| [[service\|notification-api]]    | Sends customer-facing completion or cancellation notifications when Ordering publishes the relevant status change. |
+| Decision                                                   | Benefits                                                                                                               | Costs and limits                                                                                               |
+| :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **Ordering owns status; Finance routes notifications**     | Keeps business status authoritative in one service and lets Finance cancel pending retry timers when an order finishes | Adds a Kafka hop through Finance between Ordering status events and Notification emails                        |
+| **PostgreSQL outbox + Marten event store on Ordering API** | Guarantees atomic order persistence, `OrderSummary` read projections, and Kafka event publication                      | Requires operating Marten's Async Daemon (`DaemonLockId = 44444`) alongside EF Core migrations in `orderingdb` |
+| **Soft deletion separate from `Cancelled` status**         | Distinguishes technical post-checkout cleanup failures from intentional business cancellations                         | Support and operators must inspect both business status and `IsDeleted` when troubleshooting missing orders    |
+| **Asynchronous downstream side effects**                   | Keeps checkout fast and prevents email or basket outages from blocking order acceptance                                | Introduces eventual consistency between order status and customer emails                                       |
 
-### Flow messages and visualization
+## Alternatives considered
 
-- **Inbound command:** `CreateOrder` triggers `order-api` to authenticate the buyer, resolve basket and Catalog prices, and persist the `New` Order in `order-database`.
-- **Outcome events:** `OrderStatusChangedToCompleteIntegrationEvent` and `OrderStatusChangedToCancelIntegrationEvent` trigger `notification-api` to render and send completion or cancellation messages.
+- **Notification consuming Ordering status events directly:** Rejected because **Finance** must observe `OrderStatusChangedToCompleteIntegrationEvent` and `OrderStatusChangedToCancelIntegrationEvent` anyway to stop its active retry loop and clear compensations before issuing `CompleteOrderCommand` or `CancelOrderCommand`.
+- **Finance owning order status:** Rejected because Finance is a coordination orchestrator on Durable Task Scheduler, not the domain authority for purchases, pricing snapshots, or buyer order history.
+- **Synchronous distributed transaction across Ordering, Basket, and Notification:** Rejected because two-phase commits across PostgreSQL, Redis, and external SMTP providers cannot preserve checkout availability.
+
+## Related documentation
+
+- [[flow|user-checkout]] — Detailed walkthrough of checkout validation, basket cleanup, and Finance retry timeouts.
+- [[flow|notification-delivery]] — How Notification renders and sends placement, completion, and cancellation emails.
 
 <NodeGraph />

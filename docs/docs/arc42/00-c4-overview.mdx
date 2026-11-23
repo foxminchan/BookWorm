@@ -1,0 +1,75 @@
+---
+title: "C4 architecture overview"
+summary: "Explore BookWorm's C4 System Context and Container views across its three Next.js apps, YARP gateway, ten .NET services, and backing stores."
+owners:
+  - contributor-team
+---
+
+BookWorm is an online bookstore built on .NET 11, Aspire 17, Next.js 16, Wolverine, and Kafka across six bounded contexts. This page provides a single-page C4 System Context (Level 1) and Container (Level 2) overview showing every user actor, frontend microfrontend (MFE), backend service, AI platform dependency, and backing store.
+
+## Scope and constraints
+
+- **Scope:** Covers the entire BookWorm platform—three Next.js 16 frontends (`Storefront`, `Commerce`, `Backoffice`), the YARP `API Gateway`, ten .NET 11 backend services and Azure Functions workers, two Presidio privacy containers, managed Azure stores, and external cloud providers.
+- **Key constraints:** Each bounded context owns its authoritative persistence; cross-service writes never share databases; only the `API Gateway` (and the Entra-protected Quartz Dashboard) expose external HTTP ingress; AI workflows remain strictly read-only with respect to commerce transactions.
+
+## C4 Level 1 — System context
+
+This System Context diagram shows who interacts with BookWorm and which external cloud services support authentication, AI inference, messaging, vector search, and email delivery.
+
+<MermaidFileLoader file="mermaids/00-c4-overview-diagram-1.mmd" />
+
+## C4 Level 2 — Container view
+
+Because BookWorm comprises 16 core Container Apps plus managed data stores, the Container view splits into two focused diagrams: the edge and core commerce containers, and the AI, reviews, and platform containers.
+
+### Edge and core commerce containers
+
+This diagram maps external user traffic through the YARP `API Gateway` into the three Next.js 16 microfrontends and the Catalog, Shopping, and Ordering containers.
+
+<MermaidFileLoader file="mermaids/00-c4-overview-diagram-2.mmd" />
+
+### AI, reviews, and platform containers
+
+This diagram shows how conversational book discovery, customer feedback, privacy redaction, vector ingestion, job scheduling, and email delivery connect to backing stores and external services.
+
+<MermaidFileLoader file="mermaids/00-c4-overview-diagram-3.mmd" />
+
+## Building block inventory
+
+Every deployable container app in `src/Aspire/BookWorm.AppHost/AppHost.cs` maps to a single bounded context or edge role.
+
+| Container                                                 | Bounded context | Technology                                        | Owned state and backing stores                                                           | Source path                                        |
+| :-------------------------------------------------------- | :-------------- | :------------------------------------------------ | :--------------------------------------------------------------------------------------- | :------------------------------------------------- |
+| **API Gateway** (`gateway`)                               | Edge            | YARP reverse proxy (`Aspire.Hosting.Yarp`)        | Stateless ingress; routes APIs, frontends, and `/entra` proxy                            | `src/Aspire/BookWorm.AppHost/`                     |
+| **Storefront** (`storefront`)                             | Edge (Frontend) | Next.js 16, React 19, Better Auth, AG-UI          | Public catalog, AI chat UI, customer auth owner (`/` catch-all)                          | `src/Clients/apps/storefront/`                     |
+| **Commerce** (`commerce`)                                 | Edge (Frontend) | Next.js 16, React 19, Vercel Microfrontends       | Authenticated `/basket`, `/checkout/*`, `/account/*` child zone                          | `src/Clients/apps/commerce/`                       |
+| **Backoffice** (`backoffice`)                             | Edge (Frontend) | Next.js 16, React 19, Better Auth                 | Staff dashboard mounted at `/backoffice`                                                 | `src/Clients/apps/backoffice/`                     |
+| **Catalog API** (`catalog`)                               | Catalog         | .NET 11 Minimal API + gRPC (`book.v1`)            | PostgreSQL `catalogdb`, Qdrant `vectordb`, Blob `catalog-blob`, Redis, Microsoft Foundry | `src/Services/Catalog/BookWorm.Catalog/`           |
+| **Catalog Ingestion** (`catalog-ingestion`)               | Catalog         | Azure Functions (`Azure.Functions.Sdk`)           | Reads PostgreSQL `catalogdb`, embeds via Foundry, updates Qdrant `vectordb`              | `src/Services/Catalog/BookWorm.Catalog.Ingestion/` |
+| **Basket API** (`basket`)                                 | Shopping        | .NET 11 Minimal API + gRPC (`basket.v1`)          | Azure Managed Redis (authoritative basket state, cache, idempotency)                     | `src/Services/Basket/BookWorm.Basket/`             |
+| **Ordering API** (`ordering`)                             | Ordering        | .NET 11 Minimal API + Marten event store          | PostgreSQL `orderingdb` (EF Core + Marten), Redis (cache, locks)                         | `src/Services/Ordering/BookWorm.Ordering/`         |
+| **Finance** (`finance`)                                   | Ordering        | Azure Durable Functions (`OrderOrchestrator`)     | Durable Task Scheduler (`finance-taskhub`), Azure Storage host state; no SQL DB          | `src/Services/Finance/BookWorm.Finance/`           |
+| **Rating API** (`rating`)                                 | Reviews         | .NET 11 Minimal API + Agent-to-Agent (A2A) gRPC   | Azure Cosmos DB (`ratingdb`/`feedbacks`), Redis, Foundry, Presidio                       | `src/Services/Rating/BookWorm.Rating/`             |
+| **Chat API** (`chatting`)                                 | Conversational  | .NET 11 + Agent-User Interaction (AG-UI) `/ag-ui` | Azure Blob Storage (`chatting-blob`, `ag-ui/`), Foundry, Presidio                        | `src/Services/Chat/BookWorm.Chat/`                 |
+| **MCP Tools** (`mcptools`)                                | Conversational  | .NET 11 Model Context Protocol (MCP) `/mcp`       | Stateless read-only Catalog tools; not routed through YARP                               | `src/Services/McpTools/BookWorm.McpTools/`         |
+| **Notification** (`notification`)                         | Platform        | .NET 11 Worker (`MailKit`, `Mjml.Net`)            | Stateless Kafka email sender + Redis 24h idempotency; no SQL DB                          | `src/Services/Notification/BookWorm.Notification/` |
+| **Scheduler** (`scheduler`)                               | Platform        | .NET 11 + Quartz.NET (`jobs.json`)                | PostgreSQL `schedulerdb`; triggers `ProcessVectorBatchJob` and `HeartbeatJob`            | `src/Services/Scheduler/BookWorm.Scheduler/`       |
+| **Presidio** (`presidio-analyzer`, `presidio-anonymizer`) | Privacy         | 2 internal Container Apps (port `3000`)           | Stateless PII detection and anonymization sidecars                                       | `src/Integrations/BookWorm.Hosting.Presidio/`      |
+
+:::note
+`AppHost.cs` also provisions `quartz-dashboard` as an operational tooling container app with external HTTP access protected by Microsoft Entra ID OpenID Connect (`admin` role). Local development adds `scalar` and MCP `inspector` containers in run mode only.
+:::
+
+## Key runtime and deployment boundaries
+
+- **Synchronous vs. asynchronous communication:** Interactive reads use REST (`/api/v1/*`) behind YARP and internal gRPC (`book.v1`, `basket.v1`, A2A gRPC). Cross-context workflows use Kafka CloudEvents via Wolverine with per-service dead-letter queues (`bookworm.{env}.{service}.dead-letter-queue`).
+- **Identity and authorization:** Microsoft Entra ID issues OAuth2/JWT tokens for three app roles (`admin`, `business_user`, `customer`), per-service managed identities authenticate passwordlessly to Azure resources, and Entra Agent Identities (`chatAgentId`, `ratingAgentId`) isolate AI On-Behalf-Of (OBO) calls.
+- **Deployment:** Aspire 17 (`aspire deploy`) publishes all 16 core Container Apps plus `quartz-dashboard` into one Azure Container Apps environment (`Consumption` workload profile). See [[doc|arc42/07-deployment-view]] for environment SKUs and open production hardening items.
+
+## Related architecture documentation and decisions
+
+- [[doc|arc42]] — Full 12-chapter architecture documentation index.
+- [[doc|arc42/05-building-block-view]] — Progressive Level 1–3 static decomposition.
+- [[doc|arc42/06-runtime-view]] — End-to-end checkout, vector ingestion, feedback, chat, and notification sequences.
+- [[doc|arc42/07-deployment-view]] — Local vs. Azure Container Apps infrastructure topology.
+- [[doc|arc42/09-architecture-decisions]] — All 18 platform ADRs and 55 system ADRs, including the four superseding infrastructure records.

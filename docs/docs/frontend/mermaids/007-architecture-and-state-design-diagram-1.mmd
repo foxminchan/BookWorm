@@ -1,0 +1,12 @@
+flowchart TD
+	app["App Tier (tag: app)\nStorefront, Commerce, Backoffice\n(Next.js 16)"]
+	domain["Domain Tier (tag: domain)\nstorefront-shell, api-hooks, api-client, auth, ui, seo, validations, mocks"]
+	foundation["Foundation Tier (tag: foundation)\ntypes, utils, env, otel"]
+	config["Config Tier (tag: config)\napp-config, eslint-config, typescript-config, allure-config"]
+
+	app -->|"Workspace import"| domain
+	app -->|"Workspace import"| foundation
+	domain -->|"Workspace import"| foundation
+	app -.->|"Preset / tool config"| config
+	domain -.->|"Preset / tool config"| config
+	foundation -.->|"Preset / tool config"| config

@@ -9,67 +9,57 @@ badges:
     textColor: teal
 ---
 
-import Footer from "@catalog/components/footer.astro";
+BookWorm draws a strict boundary between pre-purchase shopping intent and committed commercial orders: **Shopping** (**Basket API**, `basket`) owns the customer's mutable basket in **Redis** (`basket:{userId}`), **Catalog** (**Catalog API**, `catalog`) supplies live titles and prices, **Ordering** (**Ordering API**, `ordering`) locks in an immutable order snapshot in PostgreSQL (`orderingdb`), and **Finance** (`finance`) coordinates asynchronous basket deletion after checkout. Treating these responsibilities as distinct stages prevents accidental duplicate purchases and ensures a basket cleanup error is never confused with a failed order or payment.
 
-## 1. Context & Problem
+## Context and motivation
 
-Moving a customer from browsing their cart to placing a formal order crosses multiple business boundaries. Before purchase confirmation, the customer's selection is flexible and belongs to [[domain|shopping]]. Once the customer submits the purchase, order creation, payment settlement, and fulfilment belong to downstream capabilities.
+Before a customer clicks checkout, their basket changes frequently and requires low-latency reads and writes with live catalog pricing. After checkout, the purchase must become an immutable commercial record that cannot shift when catalog prices change or when the customer starts shopping again.
 
-Without a clear handoff lifecycle, teams risk treating the shopping basket as a permanent order record, leaving submitted baskets active for accidental double purchases, or confusing basket cleanup errors with failed payments.
+Separating Shopping from Ordering and Finance ensures:
 
-## 2. Business Value
+- **No shared mutable state:** Ordering never shares Redis basket keys with Shopping, and Shopping never writes to `orderingdb` or `catalogdb`.
+- **Clean failure isolation:** A temporary Redis or Kafka issue during post-checkout cleanup never blocks or falsifies order status, while explicit cleanup events let Finance and Ordering react deterministically.
 
-- **Prevents duplicate purchases:** Cleans up the customer's submitted basket once checkout hands off the purchase intent, reducing accidental repeat orders.
-- **Protects order accuracy:** Ensures live product details and pricing are checked from the catalog before submission, while keeping finalized orders independent of mutable basket data.
-- **Clear accountability across domains:** Establishes an unmistakable handoff point between Shopping, Catalog, and Ordering/Finance so customer support and delivery teams know which capability owns each stage.
-- **Transparent failure handling:** Distinguishes basket cleanup outcomes from payment or order outcomes so temporary cleanup issues never trigger false order-cancellation assumptions.
+## How it works
 
-## 3. How It Works
+Customers manage their basket and submit checkout through the **Commerce** (`@bookworm/commerce`) microfrontend (MFE), mounted at `/basket` and `/checkout/*` via **API Gateway** (`X-Mfe-Zone: commerce`).
 
-The checkout lifecycle follows four main stages from cart review through post-checkout cleanup:
+The sequence diagram below traces a customer from basket review through checkout handoff and asynchronous post-checkout basket cleanup.
 
-1. **Verify the customer and basket:** Only an authenticated customer's basket is eligible for checkout, and every selected [[entity|book]] must have a valid reference and a quantity above zero.
-2. **Present live product details and confirm intent:** Before submission, the customer sees up-to-date book details and prices sourced from [[domain|catalog]], which remains the single source of truth for product metadata. The customer explicitly confirms the purchase action before checkout proceeds.
-3. **Hand off purchase intent:** Checkout transfers enough information for the downstream order workflow to create and manage an Order independently, without sharing the mutable [[entity|basket]] structure. From this point forward, downstream processing owns the Order lifecycle, while Shopping is responsible only for cleaning up the submitted basket.
-4. **Emit an explicit cleanup outcome:** After attempting to delete the submitted basket, Shopping publishes exactly one outcome—either confirming that cleanup succeeded or reporting that cleanup failed. Neither outcome indicates whether payment, order completion, or fulfilment has finished.
+<MermaidFileLoader file="mermaids/checkout-lifecycle-diagram-1.mmd" />
 
-## 4. Trade-offs & Lessons Learned
+### Four checkout stages
 
-- **Handoff snapshot vs. shared basket model:** Passing purchase intent across an explicit boundary avoids coupling Ordering to Shopping's internal storage, though it requires carrying all necessary order details in the handoff payload.
-- **Asynchronous cleanup vs. blocking checkout:** Separating basket deletion from order confirmation keeps the handoff decoupled, but introduces a narrow window where cleanup can fail after an order is accepted—making explicit failure events and safe caller rules essential.
-- **No blind retries on ambiguity:** Because network or messaging hiccups can leave callers unsure whether checkout succeeded, callers must verify downstream order acceptance before retrying so customers are not charged or ordered twice.
-- **Strict domain write boundaries:** Shopping never writes Catalog or Order state, and a basket is never used to reconstruct an accepted Order.
-
-## 5. Technical Reference
-
-### Participating architecture elements
-
-- **Owning domain and system:** [[domain|shopping]] and [[system|cart-system]]
-- **Service:** [[service|basket-api]]
-- **Core entity:** [[entity|basket]] (mutable, customer-scoped purchase context)
-- **Sequence diagram:** [[diagram|checkout-interaction]] (shows the checkout sequence and failure paths)
-
-### Pre-checkout checklist
-
-1. Authenticate the customer and resolve the customer-scoped basket through [[service|basket-api]].
-2. Confirm that the basket contains valid [[entity|book]] references and positive quantities.
-3. Read the enriched basket representation for the current product details; [[domain|catalog]] remains the source of truth for [[entity|book]] metadata and prices.
-4. Confirm the customer action before submitting the purchase.
-
-### Cleanup integration events and channels
-
-The Basket API publishes exactly one cleanup outcome for the attempted deletion:
-
-- [[event|BasketDeletedCompleteIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] when deletion succeeds.
-- [[event|BasketDeletedFailedIntegrationEvent]] on [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] when deletion fails.
-
-These events describe basket cleanup only. Neither event means that payment, order completion, or fulfilment has finished.
+- **Review the live basket:** **Commerce** fetches the authenticated customer's basket from **Basket API** (`GET /basket/api/v1/baskets`). Basket API loads stored book IDs and quantities from Redis (`basket:{userId}`) and enriches them on read via Catalog API gRPC (`GetBooks`) so the customer confirms current titles and prices.
+- **Confirm and hand off purchase intent:** When the customer confirms checkout, **Commerce** sends `POST /ordering/api/v1/orders` with a unique `x-request-id`. **Ordering API** reads the basket over gRPC (`GetBasket`), resolves and locks prices via Catalog API (`PriceSale ?? Price`), persists the immutable `Order` in `orderingdb` with status `New`, and publishes `UserCheckedOutIntegrationEvent` to Kafka.
+- **Coordinate post-checkout cleanup:** **Finance** (`OrderOrchestrator` on Azure Functions + Durable Task Scheduler `finance-taskhub`) consumes `UserCheckedOutIntegrationEvent` and publishes `PlaceOrderCommand` to `bookworm.{env}.finance.place-order`.
+- **Emit an explicit cleanup outcome:** Basket API's `PlaceOrderCommandHandler` acquires a 24-hour Redis `IIntegrationEventIdempotencyGuard` keyed by `OrderId` and deletes `basket:{BasketId}`:
+  - When deletion succeeds (or the `OrderId` was already processed within 24 hours), Basket API emits `BasketDeletedCompleteIntegrationEvent` on `bookworm.{env}.basket.delete-complete`.
+  - When deletion returns `false` (key absent/not deleted), Basket API emits `BasketDeletedFailedIntegrationEvent` on `bookworm.{env}.basket.delete-failed`.
+  - Neither event proves payment settlement, order completion, or fulfillment; they report basket cleanup status only.
 
 ### Rules for callers and consumers
 
-- Do not retry checkout blindly after an ambiguous response; first determine whether the downstream workflow accepted the purchase.
-- Do not treat a cleanup failure as successful deletion.
-- Keep consumers idempotent because integration delivery can be retried.
-- Do not write Catalog data or Order state from the Shopping boundary.
+- **Verify before retrying ambiguous checkouts:** If `POST /ordering/api/v1/orders` times out, query Ordering API (`GET /ordering/api/v1/orders`) before retrying so the customer is not placed into a duplicate order.
+- **Treat cleanup failure as distinct from deletion:** Never interpret `BasketDeletedFailedIntegrationEvent` as a successful cleanup or as a payment failure.
+- **Design idempotent consumers:** Both Basket API and Finance tolerate at-least-once Kafka redelivery.
 
-<Footer />
+## Design trade-offs
+
+| Decision                                                            | Benefits                                                                                                         | Costs and limits                                                                                                              |
+| :------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| **gRPC snapshot read by Ordering API + asynchronous Kafka cleanup** | Keeps Shopping and Ordering storage decoupled and keeps checkout latency low                                     | Introduces a brief window after `201 Created` where basket cleanup is still in flight or can fail                             |
+| **Live Catalog enrichment on basket read instead of stored prices** | Customers always see current prices before checkout without catalog-sync jobs                                    | Basket reads depend on Catalog API gRPC availability and degrade gracefully when a book is missing                            |
+| **Explicit success and failure cleanup events**                     | Enables deterministic Finance/Ordering reactions (`DeleteBasketCompleteCommand` vs. `DeleteBasketFailedCommand`) | Adds two integration topics and requires disciplined incident triage so cleanup errors are not misread as order cancellations |
+
+## Alternatives considered
+
+- **Deleting the basket synchronously inside `POST /api/v1/orders`:** Rejected because coupling Ordering's PostgreSQL transaction to a remote Redis deletion creates dual-write failure modes when one store succeeds and the other fails.
+- **Promoting the basket record directly into an Order entity:** Rejected because mutable pre-order browsing state and immutable financial order history have incompatible lifecycles, schemas, and retention rules.
+
+## Related documentation
+
+- Shopping Basket API contracts reference — Exact HTTP, gRPC, Redis, and Kafka specifications.
+- How to recover a failed basket cleanup — Operational triage when `BasketDeletedFailedIntegrationEvent` fires.
+- Create and manage orders — How Ordering API locks checkout snapshots and manages status transitions.
+- Order and Finance status boundaries — How Finance handles basket cleanup outcomes.

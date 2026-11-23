@@ -1,115 +1,18 @@
 ---
-summary: Publish a feedback-created event and apply the rating in Catalog.
+summary: Usage examples for Feedback created.
 ---
 
-## 1. Context & Problem
+## Event payload
 
-After a customer submits a book rating in the Reviews service, that rating needs to be reflected in the Catalog service's book summary without coupling the two services to a shared database or synchronous transaction. Teams also need a clear pattern for handling the edge case where the target book does not exist in Catalog.
-
-## 2. Business Value
-
-- **Shared end-to-end clarity**: Gives architects, analysts, and developers a concrete view of how a single rating flows from Reviews into Catalog.
-- **Built-in data integrity**: Demonstrates not only the normal rating update path, but also how orphaned feedback is detected and rolled back via compensation when a book is missing.
-- **Consistent contract alignment**: Shows the exact message fields shared between producer and consumer, reducing integration misunderstandings.
-
-## 3. How It Works
-
-1. **Publish the creation notification**: After saving a new feedback entry, the Reviews service translates its internal creation event into a public notification containing the book identifier, the rating value, and the feedback identifier, then sends it on the feedback-created channel.
-2. **Deliver the message payload**: The messaging channel carries the three fields to subscribers in a lightweight structured payload.
-3. **Update Catalog or trigger compensation**: Catalog looks up the matching book and adds the rating to its summary. If the book cannot be found, Catalog publishes a rating-update-failed notification carrying the feedback identifier so Reviews can remove the orphaned entry.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Including the feedback identifier up front**: Adding the feedback identifier alongside the book identifier and rating allows Catalog to trigger failure compensation without needing to query Reviews back.
-- **Explicit missing-book compensation**: Rather than failing silently or stalling the message queue when a book is absent, Catalog emits a compensating event so both services stay consistent.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Publish a new feedback rating
-
-Rating API maps the committed feedback-created domain event to the integration
-contract and publishes it to
-[[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
-
-- `bookId` identifies the Catalog book to update.
-- `rating` is added to the book's denormalized rating summary.
-- `feedbackId` identifies the feedback record for failure compensation.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp FeedbackCreatedIntegrationEvent.cs
-[IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-create")]
-[MessageIdentity("BookWorm.Contracts.FeedbackCreatedIntegrationEvent")]
-public sealed record FeedbackCreatedIntegrationEvent(
-    Guid BookId,
-    int Rating,
-    Guid FeedbackId
-) : IntegrationEvent;
-```
-
-```csharp EventMapper.cs
-FeedbackCreatedEvent feedbackCreatedEvent => new FeedbackCreatedIntegrationEvent(
-    feedbackCreatedEvent.BookId,
-    feedbackCreatedEvent.Rating,
-    feedbackCreatedEvent.FeedbackId
-)
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Payload
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
-	"bookId": "11111111-1111-1111-1111-111111111111",
+	"id": "0193f1a2-4a01-7d8e-9f01-23456789abcd",
+	"creationDate": "2026-11-25T16:18:10Z",
+	"bookId": "0193f1a2-5555-7d8e-9f01-23456789abcd",
 	"rating": 5,
-	"feedbackId": "22222222-2222-2222-2222-222222222222"
-}
-```
-
-</CodeGroup>
-
-### Consume the rating update
-
-Catalog reads the book and adds the rating. When the book does not exist, it
-publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] using the feedback ID.
-
-<CodeGroup dropdown>
-
-```csharp FeedbackCreatedIntegrationEventHandler.cs
-[WolverineHandler]
-public async Task Handle(
-    FeedbackCreatedIntegrationEvent @event,
-    CancellationToken cancellationToken
-)
-{
-    var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
-
-    if (book is null)
-    {
-        await bus.PublishAsync(new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId));
-        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-        return;
-    }
-
-    book.AddRating(@event.Rating);
-    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+	"feedbackId": "0193f1a2-3333-7d8e-9f01-23456789abcd"
 }
 ```
 

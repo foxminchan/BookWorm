@@ -1,0 +1,14 @@
+flowchart LR
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	basket["Basket API\n(.NET 11 + gRPC)"]
+	redis["Redis\n(basket:{userId} + Guard)"]
+	catalog["Catalog API\n(.NET 11 + gRPC)"]
+	ordering["Ordering API\n(.NET 11 + gRPC)"]
+	finance["Finance\n(Azure Functions + Durable Task)"]
+
+	gateway --> |"HTTPS: /basket/api/v1/baskets"| basket
+	basket -->|"Get/Set/Delete"| redis
+	basket --> |"gRPC: GetBooks"| catalog
+	ordering --> |"gRPC: GetBasket"| basket
+	finance --> |"Kafka: finance.place-order"| basket
+	basket --> |"Kafka: basket.delete-complete / delete-failed"| finance

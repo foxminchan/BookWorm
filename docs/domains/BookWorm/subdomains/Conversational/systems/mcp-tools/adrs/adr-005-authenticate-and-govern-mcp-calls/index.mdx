@@ -20,6 +20,7 @@ badges:
   - content: Security
     backgroundColor: red
     textColor: red
+x-scope: "[[system|mcp-tools]], [[service|mcp-server]], [[system|identity-provider]]"
 ---
 
 ## 1. Context & Problem
@@ -56,7 +57,7 @@ Client applications still configure which subset of tools they intend to use, wh
 ## 5. Technical Reference
 
 - **Decision status:** `accepted` (2026-11-04)
-- **Scope:** [[system|mcp-tools]], [[service|mcp-server]], [[system|identity-provider]]
+
 - **Protected endpoint:** `/mcp` on [[service|mcp-server]]
 - **Required scope:** `mcptools_read`
 - **Server-side controls:**

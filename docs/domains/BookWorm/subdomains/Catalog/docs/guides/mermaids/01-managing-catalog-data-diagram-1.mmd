@@ -1,0 +1,7 @@
+flowchart LR
+	cat["Category\n(Unique Name)"] --> |"1: N optional"| book["Book\n(PostgreSQL catalogdb)"]
+	pub["Publisher\n(Unique Name)"] --> |"1: N optional"| book
+	author["Author\n(Delete Restricted)"] --> |"M: N book_authors"| book
+	book -->|"URN reference"| blob["Azure Blob Storage\n(catalog-blob)"]
+	rating["Rating API\n(Cosmos DB ratingdb)"] --> |"Kafka: average_rating & total_reviews"| book
+	book --> |"gRPC: authoritative price"| downstream["Basket API & Ordering API\n(Checkout Snapshot)"]

@@ -1,0 +1,22 @@
+sequenceDiagram
+	participant Customer as Customer (Storefront)
+	participant Rating as Rating API (.NET 11)
+	participant Cosmos as Cosmos DB (ratingdb/feedbacks)
+	participant Kafka as Kafka (CloudEvents)
+	participant Catalog as Catalog API (.NET 11)
+	participant Postgres as PostgreSQL (catalogdb)
+
+	Customer ->> Rating: HTTPS POST /rating/api/v1/feedbacks
+	Rating ->> Cosmos: Persist Feedback document (/bookId)
+	Rating ->> Kafka: Publish FeedbackCreatedIntegrationEvent
+	Rating -->> Customer: 201 Created
+	Kafka ->> Catalog: Deliver bookworm.{env}.rating.feedback-create
+	Catalog ->> Postgres: Load Book by BookId
+
+	alt Book exists
+		Catalog ->> Postgres: Update average_rating & total_reviews
+	else Book missing
+		Catalog ->> Kafka: Publish BookUpdatedRatingFailedIntegrationEvent
+		Kafka ->> Rating: Deliver bookworm.{env}.catalog.book-update-rating-failed
+		Rating ->> Cosmos: Delete orphaned Feedback document
+	end

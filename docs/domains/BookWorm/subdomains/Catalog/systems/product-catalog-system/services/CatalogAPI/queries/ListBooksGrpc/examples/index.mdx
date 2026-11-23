@@ -1,0 +1,30 @@
+---
+summary: Usage examples for List books over gRPC.
+---
+
+## Call `ListBooks` from a .NET gRPC client
+
+<CodeGroup>
+
+```csharp
+using BookWorm.Catalog.Grpc.Services;
+using Grpc.Net.Client;
+
+using var channel = GrpcChannel.ForAddress("<catalog-grpc-url>");
+var client = new BookGrpcService.BookGrpcServiceClient(channel);
+
+var response = await client.ListBooksAsync(
+    new ListBooksRequest { Search = "microservices" }
+);
+
+foreach (var book in response.Books)
+{
+    Console.WriteLine($"{book.Name} ({book.AverageRating}/5)");
+}
+```
+
+</CodeGroup>
+
+Where:
+
+- `<catalog-grpc-url>`: Base URL of Catalog API (resolved via Aspire service discovery as `catalog`, or `https://localhost:7187` locally).

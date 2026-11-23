@@ -1,0 +1,12 @@
+flowchart LR
+	discover["1. Discover Books\n(Storefront → Catalog)"]
+	chat["2. Ask AI Assistant\n(Storefront → Conversational)"]
+	basket["3. Build Basket\n(Commerce → Shopping)"]
+	order["4. Place & Track Order\n(Commerce → Ordering + Platform)"]
+	review["5. Submit Feedback\n(Storefront → Reviews → Catalog)"]
+
+	discover -->|"Browse & search"| chat
+	discover -->|"Add book"| basket
+	chat -->|"Confirmed recommendation"| basket
+	basket -->|"Checkout handoff"| order
+	order -->|"Post-purchase review"| review

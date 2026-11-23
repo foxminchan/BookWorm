@@ -1,101 +1,63 @@
-## 1. Context & Problem
+---
+summary: Usage examples for Update basket.
+---
 
-As customers add books, remove titles, or adjust quantities before checkout, client developers need concrete examples showing how to replace the basket's item list and how to distinguish between invalid input and a basket that does not exist yet. Without clear guidance, clients might attempt partial updates or fail to guide customers when a basket needs to be created first.
+## Replace the basket item collection with curl
 
-## 2. Business Value
+<CodeGroup>
 
-- **Predictable basket state**: Ensures storefront applications synchronize the full item list consistently, preventing quantity mismatches between the screen and stored basket.
-- **Faster issue resolution**: Helps teams separate validation errors (fixable input) from missing-basket outcomes (lifecycle mismatch) in client workflows.
-
-## 3. How It Works
-
-1. **Replacing the basket item collection**: The client sends the complete list of books and quantities that should remain in the basket. When the basket exists and the list is valid, the stored items are replaced in full and the service confirms success without returning extra data.
-2. **Handling validation and missing-basket outcomes**: If the submission is missing required item information, the service rejects it with field-level validation details so the caller can correct the payload. If no active basket exists to update, the service reports that the basket was not found.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Complete replacement over partial edits**: Because every update overwrites the stored item list with the submitted collection, clients must always send the entire intended basket state rather than a single added or removed item.
-- **No implicit creation on update**: Updating a non-existent basket returns a not-found outcome rather than creating one automatically, keeping creation and replacement as distinct lifecycle steps.
-
-## 5. Technical Reference
-
-### 1. Replace the basket item collection
-
-Replace the basket with the complete list of intended items. The endpoint returns no body when the update succeeds.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request PUT "$BASE_URL/api/v1/baskets" \
+```bash
+curl --request PUT "<gateway-url>/basket/api/v1/baskets" \
+  --header "Authorization: Bearer <access-token>" \
   --header "Content-Type: application/json" \
   --data '{
     "items": [
-      { "id": "book-9780141182803", "quantity": 1 },
-      { "id": "book-9780061120084", "quantity": 3 }
+      { "id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd", "quantity": 1 },
+      { "id": "0193f1a2-7b4c-7d8e-9f01-23456789abce", "quantity": 3 }
     ]
   }'
 ```
 
 </CodeGroup>
 
-The same replacement from TypeScript expects no response body:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or use the direct Basket API URL without the `/basket` prefix).
+- `<access-token>`: Entra ID JWT bearer token with role `customer` and scopes `basket_read` and `basket_write`.
 
-```ts update-basket.ts
-const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
-const response = await fetch(`${baseUrl}/api/v1/baskets`, {
-	method: "PUT",
-	headers: { "Content-Type": "application/json" },
-	body: JSON.stringify({
-		items: [
-			{ id: "book-9780141182803", quantity: 1 },
-			{ id: "book-9780061120084", quantity: 3 },
-		],
-	}),
-});
+Expected response (`204 No Content`):
 
-if (response.status === 400) {
-	throw new Error("UpdateBasket validation failed");
-}
-if (response.status === 404) {
-	throw new Error("Basket was not found");
-}
-if (!response.ok) {
-	throw new Error(`UpdateBasket failed with ${response.status}`);
-}
+<CodeGroup>
+
+```text
+HTTP/1.1 204 No Content
 ```
 
 </CodeGroup>
 
-The successful response is `204 No Content`.
+## Validation error response (`400 Bad Request`)
 
-### 2. Handle validation and missing-basket outcomes
-
-A body that fails validation returns `400 Bad Request` with `application/problem+json`:
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
 	"title": "One or more validation errors occurred.",
 	"status": 400,
 	"errors": {
-		"items": ["The items field is required."]
+		"Items[0].Quantity": ["'Quantity' must be greater than '0'."]
 	}
 }
 ```
 
 </CodeGroup>
 
-When the basket does not exist, the service returns `404 Not Found` with `application/problem+json`:
+## Missing basket response (`404 Not Found`)
 
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
-	"title": "Not Found",
-	"status": 404
+	"detail": "The requested resource was not found."
 }
 ```
 

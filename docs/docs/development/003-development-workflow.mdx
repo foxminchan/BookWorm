@@ -9,115 +9,157 @@ badges:
     textColor: teal
 ---
 
-# Make and validate a change
+Use this workflow for every backend, frontend, or documentation change so your branch stays cleanly scoped, passes Husky pre-commit checks, and merges with minimal review friction.
 
-## 1. Context & Problem
+## Prerequisites
 
-BookWorm brings together multiple backend services, customer and back-office web applications, and living architecture documentation. Without a shared change workflow, contributors can accidentally introduce inconsistent formatting, broken builds, or conflicting edits across teams. Both human contributors and AI coding assistants also need a predictable path from starting a task to submitting a verified, reviewable change.
+- A prepared local workspace from [[doc|development/002-getting-started]] (`mise run prepare` completed so `.husky` hooks are active)
+- Familiarity with the bounded context you plan to modify (see [[doc|development/001-developer-onboarding]])
 
-## 2. Business Value
+## Steps
 
-- **Predictable delivery**: Standardized branching and commit practices keep the change history clear and traceable to features, fixes, and documentation updates.
-- **Fewer integration surprises**: Local validation and formatting catch build or style issues before changes reach shared integration pipelines.
-- **Faster onboarding**: Clear, shared guidance reduces ramp-up time for new team members and ensures AI assistants follow the same repository guardrails as human contributors.
+<Steps>
+<Step title="Sync `main` and create a focused branch">
 
-## 3. How It Works
+Update your local `main` branch from `upstream` and create a short-lived branch using `<type>/<short-description>` (`feature/`, `fix/`, or `docs/` in lowercase kebab-case):
 
-Every change follows a short-lived branch lifecycle starting from an up-to-date main line, moving through implementation and validation, and concluding with a peer-reviewed pull request.
+<CodeGroup>
 
-<MermaidFileLoader file="mermaids/git-flow.mmd" />
-
-1. **Create a focused branch**: Start from an up-to-date main branch and create a short-lived branch named after the type of change (feature, bug fix, or documentation) and a concise summary of the work.
-2. **Review project guidance**: Read the relevant service documentation and repository instructions before making edits.
-3. **Implement within boundaries**: Build the change according to [[doc|development/004-engineering-standards]], keeping service boundaries and established patterns intact.
-4. **Test and format**: Add or update automated tests to verify behavior, run the relevant checks described in [[doc|development/005-testing]], and apply automated formatting across code and documentation.
-5. **Commit with clear intent**: Record completed work with a standardized commit message indicating whether the change is a feature, fix, documentation update, refactoring, test, or maintenance task, while automated pre-commit checks verify compilation and style.
-6. **Open a pull request**: Share the branch for review and validation using [[doc|development/006-pull-request-process]].
-
-To support both human contributors and AI assistants consistently, BookWorm separates repository-wide instructions, file-scoped rules, and reusable task guides so guidance stays aligned without duplicating procedures.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Short-lived branches vs. long-running branches**: Keeping branches small and focused speeds up peer reviews and reduces merge conflicts, at the cost of breaking larger initiatives into smaller, incremental deliverables.
-- **Automated pre-commit quality gates vs. commit speed**: Verifying style and compilation locally before every commit prevents broken changes from entering history, though it adds a brief check pause when committing.
-- **Layered guidance over a single monolithic manual**: Separating repository-wide rules from file-specific rules and reusable skills keeps instructions maintainable, while requiring contributors to consult all applicable layers before editing.
-
-## 5. Technical Reference
-
-### Branch naming
-
-Use a type prefix followed by a short, lowercase, kebab-case description:
-
-```text
-<type>/<short-description>
+```bash
+git fetch upstream
+git checkout main
+git merge --ff-only upstream/main
+git checkout -b <branch-type>/<short-description>
 ```
 
-Use `feature/` for new features, `fix/` for bug fixes, and `docs/` for documentation changes. For example, `docs/update-development-onboarding`. Keep branch names concise and focused on one change.
+</CodeGroup>
 
-### Step-by-step developer workflow
+Where:
 
-<Steps title="Make and validate a change">
-  <Step title="Create a branch">
-    Start from an up-to-date base branch and create a focused branch using the convention above:
+- `<branch-type>`: One of `feature`, `fix`, or `docs`.
+- `<short-description>`: Concise lowercase kebab-case summary (for example, `add-book-search`).
 
-    ```bash
-    git checkout -b feature/add-book-search
-    ```
+</Step>
+<Step title="Review owning boundaries and repository instructions">
 
-  </Step>
-  <Step title="Review project guidance">
-    Read the relevant service documentation and repository instructions before making changes.
-  </Step>
-  <Step title="Implement the change">
-    Follow the conventions in [[doc|development/004-engineering-standards]] and preserve existing service boundaries and patterns.
-  </Step>
-  <Step title="Test and format the change">
-    Add or update tests, then run the relevant checks described in [[doc|development/005-testing]]. Prefer the repository's `mise` tasks over raw tool commands.
+Before editing code:
 
-    Format your changes before committing:
+- Read `AGENTS.md` for repository-wide rules and check `.github/instructions/` for file-scoped rules.
+- Load any matching task skill from `.agents/skills/<skill-name>/SKILL.md` (for example, `tunit` when writing backend tests or `agent-framework-builder-dotnet` when modifying AI agents).
+- Confirm which bounded context owns the rule you are changing so you do not introduce direct cross-service dependencies.
 
-    ```bash
-    mise run format
-    ```
+</Step>
+<Step title="Implement the change and run targeted checks">
 
-    This runs C# (`format:cs`), frontend (`format:fe`), and documentation (`format:docs`) formatters. If you are editing documentation, you can also preview the catalog locally with `bun run dev` from `docs/`.
+Follow [[doc|development/004-engineering-standards]]. During iteration, run the smallest relevant check for the files you modified rather than the full solution suite:
 
-  </Step>
-  <Step title="Commit your work">
-    The pre-commit hook configured by `mise run prepare` runs CSharpier formatting/style checks, `dotnet format analyzers --verify-no-changes`, and a `Release` build via Husky.Net.
+- **Backend service change:** Run the target service's `.UnitTests` project (see [[doc|development/005-testing]]).
+- **Frontend change (`src/Clients`):** Run `bun run boundaries`, `bun run check-types`, `bun run lint`, and `bun run test` from `src/Clients` (see [[doc|frontend/004-testing-and-quality-gates]]).
+- **Documentation change (`docs/`):** Run `bun run check` and `bun run fitness` from `docs/`.
 
-    Use a descriptive [Conventional Commit](https://www.conventionalcommits.org/) message:
+> [!NOTE]
+> Do not start the full Aspire AppHost (`mise run run`) for routine code or documentation edits unless you need end-to-end runtime validation.
 
-    - `feat:` for features
-    - `fix:` for bug fixes
-    - `docs:` for documentation
-    - `refactor:` for refactoring
-    - `test:` for tests
-    - `chore:` for maintenance
+</Step>
+<Step title="Format all modified files">
 
-  </Step>
-  <Step title="Open a pull request">
-    Push your branch and open a pull request using [[doc|development/006-pull-request-process]].
-  </Step>
+From the repository root, run the unified formatter:
+
+<CodeGroup>
+
+```bash
+mise run format
+```
+
+</CodeGroup>
+
+This runs `format:cs` (`dnx csharpier format .`), `format:fe` (`bun run format` in `src/Clients`), and `format:docs` (`bun run format` in `docs`).
+
+</Step>
+<Step title="Commit with a Conventional Commit message">
+
+Stage your changes and commit using a [Conventional Commit](https://www.conventionalcommits.org/) prefix (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, or `chore:`):
+
+<CodeGroup>
+
+```bash
+git add <changed-files>
+git commit -m "<type>: <concise imperative summary>"
+```
+
+</CodeGroup>
+
+Where:
+
+- `<changed-files>`: Explicit paths for the files belonging to this change.
+- `<type>`: One of `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`.
+- `<concise imperative summary>`: Lowercase description of what the commit does.
+
+The Husky pre-commit hook (`.husky/task-runner.json`) automatically executes four gates in sequence:
+
+1. `dnx csharpier format .`
+2. `dnx csharpier check .`
+3. `dotnet format analyzers BookWorm.slnx --verify-no-changes`
+4. `dotnet build BookWorm.slnx --no-restore --configuration Release`
+
+</Step>
+<Step title="Push and open a pull request">
+
+Push your branch to `origin` and follow [[doc|development/006-pull-request-process]]:
+
+<CodeGroup>
+
+```bash
+git push -u origin <branch-type>/<short-description>
+```
+
+</CodeGroup>
+
+</Step>
 </Steps>
 
-### Use agent skills
+## Verification
 
-<Visibility for="humans">
-	Browse BookWorm's repository skills in
-	[`.agents/skills`](https://github.com/foxminchan/BookWorm/tree/main/.agents/skills/) and choose
-	one that matches your task. For example, use `tunit` for backend test authoring and the Aspire
-	skills for Aspire setup, orchestration, deployment, or monitoring.
-</Visibility>
+Confirm your working tree is clean, formatted, and committed on your feature branch:
 
-<Visibility for="agents">
-	Before changing the repository, read `AGENTS.md` and load any skill relevant to the task from
-	`.agents/skills`. Follow the skill's workflow and verify changes with the repository's checks; do
-	not rely on a remembered or copied list of skills because their coverage can change.
-</Visibility>
+<CodeGroup>
 
-### Where instructions belong
+```bash
+git status
+git log -1 --oneline
+```
 
-[AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) is the repository-wide source of agent guidance. File-scoped rules live under [`.github/instructions`](https://github.com/foxminchan/BookWorm/tree/main/.github/instructions); reusable task procedures belong in `.agents/skills/<skill-name>/SKILL.md`.
+</CodeGroup>
 
-For routine work, use the repository's documented commands and existing patterns. Skills supplement the repository instructions; they do not replace them.
+Expected output:
+
+<CodeGroup>
+
+```text
+On branch feature/add-book-search
+nothing to commit, working tree clean
+a1b2c3d feat: add book search filter to Catalog API
+```
+
+</CodeGroup>
+
+## Troubleshooting
+
+| Symptom                                                           | Cause                                                        | Fix                                                                                           |
+| :---------------------------------------------------------------- | :----------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| Pre-commit fails on `csharpier check`                             | Unformatted C# files remain unstaged                         | Run `mise run format:cs`, re-stage modified files, and re-run `git commit`                    |
+| Pre-commit fails on `dotnet format analyzers --verify-no-changes` | Roslyn code-style or analyzer violation in modified C# files | Run `dotnet format analyzers BookWorm.slnx`, inspect the diff, re-stage, and commit           |
+| Pre-commit fails on `dotnet build ... --configuration Release`    | Compiler warning or error (`TreatWarningsAsErrors: true`)    | Run `mise run build` to inspect full diagnostics, fix all warnings/errors, and retry          |
+| `dotnet husky` tool not found on commit                           | Local .NET tools were not restored                           | Run `mise run prepare` from the repository root                                               |
+| `git merge --ff-only upstream/main` fails                         | Local `main` diverged from `upstream/main`                   | Run `git reset --hard upstream/main` on `main` (after ensuring no unpushed work is on `main`) |
+
+## Related documentation
+
+- [[doc|development/002-getting-started]] — Initial fork, `mise`, and hook setup.
+- [[doc|development/005-testing]] — Full test commands and Pact contract verification.
+- [[doc|development/006-pull-request-process]] — PR checklist, CI gates, and maintainer review.
+- [[doc|development/004-engineering-standards]] — C#, Protobuf, integration event, and frontend rules.
+
+## Git flow
+
+<MermaidFileLoader file="mermaids/git-flow.mmd" />

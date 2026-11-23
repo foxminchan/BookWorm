@@ -18,43 +18,65 @@ sidebar:
   badge: "DELETE"
 ---
 
-## 1. Context & Problem
+`DeleteBasket` (`DELETE /api/v1/baskets`) removes the authenticated customer's active **Basket** from Redis and returns `204 No Content`. This endpoint handles customer-initiated deletion only; post-checkout basket cleanup runs asynchronously over Kafka via `PlaceOrderCommand` rather than calling this HTTP operation.
 
-Both customers and post-checkout workflows need an explicit way to remove an active [[entity|basket]] once shopping is abandoned or an order has been submitted. Leaving old baskets behind can confuse customers on their next visit or risk accidental resubmission of items that were already ordered.
+## Overview
 
-## 2. Business Value
+| Property                 | Value                                                                                                                                                                                          |
+| :----------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                                                            |
+| **Source**               | `src/Services/Basket/BookWorm.Basket/Features/Delete/DeleteBasketEndpoint.cs`, `DeleteBasketCommand.cs`, `src/Services/Basket/BookWorm.Basket/Infrastructure/Repositories/BasketRepository.cs` |
+| **Protocol / format**    | HTTP `DELETE`, empty request body                                                                                                                                                              |
+| **Direct endpoint**      | `DELETE /api/v1/baskets` (local ports: HTTP `5052`, HTTPS `7155`)                                                                                                                              |
+| **API Gateway endpoint** | `DELETE /basket/api/v1/baskets` (YARP strips `/basket`)                                                                                                                                        |
+| **Authentication**       | Microsoft Entra ID JWT bearer token; default policy requires role `customer` and scopes `basket_read` and `basket_write`                                                                       |
+| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters                                                 |
+| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                     |
 
-- **Prevents accidental reuse**: Removing a basket cleanly ensures completed or discarded shopping sessions cannot linger in the storefront.
-- **Clear lifecycle visibility**: Distinguishes between a basket that was actively deleted and one that did not exist, helping operations and workflows track state accurately.
+## Parameters and fields
 
-## 3. How It Works
+### Request headers
 
-When a caller requests to delete the current [[entity|basket]], no additional parameters or input details are needed. The service checks for an active basket in the current context:
+| Name            | Type     | Required | Default | Constraints             | Description                                                                                                                             |
+| :-------------- | :------- | :------- | :------ | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| `Authorization` | `string` | Yes      | —       | `Bearer <access-token>` | Microsoft Entra ID JWT with role `customer`, scopes `basket_read` and `basket_write`, and a non-empty `ClaimTypes.NameIdentifier` claim |
 
-- If a basket exists, the service removes it and confirms completion without returning any extra data.
-- If no basket exists, the service reports that the basket could not be found.
+### Request parameters and body
 
-## 4. Trade-offs & Lessons Learned
+`DELETE /api/v1/baskets` accepts no path parameters, query parameters, or request body.
 
-- **Explicit not-found outcome vs. silent success**: Returning a not-found result instead of silently succeeding makes state mismatches visible (such as attempting to delete a basket twice), though callers must handle that outcome intentionally.
-- **Empty request contract**: Keeping deletion parameterless reduces complexity and relies on the caller's identity context to scope which basket is removed.
+### Success response (`204 No Content`)
 
-## 5. Technical Reference
+Returns HTTP `204 No Content` with an empty response body.
 
-### Command & Endpoint
+## Behavior and side effects
 
-- **Operation**: `DELETE /api/v1/baskets`
-- **Parameters / Body**: None (empty request body contract)
+- **Existence check before deletion:** `DeleteBasketHandler` extracts `userId` from `ClaimTypes.NameIdentifier`, reads `basket:{userId}` from Redis via `GetBasketAsync`, and calls `Guard.Against.NotFound(basket, userId)`. If no active basket exists, the endpoint fails with `404 Not Found` (non-idempotent on repeated calls).
+- **Redis deletion:** When a basket exists, `BasketRepository.DeleteBasketAsync` removes the `basket:{userId}` key via `KeyDeleteAsync`.
+- **No Kafka integration events:** HTTP `DELETE /api/v1/baskets` does not publish `BasketDeletedCompleteIntegrationEvent` or `BasketDeletedFailedIntegrationEvent`. Post-checkout deletion is handled separately by `PlaceOrderCommandHandler` (`src/Services/Basket/BookWorm.Basket/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs`) consuming `bookworm.{env}.finance.place-order` with a 24-hour Redis idempotency guard.
 
-### Request and Response
+:::note
+OpenAPI metadata (`ProducesDelete()`) declares `404 Not Found` as `application/problem+json` (`ProblemDetails`), but at runtime `NotFoundExceptionHandler` (`src/BuildingBlocks/BookWorm.Chassis/Exceptions/NotFoundExceptionHandler.cs`) returns `application/json` with `{ "detail": "The requested resource was not found." }`.
+:::
 
-Send the `DELETE` request without a request body. `204` confirms deletion and does not include a response payload. `404` returns `application/problem+json` with `ProblemDetails`.
+## Error responses
 
-### Architecture Graph
+| Code / status               | Condition                                                                                                                                                                       | Recovery behavior                                                                   |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------- |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                              | Acquire a valid Entra ID access token and retry                                     |
+| `403 Forbidden`             | Valid token missing the `customer` role or the `basket_read`/`basket_write` scopes                                                                                              | Request a token with the required role and scopes                                   |
+| `404 Not Found`             | No active basket exists in Redis for the authenticated customer (`NotFoundExceptionHandler` returns `application/json` `{ "detail": "The requested resource was not found." }`) | Treat the basket as already cleared or refresh client state; do not retry unchanged |
+| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                      | Wait for the `Retry-After` interval before retrying                                 |
+| `500 Internal Server Error` | Unexpected Redis or server failure (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                                                  | Retry with exponential backoff; inspect Basket API and Redis logs using `traceId`   |
+
+## Related documentation
+
+- [[service|basket-api]] — Service overview, Redis storage, and authorization policy.
+- [[command|CreateBasket]] — Initialize a basket (`POST /api/v1/baskets`).
+- [[command|UpdateBasket]] — Replace all items in an existing basket (`PUT /api/v1/baskets`).
+- [[query|GetBasket]] — Retrieve the current basket (`GET /api/v1/baskets`).
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer
 	file="schema.json"

@@ -1,64 +1,30 @@
 ---
-summary: Delete a Buyer profile as an administrator.
+summary: Usage examples for Delete Buyer.
 ---
 
-## 1. Context & Problem
+## Delete a buyer profile through API Gateway
 
-Administrators occasionally need to remove a Buyer profile for account cleanup, data-retention compliance, or test-account removal. Without clear usage examples demonstrating how to authorize a deletion request and interpret missing-profile outcomes, internal tooling developers and QA teams risk misconfiguring permissions or error handling.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster Onboarding**: Provides administrative portal developers and QA engineers with ready-to-use examples for invoking Buyer deletion safely.
-- **Reduced Integration Errors**: Clarifies how callers should distinguish between a completed deletion and a profile that does not exist.
-- **Access Governance**: Reinforces that Buyer deletion is strictly limited to authorized administrators.
-
-## 3. How It Works
-
-1. An authorized administrator submits a deletion request identifying the target Buyer profile, without providing any additional request details.
-2. The system verifies that the caller holds administrator permissions.
-3. If the Buyer profile exists, the system deletes it and confirms completion without returning profile data.
-4. If no matching Buyer profile exists, the system informs the caller that the profile was not found so administrative tools can surface an accurate message.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Explicit Missing-Record Feedback**: Reporting a missing Buyer profile rather than silently succeeding helps administrative tools detect stale identifiers or out-of-sync views.
-- **Strict Administrator Boundary**: Restricting this action to administrator credentials prevents accidental or unauthorized self-service deletion outside approved administrative workflows.
-- **Minimal Input & Output**: Requiring only the Buyer identifier and returning no body keeps administrative scripts lightweight and avoids unnecessary data exposure.
-
-## 5. Technical Reference
-
-The endpoint requires administrator authorization and has no request body.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request DELETE "$BASE_URL/api/v1/buyers/66666666-6666-6666-6666-666666666666" \
+```bash
+curl --request DELETE "https://<gateway-host>/ordering/api/v1/buyers/<buyer-id>" \
   --header "Authorization: Bearer <admin-access-token>"
 ```
 
 </CodeGroup>
 
-The same request from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-host>`: API Gateway hostname (or `localhost:7203` with `/api/v1/buyers/<buyer-id>` when calling Ordering API directly).
+- `<buyer-id>`: UUID of the buyer profile to delete.
+- `<admin-access-token>`: Entra ID JWT with role `admin` and scopes `ordering_read` and `ordering_write`.
 
-```ts delete-buyer.ts
-const baseUrl = "https://api.example.com";
-const adminToken = "<admin-access-token>";
-const buyerId = "66666666-6666-6666-6666-666666666666";
-const response = await fetch(`${baseUrl}/api/v1/buyers/${buyerId}`, {
-	method: "DELETE",
-	headers: { Authorization: `Bearer ${adminToken}` },
-});
+Expected response:
 
-if (response.status === 404) {
-	throw new Error("Buyer was not found");
-}
-if (!response.ok) {
-	throw new Error(`DeleteBuyer failed with ${response.status}`);
-}
+<CodeGroup>
+
+```text
+HTTP/1.1 204 No Content
 ```
 
 </CodeGroup>
-
-`204 No Content` confirms the Buyer profile was deleted. There is no response body.

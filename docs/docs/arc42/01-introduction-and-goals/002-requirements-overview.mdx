@@ -9,55 +9,40 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+This page summarizes BookWorm's eight essential system-level requirements—six capability requirements (`BW-R1`–`BW-R6`) and two structural boundary drivers (`BW-R7`–`BW-R8`)—synthesized from the live codebase and bounded-context contracts. The `BW-R` identifiers are architecture reference labels rather than formal product backlog items; detailed endpoint and message specifications live in each owning service's documentation.
 
-BookWorm brings together several distinct business capabilities—book discovery, shopping, ordering, reviews, conversational assistance, and shared platform operations. Without a clear, system-level summary of what the platform must deliver and how those capabilities relate, teams risk making conflicting assumptions about data authority, checkout rules, or cross-capability dependencies.
+## Essential requirements
 
-This page synthesizes BookWorm's essential customer capabilities and architectural drivers from the current domain model and checkout flow. The `BW-R` identifiers (`BW-R1` through `BW-R8`) serve as local reference labels for this overview; they are not items from an approved product backlog, and detailed behavior and acceptance criteria live in the owning domain, service, and flow documentation.
+Checkout forms the central consistency seam in BookWorm: **Ordering API** combines the customer's persisted **Basket** with authoritative **Catalog** facts over gRPC, rejects checkout if a book is missing, and assumes sole lifecycle ownership of the resulting `Order`.
 
-## 2. Business Value
+| ID        | Capability or driver                  | Requirement                                                                                                                                                                                             | Owning context and realization                                                                                                                                                                         |
+| :-------- | :------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **BW-R1** | Book discovery and catalog management | Customers discover and search books using current product facts, pricing, and availability; store administrators maintain book, author, category, and publisher records.                                | **Catalog** (**Catalog API** REST `/api/v1/*`, gRPC `book.v1.BookGrpcService`, PostgreSQL `catalogdb`, Qdrant hybrid search, **Storefront** & **Backoffice**)                                          |
+| **BW-R2** | Basket and checkout                   | Customers maintain a persisted, customer-scoped `Basket`. Checkout validates persisted basket quantities against current **Catalog** facts and rejects order creation if any book is unavailable.       | **Shopping** (**Basket API** in Redis, gRPC `basket.v1.BasketGrpcService`) + **Ordering** (**Ordering API** checkout handler) via **Commerce**                                                         |
+| **BW-R3** | Order lifecycle                       | A valid checkout creates one accepted `Order` with purchase-time item snapshots, after which **Ordering** owns lifecycle transitions (`New`, `Cancelled`, `Completed`) and post-checkout coordination.  | **Ordering** (**Ordering API** in PostgreSQL `orderingdb` + Marten event store; **Finance** Durable Task Scheduler saga; **Commerce** & **Backoffice**)                                                |
+| **BW-R4** | Customer feedback                     | Customers submit `Feedback` records linked to a book, and staff moderate reviews, without **Reviews** taking ownership of **Catalog** book records.                                                     | **Reviews** (**Rating API** in Azure Cosmos DB `ratingdb`/`feedbacks`) publishing `FeedbackCreatedIntegrationEvent` / `FeedbackDeletedIntegrationEvent` to update **Catalog**'s derived rating summary |
+| **BW-R5** | Conversational assistance             | Customers receive **Catalog**-grounded book discovery, review summaries, and store-policy assistance via AI agents without implying live **Basket** or **Ordering** access where no integration exists. | **Conversational** (**Chat API** AG-UI `/ag-ui`, **MCP Tools** `/mcp` → **Catalog API** gRPC, remote A2A gRPC → **Rating API**, **Microsoft Foundry**, **Presidio** PII guardrails)                    |
+| **BW-R6** | Shared platform capabilities          | Scheduled background processing and outbound transactional email delivery support business capabilities without mutating or owning their domain state.                                                  | **Platform** (**Scheduler** Quartz.NET + PostgreSQL `schedulerdb` triggering **Catalog Ingestion**; stateless **Notification** Kafka consumer using MailKit, Mjml.Net, and Redis idempotency)          |
+| **BW-R7** | Independent capability evolution      | Each bounded context owns its domain behavior and persistence; backward-compatible changes inside one context do not require unrelated contexts to share mutable state or release together.             | Enforced by per-context data stores, **BookWorm.ArchTests** (`TngTech.ArchUnitNET.TUnit`), and Turborepo `turbo boundaries`                                                                            |
+| **BW-R8** | Explicit integration contracts        | Cross-context communication uses documented, owned contracts (REST `ApiVersions.V1`, Protocol Buffers gRPC, CloudEvents Kafka messages) verified for compatibility before consumers adopt changes.      | Enforced by **PactNet** contract tests (`tests/pacts/`), Protocol Buffer linting/compatibility checks, and versioned API endpoints                                                                     |
 
-- **Purchase integrity**: Ensures customers only check out against current, authoritative book details and availability, preventing invalid orders and clarifying exactly when an accepted order becomes Ordering's responsibility.
-- **Reliable supporting experiences**: Connects customer feedback to books without duplicating product ownership, and grounds conversational assistance in accurate Catalog facts without overpromising access to live basket or order data.
-- **Safer, faster change delivery**: Independent ownership and explicit integration agreements let capabilities evolve without forcing unrelated teams to coordinate releases or share mutable state.
-- **End-to-end traceability**: Gives product managers, business analysts, solution architects, and developers a shared map connecting customer needs to architectural boundaries.
+## Requirement traceability view
 
-## 3. How It Works
+The diagram below maps BookWorm's functional requirements (`BW-R1`–`BW-R6`) and structural drivers (`BW-R7`–`BW-R8`) to the bounded contexts and verification mechanisms that satisfy them.
 
-BookWorm's essential requirements fall into two complementary groups: customer-facing and supporting capabilities (`BW-R1` to `BW-R6`), and architectural rules that protect capability boundaries (`BW-R7` to `BW-R8`).
+<MermaidFileLoader file="mermaids/002-requirements-overview-diagram-1.mmd" />
 
-A central seam in the customer journey is **checkout**: it combines the customer's saved [[entity|basket]] with current [[domain|catalog]] facts, blocks order creation if a book is unavailable, and transfers lifecycle ownership to [[domain|ordering]] only after acceptance. Supporting capabilities—[[domain|reviews]], [[domain|conversational]], and [[domain|platform]]—enhance that journey while preserving their own boundaries.
+## Key design trade-offs and open gaps
 
-### Essential requirements
+- **Explicit contracts vs. ad-hoc coupling:** Enforcing independent ownership (`BW-R7`) and compatibility-checked integrations (`BW-R8`) adds upfront schema design and Pact verification work, but prevents silent downstream breakages.
+- **Scoped AI assistance over broad data access:** Restricting **Chat API** (`BW-R5`) to read-only **Catalog** tools (via **MCP Tools**), store policies, and **Rating API** review summaries prevents agents from hallucinating or exposing live **Basket** or **Order** records.
+- **Unresolved formal commitments:** No repository-level product backlog, per-requirement acceptance sign-off, or stakeholder-approved numerical SLA/retention baseline exists yet.
 
-| ID    | Capability or driver             | Requirement                                                                                                                                                                           | Why it matters                                                                                          |
-| ----- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| BW-R1 | Book discovery                   | Customers can find books and receive current product information from [[domain\|catalog]], the owner of book facts, pricing, and availability.                                        | Discovery and purchase decisions rely on authoritative product information.                             |
-| BW-R2 | Basket and checkout              | [[domain\|shopping]] maintains a customer-scoped [[entity\|basket]]. Checkout uses the persisted basket and current Catalog information; an unavailable book prevents order creation. | The submitted purchase must reflect saved customer intent and valid product data.                       |
-| BW-R3 | Order lifecycle                  | A successful checkout creates one accepted [[entity\|order]], after which [[domain\|ordering]] owns its lifecycle and fulfillment state.                                              | Order state must have a clear owner beyond the point of purchase.                                       |
-| BW-R4 | Customer feedback                | Customers can submit [[entity\|feedback]] associated with a book, while [[domain\|reviews]] does not take ownership of Catalog's book data.                                           | Feedback must remain connected to products without blurring context ownership.                          |
-| BW-R5 | Conversational assistance        | Customers can receive Catalog-grounded book discovery and store-policy assistance. The experience must not imply live Basket or Order access where no such integration exists.        | Assistance should be useful without inventing product facts or overstating its access to customer data. |
-| BW-R6 | Shared platform capabilities     | Scheduled processing and email notification delivery support business capabilities without changing their business state or taking ownership of their data.                           | Shared infrastructure must remain enabling rather than becoming an implicit business owner.             |
-| BW-R7 | Independent capability evolution | Each bounded context keeps ownership of its business behavior and data; compatible changes should not require unrelated contexts to share mutable state or release together.          | Explicit boundaries limit hidden dependencies and reduce the impact of change.                          |
-| BW-R8 | Explicit integration             | Cross-context communication uses documented, owned contracts, with compatibility checked when contracts evolve.                                                                       | Teams need to understand the meaning, ownership, and change impact of each integration.                 |
+## Related architecture documentation
 
-## 4. Trade-offs & Lessons Learned
-
-- **Explicit contracts vs. ad-hoc coupling**: Enforcing independent ownership (`BW-R7`) and explicit, compatibility-checked integrations (`BW-R8`) introduces more coordination when designing cross-context interactions, but avoids fragile shared state and makes the impact of changes visible upfront.
-- **Scoped AI assistance over unverified claims**: Limiting conversational assistance (`BW-R5`) to Catalog-grounded product facts and store policy prevents misleading customers about live basket or order state where integrations do not exist.
-- **Identified documentation gaps**: No system-wide product backlog, formal acceptance criteria for every row, or approved performance, availability, recovery, and data retention targets are currently established in the architecture documentation. Product and service owners should refine these requirements and record measurable targets where needed.
-
-## 5. Technical Reference
-
-### Requirement traceability diagram
-
-The diagram below traces the checkout (`BW-R2`), order-lifecycle (`BW-R3`), bounded-context ownership (`BW-R7`), and explicit-integration (`BW-R8`) requirements to the BookWorm capabilities and owned contracts that satisfy them:
-
-<MermaidFileLoader file="mermaids/bookworm-technical-requirements.mmd" />
-
-### Catalog and architecture cross-references
-
-- **Local requirement IDs**: `BW-R1` through `BW-R8` (overview identifiers; detailed behavior resides in each domain, service, and flow entry).
-- **System boundary and neighbors**: [[doc|arc42/03-context-and-scope]]
-- **Cross-cutting constraints**: [[doc|arc42/02-architecture-constraints]]
-- **Architectural solution strategy**: [[doc|arc42/04-solution-strategy]]
+- [[doc|arc42/01-introduction-and-goals/001-introduction]] — Business purpose and external boundaries.
+- [[doc|arc42/01-introduction-and-goals/003-quality-goals]] — Prioritized quality scenarios and acceptance evidence.
+- [[doc|arc42/02-architecture-constraints]] — Technical and organizational rules backing `BW-R7` and `BW-R8`.
+- [[doc|arc42/03-context-and-scope]] — Whole-platform business and technical boundaries.
+- [[doc|arc42/04-solution-strategy]] — Core architectural responses to these requirements.
+- [[doc|arc42/10-quality-requirements/002-quality-scenarios]] — Detailed measurable scenarios (`QR-01`–`QR-17`).

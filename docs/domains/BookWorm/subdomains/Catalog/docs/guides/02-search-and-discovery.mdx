@@ -10,61 +10,58 @@ badges:
     textColor: teal
 ---
 
-import Footer from "@catalog/components/footer.astro";
+**Catalog API** serves book discovery through two complementary query paths: structured browsing (filtering by category, publisher, author, or price bounds directly against PostgreSQL `catalogdb`) and free-text discovery (generating query embeddings via Microsoft Foundry, retrieving candidate book UUIDs from Qdrant `vectordb`, and hydrating authoritative book details from PostgreSQL). Both **Storefront** (`GET /catalog/api/v1/books`) and **MCP Tools** (`search_catalog` over gRPC `book.v1.BookGrpcService.ListBooks`) share this architecture so displayed prices, availability, and cover links always come from the primary database.
 
-## 1. Context & Problem
+## Context and motivation
 
-Customers find books in two distinct ways: structured browsing (filtering by category, publisher, author, or price range) and open-ended text search (entering keywords or natural phrases). Traditional database filtering alone struggles with semantic or fuzzy discovery, while serving book prices and availability directly from a search engine risks showing stale commercial details. BookWorm combines both capabilities while setting clear expectations around data freshness.
+Customers discover books in two distinct ways: navigating structured facets (categories, authors, publishers, price ranges, sorting) and entering natural-language search queries. Relational SQL filtering alone handles exact facets well but misses semantic intent and fuzzy phrasing. Conversely, serving prices and metadata directly from a vector search index risks exposing stale commercial data during price updates or book retirements.
 
-## 2. Business Value
+BookWorm combines relational accuracy with vector recall by treating Qdrant as a **candidate-ranking projection** and PostgreSQL (`catalogdb`) as the **authoritative hydration source**.
 
-- **Better discovery conversion:** Blending meaning-based and keyword matching helps customers locate relevant titles even without exact titles or keywords.
-- **Accurate prices and stock in search results:** Hydrating displayed results from the authoritative catalog store ensures search pages never show outdated prices or cover data from the search index.
-- **Faster issue triage:** Gives product, support, and engineering teams a shared diagnostic map to tell indexing delays apart from caching or expired image-link behavior.
+## How it works
 
-## 3. How It Works
+Every discovery request enters **Catalog API** (via **API Gateway** for Storefront REST traffic or internal gRPC from **MCP Tools** for AI chat) and branches based on whether a free-text search term is present.
 
-### Two ways to find books
+This flowchart shows how structured browsing queries PostgreSQL directly while free-text search embeds the query through Microsoft Foundry, ranks candidates in Qdrant, and hydrates authoritative rows from PostgreSQL.
 
-- **Browse with filters and paging:** When consumers filter by [[entity|category]], [[entity|publisher]], [[entity|author]], or price bounds—along with sorting and paging—results are queried directly from the primary catalog store.
-- **Free-text discovery:** When consumers provide a search term, the catalog generates a semantic representation of the query, combines meaning-based and keyword matching in the search index to find candidate book matches, and then loads the current records from the primary catalog store before applying filters and paging.
+<MermaidFileLoader file="mermaids/02-search-and-discovery-diagram-1.mmd" />
+
+### Query paths
+
+| Discovery mode              | Entry condition                                                                         | Execution path                                                                                                                                                                                                                                                                                                | Authoritative data source                                |
+| :-------------------------- | :-------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------- |
+| **Structured browse**       | Category, publisher, author, price bounds, sort, or page parameters with no search term | Queries `catalogdb` directly and caches pages under `catalog:books:list:v1:{sha256}`                                                                                                                                                                                                                          | PostgreSQL (`catalogdb`)                                 |
+| **Free-text hybrid search** | Search term provided (with optional facets and paging)                                  | Embeds query via Microsoft Foundry (`Cohere.EmbedV40`), runs hybrid vector + keyword search in Qdrant (`data-bookworm-snippets`) to obtain candidate book UUIDs, hydrates matching rows from PostgreSQL (`catalogdb`), applies filters/paging, and caches under `catalog:books:search:v1:{sha256}:{pageSize}` | Qdrant candidates hydrated from PostgreSQL (`catalogdb`) |
 
 ### Consistency expectations
 
-- **Eventually consistent search index:** A newly added or edited [[entity|book]] may not appear in free-text search until the next background indexing batch finishes.
-- **Authoritative result details:** Displayed attributes (title, price, availability, and image) always come from the primary catalog store, never from the search index record.
-- **Deletion transition window:** Deleted books are removed from the search index during background ingestion; during a brief window before cleanup completes, the search index may return a deleted candidate whose record is no longer visible when loaded from the primary store.
+- **Eventual search visibility:** Newly created or edited books appear in structured browse and direct lookups (`GET /catalog/api/v1/books/{id}`) immediately, but appear in free-text search only after **Catalog Ingestion** processes their `pending_vector_updates` row (triggered every five minutes by **Scheduler**).
+- **Authoritative commercial details:** Prices, discount prices, availability, rating summaries, and freshly signed cover SAS URLs always come from PostgreSQL (`catalogdb`) and `BlobService`, never from Qdrant payloads.
+- **Brief deletion transition window:** When a book is soft-deleted (`is_deleted = true`), Qdrant may still return its UUID as a candidate until the next **Catalog Ingestion** batch deletes the vector. PostgreSQL hydration filters out soft-deleted books so retired titles do not appear in returned results.
 
-## 4. Trade-offs & Lessons Learned
+### Separating discovery symptoms
 
-- **Eventual search consistency vs. write speed:** Updating the search index asynchronously keeps catalog edits responsive and resilient to search-engine outages, at the cost of a short delay before text search reflects new or edited titles (see [[adr|adr-003-database-queue-for-vector-indexing]]).
-- **Candidate lookup plus primary hydration:** Using the search index only to rank candidate identifiers and loading full records from the primary catalog store adds a second lookup step, but guarantees authoritative pricing and availability on every search response (see [[adr|adr-002-hybrid-vector-search-qdrant]]).
-- **Clear symptom boundaries:** Because search touches the vector index, read cache, and expiring media links, teams should separate indexing lag from stale cache entries and expired image links before escalating.
+Because discovery touches Qdrant, Redis FusionCache, and expiring Blob Storage SAS URLs, isolate symptoms before escalating:
 
-## 5. Technical Reference
+- **New or edited book missing from text search only:** Indicates ingestion lag — follow How to resolve Catalog vector index lag.
+- **Old price or metadata shown after an update:** Indicates stale cache — follow How to resolve a Catalog stale cache or Redis outage.
+- **Book cover image returns HTTP `403` or `404`:** Indicates an expired SAS URL or missing blob — follow How to resolve broken book images in Catalog.
 
-### Discovery paths
+## Design trade-offs
 
-<MermaidFileLoader file="mermaids/search-and-discovery-flow.mmd" />
+| Decision                                              | Benefits                                                                                           | Costs and limits                                                                                       |
+| :---------------------------------------------------- | :------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| **Qdrant candidate lookup + PostgreSQL hydration**    | Guarantees authoritative prices, soft-delete filtering, and live SAS URLs on every search response | Adds a relational lookup step after Qdrant retrieval                                                   |
+| **Asynchronous background vector indexing**           | Keeps catalog writes fast and shields **Catalog API** from Microsoft Foundry or Qdrant outages     | Creates a brief lag window before new or edited books appear in free-text search                       |
+| **Hashed FusionCache keys for list and search pages** | Reduces repeated embedding and database load on popular queries                                    | Cached search/list pages can reflect brief staleness until tag invalidation or TTL expiry (`00:30:00`) |
 
-| Need                                     | Use                                                                                                                       | Source of results                     |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Browse with filters and paging           | [[query\|ListBooks]] with [[entity\|category]], [[entity\|publisher]], [[entity\|author]], price bounds, sort, and paging | [[container\|catalog-database]]       |
-| Free-text (semantic + keyword) discovery | [[query\|ListBooks]] with a search term                                                                                   | [[container\|catalog-vector]] then DB |
+## Alternatives considered
 
-For a text search, [[service|catalog-api]] generates a query embedding, combines vector and keyword matching in Qdrant to find candidate book IDs, then loads the current records from PostgreSQL and applies filters and paging.
+- **PostgreSQL full-text search alone:** Rejected because keyword-only matching struggles with semantic and conversational discovery queries from both Storefront and Chat API.
+- **Serving book prices and metadata directly from Qdrant payloads:** Rejected because Qdrant is eventually consistent and would risk displaying outdated prices or retired books.
 
-### Troubleshooting from a consumer view
+## Related documentation
 
-| Symptom                                            | Likely cause             | Action                                                   |
-| -------------------------------------------------- | ------------------------ | -------------------------------------------------------- |
-| New [[entity\|book]] missing from text search only | Ingestion lag            | Follow the [[doc\|runbooks/vector-index-lag]]            |
-| Old price shown after an update                    | Stale cache entry        | Follow the [[doc\|runbooks/stale-cache-or-redis-outage]] |
-| Image link returns 403 or expired                  | SAS URL lifetime elapsed | Re-fetch the book to obtain a new URL                    |
-
-### Related
-
-- [[adr|adr-002-hybrid-vector-search-qdrant]]: Hybrid vector search
-- [[adr|adr-003-database-queue-for-vector-indexing]]: Database queue for indexing
-
-<Footer />
+- [[flow|product-ingestion]] — How PostgreSQL triggers, Scheduler, Kafka, and Catalog Ingestion keep Qdrant synchronized.
+- Catalog consistency and data ownership reference — Store ownership matrix and `CatalogCacheKeys` inventory.
+- [[flow|agent-orchestration]] — How Chat API queries Catalog discovery through MCP Tools (`search_catalog`).

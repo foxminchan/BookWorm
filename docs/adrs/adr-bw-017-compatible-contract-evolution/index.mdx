@@ -14,38 +14,72 @@ related:
   - id: adr-bw-004-explicit-http-and-grpc-contracts
   - id: adr-bw-010-cross-boundary-correlation
   - id: adr-bw-016-layered-architecture-verification
+decisionMakers:
+  - contributor-team
+x-scope: "Whole system"
 ---
 
-## Context
+## Context and problem statement
 
-Independent deployment is unsafe when a producer changes interface shape, routing identity, or business meaning without considering consumers. Updating a compatibility baseline too early can hide an incompatible schema change.
+Independent deployment breaks down whenever a service changes an HTTP route, Protocol Buffer message, Kafka event schema, or topic-routing identity without coordinating with consumers. Updating a committed contract baseline prematurely hides breaking changes from automated checks and turns minor refactors into production incidents.
 
-## Decision
-
-Identify the owner and known consumers before changing a contract. Prefer additive changes that preserve existing behavior, verify asynchronous consumer/provider contracts, and check Protocol Buffer lint and breaking compatibility against the committed baseline before updating it. Commit validated schema and baseline changes together.
-
-Coordinate a migration for breaking changes, including semantic changes that schema tools cannot detect. Independent release is conditional on compatibility, not merely on separate deployment units.
+BookWorm needs an explicit contract-evolution rule that preserves backward compatibility for routine releases and governs coordinated migrations when breaking changes are unavoidable.
 
 ## Decision drivers
 
-- Interoperability across service versions.
-- Deployability without forced platform-wide releases for compatible changes.
-- Preservation of event identity, routing, and business semantics.
+- **Interoperability:** Keep independently versioned producers and consumers compatible across rolling deployments.
+- **Independent deployability:** Allow compatible additive changes to ship without synchronized platform-wide releases.
+- **Semantic integrity:** Protect event identity, CloudEvents routing metadata, and business meaning alongside wire-level schemas.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                                        | Assessment                                                            |
-| -------------------------------------------------- | --------------------------------------------------------------------- |
-| Change the producer and expect consumers to follow | Gives local speed but creates runtime incompatibility.                |
-| Update the baseline before compatibility checks    | Silences evidence instead of validating the change.                   |
-| Release all services together for every change     | Reduces version variation but discards intended release independence. |
+1. Gate contract changes on consumer-impact review, additive evolution, Pact verification, and Protobuf breaking checks before baseline updates
+2. Let producers modify contracts freely and expect consumers to adapt afterward
+3. Update committed Pact and Protobuf baselines before running compatibility checks
+4. Synchronize and deploy every BookWorm service together for every change
 
-## Consequences
+## Decision outcome
 
-- Compatible changes can preserve independent service evolution.
-- Breaking changes require coordination, migration, and updated documentation.
-- Known-consumer tests cannot prove compatibility with undiscovered consumers; ownership and consumer inventory still matter.
+Chosen option: **Gate contract changes on consumer-impact review, additive evolution, Pact verification, and Protobuf breaking checks before baseline updates**, because it enables independent service releases while catching wire-level and routing regressions in CI.
 
-## Evidence
+Before modifying an HTTP API (`ApiVersions.V1`), gRPC `.proto` contract (`book.v1.BookGrpcService`, `basket.v1.BasketGrpcService`), or Kafka integration event/command:
 
-See [[doc|arc42/02-architecture-constraints]], [[doc|development/004-engineering-standards]], and [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]].
+1. Identify the contract owner and all known consumers.
+2. Prefer additive, backward-compatible fields and preserve existing enum meanings, namespaces, and topic names.
+3. Run `mise run test` so `PactConsumer` generates updated consumer expectations and `PactProvider` verifies all 8 committed pact files in `tests/pacts/`, and run Buf Protobuf lint and breaking-change checks (`mise run setup:buf`) against the committed baseline.
+4. Commit validated contract and baseline updates together, or coordinate a versioned migration (such as introducing `ApiVersions.V2`) when a breaking or semantic change is unavoidable.
+
+### Consequences
+
+- **Positive:** Compatible enhancements deploy independently without lockstep releases across all 10 backend services and 3 frontend microfrontends.
+- **Negative:** Breaking changes require explicit migration planning, consumer sign-off, and synchronized documentation updates, and automated checks only validate known consumers.
+- **Follow-up:** Keep consumer inventories current in the API and contracts reference and verify every contract PR runs both Pact and Protobuf checks.
+
+## Pros and cons of the options
+
+### Gate contract changes on consumer-impact review, additive evolution, Pact verification, and Protobuf breaking checks before baseline updates
+
+- **Good**, because automated Pact and Buf checks catch incompatible field removals, type changes, and serialization breaks before merge.
+- **Good**, because explicit API versioning (`ApiVersions.V1`/`V2`/`V3`) provides a clean migration path when breaking changes are required.
+- **Bad**, because schema tools cannot detect purely semantic changes (such as altering what a status transition implies), which still require human review.
+
+### Let producers modify contracts freely and expect consumers to adapt afterward
+
+- **Good**, because producers iterate locally without coordination steps.
+- **Bad**, because unannounced contract changes break checkout, rating projections, and frontend API clients at runtime.
+
+### Update committed Pact and Protobuf baselines before running compatibility checks
+
+- **Good**, because CI checks pass immediately.
+- **Bad**, because resetting baselines first destroys the compatibility safety net.
+
+### Synchronize and deploy every BookWorm service together for every change
+
+- **Good**, because all services run matching contract versions simultaneously.
+- **Bad**, because lockstep deployments discard the independent-deployability goal established in ADR-BW-001.
+
+## Verification and links
+
+- **Verified against:** `mise.toml`, `tests/pacts/`, `src/BuildingBlocks/BookWorm.Constants/`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Basket/BookWorm.Basket/Grpc/Protos/basket/v1/basket.proto`
+- **Related architecture:** [[doc|arc42/02-architecture-constraints]], [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], [[doc|development/004-engineering-standards]]
+- **Related ADRs:** ADR-BW-004, ADR-BW-010, ADR-BW-016, [[doc|arc42/09-architecture-decisions]]

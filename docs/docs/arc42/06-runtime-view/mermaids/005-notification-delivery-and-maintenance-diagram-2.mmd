@@ -1,0 +1,11 @@
+flowchart LR
+    quartz["Scheduler\n(Quartz.NET 4.8.1)"]
+    pg[("PostgreSQL\n(schedulerdb + wolverine outbox)")]
+    kafka["Kafka Broker\n(scheduler.process-vector-batch)"]
+    ingest["Catalog Ingestion\n(Azure Functions Worker)"]
+    otel["OpenTelemetry\n(Aspire Dashboard / Log Analytics)"]
+
+    quartz <-->|"SQL: Persist triggers & 30d history"| pg
+    quartz -->|"Every 5 min UTC: ProcessVectorBatchIntegrationEvent"| kafka
+    kafka -->|"KafkaTrigger (group: catalog-ingestion)"| ingest
+    quartz -->|"Every 30s UTC: HeartbeatJob log/telemetry"| otel

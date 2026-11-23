@@ -1,0 +1,25 @@
+sequenceDiagram
+	participant Client as Commerce MFE\n(Next.js 16)
+	participant GW as API Gateway\n(YARP)
+	participant Ord as Ordering API\n(.NET 11 + Marten/PG)
+	participant Bsk as Basket API\n(.NET 11 + Redis)
+	participant Cat as Catalog API\n(.NET 11 + PG)
+	participant Fin as Finance\n(Durable Functions)
+	participant Notif as Notification\n(Kafka + MailKit)
+
+	Client ->> GW: HTTPS POST /ordering/api/v1/orders (x-request-id)
+	GW ->> Ord: Forward POST /api/v1/orders (Entra ID JWT)
+	Ord ->> Bsk: gRPC basket.v1.BasketGrpcService/GetBasket
+	Bsk -->> Ord: Persisted item quantities
+	Ord ->> Cat: gRPC book.v1.BookGrpcService/GetBooks
+	Cat -->> Ord: Authoritative book details & prices
+	Ord ->> Ord: Persist Order snapshot + Marten event + PG outbox
+	Ord -->> Client: 201 Created (orderId)
+	Ord ->> Fin: Kafka: UserCheckedOutIntegrationEvent (key: OrderId)
+	Fin ->> Fin: Start OrderOrchestrator in finance-taskhub
+	Fin ->> Bsk: Kafka: PlaceOrderCommand (key: OrderId)
+	Fin ->> Notif: Kafka: PlaceOrderCommand (key: OrderId)
+	Notif ->> Notif: Redis 24h idempotency -> MJML -> MailKit SMTP
+	Bsk ->> Bsk: Delete basket in Redis
+	Bsk ->> Fin: Kafka: BasketDeletedComplete / FailedIntegrationEvent
+	Fin ->> Ord: Kafka: DeleteBasketComplete / FailedCommand

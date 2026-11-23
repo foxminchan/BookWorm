@@ -18,47 +18,68 @@ sidebar:
   badge: "QUERY"
 ---
 
-## 1. Context & Problem
+`ListBooks` queries **Catalog API** (`QUERY /api/v1/books`) with an optional JSON request body to search, filter, sort, and paginate catalog books. The endpoint is publicly readable, uses hybrid vector search (Microsoft Foundry embeddings + Qdrant) when `search` is supplied, caches results in FusionCache, and emits total counts and navigation links in HTTP response headers.
 
-Customers browsing a bookstore expect to narrow down the catalog by keyword, price range, [[entity|category]], [[entity|publisher]], or [[entity|author]], as well as sort and page through results. Encoding many multi-value filter criteria into simple address-bar links quickly becomes unwieldy and error-prone, so the Catalog needs a structured way to accept rich search criteria.
+## Overview
 
-## 2. Business Value
+| Property                          | Value                                                                                                                                                                                                                       |
+| :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                         | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                                        |
+| **Source**                        | `src/Services/Catalog/BookWorm.Catalog/Features/Books/List/ListBooksEndpoint.cs`, `ListBooksQuery.cs`, `ListBooksValidator.cs`                                                                                              |
+| **Protocol / format**             | HTTP `QUERY /api/v1/books` (via API Gateway: `QUERY /catalog/api/v1/books`), `ApiVersions.V1`, JSON (`application/json`)                                                                                                    |
+| **Authentication**                | None required (public read endpoint)                                                                                                                                                                                        |
+| **Rate limiting**                 | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                                                                                               |
+| **Persistence, search & caching** | PostgreSQL (`catalogdb`, EF Core) + Qdrant (`vectordb`) hybrid search when `search` is non-empty; FusionCache L1/L2 caches search IDs for `5 minutes` (`BookSearchTag`) and filtered pages for `60 seconds` (`BookListTag`) |
+| **Contract version**              | `1.0.0`                                                                                                                                                                                                                     |
 
-- **Higher storefront discovery**: Rich filtering, sorting, and price bounds help shoppers quickly locate books that match their budget and interests.
-- **Scalable browsing performance**: Built-in paging keeps response sizes manageable as the catalog grows.
-- **Clear input validation**: Invalid price bounds, paging values, or malformed identifiers are rejected immediately with clear feedback instead of returning misleading results.
+## Parameters and fields
 
-## 3. How It Works
+### Request body (`ListBooksQuery`, optional)
 
-1. A client submits a structured search request specifying optional paging controls (which page to view and how many items per page), sorting preferences (which attribute to sort by and in ascending or descending order), and optional filters.
-2. Filters can combine free-text search, minimum and maximum price bounds, and one or more [[entity|category]], [[entity|publisher]], or [[entity|author]] selections.
-3. If no criteria are provided, the catalog applies default paging and sorting settings.
-4. The catalog validates the criteria; if any paging, price, or identifier value is invalid, the request is rejected. Otherwise, it returns the matching page of [[entity|book]] entries along with pricing, availability, relationships, and rating summaries.
+The JSON request body is optional; omitting it applies all defaults below.
 
-## 4. Trade-offs & Lessons Learned
+| Name           | Type               | Required | Default  | Constraints                                 | Description                                                                                                                         |
+| :------------- | :----------------- | :------- | :------- | :------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------- |
+| `pageIndex`    | `integer`          | No       | `1`      | `> 0` (`ListBooksValidator`)                | 1-based page number to retrieve                                                                                                     |
+| `pageSize`     | `integer`          | No       | `20`     | `> 0` (`ListBooksValidator`)                | Maximum number of books per page (also caps vector search candidate count)                                                          |
+| `orderBy`      | `string \| null`   | No       | `"Name"` | Property name supported by `BookFilterSpec` | Field used to sort results                                                                                                          |
+| `isDescending` | `boolean`          | No       | `false`  | `true` or `false`                           | Sorts descending when `true` and ascending when `false`                                                                             |
+| `search`       | `string \| null`   | No       | `null`   | Trimmed, lowercased for cache key           | Free-text query executed via hybrid search against Qdrant (`vectordb`); returns an empty page immediately if zero vector hits match |
+| `minPrice`     | `number \| null`   | No       | `null`   | Decimal                                     | Inclusive minimum price filter                                                                                                      |
+| `maxPrice`     | `number \| null`   | No       | `null`   | Decimal                                     | Inclusive maximum price filter                                                                                                      |
+| `categoryId`   | `string[] \| null` | No       | `null`   | Array of UUIDs                              | Restricts results to books matching any supplied category ID                                                                        |
+| `publisherId`  | `string[] \| null` | No       | `null`   | Array of UUIDs                              | Restricts results to books matching any supplied publisher ID                                                                       |
+| `authorIds`    | `string[] \| null` | No       | `null`   | Array of UUIDs                              | Restricts results to books associated with any supplied author ID                                                                   |
 
-- **Flat page response without a wrapper**: Returning only the selected page of books as a list keeps the payload compact, but means callers do not receive total item counts or total page numbers in the same response and must infer whether more pages exist from the returned page size.
-- **Structured request body for queries**: Passing filter criteria in a structured request payload avoids link length limits when filtering by multiple categories, publishers, or authors, though some caches and intermediaries handle body-based read requests differently from standard link requests.
-- **Strict upfront validation**: Rejecting invalid filter values immediately prevents silent query mistakes, requiring clients to validate user inputs (such as price bounds and selected identifiers) before submitting.
+`orderBy` recognizes `Name`, `Price.OriginalPrice`, `Price.DiscountPrice`, and `Status`. Any other value falls back to `Name`; ties are ordered by book ID.
 
-## 5. Technical Reference
+### Response headers
 
-- **Endpoint**: `QUERY /api/v1/books`
-- **Status codes**: `200`, `400`
-- **Entities**: [[entity|book]], [[entity|category]], [[entity|publisher]], [[entity|author]]
+`ListBooksEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
+
+| Header             | Format                                    | Description                                                                                 |
+| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------ |
+| `Pagination-Count` | Integer string (for example, `84`)        | Total number of books matching the active filters across all pages                          |
+| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations |
+
+### Response schema (`BookDto[]`)
+
+A `200 OK` response body serializes `PagedResult<BookDto>` as a JSON array of `BookDto` objects (returns `[]` when no books match). See [[query|GetBook]] for the full field-by-field `BookDto` schema (`id`, `name`, `description`, `imageUrl`, `price`, `priceSale`, `status`, `category`, `publisher`, `authors`, `averageRating`, `totalReviews`).
+
+## Error responses
+
+| Code / status           | Condition                                                                                                                                               | Recovery behavior                                   |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------- |
+| `400 Bad Request`       | `pageIndex <= 0`, `pageSize <= 0`, malformed UUID in filter arrays, or invalid JSON payload (`application/problem+json` `HttpValidationProblemDetails`) | Fix request body values; do not retry unchanged     |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                                             | Wait for the `Retry-After` duration before retrying |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL/Qdrant persistence, and endpoints.
+- [[query|GetBook]] — Retrieve a single book projection by ID.
+- [[query|ListBooksGrpc]] — Internal gRPC book search endpoint used by MCP Tools.
+- [[entity|book]] — Domain model for catalog books.
 
 <NodeGraph />
-
-### Contract
-
-Send a JSON request body (optional; defaults apply when omitted) with `pageIndex`, `pageSize`, `orderBy`, and `isDescending` for paging and sorting. Optional filters are `search`, `minPrice`, `maxPrice`, `categoryId`, `publisherId`, and `authorIds` arrays.
-
-The response is a JSON array of `BookDto` objects. The endpoint currently returns the selected page as an array rather than a wrapper object.
-
-### Operational notes
-
-`400` indicates an invalid page, price, UUID, or filter value.
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

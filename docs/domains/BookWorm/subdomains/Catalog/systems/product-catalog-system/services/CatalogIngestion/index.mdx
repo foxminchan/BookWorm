@@ -31,71 +31,72 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-## 1. Context & Problem
+Catalog Ingestion (`catalog-ingestion`) is an internal Azure Functions isolated worker in the Catalog bounded context that reads queued book mutations from PostgreSQL, generates semantic embeddings with Microsoft Foundry, and updates the Qdrant vector index in bounded batches. It exposes no HTTP or gRPC endpoints and is not routed through the API Gateway.
 
-BookWorm supports rich semantic search over its catalog so readers can find books by meaning, not only exact keywords. Generating search vectors and updating the search index ([[container|catalog-vector]]) is too slow and failure-prone to run synchronously every time someone creates, edits, or removes a [[entity|book]] through [[service|catalog-api]].
+## Overview
 
-Catalog Ingestion solves this by moving search index maintenance to an asynchronous background worker. Book changes are recorded durably in [[container|catalog-database]] and processed in scheduled batches, keeping [[service|catalog-api]] fast and resilient while ensuring the search index stays accurate.
+| Property                 | Value                                                                                                                                                                               |
+| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                | Catalog bounded context (`BookWorm.Catalog.Ingestion`)                                                                                                                              |
+| **Aspire resource ID**   | `catalog-ingestion`                                                                                                                                                                 |
+| **Source**               | `src/Services/Catalog/BookWorm.Catalog.Ingestion`                                                                                                                                   |
+| **Runtime & local port** | `Azure.Functions.Sdk` `1.1.0` (`Microsoft.Azure.Functions.Worker` `2.52.0`) — local `--port 7071`; not routed via API Gateway                                                       |
+| **Trigger & protocol**   | `[KafkaTrigger]` (`ProcessVectorBatch`) on unprefixed topic `scheduler.process-vector-batch`, consumer group `catalog-ingestion`                                                    |
+| **Dependencies**         | PostgreSQL (`catalogdb`), Qdrant (`vectordb`), Microsoft Foundry (`embedding` = `Cohere.EmbedV40`), Azure Storage (`storage` host state), Wolverine PostgreSQL outbox (`catalogdb`) |
+| **Authentication**       | Internal worker (no public auth); Azure Managed Identity RBAC (`CognitiveServicesUser` for Microsoft Foundry) in Azure                                                              |
 
-## 2. Business Value
+## Runtime architecture
 
-- **Responsive catalog management**: [[service|catalog-api]] does not wait for search indexing before confirming book updates to users or administrators.
-- **Reliable search accuracy**: Durable queuing and revision checks guarantee that search entries reflect the latest approved book details and deleted books are cleanly removed.
-- **Resilience to external outages**: Temporary slowdowns or outages in the embedding provider or search store do not break catalog writes; pending updates remain safely queued for the next run.
-- **Controlled processing cost**: Processing updates in bounded periodic batches prevents sudden bursts of book edits from overwhelming downstream AI and search services.
+Scheduler triggers Catalog Ingestion every five minutes over Kafka; the worker acquires a PostgreSQL advisory lock, reads coalesced book revisions, generates embeddings, and upserts or deletes vectors in Qdrant.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/CatalogIngestion-diagram-1.mmd" />
 
-Every five minutes, a scheduled batch signal ([[event|ProcessVectorBatchIntegrationEvent]]) triggers Catalog Ingestion to synchronize recent book changes into [[container|catalog-vector]]:
+## Trigger and batch execution contract
 
-1. **Ensure single active runner**: The worker requests an exclusive processing lock so only one batch processor updates the search index at a time. If another instance already holds the lock, this run exits without doing duplicate work.
-2. **Collect a bounded batch**: It reads up to 200 pending book updates from [[container|catalog-database]], ordered from oldest update to newest.
-3. **Assemble searchable content**: For each active [[entity|book]], it builds searchable text from the book's title, description, [[entity|author]] names, [[entity|category]], and [[entity|publisher]].
-4. **Update or remove search entries**: For active books, it generates semantic search vectors via the configured embedding service and updates the matching record in [[container|catalog-vector]]. When a queued book is missing or has been deleted, it removes the corresponding entry from [[container|catalog-vector]].
-5. **Confirm completed items safely**: Each queued item is cleared only if its recorded revision still matches what the worker originally read. If a newer edit happened while the batch was running, that item stays queued so the newer change is picked up in a later batch.
-6. **Release the lock**: Once finished—even if an error occurs—the worker releases the exclusive lock. If vector generation or search-store updates fail, affected items remain unconfirmed in the durable queue for automatic retry on a future run.
+| Property                     | Value                                                                                                           |
+| :--------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| **Function name**            | `ProcessVectorBatch`                                                                                            |
+| **Inbound event**            | [[event\|ProcessVectorBatchIntegrationEvent]]                                                                   |
+| **Kafka topic**              | `scheduler.process-vector-batch` (`AppendPrefix = false`)                                                       |
+| **Consumer group**           | `catalog-ingestion`                                                                                             |
+| **Cadence**                  | Every 5 minutes UTC (`0 0/5 * * * ?`), dispatched by [[service\|scheduler-dashboard]] (`ProcessVectorBatchJob`) |
+| **Batch limit**              | Up to `200` pending updates per invocation (controlled by the worker, not the trigger payload)                  |
+| **Target Qdrant collection** | `data-bookworm-snippets`                                                                                        |
 
-## 4. Trade-offs & Lessons Learned
+### Processing steps per invocation
 
-- **Eventual search consistency vs. write speed**: Decoupling search indexing from [[service|catalog-api]] keeps book writes fast and reliable, at the trade-off of a short delay (governed by the five-minute schedule) before new or edited books appear in semantic search.
-- **Single-batch exclusivity**: Using an exclusive lock and a fixed 200-record batch size prevents concurrent workers from overwriting each other out of order and keeps external embedding usage predictable, though very large bulk imports take multiple cycles to drain.
-- **Coalescing durable queue**: Because the queue in [[container|catalog-database]] combines multiple edits to the same book and checks revisions before clearing work, rapid consecutive edits only need to be indexed once without risking lost updates.
-- **Monitoring for silent lag**: If the scheduler stops triggering, credentials expire, or the database, embedding service, or vector store becomes unreachable, catalog writes continue normally while the pending queue grows—making queue depth and item age essential operational health metrics.
+1. **Acquire exclusivity:** Requests a PostgreSQL advisory lock on `catalogdb`. If another worker holds the lock, the invocation exits immediately without duplicate work.
+2. **Fetch bounded batch:** Reads up to `200` rows from `pending_vector_updates`, ordered oldest-first by update timestamp and book ID.
+3. **Assemble searchable text:** For each active [[entity|book]], builds combined text from title, description, [[entity|author]] names, [[entity|category]], and [[entity|publisher]].
+4. **Upsert or delete in Qdrant:** Generates embeddings through Microsoft Foundry (`Cohere.EmbedV40`) and upserts active book snippets into `data-bookworm-snippets`. Deletes the Qdrant record when a queued book is missing or soft-deleted.
+5. **Revision-safe acknowledgment:** Deletes each `pending_vector_updates` row only if its stored revision still matches the revision read at step 2; concurrent edits remain queued for the next cycle.
+6. **Release lock:** Releases the PostgreSQL advisory lock in all exit paths, including exceptions.
 
-## 5. Technical Reference
+## Failure semantics and operational checks
 
-### Trigger and event intake
+| Condition                              | Behavior                                                                                        | Recovery behavior                                                                                                 |
+| :------------------------------------- | :---------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| Advisory lock held by another instance | Invocation returns immediately with no side effects                                             | Wait for active batch to complete                                                                                 |
+| Embedding or Qdrant failure            | Exception propagates; affected rows are not acknowledged and remain in `pending_vector_updates` | Next 5-minute trigger retries automatically; verify Foundry RBAC and Qdrant connectivity                          |
+| Growing `pending_vector_updates` queue | Catalog writes continue normally while semantic search lags behind                              | Inspect [[service\|scheduler-dashboard]] execution history, `pending_vector_updates` count/age, and Function logs |
+| Concurrent edit during active batch    | Revision mismatch prevents premature acknowledgment                                             | Newer revision is processed on the next scheduled cycle                                                           |
 
-- **Runtime**: Internal C# Azure Functions worker.
-- **Trigger**: Kafka trigger (`ProcessVectorBatch`) bound to topic `scheduler.process-vector-batch` with consumer group `catalog-ingestion`.
-- **Schedule**: The Scheduler service publishes [[event|ProcessVectorBatchIntegrationEvent]] to `scheduler.process-vector-batch` every five minutes via `ProcessVectorBatchJob`.
-- **Batch sizing**: Each Kafka trigger invocation processes one bounded batch of up to 200 pending updates; the batch size is controlled by the worker rather than the trigger payload.
+`VectorBatchProcessor` uses PostgreSQL advisory lock key `740031001` via `pg_try_advisory_lock($1)` and releases it in a `finally` block. Its per-invocation read limit is 200 pending updates.
 
-### Processing behavior
+:::note
+`BookWorm.Catalog.Ingestion` currently has no dedicated `.UnitTests` project in `BookWorm.slnx`; contract coverage relies on `Catalog-Scheduler` Pact verification (`tests/pacts/`).
+:::
 
-1. Acquire a PostgreSQL advisory lock so only one vector batch processor runs at a time.
-2. Read up to 200 pending records ordered by update time and book ID.
-3. Build searchable text from each active [[entity|book]]'s title, description, [[entity|author]] names, [[entity|category]], and [[entity|publisher]].
-4. Generate embeddings for active books and upsert their content and vector into the `data-bookworm-snippets` collection in Qdrant ([[container|catalog-vector]]).
-5. Delete the Qdrant record when the queued book is missing or soft-deleted.
-6. Acknowledge each queue item only if its revision still matches the revision that was read, leaving newer concurrent changes queued for a subsequent batch.
-7. Release the advisory lock, including when processing fails.
+## Messages
 
-If another worker already holds the lock, the processor does no work during that invocation. If embedding generation or a Qdrant operation fails, the exception is propagated and affected queue items are not acknowledged, leaving pending work available for a later invocation.
+<MessageTable format="all" limit={10} />
 
-### Data dependencies
+## Related documentation
 
-- Reads book records, relationships, and pending update revisions from [[container|catalog-database]].
-- Deletes acknowledged pending updates from [[container|catalog-database]] after successful index operations.
-- Writes searchable records to [[container|catalog-vector]].
-- Uses the configured embedding service to generate vectors (managed via application configuration).
-
-### Operations
-
-- Monitor the age and count of `pending_vector_updates` in [[container|catalog-database]] alongside Scheduler job outcomes and Qdrant health to detect ingestion lag.
-- A growing queue can indicate that the scheduled job is not invoking this worker, credentials are rejected, or the database, embedding service, or vector store is unavailable.
-- The queue is durable and coalesces changes by book ID. See [[container|catalog-database]] for triggers and queue semantics.
-
-### Architecture
+- [[doc|platform/006-api-and-contracts]] — Consolidated service and messaging directory.
+- [[service|catalog-api]] — Authoritative Catalog service that enqueues vector updates.
+- [[service|scheduler-dashboard]] — Scheduler triggering `ProcessVectorBatchJob`.
+- [[container|catalog-database]] — PostgreSQL `pending_vector_updates` queue and triggers.
+- [[container|catalog-vector]] — Qdrant collection reference.
 
 <NodeGraph />

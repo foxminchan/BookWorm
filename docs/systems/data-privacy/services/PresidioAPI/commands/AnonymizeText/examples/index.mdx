@@ -1,15 +1,78 @@
-## Anonymize detected text with `HttpClient`
+---
+summary: Usage examples for Anonymize text.
+---
 
-Send the original text, the matching Analyzer detections, and optional
-operator settings to the Anonymizer. The offsets and entity types must come
-from analysis of this same text.
+## Replace and redact JSON request
 
-<CodeGroup dropdown>
+<CodeGroup>
 
-```csharp AnonymizeText.cs
+```json
+{
+	"text": "Contact Jane Example at jane@example.test.",
+	"anonymizers": {
+		"PERSON": {
+			"type": "replace",
+			"new_value": "[PERSON]"
+		},
+		"EMAIL_ADDRESS": {
+			"type": "redact"
+		}
+	},
+	"analyzer_results": [
+		{
+			"start": 8,
+			"end": 20,
+			"score": 0.85,
+			"entity_type": "PERSON"
+		},
+		{
+			"start": 24,
+			"end": 41,
+			"score": 0.99,
+			"entity_type": "EMAIL_ADDRESS"
+		}
+	]
+}
+```
+
+</CodeGroup>
+
+Expected response (`200 OK`):
+
+<CodeGroup>
+
+```json
+{
+	"text": "Contact [PERSON] at .",
+	"items": [
+		{
+			"start": 20,
+			"end": 20,
+			"entity_type": "EMAIL_ADDRESS",
+			"text": "",
+			"operator": "redact"
+		},
+		{
+			"start": 8,
+			"end": 16,
+			"entity_type": "PERSON",
+			"text": "[PERSON]",
+			"operator": "replace"
+		}
+	]
+}
+```
+
+</CodeGroup>
+
+## Call from C# (`HttpClient`)
+
+<CodeGroup>
+
+```csharp
+using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Collections.Generic;
 
 var anonymizerUrl = Environment.GetEnvironmentVariable("ANONYMIZER_URL")
     ?? throw new InvalidOperationException("Set ANONYMIZER_URL to the Presidio Anonymizer base URL.");
@@ -38,6 +101,12 @@ Console.WriteLine(result.RootElement.GetProperty("text").GetString());
 
 </CodeGroup>
 
-Keep the input text and its analysis results together; stale offsets can
-anonymize the wrong portion of the text. Do not log the original request when
-it may contain PII.
+Expected output:
+
+<CodeGroup>
+
+```text
+Contact [PERSON] at .
+```
+
+</CodeGroup>

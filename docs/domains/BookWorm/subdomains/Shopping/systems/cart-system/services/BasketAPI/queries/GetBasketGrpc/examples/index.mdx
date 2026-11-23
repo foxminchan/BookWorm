@@ -1,0 +1,33 @@
+---
+summary: Usage examples for Get basket over gRPC.
+---
+
+## Call `GetBasket` from a .NET gRPC client
+
+<CodeGroup>
+
+```csharp
+using BookWorm.Basket.Grpc.Services;
+using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
+using Grpc.Net.Client;
+
+using var channel = GrpcChannel.ForAddress("<basket-grpc-url>");
+var client = new BasketGrpcService.BasketGrpcServiceClient(channel);
+
+var headers = new Metadata
+{
+    { "Authorization", "Bearer <delegated-access-token>" },
+};
+
+var response = await client.GetBasketAsync(new Empty(), headers);
+
+Console.WriteLine($"Basket {response.Id} contains {response.Items.Count} item(s)");
+```
+
+</CodeGroup>
+
+Where:
+
+- `<basket-grpc-url>`: Base URL of Basket API (resolved via Aspire service discovery as `basket`, or `https://localhost:7155` locally).
+- `<delegated-access-token>`: Entra ID OBO access token scoped for Basket API.

@@ -1,0 +1,6 @@
+flowchart LR
+    sched["Scheduler\n(Quartz.NET)"] -->|"Kafka: scheduler.process-vector-batch"| kafka["Kafka Broker\n(Unprefixed topic)"]
+    kafka -->|"KafkaTrigger: ProcessVectorBatch"| ingest["Catalog Ingestion\n(Azure Functions Worker)"]
+    ingest <-->|"SQL: advisory lock + pending_vector_updates"| pg["Catalog Database\n(PostgreSQL catalogdb)"]
+    ingest -->|"HTTPS: Cohere.EmbedV40"| foundry["Microsoft Foundry\n(Embeddings)"]
+    ingest -->|"gRPC/HTTP: upsert/delete vectors"| qdrant["Catalog Vector\n(Qdrant)"]

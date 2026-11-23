@@ -15,76 +15,60 @@ badges:
     textColor: blue
 ---
 
-## Explanation: Why Split the Customer Website?
+BookWorm divides its customer-facing website into two independent Next.js 16 microfrontends (MFEs)—**Storefront** (`@bookworm/storefront`) for public discovery and **Commerce** (`@bookworm/commerce`) for authenticated shopping—served behind a single YARP API Gateway origin. This split isolates public caching and SEO optimization from private, always-fresh checkout and order workflows while preserving one seamless browser experience.
 
-BookWorm's customer-facing website serves two very different kinds of pages:
+## Context and motivation
 
-- **Public browsing (`@bookworm/storefront`):** The home page, book catalog, book details, reviews, info pages, sign-in pages, and the AI assistant. These pages are the same for most visitors, so they can be cached for speed and indexed by search engines.
-- **Personal shopping (`@bookworm/commerce`):** The shopping basket, checkout, customer profile, and order history. These pages belong to a specific signed-in shopper, so they must stay private, always show fresh data, and stay hidden from search engines.
+An online bookstore serves two fundamentally different workloads under one domain:
 
-Splitting these into two separate apps lets each side be tuned, updated, and deployed on its own—while customers still experience one single website.
+- **Public discovery (Storefront):** Home page, catalog browsing, book details, customer reviews, static policy pages, authentication entrypoints, and the AI book assistant. Most visitors see identical content, so aggressive component caching (`cacheComponents: true`), static optimization, and search-engine indexing (`@workspace/seo`) directly improve conversion and latency.
+- **Authenticated transactions (Commerce):** Shopping basket (`/basket`), checkout confirmation (`/checkout/confirmation`), account profile (`/account`), and order history (`/account/orders`). Every response is user-specific, must never be served from a shared cache (`cacheComponents: false`), and must stay excluded from search indexing.
 
-### One Entry Point, One Routing File
+Keeping both workloads in one Next.js deployment couples caching settings, release cadences, and failure blast radii. Splitting them into two Next.js zones lets each application tune its rendering pipeline and deploy independently without forcing shoppers onto separate subdomains.
 
-<MermaidFileLoader file="mermaids/mfe-gateway-routing.mmd" />
+## How it works
 
-Customers never see two separate websites. Everything goes through a single gateway, and both the gateway and the frontend apps read from the same configuration file (`src/Clients/apps/storefront/microfrontends.json`):
+### Single origin and shared routing manifest
 
-- **No URL conflicts:** Backend API routes (like `/catalog` or `/ordering`) and sign-in routes are matched first, so frontend pages can never accidentally override them.
-- **Separate asset paths:** The commerce app serves its own static files under `/commerce-assets/*` so they never clash with the storefront's files.
-- **Storefront as the default:** Any customer route that does not match a backend service or a commerce path goes to the storefront app.
+Customers interact with one HTTPS origin terminated by the YARP API Gateway (`gateway`). Both Aspire (`FrontendExtensions.cs` + `ApiGatewayProxyBuilder.cs`) and the two Next.js apps (`@vercel/microfrontends` `^2.4.2`) read the same routing manifest: `src/Clients/apps/storefront/microfrontends.json`.
 
-### Seamless Look and Navigation
+This diagram shows how the API Gateway routes browser requests across backend APIs, Microsoft Entra ID, Backoffice, Commerce, and Storefront from one shared manifest.
 
-Even though the storefront and commerce pages live in separate apps, shoppers should not feel like they are jumping between different sites. Both apps use a shared layout package (`@workspace/storefront-shell`) that provides:
+<MermaidFileLoader file="mermaids/006-microfrontend-architecture-diagram-1.mmd" />
 
-- The same header, footer, and mobile navigation bar.
-- Cross-app links that preload pages smoothly when moving between browsing and checkout.
-- A shared basket counter so the header badge stays up to date everywhere.
+- **Deterministic YARP precedence:** Backend API prefixes (`/chatting`, `/rating`, `/ordering`, `/basket`, `/catalog`) receive orders `0` through `4`, followed by `/entra` at order `5`, explicit frontend routes, and Storefront's catch-all `/{**remainder}` at `int.MaxValue`.
+- **Exact-match collision handling:** Because Commerce serves `/basket` while **Basket API** owns `/basket/{**remainder}`, `ProxyExtensions.cs` assigns exact-match colliding frontend routes `order = -1`. A browser navigation to `/basket` reaches Commerce, while `/basket/api/v1/baskets` routes to **Basket API**.
+- **Isolated static assets:** Commerce sets `assetPrefix: "commerce-assets"` and registers `/commerce-assets/:path*` so its JavaScript, CSS, and image chunks never collide with Storefront's `/_next/static/*` assets.
+- **Zone observability:** YARP attaches `X-Mfe-Zone` (`storefront`, `commerce`, or `backoffice`) to every frontend response for rapid routing verification and diagnostics.
 
-### Single Sign-In Across Both Apps
+### Shared chrome and single sign-in across zones
 
-<MermaidFileLoader file="mermaids/mfe-user-journey.mmd" />
+Even though Storefront and Commerce run as separate Next.js processes, shoppers experience one continuous interface:
 
-Sign-in is handled in one place—the storefront app—so there is only one login flow to maintain. Because both apps sit behind the same website address, they share the same login session. If an unauthenticated shopper visits a protected page like `/basket`, `/checkout`, or `/account`, they are sent to the login page and returned to where they started once signed in.
+- **Shared shell (`@workspace/storefront-shell`):** Both apps render the identical header, footer, mobile bottom navigation, cross-zone `MfeLink` transitions, and Jotai-backed basket badge.
+- **Single authentication owner:** Storefront owns `/api/auth/[...all]` (Better Auth + Microsoft Entra ID). Commerce runs with `.WithoutEntraId()` in `FrontendExtensions.cs` and reads the same origin-scoped Better Auth session cookie.
 
----
+This sequence shows how an unauthenticated shopper navigating from Storefront to Commerce is redirected to Storefront's login flow and returned to their destination.
 
-## How-to Guide: Add a New Customer Page
+<MermaidFileLoader file="mermaids/006-microfrontend-architecture-diagram-2.mmd" />
 
-Follow these steps when adding a new page for shoppers:
+## Design trade-offs
 
-1. **Pick the right app:**
-   - Put public, shareable, or search-indexed pages in `src/Clients/apps/storefront/app/`.
-   - Put personal or signed-in pages in `src/Clients/apps/commerce/app/`.
-2. **Register commerce routes:** If you added the page to `commerce`, add its URL pattern to `routing[].paths` in `src/Clients/apps/storefront/microfrontends.json`. (Storefront pages are matched automatically as the default fallback.)
-3. **Avoid backend path names:** Make sure the first part of your new URL does not match an existing backend prefix (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chat`, or `/entra`).
-4. **Require sign-in if needed:** If the new `commerce` page is only for signed-in users, check that its path is listed under `protectedRoutes` in `src/Clients/apps/commerce/proxy.ts`.
-5. **Run the checks:** From `src/Clients`, verify boundaries, types, linting, tests, and the build:
-   ```sh
-   bun run boundaries
-   bun run check-types
-   bun run lint
-   bun run test
-   bun run build
-   ```
+| Decision                                             | Benefits                                                                                                                                                | Costs and limits                                                                                                                     |
+| :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------- |
+| Multi-zone split behind YARP + `microfrontends.json` | Independent caching (`cacheComponents: true` vs. `false`), independent container builds/scaling, single origin without CORS or cookie-domain complexity | Two customer Next.js containers to deploy and monitor; top-level Commerce routes must be registered in `microfrontends.json`         |
+| Shared shell package (`@workspace/storefront-shell`) | Visual and behavioral consistency across header, footer, and basket badge without runtime bundle federation                                             | Shell changes rebuild both Storefront and Commerce (mitigated by Turborepo caching)                                                  |
+| Storefront as sole customer auth owner               | One Better Auth callback and Entra ID registration for all customer zones                                                                               | Commerce depends on Storefront availability for initial sign-in (`/login`) and `/api/auth/[...all]`                                  |
+| Full-document transitions across zones               | Clean isolation between app runtimes and React trees with zero shared global state bugs                                                                 | Slightly heavier navigation cost across the Storefront-to-Commerce boundary than intra-app client routing (mitigated by prefetching) |
 
----
+## Alternatives considered
 
-## Reference
+- **Single customer Next.js monolith:** Simpler to deploy initially, but forces public catalog caching, AI chat runtime dependencies (`@copilotkit/*`, `@ag-ui/client`), and authenticated checkout routes into one build and runtime profile.
+- **Separate subdomains (`shop.*` and `checkout.*`):** Eliminates gateway path routing, but introduces cross-subdomain cookie scoping, extra Entra ID redirect URIs, and fragmented SEO/origin boundaries.
+- **Client-side Module Federation:** Enables SPA transitions without document reloads, but adds webpack/bundler runtime coupling, version-skew risks across React 19 / Next.js 16 App Router Server Components, and harder SSR hydration.
 
-### App Ownership
+## Related documentation
 
-| App          | Package                | Routes                                                       | Cached & Public | Sign-In Owner                   | Health Check  |
-| :----------- | :--------------------- | :----------------------------------------------------------- | :-------------- | :------------------------------ | :------------ |
-| `storefront` | `@bookworm/storefront` | `/{**remainder}` (default)                                   | Yes             | `/api/auth/[...all]`            | `/`           |
-| `commerce`   | `@bookworm/commerce`   | `/basket`, `/checkout/*`, `/account/*`, `/commerce-assets/*` | No              | Shared via gateway              | `/api/health` |
-| `backoffice` | `@bookworm/backoffice` | `/backoffice/{**remainder}`                                  | No              | `/backoffice/api/auth/[...all]` | `/backoffice` |
-
-### Related Documentation
-
-- [[doc|frontend/001-monorepo-architecture]] — Workspace structure and package list
-- [[doc|frontend/002-applications-and-routing]] — Full route maps across `storefront`, `commerce`, and `backoffice`
-- [[doc|frontend/003-data-fetching-and-state]] — Data fetching, caching, and shared state
-- [[doc|frontend/004-testing-and-quality-gates]] — Unit, end-to-end, and build checks
-- [[doc|platform/004-identity-and-rbac-matrix]] — Identity and gateway configuration
+- [[doc|frontend/009-add-customer-page]] — Step-by-step procedure for adding a Storefront or Commerce route.
+- [[doc|frontend/002-applications-and-routing]] — Complete zone ownership table, ports, and route maps.
+- [[doc|frontend/007-architecture-and-state-design]] — How `@workspace/storefront-shell` and Turborepo tiers support both customer zones.

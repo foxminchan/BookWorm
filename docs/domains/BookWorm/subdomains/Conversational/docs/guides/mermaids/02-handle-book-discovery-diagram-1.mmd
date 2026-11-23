@@ -1,0 +1,19 @@
+flowchart LR
+	book["Book Agent\n(Agent Framework / book)"]
+	catRes["book-catalog-researcher\n(Sub-Agent, temp 0.2)"]
+	recRes["book-recommendation-researcher\n(Sub-Agent, temp 0.4)"]
+	mcp["MCP Tools\n(mcptools /mcp)"]
+	catalog["Catalog API\n(.NET 11 gRPC)"]
+	memory["Memory Providers\n(Foundry + FileMemory)"]
+	ui["Storefront AG-UI Tools\n(showBookCard / addToBasket)"]
+	rating["Rating Agent\n(Rating API A2A gRPC)"]
+
+	book --> |"Delegate: parallel"| catRes
+	book --> |"Delegate: parallel"| recRes
+	book --> |"MCP HTTP: search/get/list"| mcp
+	catRes --> |"MCP HTTP: Catalog facts"| mcp
+	recRes --> |"MCP HTTP: Shortlist"| mcp
+	mcp --> |"gRPC: BookGrpcService"| catalog
+	book --> |"Read/Write: Preferences & Plans"| memory
+	book -->|"AG-UI Tool Call"| ui
+	book --> |"A2A gRPC: handoff_to_rating"| rating

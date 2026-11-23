@@ -10,86 +10,75 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+BookWorm enforces strict bounded-context isolation so every business fact has one authoritative owner, every derived view can be rebuilt safely, and every cross-service interaction uses an explicit versioned contract. These principles prevent shared-database coupling and keep operational work (scheduling and email delivery) cleanly separated from core commerce state.
 
-## 1. Context & Problem
+## Context and motivation
 
-As a digital commerce platform grows, the greatest risk to maintainability is allowing every capability to share one tangled data model. When multiple areas read and update the same records directly, nobody can tell which part of the business owns the truth, small changes trigger unexpected side effects, and auditing or troubleshooting becomes difficult.
+As a microservices platform grows, reading or mutating another service's database table directly is the fastest way to create hidden coupling and data corruption. BookWorm eliminates shared-table shortcuts by pairing clear domain ownership rules with automated verification in CI (`ArchUnitNET.TUnit`, Pact consumer/provider tests, `buf breaking`, and `turbo boundaries`).
 
-BookWorm solves this by separating its domain into well-defined areas with strict rules on ownership, derived copies, and how changes travel across boundaries.
+## How it works
 
-## 2. Business Value
+This diagram summarizes the four boundary rules governing data ownership and cross-context communication in BookWorm.
 
-- **Unambiguous accountability**: Every core business fact—product price, active basket, accepted order, customer review—has a single authoritative home.
-- **Safer, faster delivery**: Teams can evolve internal workflows without breaking neighboring business areas as long as shared agreements remain intact.
-- **Easy recovery from display or search drift**: Supporting summaries, search indexes, and temporary speedups can be rebuilt cleanly without risking core business records.
-- **Clear auditing and troubleshooting**: Separating operational tasks (like retrying an email) from official business decisions makes order history and customer support far easier to verify.
+<MermaidFileLoader file="mermaids/03-domain-principles-and-boundaries-diagram-1.mmd" />
 
-## 3. How It Works
+### Four guiding principles
 
-### Guiding principles
+- **One authoritative source of truth:** Each business record belongs to one bounded context—books to [[domain|catalog]], baskets to [[domain|shopping]], accepted orders to [[domain|ordering]], and individual reviews to [[domain|reviews]].
+- **Derived views are disposable and rebuildable:** Catalog rating summaries, Qdrant vector indexes, FusionCache entries, and Marten `OrderSummary` views exist for fast reads and search. They never replace authoritative records and can be regenerated if they drift.
+- **Explicit contracts over shared storage:** Services never read or write another context's database. Cross-context communication uses versioned REST (`/api/v1/*`), gRPC (`book.v1`, `basket.v1`), MCP (`/mcp`), A2A gRPC, or CloudEvents Kafka topics.
+- **Operational work never mutates business state:** Scheduled jobs (`ProcessVectorBatchJob`, `HeartbeatJob`) and email delivery (`Notification` with MailKit resilience and Kafka DLQs) never alter authoritative `Order` or `Book` business status.
 
-1. **One owner for every source of truth**: Product facts live in [[domain|catalog]], temporary shopping intent lives in [[domain|shopping]], accepted purchases live in [[domain|ordering]], and individual customer feedback lives in [[domain|reviews]]. Supporting platform features such as notifications and scheduled work help the business operate without owning business records.
-2. **Derived information is clearly marked and rebuildable**: Some information is intentionally copied for convenience or speed—such as rating summaries shown alongside books, search indexes built from catalog details, and temporary performance copies. These are never treated as independent authorities and can be regenerated from the original source if they ever drift.
-3. **Areas collaborate through explicit agreements, never shortcuts**: One area never reaches directly into another area's records. Instead, key transitions—such as handing a basket over to create an order, sharing order updates, publishing review summaries, or triggering notifications—happen through formal, documented handoffs.
-4. **Operational work stays separate from business ownership**: Background tasks—like refreshing search data or retrying a failed email—must never alter the official business state of an order or a book record.
+### Ownership matrix
 
-### Core business rules
+| Bounded context                | Authoritative ownership                                                                        | Explicitly out of scope                                                     |
+| :----------------------------- | :--------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**        | Book metadata, taxonomies, pricing, availability, cover blobs, and derived search/rating views | Individual customer reviews, baskets, and accepted order snapshots          |
+| **[[domain\|shopping]]**       | Customer-scoped mutable baskets (`Redis`) and pre-order shopping intent                        | Accepted orders, order lifecycle state, and product master data             |
+| **[[domain\|ordering]]**       | `Buyer` profiles, `Order` records, purchase-time item snapshots, and lifecycle transitions     | Mutable baskets, live catalog descriptions, and external payment settlement |
+| **[[domain\|reviews]]**        | Individual `Feedback` documents (`Cosmos DB`) and AI feedback summaries                        | Authoritative book metadata and Catalog's derived rating summary            |
+| **[[domain\|conversational]]** | AG-UI session state (`chatting-blob`), routing decisions, and agent orchestration              | Catalog book records, baskets, billing, and authoritative orders            |
+| **[[domain\|platform]]**       | Quartz schedules (`schedulerdb`), notification idempotency (`Redis`), and SMTP submission      | Business records owned by Catalog, Shopping, Ordering, or Reviews           |
 
-- A basket is not an order.
-- An accepted checkout creates a single order.
-- Ordering owns the order lifecycle after acceptance.
-- Catalog owns the canonical product and pricing information.
-- Reviews owns the review record; Catalog owns only the derived summary.
-- Platform notifications represent delivery work, not business state.
-- Conversational assistance helps customers access information without owning the underlying records.
+### Automated boundary enforcement
 
-### Ownership model by subdomain
+BookWorm validates these principles automatically in CI rather than relying on manual code review alone:
 
-The contexts in this table are [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]].
+- **Backend architecture rules:** `tests/BookWorm.ArchTests` (`ArchUnitNET.TUnit`) checks cross-service dependency isolation, domain entity/value-object rules, and handler conventions.
+- **Asynchronous message contracts:** Pact.NET consumer and provider tests (`tests/pacts/`) verify Kafka CloudEvents compatibility across producer/consumer pairs.
+- **gRPC compatibility:** `buf lint` and `buf breaking --against lock.binpb` protect `book.v1` and `basket.v1` Protobuf schemas.
+- **Frontend layer boundaries:** `bun run boundaries` (`turbo boundaries` in `src/Clients`) enforces the 4-tier dependency graph (`config` → `foundation` → `domain` → `app`).
 
-| Subdomain      | What it owns                                                   | What it does not own                       |
-| -------------- | -------------------------------------------------------------- | ------------------------------------------ |
-| Catalog        | Product metadata, pricing, availability, and search projection | Individual review records or order state   |
-| Shopping       | Basket state and pre-order intent                              | Accepted orders or final lifecycle state   |
-| Ordering       | Order record and status transitions                            | Basket lifecycle or product master data    |
-| Reviews        | Feedback records, ratings, and review history                  | Authoritative book metadata                |
-| Conversational | Customer-facing interaction patterns and book support guidance | Booking, billing, and order-of-record data |
-| Platform       | Notifications, scheduled jobs, and infrastructure support      | Business state of the domains it serves    |
+### Three-question pre-change boundary gate
 
-## 4. Trade-offs & Lessons Learned
+Before implementing any cross-context feature, answer three questions:
 
-- **Explicit handoffs over shared shortcuts**: Prohibiting direct cross-area data reads takes more upfront design on workflows like basket-to-order handoff or order status propagation, but prevents hidden coupling and accidental cross-context updates.
-- **Eventual alignment for projections**: Derived summaries and search data may briefly lag behind primary updates; accepting this minor delay keeps core transactions simple and recoverable.
-- **Common anti-patterns to avoid**:
-  - Reading order status, review details, or basket state directly from another context's storage.
-  - Treating a derived summary or projection as the original source of truth.
-  - Mixing operational retry status with official business status.
-  - Embedding business rules inside scheduled background jobs or email delivery flows.
-  - Interpreting an accepted email send as proof that a purchase or support action succeeded.
+1. Which bounded context owns the authoritative state?
+2. Which explicit versioned contract carries the interaction?
+3. Is every downstream copy classified as derived (rebuildable) rather than authoritative?
 
-## 5. Technical Reference
+## Design trade-offs
 
-BookWorm enforces bounded-context boundaries across [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]]:
+| Decision                            | Benefits                                                                    | Costs and limits                                                                                                  |
+| :---------------------------------- | :-------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **No cross-service database reads** | Services deploy and change schemas independently without breaking neighbors | Cross-context displays require gRPC enrichment (Basket → Catalog) or asynchronous projections (Reviews → Catalog) |
+| **Anti-pattern prohibition**        | Prevents hidden coupling, status conflation, and non-rebuildable caches     | Requires upfront contract design and Pact/Buf updates when schemas evolve                                         |
 
-- **Cross-context contracts**: Communicate exclusively via explicit commands, events, queries, or synchronous service interfaces—never direct reads/writes against another context's primary database.
-- **Derived projections & caching**: Catalog rating summaries (projected from Reviews), search vectors (derived from Catalog), and cache entries (temporary optimization layers) are disposable/replayable and never authoritative.
-- **Operational separation**: Scheduled jobs (such as vector index updates or email retries) must never mutate authoritative Order or Book domain state.
+### Anti-patterns prohibited in BookWorm
 
-### Contributor design checklist
+- Querying another service's PostgreSQL, Cosmos DB, or Redis store directly.
+- Treating a rating summary, Qdrant vector, or cache entry as authoritative truth.
+- Treating Finance saga timeout or SMTP acceptance as proof of `Order` completion or customer inbox delivery.
+- Embedding business-state mutations inside Quartz jobs or Notification workers.
 
-1. Identify the owning bounded context before modifying a model.
-2. Classify data explicitly as source-of-truth or derived.
-3. Prefer explicit event or command boundaries over shared persistence.
-4. Confirm the customer-facing product experience still aligns with the domain contract.
-5. Update the contract and documentation whenever ownership changes.
+## Alternatives considered
 
-### Three-question boundary gate
+- **Shared relational database with cross-schema joins:** Reduces initial query boilerplate but couples every service release to a single schema and removes independent scaling (Cosmos DB for Reviews, Redis for Basket).
 
-For any cross-context change, verify before implementation:
+## Related documentation
 
-1. Which context owns the data?
-2. What explicit contract carries the change?
-3. Is the downstream side effect derived or authoritative?
-
-<Footer />
+- [[doc|development/001-developer-onboarding]] — High-level contributor guide.
+- [[doc|development/000-local-quickstart]] — End-to-end local quickstart tutorial.
+- [[domain|BookWorm]] — Context map and service inventory.
+- [[doc|arc42/12-glossary]] — Canonical terms and ownership notes.
+- ADR-BW-001: Capability-aligned boundaries — Architectural decision record for bounded-context decomposition.

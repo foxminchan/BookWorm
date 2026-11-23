@@ -1,0 +1,11 @@
+flowchart LR
+	client["Commerce / Backoffice\n(Next.js 16 MFE)"]
+	ordering["Ordering API\n(.NET 11 + FusionCache L1)"]
+	redis[("Redis\n(Locks + Idempotency + L2 Cache)")]
+	db[("Order database\n(PostgreSQL: orderingdb)")]
+	catalog["Catalog API\n(.NET 11 gRPC)"]
+
+	client --> |"HTTPS: POST/PATCH + x-request-id"| ordering
+	ordering --> |"RESP: SET NX / Lock / L2 Get-Set"| redis
+	ordering --> |"gRPC: GetBooks (cached)"| catalog
+	ordering --> |"EF Core + Marten: Persist Order"| db

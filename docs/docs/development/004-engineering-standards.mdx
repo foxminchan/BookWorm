@@ -9,62 +9,62 @@ badges:
     textColor: teal
 ---
 
-# Engineering standards
+This reference defines the enforceable backend, messaging, Protocol Buffers, database, and frontend engineering standards across BookWorm. Architectural and structural rules are verified automatically by `tests/BookWorm.ArchTests` and `bun run boundaries`.
 
-## 1. Context & Problem
+## Overview
 
-BookWorm is built as a set of independent backend services paired with customer-facing and back-office web applications. Without shared engineering standards, teams risk introducing hidden cross-service coupling, breaking asynchronous event routing, drifting in data naming conventions, or duplicating user-interface components across applications.
+| Property                    | Value                                                                                                                                                  |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                   | Contributor Team (`contributor-team`)                                                                                                                  |
+| **Solution & build config** | `BookWorm.slnx`, `Directory.Build.props`, `Directory.Packages.props`, `Versions.props`, `global.json`                                                  |
+| **Backend stack**           | .NET `11.0.100` (`net11.0`), C# `preview` (C# 15), Aspire `17.0.0`, `Mediator.SourceGenerator` `3.0.2`, Wolverine `6.65.1`                             |
+| **Frontend stack**          | Bun `1.4.4`, Turborepo `2.11.13`, Next.js `16.4.6`, React `19.3.1`, TypeScript `6.0.3` (`@typescript/native` `7.0.2` for type checks)                  |
+| **Automated enforcement**   | `TreatWarningsAsErrors: true`, `EnforceCodeStyleInBuild: true`, CSharpier `1.4.1`, `BookWorm.ArchTests`, `turbo boundaries`, ESLint `--max-warnings 0` |
 
-## 2. Business Value
+## Protected repository files
 
-- **Independent service delivery**: Clean boundaries allow teams to build, test, and deploy individual services without unintentionally breaking neighboring capabilities.
-- **Reliable cross-service communication**: Consistent event naming, minimal payloads, and compatibility checks prevent silent messaging failures or breaking interface updates.
-- **Lower maintenance cost**: Centralized package management, shared frontend primitives, and consistent domain modeling keep the codebase understandable and easier to evolve.
+| File                                            | Rule                                                                                                                               |
+| :---------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| `global.json`                                   | Do not modify SDK versions (`11.0.100`, `Azure.Functions.Sdk` `1.1.0`, `Microsoft.Testing.Platform`) unless explicitly approved    |
+| `NuGet.config`                                  | Do not add unofficial package sources (single NuGet.org v3 source)                                                                 |
+| `Versions.props` and `Directory.Packages.props` | Central Package Management is mandatory (`ManagePackageVersionsCentrally: true`); never pin versions in individual `.csproj` files |
+| `src/Clients/bun.lock` and `docs/bun.lock`      | Bun-managed lockfiles only; never commit `package-lock.json`, `pnpm-lock.yaml`, or `yarn.lock`                                     |
 
-## 3. How It Works
+## C# and backend architecture standards
 
-BookWorm's engineering standards align backend services, cross-service messaging, contract schemas, and client applications around four core practices:
+| Area                     | Standard                                                                                                                                                                                              | Enforcement / Notes                                     |
+| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| **Architecture**         | Vertical Slice Architecture (VSA) + Domain-Driven Design (DDD); zero direct project references between services                                                                                       | Verified by `BookWorm.ArchTests`                        |
+| **Language & build**     | Target `net11.0`, `Nullable: enable`, `ImplicitUsings: enable`, `Features: runtime-async=on`, file-scoped namespaces, primary constructors for immutable dependencies                                 | `Directory.Build.props` (`TreatWarningsAsErrors: true`) |
+| **Type sealing**         | Mark endpoints, CQRS handlers, DbContexts, integration events, and test classes `sealed` by default                                                                                                   | Verified by `BookWorm.ArchTests`                        |
+| **Async & cancellation** | Use `async`/`await` end-to-end and propagate `CancellationToken` through every async boundary                                                                                                         | Code style & analyzers                                  |
+| **CQRS mediator**        | Use `Mediator.SourceGenerator` (`3.0.2`); **do not introduce `MediatR`**                                                                                                                              | Verified in `Directory.Packages.props` and `AGENTS.md`  |
+| **API versioning**       | Explicit URL segment and `api-version` header versioning via `ApiVersions.V1` (`/api/v1/...`)                                                                                                         | `BookWorm.Constants` & `BookWorm.Chassis`               |
+| **Authorization**        | Apply Microsoft Entra ID authorization policies (`admin`, `business_user`, `customer`, scoped actions) at endpoint boundaries                                                                         | Per-service endpoint registration                       |
+| **PostgreSQL naming**    | Use `snake_case` for all PostgreSQL identifiers, tables, columns, and raw SQL (`EFCore.NamingConventions` `11.0.0`)                                                                                   | Applies to `catalogdb`, `orderingdb`, and `schedulerdb` |
+| **Formatting**           | Follow `.editorconfig` and format with `mise run format:cs` (`dnx csharpier format .`)                                                                                                                | Enforced by Husky pre-commit and `backend-shared.yml`   |
+| **DDD building blocks**  | Reuse `BookWorm.SharedKernel` primitives (`Entity`, `AuditableEntity`, `ValueObject`, `IAggregateRoot`, `ISoftDelete`, `DomainEvent`, `Decider`, `PagedResult`) and Specification/Repository patterns | `src/BuildingBlocks/BookWorm.SharedKernel`              |
 
-1. **Preserve service boundaries and centralized governance**: Each service owns its business domain and avoids direct dependencies on other services. Software dependency versions are managed centrally across the repository, and business-logic changes are paired with automated tests and updated documentation.
-2. **Keep cross-service events focused and stable**: Services exchange state changes through integration events that carry only the minimum data consumers need. Event naming follows a consistent action-and-entity convention, and routing metadata stays fixed so the messaging layer delivers events accurately.
-3. **Validate shared service contracts before merging**: Changes to shared service-to-service interface definitions are checked for style compliance and backward compatibility against a committed baseline. Any intentionally breaking update requires team coordination and a migration plan.
-4. **Apply consistent domain and frontend architecture**: Services model business rules using established patterns—separating reads from writes, encapsulating business invariants, isolating persistence, and using consistent database naming. Client applications reuse shared visual building blocks across the storefront and back-office apps while preserving strict type safety and clear separation between server-rendered and interactive client behavior.
+## Integration events and Kafka contracts
 
-## 4. Trade-offs & Lessons Learned
+Cross-service asynchronous communication uses **Wolverine** (`6.65.1`) over **Kafka** with CloudEvents JSON serialization (`CloudEventsOnlyKafkaMapper`).
 
-- **Strict service isolation vs. convenience**: Avoiding direct cross-service dependencies requires explicit contracts and asynchronous messaging, trading extra upfront design effort for independent deployment and fault isolation.
-- **Compatibility locks on interface schemas**: Validating contract changes against a committed lock baseline prevents accidental breaking changes for consumers, but requires explicit coordination and migration planning whenever incompatible changes are needed.
-- **Immutable integration-event routing**: Because the event bus routes messages using consistent naming and namespace conventions, renaming or relocating published event types can silently break downstream subscribers.
-- **Shared frontend packages and centralized dependencies**: Managing package versions and UI components centrally prevents drift and duplication across apps, though updates to shared modules affect multiple consumers at once.
-
-## 5. Technical Reference
-
-Follow established repository patterns first. These guidelines help keep BookWorm's services maintainable and independently deployable.
-
-### General coding practices
-
-- Apply Domain-Driven Design principles and preserve service boundaries; avoid direct cross-service dependencies.
-- BookWorm targets .NET 11 and uses C# 15. Use the repository SDK and language settings, and follow `.editorconfig` for formatting.
-- Prefer explicit type declarations when the type is not obvious.
-- Use primary constructors for classes with immutable properties and expression-bodied members where they improve clarity.
-- Keep endpoints, handlers, DbContexts, and tests `sealed` by default.
-- Propagate `CancellationToken` through asynchronous operations, and use `async`/`await` consistently.
-- Use `Mediator.SourceGenerator` for CQRS; do not introduce MediatR.
-- Keep package versions centralized in `Directory.Packages.props`.
-- Implement tests for business logic and update relevant documentation when behavior changes.
-
-### Integration events
-
-Integration events communicate across service boundaries:
-
-- Declare integration events in the `BookWorm.Contracts` namespace.
-- Use the `[Action][Entity]IntegrationEvent` naming pattern, such as `BookCreatedIntegrationEvent`.
-- Include only the data consumers need to keep payloads focused.
-- Preserve the `IntegrationMessageOwner` topic routing and `MessageIdentity` metadata used by the event bus.
+| Rule                     | Specification                                                                                                                                                                                         |
+| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Namespace**            | Declare all integration events and cross-service commands in `BookWorm.Contracts`                                                                                                                     |
+| **Naming pattern**       | `[Action][Entity]IntegrationEvent` (for example, `UserCheckedOutIntegrationEvent`)                                                                                                                    |
+| **Topic naming formula** | Default (`AppendPrefix = true`): `bookworm.{environment-kebab}.{owner-service}.{topic-name}`. Unprefixed exception (`AppendPrefix = false`): `scheduler.process-vector-batch` (`KafkaTopicRouter.cs`) |
+| **Dead-letter queue**    | Per-service native DLQ: `bookworm.{environment-kebab}.{service-kebab}.dead-letter-queue` after retry cooldown (`50ms`, `250ms`, `1s` with full jitter)                                                |
+| **Routing metadata**     | Preserve `[IntegrationMessageOwner]` and `[MessageIdentity]` attributes verbatim                                                                                                                      |
+| **Payload discipline**   | Include only the minimal fields required by consumers; never leak internal aggregate state                                                                                                            |
 
 :::danger
-Do not change integration-event namespaces. The event bus relies on consistent namespace conventions for routing.
+Do not rename or relocate integration event namespaces or `[MessageIdentity]` values. Wolverine's Kafka topic router and downstream Pact contracts rely on immutable namespace and message-identity conventions.
 :::
+
+### Integration event example
+
+<CodeGroup>
 
 ```csharp
 using BookWorm.Constants.Aspire;
@@ -75,50 +75,51 @@ namespace BookWorm.Contracts;
 [IntegrationMessageOwner(ServiceName = Services.Ordering, TopicName = "user-checked-out")]
 [MessageIdentity("BookWorm.Contracts.UserCheckedOutIntegrationEvent")]
 public sealed record UserCheckedOutIntegrationEvent(
-   Guid OrderId,
-   Guid BasketId,
-   string? FullName,
-   string? Email,
-   decimal TotalMoney
+    Guid OrderId,
+    Guid BasketId,
+    string? FullName,
+    string? Email,
+    decimal TotalMoney
 ) : IntegrationEvent;
 ```
 
-### Protocol Buffers
+</CodeGroup>
 
-When changing `.proto` files, ensure `buf` is installed (`mise run setup:buf`) and validate the schema and compatibility before submitting:
+## Protocol Buffers (`gRPC`)
+
+Internal synchronous service-to-service contracts use Protobuf `edition = "2023"` (`book.v1.BookGrpcService` in `BookWorm.Catalog` and `basket.v1.BasketGrpcService` in `BookWorm.Basket`).
+
+Whenever you edit a `.proto` file, install Buf (`mise run setup:buf`) and run these three commands in order from the service's `Grpc/Protos` directory:
+
+<CodeGroup>
 
 ```bash
-# Run from the service's Grpc/Protos directory (Basket or Catalog).
 buf lint
 buf breaking --against lock.binpb
 buf build -o lock.binpb
 ```
 
-Run the commands in order: lint the schema, check for breaking changes against that module's committed `lock.binpb`, then update the lock file after validation. Commit the schema and updated lock file together. Breaking changes require coordination and a migration plan.
+</CodeGroup>
 
-### Design patterns
+Commit the updated `.proto` file and `lock.binpb` together. Breaking changes require cross-service coordination and a migration plan.
 
-Use patterns where they fit the service and its domain:
+## Frontend (`src/Clients`) standards
 
-- CQRS with Mediator
-- Repository pattern for data access
-- Domain events for domain side effects
-- Value Objects for immutable domain concepts
-- Domain Services for complex business logic
-- Factories or Builders for object creation
-- Specification pattern for complex queries
+The frontend workspace under `src/Clients` hosts **3 Next.js 16 applications** (`@bookworm/storefront`, `@bookworm/commerce`, `@bookworm/backoffice`) and **16 shared `@workspace/*` packages** managed by Bun `1.4.4` and Turborepo `2.11.13`.
 
-Avoid circular dependencies and keep services independently deployable. Use `snake_case` for PostgreSQL identifiers and raw SQL.
+| Area                      | Standard                                                                                                                                                                                                                                             |
+| :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Package manager**       | Use `bun` and `bun run` from `src/Clients`; never introduce `npm`, `pnpm`, or `yarn`                                                                                                                                                                 |
+| **Workspace boundaries**  | Enforce the 4-tier Turborepo hierarchy (`config` -> `foundation` -> `domain` -> `app`) with `bun run boundaries`                                                                                                                                     |
+| **Next.js & React**       | Target Next.js 16 (App Router, Turbopack) and React 19 with explicit Server/Client Component boundaries; keep `app/**/page.tsx` routes thin and delegate interactive views to `features/<domain>/`                                                   |
+| **Data fetching**         | Centralize TanStack Query `queryOptions` factories in `@workspace/api-hooks` and typed Axios/SSE clients in `@workspace/api-client`                                                                                                                  |
+| **TypeScript strictness** | Avoid `any`; use strict interfaces, discriminated unions, and `valibot` validation schemas in `@workspace/validations`; verify with `bun run check-types` (`@typescript/native`)                                                                     |
+| **Shared packages**       | Reuse UI primitives (`@workspace/ui`), auth (`@workspace/auth`), env schemas (`@workspace/env`), telemetry (`@workspace/otel`), SEO (`@workspace/seo`), and customer layout (`@workspace/storefront-shell`) rather than duplicating code across apps |
+| **Lint & accessibility**  | Pass `bun run lint` (`ESLint --max-warnings 0`, including `eslint-plugin-jsx-a11y`) targeting WCAG 2.1 AA                                                                                                                                            |
 
-### Frontend (`src/Clients`)
+## Related documentation
 
-The client applications live in a Bun + Turborepo monorepo under `src/Clients` (`apps/storefront`, `apps/backoffice`, and 15 shared `packages/*` packages):
-
-- Use `bun` and `bun run` from `src/Clients`; do not introduce `npm`, `pnpm`, or `yarn` lockfiles.
-- Enforce the 4-tier Turborepo dependency hierarchy (`config` -> `foundation` -> `domain` -> `app`) with `bun run boundaries`.
-- Target Next.js 16 (App Router) and idiomatic React 19 with explicit server/client boundaries; keep `app/**/page.tsx` routes thin and delegate interactive views to `features/<domain>/`.
-- Centralize data fetching in `@workspace/api-hooks` `queryOptions` factories and typed HTTP/SSE clients in `@workspace/api-client`.
-- Keep TypeScript strict; avoid `any` and prefer typed interfaces and discriminated unions.
-- Reuse shared UI primitives, environment schemas, auth factories, telemetry setup, and SEO utilities from `@workspace/*` packages instead of duplicating code across apps.
-
-For the complete client architecture reference, see [[doc|frontend/001-monorepo-architecture]], [[doc|frontend/002-applications-and-routing]], [[doc|frontend/003-data-fetching-and-state]], and [[doc|frontend/004-testing-and-quality-gates]].
+- [[doc|development/003-development-workflow]] — Formatting and Husky pre-commit workflow.
+- [[doc|development/008-testing-matrix]] — Automated verification suites enforcing these standards.
+- [[doc|frontend/001-monorepo-architecture]] — Detailed inventory of all 16 `@workspace/*` packages.
+- [[doc|frontend/002-applications-and-routing]] — Route maps for Storefront, Commerce, and Backoffice.

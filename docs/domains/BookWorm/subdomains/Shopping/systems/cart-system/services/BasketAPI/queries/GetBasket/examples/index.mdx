@@ -1,45 +1,63 @@
-## 1. Context & Problem
+---
+summary: Usage examples for Get basket.
+---
 
-Developers integrating storefront cart pages and client applications need practical examples showing how to retrieve the active customer's basket and how to handle the case where no basket currently exists. Without clear guidance on optional product fields and missing-basket outcomes, client code can fail unexpectedly when a shopper has not started a basket or when catalog display fields are absent.
+## Retrieve the current basket with curl
 
-## 2. Business Value
+<CodeGroup>
 
-- **Faster client integration:** Provides ready-to-use request and response examples so storefront teams can build and test cart views quickly.
-- **Resilient cart interfaces:** Makes optional item fields explicit so user interfaces handle missing names or absent sale prices cleanly.
-- **Predictable empty-cart handling:** Shows the exact response when a basket does not exist so clients can render an empty-cart experience consistently.
-
-## 3. How It Works
-
-1. A client requests the current customer's basket without passing any query parameters.
-2. When an active basket exists, the service returns the basket identifier along with each item's identifier, quantity, and optional catalog display details such as book name, regular price, and sale price.
-3. Optional fields like item name, price, and sale price may be empty when catalog details are unavailable or when no sale price applies.
-4. When no basket is available for the customer, the service reports that the basket could not be found so the client can respond appropriately.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Graceful handling of nullable fields:** Allowing item names, prices, and sale prices to be nullable prevents missing product metadata from breaking basket retrieval, while requiring client views to provide sensible UI fallbacks.
-- **Explicit not-found outcome:** Reporting a missing basket rather than returning a synthetic empty basket lets clients distinguish an uninitialized cart from a populated one.
-
-## 5. Technical Reference
-
-### 1. Retrieve the basket
-
-Retrieve the basket with no query parameters. The response includes the basket ID and item quantities; `name`, `price`, and `priceSale` may be `null` where allowed by the response contract.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request GET "$BASE_URL/api/v1/baskets" \
+```bash
+curl --request GET "<gateway-url>/basket/api/v1/baskets" \
+  --header "Authorization: Bearer <access-token>" \
   --header "Accept: application/json"
 ```
 
 </CodeGroup>
 
-The same query from TypeScript parses the documented response shape:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or direct Basket API URL `https://localhost:7155` without the `/basket` prefix).
+- `<access-token>`: Entra ID bearer token for a signed-in customer.
 
-```ts get-basket.ts
+Expected response (`200 OK`):
+
+<CodeGroup>
+
+```json
+{
+	"id": "customer-123",
+	"items": [
+		{
+			"id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+			"quantity": 2,
+			"name": "The Great Gatsby",
+			"price": 12.99,
+			"priceSale": null
+		}
+	]
+}
+```
+
+</CodeGroup>
+
+Expected response when no basket exists (`404 Not Found`):
+
+<CodeGroup>
+
+```json
+{
+	"title": "Not Found",
+	"status": 404
+}
+```
+
+</CodeGroup>
+
+## Retrieve the current basket with TypeScript
+
+<CodeGroup>
+
+```typescript
 type BasketItem = {
 	id: string | null;
 	quantity: number | string;
@@ -53,9 +71,14 @@ type CustomerBasketDto = {
 	items: BasketItem[];
 };
 
-const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
-const response = await fetch(`${baseUrl}/api/v1/baskets`, {
-	headers: { Accept: "application/json" },
+const gatewayUrl = "<gateway-url>";
+const accessToken = "<access-token>";
+
+const response = await fetch(`${gatewayUrl}/basket/api/v1/baskets`, {
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		Accept: "application/json",
+	},
 });
 
 if (response.status === 404) {
@@ -67,42 +90,6 @@ if (!response.ok) {
 
 const basket = (await response.json()) as CustomerBasketDto;
 console.log(`${basket.items.length} item(s) in basket ${basket.id}`);
-```
-
-</CodeGroup>
-
-The `200 OK` response is `application/json`:
-
-<CodeGroup dropdown>
-
-```json
-{
-	"id": "customer-123",
-	"items": [
-		{
-			"id": "book-9780141182803",
-			"quantity": 2,
-			"name": "The Great Gatsby",
-			"price": 12.99,
-			"priceSale": null
-		}
-	]
-}
-```
-
-</CodeGroup>
-
-### 2. Handle a missing basket
-
-When no basket is available, the query returns `404 Not Found` with `application/problem+json`.
-
-<CodeGroup dropdown>
-
-```json
-{
-	"title": "Not Found",
-	"status": 404
-}
 ```
 
 </CodeGroup>

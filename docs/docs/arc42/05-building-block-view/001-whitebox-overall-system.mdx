@@ -9,145 +9,52 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+BookWorm decomposes at Level 1 into an edge frontend tier, six backend bounded contexts, and a shared technical foundation. Each bounded context owns its business rules and data stores, collaborating across boundaries exclusively through versioned HTTP APIs (`/api/v1/*`), gRPC contracts, Model Context Protocol (MCP), Agent-to-Agent (A2A) gRPC, and Kafka CloudEvents.
 
-While external actors and provider boundaries are mapped in [[doc|arc42/03-context-and-scope]], stakeholders also need to see what sits inside the BookWorm platform itself. In a commerce system spanning product discovery, baskets, orders, reviews, conversational assistance, and background operations, splitting components along technical layers alone often creates a shared middle tier where everyone edits the same rules and data.
+## Decomposition rationale
 
-This Level-1 white-box view breaks BookWorm into owned business capabilities and shows the primary dependencies between them so every team knows what each part owns and how capabilities collaborate.
+BookWorm splits components by bounded context rather than by technical tier. Separating product truth, pre-order baskets, accepted orders, customer feedback, conversational AI, and platform operations allows each service to evolve its schema and storage engine independently without cross-database coupling.
 
-## 2. Business Value
+The shared foundation (`Aspire`, `BuildingBlocks`, and `Integrations`) provides hosting, telemetry, resilience, validation, and security primitives. It holds zero business state and never acts as a shared domain layer.
 
-- **Clear business accountability:** Each capability owns its domain rules and records, making it straightforward to assign feature work, triage defects, and measure impact.
-- **Insulated evolution:** Capabilities interact through explicit contracts and business announcements rather than shared internal state, allowing internal improvements without breaking neighboring capabilities.
-- **Safe conversational assistance:** Customer-facing AI support enhances discovery and review comprehension without risking unauthorized order placement or basket changes.
+## Level-1 system white-box diagram
 
-## 3. How It Works
+This diagram shows the static dependencies and protocols connecting the edge tier and all six backend bounded contexts.
 
-BookWorm is organized around six business capabilities supported by a common technical foundation. The shared foundation supplies startup configuration and common technical plumbing, but it is **not** a shared business layer and never owns product, basket, order, or review data.
+<MermaidFileLoader file="mermaids/001-whitebox-overall-system-diagram-1.mmd" />
 
-- **Catalog** ([[domain|catalog]]) owns book details, reference data, pricing, availability, discovery, and aggregated book ratings, along with background updates to keep search results current.
-- **Shopping** ([[domain|shopping]]) owns active customer baskets before checkout, reads current book details from Catalog for display, and removes submitted baskets when requested after checkout.
-- **Ordering** ([[domain|ordering]]) owns accepted orders, purchase-time item values, and official order status. A dedicated coordination component manages post-checkout follow-up—such as requesting basket cleanup and order emails—without taking ownership of baskets or notifications.
-- **Reviews** ([[domain|reviews]]) owns individual customer feedback and produces read-time review summaries. It announces rating changes so Catalog can maintain its own rating totals without reading Review records directly.
-- **Conversational** ([[domain|conversational]]) delivers interactive customer support and book discovery through specialist assistants, scoped Catalog lookups, privacy filtering, and Review summaries. It is strictly advisory and never places orders, changes baskets, or triggers commerce lifecycle changes.
-- **Platform** ([[domain|platform]]) provides durable notifications and recurring scheduled work. It tracks operational attempts (schedules and delivery records) while leaving business outcomes to the originating capability.
+:::note
+`BookWorm.AppHost`, `BookWorm.ServiceDefaults`, `BookWorm.Chassis`, `BookWorm.Constants`, `BookWorm.SharedKernel`, and `BookWorm.Hosting.Presidio` underpin the backend services shown above without owning domain data.
+:::
 
-### Key boundary rules
+## Contained building blocks
 
-- Reading basket contents and current book facts at checkout does not transfer ownership of either capability's data to Ordering.
-- Ordering hands off checkout and status updates to its coordination component, which owns coordination progress while Ordering keeps ownership of official order status.
-- Successful basket cleanup only confirms that the basket was deleted—it does not prove an order is complete.
-- Catalog updates its derived book ratings from feedback announcements rather than reading Reviews storage directly.
-- Conversational workflows remain read-only/advisory with respect to commerce transactions.
-- Scheduled triggers and email processing record operational execution, while the receiving capability owns processing and business meaning.
+| Building block         | Bounded context / role | Authoritative responsibility                                                                                                                                    | Primary interfaces and dependencies                                                                                                 | Source path                                                                                      |
+| :--------------------- | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- |
+| **Edge and Frontends** | Edge                   | External ingress routing (`API Gateway`), public discovery and AI chat (`Storefront`), basket/checkout/account (`Commerce`), and staff dashboard (`Backoffice`) | YARP reverse proxy (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chatting`, `/entra`, `/backoffice`, microfrontend zones)       | `src/Aspire/BookWorm.AppHost/`, `src/Clients/apps/*`                                             |
+| **Catalog**            | Catalog                | Books, authors, categories, publishers, pricing, hybrid vector search, and derived book rating summaries                                                        | `Catalog API` (REST v1 + gRPC `book.v1`); `Catalog Ingestion` Kafka-triggered Azure Function (`scheduler.process-vector-batch`)     | `src/Services/Catalog/BookWorm.Catalog/`, `src/Services/Catalog/BookWorm.Catalog.Ingestion/`     |
+| **Shopping**           | Shopping               | Customer-scoped mutable pre-order baskets stored in Redis                                                                                                       | `Basket API` (REST v1 + gRPC `basket.v1`); reads Catalog via gRPC; exchanges cleanup commands/events with Finance over Kafka        | `src/Services/Basket/BookWorm.Basket/`                                                           |
+| **Ordering**           | Ordering               | Accepted orders, purchase-time item snapshots, order status (`New`, `Cancelled`, `Completed`), and post-checkout orchestration (`Finance`)                      | `Ordering API` (REST v1, Marten event store, gRPC clients to Basket & Catalog); `Finance` Durable Functions saga over Kafka         | `src/Services/Ordering/BookWorm.Ordering/`, `src/Services/Finance/BookWorm.Finance/`             |
+| **Reviews**            | Reviews                | Individual customer `Feedback` records in Cosmos DB and AI review summarization                                                                                 | `Rating API` (REST v1 + A2A gRPC + `/agents`); publishes feedback events to Catalog; calls `MCP Tools` and Presidio                 | `src/Services/Rating/BookWorm.Rating/`                                                           |
+| **Conversational**     | Conversational         | Multi-agent customer support and book discovery with PII redaction and governance policies                                                                      | `Chat API` (Agent-User Interaction (AG-UI) `/ag-ui`); `MCP Tools` (`/mcp`, not behind YARP); calls Rating via A2A gRPC and Presidio | `src/Services/Chat/BookWorm.Chat/`, `src/Services/McpTools/BookWorm.McpTools/`                   |
+| **Platform**           | Platform               | Recurring job scheduling and stateless transactional order email delivery                                                                                       | `Scheduler` (Quartz.NET + Kafka producer); `Notification` (stateless Kafka + MailKit + Redis idempotency consumer)                  | `src/Services/Scheduler/BookWorm.Scheduler/`, `src/Services/Notification/BookWorm.Notification/` |
+| **Shared foundation**  | Technical chassis      | Distributed orchestration, telemetry, rate limiting, Wolverine/Kafka, FusionCache, Entra ID, and Presidio hosting                                               | Referenced at build time by services; contains zero domain tables or business state                                                 | `src/Aspire/`, `src/BuildingBlocks/`, `src/Integrations/`                                        |
 
-## 4. Trade-offs & Lessons Learned
+## Boundary rules
 
-- **Clear ownership vs. extra boundary messaging:** Keeping basket deletion, order status, coordination state, and notification delivery in separate capabilities requires explicit handoffs and outcome messages, but prevents tangled state across domains.
-- **Derived projections over cross-domain queries:** Having Catalog maintain its own rating projection from Review announcements avoids runtime database coupling, at the cost of handling asynchronous updates.
-- **Strict guardrails on AI workflows:** Keeping conversational tools read-only and advisory avoids complex transactional compensation from chat interactions, while requiring users to complete purchases through the standard shopping and checkout path.
-- **Operational success is not business completion:** Distinguishing operational records (scheduled runs, notification outbox records) from business status ensures failures are diagnosed in the right capability without misreporting order outcomes.
+- **Reads do not transfer ownership:** `Ordering API` reads basket contents from `Basket API` and current book prices from `Catalog API` over gRPC at checkout, capturing an order snapshot without assuming ownership of basket or catalog data.
+- **Orchestration state is distinct from order status:** `Finance` owns post-checkout coordination progress in Durable Task Scheduler (`finance-taskhub`), while `Ordering API` remains the sole authority for official order status.
+- **Basket deletion does not prove order completion:** Confirming basket deletion via `BasketDeletedCompleteIntegrationEvent` verifies cleanup only; it never confirms fulfillment or delivery.
+- **Derived projections avoid cross-database reads:** `Catalog API` updates its book rating summary asynchronously from `Rating API` Kafka events (`FeedbackCreatedIntegrationEvent`, `FeedbackDeletedIntegrationEvent`) rather than querying Cosmos DB directly.
+- **Conversational AI is strictly advisory:** `Chat API` and `MCP Tools` execute read-only lookups and review summaries. Neither places orders, mutates baskets, nor emits commerce lifecycle events.
+- **Operational delivery is not business completion:** `Scheduler` triggers `Catalog Ingestion` over Kafka (`scheduler.process-vector-batch`) and does not emit maintenance messages to `Notification`. `Notification` tracks deduplication in Redis for 24 hours and submits email via SMTP without owning order status or maintaining a PostgreSQL email outbox.
 
-## 5. Technical Reference
+## Related architecture decisions
 
-### Overview diagram
-
-```plantuml
-@startuml
-left to right direction
-skinparam componentStyle rectangle
-
-package "BookWorm platform" {
-    package "Catalog" {
-        component "Catalog API" as CatalogAPI
-        component "Catalog Ingestion" as CatalogIngestion
-    }
-
-    package "Shopping" {
-        component "Basket API" as BasketAPI
-    }
-
-    package "Ordering" {
-        component "Order API" as OrderAPI
-        component "Finance orchestration" as Finance
-    }
-
-    package "Reviews" {
-        component "Rating API" as RatingAPI
-        component "Rating Agent" as RatingAgent
-    }
-
-    package "Conversational" {
-        component "Chat workflow and agents" as Chat
-        component "MCP tools" as MCP
-    }
-
-    package "Platform" {
-        component "Scheduler" as Scheduler
-        component "Notification" as Notification
-    }
-
-    component "Shared foundation\nAspire, service defaults,\nchassis and shared libraries" as Foundation
-}
-
-OrderAPI --> BasketAPI : reads basket
-OrderAPI --> CatalogAPI : resolves current product facts
-BasketAPI --> CatalogAPI : reads product facts
-OrderAPI --> Finance : checkout and status messages
-Finance --> BasketAPI : requests basket cleanup
-BasketAPI --> Finance : reports deletion outcome
-Finance --> Notification : requests order email
-RatingAPI --> CatalogAPI : feedback rating events
-Chat --> MCP : Catalog tools
-MCP --> CatalogAPI : reads Catalog data
-Chat --> RatingAgent : agent-to-agent summary
-Scheduler --> CatalogIngestion : authenticated batch request
-Scheduler --> Notification : maintenance messages
-
-Foundation ..> CatalogAPI
-Foundation ..> CatalogIngestion
-Foundation ..> BasketAPI
-Foundation ..> OrderAPI
-Foundation ..> Finance
-Foundation ..> RatingAPI
-Foundation ..> RatingAgent
-Foundation ..> Chat
-Foundation ..> MCP
-Foundation ..> Scheduler
-Foundation ..> Notification
-@enduml
-```
-
-### Detailed service and data-store diagram
-
-The following view complements the capability-level overview with service dependencies, communication paths, and persistence components.
-
-<DrawIO url="https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&target=blank&highlight=0000ff&layers=1&nav=1&title=BookWorm&dark=0#Uhttps%3A%2F%2Fdrive.google.com%2Fuc%3Fid%3D14OKRv9-iGiyCvOu4qwSnh1Mk6e5f_XWg%26export%3Ddownload" />
-
-### Decomposition rationale
-
-BookWorm is decomposed by bounded context and business ownership, not by technical layer alone. Each capability owns its business rules and data; communication across capabilities uses service contracts and integration messages. This structure lets a capability change internally while keeping its consumers insulated by those contracts.
-
-The shared foundation supports service startup and common technical concerns. It is not a shared business layer and does not own Catalog, Basket, Order, or Feedback data.
-
-### Contained building blocks
-
-| Building block             | Responsibility                                                                                                                                                                   | Main interfaces and dependencies                                                                                                                              | Source mapping (`BookWorm/src/`)                                                         |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [[domain\|catalog]]        | Owns book and reference data, pricing, availability, discovery, and the derived book-rating projection.                                                                          | [[service\|catalog-api]]; Catalog integration events; [[service\|catalog-ingestion]] processes queued search-index updates.                                   | `Services/Catalog/BookWorm.Catalog/`, `Services/Catalog/BookWorm.Catalog.Ingestion/`     |
-| [[domain\|shopping]]       | Owns customer baskets and pre-order shopping state. It retrieves current Catalog facts for basket presentation and supports checkout cleanup.                                    | [[service\|basket-api]]; reads Catalog data; exchanges checkout and deletion outcomes with Ordering's coordination workflow.                                  | `Services/Basket/BookWorm.Basket/`                                                       |
-| [[domain\|ordering]]       | Owns accepted Orders, purchase-time item values, and Order status. Its coordination service handles post-checkout work without taking ownership of Basket or Notification state. | [[service\|order-api]], [[service\|order-orchestration]]; checkout and status events; Basket cleanup outcomes; notification commands.                         | `Services/Ordering/BookWorm.Ordering/`, `Services/Finance/BookWorm.Finance/`             |
-| [[domain\|reviews]]        | Owns individual customer Feedback and produces read-time review summaries. Catalog consumes rating changes and maintains its own derived rating projection.                      | [[service\|rating-api]]; feedback integration events; read-only Catalog and feedback tools for [[agent\|rating-agent]].                                       | `Services/Rating/BookWorm.Rating/`                                                       |
-| [[domain\|conversational]] | Provides the customer-facing conversational workflow and specialist agents for support and Catalog-backed discovery.                                                             | [[service\|chat-api]]; MCP access through [[system\|mcp-tools]]; A2A access to the Rating agent; privacy processing through Presidio.                         | `Services/Chat/BookWorm.Chat/`, `Services/McpTools/BookWorm.McpTools/`                   |
-| [[domain\|platform]]       | Provides durable notifications and scheduled processing without owning the business state handled by other capabilities.                                                         | [[service\|notification-api]]; Quartz schedules and authenticated Catalog Ingestion requests, plus maintenance messages from [[service\|sheduler-dashboard]]. | `Services/Notification/BookWorm.Notification/`, `Services/Scheduler/BookWorm.Scheduler/` |
-| **Shared foundation**      | Supplies service hosting, common runtime configuration, and reusable technical building blocks.                                                                                  | Aspire AppHost and service defaults; reusable chassis, constants, shared-kernel, and Presidio hosting libraries.                                              | `Aspire/`, `BuildingBlocks/`, `Integrations/`                                            |
-
-### Important interfaces
-
-- Order API reads Basket and current Catalog facts during checkout. These reads do not transfer ownership of either capability's data.
-- Order API publishes checkout and Order status messages to Finance. Finance owns coordination state; Ordering continues to own Order status.
-- Finance requests Basket cleanup and receives its outcome through service contracts. A deletion result is not proof that an Order completed.
-- Reviews publishes Feedback changes for Catalog to update its own rating projection; Catalog does not read the Rating Database.
-- Conversational uses scoped MCP tools for Catalog information and an agent-to-agent interface for Rating summaries. The workflow does not place Orders, mutate Baskets, or publish commerce lifecycle events.
-- Scheduler invokes Catalog Ingestion through an authenticated service request and publishes maintenance messages for Notification. The receiving service owns processing and its outcome.
-- Platform services own their operational state, such as schedules and email outbox records, but do not determine the business outcome of the work they schedule or notify.
+| ADR                                          | Decision summary                                                                | Status   |
+| :------------------------------------------- | :------------------------------------------------------------------------------ | :------- |
+| ADR-BW-001: Capability-aligned boundaries    | Decompose BookWorm around six bounded contexts                                  | Proposed |
+| ADR-BW-004: Explicit HTTP and gRPC contracts | Use versioned HTTP APIs and protobuf gRPC for synchronous calls                 | Proposed |
+| ADR-BW-005: Kafka integration backbone       | Use Wolverine and Kafka CloudEvents for cross-context messaging                 | Proposed |
+| ADR-BW-006: Service-owned business state     | Isolate persistence stores per service boundary                                 | Proposed |
+| ADR-Notification-Stateless-Kafka-Worker      | Run Notification as a stateless Kafka and MailKit worker with Redis idempotency | Accepted |

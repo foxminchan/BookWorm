@@ -36,42 +36,64 @@ properties:
     description: Non-negative per-book price selected when the Order was created.
 ---
 
-## 1. Context & Problem
+`OrderItem` is a child entity of the `Order` aggregate that records one book, its quantity, and its purchase-time unit price. Ordering API persists it in PostgreSQL (`orderingdb`).
 
-A single customer purchase often includes multiple titles and varying copy counts. At the same time, book prices in the storefront change regularly due to promotions, discounts, or catalog updates. If an [[entity|order]] only referenced live catalog entries without recording purchase-time details, later price changes would alter past order totals, and fulfillment or support teams would lack an accurate breakdown of what was bought.
+## Overview
 
-BookWorm solves this by capturing each line of an order as an Order Item—preserving the exact [[entity|book]], quantity, and agreed unit price from the moment of checkout.
+| Property                  | Value                                                                                                   |
+| :------------------------ | :------------------------------------------------------------------------------------------------------ |
+| **Owner**                 | Ordering bounded context / **Ordering API** (`ordering`)                                                |
+| **Parent aggregate**      | [[entity\|order]]                                                                                       |
+| **Source**                | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/OrderAggregate/OrderItem.cs`            |
+| **EF Core configuration** | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EntityConfigurations/OrderItemConfiguration.cs` |
+| **Backing store**         | PostgreSQL database `orderingdb`, table `order_items` (`snake_case`)                                    |
+| **Base type**             | `Entity` (`Guid Id`); not an aggregate root                                                             |
 
-## 2. Business Value
+## Parameters and fields
 
-- **Accurate receipts and financials:** Locks in the purchase-time unit price and copy count so historical order totals remain trustworthy even when catalog prices change later.
-- **Clear fulfillment and support visibility:** Gives operations and customer support an exact line-by-line record of every [[entity|book]] and quantity in a customer's purchase.
-- **Clean domain ownership:** Separates historical purchase records from ongoing merchandising, letting catalog managers update prices and descriptions without risking side effects on past orders.
+| Name       | Type               | Required | Default               | Constraints                            | Description                                   |
+| :--------- | :----------------- | :------- | :-------------------- | :------------------------------------- | :-------------------------------------------- |
+| `id`       | `Guid`             | Yes      | `uuidv7()` (database) | Primary key                            | Unique line identifier                        |
+| `orderId`  | `OrderId` (`Guid`) | Yes      | —                     | FK to `orders.id`; `ON DELETE CASCADE` | Parent order                                  |
+| `bookId`   | `Guid`             | Yes      | —                     | Unique with `order_id`                 | Catalog book ID; no cross-service foreign key |
+| `quantity` | `int`              | Yes      | —                     | `> 0`                                  | Number of copies                              |
+| `price`    | `decimal`          | Yes      | —                     | `>= 0`                                 | Unit price captured at checkout               |
 
-## 3. How It Works
+## Invariants and behavior
 
-An Order Item represents one book line within a parent [[entity|order]] and records three core business facts at checkout:
+- **Positive quantity:** The constructor throws `OrderingDomainException("Quantity must be greater than zero")` when `quantity <= 0`.
+- **Non-negative price:** The constructor throws `OrderingDomainException("Price must be greater than or equal to zero")` when `price < 0`.
+- **One line per book:** A unique index on `(book_id, order_id)` prevents two lines for the same book in one order.
+- **Line total:** `GetTotalPrice()` returns `price * quantity`. `Order.totalPrice` sums these values.
+- **Parent visibility:** A global query filter (`!e.Order!.IsDeleted`) hides items of soft-deleted orders.
+- **Price snapshot:** `price` does not change when Catalog prices change.
 
-- **Book reference:** Identifies which [[entity|book]] the customer selected.
-- **Quantity:** Records how many copies were purchased (always greater than zero).
-- **Purchase-time price:** Captures the non-negative unit price selected when the order was created.
+## Relationships
 
-The line total for an Order Item is calculated by multiplying its recorded unit price by its quantity. Order Items are not independently managed products; they exist only as part of their parent order, while the catalog remains the owner of current book information and live pricing for future shoppers.
+| Related entity    | Cardinality             | Mapping                                                                   |
+| :---------------- | :---------------------- | :------------------------------------------------------------------------ |
+| [[entity\|order]] | Many items to one order | `order_id`, `ON DELETE CASCADE`, loaded with `AutoInclude()` from `Order` |
+| [[entity\|book]]  | Many items to one book  | `book_id`; cross-service reference to Catalog                             |
 
-## 4. Trade-offs & Lessons Learned
+## Examples
 
-- **Price snapshot over live lookup:** Recording the price at checkout guarantees financial consistency for historical orders, at the cost of storing a purchase-time price snapshot rather than pulling prices dynamically later.
-- **Parent-owned lifecycle:** Keeping Order Items strictly attached to an [[entity|order]] prevents orphaned line items and keeps order totals consistent, meaning individual items cannot be created or managed independently outside an order.
-- **Minimal catalog coupling:** Storing only the book reference, quantity, and price keeps order records lean and decoupled from catalog descriptions, which means order views that display book titles or cover details must look them up from the catalog.
+### Order item record
 
-## 5. Technical Reference
+<CodeGroup>
 
-- **Domain role:** Child entity (`aggregateRoot: false`) of the `Order` aggregate in the `Ordering` domain.
-- **Line total calculation:** `price * quantity`.
-- **Relationships:**
-  - Belongs to one [[entity|order]] (`orderId` → `order.id`, `relationType: belongsTo`).
-  - References one [[entity|book]] (`bookId` → `book.id`, `relationType: references`).
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-0000000c0001",
+	"orderId": "0193f1a2-7b4c-7d8e-9f01-0000000a0001",
+	"bookId": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+	"quantity": 2,
+	"price": 49.99
+}
+```
 
-### Entity Properties
+</CodeGroup>
 
-<EntityPropertiesTable />
+## Related documentation
+
+- [[entity|order]] — Parent aggregate and lifecycle.
+- [[entity|book]] — Catalog source of current prices.

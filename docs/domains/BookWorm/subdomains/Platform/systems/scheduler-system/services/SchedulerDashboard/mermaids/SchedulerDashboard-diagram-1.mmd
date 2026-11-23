@@ -1,0 +1,6 @@
+flowchart LR
+	admin["Store Administrator\n(Browser)"] --> |"HTTPS OIDC (admin): /quartz"| dash["Quartz Dashboard\n(Container UI)"]
+	dash <-->|"Dashboard Agent\n(BookWorm.Scheduler.Jobs.*)"| sched["Scheduler\n(.NET 11 + Quartz.NET 4.8.1)"]
+	sched --> |"SQL: Quartz tables + Wolverine outbox"| db["Scheduler Database\n(PostgreSQL schedulerdb)"]
+	sched --> |"Kafka: scheduler.process-vector-batch"| kafka["Kafka Broker\n(Unprefixed topic)"]
+	kafka -->|"KafkaTrigger"| ingest["Catalog Ingestion\n(Azure Functions)"]

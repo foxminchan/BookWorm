@@ -18,33 +18,61 @@ sidebar:
   badge: "DELETE"
 ---
 
-## 1. Context & Problem
+The `DeleteBuyer` command (`DELETE /api/v1/buyers/{id}`) permanently removes a `Buyer` profile from **Ordering API** (v1.0.0). Access is restricted to callers holding the Microsoft Entra ID `admin` role, and external callers reach this endpoint through the YARP **API Gateway** at `/ordering/api/v1/buyers/{id}`.
 
-During customer lifecycle management, administrative teams sometimes need to remove a [[entity|buyer]] profile—for example, for account offboarding, duplicate cleanup, or compliance requests. The Ordering system requires a controlled administrative capability to remove a Buyer profile by its unique identifier without exposing this destructive action to general users.
+## Overview
 
-## 2. Business Value
+| Property                    | Value                                                                                                                                                                         |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                   | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                                       |
+| **Source**                  | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/Delete/DeleteBuyerEndpoint.cs`, `DeleteBuyerCommand.cs`, `Infrastructure/EntityConfigurations/BuyerConfiguration.cs` |
+| **Protocol / format**       | HTTP `DELETE`, empty response body (`204 No Content`, API version `v1`)                                                                                                       |
+| **Gateway endpoint**        | `DELETE /ordering/api/v1/buyers/{id}`                                                                                                                                         |
+| **Direct service endpoint** | `DELETE /api/v1/buyers/{id}` (local ports: HTTP `5244`, HTTPS `7203`)                                                                                                         |
+| **Authentication**          | Microsoft Entra ID JWT — `admin` policy: role `admin` plus scopes `ordering_read` and `ordering_write`                                                                        |
+| **Idempotency**             | Standard HTTP `DELETE` semantics (`IdempotencyEndpointFilter` is not applied; `x-request-id` is not required; repeat calls return `404 Not Found`)                            |
+| **ETag**                    | Not used                                                                                                                                                                      |
+| **Rate limit**              | `PerUserRateLimit` token bucket (30 burst, 20 tokens / 10s, queue limit 5) plus global concurrency (100) and IP fixed-window (30 req/min) limiters                            |
 
-- **Controlled Data Governance**: Ensures only authorized administrators can delete [[entity|buyer]] profiles.
-- **Operational Clarity**: Gives administrative tools deterministic confirmation when a profile is deleted or clear notification when the requested profile does not exist.
-- **Lightweight Integration**: Eliminates unnecessary input overhead because only the target Buyer identifier is required.
+## Parameters and fields
 
-## 3. How It Works
+### Request parameters
 
-1. An administrator submits a deletion request targeting a specific [[entity|buyer]] profile by its unique identifier, with no additional payload.
-2. The service verifies that the caller satisfies the administrator authorization policy.
-3. If a matching Buyer profile exists, the service deletes it and confirms completion without returning profile data.
-4. If no Buyer matches the provided identifier, the service reports that the Buyer could not be found.
+`DeleteBuyer` accepts no request body and requires no `x-request-id` header.
 
-## 4. Trade-offs & Lessons Learned
+| Name | Type            | Required | Default | Constraints                          | Description                                       |
+| :--- | :-------------- | :------- | :------ | :----------------------------------- | :------------------------------------------------ |
+| `id` | `string` (UUID) | Yes      | —       | Path parameter; valid `BuyerId` UUID | Unique identifier of the buyer profile to delete. |
 
-- **Administrator-Only Access**: Limiting profile deletion to administrators reduces the risk of accidental data loss or unauthorized tampering with customer records, at the cost of requiring administrative intervention for profile removal.
-- **Explicit Not-Found Reporting**: Distinguishing a missing profile from a successful deletion prevents callers from assuming a stale or invalid identifier succeeded, though automated cleanup clients must handle missing-record responses explicitly.
-- **Identifier-Only Contract**: Omitting a request body keeps the operation minimal, meaning any audit reason or approval tracking must be recorded outside this command if required by operations teams.
+### Response
 
-## 5. Technical Reference
+`204 No Content` with an empty response body confirms the buyer profile was deleted.
 
-- **Endpoint & Authorization**: `DELETE /api/v1/buyers/{id}` deletes a [[entity|buyer]] profile by its identifier and requires the administrator authorization policy.
-- **Contract**: Provide the Buyer identifier in the `{id}` path parameter. The operation has no request body. `204 No Content` confirms deletion; `404 Not Found` indicates that no matching Buyer exists.
+## Behavior and side effects
+
+- **Permanent hard delete:** Unlike `Order` (which implements `ISoftDelete`), `Buyer` does not implement `ISoftDelete`. `DeleteBuyerHandler` fetches the entity via `repository.GetByIdAsync((Guid)request.Id, cancellationToken)`, throws `NotFoundException` (`404 Not Found`) if absent, calls `repository.Delete(buyer)`, and commits inside a `[Transactional]` unit of work on PostgreSQL (`orderingdb`).
+- **No events emitted:** Deleting a buyer raises no domain events and publishes no Kafka integration events.
+- **Orders foreign-key relationship:** `BuyerConfiguration` configures `Buyer.Orders` with `OnDelete(DeleteBehavior.SetNull)`, while `OrderConfiguration` configures `Order.BuyerId` as `IsRequired()`.
+
+The initial migration and current model snapshot define `orders.buyer_id` as non-nullable while the foreign key uses `ON DELETE SET NULL`. Deleting a buyer with orders therefore attempts to write `NULL` into a non-nullable column and is expected to fail with a database constraint error; the global handler maps unhandled persistence exceptions to HTTP `500`. This is a schema-derived expectation, not a live PostgreSQL test.
+
+## Error responses
+
+| Code / status               | Condition                                                                              | Recovery behavior                                                                  |
+| :-------------------------- | :------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Path parameter `{id}` is not a valid UUID                                              | Supply a valid `BuyerId` UUID; do not retry unchanged.                             |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                     | Acquire a fresh Entra ID access token and retry.                                   |
+| `403 Forbidden`             | Authenticated caller lacks the `admin` role or `ordering_read`/`ordering_write` scopes | Authenticate with an `admin` token that includes the required scopes.              |
+| `404 Not Found`             | No buyer profile exists with the specified `{id}` (including repeat delete attempts)   | Verify the buyer identifier; treat as already absent if retrying a prior deletion. |
+| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limits                               | Wait for the `Retry-After` header interval before retrying.                        |
+| `500 Internal Server Error` | Unhandled database or constraint error                                                 | Inspect Ordering API logs and check whether dependent orders reference the buyer.  |
+
+## Related documentation
+
+- [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[command|CreateBuyer]] — Create a buyer profile for the authenticated caller.
+- [[command|UpdateAddress]] — Update the authenticated customer's address.
+- [[entity|buyer]] — Buyer aggregate schema and constraints.
 
 <NodeGraph />
 

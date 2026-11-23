@@ -10,79 +10,128 @@ badges:
     textColor: orange
 ---
 
-import Footer from "@catalog/components/footer.astro";
+Use this guide when a book cover image returns HTTP `403` or `404`, or when a book has an `image` URN stored in PostgreSQL (`catalogdb`) but the cover fails to render in **Storefront** or **Backoffice**. **Catalog API** stores only an internal URN (`urn:{account}:{container}:{blobName}`) and signs short-lived, read-only SAS URLs on read (`SasExpiryHours = 1` default in `CatalogAppSettings.cs`).
 
-## 1. Context & Problem
+## Prerequisites
 
-Book cover images are stored in cloud object storage, while each [[entity|book]] record holds only a structured internal storage reference. When a book is requested, the catalog issues a short-lived, read-only link so browsers and apps can load the artwork safely. If a client caches that link past its expiration, if a database restore points to the wrong storage location, or if an image file goes missing, book covers fail to render.
+- Read access to **Catalog API** logs (OpenTelemetry / Aspire Dashboard / Azure Log Analytics).
+- Read access to PostgreSQL (`catalogdb`) and Azure Blob Storage (`catalog-blob`, or Azurite + Azure Storage Explorer locally).
+- An authenticated Microsoft Entra ID bearer token with `business_user` or `admin` role if you need to re-upload or clear a book's cover image through **Catalog API**.
 
-## 2. Business Value
+## Steps
 
-- **Preserves storefront visual quality:** Restores missing book covers quickly so merchandising pages remain complete and trustworthy.
-- **Prevents risky manual data fixes:** Steers support and operations teams toward safe storage restoration or standard catalog updates rather than unapproved direct database edits.
-- **Maintains media security:** Balances easy cover rendering with controlled, time-limited media access.
+<Steps>
+<Step title="Fetch a fresh book payload to rule out an expired SAS URL">
 
-## 3. How It Works
+Expired SAS URLs are the most common cause of `403` errors because `BlobService.GetFileSasUrl` issues read-only URLs valid for `SasExpiryHours` (default `1` hour, with a 5-minute clock-skew start buffer). Re-fetch the book from **Catalog API**:
 
-### Symptoms and common causes
+<CodeGroup>
 
-This runbook applies when an image link fails with an access-denied or not-found error, or when a [[entity|book]] has an image reference recorded but its cover fails to display.
+```bash
+curl -sS "<gateway-url>/catalog/api/v1/books/<book-id>"
+```
 
-Diagnosis checks three possibilities in order:
+</CodeGroup>
 
-1. **Expired image link (most common):** Generated image links are read-only and valid only for a limited time. Consumers must never store these links permanently; re-fetching the book issues a fresh working link.
-2. **Wrong storage account or container:** Every book's internal image reference identifies the expected storage account, container, and file name, and the catalog validates the account and container before serving the image. A restored or migrated record pointing to another environment's account or container will fail validation.
-3. **Missing image file:** Confirm whether the underlying media file exists in the configured media storage container.
+Where:
 
-### Recovery and verification
+- `<gateway-url>`: Base URL of **API Gateway** (for example, `https://localhost:<port>` locally or the Azure Container Apps gateway URL).
+- `<book-id>`: Target book UUID.
 
-- If the media file is missing and recoverable, restore it to the exact same container and file name so the existing book reference works without changing catalog records.
-- If the file cannot be recovered, update the book with a new image—or remove the image—through the catalog service so a valid new reference is generated. Avoid hand-editing the stored image field directly unless performing an approved operational correction.
-- Verify resolution by fetching the book and confirming a working, time-limited image link is returned.
+Test the freshly returned `imageUrl` with `curl -I "<image-url>"`. If HTTP `200 OK` returns, the client cached an expired SAS URL—fix the client so it never stores SAS URLs beyond their expiry window.
 
-## 4. Trade-offs & Lessons Learned
+</Step>
+<Step title="Inspect the stored image URN in `catalogdb`">
 
-- **Time-limited links vs. static public URLs:** Issuing short-lived, read-only links prevents unrestricted media scraping and decouples clients from storage internals, at the trade-off of failing if any client persists a link beyond its expiry window.
-- **Strict account and container validation:** Checking storage location details on read catches cross-environment restore mismatches immediately, though environment migrations require careful alignment of image references.
-- **API-mediated image updates:** Updating or clearing missing images through [[service|catalog-api]] keeps storage objects and catalog references consistent, avoiding manual database drift.
+If **Catalog API** throws `UrnException` or the fresh SAS URL still fails, inspect the stored `image` column in PostgreSQL (`catalogdb`):
 
-## 5. Technical Reference
+<CodeGroup>
 
-### Symptoms
+```sql
+SELECT id, name, image, is_deleted
+FROM books
+WHERE id = '<book-id>';
+```
 
-- Image URL returns `403`/`404`.
-- The [[entity|book]] record has an image URN but the image does not render.
+</CodeGroup>
 
-### Diagnose
+Where:
 
-1. **Expired URL (most common):** SAS URLs are read-only and time-limited
-   (`SasExpiryHours`). Re-fetch the book to get a fresh URL; never store the
-   URL.
-2. **Wrong account or container:** URNs are `urn:{account}:{container}:{blobName}`
-   and the API validates account and container before reading. A restored or
-   migrated record pointing to a different account or container will fail.
-3. **Missing blob:** confirm the blob exists in the configured container in
-   [[container|catalog-blob]].
+- `<book-id>`: Target book UUID.
 
-### Recover
+Verify that `image` matches `urn:<storage-account>:catalog-blob:<blob-name>` for the current environment. `BlobService.GetBlobNameFromUrn` rejects any URN whose storage account or container name does not match the configured `BlobContainerClient`, or whose blob name contains `/`, `\`, or `..`.
 
-- Restore the blob to the same container and blob name, keeping the URN
-  unchanged.
-- If the blob is unrecoverable, update the book with a new image through
-  [[service|catalog-api]] so a new URN is generated, or remove the image.
-- Do not hand-edit `books.image` unless it is an approved operational
-  correction.
+</Step>
+<Step title="Verify that the blob exists in Azure Blob Storage (`catalog-blob`)">
 
-### Verify
+Check whether `<blob-name>` exists in the target storage account:
 
-[[query|GetBook]] returns a working time-limited URL for the book.
+<CodeGroup>
 
-### Contact
+```bash
+az storage blob exists \
+  --account-name <storage-account> \
+  --container-name catalog-blob \
+  --name <blob-name> \
+  --auth-mode login
+```
 
-- **Contact point:** [[team\|platform-team]] for Blob Storage or infrastructure
-  incidents; [[team\|contributor-team]] for Catalog API, URN, or image-handling
-  issues.
-- For urgent incidents, use the responsible team's established support or
-  on-call channel. A specific channel or rotation is not documented here.
+</CodeGroup>
 
-<Footer />
+Where:
+
+- `<storage-account>`: Azure Storage account name configured for this environment.
+- `<blob-name>`: Fourth colon-delimited segment of `books.image`.
+
+</Step>
+<Step title="Recover the missing blob or update the book through Catalog API">
+
+Choose the recovery path matching your diagnosis:
+
+- **Blob deleted or missing, backup available:** Restore the blob to the exact same `<storage-account>`, container `catalog-blob`, and `<blob-name>` so the existing URN works without modifying PostgreSQL.
+- **Blob unrecoverable:** Upload a replacement cover (`image/jpeg`, `image/png`, or `image/webp`) or remove the image through **Backoffice** or **Catalog API** (`PUT /catalog/api/v1/books`) so `BlobService.UploadFileAsync` writes a valid new blob and updates `books.image` atomically.
+
+> [!CAUTION]
+> Do not hand-edit `books.image` in PostgreSQL unless you are executing an approved database-migration remediation (for example, after restoring a backup from another storage account). Manual edits bypass `BlobService` validation and can orphan blobs.
+
+</Step>
+</Steps>
+
+## Verification
+
+Re-fetch the book through **API Gateway** and confirm the returned SAS URL serves HTTP `200 OK`:
+
+<CodeGroup>
+
+```bash
+IMAGE_URL=$(curl -sS "<gateway-url>/catalog/api/v1/books/<book-id>" | jq -r '.imageUrl')
+curl -I "$IMAGE_URL"
+```
+
+</CodeGroup>
+
+Expected output:
+
+<CodeGroup>
+
+```text
+HTTP/2 200
+content-type: image/webp
+```
+
+</CodeGroup>
+
+## Troubleshooting
+
+| Symptom                                                                 | Cause                                                                                                            | Fix                                                                                                                                    |
+| :---------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| Image URL returns `403` (`AuthenticationFailed` / expired signature)    | Client cached a SAS URL past `SasExpiryHours` (default `1` hour)                                                 | Re-fetch the book from **Catalog API**; update the client not to persist SAS URLs                                                      |
+| Image URL returns `403` immediately after generation in Azure           | Managed Identity lacks permission to request a User Delegation Key (`BlobService.GetOrRefreshUserDelegationKey`) | Verify the **Catalog API** managed identity has `Storage Blob Data Contributor` / `Storage Blob Delegator` RBAC on the storage account |
+| **Catalog API** logs `UrnException` (`URN account name must match ...`) | Database was restored or migrated from another environment with a different storage account or container name    | Align the migrated blobs to the environment's storage account/container and update URNs via an approved remediation                    |
+| Fresh SAS URL returns `404` (`BlobNotFound`)                            | Blob was deleted or never uploaded to `catalog-blob`                                                             | Restore the blob under the same `<blob-name>`, or upload a new image through **Catalog API**                                           |
+| Upload fails with `Content type '...' is not allowed`                   | File MIME type is outside `BlobService._allowedContentTypes`                                                     | Convert the image to `image/jpeg`, `image/png`, or `image/webp` and retry                                                              |
+
+## Related documentation
+
+- Managing BookWorm catalog data — Cover upload rules, URN storage model, and short-lived SAS link trade-offs.
+- Catalog consistency and data ownership reference — Authoritative role of `catalog-blob` and `catalogdb`.

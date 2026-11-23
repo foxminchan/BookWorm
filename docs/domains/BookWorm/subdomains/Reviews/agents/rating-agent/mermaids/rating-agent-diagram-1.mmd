@@ -1,0 +1,15 @@
+flowchart LR
+	chat["Chat API\n(A2A gRPC Client)"]
+	summarizer["RatingSummarizer Workflow\n(Partition -> Map -> Reduce -> Assess -> Classify)"]
+	agent["Rating Agent\n(rating / Agent Framework)"]
+	reviewTool["ReviewTool\n(GetCustomerReviews, 30/min)"]
+	mcp["MCP Tools\n(get_book + Prompts)"]
+	presidio["Presidio\n(Analyzer + Anonymizer)"]
+	cosmos[("Rating database\n(Cosmos DB: ratingdb/feedbacks)")]
+
+	chat --> |"A2A gRPC: rating_read"| agent
+	summarizer --> |"In-process: StructuredRatingResponseRunner"| agent
+	agent --> |"Function: GetCustomerReviews"| reviewTool
+	reviewTool --> |"Mediator: ListFeedbacksQuery"| cosmos
+	agent --> |"MCP: get_book"| mcp
+	agent --> |"HTTP Middleware: PII"| presidio

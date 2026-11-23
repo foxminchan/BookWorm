@@ -1,0 +1,14 @@
+flowchart LR
+	router["DecisionRouterExecutor\n(Microsoft-Decision-1)"]
+	qa["QA Agent\n(Agent Framework / qa)"]
+	skill["store-policies Skill\n(SKILL.md + STORE_FAQ.md)"]
+	gov["Agent Governance & Presidio\n(chat-agents.yaml + PII)"]
+	book["Book Agent\n(Agent Framework / book)"]
+	rating["Rating Agent\n(Rating API A2A gRPC)"]
+
+	router --> |"In-process: RouteTarget.QA"| qa
+	qa --> |"Skill Tools: load_skill / read_skill_resource"| skill
+	qa --> |"Middleware: Allowlist & PII Redact"| gov
+	qa --> |"Handoff: handoff_to_book"| book
+	book --> |"Handoff: handoff_to_qa"| qa
+	book --> |"A2A gRPC: handoff_to_rating"| rating

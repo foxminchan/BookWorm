@@ -1,0 +1,22 @@
+flowchart LR
+	clients["Commerce & Backoffice\n(Next.js 16 via YARP)"]
+	ordering["Ordering API\n(.NET 11 + EF Core + Marten)"]
+	basket["Basket API\n(.NET 11 gRPC)"]
+	catalog["Catalog API\n(.NET 11 gRPC)"]
+	pg["Ordering Database\n(PostgreSQL: orderingdb)"]
+	redis["Ordering Cache & Locks\n(Redis + FusionCache)"]
+	kafka["Kafka\n(Wolverine CloudEvents)"]
+	finance["Finance\n(Azure Functions + Durable Task)"]
+	dts["Durable Task Scheduler\n(finance-taskhub)"]
+	notif["Notification\n(Kafka + MailKit Worker)"]
+
+	clients --> |"HTTPS: /ordering/api/v1/*"| ordering
+	ordering --> |"gRPC: GetBasket"| basket
+	ordering --> |"gRPC: GetBooks"| catalog
+	ordering -->|"EF Core + Marten + Outbox"| pg
+	ordering -->|"Locks + Idempotency"| redis
+	ordering --> |"Kafka: UserCheckedOut / Status"| kafka
+	kafka -->|"Kafka triggers"| finance
+	finance -->|"Saga state"| dts
+	finance --> |"Kafka: PlaceOrder / Status cmds"| kafka
+	kafka -->|"Order email commands"| notif

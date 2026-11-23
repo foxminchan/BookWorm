@@ -163,7 +163,7 @@ Catalog remains the source of truth for book facts. A remembered conversation is
 | Updates           | Append new episodes; remove expired or user-deleted entries.                                                         | Insert or update preferences; repeated evidence can reinforce them and explicit corrections replace conflicting values. |
 | Retention         | Proposed 90 days, configurable and subject to approval.                                                              | Until user deletion or an agreed decay policy removes stale preferences.                                                |
 
-- Confidence is a processing signal, not proof that a preference is correct; decay reduces older information weight over time (rules TBD).
+- Confidence is a processing signal, not proof that a preference is correct; decay reduces older information weight over time (the decay rules are not yet defined).
 - An expiry timestamp alone does not delete a record; implementation must exclude expired episodes from retrieval and provide a cleanup mechanism for physical deletion.
 
 ### Developer implementation outline

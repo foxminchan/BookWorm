@@ -1,0 +1,23 @@
+flowchart LR
+	rating["Rating API & Agent\n(.NET 11 + A2A gRPC)"]
+	cosmos[("Azure Cosmos DB\n(ratingdb / feedbacks)")]
+	chat["Chat API\n(.NET 11 + AG-UI)"]
+	chatblob[("Azure Blob\n(chatting-blob)")]
+	mcp["MCP Tools\n(.NET 11 + /mcp)"]
+	presidio["Presidio\n(Analyzer & Anonymizer)"]
+	foundry["Microsoft Foundry\n(ModelRouter, Decision-1)"]
+	scheduler["Scheduler\n(.NET 11 + Quartz.NET)"]
+	scheddb[("PostgreSQL\n(schedulerdb)")]
+	notify["Notification\n(.NET 11 Kafka Worker)"]
+	redis[("Azure Managed Redis\n(Idempotency & Cache)")]
+
+	rating -->|"EF Core Cosmos"| cosmos
+	rating -->|"MCP HTTP"| mcp
+	rating -->|"HTTP PII"| presidio
+	chat -->|"AG-UI Sessions"| chatblob
+	chat -->|"MCP HTTP"| mcp
+	chat -->|"A2A gRPC"| rating
+	chat -->|"HTTP PII"| presidio
+	chat -->|"HTTPS Inference"| foundry
+	scheduler -->|"Quartz Store"| scheddb
+	notify -->|"24h Idempotency"| redis

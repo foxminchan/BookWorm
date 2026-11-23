@@ -1,108 +1,19 @@
 ---
-summary: Publish and consume the failed basket deletion outcome.
+summary: Usage examples for Basket deletion failed.
 ---
 
-## 1. Context & Problem
+## Event payload with customer email
 
-Delivery teams implementing checkout compensation need a clear example of how a failed basket cleanup is published and how the ordering workflow handles the failure—including when the target order is already missing.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Consistent recovery wiring**: Shows teams how failed cart cleanup triggers order recovery across service boundaries.
-- **Resilient error handling**: Demonstrates how missing orders are safely ignored so duplicate or out-of-order failure notifications do not cause processing errors.
-- **Preserved recovery context**: Keeps the order reference, basket reference, purchase total, and optional email together for downstream follow-up.
-
-## 3. How It Works
-
-1. When checkout cleanup fails to delete the submitted basket, the basket service emits a failure notification carrying the order reference, basket reference, optional customer email, and purchase total.
-2. The messaging platform routes the notification to the failure stream.
-3. The ordering workflow receives the notification and looks up the matching order.
-4. If the order exists, it is marked for removal along the recovery path; if no matching order exists, the step exits safely without making changes.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Safe handling of missing orders**: Treating an absent order as a safe no-op prevents repeated retry errors when failure notifications arrive more than once or after the order was already removed.
-- **Nullable email expectation**: Downstream notification handlers must account for cases where no customer email is present on the failure payload.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Publish failed cleanup
-
-Basket publishes this event when the checkout workflow cannot delete the
-submitted basket. Wolverine routes it to
-[[channel|bookworm.&#123;env&#125;.basket.delete-failed]].
-
-- `orderId` correlates the failure with the accepted order.
-- `basketId` identifies the basket requiring recovery.
-- `email` is nullable and may be used for downstream notification.
-- `totalMoney` preserves the purchase total for recovery processing.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp BasketDeletedFailedIntegrationEvent.cs
-[IntegrationMessageOwner(ServiceName = Services.Basket, TopicName = "delete-failed")]
-[MessageIdentity("BookWorm.Contracts.BasketDeletedFailedIntegrationEvent")]
-public sealed record BasketDeletedFailedIntegrationEvent(
-    Guid OrderId,
-    Guid BasketId,
-    string? Email,
-    decimal TotalMoney
-) : IntegrationEvent;
-```
-
-```csharp PlaceOrderCommandHandler.cs
-if (!basketDeleted)
+```json
 {
-    await bus.PublishAsync(
-        new BasketDeletedFailedIntegrationEvent(
-            command.OrderId,
-            command.BasketId,
-            command.Email,
-            command.TotalMoney
-        )
-    );
-}
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Consume the failure outcome
-
-Ordering consumes the failure and marks the corresponding order for the
-recovery path. A missing order is treated as an idempotent no-op.
-
-<CodeGroup dropdown>
-
-```csharp DeleteBasketFailedCommandHandler.cs
-[WolverineHandler]
-public async Task Handle(
-    DeleteBasketFailedCommand message,
-    CancellationToken cancellationToken
-)
-{
-    var order = await repository.GetByIdAsync(message.OrderId, cancellationToken);
-
-    if (order is null)
-    {
-        return;
-    }
-
-    order.Delete();
-    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abce",
+	"creationDate": "2026-11-25T16:15:05Z",
+	"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
+	"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
+	"email": "reader@example.com",
+	"totalMoney": 59.98
 }
 ```
 

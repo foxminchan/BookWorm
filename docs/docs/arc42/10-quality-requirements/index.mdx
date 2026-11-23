@@ -9,47 +9,30 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+This chapter translates BookWorm's five prioritized quality goals from [[doc|arc42/01-introduction-and-goals/003-quality-goals]]—**Correctness**, **Interoperability**, **Deployability**, **Modifiability**, and **Operability**—into a structured quality tree and 17 concrete, measurable scenarios (`QR-01`–`QR-17`) spanning commerce correctness, reliability, security, privacy, AI governance, performance, and accessibility.
 
-BookWorm's introduction establishes five leading architectural goals in priority order in [[doc|arc42/01-introduction-and-goals/003-quality-goals]]: **correctness, interoperability, deployability, modifiability, and operability**. However, high-level goals alone do not tell teams how to test a checkout flow, evaluate background search updates, verify access controls, or assess AI-assisted discovery.
+:::note
+All 17 scenarios begin as **proposed / not evaluated**. Existing codebase mechanisms (such as Pact contract tests, Presidio PII middleware, or Azure HA provisioning) provide design evidence, not proof of end-to-end SLA compliance until evaluated under frozen test conditions with recorded evidence.
+:::
 
-This chapter makes BookWorm's architectural qualities concrete across the complete platform—covering commerce, derived catalog views, background workflows, and AI-assisted discovery—while expanding to reliability, security, privacy, efficiency, and usability.
+## Chapter map
 
-## 2. Business Value
+| Section                                                                  | Focus                                                                                                                  | Primary audience                            |
+| :----------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- | :------------------------------------------ |
+| [[doc\|arc42/10-quality-requirements/001-quality-requirements-overview]] | Three priority tiers (`P1`–`P3`), inline quality tree, nine quality concern areas, and strategy traceability           | Product stakeholders, architects, engineers |
+| [[doc\|arc42/10-quality-requirements/002-quality-scenarios]]             | 17 measurable usage and change scenarios (`QR-01`–`QR-17`), verification rules, evidence template, and open trade-offs | Architects, contributors, QA, operators     |
 
-Turning quality goals into an explicit baseline creates alignment across business and technical stakeholders:
+## Baseline and governance rules
 
-- **Shared priorities:** Connects executive goals to concrete, testable expectations before production commitments are made.
-- **Honest baselines:** Distinguishes what the current design supports from unapproved service-level targets, preventing costly misunderstandings with stakeholders.
-- **Clear accountability:** Establishes proposed reviewer roles and measurable criteria so teams can surface risks and technical debt early.
+- **Authoritative priority order:** [[doc|arc42/01-introduction-and-goals/003-quality-goals]] remains authoritative when qualities compete: **Correctness > Interoperability > Deployability > Modifiability > Operability**.
+- **Behavioral criteria vs. proposed numerical budgets:** Behavioral assertions derive directly from BookWorm's domain invariants and service contracts. Numerical budgets (latency, availability, RTO/RPO, freshness lag, rollout time) are concrete starting proposals awaiting formal stakeholder sign-off.
+- **Visible limits over hidden assumptions:** Duplicate side effects under retries, eventual consistency on derived search and rating views, partial safeguard coverage, the absence of backend `.IntegrationTests` projects, and unverified production restore drills remain explicitly documented rather than assumed away.
+- **Proposed reviewers vs. named approvers:** Reviewer roles listed in [[doc|arc42/10-quality-requirements/001-quality-requirements-overview]] are suggested review groups; formal production adoption requires named decision-makers.
 
-## 3. How It Works
+## Related architecture documentation
 
-The chapter is organized into two pages that move from strategy to verification:
-
-1. **Overview and priority tiers** ([[doc|arc42/10-quality-requirements/001-quality-requirements-overview]]): Defines priority tiers, a visual quality tree, stakeholder concern areas, and traceability back to BookWorm's architectural strategy.
-2. **Measurable scenarios** ([[doc|arc42/10-quality-requirements/002-quality-scenarios]]): Translates business invariants and ownership rules into 17 concrete usage and change scenarios (`QR-01` through `QR-17`), complete with verification evidence requirements, known limits, and open agreements.
-
-Together, these pages pair **behavioral criteria** (assertions derived from documented business rules) with **quantitative proposals** (concrete starting budgets where no repository-wide target has yet been approved).
-
-## 4. Trade-offs & Lessons Learned
-
-- **Proposed baseline, not an approved SLA:** This chapter is neither a test report nor a guarantee that every scenario currently passes. Existing design mechanisms are supporting design evidence, not proof of end-to-end fulfillment.
-- **Numerical proposals require stakeholder sign-off:** Quantitative targets give teams concrete starting points, but product, service, and operations stakeholders must formally agree on final values and measurement conditions before adoption.
-- **Known limits stay visible:** Duplicate effects under retries, partial safeguard coverage, eventual consistency, sampled diagnostic data, and an unspecified production topology are called out explicitly rather than hidden.
-- **Proposed reviewers vs. named approvers:** Stakeholder roles listed in the overview are suggested reviewers; formal sign-off requires named decision makers.
-
-## 5. Technical Reference
-
-### Chapter contents
-
-| Page                                                                     | What it establishes                                                                                                   |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| [[doc\|arc42/10-quality-requirements/001-quality-requirements-overview]] | Priority tiers, the Mermaid quality tree, stakeholder concerns, and traceability to architectural strategy            |
-| [[doc\|arc42/10-quality-requirements/002-quality-scenarios]]             | Seventeen measurable usage and change scenarios, verification evidence, known limits, trade-offs, and open agreements |
-
-### Status and governance notes
-
-- Authoritative priority order remains in [[doc|arc42/01-introduction-and-goals/003-quality-goals]]: correctness, interoperability, deployability, modifiability, and operability.
-- All scenarios begin as `proposed / not evaluated` until evaluated under frozen conditions with recorded evidence in the owning team's acceptance or release record.
-- Page maintenance is owned by `contributor-team`; stakeholder roles in the overview are proposed reviewers rather than named approvers.
+- [[doc|arc42/01-introduction-and-goals/003-quality-goals]] — Top five architectural quality priorities.
+- [[doc|arc42/04-solution-strategy]] — Core design approaches satisfying these requirements.
+- [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] — Current automated test suites (TUnit, PactNet, ArchUnitNET, Vitest, Playwright BDD).
+- [[doc|arc42/11-risks-and-technical-debt]] — Open exposures linked directly to `QR-01`–`QR-17`.
+- [[doc|arc42/09-architecture-decisions]] — Formal decisions resolving quality trade-offs.

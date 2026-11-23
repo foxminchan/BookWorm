@@ -20,54 +20,71 @@ styles:
   icon: /icons/database/redis.svg
 ---
 
-## 1. Context & Problem
+Rating cache is the non-authoritative FusionCache L1 + Redis L2 caching layer used by [[service|rating-api]] to cache per-book AI feedback summaries produced by the `SummarizeFeedback` query. It avoids repeated multi-step LLM summarization runs for identical books while keeping [[container|rating-database]] (Azure Cosmos DB) as the sole source of truth for customer feedback.
 
-Generating an AI-assisted feedback summary for a book requires loading customer reviews, fetching product context, and running a multi-step summarization workflow. Repeating that full workflow on every summary request—even when multiple shoppers view the same book in succession—wastes compute, adds latency, and places unnecessary load on downstream AI and database resources.
+## Overview
 
-**Rating Cache** addresses this by temporarily storing generated per-book summaries so repeated requests can be served quickly without turning the cache into a source of truth.
+| Property               | Value                                                                                                                                                                                                                                              |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**              | Reviews bounded context — [[service\|rating-api]] (`rating`)                                                                                                                                                                                       |
+| **Aspire resource ID** | `redis` (shared Azure Managed Redis resource)                                                                                                                                                                                                      |
+| **Source**             | `src/Services/Rating/BookWorm.Rating/Features/Summarize/SummarizeFeedbackQuery.cs`, `src/Services/Rating/BookWorm.Rating/Domain/EventHandlers/FeedbackCacheInvalidationHandler.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs` |
+| **Engine**             | FusionCache (`2.10.0`) + Redis (local container + RedisInsight in development; Azure Managed Redis in cloud)                                                                                                                                       |
+| **Authoritative**      | No (`authoritative: false`, `readWrite`)                                                                                                                                                                                                           |
+| **Classification**     | `internal`                                                                                                                                                                                                                                         |
+| **Retention**          | Transient (`6 hours` for reviewed books; `1 minute` when `ReviewCount == 0`)                                                                                                                                                                       |
 
-## 2. Business Value
+## Architecture and cache-miss flow
 
-- **Faster response times:** Repeated summary requests for popular books return quickly from cache instead of waiting on full AI summarization.
-- **Lower operating cost:** Avoiding redundant model executions for unchanged reviews reduces AI usage and database read pressure.
-- **Zero data-loss risk:** Because the cache is strictly temporary and non-authoritative, clearing or losing cached entries never affects real customer feedback.
-- **Responsive first-review experience:** Books with no reviews yet expire quickly so newly submitted first reviews appear promptly in summaries.
+Rating API registers an Azure-authenticated Redis client (`DisableAutoActivation = false`), FusionCache (L1 memory + Redis L2 + Redis backplane + distributed lock + 2-hour fail-safe via `BookWorm.Chassis`), and a 24-hour integration event idempotency guard (`AddIntegrationEventIdempotency()`).
 
-## 3. How It Works
+The diagram shows how `SummarizeFeedbackHandler` checks L1 and Redis L2 before invoking `RatingSummarizer` against Cosmos DB and Microsoft Foundry.
 
-Rating Cache acts as a two-tier temporary memory and shared cache layer used by the Rating service when answering summary requests:
+<MermaidFileLoader file="mermaids/rating-cache-diagram-1.mmd" />
 
-1. **Serve from cache when available:** When a summary is requested for a book, the service checks for an existing cached summary under that book's versioned key.
-2. **Generate and store on a miss:** If no cached entry exists or the previous one has expired, the service runs the summarization workflow against authoritative feedback in [[container|rating-database]] and stores the result in the cache for subsequent callers.
-3. **Different lifetimes by state:** A full summary for a book with reviews stays cached for up to six hours, while an empty "no feedback yet" result expires after one minute so newly arrived reviews are picked up quickly.
-4. **Disposable by design:** Entries expire automatically based on time rather than being actively cleared when individual reviews are added or deleted. If the cache is cleared or unavailable, summaries are simply regenerated from authoritative feedback data.
+## Cache keys, payload, and TTL policy
 
-## 4. Trade-offs & Lessons Learned
+`SummarizeFeedbackHandler` configures explicit per-entry `Duration` (L1) and `DistributedCacheDuration` (L2) values rather than relying on the global `Caching:Expiration` default.
 
-- **Up to six hours of summary staleness:** Because creating or deleting feedback does not immediately evict a book's cached summary, a cached summary can reflect slightly older feedback until its expiration window ends.
-- **Short window for empty books:** Using a one-minute expiration for no-feedback results balances preventing burst requests on unreviewed books with allowing the very first customer reviews to show up quickly.
-- **Operational diagnostics:** When summaries feel unexpectedly slow or stale, teams should inspect cache hit behavior, distributed cache availability, and whether the entry is still within its expiration window—while remembering the cache can always be safely flushed.
+| Cached state                                   | Logical key                                       | L1 & L2 TTL                  | Source on miss                                                 | Invalidation strategy                                                                                                                                           |
+| :--------------------------------------------- | :------------------------------------------------ | :--------------------------- | :------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Book with feedback (`ReviewCount > 0`)**     | `rating:summary:v1:{BookId}`                      | `6 hours`                    | `ISummarizer.SummarizeAsync` (Cosmos DB + Map-Reduce workflow) | Actively evicted on `FeedbackDeletedEvent` and `FeedbackRevertedEvent`; expires by 6-hour TTL on additional `FeedbackCreatedEvent` writes                       |
+| **Book with no feedback (`ReviewCount == 0`)** | `rating:summary:v1:{BookId}`                      | `1 minute`                   | Cosmos DB query (no LLM call made)                             | Actively evicted immediately on `FeedbackCreatedEvent` (when cached `ReviewCount == 0`), `FeedbackDeletedEvent`, and `FeedbackRevertedEvent`, plus 1-minute TTL |
+| **Book feedback list entries**                 | Tagged with `RatingCacheKeys.FeedbackTag(BookId)` | `Caching:Expiration` default | Cosmos DB query (`ListFeedbacks`)                              | Actively evicted by tag (`RemoveByTagAsync`) on `FeedbackCreatedEvent`, `FeedbackDeletedEvent`, and `FeedbackRevertedEvent`                                     |
 
-## 5. Technical Reference
+### Cached `SummarizeResult` payload
 
-- **Consumer service:** [[service|rating-api]] for the [[query|SummarizeFeedback]] query.
-- **Authoritative fallback:** [[container|rating-database]] (cache is `authoritative: false`, `retention: transient`).
-- **Technology stack:** FusionCache with an in-process L1 cache and a Redis-backed (`azure-managed-redis`) distributed cache; values are serialized as JSON. Summarization entries configure explicit per-entry expiration rather than relying on the general cache expiration.
-- **Cached payload:** `SummarizeResult` containing `summary`, `classification`, `average rating`, `review count`, `evidence`, and `confidence`.
+Values are serialized as JSON using `System.Text.Json` and contain six fields:
 
-### Cache Keys & Expiration
+- `summary` — Synthesized natural-language summary of customer feedback.
+- `classification` — Deterministic tier (`NoData`, `Bad`, `Good`, or `TopRated`) computed by `RatingClassifier.Classify`.
+- `averageRating` — Computed arithmetic average rating across stored feedback records.
+- `reviewCount` — Total count of feedback records evaluated.
+- `evidence` — Supporting review themes identified by the quality-assessment step.
+- `confidence` — Assessment confidence level.
 
-| Data                           | Key                          | Source                           | Expiration |
-| ------------------------------ | ---------------------------- | -------------------------------- | ---------- |
-| Generated summary for a book   | `rating:summary:v1:{BookId}` | Feedback and summarizer workflow | 6 hours    |
-| No-feedback summary for a book | `rating:summary:v1:{BookId}` | Feedback query                   | 1 minute   |
+## Hosting and environment provisioning
 
-### Operational Guidance
+AppHost provisions the shared `redis` resource via `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Redis.cs`.
 
-- Cache keys are scoped per `BookId` and versioned with the `v1` prefix (`rating:summary:v1:{BookId}`).
-- No active invalidation occurs when feedback is created or deleted; stale entries clear on TTL expiration.
-- Treat all entries as disposable; investigate FusionCache and Redis availability when summaries are slow or cache entries are not being reused.
+| Environment           | Provisioning & SKU                                                      | High availability | Local tooling |
+| :-------------------- | :---------------------------------------------------------------------- | :---------------- | :------------ |
+| **Local development** | Local Redis container (`ContainerLifetime.Persistent`) with data volume | Single container  | RedisInsight  |
+| **Azure Development** | Azure Managed Redis (`BalancedB0`)                                      | Disabled          | —             |
+| **Azure Staging**     | Azure Managed Redis (`BalancedB1`)                                      | Enabled           | —             |
+| **Azure Production**  | Azure Managed Redis (`BalancedB5`)                                      | Enabled           | —             |
 
-### Container Graph
+## Operational notes
+
+- **Up to 6-hour staleness window on new reviews for already-reviewed books:** `FeedbackCacheInvalidationHandler` actively evicts `rating:summary:v1:{BookId}` on deletions, reversions, and when a previously unreviewed book (`ReviewCount == 0`) receives its first review. Adding another review to a book that already has a cached summary (`ReviewCount > 0`) refreshes on the 6-hour TTL.
+- **Targeted cache invalidation:** To force regeneration for a single book without impacting other services on the shared Redis cluster, delete only the key matching `rating:summary:v1:{BookId}` rather than flushing the entire Redis instance.
+- **Shared-instance flush warning:** Flushing `redis` globally also clears active baskets in [[container|basket-database]], locks/idempotency markers in [[container|order-cache]], and 24-hour Kafka event idempotency keys across five services.
+
+## Related documentation
+
+- [[service|rating-api]] — Owning service REST endpoints, A2A gRPC server, and `SummarizeFeedback` query.
+- [[container|rating-database]] — Authoritative Azure Cosmos DB store (`ratingdb`/`feedbacks`) behind this cache.
+- [[agent|rating-agent]] — AI agent and Map-Reduce workflow invoked on cache misses.
+- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
 
 <NodeGraph />

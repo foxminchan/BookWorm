@@ -9,56 +9,54 @@ badges:
     textColor: blue
 ---
 
-The system under consideration is the complete [[domain|BookWorm]] platform. This overview establishes the whole-platform boundary—identifying users, internal capabilities, and neighboring systems without assigning detailed service-level contracts.
+The system under consideration is the complete BookWorm online bookstore platform—its edge gateway, three web applications, ten backend services across six bounded contexts, and internal privacy sidecars. This overview defines what BookWorm owns inside its boundary versus what external cloud and SaaS providers supply outside it.
 
-## 1. Context & Problem
+## Whole-platform scope boundary
 
-Before designing individual services or integration details, stakeholders across product, business, and engineering need a shared agreement on what belongs inside BookWorm and what sits outside it. Without an explicit platform boundary, teams risk assuming BookWorm owns external capabilities (such as payment processing or email delivery), misplacing features across domains, or mixing high-level scope decisions with low-level technical choices.
+The diagram below distinguishes the capabilities owned inside BookWorm from the external providers connected across its boundary.
 
-## 2. Business Value
+<MermaidFileLoader file="mermaids/001-overview-diagram-1.mmd" />
 
-- **Shared scope alignment:** Gives product owners, analysts, architects, and delivery teams a single view of the customer and operational capabilities BookWorm delivers.
-- **Clear dependency awareness:** Separates BookWorm-owned business capabilities from external partner systems, making third-party reliance visible early.
-- **Clean decision separation:** Keeps business-level information exchanges separate from technical communication channels so each audience can review and confirm its own concerns without ambiguity.
+## In-scope capabilities
 
-## 3. How It Works
+BookWorm builds, versions, and operates the following areas inside its repository and **Aspire** 17 orchestration:
 
-BookWorm is scoped as an end-to-end commerce platform rather than a single isolated application. It brings together customer-facing bookstore capabilities and the shared platform capabilities that support them, while relying on external neighbors for specialized functions outside its boundary.
+| Area                          | Bounded context / layer | Key components                                                       | Owned responsibilities and entities                                                                                                                              |
+| :---------------------------- | :---------------------- | :------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Edge and microfrontends**   | Edge                    | **API Gateway** (YARP), **Storefront**, **Commerce**, **Backoffice** | Public ingress routing, customer browsing/AI chat, authenticated checkout/account views, and staff administration                                                |
+| **Product catalog**           | **Catalog**             | **Catalog API**, **Catalog Ingestion**                               | Authoritative `Book`, `Author`, `Category`, and `Publisher` data, pricing, blob cover assets, derived rating summary, and Qdrant hybrid vector search            |
+| **Shopping basket**           | **Shopping**            | **Basket API**                                                       | Customer-scoped mutable pre-order `Basket` stored in Redis                                                                                                       |
+| **Order management**          | **Ordering**            | **Ordering API**, **Finance**                                        | Accepted `Order` and `Buyer` records, purchase-time snapshots, lifecycle statuses (`New`, `Cancelled`, `Completed`), and Durable Task post-checkout coordination |
+| **Customer reviews**          | **Reviews**             | **Rating API**                                                       | Individual customer `Feedback` records in Azure Cosmos DB and AI-generated book review summaries                                                                 |
+| **Conversational assistance** | **Conversational**      | **Chat API**, **MCP Tools**                                          | Multi-agent book discovery and store-policy assistance over AG-UI, A2A gRPC, and Model Context Protocol (MCP)                                                    |
+| **Internal privacy sidecars** | Privacy                 | **Presidio** (`presidio-analyzer`, `presidio-anonymizer`)            | Internal PII detection and anonymization on AI prompt/response paths                                                                                             |
+| **Enabling platform**         | **Platform**            | **Notification**, **Scheduler**, Quartz Dashboard                    | Stateless Kafka transactional email rendering/submission and Quartz.NET scheduled jobs                                                                           |
 
-<MermaidFileLoader file="mermaids/bookworm-scope.mmd" />
+## Outside the boundary
 
-### In-Scope Capabilities
+### Implemented external neighbors
 
-| Capability                                   | Included behavior                                                                     |
-| -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [[domain\|catalog]] and [[domain\|shopping]] | Product discovery, search, browsing, [[entity\|basket]] creation, and checkout intent |
-| [[domain\|ordering]]                         | Acceptance of purchases and management of [[entity\|order]] state                     |
-| [[domain\|reviews]]                          | Customer review and rating journeys                                                   |
-| [[domain\|conversational]]                   | AI-assisted product discovery and customer support                                    |
-| Shared [[domain\|platform]] capabilities     | Notifications, scheduling, and operational support                                    |
+These external systems are actively wired in `src/Aspire/BookWorm.AppHost/AppHost.cs` and `.github/workflows/apphost-cd.yml`, while their internal operations sit outside BookWorm's ownership:
 
-### Outside the Boundary
+- **Microsoft Entra ID:** Customer and staff authentication, RBAC (`admin`, `business_user`, `customer`), API scopes, and Entra Agent Identities (`blueprintAppId`, `chatAgentId`, `ratingAgentId`).
+- **Microsoft Foundry:** Hosted AI models (`ModelRouter` for chat, `MicrosoftDecision1` for routing/tool selection, Cohere `EmbedV40` for embeddings).
+- **SendGrid (cloud) / Mailpit (local):** Outbound SMTP email transport (`port 587`) consumed exclusively by **Notification**.
+- **Confluent Cloud (cloud Kafka) and Qdrant Cloud (cloud vector DB):** Managed external backing services used in Azure publish/deploy mode (replaced locally by Aspire-managed Docker containers).
 
-Identity ([[system|identity-provider]]), payment processing, fulfillment, email delivery ([[system|sendgrid]]), and AI model hosting are neighboring systems, not BookWorm-owned business capabilities. The platform depends on these partners for specific interactions, while their internal behavior and operations remain outside BookWorm's boundary.
+### Conceptual out-of-scope boundaries (not implemented)
 
-## 4. Trade-offs & Lessons Learned
+- **Payment settlement provider:** Not implemented in the repository. **Finance** coordinates post-checkout basket cleanup and email notifications via Azure Durable Task Scheduler—it does not authorize or settle financial payments.
+- **Physical shipping fulfillment provider:** Not implemented in the repository. **Ordering API** manages logical order statuses (`New`, `Cancelled`, `Completed`) without external warehouse or carrier integration.
 
-- **High-level boundary vs. premature detail:** This overview intentionally avoids acting as a deployment blueprint or an exhaustive vendor catalog. Keeping external provider specifics out of the top-level boundary prevents premature coupling to a single vendor or infrastructure layout.
-- **Business vs. technical separation:** Separating business-level exchanges from technical channels ensures stakeholders can validate the commerce scope before locking down communication styles or hosting arrangements.
-- **Open provider inventory:** Repository-level architecture sources identify the _categories_ of external neighbors rather than a confirmed inventory of providers, owners, and interface commitments. Those open points must be resolved in dedicated service and system documentation.
+## Boundary rules and assumptions
 
-## 5. Technical Reference
+- **Subject system:** All arc42 chapters describe the complete BookWorm platform unless explicitly scoped to a single service.
+- **Strict domain separation:** Business exchanges ([[doc|arc42/03-context-and-scope/002-business-context]]) stay independent of transport protocols ([[doc|arc42/03-context-and-scope/003-technical-context]]) so product stakeholders can validate scope without parsing infrastructure details.
+- **Delegated service contracts:** Exact HTTP schemas, gRPC `.proto` definitions, and Kafka message payloads live in the service and contract references rather than being duplicated at the platform boundary.
 
-### Scope & Boundary Rules
+## Related architecture documentation
 
-- **Subject system:** Complete [[domain|BookWorm]] platform (not an individual service).
-- **Owned domains:** [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and shared [[domain|platform]] capabilities.
-- **Tracked domain entities:** [[entity|basket]], [[entity|order]].
-- **Documented external systems:** [[system|identity-provider]], [[system|sendgrid]], plus conceptual neighboring roles for payment processing, fulfillment, and AI model hosting.
-
-### Context Assumptions & Open Points
-
-- The exact inventory of external providers, their owners, and their interfaces is not established by the repository-level architecture sources.
-- This chapter identifies the known interaction categories without implying specific endpoints, protocols, payload schemas, or production topology.
-- Detailed service responsibilities and contracts belong in the relevant service and system documentation.
-- The subsequent pages separate business-level data exchanges from the technical channels that realize them.
+- [[doc|arc42/03-context-and-scope/002-business-context]] — Black-box actors and domain-level information exchanges.
+- [[doc|arc42/03-context-and-scope/003-technical-context]] — Verified protocols, channels, and external technical interfaces.
+- [[doc|arc42/00-c4-overview]] — Full C4 Context and Container diagrams.
+- [[doc|arc42/05-building-block-view]] — Whitebox view of internal containers and components.

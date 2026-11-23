@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using BookWorm.Chassis.EventBus.Reflection;
 using BookWorm.Constants.Aspire;
 using JasperFx.Resources;
 using Microsoft.EntityFrameworkCore;
@@ -21,55 +22,6 @@ namespace BookWorm.Chassis.EventBus.Wolverine;
 
 public static class WolverineHostExtensions
 {
-    private static Type[] ScanIntegrationTypes(IEnumerable<Assembly> assemblies)
-    {
-        return
-        [
-            .. assemblies
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type =>
-                    type is { IsClass: true, IsAbstract: false }
-                    && IsIntegrationMessageOrHandler(type)
-                )
-                .Distinct(),
-        ];
-    }
-
-    private static bool IsIntegrationMessageOrHandler(Type type)
-    {
-        return type.IsAssignableTo(typeof(IntegrationEvent))
-            || type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
-                .Any(method =>
-                    IsMessageHandlerMethod(method)
-                    && method
-                        .GetParameters()[0]
-                        .ParameterType.IsAssignableTo(typeof(IntegrationEvent))
-                );
-    }
-
-    private static IEnumerable<Type> GetHandledIntegrationEventTypes(IEnumerable<Type> types)
-    {
-        return types
-            .Where(t => !t.IsAssignableTo(typeof(IntegrationEvent)))
-            .SelectMany(t =>
-                t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
-            )
-            .Where(IsMessageHandlerMethod)
-            .Select(m => m.GetParameters()[0].ParameterType)
-            .Where(t => t.IsAssignableTo(typeof(IntegrationEvent)));
-    }
-
-    private static IEnumerable<Type> GetIntegrationEventTypes(IEnumerable<Type> types)
-    {
-        return types.Where(t => t.IsAssignableTo(typeof(IntegrationEvent)));
-    }
-
-    private static bool IsMessageHandlerMethod(MethodInfo method)
-    {
-        return method.GetCustomAttribute<WolverineHandlerAttribute>() is not null
-            && method.GetParameters().Length > 0;
-    }
-
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
@@ -236,8 +188,8 @@ public static class WolverineHostExtensions
             params Assembly[] assemblies
         )
         {
-            var scannedTypes = ScanIntegrationTypes(assemblies);
-            var messageTypes = GetIntegrationEventTypes(scannedTypes).ToArray();
+            var scannedTypes = assemblies.ScanIntegrationTypes();
+            var messageTypes = scannedTypes.GetIntegrationEventTypes().ToArray();
 
             foreach (var messageType in messageTypes)
             {
@@ -252,7 +204,7 @@ public static class WolverineHostExtensions
                 opts.PublishMessage(messageType).ToKafkaTopic(topic).TelemetryEnabled(true);
             }
 
-            foreach (var messageType in GetHandledIntegrationEventTypes(scannedTypes).Distinct())
+            foreach (var messageType in scannedTypes.GetHandledIntegrationEventTypes().Distinct())
             {
                 var topic = KafkaTopicRouter.CreateTopicName(
                     messageType,

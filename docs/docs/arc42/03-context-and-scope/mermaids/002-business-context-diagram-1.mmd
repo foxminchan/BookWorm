@@ -1,0 +1,15 @@
+flowchart LR
+	customer["Customers\n(Shoppers)"]
+	admin["Store Administrators\n(Merchandising & Support)"]
+	bookworm["BookWorm Platform\n(Online Bookstore)"]
+	entra["Microsoft Entra ID\n(Identity Provider)"]
+	foundry["Microsoft Foundry\n(AI Model Provider)"]
+	smtp["SendGrid / Mailpit\n(Email Delivery Provider)"]
+
+	customer -->|"Browse, basket, checkout,\nreviews, chat questions"| bookworm
+	bookworm -->|"Catalog facts, order outcomes,\nAI guidance, review summaries"| customer
+	admin -->|"Catalog edits, order status\nupdates, review moderation"| bookworm
+	bookworm -->|"Operational dashboards,\norder & job status"| admin
+	bookworm <-->|"Sign-in requests &\nidentity / role claims"| entra
+	bookworm <-->|"Prompts, book text &\nAI answers, decisions, vectors"| foundry
+	bookworm <-->|"Order emails &\nSMTP relay acceptance"| smtp

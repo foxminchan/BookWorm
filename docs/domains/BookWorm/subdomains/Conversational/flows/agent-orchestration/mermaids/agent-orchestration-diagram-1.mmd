@@ -1,0 +1,11 @@
+flowchart LR
+	storefront["Storefront\n(Next.js 16 + AG-UI)"] --> |"HTTPS: POST /chatting/ag-ui"| gateway["API Gateway\n(YARP Reverse Proxy)"]
+	gateway --> |"HTTP: /ag-ui"| validation["InputValidationExecutor\n(Chat API)"]
+	validation -->|"Rejected"| reject["RejectedOutputExtractor\n(Boundary Reply)"]
+	validation -->|"Accepted"| router["DecisionRouterExecutor\n(Microsoft-Decision-1)"]
+	router -->|"Low confidence"| hitl["RouteDisambiguationPort\n(HITL RequestPort)"]
+	hitl -->|"Selected route"| specialists["Specialist Agents\n(Book, QA, Rating)"]
+	router -->|"High confidence"| specialists
+	specialists -->|"MCP HTTP / A2A gRPC"| downstream["MCP Tools & Rating API\n(Read-Only Backends)"]
+	specialists -->|"Draft reply"| formatter["ResponseFormatterExecutor\n(Output Hygiene)"]
+	formatter -->|"AG-UI stream"| storefront

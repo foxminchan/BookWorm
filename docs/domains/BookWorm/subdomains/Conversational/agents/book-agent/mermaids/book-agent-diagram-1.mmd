@@ -1,0 +1,17 @@
+flowchart LR
+	router["Decision Router\n(Microsoft-Decision-1)"]
+	book["Book Agent\n(book / Agent Framework)"]
+	catRes["Book Catalog Researcher\n(Delegated Subagent)"]
+	recRes["Book Recommendation Researcher\n(Delegated Subagent)"]
+	mcp["MCP Tools\n(Streamable HTTP /mcp)"]
+	rating["Rating Agent\n(Remote A2A gRPC)"]
+	qa["QA Agent\n(In-Process Handoff)"]
+	presidio["Presidio\n(Analyzer + Anonymizer)"]
+
+	router --> |"Workflow: RouteTarget.Book"| book
+	book --> |"Delegate: parallel"| catRes
+	book --> |"Delegate: parallel"| recRes
+	book --> |"MCP: Catalog tools"| mcp
+	book --> |"Handoff: handoff_to_rating"| rating
+	book --> |"Handoff: handoff_to_qa"| qa
+	book --> |"HTTP Middleware: PII"| presidio

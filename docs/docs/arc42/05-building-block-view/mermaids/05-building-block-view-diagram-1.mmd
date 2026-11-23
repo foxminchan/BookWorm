@@ -1,0 +1,7 @@
+flowchart LR
+	l1["Level 1: Whitebox Overall System\n(Edge + 6 Bounded Contexts + Shared Foundation)"]
+	l2["Level 2: Capability Internals\n(10 Backend Services, 3 MFEs, Backing Stores)"]
+	l3["Level 3: Finance Orchestration\n(Azure Durable Functions OrderOrchestrator)"]
+
+	l1 -->|"Zooms into all contexts"| l2
+	l2 -->|"Zooms into checkout coordinator"| l3

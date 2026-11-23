@@ -1,0 +1,6 @@
+stateDiagram-v2
+	[*] --> New: POST /api/v1/orders (201 Created)
+	New --> Completed: PATCH /api/v1/orders/{orderId}/complete
+	New --> Cancelled: PATCH /api/v1/orders/{orderId}/cancel
+	Completed --> [*]
+	Cancelled --> [*]

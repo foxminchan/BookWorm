@@ -1,0 +1,13 @@
+flowchart LR
+	pgSvc["Catalog, Ordering, Scheduler\n(Wolverine + PG Outbox/Inbox)"]
+	cosSvc["Rating API\n(Wolverine + Cosmos DB)"]
+	redSvc["Basket, Notification\n(Wolverine + Redis 24h Guard)"]
+	fnSvc["Finance, Catalog Ingestion\n(Azure Functions KafkaTrigger)"]
+	kafka["Kafka Broker\n(CloudEvents JSON, Partitioned)"]
+	dlq["Per-Service Native DLQ\n(bookworm.{env}.{svc}.dead-letter-queue)"]
+
+	pgSvc <-->|"CloudEvents + PG Outbox"| kafka
+	cosSvc <-->|"CloudEvents + Cosmos Persistence"| kafka
+	redSvc <-->|"CloudEvents + Redis SET NX"| kafka
+	fnSvc <-->|"KafkaTrigger / Publisher"| kafka
+	kafka -->|"Exhausted Retries / JsonException (7d)"| dlq

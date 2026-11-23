@@ -18,39 +18,74 @@ sidebar:
   badge: "POST"
 ---
 
-## 1. Context & Problem
+`CreateBook` creates a new book listing in **Catalog API** (`POST /api/v1/books`) from a `multipart/form-data` payload, optionally uploads a cover image to Azure Blob Storage, and returns `201 Created` with the generated UUIDv7 and a `Location` header.
 
-BookWorm's storefront relies on rich, accurate [[entity|book]] listings that combine core product details, pricing, visual cover art, and structured links to an existing [[entity|category]], [[entity|publisher]], and one or more [[entity|author]] records. Business users and catalog management tools need a single authoritative operation to publish a new book listing while enforcing required metadata and pricing rules.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                        |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                         |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Books/Create/`                                                               |
+| **Protocol / format** | HTTP `POST`, `multipart/form-data` request (`[FromForm]`), JSON string response                                              |
+| **Endpoint**          | Direct: `POST /api/v1/books` (local HTTP `5100`, HTTPS `7187`); API Gateway: `POST /catalog/api/v1/books`                    |
+| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
+| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                     |
+| **Idempotency**       | Not idempotent; no `x-request-id` header is required or enforced                                                             |
+| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                   |
 
-- **Consistent storefront quality:** Requiring a title, description, price, and valid catalog relationships ensures every new listing is discoverable, properly categorized, and ready for customers.
-- **Streamlined publishing:** Allowing an optional cover image to be supplied alongside the book details avoids separate manual upload steps for catalog operators.
-- **Built-in pricing safeguards:** Validating prices before saving prevents negative, malformed, or inconsistent pricing from reaching the storefront.
+## Parameters and fields
 
-## 3. How It Works
+### Request form fields (`multipart/form-data`)
 
-1. A business user or integration submits the book's title, description, pricing, links to its [[entity|category]], [[entity|publisher]], and at least one [[entity|author]], along with an optional cover image.
-2. The catalog service checks that all required details are present, pricing values are valid, and relationship identifiers are properly formatted.
-3. If everything passes validation, the service saves the [[entity|book]] listing, stores any uploaded cover image, and returns the new book's unique identifier.
-4. If any required field is missing, a price is invalid, or an identifier or submission format is malformed, the service rejects the request and returns validation details so the caller can correct the submission.
+`CreateBookEndpoint` configures `.WithFormOptions(true)` (buffered form body); antiforgery validation is disabled in Development by `RegisterEndpointExtensions.MapEndpoints`.
 
-## 4. Trade-offs & Lessons Learned
+| Name          | Type            | Required | Default | Constraints                                                                                                                                                                                            | Description                                      |
+| :------------ | :-------------- | :------- | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| `name`        | `string`        | Yes      | —       | Non-empty, max `50` chars (`DataSchemaLength.Medium`)                                                                                                                                                  | Book title                                       |
+| `description` | `string`        | No       | `""`    | Max `500` chars in `BookValidatorBase` (`DataSchemaLength.SuperLarge`; DB column max `1000`, `NOT NULL`)                                                                                               | Book summary text                                |
+| `price`       | `decimal`       | Yes      | —       | Strictly `> 0`; stored as `numeric(18,2)`                                                                                                                                                              | Regular catalog price                            |
+| `priceSale`   | `decimal`       | No       | `null`  | When provided: strictly `> 0` and `<= price`; stored as `numeric(18,2)`                                                                                                                                | Optional promotional sale price                  |
+| `categoryId`  | `uuid`          | Yes      | —       | Non-empty UUID (`Guid != Guid.Empty`); must reference an existing category                                                                                                                             | Category identifier                              |
+| `publisherId` | `uuid`          | Yes      | —       | Non-empty UUID (`Guid != Guid.Empty`); must reference an existing publisher                                                                                                                            | Publisher identifier                             |
+| `authorIds`   | `uuid[]`        | Yes      | —       | Non-empty array (`>= 1` UUID); repeat `authorIds` form fields for multiple authors                                                                                                                     | Author identifiers associated with the book      |
+| `image`       | `file` (binary) | No       | `null`  | Non-empty, max `1,048,576` bytes (1 MB / 1,024 KB); allowed MIME types and extensions: `image/jpeg` (`.jpg`, `.jpeg`), `image/png` (`.png`), `image/webp` (`.webp`); extension must match content type | Optional binary cover image upload (`IFormFile`) |
 
-- **Atomic metadata and cover upload:** Combining book fields and optional cover artwork into one submission keeps book creation cohesive, though it requires multipart form uploads instead of simple text requests.
-- **Strict relationship validation:** Enforcing valid links to [[entity|category]], [[entity|publisher]], and [[entity|author]] records up front prevents orphaned listings, at the expense of requiring those reference records to be created beforehand.
+### Response (`201 Created`)
 
-## 5. Technical Reference
+| Element           | Type     | Required | Default | Constraints                                                 | Description                                     |
+| :---------------- | :------- | :------- | :------ | :---------------------------------------------------------- | :---------------------------------------------- |
+| `Location` header | `string` | Yes      | —       | Relative path from `GetBookEndpoint` (`/api/v1/books/{id}`) | URI of the created book resource                |
+| Root body         | `string` | Yes      | —       | UUIDv7 (`BookId`)                                           | Generated unique identifier of the created book |
 
-- **Operation:** `POST /api/v1/books`
-- **Request format:** `multipart/form-data` containing required title, description, price, [[entity|category]], [[entity|publisher]], and at least one [[entity|author]] as multipart fields, plus an optional `image` binary cover upload.
-- **Success (`201`):** Response body is a JSON string containing the new book UUID.
-- **Validation failure (`400`):** Indicates validation failure, including malformed UUIDs, missing fields, invalid prices, or an invalid multipart payload.
+## Behavior and side effects
 
-### Message & Service Graph
+- **Transactional persistence:** `CreateBookCommand` is decorated with `[Transactional]`, wrapping database operations in `TransactionBehavior<CatalogDbContext>`. New books start with `Status.InStock`, `AverageRating = 0.0`, `TotalReviews = 0`, and `IsDeleted = false`.
+- **Cover image upload:** `CreateBookPreProcessor` uploads `image` (when provided) to Azure Blob Storage container `catalog-blob` via `BlobService.UploadFileAsync`, storing a URN in the format `urn:{account}:{container}:{uuidv7}-{sanitized-name}{ext}` (max `255` chars).
+
+`CreateBookCommand` implements `ICommand<BookId>`, but `CreateBookPreProcessor` derives from `MessagePreProcessor<CreateBookCommand, Guid>`. In Mediator 3.0.2, `MessagePreProcessor<TMessage, TResponse>` implements `IPipelineBehavior<TMessage, TResponse>`, so this processor is closed over a different response type from the command and is not the matching `IPipelineBehavior<CreateBookCommand, BookId>`. Do not assume the image-upload pre-processing step runs; align the response type in source before relying on it. This is a source-level finding, not a runtime test. See the [versioned Mediator implementation](https://github.com/martinothamar/Mediator/blob/v3.0.2/src/Mediator/Pipeline/MessagePreProcessor.cs).
+
+- **Cache invalidation:** Dispatches `BookCreatedEvent` on save; `BookChangedEventHandler` removes FusionCache entries tagged `books:list` and `books:search`.
+- **Vector index queueing:** PostgreSQL triggers `books_vector_update` (`AFTER INSERT ON books`) and `book_authors_vector_update` (`AFTER INSERT ON book_authors`) upsert the new `book_id` into `pending_vector_updates` (`20261004000000_AddPendingVectorUpdates.cs`). **Catalog Ingestion** refreshes the Qdrant embedding asynchronously when triggered by **Scheduler** (every 5 minutes via `scheduler.process-vector-batch`).
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                                                                                 | Recovery behavior                                                        |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------- |
+| `400 Bad Request`           | FluentValidation failure (missing/empty required fields, `price <= 0`, `priceSale <= 0` or `> price`, length exceeded, invalid image size/type/extension) or malformed multipart payload (`HttpValidationProblemDetails`) | Fix invalid form fields or file upload; do not retry unchanged input     |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                                                                                                                 | Acquire a valid Entra ID access token and retry                          |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                                                                                                           | Request the required Entra ID app role and scopes                        |
+| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                                                                                                                  | Wait for the `Retry-After` interval before retrying                      |
+| `500 Internal Server Error` | Foreign-key violation (non-existent `categoryId`, `publisherId`, or `authorIds`), Azure Blob upload failure, or unhandled server error (`ProblemDetails` with `traceId`)                                                  | Verify referenced IDs exist and inspect Catalog API logs using `traceId` |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[command|UpdateBook]] — Replace an existing book listing and manage cover images.
+- [[command|DeleteBook]] — Soft-delete an existing book listing.
+- [[command|CreateAuthor]] — Create author records before linking them to books.
+- [[command|CreateCategory]] — Create category records before linking them to books.
+- [[command|CreatePublisher]] — Create publisher records before linking them to books.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

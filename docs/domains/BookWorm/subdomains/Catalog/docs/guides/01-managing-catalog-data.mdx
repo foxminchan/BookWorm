@@ -10,59 +10,59 @@ badges:
     textColor: teal
 ---
 
-import Footer from "@catalog/components/footer.astro";
+**Catalog API** (`BookWorm.Catalog`) is the authoritative owner of BookWorm's books, authors, categories, publishers, pricing, and cover image references. Store administrators manage these records through **Backoffice** (`@bookworm/backoffice`) or authenticated REST calls to `/catalog/api/v1/{books,authors,categories,publishers}` (requiring Microsoft Entra ID `business_user` or `admin` roles with `read` and `write` scopes). Understanding entity creation order, deletion rules, read-only rating summaries, and asynchronous indexing prevents broken references and pricing surprises across **Storefront**, **Basket API**, and **Ordering API**.
 
-## 1. Context & Problem
+## Context and motivation
 
-Catalog administrators, support staff, and integration teams regularly onboard and update books, authors, categories, and publishers. Because books depend on valid supporting records, enforce strict pricing and deletion boundaries, include cover artwork, and feed downstream storefronts and orders, teams need clear operational rules to avoid broken references, invalid discounts, or misunderstandings about how updates propagate.
+Books depend on supporting taxonomy records (a category, a publisher, and one or more authors), carry promotional pricing rules, reference binary cover artwork in Azure Blob Storage (`catalog-blob`), and display derived customer ratings from **Reviews**. Without clear domain invariants at the **Catalog API** boundary, invalid discounts, orphaned author attributions, expired image links, or manual rating overrides would corrupt merchandising data across customer microfrontends (MFEs).
 
-## 2. Business Value
+## How it works
 
-- **Consistent catalog quality:** Enforces unique classifications, valid discount ranges, and clean author-to-book relationships at the point of entry.
-- **Trustworthy customer ratings:** Protects rating integrity by ensuring review scores and counts are derived exclusively from verified customer feedback rather than manual edits.
-- **Safe order boundaries:** Keeps active shopping carts aligned with current pricing at checkout while ensuring catalog edits never retroactively alter accepted customer orders.
+Every catalog write enters **Catalog API**, validates domain invariants before committing to PostgreSQL (`catalogdb`), and triggers downstream cache invalidation and background vector indexing.
 
-## 3. How It Works
+This entity diagram shows the relationships between Catalog's core records, cover artwork storage, and external Reviews and Ordering boundaries.
 
-This guide is intended for catalog business users, support staff, and teams integrating with the catalog.
+<MermaidFileLoader file="mermaids/01-managing-catalog-data-diagram-1.mmd" />
 
-### Order of operations
+### Entity creation order
 
-Because every [[entity|book]] references a category, a publisher, and one or more authors, supporting records must exist first:
+Because a book references supporting taxonomy records, create entities in dependency order:
 
-1. Create the [[entity|publisher]] and [[entity|category]] records.
-2. Create the [[entity|author]] records.
-3. Create the [[entity|book]] referencing those identities, optionally uploading cover artwork alongside the request.
-4. Confirm the saved book details, then allow time for background search indexing to make the title discoverable via free-text search (see [[doc|guides/search-and-discovery]]).
+1. **Create publishers and categories first:** Names must be unique within `catalogdb`.
+2. **Create authors:** Authors exist independently before being linked via `book_authors`.
+3. **Create the book with optional cover artwork:** Reference the created category, publisher, and author IDs via multipart form data on `/catalog/api/v1/books`. Direct reads (`GET /catalog/api/v1/books/{id}`) reflect the saved book immediately, while free-text search becomes discoverable after the next scheduled **Catalog Ingestion** batch runs.
 
-### Rules to respect
+### Domain invariants
 
-- A discount price on a [[entity|book]] cannot be negative or greater than its original price.
-- [[entity|category]] and [[entity|publisher]] names must be unique.
-- Deleting a [[entity|category]] or [[entity|publisher]] preserves its books and simply clears the reference on those books.
-- An [[entity|author]] cannot be deleted while any [[entity|book]] records still reference them.
-- Deleting a [[entity|book]] performs a soft delete, hiding it from active listings and removing it from search.
-- Book rating summaries and total review counts are read-only and cannot be edited manually; they are derived automatically from [[domain|reviews]] [[entity|feedback]].
+- **Valid discount bounds:** A book's `DiscountPrice` must be greater than or equal to `0` and less than or equal to its `OriginalPrice` (`Price.cs`).
+- **Category and publisher deletion:** Deleting a category or publisher preserves associated books and clears their reference rather than deleting books.
+- **Author deletion protection:** **Catalog API** blocks deleting an author while any book still references that author (`DeleteBehavior.Restrict` in `BookAuthorConfiguration.cs`).
+- **Book soft deletion:** Deleting a book sets `is_deleted = true`, hides it from active listings, and queues its UUID in `pending_vector_updates` so **Catalog Ingestion** deletes it from Qdrant (`vectordb`).
+- **Read-only rating summaries:** `average_rating` and `total_reviews` are read-only projections updated by Kafka events from **Rating API**. Catalog users and integrators cannot edit rating fields manually.
 
-### Images and post-change behavior
+### Cover artwork and post-change propagation
 
-Upload cover artwork directly with the book creation or update request. The catalog keeps a durable internal storage reference and returns short-lived image links when books are read; consumers should never save those temporary links as permanent identifiers.
+- **Multipart uploads and short-lived SAS URLs:** Upload cover artwork (`image/jpeg`, `image/png`, or `image/webp`) with the book create or update request. **Catalog API** stores only an internal URN (`urn:{account}:{container}:{blobName}`) in PostgreSQL (`books.image`) and generates read-only, time-limited SAS URLs on read (`SasExpiryHours = 1` default in `CatalogAppSettings.cs`). Clients must never persist those temporary SAS URLs as permanent image identifiers.
+- **Immediate direct reads vs. eventual search:** Book writes invalidate `book:{id}` in Redis FusionCache so direct lookups return current values right away, while PostgreSQL triggers enqueue `book_id` in `pending_vector_updates` for asynchronous Qdrant indexing.
+- **Immutable accepted orders:** **Basket API** and **Ordering API** re-validate current prices through gRPC (`book.v1.BookGrpcService`) at checkout. Editing a book's price or metadata in Catalog never retroactively alters an already accepted order in `orderingdb`.
 
-Immediately after a book is created or updated, any cached copy of that [[entity|book]] is cleared so direct reads reflect the latest values right away. Affected records are queued for background search indexing, meaning free-text search may lag briefly until processing completes. Downstream contexts such as [[domain|shopping]] must re-validate price and availability at checkout, and a [[domain|catalog]] change never rewrites an already accepted [[domain|ordering]] order.
+## Design trade-offs
 
-## 4. Trade-offs & Lessons Learned
+| Decision                                                        | Benefits                                                                                                     | Costs and limits                                                                                           |
+| :-------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
+| **Restrict author deletion; allow category/publisher deletion** | Protects author attribution integrity while keeping taxonomy reorganization low-friction                     | Removing an author requires unlinking or retiring their books first                                        |
+| **Soft-delete books (`is_deleted = true`)**                     | Preserves historical book identity and order-audit traceability while removing titles from storefront search | Deleted rows remain in PostgreSQL and require filtering in queries and ingestion                           |
+| **Store internal URN and sign short-lived SAS URLs on read**    | Prevents public blob scraping (`AllowBlobPublicAccess = false`) and decouples clients from storage internals | Clients that cache book payloads beyond `SasExpiryHours` encounter HTTP `403` until they re-fetch the book |
+| **Read-only rating summary updated asynchronously**             | Keeps Reviews (`Cosmos DB`) authoritative and prevents manual tampering with customer scores                 | Rating changes appear in Catalog after brief Kafka propagation lag                                         |
 
-- **Strict author protection vs. flexible taxonomy cleanup:** Preventing [[entity|author]] deletion while books exist safeguards author attribution, whereas clearing [[entity|category]] or [[entity|publisher]] links allows taxonomy updates without forcing bulk book edits.
-- **Soft deletion of books:** Retaining soft-deleted book records preserves historical identity and order traceability while cleanly removing titles from customer search.
-- **Immediate read accuracy vs. eventual search indexing:** Clearing cached book reads guarantees immediate accuracy on direct lookups while accepting a brief background delay before text search catches up.
-- **Short-lived image links:** Time-limited media links improve access control, at the trade-off that callers must fetch fresh book data rather than storing image links long-term.
+## Alternatives considered
 
-## 5. Technical Reference
+- **Hard-deleting books from PostgreSQL:** Rejected because removing primary keys breaks historical references in accepted orders and complicates vector cleanup.
+- **Public anonymous blob URLs for book covers:** Rejected to keep Azure Storage locked down (`AllowBlobPublicAccess = false`) and signed through Managed Identity User Delegation Keys.
+- **Allowing Catalog admins to edit `average_rating` directly:** Rejected because **Reviews** owns individual `Feedback` records and Catalog's summary must remain a faithful projection.
 
-- **Audience & Integration Contract:** Teams integrating with [[service|catalog-api]] should follow the [[service|catalog-api]] OpenAPI contract.
-- **Image Upload & Storage:** Send cover images using multipart form data on [[entity|book]] create or update requests. The database stores only a URN referencing [[container|catalog-blob]]; image URLs returned by the API are time-limited and must not be saved as identifiers.
-- **Verification & Read-Only Fields:** Confirm created or updated books with [[query|GetBook]]. Rating fields (`average_rating`, `total_reviews`) are not editable and are derived from [[domain|reviews]] [[entity|feedback]].
-- **Cache & Indexing Propagation:** Writes invalidate the cached [[entity|book]] entry and enqueue affected [[entity|book]] records for [[service|catalog-ingestion]].
-- **Downstream Checkout & Orders:** [[domain|shopping]] re-validates price and availability at checkout; [[domain|catalog]] updates never mutate accepted [[domain|ordering]] orders.
+## Related documentation
 
-<Footer />
+- Catalog search and discovery — How structured filters and hybrid Qdrant text search serve catalog reads.
+- Catalog consistency and data ownership reference — Authoritative vs. derived Catalog stores and cache key inventory.
+- How to resolve broken book images in Catalog — Diagnose expired SAS links, URN mismatches, and missing blobs.

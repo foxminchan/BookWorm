@@ -1,10 +1,52 @@
-## List recognizers with `HttpClient`
+---
+summary: Usage examples for Get recognizers.
+---
 
-The optional `language` parameter uses a two-character ISO 639-1 code.
+## Query English recognizers with curl
 
-<CodeGroup dropdown>
+<CodeGroup>
 
-```csharp GetRecognizers.cs
+```bash
+curl --fail --get --data-urlencode "language=en" "<presidio-analyzer-url>/recognizers"
+```
+
+</CodeGroup>
+
+Where:
+
+- `<presidio-analyzer-url>`: Base URL of the `presidio-analyzer` container (resolved from the Aspire Dashboard or `ConnectionStrings__presidio-analyzer`).
+
+Illustrative response (`200 OK`, from the upstream OpenAPI example; the installed image may expose a different list):
+
+<CodeGroup>
+
+```json
+[
+	"CryptoRecognizer",
+	"CreditCardRecognizer",
+	"IbanRecognizer",
+	"UsPhoneRecognizer",
+	"EmailRecognizer",
+	"UsPassportRecognizer",
+	"NhsRecognizer",
+	"IpRecognizer",
+	"SpacyRecognizer",
+	"SgFinRecognizer",
+	"UsSsnRecognizer",
+	"UsBankRecognizer",
+	"DomainRecognizer",
+	"UsLicenseRecognizer",
+	"UsItinRecognizer"
+]
+```
+
+</CodeGroup>
+
+## Query recognizers with C# `HttpClient`
+
+<CodeGroup>
+
+```csharp
 using System.Net.Http.Json;
 
 var analyzerUrl = Environment.GetEnvironmentVariable("ANALYZER_URL")

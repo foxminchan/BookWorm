@@ -10,70 +10,107 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+This reference defines the pre-release review checklist for changes to BookWorm Chat API (`chatting`) agents, routing policies, governance rules, skills, and workflow executors. Use this checklist during pull request reviews whenever you modify agent prompts, `Microsoft-Decision-1` routing logic, MCP Tools (`mcptools`), or Rating API Agent-to-Agent (A2A) gRPC handoffs.
 
-## 1. Context & Problem
+## Overview
 
-Modifications to conversational agents, routing questions, decision thresholds, or multi-step handoffs can easily create unintended ripple effects. Without a shared review gate before and after making changes, updates can blur boundaries with neighboring business domains, cause assistants to fabricate unavailable book details or imply live account access, and leave architecture diagrams, guides, and support runbooks out of sync with live behavior.
+| Property              | Value                                                                                                                                        |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Conversational subdomain (`BookWorm.Chat`)                                                                                                   |
+| **Source**            | `src/Services/Chat/BookWorm.Chat/`                                                                                                           |
+| **Protocol / format** | AG-UI (`/ag-ui`), Agent Discovery (`/agents`), MCP Streamable HTTP (`/mcp`), A2A gRPC (`rating`)                                             |
+| **Authentication**    | Microsoft Entra ID JWT (`customer` role + `chatting_read`, `chatting_write` scopes); Entra Agent Identities (`chatAgentId`, `ratingAgentId`) |
 
-## 2. Business Value
+## Impacted source files
 
-- **Customer trust and safety**: Prevents misleading responses, fabricated catalog facts, and false promises around account lookups or review persistence.
-- **Clear domain ownership**: Protects Catalog, Shopping, Ordering, and Reviews as the single sources of truth for their business data and operations.
-- **Predictable delivery**: Gives Solution Architects, Product Managers, Business Analysts, and Developers a consistent readiness standard before releasing routing or prompt changes.
-- **Operational alignment**: Keeps customer-facing behavior, documentation, and support triage guides synchronized.
+Map every planned change to its authoritative source files before modifying behavior.
 
-## 3. How It Works
+| Change area                         | Primary files in `src/Services/Chat/BookWorm.Chat/`                                                                                                                                                                                                                  | Dependent contracts or services                                                                                                                   |
+| :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Input validation and truncation** | `Orchestration/Executors/Validation/InputValidationExecutor.cs`, `Domain/Services/PromptValidationService.cs`, `Domain/AggregatesModel/ConversationAggregate/UserPrompt.cs`, `Infrastructure/Governance/GovernancePromptSafetyEvaluator.cs`                          | `Policies/chat-agents.yaml` (`multi_turn_injection_patterns`)                                                                                     |
+| **Routing and disambiguation**      | `Orchestration/Executors/Routing/DecisionRouterExecutor.cs`, `Infrastructure/Decisions/ChatRoutingDecisionService.cs`, `Infrastructure/Decisions/ChatRoutingGuardrailEvaluator.cs`, `Orchestration/Executors/Disambiguation/*`, `Orchestration/AGUIWorkflowAgent.cs` | Microsoft Foundry `decision` deployment (`Microsoft-Decision-1`)                                                                                  |
+| **Workflow graph and handoffs**     | `Orchestration/WorkflowRegistration.cs`, `Orchestration/EndpointMapping.cs`                                                                                                                                                                                          | Azure Blob Storage (`chatting-blob`, prefix `ag-ui/`)                                                                                             |
+| **Book Agent and researchers**      | `Agents/BookSearch/book-agent.yaml`, `Agents/BookSearch/catalog-researcher.yaml`, `Agents/BookSearch/recommendation-researcher.yaml`, `Agents/BookSearch/BookAgentRegistration.cs`, `Skills/book-catalog/*`, `Infrastructure/HarnessProviderFactory.cs`              | MCP Tools (`mcptools` `/mcp`), Catalog API (`book.v1.BookGrpcService`), Storefront (`@bookworm/storefront`) AG-UI tools, Microsoft Foundry memory |
+| **QA Agent and store policies**     | `Agents/CustomerSupport/qa-agent.yaml`, `Agents/CustomerSupport/QAAgentRegistration.cs`, `Skills/store-policies/SKILL.md`, `Skills/store-policies/references/STORE_FAQ.md`                                                                                           | None (policy-only; no live Basket or Ordering clients)                                                                                            |
+| **Rating Agent integration**        | `Agents/Rating/RatingAgentRegistration.cs`                                                                                                                                                                                                                           | Rating API (`rating`) A2A gRPC server, Entra Agent Identity token exchange                                                                        |
+| **Governance and privacy**          | `Policies/chat-agents.yaml`, `Extensions/Extensions.cs`, `Infrastructure/Extensions.cs`                                                                                                                                                                              | Presidio (`presidio-analyzer`, `presidio-anonymizer`), Microsoft Agent Governance Toolkit                                                         |
+| **Response formatting**             | `Orchestration/Executors/Formatting/ResponseFormatterExecutor.cs`, `Domain/Services/ResponseFormattingService.cs`, `Domain/AggregatesModel/ConversationAggregate/AssistantResponse.cs`                                                                               | Storefront AG-UI tool-call rendering                                                                                                              |
 
-Before releasing any change to the conversational experience, teams follow three review stages:
+## Pre-change scope and boundary checklist
 
-1. **Assess Scope and Domain Boundaries**: Determine which part of the interaction flow is affected—initial input screening, routing decisions, specialist behavior, delegated multi-step research, or final answer formatting. Confirm that adjacent domains keep ownership of their own data and operations, and define explicit limits for unsupported languages, off-topic questions, live account inquiries, and incomplete book details so gaps are never filled with guesses.
-2. **Synchronize Documentation and Catalog Assets**: Update the affected specialist profiles, routing policies, end-to-end interaction flows, and system or service descriptions so they accurately reflect externally visible behavior. Review related guides and operational runbooks to remove or update outdated steps.
-3. **Verify End-to-End Outcomes**: Validate both accepted and rejected inputs, every supported specialist destination, and boundary outcomes for unsupported languages or out-of-scope topics. Confirm that mixed support-and-book requests behave cleanly, parallel research branches merge into a useful summary even when some details are missing, and session behavior is never described as durable history unless persistence actually exists.
+Verify every boundary invariant before editing prompts, executors, or tool registrations.
 
-## 4. Trade-offs & Lessons Learned
+- [ ] **Identify affected workflow layers:** Confirm whether the change modifies Layer 1 (`InputValidationExecutor`), Layer 2 (`DecisionRouterExecutor`, `RouteDisambiguationPort`, specialist sub-workflows, delegated researchers), or Layer 3 (`ResponseFormatterExecutor`).
+- [ ] **Preserve backend domain ownership:** Keep Catalog API, Basket API, Ordering API, and Rating API as the sole authoritative owners of catalog records, baskets, orders, and persisted `Feedback` records. Do not add PostgreSQL, Redis, Kafka, or direct transactional write clients to Chat API.
+- [ ] **Separate backend boundaries from Storefront AG-UI tools:** Keep any user-confirmed basket UI actions (`addToBasket`, `viewBasket`, `showBasketSummary`) strictly inside Storefront (`@bookworm/storefront`) client-side AG-UI tool handlers, not server-side mutations in Chat API.
+- [ ] **Preserve grounding and uncertainty rules:** Require `Book Agent`, `book-catalog-researcher`, and `book-recommendation-researcher` to cite only MCP catalog results and state missing prices, availability, or ratings as unavailable rather than guessing.
+- [ ] **Preserve QA Agent policy-only scope:** Ensure `QA Agent` answers strictly from `Skills/store-policies/` and never claims live access to customer accounts, baskets, or orders.
+- [ ] **Keep sentiment inline without adding a Sentiment Agent:** Keep emotional book feedback handled inline by `Book Agent` (`book-agent.yaml`) without introducing a separate sentiment service or agent, and never imply that chat feedback created a persisted Reviews `Feedback` record.
+- [ ] **Account for all three persistence and memory tiers:**
+  - AG-UI conversation sessions persist in Azure Blob Storage container `chatting-blob` under prefix `ag-ui/` (Azurite locally; Azure Storage in cloud).
+  - `Book Agent` file memory (`FileMemoryProvider` rooted at `Chat:Harness:FileMemory:Root`) is container-local and ephemeral across container restarts.
+  - `Book Agent` reading preference memory (`FoundryMemoryProvider`, store `Chat:Harness:FoundryMemory:StoreName`) is user-scoped via Microsoft Entra ID claims.
 
-- **Upfront review vs. iteration speed**: Requiring documentation and cross-path verification adds friction to small routing or prompt tweaks, but catches boundary regressions before customers encounter them.
-- **Strict domain separation vs. conversational convenience**: Keeping Catalog, Shopping, Ordering, and Reviews isolated from direct conversational writes limits what chat can do autonomously, yet prevents inconsistent business state and unverified data claims.
-- **Explicit session expectations**: Teams must avoid assuming or documenting conversation memory as durable across restarts unless explicit persistence has been implemented and verified.
+## Governance, security, and contract checklist
 
-## 5. Technical Reference
+:::note
+`Policies/chat-agents.yaml` enforces `default_action: deny`. Any new MCP tool, skill tool, harness tool, Storefront UI tool, or handoff tool fails silently or returns a governance denial unless explicitly permitted for the calling agent DID.
+:::
 
-### Before changing behavior
+- [ ] **Update `Policies/chat-agents.yaml` allowlists and denylists:** Add explicit `allow` rules for any new tools under the exact agent DID (`did:mesh:bookworm:book`, `did:mesh:bookworm:book-catalog-researcher`, `did:mesh:bookworm:book-recommendation-researcher`, or `did:mesh:bookworm:qa`), and preserve `qa-agent-deny-catalog-tools` (priority 70).
+- [ ] **Review `conversation_guardian` and injection rules:** Confirm `escalation_score_threshold` (`0.6`), `max_conversation_turns` (`30`), and `multi_turn_injection_patterns` still permit legitimate handoffs without false blocks.
+- [ ] **Verify Presidio PII and guardrail middleware:** Keep `UsePIIMiddleware(sp)` and `UseGuardrailMiddleware()` registered in both `BookAgentRegistration.cs` and `QAAgentRegistration.cs`.
+- [ ] **Verify Entra ID auth and rate limits:** Keep `/ag-ui` protected by `Authorization.Policies.Customer` (`customer` role + `chatting_read` and `chatting_write` scopes), `RequirePerUserRateLimit()`, and `UseClaimsBasedAgentIsolation()`.
+- [ ] **Verify Rating Agent A2A gRPC and MCP Tools contracts:** Confirm any change to `mcptools` tool signatures (`search_catalog`, `get_book`, `list_categories`, `list_authors`) matches `book-agent.yaml`, `catalog-researcher.yaml`, and `recommendation-researcher.yaml`, and confirm `RatingAgentRegistration.cs` preserves Entra Agent Identity token exchange (`AddAgentTokenExchange(Services.Rating)`).
 
-- [ ] Identify whether the change affects input validation, Decision Router
-      questions/thresholds, specialist behavior, delegated research, or final
-      response formatting.
-- [ ] Keep Catalog, Shopping, Ordering, and Reviews as owners of their business
-      data and operations.
-- [ ] Confirm the intended boundary for unsupported languages, out-of-scope
-      requests, and questions that need live account-specific information.
-- [ ] For book answers, define how the response handles missing or incomplete
-      supporting information without inventing facts.
+## Documentation synchronization checklist
 
-### Update the catalog
+Update affected documentation in the same pull request as code or prompt changes.
 
-- [ ] Update the affected agent resource, such as [[agent|book-agent]],
-      [[agent|qa-agent]], or [[agent|rating-agent]], or the routing policy in
-      `ChatRoutingDecisionService`.
-- [ ] Update the [[flow|agent-orchestration]] when the request path, branch,
-      handoff, or terminal outcome changes.
-- [ ] Keep the [[system|chat-system]] and [[service|chat-api]] descriptions
-      consistent with externally visible behavior.
-- [ ] Review related domain guidance and runbooks for steps that are no longer
-      valid.
+- [ ] Update Conversational architecture and domain boundaries reference when workflow stages, persistence tiers, security controls, or handoff edges change.
+- [ ] Update How BookWorm routes customer chat requests when `PromptValidationService` bounds, `Microsoft-Decision-1` questions or thresholds (`0.5` / `0.6`), or `RouteDisambiguationPort` options change.
+- [ ] Update How BookWorm handles book discovery and recommendations, How BookWorm answers store and customer-support questions, or How BookWorm handles book feedback in conversation when specialist behavior changes.
+- [ ] Update operational runbooks (no usable response, unexpected routing or rejection, and incomplete book research) when diagnostic log messages, error responses, or recovery steps change.
 
-### Verify the behavior
+## Verification matrix and commands
 
-- [ ] Test accepted and rejected input paths.
-- [ ] Test each supported Decision Router destination (`Book`, `QA`, `Rating`)
-      and its boundary outcomes (`NonEnglish`, `OutOfScope`).
-- [ ] Test mixed requests where customer-support questions also need book
-      information.
-- [ ] For delegated research, verify both branches and the synthesized result.
-- [ ] Verify that the final response is useful when one or more details are
-      unavailable.
-- [ ] Confirm session behavior is not described as durable unless persistence
-      has been implemented.
+Validate every conversational path before merging.
 
-<Footer />
+| Verification path                            | Required test cases                                                                                                                                                                                                                                                                                      |
+| :------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Input validation**                         | Empty/whitespace input (`MinLength = 1`), prompts over `2000` characters truncated to `1900` + suffix, `SuspiciousPatternRegex` blocks, `GovernancePromptSafetyEvaluator` blocks, and pure tool-result resume turns bypassed (`IsPureToolResultResumeTurn`)                                              |
+| **Decision Router (`Microsoft-Decision-1`)** | `is_safe < 0.5` (`RouteTarget.UnsafeInput`), `is_english < 0.5` (`RouteTarget.NonEnglish`), `is_in_scope < 0.5` (`RouteTarget.OutOfScope`), direct routes (`Book`, `QA`, `Rating`), partial response fallback (`DecisionUnansweredException`), and `< 0.6` confidence pause at `RouteDisambiguationPort` |
+| **HITL disambiguation resume**               | Both tool-result responses (`disambiguateRoute`) and plain-text replies (`1`/`book`, `2`/`qa`/`support`/`policy`, `3`/`rating`/`review`) normalized by `AGUIWorkflowAgent.NormalizeDisambiguationResume`                                                                                                 |
+| **Specialist handoffs**                      | `QA -> Book` (mixed support and book), `Book -> QA` (book then policy), `Book -> Rating` (only after resolving a single book ID; ambiguous or missing titles do not hand off), and `Rating` terminal behavior                                                                                            |
+| **Delegated book research**                  | Direct single-step lookup vs. concurrent `book-catalog-researcher` and `book-recommendation-researcher` synthesis with deduplication and partial-evidence transparency; Plan Mode approval pause before multi-step research                                                                              |
+| **Response formatting and sessions**         | Normal reply formatting, `SystemPromptLeakRegex` stripping, `AssistantResponse.DefaultFallbackMessage` on empty text, empty-string passthrough on `FunctionCallContent`-only assistant messages, and Azure Blob Storage (`chatting-blob`, `ag-ui/`) session round-trip                                   |
+
+Run the targeted Chat unit tests first, then run repository-wide formatting and verification tasks from the repository root:
+
+<CodeGroup>
+
+```bash
+dotnet test src/Services/Chat/BookWorm.Chat.UnitTests
+mise run format
+mise run test
+```
+
+</CodeGroup>
+
+Expected output:
+
+<CodeGroup>
+
+```text
+Test run summary: Passed! (0 failed)
+```
+
+</CodeGroup>
+
+The Storefront `ai-chatbot.feature` exists and is tagged `@high-priority` and `@chat`, but no repository CI workflow runs the Storefront Playwright suite. A mandatory manual PR gate for prompt changes is not documented.
+
+## Related documentation
+
+- Conversational architecture and domain boundaries reference — Workflow layers, storage boundaries, and security controls.
+- How BookWorm routes customer chat requests — Detailed routing, disambiguation, and handoff behavior.
+- How to diagnose unexpected chat routing or rejection — Operational triage for validation and routing defects.

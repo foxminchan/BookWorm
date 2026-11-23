@@ -12,70 +12,126 @@ badges:
     textColor: blue
 ---
 
-## Explanation: Thin Routes & Feature Slices
+This reference documents BookWorm's three Next.js 16 App Router applications (**Storefront**, **Commerce**, and **Backoffice**), including API Gateway zone ownership, development ports, Next.js configuration flags, standard folder layout, authentication scopes, SEO ownership, and complete route maps. For architectural rationale, see [[doc|frontend/007-architecture-and-state-design]] and [[doc|frontend/006-microfrontend-architecture]].
 
-BookWorm runs three Next.js App Router applications served behind the YARP API gateway: `@bookworm/storefront` and `@bookworm/commerce` (which together form the customer-facing microfrontend experience) and `@bookworm/backoffice` (for store staff). When page files mix routing, data fetching, form state, and layout logic together, server and client boundaries blur and routes become difficult to test.
+## Overview
 
-BookWorm keeps route files thin and delegates domain logic to focused feature slices:
+| Property               | Value                                                                                                                                                                           |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Owner**              | BookWorm Frontend (`src/Clients/apps/`)                                                                                                                                         |
+| **Source**             | `src/Clients/apps/{storefront,commerce,backoffice}`, `src/Clients/apps/storefront/microfrontends.json`, `src/Aspire/BookWorm.AppHost/Extensions/Frontend/FrontendExtensions.cs` |
+| **Protocol / ingress** | HTTPS via YARP API Gateway (`gateway`) with `X-Mfe-Zone` response header                                                                                                        |
+| **Authentication**     | Better Auth (`^1.7.28`) + Microsoft Entra ID (callback: `/api/auth/oauth2/callback/microsoft-entra-id`)                                                                         |
 
-- **Thin route entrypoints:** Route files handle page metadata, loading boundaries, and server-side prefetching, then render a single view component from `features/`.
-- **Domain-aligned feature slices:** UI components, filters, tables, and forms are grouped under `features/` by business capability ([[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]]), mirroring the backend service boundaries.
-- **Centralized navigation and constants:** Application titles, pagination defaults, and navigation trees live in `config/` (or `@workspace/storefront-shell` for customer zones) rather than being duplicated across components.
-- **Separate authentication scopes:** Customer zones (`storefront` and `commerce`) share a single Better Auth session owned by `storefront` (`/api/auth/[...all]`), while `backoffice` configures its own Microsoft Entra ID scopes through `@workspace/auth` so customer sessions never request staff-only write permissions. Backend APIs still enforce authorization independently.
+## Application and zone ownership matrix
 
----
+Combines application runtime attributes (`FrontendExtensions.cs`, `next.config.mjs`) with microfrontend (MFE) zone routing (`microfrontends.json`):
 
-## Reference
+| Attribute                | Storefront (`@bookworm/storefront`)                                                    | Commerce (`@bookworm/commerce`)                                                                      | Backoffice (`@bookworm/backoffice`)                              |
+| :----------------------- | :------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| **Aspire resource ID**   | `storefront`                                                                           | `commerce`                                                                                           | `backoffice`                                                     |
+| **Audience**             | Public and authenticated bookstore customers                                           | Authenticated bookstore customers (basket, checkout, orders)                                         | Store administrators and staff                                   |
+| **Dev port**             | `3000` (`microfrontends.json`)                                                         | `3001` (`microfrontends.json`)                                                                       | Dynamic `PORT` under Aspire (Playwright E2E `defaultPort: 3001`) |
+| **Gateway mount**        | `/{**remainder}` (lowest priority fallback, `int.MaxValue`)                            | `/basket`, `/checkout`, `/checkout/:path*`, `/account`, `/account/:path*`, `/commerce-assets/:path*` | `/backoffice/{**remainder}`                                      |
+| **`X-Mfe-Zone` header**  | `storefront`                                                                           | `commerce`                                                                                           | `backoffice`                                                     |
+| **Next.js config flags** | `cacheComponents: true`, `withMicrofrontends`                                          | `cacheComponents: false`, `withMicrofrontends`, `assetPrefix: "commerce-assets"`                     | `basePath: "/backoffice"`                                        |
+| **Cached & public**      | Yes (public pages indexed via `@workspace/seo`)                                        | No (private, dynamic, non-indexed)                                                                   | No (staff-only, non-indexed)                                     |
+| **Auth ownership**       | Owns `/api/auth/[...all]` (Better Auth + Entra ID)                                     | Shares Storefront session (`.WithoutEntraId()` in AppHost); `proxy.ts` enforces login                | Owns `/backoffice/api/auth/[...all]` (separate Entra ID scopes)  |
+| **Health check path**    | `/`                                                                                    | `/api/health`                                                                                        | `/backoffice`                                                    |
+| **Conversational UI**    | CopilotKit + AG-UI (`/api/copilotkit/[[...slug]]`, `NEXT_PUBLIC_COPILOT_ENABLED=true`) | —                                                                                                    | —                                                                |
+| **E2E BDD suites**       | 9 Playwright BDD feature files                                                         | None (unit/component tests only; covered via Storefront E2E)                                         | 6 Playwright BDD feature files                                   |
 
-### Application Comparison
+## Standard application folder layout
 
-| Attribute               | `@bookworm/storefront`                             | `@bookworm/commerce`                                         | `@bookworm/backoffice`               |
-| :---------------------- | :------------------------------------------------- | :----------------------------------------------------------- | :----------------------------------- |
-| **Audience**            | Online bookstore customers (public & discovery)    | Authenticated bookstore customers (cart & orders)            | Store administrators and staff       |
-| **Gateway Path Prefix** | `/` (fallback zone)                                | `/basket`, `/checkout/*`, `/account/*`, `/commerce-assets/*` | `/backoffice`                        |
-| **Rendering Features**  | App Router, `cacheComponents`, MFE, Turbopack      | App Router, MFE (`assetPrefix`), Turbopack                   | App Router, `basePath`, Turbopack    |
-| **Auth Ownership**      | Owns `/api/auth/[...all]` (Better Auth + Entra ID) | Consumes shared session; `proxy.ts` enforces login           | Owns `/backoffice/api/auth/[...all]` |
-| **Conversational UI**   | CopilotKit + AG-UI (`/api/copilotkit/[[...slug]]`) | None                                                         | None                                 |
+Every application under `src/Clients/apps/<app-name>/` follows a consistent thin-route structure, with app-specific extensions noted inline:
 
-### Standard Application Folder Structure
+<CodeGroup>
+
+```text
+apps/<app-name>/
+├── app/                     # Thin Next.js App Router layouts, pages, loading/error boundaries, API routes
+├── atoms/                   # App-local Jotai atoms (storefront: feature-flags-atom.ts)
+├── components/              # App-specific shared UI components
+├── config/                  # App titles, pagination defaults, navigation config
+├── features/                # Domain-aligned feature slices (UI, forms, tables, views)
+├── hooks/                   # App-local React hooks (backoffice: dashboard stats, CRUD/table hooks)
+├── lib/                     # App utilities (auth config, query client wiring, MSW bootstrap)
+├── __tests__/               # Vitest unit and component tests + setup.ts
+├── e2e/                     # Playwright BDD features and steps (storefront and backoffice only)
+├── env.mjs                  # Composed @workspace/env runtime validation schema
+├── instrumentation.ts       # OpenTelemetry registration via @workspace/otel
+├── microfrontends.json      # Multi-zone route manifest (storefront only; shared with commerce & AppHost)
+├── next.config.mjs          # createNextConfig(...) wrapper
+├── proxy.ts                 # Protected-route login redirect guard (commerce only)
+└── turbo.json               # Declares "tags": ["app"]
+```
+
+</CodeGroup>
+
+## Route maps
+
+### Storefront (`@bookworm/storefront`)
+
+Served at the root origin (`/`) via the API Gateway fallback zone (`X-Mfe-Zone: storefront`).
+
+| Route group / path                                           | Feature area                                 | Primary backing domain and service                  |
+| :----------------------------------------------------------- | :------------------------------------------- | :-------------------------------------------------- |
+| `(main)/`                                                    | Landing showcase and book discovery          | Catalog (**Catalog API**)                           |
+| `(catalog)/shop`                                             | Filterable catalog listing                   | Catalog (**Catalog API**)                           |
+| `(catalog)/shop/[id]`                                        | Book detail view and customer reviews        | Catalog (**Catalog API**), Reviews (**Rating API**) |
+| `(catalog)/categories`                                       | Category directory                           | Catalog (**Catalog API**)                           |
+| `(catalog)/publishers`                                       | Publisher directory                          | Catalog (**Catalog API**)                           |
+| `(auth)/login`, `(auth)/register`                            | Customer sign-in and registration redirects  | Microsoft Entra ID (via Better Auth)                |
+| `(content)/about`, `(content)/shipping`, `(content)/returns` | Static informational pages                   | —                                                   |
+| `/api/auth/[...all]`                                         | Better Auth OAuth2 and session route handler | Better Auth + Microsoft Entra ID                    |
+| `/api/copilotkit/[[...slug]]`                                | Streaming AI assistant runtime (AG-UI)       | Conversational (**Chat API**)                       |
+
+### Commerce (`@bookworm/commerce`)
+
+Served behind the API Gateway under explicit zone patterns from `microfrontends.json` (`X-Mfe-Zone: commerce`). `apps/commerce/proxy.ts` enforces session cookies on `["/basket", "/checkout", "/account"]` and redirects unauthenticated requests to `/login?callbackUrl=<path>`.
+
+| Route group / path                 | Feature area                                                    | Primary backing domain and service |
+| :--------------------------------- | :-------------------------------------------------------------- | :--------------------------------- |
+| `(basket)/basket`                  | Customer shopping basket                                        | Shopping (**Basket API**)          |
+| `(ordering)/checkout/confirmation` | Post-checkout order confirmation                                | Ordering (**Ordering API**)        |
+| `(ordering)/account`               | Customer account profile and address                            | Ordering (**Ordering API**)        |
+| `(ordering)/account/orders`        | Customer order history list                                     | Ordering (**Ordering API**)        |
+| `(ordering)/account/orders/[id]`   | Individual order detail and status                              | Ordering (**Ordering API**)        |
+| `/api/health`                      | Aspire health check endpoint (excluded from `proxy.ts` matcher) | —                                  |
+
+### Backoffice (`@bookworm/backoffice`)
+
+Mounted at `basePath: "/backoffice"` (`X-Mfe-Zone: backoffice`). Every route below is externally accessed with the `/backoffice` prefix (for example, `/backoffice/books` and `/backoffice/api/auth/[...all]`).
+
+| Route group / internal path      | External gateway path           | Feature area                                        | Primary backing domain and service                     |
+| :------------------------------- | :------------------------------ | :-------------------------------------------------- | :----------------------------------------------------- |
+| `(admin)/`                       | `/backoffice`                   | Admin overview dashboard (KPIs, charts, SSE stream) | Ordering (**Ordering API**), Catalog (**Catalog API**) |
+| `(admin)/(catalog)/books`        | `/backoffice/books`             | Book inventory list                                 | Catalog (**Catalog API**)                              |
+| `(admin)/(catalog)/books/new`    | `/backoffice/books/new`         | Create book form                                    | Catalog (**Catalog API**)                              |
+| `(admin)/(catalog)/books/[id]`   | `/backoffice/books/[id]`        | Edit book detail (ETag concurrency)                 | Catalog (**Catalog API**)                              |
+| `(admin)/(catalog)/authors`      | `/backoffice/authors`           | Author taxonomy management                          | Catalog (**Catalog API**)                              |
+| `(admin)/(catalog)/categories`   | `/backoffice/categories`        | Category taxonomy management                        | Catalog (**Catalog API**)                              |
+| `(admin)/(catalog)/publishers`   | `/backoffice/publishers`        | Publisher taxonomy management                       | Catalog (**Catalog API**)                              |
+| `(admin)/(ordering)/customers`   | `/backoffice/customers`         | Buyer directory management                          | Ordering (**Ordering API**)                            |
+| `(admin)/(ordering)/orders`      | `/backoffice/orders`            | Order management list                               | Ordering (**Ordering API**)                            |
+| `(admin)/(ordering)/orders/[id]` | `/backoffice/orders/[id]`       | Order detail, cancel/complete actions               | Ordering (**Ordering API**)                            |
+| `(admin)/(rating)/reviews`       | `/backoffice/reviews`           | Customer feedback moderation                        | Reviews (**Rating API**)                               |
+| `/api/auth/[...all]`             | `/backoffice/api/auth/[...all]` | Staff Better Auth route handler                     | Better Auth + Microsoft Entra ID                       |
+
+## SEO and metadata scope
+
+- **Storefront:** Uses `@workspace/seo` to generate Open Graph metadata, canonical URLs, and Schema.org JSON-LD structured data for public catalog and content pages.
+- **Commerce and Backoffice:** Serve authenticated workflows that are excluded from public search indexing.
+
+Commerce sets `robots: { index: false, follow: false }` in its root layout. Backoffice's root layout does not declare `robots` metadata; its admin layout enforces an `AuthGuard`, but that is not equivalent to a `noindex, nofollow` directive.
+
+## Related documentation
+
+- [[doc|frontend/009-add-customer-page]] — Step-by-step workflow to add a Storefront or Commerce route.
+- [[doc|frontend/006-microfrontend-architecture]] — Why Storefront and Commerce are split and how YARP precedence works.
+- [[doc|frontend/001-monorepo-architecture]] — Monorepo layout and 16 shared `@workspace/*` packages.
+- [[doc|frontend/003-data-fetching-and-state]] — How feature slices query and mutate backend services.
+
+## App folder structure
 
 <MermaidFileLoader file="mermaids/app-folder-structure.mmd" />
-
-### Storefront Route Map
-
-| Route Group / Path                             | Feature Area                    | Primary Backing Domain & Service                                                              |
-| :--------------------------------------------- | :------------------------------ | :-------------------------------------------------------------------------------------------- |
-| `(main)/`                                      | Landing showcase & discovery    | [[domain\|catalog]] ([[service\|catalog-api]])                                                |
-| `(catalog)/shop`, `(catalog)/shop/[id]`        | Catalog browsing & book details | [[domain\|catalog]] ([[service\|catalog-api]]), [[domain\|reviews]] ([[service\|rating-api]]) |
-| `(catalog)/categories`, `(catalog)/publishers` | Taxonomy listings               | [[domain\|catalog]] ([[service\|catalog-api]])                                                |
-| `(auth)/login`, `(auth)/register`              | Authentication redirects        | [[system\|identity-provider]]                                                                 |
-| `(content)/about`, `/shipping`, `/returns`     | Informational pages             | —                                                                                             |
-| `/api/auth/[...all]`                           | Better Auth route handler       | Better Auth + Microsoft Entra ID                                                              |
-| `/api/copilotkit/[[...slug]]`                  | AI chat runtime                 | [[domain\|conversational]] ([[service\|chat-api]])                                            |
-
-### Commerce Route Map
-
-| Route Group / Path                                         | Feature Area              | Primary Backing Domain & Service               |
-| :--------------------------------------------------------- | :------------------------ | :--------------------------------------------- |
-| `(basket)/basket`                                          | Shopping basket           | [[domain\|shopping]] ([[service\|basket-api]]) |
-| `(ordering)/checkout/confirmation`                         | Order confirmation        | [[domain\|ordering]] ([[service\|order-api]])  |
-| `(ordering)/account`, `(ordering)/account/orders`, `/[id]` | Customer account & orders | [[domain\|ordering]] ([[service\|order-api]])  |
-| `/api/health`                                              | Health check endpoint     | —                                              |
-
-### Backoffice Route Map
-
-| Route Group / Path                                        | Feature Area                | Primary Backing Domain & Service                                   |
-| :-------------------------------------------------------- | :-------------------------- | :----------------------------------------------------------------- |
-| `(admin)/`                                                | Admin overview dashboard    | [[domain\|ordering]] ([[service\|order-api]]), [[domain\|catalog]] |
-| `(admin)/(catalog)/books`, `/new`, `/[id]`                | Book inventory management   | [[domain\|catalog]] ([[service\|catalog-api]])                     |
-| `(admin)/(catalog)/categories`, `/authors`, `/publishers` | Catalog taxonomy management | [[domain\|catalog]] ([[service\|catalog-api]])                     |
-| `(admin)/(ordering)/customers`, `/orders`, `/orders/[id]` | Customer & order management | [[domain\|ordering]] ([[service\|order-api]])                      |
-| `(admin)/(rating)/reviews`                                | Customer review moderation  | [[domain\|reviews]] ([[service\|rating-api]])                      |
-| `/api/auth/[...all]`                                      | Better Auth route handler   | Better Auth + Microsoft Entra ID                                   |
-
-### Related Documentation
-
-- [[doc|frontend/001-monorepo-architecture]] — Workspace boundary tiers and package inventory
-- [[doc|frontend/003-data-fetching-and-state]] — How feature slices query and mutate backend data
-- [[doc|frontend/006-microfrontend-architecture]] — Multi-zone routing between `storefront` and `commerce`
-- [[doc|platform/004-identity-and-rbac-matrix]] — Microsoft Entra ID identity and gateway configuration

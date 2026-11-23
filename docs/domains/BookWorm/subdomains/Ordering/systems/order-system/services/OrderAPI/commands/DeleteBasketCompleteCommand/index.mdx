@@ -14,42 +14,62 @@ owners:
 schemaPath: schema.json
 ---
 
-## 1. Context & Problem
+`DeleteBasketCompleteCommand` (v1.0.0) is a Kafka integration command published by **Finance** (Azure Functions + Azure Durable Task Scheduler `OrderOrchestrator`) to inform **Ordering API** that post-checkout basket cleanup succeeded. **Ordering API** logs the outcome for operational visibility without modifying the order's business status.
 
-Following checkout, the Finance workflow oversees removing the customer's purchased basket so old items do not linger. The ordering service needs visibility into when that cleanup succeeds for operational tracking, while keeping Finance's internal workflow progress strictly separate from the customer-facing status of the [[entity|order]].
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                                                                                                                                                                                                                                         |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Ordering bounded context — produced by [[service\|order-orchestration]], consumed by [[service\|order-api]]                                                                                                                                                                                                                                   |
+| **Source**            | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/Events/DeleteBasketCompleteCommand.cs`, `IntegrationEvents/EventHandlers/DeleteBasketCompleteCommandHandler.cs`, `src/Services/Finance/BookWorm.Finance/Features/Orders/BasketDeletion/PublishDeleteBasketCompleteActivity.cs`, `Orchestration/Steps/BasketDeletedCompleteStep.cs` |
+| **Protocol / format** | Kafka + CloudEvents JSON (`CloudEventsOnlyKafkaMapper`, Wolverine)                                                                                                                                                                                                                                                                            |
+| **Kafka topic**       | `bookworm.{env}.finance.delete-basket-complete` (where `{env}` is the kebab-case environment name)                                                                                                                                                                                                                                            |
+| **Partition key**     | `OrderId` (preserves per-order message ordering on Kafka)                                                                                                                                                                                                                                                                                     |
+| **Authentication**    | Internal Kafka broker transport (no HTTP endpoint or Microsoft Entra ID user token)                                                                                                                                                                                                                                                           |
+| **Contract test**     | `tests/pacts/Ordering-Finance.json`                                                                                                                                                                                                                                                                                                           |
 
-- **Operational visibility:** Confirms that post-checkout basket cleanup completed successfully for a specific order.
-- **Lifecycle independence:** Prevents Finance workflow milestones from unintentionally altering the business status of the order.
-- **Clear domain ownership:** Distinguishes Finance's coordination confirmation from Basket's own deletion result, avoiding confusion across service teams.
+:::note
+`DeleteBasketCompleteCommand` is distinct from [[event|BasketDeletedCompleteIntegrationEvent]]. **Basket API** publishes `BasketDeletedCompleteIntegrationEvent` to **Finance**; **Finance**'s Durable Functions `OrderOrchestrator` then publishes `DeleteBasketCompleteCommand` to **Ordering API**.
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-1. After Finance verifies that the customer's basket has been cleaned up, it sends this confirmation to [[service|order-api]].
-2. The message identifies itself, when it was created, the associated [[entity|order]], and the total purchase amount.
-3. [[service|order-api]] records the successful outcome for operational logging without modifying the order's business status.
-4. This command is distinct from [[event|BasketDeletedCompleteIntegrationEvent]], which Basket publishes as its own deletion result.
+The table below describes the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema).
 
-## 4. Trade-offs & Lessons Learned
+| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                             |
+| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :------------------------------------------------------ |
+| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier assigned to the integration message.  |
+| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when **Finance** created the command.     |
+| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the order whose basket cleanup succeeded. |
+| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                             | Total purchase amount associated with the order.        |
 
-- **Logging without status mutation:** Keeping order status untouched avoids coupling Finance's orchestration lifecycle to order fulfillment states, though order progression must rely on dedicated order-lifecycle events.
-- **Separated completion signals:** Maintaining both Finance's coordination command and Basket's domain event preserves clear ownership boundaries, at the cost of requiring teams to distinguish between the two messages.
+## Behavior and side effects
 
-## 5. Technical Reference
+- **Producer flow (Finance Durable Functions):** When `OrderOrchestrator` receives `BasketDeletedCompleteIntegrationEvent`, `BasketDeletedCompleteStep` marks the basket deleted in orchestration state, registers `PublishDeleteBasketFailedActivity` as a LIFO Saga compensation (in case a later orchestration step fails), and calls `PublishDeleteBasketCompleteActivity` (Durable Functions retry policy: 3 attempts, 5-second initial interval, 2.0 backoff coefficient) to publish `DeleteBasketCompleteCommand` over Wolverine Kafka.
+- **Consumer flow (Ordering API):** `DeleteBasketCompleteCommandHandler` (`[WolverineHandler]`) writes a structured `LogLevel.Information` entry (`EventId = 0`, `LogBasketDeletionCompleted`: `"Basket deletion completed for Order {OrderId}, Amount: {TotalMoney}"`) with `orderId` annotated with `[SensitiveData]` for log redaction.
+- **No order state mutation:** The handler performs no PostgreSQL write, leaves `Order.Status` unchanged, and does not wrap execution in `IIntegrationEventIdempotencyGuard` because logging is side-effect-free.
 
-- **Channel:** [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
-- **Distinct from:** [[event|BasketDeletedCompleteIntegrationEvent]] (published by Basket as its own deletion result). Finance saga progress and Order status are separate lifecycles.
-- **Payload structure:** Contains `id`, `creationDate`, `orderId`, and `totalMoney`. The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
+## Error responses
 
-### Schema
+| Code / status                                  | Condition                                                                   | Recovery behavior                                                                                                                                                                           |
+| :--------------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Activity publish failure (**Finance**)         | Transient Kafka broker failure during `PublishDeleteBasketCompleteActivity` | Durable Functions retries up to 3 times (5s initial delay, 2.0 backoff); if all retries fail, `OrderOrchestrator` catches `TaskFailedException` and executes LIFO `OrderSagaCompensations`. |
+| Consumer processing failure (**Ordering API**) | Deserialization error or unexpected handler exception                       | Wolverine retries with cooldown (`50ms`, `250ms`, `1s` with full jitter) and routes persistent failures to `bookworm.{env}.ordering.dead-letter-queue`.                                     |
+| Duplicate delivery                             | Kafka at-least-once redelivery of the same command                          | Handler logs the message again with no database or status side effects.                                                                                                                     |
+
+## Related documentation
+
+- [[service|order-api]] — Consuming service and Wolverine Kafka configuration.
+- [[service|order-orchestration]] — Azure Durable Functions `OrderOrchestrator` producer.
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] — Kafka topic specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering API consumers.
+- [[command|DeleteBasketFailedCommand]] — Companion recovery/compensation command that soft-deletes the order.
+- [[event|BasketDeletedCompleteIntegrationEvent]] — Upstream event from **Basket API** to **Finance**.
+
+<NodeGraph />
 
 <SchemaViewer
 	file="schema.json"
 	title="Successful basket cleanup command payload"
 	maxHeight="500"
 />
-
-### Architecture
-
-<NodeGraph />

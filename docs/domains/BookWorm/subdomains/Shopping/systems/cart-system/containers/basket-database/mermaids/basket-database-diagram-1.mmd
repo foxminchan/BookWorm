@@ -1,0 +1,11 @@
+flowchart LR
+	commerce["Commerce\n(Next.js 16 MFE)"]
+	basket["Basket API\n(.NET 11 REST + gRPC)"]
+	redis[("Redis\n(basket:{userId})")]
+	catalog["Catalog API\n(.NET 11 gRPC)"]
+	kafka["Kafka Broker\n(basket.delete-*)"]
+
+	commerce --> |"HTTPS: /api/v1/baskets"| basket
+	basket --> |"RESP: StringGet/Set/Delete"| redis
+	basket --> |"gRPC: GetBooks"| catalog
+	basket --> |"Kafka: DeleteComplete/Failed"| kafka

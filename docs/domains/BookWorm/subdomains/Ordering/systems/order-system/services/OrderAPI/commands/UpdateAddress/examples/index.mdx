@@ -1,42 +1,14 @@
 ---
-summary: Update the address on the authenticated Buyer's profile.
+summary: Usage examples for Update Buyer address.
 ---
 
-## 1. Context & Problem
+## Update the authenticated buyer's address through API Gateway
 
-Customers frequently need to update their shipping or profile address before placing new orders. Application teams building account-management screens need clear, end-to-end examples showing how a signed-in customer submits structured address details (street, city, and province) and handles validation or missing-profile errors cleanly.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Self-Service Convenience**: Enables customers to keep delivery addresses accurate without contacting support, reducing failed deliveries.
-- **Immediate Confirmation**: Returns the updated Buyer profile right away so user interfaces can refresh displayed address details without an extra lookup.
-- **Actionable Validation Feedback**: Gives frontend teams predictable, field-level error details to guide users when required address fields are missing or invalid.
-
-## 3. How It Works
-
-1. A signed-in customer submits their updated street, city, and province details.
-2. The service identifies the Buyer directly from the authenticated session rather than requiring a separate customer identifier in the request.
-3. The service validates that all required address fields are present and valid.
-4. When valid, the Buyer's saved address is updated and the refreshed profile—including the formatted full address—is returned immediately.
-5. If required address information is missing or invalid, or if the customer has no Buyer profile yet, the service rejects the update and returns clear details explaining why.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Identity Derived from Authentication**: Determining the Buyer from the caller's authenticated credentials prevents a customer from modifying another user's address, while assuming the Buyer profile already exists before an address update is attempted.
-- **Structured Input, Formatted Output**: Accepting separate street, city, and province fields enforces consistent input quality, while returning a combined display address simplifies UI rendering.
-- **Strict Validation Up Front**: Rejecting incomplete address fields immediately prevents storing partial addresses that could disrupt downstream order fulfillment.
-
-## 5. Technical Reference
-
-### 1. Update a Buyer address
-
-Send the new address as JSON. The service identifies the Buyer from the authenticated request.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request PATCH "$BASE_URL/api/v1/buyers/address" \
-  --header "Authorization: Bearer <access-token>" \
+```bash
+curl --request PATCH "https://<gateway-host>/ordering/api/v1/buyers/address" \
+  --header "Authorization: Bearer <customer-access-token>" \
   --header "Content-Type: application/json" \
   --data '{
     "street": "20 New Street",
@@ -47,55 +19,18 @@ curl --request PATCH "$BASE_URL/api/v1/buyers/address" \
 
 </CodeGroup>
 
-The same request from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-host>`: API Gateway hostname (or `localhost:7203` with `/api/v1/buyers/address` when calling Ordering API directly).
+- `<customer-access-token>`: Entra ID JWT with role `customer` and scopes `ordering_read` and `ordering_write`.
 
-```ts update-buyer-address.ts
-type BuyerDto = {
-	id: string;
-	name: string | null;
-	address: string | null;
-};
+Expected response (`200 OK`):
 
-const baseUrl = "https://api.example.com";
-const accessToken = "<access-token>";
-const response = await fetch(`${baseUrl}/api/v1/buyers/address`, {
-	method: "PATCH",
-	headers: {
-		Authorization: `Bearer ${accessToken}`,
-		"Content-Type": "application/json",
-	},
-	body: JSON.stringify({
-		street: "20 New Street",
-		city: "Ben Thanh",
-		province: "Ho Chi Minh City",
-	}),
-});
-
-if (response.status === 400) {
-	throw new Error("UpdateAddress validation failed");
-}
-if (response.status === 404) {
-	throw new Error("Buyer profile was not found");
-}
-if (!response.ok) {
-	throw new Error(`UpdateAddress failed with ${response.status}`);
-}
-
-const buyer = (await response.json()) as BuyerDto;
-console.log(buyer.address);
-```
-
-</CodeGroup>
-
-`200 OK` returns the updated Buyer profile:
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
-	"id": "66666666-6666-6666-6666-666666666666",
+	"id": "0193f1a2-6666-7d8e-9f01-23456789abcd",
 	"name": "Avery Nguyen",
 	"address": "20 New Street, Ben Thanh, Ho Chi Minh City"
 }
@@ -103,18 +38,16 @@ console.log(buyer.address);
 
 </CodeGroup>
 
-### 2. Handle invalid address fields
+## Validation failure response (`400 Bad Request`)
 
-Invalid address data returns `400 Bad Request` with validation problem details.
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
 	"title": "One or more validation errors occurred.",
 	"status": 400,
 	"errors": {
-		"City": ["The City field is required."]
+		"City": ["'City' must not be empty."]
 	}
 }
 ```

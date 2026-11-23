@@ -1,0 +1,16 @@
+flowchart LR
+	customer["Customer\n(Browser)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	commerce["Commerce & Storefront\n(Next.js 16 MFEs)"]
+	sync["Ordering, Catalog, Rating, Chat\n(.NET 11 APIs)"]
+	kafka["Kafka Broker\n(CloudEvents JSON)"]
+	async["Finance, Catalog Ingestion, Notification\n(Workers & Functions)"]
+	scheduler["Scheduler\n(Quartz.NET)"]
+
+	customer -->|"HTTPS"| gateway
+	gateway -->|"HTTP Zones"| commerce
+	commerce -->|"HTTPS REST / AG-UI"| sync
+	sync -->|"gRPC / A2A / MCP"| sync
+	sync -->|"Kafka Events"| kafka
+	scheduler --> |"Cron: Kafka Event"| kafka
+	kafka -->|"Kafka Consumers & Triggers"| async

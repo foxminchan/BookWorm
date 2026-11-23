@@ -19,41 +19,57 @@ owners:
   - contributor-team
 ---
 
-## 1. Context & Problem
+`Category` is the Catalog aggregate root that classifies books into a single-level taxonomy. Catalog API owns it and persists it in PostgreSQL (`catalogdb`).
 
-As a bookstore catalog grows, shoppers need a clear taxonomy of genres and subjects to browse and filter titles. If category labels were entered as unvalidated text on each [[entity|book]], typos and duplicate labels would fracture storefront navigation and reporting.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                                |
+| :------------------------ | :--------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Catalog bounded context / **Catalog API** (`catalog`)                                                |
+| **Source**                | `src/Services/Catalog/BookWorm.Catalog/Domain/AggregatesModel/CategoryAggregate/Category.cs`         |
+| **EF Core configuration** | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/EntityConfigurations/CategoryConfiguration.cs` |
+| **Backing store**         | PostgreSQL database `catalogdb`, table `categories` (`snake_case`)                                   |
+| **Base type**             | `Entity<CategoryId>`, `IAggregateRoot`                                                               |
+| **Identifier**            | `CategoryId` (Vogen value object wrapping `Guid`)                                                    |
 
-- **Better discoverability:** Gives customers clean, predictable subject groupings for browsing and filtering the catalog.
-- **Centralized taxonomy management:** Allows merchandising teams to rename a category once and have the change apply across all grouped titles.
-- **Catalog hygiene:** Prevents blank or retired categories from polluting active storefront menus.
+`Category` has no audit timestamps, row version, soft-delete flag, or `Books` navigation collection.
 
-## 3. How It Works
+## Parameters and fields
 
-A Category represents a distinct classification used to group [[entity|book]]s in the catalog:
+| Name   | Type                  | Required | Default               | Constraints                                | Description                |
+| :----- | :-------------------- | :------- | :-------------------- | :----------------------------------------- | :------------------------- |
+| `id`   | `CategoryId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                                | Unique category identifier |
+| `name` | `string`              | Yes      | —                     | Non-whitespace; max 50 chars; unique index | Category display name      |
 
-- Each category has a unique identity, a required display name, and an associated collection of books categorized under it.
-- **Validation rules:** The catalog requires every category to have a non-empty name and enforces that operations cannot proceed against a category marked as deleted.
+## Invariants and behavior
 
-## 4. Trade-offs & Lessons Learned
+- **Name required:** Setting `Name` to null or whitespace throws `CatalogDomainException("Category name must be provided.")`.
+- **Name unique:** PostgreSQL rejects a second category with the same `name`.
+- **Hard delete:** Deleting a category removes the row. PostgreSQL sets `books.category_id` to `NULL` for affected books (`ON DELETE SET NULL`).
+- **Domain events:** The constructor raises `CategoryCreatedEvent`, `UpdateName(...)` raises `CategoryUpdatedEvent`, and `Remove()` raises `CategoryDeletedEvent`.
 
-- **Flat vs. hierarchical taxonomy:** Modeling Category as a simple, single-level grouping keeps navigation and maintenance straightforward, though supporting nested subcategories (parent/child genres) or assigning a book to multiple categories would require extending the model later.
-- **Deletion guard:** Blocking use of deleted categories protects catalog integrity so active books cannot remain tied to retired classifications.
+## Relationships
 
-## 5. Technical Reference
+| Related entity   | Cardinality                | Mapping                                                                                         |
+| :--------------- | :------------------------- | :---------------------------------------------------------------------------------------------- |
+| [[entity\|book]] | One category to many books | `books.category_id` (nullable), `ON DELETE SET NULL`; configured from `Book` with `.WithMany()` |
 
-### Entity Overview
+## Examples
 
-- **Entity ID:** `category` (`Category`)
-- **Aggregate Root:** `true`
-- **Rules:** Requires a non-empty `name` and ensures the category is not deleted. Maintains a collection of [[entity|book]]s categorized under the category.
-- **Owners:** `contributor-team`
+### Category record
 
-### Entity Properties
+<CodeGroup>
 
-<EntityPropertiesTable />
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-000000000001",
+	"name": "Software Architecture"
+}
+```
 
-### Entity Relationships
+</CodeGroup>
 
-- A category has multiple [[entity|book]]s
+## Related documentation
+
+- [[entity|book]] — Aggregate that references a category.
+- [[entity|publisher]] — Sibling Catalog classification entity.

@@ -13,38 +13,67 @@ appliesTo:
 related:
   - id: adr-bw-003-aspire-shared-service-defaults
   - id: adr-bw-009-local-cqrs-building-blocks
+decisionMakers:
+  - contributor-team
+x-scope: "Whole system (backend services)"
 ---
 
-## Context
+## Context and problem statement
 
-BookWorm already has a shared .NET ecosystem, service building blocks, testing conventions, and centrally managed packages. Introducing a different service runtime would add separate hosting, dependency, integration, and maintenance practices.
+BookWorm's backend services share building blocks (`BookWorm.Chassis`, `BookWorm.SharedKernel`, `BookWorm.Constants`), Aspire service defaults, TUnit testing utilities, and centralized package versions. Introducing competing backend runtimes or per-service package version pinning would fragment tooling, duplicate integration plumbing, and complicate cross-service upgrades.
 
-## Decision
-
-Use the repository SDK and language settings for application services and retain centralized package management and existing C# conventions. The engineering standards currently document .NET 11 and C# 15; future upgrades should follow the repository baseline rather than a version frozen by this ADR.
-
-This does not require browser clients, external providers, or infrastructure products to use .NET.
+BookWorm needs an explicit platform baseline that preserves backend consistency without restricting browser clients, infrastructure containers, or external providers to .NET.
 
 ## Decision drivers
 
-- Reuse existing service and integration libraries.
-- Limit technology fragmentation and dependency-management inconsistency.
-- Preserve contributor familiarity and existing test infrastructure.
+- **Reuse:** Share common hosting, telemetry, security, messaging, and testing libraries across all backend services.
+- **Maintainability:** Prevent runtime fragmentation and inconsistent dependency versions across the solution.
+- **Contributor onboarding:** Preserve uniform C# coding conventions, analyzers, and build workflows.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                                       | Assessment                                                                          |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Polyglot services by default                      | Allows local ecosystem choices but increases integration and operational variation. |
-| Replace the service runtime                       | Requires broad migration without a documented business driver.                      |
-| Independently chosen package versions per service | Gives local freedom but makes shared-library compatibility harder to manage.        |
+1. Standardize backend services on the repository .NET and C# baseline with Central Package Management
+2. Allow polyglot backend service runtimes by default
+3. Migrate backend services to another runtime ecosystem
+4. Pin NuGet package versions independently in each service project
 
-## Consequences
+## Decision outcome
 
-- Services can reuse established libraries and engineering practices.
-- Toolchain and shared-package upgrades require compatibility review across affected services.
-- The decision constrains local technology choice but does not prescribe a production operating system or cloud.
+Chosen option: **Standardize backend services on the repository .NET and C# baseline with Central Package Management**, because it maximizes library reuse and keeps build, analyzer, and security standards uniform across all 10 backend projects.
 
-## Evidence
+Services target the repository SDK (`11.0.100` in `global.json`) and framework settings (`net11.0`, C# preview features, nullable reference types, `TreatWarningsAsErrors`, and `EnforceCodeStyleInBuild` in `Directory.Build.props`). Package versions stay centralized in `Versions.props` and `Directory.Packages.props` with transitive pinning enabled. Future .NET upgrades follow the repository baseline rather than freezing this ADR to a single release. Browser clients (`src/Clients/` on Next.js 16 and Bun), sidecars (Presidio), and backing stores remain free to use their native runtimes.
 
-See [[doc|development/004-engineering-standards]] and [[doc|arc42/02-architecture-constraints]]. Approval of this reconstructed record remains to be confirmed.
+### Consequences
+
+- **Positive:** Backend services reuse shared building blocks, CSharpier formatting, Roslyn analyzers, and TUnit test tooling without reimplementation.
+- **Negative:** SDK and shared-package upgrades require compatibility verification across every backend project in `BookWorm.slnx`.
+- **Follow-up:** Confirm formal acceptance of this reconstructed decision and continue enforcing Central Package Management in code review.
+
+## Pros and cons of the options
+
+### Standardize backend services on the repository .NET and C# baseline with Central Package Management
+
+- **Good**, because every backend service shares one build toolchain, analyzer ruleset, and dependency graph.
+- **Good**, because security patches and library updates propagate from one central location.
+- **Bad**, because services cannot adopt an alternative backend runtime without an explicit architectural exception.
+
+### Allow polyglot backend service runtimes by default
+
+- **Good**, because individual teams can select language ecosystems tailored to specific workloads.
+- **Bad**, because each additional runtime requires separate telemetry, auth, messaging, and CI/CD implementations.
+
+### Migrate backend services to another runtime ecosystem
+
+- **Good**, because it could align with a different ecosystem if a strong business driver emerged.
+- **Bad**, because migration carries high rewrite cost with no documented product or operational driver.
+
+### Pin NuGet package versions independently in each service project
+
+- **Good**, because one service can upgrade a dependency ahead of others.
+- **Bad**, because version drift breaks binary compatibility with `BookWorm.Chassis` and increases dependency maintenance cost.
+
+## Verification and links
+
+- **Verified against:** `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `Versions.props`, `BookWorm.slnx`
+- **Related architecture:** [[doc|arc42/02-architecture-constraints]], [[doc|development/004-engineering-standards]]
+- **Related ADRs:** ADR-BW-003, ADR-BW-009, [[doc|arc42/09-architecture-decisions]]

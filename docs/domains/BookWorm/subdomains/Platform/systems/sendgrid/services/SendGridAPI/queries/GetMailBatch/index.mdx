@@ -20,71 +20,57 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`GetMailBatch` queries the external SendGrid Web API v3 (`GET /v3/mail/batch/{batch_id}`) to verify whether a previously created mail batch identifier exists. A `200 OK` response confirms only that SendGrid recognizes the identifier; it does not confirm that messages were attached, submitted, or delivered.
 
-When BookWorm groups related email submissions for scheduled delivery using [[system|sendgrid]] mail batches, a workflow may pause or resume across time. Before attaching new messages to a previously created batch, the platform needs a reliable way to verify that the external provider still recognizes that batch identifier, while ensuring teams do not confuse a valid batch reference with completed email delivery.
+:::warning
+**Not invoked by current BookWorm runtime code:** BookWorm's **Notification** service (`src/Services/Notification/BookWorm.Notification`) sends transactional order emails over **SMTP using MailKit** (**Mailpit** locally and `smtp://smtp.sendgrid.net:587` in Azure publish mode). No service in the current repository calls SendGrid's HTTP v3 Mail Batch API.
+:::
 
-## 2. Business Value
+## Overview
 
-- **Safe workflow resumption:** Verifies that a stored batch reference is valid before downstream email submissions depend on it.
-- **Clear operational semantics:** Distinguishes between "the batch identifier exists" and "emails in this batch were sent or delivered," preventing misleading status assumptions.
-- **Actionable failure diagnosis:** Separates invalid batch identifiers from authentication, permission, or provider availability issues so operators can respond appropriately.
+| Property              | Value                                                                                                                                                                                                                                    |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Platform bounded context — external provider (**SendGrid Web API v3**)                                                                                                                                                                   |
+| **Source**            | External SendGrid API; BookWorm's active email transport is in `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs` and `src/Services/Notification/BookWorm.Notification/Infrastructure/Senders/MailKit/MailKitSender.cs` |
+| **Protocol / format** | HTTPS `GET https://api.sendgrid.com/v3/mail/batch/{batch_id}`, JSON (`application/json`)                                                                                                                                                 |
+| **Authentication**    | SendGrid API key via `Authorization: Bearer <sendgrid-api-key>` header                                                                                                                                                                   |
+| **Contract version**  | `1.0.0`                                                                                                                                                                                                                                  |
 
-## 3. How It Works
+## Parameters and fields
 
-1. **Request batch verification:** An authenticated caller asks [[system|sendgrid]] to verify a specific batch identifier originally issued during batch creation.
-2. **Confirm identifier recognition:** When the provider recognizes the identifier, it echoes the batch identifier back to confirm its existence—without reporting whether any emails have been attached, submitted, or delivered.
-3. **Reject invalid or unauthorized lookups:** If the batch identifier is invalid, or if the caller lacks valid credentials or permissions, the provider rejects the lookup so the calling workflow can handle the state or configuration error.
+### Path parameters
 
-## 4. Trade-offs & Lessons Learned
+| Name       | Type     | Required | Default | Constraints                                    | Description                                |
+| :--------- | :------- | :------- | :------ | :--------------------------------------------- | :----------------------------------------- |
+| `batch_id` | `string` | Yes      | —       | Non-empty string returned by `CreateMailBatch` | SendGrid mail batch identifier to validate |
 
-- **Read-only existence check:** Keeping this query focused solely on validating the batch identifier provides a lightweight pre-flight check, but means teams cannot rely on it to monitor message-level delivery progress.
-- **Explicit error differentiation:** Distinguishing an invalid batch identifier from authentication or provider-side failures simplifies troubleshooting, provided callers treat missing or invalid identifiers as workflow errors rather than empty successes.
+### Response schema (`GetMailBatchResponse`)
 
-## 5. Technical Reference
+A `200 OK` response returns a `GetMailBatchResponse` JSON object (`additionalProperties: false`).
 
-The `GetMailBatch` query (`GET /v3/mail/batch/{batch_id}`) validates a mail batch identifier created by [[command|CreateMailBatch]]. A successful response confirms that [[system|sendgrid]] recognizes the identifier; it does not confirm that the batch has been associated with a send or that any message has been delivered.
+| Field      | Type     | Required | Constraints    | Description                              |
+| :--------- | :------- | :------- | :------------- | :--------------------------------------- |
+| `batch_id` | `string` | Yes      | `minLength: 1` | Validated SendGrid mail batch identifier |
 
-### Request
+## Error responses
 
-Provide the batch identifier as the `batch_id` path parameter in an
-authenticated request:
+The [SendGrid OpenAPI contract](https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml) defines `ErrorResponse` with an `errors` array and optional `id`. For `GET /v3/mail/batch/{batch_id}`, it documents `400`, `401`, `403`, `405`, and `500` responses; its description says an invalid batch ID returns `400`. It does not list `404` for this operation. This documents the published contract, not every possible live-service response.
 
-<CodeGroup dropdown>
+| Code / status               | Condition                                     | Recovery behavior                                                          |
+| :-------------------------- | :-------------------------------------------- | :------------------------------------------------------------------------- |
+| `400 Bad Request`           | Invalid or unrecognized `batch_id`            | Treat as a workflow state error; create a new batch before submitting mail |
+| `401 Unauthorized`          | Missing or invalid SendGrid API key           | Verify the bearer token credential and retry                               |
+| `403 Forbidden`             | API key lacks permission to read mail batches | Grant Mail Batch read permissions on the SendGrid API key                  |
+| `405 Method Not Allowed`    | Unsupported HTTP verb used on the batch path  | Send an HTTP `GET` request                                                 |
+| `500 Internal Server Error` | SendGrid server-side failure                  | Retry with exponential backoff                                             |
 
-```sh
-curl -X GET \
-  "https://api.sendgrid.com/v3/mail/batch/{batch_id}" \
-  -H "Authorization: Bearer $SENDGRID_API_KEY"
-```
+## Related documentation
 
-</CodeGroup>
-
-### Response
-
-<CodeGroup dropdown>
-
-```json
-{
-	"batch_id": "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw"
-}
-```
-
-</CodeGroup>
-
-### Schema
-
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
-
-### Response and failures
-
-- `200 OK` returns the valid batch identifier.
-- `400 Bad Request` indicates an invalid batch identifier.
-- `401 Unauthorized` indicates missing or invalid authentication.
-- `403 Forbidden` indicates that the caller is not allowed to inspect the batch.
-- `405 Method Not Allowed` indicates an unsupported HTTP method.
-- `500 Internal Server Error` indicates a provider-side failure.
-
-### Architecture
+- [[service|sendgrid-api]] — External SendGrid API contract summary.
+- [[service|notification-api]] — BookWorm's active MailKit/SMTP notification worker.
+- [[command|CreateMailBatch]] — External SendGrid command that issues a `batch_id`.
+- [[command|SendMail]] — External SendGrid v3 mail send contract.
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

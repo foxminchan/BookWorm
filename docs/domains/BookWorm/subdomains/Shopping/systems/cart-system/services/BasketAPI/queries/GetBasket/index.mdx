@@ -18,44 +18,58 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`GetBasket` retrieves the authenticated customer's active basket from **Basket API** (`GET /api/v1/baskets`) and enriches non-empty basket items with live titles and pricing from **Catalog API** over gRPC. The caller's customer identity is resolved from the Microsoft Entra ID access token; no basket identifier parameter is accepted.
 
-Before updating quantities or proceeding to checkout, shoppers need to review the contents of their current [[entity|basket]]—including selected quantities alongside up-to-date book titles, regular prices, and sale prices. Because the shopping basket capability intentionally stores only item identifiers and quantities rather than duplicating product catalog records, reading a basket must combine stored cart state with current catalog presentation details.
+## Overview
 
-## 2. Business Value
+| Property                       | Value                                                                                                                                                      |
+| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                      | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                        |
+| **Source**                     | `src/Services/Basket/BookWorm.Basket/Features/Get/GetBasketEndpoint.cs`, `GetBasketQuery.cs`, `GetBasketQuery.PostProcessor.cs`                            |
+| **Protocol / format**          | HTTP `GET /api/v1/baskets` (via API Gateway: `GET /basket/api/v1/baskets`), `ApiVersions.V1`, JSON (`application/json`)                                    |
+| **Authentication**             | Microsoft Entra ID JWT required (`customer` role; scopes `basket_read`, `basket_write`)                                                                    |
+| **Rate limiting**              | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                              |
+| **Backing store & enrichment** | Reads basket state from Redis; when `items` is non-empty, deduplicates book IDs and enriches items via Catalog API gRPC `book.v1.BookGrpcService/GetBooks` |
+| **Contract version**           | `1.0.0`                                                                                                                                                    |
 
-- **Up-to-date cart presentation:** Displays live book names, regular prices, and promotional prices so shoppers see accurate pricing before checkout.
-- **Simple, secure storefront calls:** Requires no basket identifier or query parameters from the caller, preventing customers from reading another shopper's cart.
-- **Clean domain ownership:** Keeps product metadata owned by the catalog capability rather than storing stale copies inside the basket.
+## Parameters and fields
 
-## 3. How It Works
+### Request parameters
 
-1. A caller requests the authenticated customer's current [[entity|basket]] without providing any path or query parameters.
-2. If no basket exists for the customer, the service reports that the basket could not be found.
-3. When the basket exists and contains items, the basket service gathers the unique book identifiers and requests current book details from the product catalog service in a single batch lookup.
-4. The service merges the stored basket identifier and item quantities with the returned catalog presentation details and delivers the complete basket view to the caller.
+`GetBasket` accepts no path parameters, query parameters, or request body. Basket API resolves the customer ID from the authenticated Entra ID claims principal.
 
-## 4. Trade-offs & Lessons Learned
+### Response schema (`CustomerBasketDto`)
 
-- **On-read enrichment vs. cached catalog copies:** Fetching product details dynamically on each read ensures catalog ownership and fresh pricing, at the cost of depending on catalog availability when a basket is non-empty.
-- **Batching distinct item identifiers:** Deduplicating book identifiers into one batch lookup avoids repeated round-trips for multi-item baskets.
-- **Optional presentation fields:** Because book names or sale prices may be absent when no discount applies or catalog data is missing, storefront interfaces should handle missing display fields gracefully.
+A `200 OK` response returns a `CustomerBasketDto` JSON object.
 
-## 5. Technical Reference
+| Field               | Type                       | Required | Constraints                     | Description                                                                    |
+| :------------------ | :------------------------- | :------- | :------------------------------ | :----------------------------------------------------------------------------- |
+| `id`                | `string \| null`           | Yes      | —                               | Identifier of the customer's basket                                            |
+| `items`             | `BasketItem[]`             | Yes      | Array (may be empty)            | Line items currently stored in the basket                                      |
+| `items[].id`        | `string \| null`           | Yes      | —                               | Catalog book identifier                                                        |
+| `items[].quantity`  | `integer \| string`        | Yes      | `int32` (`^-?(?:0\|[1-9]\d*)$`) | Requested unit quantity                                                        |
+| `items[].name`      | `string \| null`           | No       | —                               | Book title enriched from Catalog API (`null` when unavailable)                 |
+| `items[].price`     | `number \| string`         | No       | `double`, default `0`           | Regular unit price enriched from Catalog API                                   |
+| `items[].priceSale` | `number \| string \| null` | No       | `double` or `null`              | Promotional sale price enriched from Catalog API (`null` when no sale applies) |
 
-Retrieves the current customer's [[entity|basket]] (`GET /api/v1/baskets`). The operation defines no documented request body, query parameters, or path parameters.
+## Error responses
+
+| Code / status           | Condition                                                                                                   | Recovery behavior                                                     |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                          | Re-authenticate the customer and retry                                |
+| `403 Forbidden`         | Authenticated principal lacks the `customer` role or required `basket_read` / `basket_write` scope          | Request a token with the required customer scopes                     |
+| `404 Not Found`         | No active basket exists in Redis for the authenticated customer (`application/problem+json`)                | Treat as an empty/uninitialized basket until the customer creates one |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying                   |
+
+## Related documentation
+
+- [[service|basket-api]] — Service overview, Redis persistence, and endpoints.
+- [[query|GetBasketGrpc]] — Internal gRPC contract used by Ordering API during checkout.
+- [[query|GetBooksGrpc]] — Batch gRPC book lookup used to enrich basket items.
+- [[command|CreateBasket]] — Create a new customer basket.
+- [[entity|basket]] — Domain model for stored customer baskets.
 
 <NodeGraph />
-
-### Query parameters and response
-
-- **Parameters:** None (customer scope is resolved from the caller context).
-- **`200 OK` (`application/json`):** Returns a `CustomerBasketDto` containing `id` (`string | null`) and `items` (each item requires `id` and `quantity` as `int32` integer or string, with optional `name`, `price`, and `priceSale`).
-- **`404 Not Found` (`application/problem+json`):** Returns `ProblemDetails` when no basket is found.
-
-When the basket has items, BasketAPI enriches them by sending the [[query|GetBooksGrpc]] gRPC query to Catalog with the distinct item IDs.
-
-### Schema
 
 <SchemaViewer
 	file="schema.json"

@@ -9,107 +9,123 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+This reference defines the `FeedbackCreatedIntegrationEvent` Kafka integration contract consumed by **Catalog API** (`BookWorm.Catalog`) to update a book's derived `average_rating` and `total_reviews` projection in PostgreSQL (`catalogdb`) when **Rating API** (`BookWorm.Rating`) persists a new `Feedback` document in Azure Cosmos DB (`ratingdb`/`feedbacks`).
 
-## 1. Context & Problem
+## Overview
 
-In BookWorm, individual customer reviews and ratings are owned by the Rating capability, while book discovery and product summaries live in the Catalog capability. When customers browse or filter books, Catalog needs immediate access to each book's rating summary without synchronously querying the Rating service on every request. At the same time, if a review is submitted for a book that no longer exists in Catalog, the two services need a reliable way to detect and reconcile that mismatch.
+| Property              | Value                                                                                                                                                          |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner (producer)**  | Reviews bounded context — **Rating API** (`src/Services/Rating/BookWorm.Rating`)                                                                               |
+| **Consumer**          | Catalog bounded context — **Catalog API** (`src/Services/Catalog/BookWorm.Catalog`)                                                                            |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/IntegrationEvents/Events/FeedbackCreatedIntegrationEvent.cs`, `EventHandlers/FeedbackCreatedIntegrationEventHandler.cs` |
+| **Kafka topic**       | `bookworm.{env}.rating.feedback-create` (`AppendPrefix = true`)                                                                                                |
+| **Message identity**  | `BookWorm.Contracts.FeedbackCreatedIntegrationEvent`                                                                                                           |
+| **Protocol / format** | Kafka + CloudEvents JSON (`CloudEventsOnlyKafkaMapper`), partitioned by `BookId` / `FeedbackId`                                                                |
+| **Idempotency**       | Redis-backed `IIntegrationEventIdempotencyGuard` (24-hour TTL keyed by `Id` + `FeedbackCreatedIntegrationEventHandler`)                                        |
+| **Contract tests**    | Pact messaging tests in `BookWorm.Catalog.ContractTests` and `tests/pacts/` (`Catalog-Rating`, `Rating-Catalog`)                                               |
 
-## 2. Business Value
+## Parameters and fields
 
-- **Fast storefront browsing**: Keeping a local rating summary alongside each book avoids cross-service delays during search and catalog listing.
-- **Clear domain boundaries**: Rating owns individual feedback records while Catalog owns product metadata, allowing each team and service to evolve independently.
-- **Automatic data reconciliation**: Missing-book conflicts trigger a compensation signal instead of silently leaving orphaned ratings in the system.
+| Name         | Type   | Required | Default   | Constraints                           | Description                                                                                                              |
+| :----------- | :----- | :------- | :-------- | :------------------------------------ | :----------------------------------------------------------------------------------------------------------------------- |
+| `Id`         | `Guid` | Yes      | Generated | Inherited from `IntegrationEvent`     | Unique event identifier used as the Redis idempotency key                                                                |
+| `BookId`     | `Guid` | Yes      | —         | Non-empty UUID                        | Target Catalog book identifier to update                                                                                 |
+| `Rating`     | `int`  | Yes      | —         | Validated by **Rating API** (`1`–`5`) | Star rating added to the book's running summary via `Book.AddRating`                                                     |
+| `FeedbackId` | `Guid` | Yes      | —         | Non-empty UUID                        | Authoritative Cosmos DB feedback identifier returned in `BookUpdatedRatingFailedIntegrationEvent` if the book is missing |
 
-## 3. How It Works
+## Processing and error behavior
 
-1. When a customer submits new feedback, the Rating service publishes a notification containing the book identifier, the rating score, and the feedback identifier.
-2. The Catalog service receives the notification and looks up the referenced book in its catalog store.
-3. If the book exists, Catalog adds the new rating score to the book's denormalized rating summary and saves the updated summary.
-4. If the book does not exist, Catalog emits a failure notification ([[event|BookUpdatedRatingFailedIntegrationEvent]]) carrying the feedback identifier so the Rating service can compensate or reconcile the orphaned feedback.
+| Condition                                | Handler behavior                                                                                                                                                                        | Recovery / downstream effect                                                                                                                 |
+| :--------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Book exists in `catalogdb`**           | Calls `book.AddRating(@event.Rating)` (`((AverageRating * TotalReviews) + rating) / (TotalReviews + 1)`, `TotalReviews++`) and saves via `UnitOfWork.SaveEntitiesAsync`; returns `null` | Commits updated summary and invalidates cached book entry                                                                                    |
+| **Book missing (`book is null`)**        | Calls `UnitOfWork.SaveEntitiesAsync` and returns `BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId)` as a Wolverine cascading message                                          | Publishes compensation event to `bookworm.{env}.catalog.book-update-rating-failed` so **Rating API** deletes the orphaned Cosmos DB feedback |
+| **Duplicate event within 24 hours**      | `IIntegrationEventIdempotencyGuard` skips re-execution for the same `@event.Id`                                                                                                         | Prevents double-counting `TotalReviews` on Kafka redelivery                                                                                  |
+| **Transient DB or infrastructure error** | Exception propagates to Wolverine                                                                                                                                                       | Wolverine retries (`50ms / 250ms / 1s` with full jitter), then routes to `bookworm.{env}.catalog.dead-letter-queue`                          |
 
-## 4. Trade-offs & Lessons Learned
+## Examples
 
-- **Eventual consistency**: Because rating summaries are updated asynchronously, there is a brief delay between a customer submitting feedback and the new score appearing in Catalog.
-- **Compensation instead of distributed locking**: Accepting feedback first and compensating on missing books avoids tight synchronous coupling, at the cost of handling rare rollback scenarios asynchronously.
-- **Denormalized summary only**: Storing only summary figures in Catalog keeps storage lean and avoids duplicating review text, while relying on reliable message delivery to stay accurate.
+### Contract record (`FeedbackCreatedIntegrationEvent.cs`)
 
-## 5. Technical Reference
+<CodeGroup>
 
-<Columns cols={2}>
+```csharp
+using BookWorm.Constants.Aspire;
+using Wolverine.Attributes;
 
-<Column>
+namespace BookWorm.Contracts;
 
-### Publish a new feedback rating
-
-Rating maps its `FeedbackCreatedEvent` domain event to the shared integration
-contract. Wolverine uses the chassis metadata to publish it to
-[[channel|bookworm.&#123;env&#125;.rating.feedback-create]].
-
-- `bookId` identifies the Catalog book to update.
-- `rating` is added to the book's denormalized rating summary.
-- `feedbackId` identifies the feedback record for failure compensation.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp FeedbackCreatedIntegrationEvent.cs
 [IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-create")]
 [MessageIdentity("BookWorm.Contracts.FeedbackCreatedIntegrationEvent")]
-public sealed record FeedbackCreatedIntegrationEvent(
-    Guid BookId,
-    int Rating,
-    Guid FeedbackId
-) : IntegrationEvent;
-```
-
-```csharp EventMapper.cs
-FeedbackCreatedEvent feedbackCreatedEvent => new FeedbackCreatedIntegrationEvent(
-    feedbackCreatedEvent.BookId,
-    feedbackCreatedEvent.Rating,
-    feedbackCreatedEvent.FeedbackId
-)
+public sealed record FeedbackCreatedIntegrationEvent(Guid BookId, int Rating, Guid FeedbackId)
+    : IntegrationEvent;
 ```
 
 </CodeGroup>
 
-</Column>
+### Catalog consumer handler (`FeedbackCreatedIntegrationEventHandler.cs`)
 
-</Columns>
+<CodeGroup>
 
----
+```csharp
+using BookWorm.Chassis.EventBus.Idempotency;
+using BookWorm.Contracts;
+using Wolverine.Attributes;
 
-### Apply the rating in Catalog
+namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
-Catalog reads the book and adds the rating. When the book does not exist, it
-publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] using the feedback ID.
-
-<CodeGroup dropdown>
-
-```csharp FeedbackCreatedIntegrationEventHandler.cs
-[WolverineHandler]
-public async Task Handle(
-    FeedbackCreatedIntegrationEvent @event,
-    CancellationToken cancellationToken
+internal sealed class FeedbackCreatedIntegrationEventHandler(
+    IBookRepository repository,
+    IIntegrationEventIdempotencyGuard? idempotencyGuard = null
 )
 {
-    var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
-
-    if (book is null)
+    [WolverineHandler]
+    public async Task<BookUpdatedRatingFailedIntegrationEvent?> Handle(
+        FeedbackCreatedIntegrationEvent @event,
+        CancellationToken cancellationToken
+    )
     {
-        await bus.PublishAsync(new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId));
-        await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-        return;
-    }
+        return await idempotencyGuard.ExecuteAsync(
+            @event.Id,
+            nameof(FeedbackCreatedIntegrationEventHandler),
+            async ct =>
+            {
+                var book = await repository.GetByIdAsync(@event.BookId, ct);
 
-    book.AddRating(@event.Rating);
-    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+                if (book is null)
+                {
+                    await repository.UnitOfWork.SaveEntitiesAsync(ct);
+                    return new BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId);
+                }
+
+                book.AddRating(@event.Rating);
+                await repository.UnitOfWork.SaveEntitiesAsync(ct);
+                return null;
+            },
+            cancellationToken: cancellationToken
+        );
+    }
 }
 ```
 
 </CodeGroup>
 
-<Footer />
+### Example JSON payload
+
+<CodeGroup>
+
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+	"bookId": "0193f1a2-1111-7d8e-9f01-234567890001",
+	"rating": 5,
+	"feedbackId": "0193f1a2-2222-7d8e-9f01-234567890002"
+}
+```
+
+</CodeGroup>
+
+## Related documentation
+
+- Catalog feedback-deleted contract reference — Companion contract for removed feedback.
+- [[flow|feedback-publication]] — End-to-end Reviews-to-Catalog projection and compensation design.
+- How to resolve a Catalog rating summary mismatch — Operational runbook for rating drift and DLQ handling.

@@ -1,0 +1,19 @@
+flowchart TD
+	turn["Agent Turn\n(Messages + ChatOptions.Tools)"]
+	empty{"Tools Empty or\nNoneChatToolMode?"}
+	partition["PartitionTools\n(Last 6 Messages + Mandatory vs Candidates)"]
+	decide["IDecisionClient\n(Microsoft-Decision-1)"]
+	failopen["Fail-Open Fallback\n(Retain All Original Tools)"]
+	filter["Keep Candidates\n(TrueProbability >= 0.5)"]
+	merge["Merge Mandatory +\nSelected Candidate Tools"]
+	chat["Inner IChatClient\n(Foundry ModelRouter)"]
+
+	turn --> empty
+	empty -->|"Yes"| chat
+	empty -->|"No"| partition
+	partition -->|"Binary questions"| decide
+	decide -->|"Timeout / Error / Empty"| failopen
+	failopen --> chat
+	decide -->|"DecisionResponse"| filter
+	filter --> merge
+	merge --> chat

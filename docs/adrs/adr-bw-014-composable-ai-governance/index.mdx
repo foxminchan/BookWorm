@@ -20,38 +20,72 @@ related:
   - id: adr-004-read-only-governed-feedback-summarization
   - id: adr-001-use-presidio-analyze-for-pii-detection
   - id: adr-002-anonymize-detected-pii
+decisionMakers:
+  - contributor-team
+x-scope: "Whole system (Chat API, Rating API, MCP Tools)"
 ---
 
-## Context
+## Context and problem statement
 
-Chat and Rating process untrusted user content and call model or tool dependencies. Independent control implementations would drift, but a shared library alone does not protect every execution path.
+Chat API, Rating API, and MCP Tools process untrusted customer prompts and user-authored review text before invoking Microsoft Foundry models (`ModelRouter`, `MicrosoftDecision1`, Cohere `EmbedV40`) and tool endpoints. Rebuilding prompt-injection defenses, PII redaction, and tool-access policies separately inside each agent creates security drift, whereas assuming a shared library automatically protects every code path leaves newly added AI routes unexamined.
 
-## Decision
-
-Reuse the existing governance kernel, Presidio-backed PII handling, and chat-client guardrails on the documented Chat and Rating paths. Keep trusted instructions distinct from untrusted content, and review effective policy and tool registration when adding a path.
-
-This records composition and coverage verification across AI capabilities. Local ADRs remain authoritative for fail-closed behavior, per-agent permissions, summarization tools, and Presidio operations.
+BookWorm needs a composable AI governance model that shares reusable security middleware while enforcing explicit per-agent policies and tool boundaries.
 
 ## Decision drivers
 
-- Reuse of security and privacy mechanisms without assuming universal coverage.
-- Least necessary model data and tool access.
-- Observable rejection and dependency-failure behavior.
+- **Defense in depth:** Combine PII detection/anonymization, input/output guardrails, policy enforcement, and scoped identities on every AI execution path.
+- **Least privilege:** Restrict each agent and Model Context Protocol (MCP) tool to the minimum read-only data and permissions required.
+- **Explicit coverage verification:** Require every new model call or agent route to register governance policies explicitly rather than assuming global coverage.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                                     | Assessment                                                  |
-| ----------------------------------------------- | ----------------------------------------------------------- |
-| Trust prompts alone                             | Avoids middleware but provides no enforceable tool policy.  |
-| Duplicate controls per agent                    | Permits local tailoring while increasing divergence.        |
-| Assume shared registration protects all AI code | Simplifies review but leaves unregistered paths unexamined. |
+1. Compose shared `BookWorm.Chassis` AI governance, Presidio PII middleware, and per-service YAML policies across Chat API, Rating API, and MCP Tools
+2. Rely solely on system-prompt instructions to restrict model behavior
+3. Implement isolated governance and PII controls independently inside each AI service
+4. Assume registering a governance package once protects every AI code path automatically
 
-## Consequences
+## Decision outcome
 
-- Enabled paths can share policy and privacy mechanisms while retaining local permissions.
-- Control composition adds dependencies and policy-deployment obligations.
-- Pattern detection and anonymization remain defense-in-depth, not guarantees that every attack or sensitive value is detected.
+Chosen option: **Compose shared `BookWorm.Chassis` AI governance, Presidio PII middleware, and per-service YAML policies across Chat API, Rating API, and MCP Tools**, because it reuses verified middleware while tailoring tool permissions, identity rings, and guardrails per agent.
 
-## Evidence
+BookWorm composes four verified layers:
 
-See [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] and the related system ADRs. No new model provider or universal AI control coverage is asserted.
+- **Policy kernel (`Microsoft.AgentGovernance.Extensions` `5.0.0`):** `GovernanceKernel` in `BookWorm.Chassis` enforces base rules (`Policies/default.yaml`) plus service-specific policies (`Policies/chat-agents.yaml` in Chat API, `Policies/rating-agent.yaml` in Rating API, and `Policies/mcp-tools.yaml` in MCP Tools).
+- **PII protection (Presidio):** Internal `presidio-analyzer` and `presidio-anonymizer` sidecars back `PIIMiddleware` on Chat API and Rating API to detect and anonymize PII before model invocation.
+- **Guardrails and deterministic routing:** `GuardrailMiddleware`, `RatingOutputGuardrailMiddleware`, `DecisionToolSelectionMiddleware`, and Microsoft-Decision-1 (`IDecisionClient`) validate inputs, restrict tool selection, and separate trusted instructions from untrusted content.
+- **Agent identity isolation:** Microsoft Entra ID Agent Identities (`entra-agent-identities.bicep` provisioning `blueprintAppId`, `chatAgentId`, and `ratingAgentId`) and `UseClaimsBasedAgentIsolation()` isolate agent permissions from end-user tokens.
+
+### Consequences
+
+- **Positive:** Chat API, Rating API, and MCP Tools share consistent PII filtering, injection detection, and policy telemetry while preserving least-privilege tool lists per agent.
+- **Negative:** Running Presidio sidecars and governance middleware adds runtime latency, container dependencies, and YAML policy maintenance.
+- **Follow-up:** Review YAML policy files, tool allowlists, and Presidio failure behavior whenever adding a new agent, skill, or MCP tool.
+
+## Pros and cons of the options
+
+### Compose shared `BookWorm.Chassis` AI governance, Presidio PII middleware, and per-service YAML policies across Chat API, Rating API, and MCP Tools
+
+- **Good**, because security primitives live in one audited chassis layer while permissions stay scoped to each service's YAML policy.
+- **Good**, because Entra ID Agent Identities and claims isolation bound cross-agent A2A and MCP calls.
+- **Bad**, because PII detection and guardrails remain defense-in-depth controls rather than an absolute guarantee against novel prompt-injection attacks.
+
+### Rely solely on system-prompt instructions to restrict model behavior
+
+- **Good**, because services avoid extra middleware and sidecar containers.
+- **Bad**, because prompt text provides no enforceable runtime boundary against prompt injection or unauthorized tool invocation.
+
+### Implement isolated governance and PII controls independently inside each AI service
+
+- **Good**, because every agent has full local autonomy over its filters.
+- **Bad**, because security fixes must be duplicated across Chat API, Rating API, and MCP Tools, inviting policy drift.
+
+### Assume registering a governance package once protects every AI code path automatically
+
+- **Good**, because onboarding a new endpoint looks faster initially.
+- **Bad**, because direct `IChatClient` calls or new endpoints can bypass middleware unless explicitly verified during code review.
+
+## Verification and links
+
+- **Verified against:** `src/BuildingBlocks/BookWorm.Chassis/AI/`, `src/Services/Chat/BookWorm.Chat/Extensions/Extensions.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `src/Services/McpTools/BookWorm.McpTools/`, `src/Integrations/BookWorm.Hosting.Presidio/`, `src/Aspire/BookWorm.AppHost/Infra/entra-agent-identities.bicep`
+- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/005-ai-governance]], [[doc|arc42/06-runtime-view/004-conversational-book-discovery]], [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]]
+- **Related ADRs:** Chat Blob Sessions ADR, Rating Cosmos DB ADR, [[doc|arc42/09-architecture-decisions]]

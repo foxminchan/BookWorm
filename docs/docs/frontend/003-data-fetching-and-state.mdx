@@ -12,53 +12,112 @@ badges:
     textColor: blue
 ---
 
-## Explanation: Predictable Data Flow & Concurrency
+This reference specifies BookWorm's frontend data pipeline across `@workspace/types`, `@workspace/validations`, `@workspace/api-client`, `@workspace/api-hooks`, and Jotai client atoms. For architectural rationale behind these layers, see [[doc|frontend/007-architecture-and-state-design]].
 
-BookWorm's frontend applications communicate with five backend services ([[service|catalog-api]], [[service|basket-api]], [[service|order-api]], [[service|rating-api]], [[service|chat-api]]) through the YARP API gateway. Rather than scattering raw `fetch` calls across components, data flows through a layered pipeline:
+## Overview
 
-1. **Shared contracts first:** Request/response types and Valibot validation schemas are defined once and reused by both Formisch form validation and HTTP clients.
-2. **Single source of truth for cache keys:** Query keys and fetchers are paired in `@workspace/api-hooks` so server-side prefetching and client-side subscriptions always match without cache misses on hydration.
-3. **Optimistic concurrency with ETags:** Editable backoffice resources (books and order summaries) use conditional HTTP headers (`If-None-Match` and `If-Match`). If another user modifies a record first, the update fails safely with `412 Precondition Failed` instead of silently overwriting newer data.
-4. **Targeted real-time updates:**
-   - The backoffice dashboard loads an initial snapshot and listens to a Server-Sent Events (SSE) stream, ignoring out-of-order events older than the current snapshot.
-   - The storefront AI assistant streams responses over CopilotKit's AG-UI runtime, forwarding authenticated user tokens to [[service|chat-api]] and rendering declarative A2UI components from the storefront catalog.
-5. **Minimal client-only state:** Lightweight Jotai atoms hold ephemeral UI and session-derived state (such as basket count and feature flags), short-circuiting basket requests when a shopper is not signed in.
+| Property              | Value                                                                                                                                        |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | BookWorm Frontend (`src/Clients/packages/`)                                                                                                  |
+| **Source**            | `packages/api-client`, `packages/api-hooks`, `packages/types`, `packages/validations`, `packages/storefront-shell`                           |
+| **Protocol / format** | HTTP/JSON (including HTTP `QUERY`), conditional ETags (`If-None-Match`/`If-Match`), Server-Sent Events (SSE), Agent-User Interaction (AG-UI) |
+| **Authentication**    | Bearer token injected via `ApiClient.setTokenProvider(...)` from Better Auth + Microsoft Entra ID                                            |
 
----
+## Data pipeline packages
 
-## Reference
+| Package                       | Tier         | Key dependencies                                   | Responsibility                                                                             |
+| :---------------------------- | :----------- | :------------------------------------------------- | :----------------------------------------------------------------------------------------- |
+| `@workspace/types`            | `foundation` | TypeScript                                         | Shared domain DTO interfaces and pagination wrappers                                       |
+| `@workspace/validations`      | `domain`     | `valibot` `^1.5.0`                                 | Shared Valibot schemas reused by `@formisch/react` forms and API payloads                  |
+| `@workspace/api-client`       | `domain`     | `axios` `^1.21.1`, `p-retry` `^9.0.0`              | Typed HTTP clients, retry policy, conditional ETag transport, and dashboard SSE subscriber |
+| `@workspace/api-hooks`        | `domain`     | `@tanstack/react-query` `^5.108.4`                 | Query key registry, `queryOptions` factories, mutation hooks, and `getQueryClient`         |
+| `@workspace/storefront-shell` | `domain`     | `jotai` `^3.0.2`, `jotai-tanstack-query` `^0.11.0` | Customer cross-zone auth and derived basket atoms                                          |
 
-### Data Pipeline Packages
+## API endpoint registry (`@workspace/api-client/endpoints`)
 
-| Package                  | Tier         | Responsibility                                                        |
-| :----------------------- | :----------- | :-------------------------------------------------------------------- |
-| `@workspace/types`       | `foundation` | Domain DTO interfaces and pagination wrappers                         |
-| `@workspace/validations` | `domain`     | Shared Valibot schemas for forms and API payloads                     |
-| `@workspace/api-client`  | `domain`     | Typed Axios clients, retries, conditional ETag transport, SSE streams |
-| `@workspace/api-hooks`   | `domain`     | TanStack Query key/options factories, hooks, mutations, ETag cache    |
+All frontend HTTP requests target the YARP API Gateway using `API_ENDPOINTS` (`src/Clients/packages/api-client/src/endpoints.ts`):
 
-### Query Factory Exports (`@workspace/api-hooks`)
+| Domain         | Backing service  | Endpoint paths                                                                                                                                                                                                                                                                                                          |
+| :------------- | :--------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Basket         | **Basket API**   | `/basket/api/v1/baskets`                                                                                                                                                                                                                                                                                                |
+| Catalog        | **Catalog API**  | `/catalog/api/v1/books`, `/catalog/api/v1/books/:id`, `/catalog/api/v1/authors`, `/catalog/api/v1/authors/:id`, `/catalog/api/v1/categories`, `/catalog/api/v1/categories/:id`, `/catalog/api/v1/publishers`, `/catalog/api/v1/publishers/:id`                                                                          |
+| Conversational | **Chat API**     | `/chatting/ag-ui`                                                                                                                                                                                                                                                                                                       |
+| Ordering       | **Ordering API** | `/ordering/api/v1/orders`, `/ordering/api/v1/orders/:id`, `/ordering/api/v1/orders/:id/{history,summary,cancel,complete}`, `/ordering/api/v1/buyers`, `/ordering/api/v1/buyers/me`, `/ordering/api/v1/buyers/address`, `/ordering/api/v1/buyers/:id`, `/ordering/api/v1/dashboard`, `/ordering/api/v1/dashboard/stream` |
+| Reviews        | **Rating API**   | `/rating/api/v1/feedbacks`, `/rating/api/v1/feedbacks/:id`, `/rating/api/v1/feedbacks/:bookId/summarize`                                                                                                                                                                                                                |
 
-| Subpath Export                          | Factory Objects                                                       | Backing Service          |
-| :-------------------------------------- | :-------------------------------------------------------------------- | :----------------------- |
-| `@workspace/api-hooks/catalog/queries`  | `bookQueries`, `authorQueries`, `categoryQueries`, `publisherQueries` | [[service\|catalog-api]] |
-| `@workspace/api-hooks/basket/queries`   | `basketQueries`                                                       | [[service\|basket-api]]  |
-| `@workspace/api-hooks/ordering/queries` | `orderQueries`, `buyerQueries`                                        | [[service\|order-api]]   |
-| `@workspace/api-hooks/rating/queries`   | `feedbackQueries`                                                     | [[service\|rating-api]]  |
+## HTTP client, retries, and ETag headers (`@workspace/api-client/client`)
 
-### Client State & Real-Time Channels
+### Standard headers (`@workspace/api-client/headers`)
 
-| Mechanism               | Application              | Purpose                                                                                                 |
-| :---------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------ |
-| TanStack Query + SSR    | All apps                 | Server prefetching via `HydrationBoundary` and client caching                                           |
-| Conditional ETags       | `backoffice`             | Optimistic concurrency on book and order-summary updates                                                |
-| SSE (`dashboard`)       | `backoffice`             | Live overview metrics pushed into the query cache                                                       |
-| CopilotKit AG-UI & A2UI | `storefront`             | Authenticated streaming AI chat & generative UI (`/api/copilotkit/[[...slug]]`)                         |
-| Jotai atoms             | `storefront`, `commerce` | Shared authentication flag, derived basket state (`@workspace/storefront-shell`), and AI feature toggle |
+`HttpHeaders` standardizes header names across clients and MSW mocks: `Accept`, `Authorization`, `Cache-Control`, `Content-Type`, `ETag`, `If-Match`, `If-None-Match`, `Link`, `Location`, `Pagination-Count`, `x-request-id`, and `Retry-After`.
 
-### Related Documentation
+### Retry and conditional request contract
 
-- [[doc|frontend/001-monorepo-architecture]] — Dependency direction rules across shared packages
-- [[doc|frontend/002-applications-and-routing]] — Route structure and server prefetching entrypoints
-- [[doc|frontend/006-microfrontend-architecture]] — Cross-zone state and navigation between `storefront` and `commerce`
-- [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] — Platform-wide validation, retries, and resilience patterns
+| Setting / behavior                 | Verified value (`packages/api-client/src/client.ts`)                                                                       | Notes                                                                       |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| Max retries                        | `NEXT_PUBLIC_MAX_RETRIES` (default `5`)                                                                                    | Executed via `p-retry`; respects `AbortSignal`                              |
+| `Retry-After` cap                  | `60,000 ms` (`MAX_RETRY_AFTER_MS`)                                                                                         | Parses both delay-seconds and HTTP-date headers                             |
+| Always retried statuses            | `408 Request Timeout`, `429 Too Many Requests`                                                                             | Never retries other `4xx` responses                                         |
+| Network error retry                | Retried when `error.code` is present and not `ECONNABORTED`                                                                | Never retries canceled requests (`axios.isCancel`)                          |
+| `5xx` retry rule                   | Retried for idempotent methods (`GET`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `QUERY`) or any request carrying `x-request-id` | Prevents duplicate non-idempotent writes without an idempotency key         |
+| Conditional GET (`getConditional`) | Sends `Cache-Control: no-cache` and optional `If-None-Match`; accepts `2xx` or `304 Not Modified`                          | Returns `{ data, etag, notModified }`                                       |
+| Optimistic concurrency conflict    | `isPreconditionFailedError(error)` checks HTTP `412 Precondition Failed`                                                   | Triggered when `If-Match` fails on Backoffice book or order-summary updates |
+
+## Query client and factory exports (`@workspace/api-hooks`)
+
+### `QueryClient` defaults (`@workspace/api-hooks/query-client`)
+
+| Option                           | Server (`typeof window === "undefined"`)                           | Browser                                                                            |
+| :------------------------------- | :----------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| Instance lifecycle               | New `QueryClient` per request (prevents cross-request state leaks) | Module-scoped singleton (`browserQueryClient`)                                     |
+| `staleTime`                      | `60,000 ms` (60 seconds)                                           | `60,000 ms` (60 seconds)                                                           |
+| `retry`                          | `false` (zero SSR retries)                                         | Up to `2` retries (`MAX_CLIENT_QUERY_RETRIES`); skips `4xx` except `408` and `429` |
+| `dehydrate.shouldDehydrateQuery` | Includes `pending` queries alongside default settled queries       | —                                                                                  |
+
+### Subpath export map (`packages/api-hooks/package.json`)
+
+| Subpath export                                                         | Key exports / factories                                                                        | Backing service   |
+| :--------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :---------------- |
+| `@workspace/api-hooks/keys`                                            | `basketKeys`, `catalogKeys`, `orderingKeys` (including `dashboard`), `ratingKeys`              | All REST services |
+| `@workspace/api-hooks/query-client`                                    | `getQueryClient`                                                                               | All apps          |
+| `@workspace/api-hooks/catalog/queries`                                 | `bookQueries`, `authorQueries`, `categoryQueries`, `publisherQueries`                          | **Catalog API**   |
+| `@workspace/api-hooks/catalog/{books,authors,categories,publishers}/*` | Entity-specific query and mutation hooks                                                       | **Catalog API**   |
+| `@workspace/api-hooks/basket/queries` and `/basket/*`                  | `basketQueries` and basket mutation hooks                                                      | **Basket API**    |
+| `@workspace/api-hooks/ordering/queries`                                | `orderQueries` (`all`, `list`, `detail`, `history`), `buyerQueries` (`all`, `current`, `list`) | **Ordering API**  |
+| `@workspace/api-hooks/ordering/{orders,buyers}/*`                      | Order and buyer mutation/query hooks                                                           | **Ordering API**  |
+| `@workspace/api-hooks/rating/queries` and `/rating/*`                  | `feedbackQueries` (`all`, `list`, `summary`) and feedback mutation hooks                       | **Rating API**    |
+
+## Real-time channels and client state
+
+### Real-time streaming channels
+
+| Channel           | Application    | Endpoint & protocol                                                                              | Reconnect / streaming contract                                                                                                                                                                                     |
+| :---------------- | :------------- | :----------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard metrics | **Backoffice** | `/ordering/api/v1/dashboard/stream` (`text/event-stream` SSE via `dashboardApiClient.subscribe`) | Sends `Accept: text/event-stream`, `credentials: "include"`, `cache: "no-store"`, and Bearer token; parses `event: dashboard` frames; reconnects with exponential backoff starting at `1,000 ms` up to `30,000 ms` |
+| AI assistant chat | **Storefront** | `/api/copilotkit/[[...slug]]` -> `/chatting/ag-ui` (CopilotKit AG-UI & declarative A2UI)         | Forwards authenticated customer tokens to **Chat API**, streams responses, and connects to `@generative-a11y/ag-ui` for screen-reader pacing                                                                       |
+
+### Jotai client atoms
+
+| Atom                   | Source file                                          | Applications         | Behavior                                                                                                              |
+| :--------------------- | :--------------------------------------------------- | :------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `isAuthenticatedAtom`  | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | Boolean auth flag (default `false`) gating basket fetches                                                             |
+| `basketAtom`           | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | `atomWithQuery` keyed by `basketKeys.detail()`; `enabled: get(isAuthenticatedAtom)` short-circuits anonymous requests |
+| `basketItemCountAtom`  | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | Derived sum of item quantities (`0` when empty or signed out)                                                         |
+| `basketItemsAtom`      | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | Derived array of `BasketItem` (stable empty array fallback)                                                           |
+| `isCopilotEnabledAtom` | `apps/storefront/atoms/feature-flags-atom.ts`        | Storefront           | Initialized from `env.NEXT_PUBLIC_COPILOT_ENABLED`                                                                    |
+
+## Error responses
+
+| HTTP status                                     | Condition                                                         | Client recovery behavior                                                                                                 |
+| :---------------------------------------------- | :---------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| `304 Not Modified`                              | `If-None-Match` matches current server ETag on `getConditional()` | Returns `{ data: null, etag, notModified: true }`; caller retains cached entity                                          |
+| `401 Unauthorized`                              | Missing or expired Microsoft Entra ID token                       | Not retried; triggers re-authentication or redirects to `/login`                                                         |
+| `408 Request Timeout` / `429 Too Many Requests` | Transient timeout or API rate limit                               | Retried by `ApiClient` (up to `NEXT_PUBLIC_MAX_RETRIES`, honoring `Retry-After` up to `60,000 ms`)                       |
+| `412 Precondition Failed`                       | `If-Match` ETag is stale due to a concurrent Backoffice edit      | Detected by `isPreconditionFailedError(error)`; never retried; prompts user to reload latest version                     |
+| `5xx`                                           | Upstream service error                                            | Retried only for idempotent methods (`GET`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `QUERY`) or requests with `x-request-id` |
+
+## Related documentation
+
+- [[doc|frontend/007-architecture-and-state-design]] — Why BookWorm separates server cache, ETags, streams, and Jotai atoms.
+- [[doc|frontend/002-applications-and-routing]] — Where routes prefetch queries and host `/api/copilotkit/[[...slug]]`.
+- [[doc|frontend/001-monorepo-architecture]] — Package boundary tiers for `@workspace/types`, `@workspace/api-client`, and `@workspace/api-hooks`.

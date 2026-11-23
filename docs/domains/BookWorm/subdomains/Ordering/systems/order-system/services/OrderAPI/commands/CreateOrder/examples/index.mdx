@@ -1,75 +1,31 @@
 ---
-summary: Create an Order from the authenticated Buyer's current basket.
+summary: Usage examples for Create order.
 ---
 
-## 1. Context & Problem
+## Create an order through API Gateway
 
-Client applications and integration partners need a clear, reliable reference for turning a signed-in buyer's active shopping basket into a submitted order. Sending itemized order lines or prices from client devices would create duplication and expose pricing to tampering, while network retries during checkout risk creating duplicate orders.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster client integration:** Gives frontend and integration teams concrete request and response examples to implement checkout consistently.
-- **Duplicate-order protection:** Demonstrates how callers attach a unique request tracking key so retried checkout attempts do not create duplicate orders.
-- **Authoritative pricing:** Keeps basket items and book prices sourced exclusively from trusted backend services.
-
-## 3. How It Works
-
-1. The caller authenticates as the buyer and supplies a unique request tracking key representing the checkout attempt.
-2. No itemized order details are included in the request; the ordering service automatically retrieves the buyer's current basket and book pricing from connected services.
-3. After the order is created, the service returns the newly assigned order identifier.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Minimal submission contract:** Omitting a request body simplifies client integrations and prevents client-side price manipulation, while requiring callers to maintain valid sign-in credentials and generate unique tracking keys.
-- **Caller-managed retry keys:** Callers must reuse the same tracking key when retrying an uncertain checkout request and issue a fresh key for each new purchase attempt.
-
-## 5. Technical Reference
-
-### 1. Create an Order
-
-Send the required idempotency key (`x-request-id`). Order API reads the basket and book data from the connected services; the request has no body (`POST /api/v1/orders`).
-
-<CodeGroup dropdown>
-
-```sh
-curl --request POST "$BASE_URL/api/v1/orders" \
+```bash
+curl --request POST "https://<gateway-host>/ordering/api/v1/orders" \
   --header "Authorization: Bearer <access-token>" \
-  --header "x-request-id: checkout-2026-001"
+  --header "x-request-id: <request-id>"
 ```
 
 </CodeGroup>
 
-The same request from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-host>`: API Gateway hostname (or `localhost:7203` with `/api/v1/orders` when calling Ordering API directly).
+- `<access-token>`: Entra ID JWT with role `customer` or `admin` and scopes `ordering_read` and `ordering_write`.
+- `<request-id>`: Unique client-generated idempotency key (for example, a UUID v7).
 
-```ts create-order.ts
-const baseUrl = "https://api.example.com";
-const accessToken = "<access-token>";
-const response = await fetch(`${baseUrl}/api/v1/orders`, {
-	method: "POST",
-	headers: {
-		Authorization: `Bearer ${accessToken}`,
-		"x-request-id": "checkout-2026-001",
-	},
-});
+Expected response (`201 Created`, with header `Location: /api/v1/orders/0193f1a2-1111-7d8e-9f01-23456789abcd`):
 
-if (!response.ok) {
-	throw new Error(`CreateOrder failed with ${response.status}`);
-}
-
-const orderId = (await response.json()) as string;
-console.log(`Created order ${orderId}`);
-```
-
-</CodeGroup>
-
-`201 Created` returns the new Order UUID:
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
-"44444444-4444-4444-4444-444444444444"
+"0193f1a2-1111-7d8e-9f01-23456789abcd"
 ```
 
 </CodeGroup>

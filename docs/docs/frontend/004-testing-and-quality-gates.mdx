@@ -12,84 +12,183 @@ badges:
     textColor: blue
 ---
 
-## How to Run Frontend Quality Checks
+Run these checks before opening a pull request that touches `src/Clients/` to verify formatting, workspace boundaries, TypeScript types, ESLint rules, Vitest unit and component tests, Next.js production builds, and Playwright BDD end-to-end (E2E) suites. For backend, Pact contract, and architecture test commands, see [[doc|development/008-testing-matrix]].
 
-BookWorm verifies frontend changes across four layers: static checks (formatting, boundaries, types, and linting), offline unit/component tests (Vitest + MSW), browser end-to-end tests (Playwright BDD + `axe-core`), and production Next.js builds.
+## Prerequisites
 
-### Before Opening a Pull Request
+- Bun `1.4.4` and Node.js `>= 24.0.0` installed via `mise install` (see [[doc|development/002-getting-started]]).
+- Workspace dependencies installed with `bun install` inside `src/Clients`.
+- For browser E2E runs only: Playwright Chromium binaries installed once from `src/Clients`:
 
-1. **Format modified files** from the repository root:
+  ```bash
+  bunx turbo run playwright:install
+  ```
 
-   ```bash
-   mise run format:fe
-   ```
+## Steps
 
-2. **Run static checks** from `src/Clients` to verify workspace boundaries, TypeScript types, and ESLint (`--max-warnings 0`, including `jsx-a11y` rules):
+<Steps>
+<Step title="Format frontend files">
 
-   ```bash
-   bun run boundaries
-   bun run check-types
-   bun run lint
-   ```
+From the repository root, run the `mise` formatter task (Prettier across `**/*.{ts,tsx,md,feature}` in `src/Clients`):
 
-3. **Run unit and component tests** from `src/Clients` (uses deterministic mock data and requires no running backend):
+<CodeGroup>
 
-   ```bash
-   bun run test
-   ```
+```bash
+mise run format:fe
+```
 
-4. **Verify the production build** when changing layouts, routes, or Server/Client Component boundaries:
+</CodeGroup>
 
-   ```bash
-   bun run build
-   ```
+</Step>
+<Step title="Run static quality gates">
 
-5. **Run browser E2E tests** when modifying user journeys, navigation, or accessibility behavior:
+From `src/Clients`, verify Turborepo dependency boundaries, strict TypeScript types (`@typescript/native`), and ESLint (`--max-warnings 0`, including `eslint-plugin-jsx-a11y`):
 
-   ```bash
-   bun run e2e
-   ```
+<CodeGroup>
 
-### Generating Test Reports
+```bash
+bun run boundaries
+bun run check-types
+bun run lint
+```
 
-To aggregate Vitest and Playwright results into an Allure report from `src/Clients`:
+</CodeGroup>
+
+</Step>
+<Step title="Run Vitest unit and component tests">
+
+From `src/Clients`, run the offline Vitest + Happy DOM + MSW v2 test suite across **Storefront**, **Commerce**, and **Backoffice** (no running backend required):
+
+<CodeGroup>
+
+```bash
+bun run test
+```
+
+</CodeGroup>
+
+To collect V8 coverage reports (`text`, `json`, `json-summary`, `html`, `lcov`) across all apps from `src/Clients`, invoke the Turborepo task directly:
+
+<CodeGroup>
+
+```bash
+bunx turbo run test:coverage
+```
+
+</CodeGroup>
+
+> [!NOTE]
+> `src/Clients/package.json` does not define a root `test:coverage` script. Use `bunx turbo run test:coverage` from `src/Clients`, or run `bun run test:coverage` inside an individual app directory such as `src/Clients/apps/storefront`.
+
+</Step>
+<Step title="Verify production Next.js builds">
+
+Run production builds from `src/Clients` whenever you change layouts, routes, `next.config.mjs`, `microfrontends.json`, or Server/Client Component boundaries:
+
+<CodeGroup>
+
+```bash
+bun run build
+```
+
+</CodeGroup>
+
+To limit a check to one application during local iteration, pass a Turborepo filter:
+
+<CodeGroup>
+
+```bash
+bunx turbo run build --filter=@bookworm/<app-name>
+```
+
+</CodeGroup>
+
+Where:
+
+- `<app-name>`: `storefront`, `commerce`, or `backoffice`.
+
+</Step>
+<Step title="Run Playwright BDD E2E suites (when changing user journeys)">
+
+From `src/Clients`, compile Gherkin `.feature` files with `bddgen` and execute Playwright browser tests:
+
+<CodeGroup>
+
+```bash
+bun run e2e
+```
+
+</CodeGroup>
+
+E2E coverage by application:
+
+- **`@bookworm/storefront` (`defaultPort: 3000`):** 9 feature suites (`accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery`) covering Storefront and Commerce customer journeys.
+- **`@bookworm/backoffice` (`defaultPort: 3001` in Playwright config):** 6 feature suites (`authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`).
+- **`@bookworm/commerce`:** Unit and component tests only; no standalone E2E feature files exist yet.
+
+`packages/app-config/playwright.mjs` does not auto-start a dev server; Playwright targets `process.env.BASE_URL` (defaulting to `http://localhost:3000` for Storefront and `http://localhost:3001` for Backoffice), so ensure the target app or Aspire AppHost is running before executing `bun run e2e`.
+
+</Step>
+<Step title="Generate a combined Allure report (optional)">
+
+From `src/Clients`, merge `allure-results` from Backoffice, Storefront, and Commerce into `src/Clients/allure-report/`:
+
+<CodeGroup>
 
 ```bash
 bun run allure:report
 ```
 
----
+</CodeGroup>
 
-## Reference
+</Step>
+</Steps>
 
-### Verification Command Matrix
+## Verification
 
-| Check                      | Working Directory | Command                 | Scope                                                                                                 |
-| :------------------------- | :---------------- | :---------------------- | :---------------------------------------------------------------------------------------------------- |
-| Format frontend files      | Repo root         | `mise run format:fe`    | Prettier across `src/Clients` (`*.{ts,tsx,md,feature}`)                                               |
-| Verify package boundaries  | `src/Clients`     | `bun run boundaries`    | Enforces `config` / `foundation` / `domain` / `app` import rules                                      |
-| Type check all packages    | `src/Clients`     | `bun run check-types`   | Strict TypeScript check across workspace packages                                                     |
-| Lint all packages          | `src/Clients`     | `bun run lint`          | ESLint (`--max-warnings 0`) including `eslint-plugin-jsx-a11y`                                        |
-| Run unit & component tests | `src/Clients`     | `bun run test`          | Vitest + Happy DOM + MSW v2 across all three apps                                                     |
-| Collect code coverage      | `src/Clients`     | `bun run test:coverage` | V8 coverage reports (`lcov`, `json-summary`, `html`) per app                                          |
-| Build production apps      | `src/Clients`     | `bun run build`         | Next.js production builds with Turbopack                                                              |
-| Run BDD E2E tests          | `src/Clients`     | `bun run e2e`           | Compiles Gherkin specs and runs Playwright tests                                                      |
-| Generate Allure report     | `src/Clients`     | `bun run allure:report` | Combines unit and E2E results across `backoffice`, `storefront`, and `commerce` into `allure-report/` |
+Confirm that all static, build, and test gates match the GitHub Actions pipeline (`.github/workflows/frontend-shared.yml`) by checking that every command exits with code `0` and Turborepo reports zero failed tasks.
 
-### Shared Test Infrastructure
+From `src/Clients`, run the CI-equivalent affected check against your base branch:
 
-- **Configuration (`@workspace/app-config`):** Centralizes Vitest, Playwright BDD, and Next.js settings so all apps share deterministic Faker seeds, isolated MSW mock lifecycles, and router stubs without per-app duplication.
-- **Coverage exclusions:** Thin declarative files (`page.tsx`, `layout.tsx`, `env.mjs`, `instrumentation.ts`, `proxy.ts`, `config/`) are excluded from coverage metrics so percentages reflect executable logic in `features/`, `components/`, and `hooks/`.
+<CodeGroup>
 
-### E2E BDD Feature Coverage
+```bash
+bunx turbo boundaries && bunx turbo run check-types lint build test --affected
+```
 
-| Application            | Default Port | Feature Suites (`e2e/features/*.feature`)                                                                                                                                                                                               |
-| :--------------------- | :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@bookworm/storefront` | `3000`       | `accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery` (covers `storefront` + `commerce` customer journeys through the gateway) |
-| `@bookworm/backoffice` | `3001`       | `authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`                                                                                                                    |
+</CodeGroup>
 
-### Related Documentation
+Expected output:
 
-- [[doc|development/005-testing]] — Repository-wide backend, contract, frontend, and EventCatalog checks
-- [[doc|frontend/001-monorepo-architecture]] — Workspace boundary tiers checked by `bun run boundaries`
-- [[doc|frontend/005-accessibility]] — Accessibility standards, contributor checklist, and E2E checks
+<CodeGroup>
+
+```text
+ Tasks:    <count> successful, <count> total
+Cached:    <cached> cached, <count> total
+  Time:    <duration>
+```
+
+</CodeGroup>
+
+Where:
+
+- `<count>`: Number of affected workspace tasks executed for your diff.
+- `<cached>`: Number of tasks replayed from local or Turborepo Remote Cache.
+- `<duration>`: Total elapsed wall-clock time.
+
+## Troubleshooting
+
+| Symptom                                                  | Cause                                                                                                                                                                                                                                                      | Fix                                                                                                       |
+| :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
+| `Script not found "test:coverage"` in `src/Clients`      | Root `src/Clients/package.json` exposes `test`, not `test:coverage`                                                                                                                                                                                        | Run `bunx turbo run test:coverage` from `src/Clients` or `bun run test:coverage` inside `apps/<app-name>` |
+| `turbo boundaries` reports an illegal import             | A package imports from a higher dependency tier (`config` -> `foundation` -> `domain` -> `app`)                                                                                                                                                            | Move shared code to a lower tier; see [[doc\|frontend/001-monorepo-architecture]]                         |
+| `bun run lint` fails on warnings                         | ESLint runs with `--max-warnings 0` across all packages                                                                                                                                                                                                    | Run `bun run lint:fix` inside the failing app or fix the reported rule/accessibility violation            |
+| `Executable doesn't exist` during `bun run e2e`          | Playwright Chromium browser binaries are not installed                                                                                                                                                                                                     | Run `bunx turbo run playwright:install` from `src/Clients`                                                |
+| SQLite `database is locked` errors in parallel MSW tests | Custom `MSW_COOKIE_STORE_PATH` shared across parallel Vitest workers                                                                                                                                                                                       | Unset `MSW_COOKIE_STORE_PATH` so `packages/app-config/vitest.mjs` creates a per-process temp database     |
+| Unexpected coverage drop on route or helper files        | Shared exclusions in `packages/app-config/vitest.mjs` exclude `app/**/*.ts(x)`, `**/middleware.ts`, `**/env.mjs`, `**/instrumentation.ts`, and select `lib/*` helpers, but not custom `proxy.ts` or `config/` files unless added to `extraCoverageExclude` | Add unit tests for executable logic or configure `extraCoverageExclude` in the app's `vitest.config.ts`   |
+
+## Related documentation
+
+- [[doc|development/008-testing-matrix]] — Backend TUnit, Pact contract, ArchUnitNET, frontend, and documentation checks.
+- [[doc|frontend/005-accessibility]] — Targeted `jsx-a11y`, `axe-core`, keyboard, and screen-reader checks.
+- [[doc|frontend/001-monorepo-architecture]] — Workspace scripts, dependency tiers, and package inventory.

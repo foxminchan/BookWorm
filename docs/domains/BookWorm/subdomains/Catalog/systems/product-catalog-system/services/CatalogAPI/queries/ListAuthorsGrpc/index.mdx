@@ -14,63 +14,72 @@ sidebar:
   badge: "gRPC"
 ---
 
-## 1. Context & Problem
+`ListAuthorsGrpc` invokes the internal `book.v1.BookGrpcService/ListAuthors` gRPC unary RPC on **Catalog API** to return all registered catalog authors (`AuthorItem`) without pagination. **MCP Tools** calls this RPC to power its `list_authors` tool.
 
-Internal platform services—such as AI assistant integrations—often need a complete list of [[entity|author]] records in the Catalog to answer user questions or resolve author names without routing through public storefront gateways. Without a dedicated internal read path, internal consumers would either duplicate catalog data or rely on slower public interfaces.
+## Overview
 
-## 2. Business Value
+| Property                | Value                                                                                                                                        |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner (gRPC server)** | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                         |
+| **Primary caller**      | **MCP Tools** (`mcptools`, `list_authors` tool)                                                                                              |
+| **Source**              | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs` |
+| **Protocol / format**   | gRPC unary RPC (`book.v1.BookGrpcService/ListAuthors`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"`   |
+| **Authentication**      | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                         |
+| **Caching**             | Dispatches `ListAuthorsQuery`, backed by PostgreSQL (`catalogdb`) and FusionCache (L1 + Redis L2, key `CatalogCacheKeys.Authors`)            |
+| **Contract version**    | `1.0.0`                                                                                                                                      |
 
-- **Consistent catalog knowledge**: Internal tools and assistants read directly from the authoritative Catalog rather than maintaining stale copies.
-- **Responsive internal integrations**: High-speed internal service-to-service communication keeps automated workflows and assistant responses fast.
-- **Simple onboarding for internal consumers**: No user sign-in or complex filter setup is required to retrieve the full directory of authors.
+## Parameters and fields
 
-## 3. How It Works
+### Request message (`ListAuthorsRequest`)
 
-1. An internal consumer—such as [[service|mcp-server]]—sends an empty request to [[service|catalog-api]] asking for all [[entity|author]] records.
-2. Because this is an anonymous read operation for internal services, no customer identity or search criteria are needed.
-3. The catalog service retrieves every available author record and returns their identifiers and display names.
-4. The consuming service uses this directory to power internal capabilities such as listing known authors for users or assistants.
+`ListAuthorsRequest` is an empty Protobuf message with no fields.
 
-## 4. Trade-offs & Lessons Learned
+### Response message (`ListAuthorsResponse`)
 
-- **Unpaginated full list**: Returning all authors in a single response keeps the interaction simple for internal callers, assuming the author directory remains small enough to fit comfortably in one payload; if the catalog grows substantially, pagination or filtering will be needed.
-- **Anonymous internal access**: Omitting per-user authorization simplifies internal service-to-service calls, assuming network-level trust between internal services and that only non-sensitive public catalog metadata is exposed.
-- **Dedicated internal contract**: Maintaining a binary internal contract alongside the public web interface improves efficiency for service-to-service calls at the cost of keeping both contracts aligned as author fields evolve.
+| Field            | Protobuf type         | Tag | Description                                                             |
+| :--------------- | :-------------------- | :-- | :---------------------------------------------------------------------- |
+| `authors`        | `repeated AuthorItem` | `1` | All catalog authors (empty collection if none exist)                    |
+| `authors[].id`   | `string`              | `1` | Author UUID                                                             |
+| `authors[].name` | `string`              | `2` | Author display name (mapped to empty string `""` if null in source DTO) |
 
-## 5. Technical Reference
+### Protobuf contract
 
-The `ListAuthors` RPC returns all available [[entity|author]] records in the Catalog through the `book.v1` gRPC contract. It is an anonymous read operation exposed for internal service-to-service clients.
+<CodeGroup>
 
-- **Producer**: [[service|mcp-server]] invokes `BookService.ListAuthorsAsync` to power the `list_authors` MCP tool.
-- **Consumer**: [[service|catalog-api]] handles the request by dispatching `ListAuthorsQuery`.
+```protobuf
+edition = "2023";
 
-<NodeGraph />
+package book.v1;
 
-### Contract
+service BookGrpcService {
+  rpc ListAuthors (ListAuthorsRequest) returns (ListAuthorsResponse);
+}
 
-Send an empty `ListAuthorsRequest`. The response is `ListAuthorsResponse`, containing a repeated collection of `AuthorItem` values (`id` and `name`).
+message ListAuthorsRequest {}
 
-### Schema
+message ListAuthorsResponse {
+  repeated AuthorItem authors = 1;
+}
 
-<Schema file="schema.proto" lang="protobuf" title="ListAuthors gRPC schema" />
-
-### Examples
-
-<CodeGroup dropdown>
-
-```csharp title="ListAuthors gRPC example"
-using Grpc.Net.Client;
-using BookWorm.Catalog.Grpc.Services;
-
-using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
-var client = new BookGrpcService.BookGrpcServiceClient(channel);
-
-var response = await client.ListAuthorsAsync(new ListAuthorsRequest());
-
-foreach (var author in response.Authors)
-{
-    Console.WriteLine($"{author.Id}: {author.Name}");
+message AuthorItem {
+  string id = 1;
+  string name = 2;
 }
 ```
 
 </CodeGroup>
+
+## Error responses
+
+| Code / status        | Condition                  | Recovery behavior                           |
+| :------------------- | :------------------------- | :------------------------------------------ |
+| `Unavailable` (`14`) | Catalog API is unreachable | Retry within the budgeted resilience policy |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and gRPC services.
+- [[service|mcp-server]] — Primary caller exposing the `list_authors` MCP tool.
+- [[query|ListAuthors]] — Public HTTP endpoint (`GET /api/v1/authors`).
+- [[entity|author]] — Domain model for catalog authors.
+
+<NodeGraph />

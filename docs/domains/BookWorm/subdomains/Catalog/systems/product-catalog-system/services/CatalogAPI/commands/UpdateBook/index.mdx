@@ -18,49 +18,81 @@ sidebar:
   badge: "PUT"
 ---
 
-## 1. Context & Problem
+`UpdateBook` replaces the full metadata, pricing, relationships, and optional cover image of an existing book in **Catalog API** (`PUT /api/v1/books`) from a `multipart/form-data` payload and returns `204 No Content`. Callers can supply an `If-Match` header with the book's `ETag` to enforce optimistic concurrency control.
 
-Book listings evolve over time: prices change for promotions, descriptions are refined, cover artwork is refreshed or retired, and relationships to authors, categories, or publishers may need correction. Requiring callers to re-submit every single detail of a [[entity|book]] just to adjust a price or swap a cover image would be error-prone and cumbersome.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                        |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                         |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Books/Update/`                                                               |
+| **Protocol / format** | HTTP `PUT`, `multipart/form-data` request (`[FromForm]`), empty response body (`204 No Content`)                             |
+| **Endpoint**          | Direct: `PUT /api/v1/books` (local HTTP `5100`, HTTPS `7187`); API Gateway: `PUT /catalog/api/v1/books`                      |
+| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
+| **Concurrency**       | Optional `If-Match` header (`ETagEndpointFilter` via `.WithETag()`); stale versions return `412 Precondition Failed`         |
+| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                     |
+| **Idempotency**       | Idempotent when resubmitting identical fields without a new `image` upload; no `x-request-id` header is enforced             |
+| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                   |
 
-- **Faster merchandising updates**: Enables rapid price adjustments, promotional sale pricing, and metadata corrections without rebuilding the listing.
-- **Unified asset and data handling**: Allows text details, catalog relationships, and cover artwork to be updated together in a single action.
-- **Lower risk of accidental overwrites**: Because only the supplied details are changed, omitted attributes remain intact.
+:::note
+`PUT /api/v1/books` is a **full replacement**, not a partial patch. `UpdateBookValidator` inherits `BookValidatorBase` and requires `id`, `name`, `price`, `categoryId`, `publisherId`, and `authorIds` on every request; omitting optional fields (`description`, `priceSale`) overwrites them with their defaults (`""` and `null`).
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-The caller supplies the book's unique identifier along with only the details that need to change—such as title, description, regular price, sale price, category, publisher, assigned authors, or cover artwork.
+### Request headers
 
-1. Any attributes omitted from the request remain unchanged on the existing listing.
-2. Cover artwork can be replaced with a newly uploaded image or cleared entirely using an explicit image-removal option.
-3. The catalog validates the submitted values and verifies that the book exists before applying the update and returning an empty confirmation.
-4. If the submission is invalid or the specified book cannot be found, the change is rejected without modifying the listing.
+| Name            | Type     | Required | Default | Constraints                                                                                                  | Description                                              |
+| :-------------- | :------- | :------- | :------ | :----------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| `Authorization` | `string` | Yes      | —       | `Bearer <access-token>`                                                                                      | Entra ID JWT satisfying the `business_user` policy       |
+| `If-Match`      | `string` | No       | —       | Strong (`"<row-version>"`) or weak (`W/"<row-version>"`) unsigned integer ETag from `GET /api/v1/books/{id}` | Expected `RowVersion` for optimistic concurrency control |
 
-## 4. Trade-offs & Lessons Learned
+### Request form fields (`multipart/form-data`)
 
-- **Partial updates over full replacement**: Allowing callers to send only changed fields avoids accidental data loss, though it requires an explicit flag to remove an existing cover image rather than relying on an omitted field.
-- **Combined metadata and media upload**: Accepting form uploads with optional file data simplifies client workflows for cover updates, at the cost of slightly more involved request construction compared to text-only updates.
-- **Relationship replacement**: When relationship fields such as assigned authors are provided, the supplied values replace the previous set, so callers must pass the full intended list rather than a single addition.
+`UpdateBookEndpoint` configures `.WithFormOptions(true)` (buffered form body); antiforgery validation is disabled in Development by `RegisterEndpointExtensions.MapEndpoints`.
 
-## 5. Technical Reference
+| Name            | Type            | Required | Default | Constraints                                                                                                                                                                                            | Description                                                                                 |
+| :-------------- | :-------------- | :------- | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
+| `id`            | `uuid`          | Yes      | —       | Non-empty UUID (`Guid != Guid.Empty`)                                                                                                                                                                  | Identifier of the book to replace                                                           |
+| `name`          | `string`        | Yes      | —       | Non-empty, max `50` chars (`DataSchemaLength.Medium`)                                                                                                                                                  | Book title                                                                                  |
+| `description`   | `string`        | No       | `""`    | Max `500` chars in `BookValidatorBase` (`DataSchemaLength.SuperLarge`; DB column max `1000`, `NOT NULL`)                                                                                               | Book summary text; omitting clears the stored description to `""`                           |
+| `price`         | `decimal`       | Yes      | —       | Strictly `> 0`; stored as `numeric(18,2)`                                                                                                                                                              | Regular catalog price                                                                       |
+| `priceSale`     | `decimal`       | No       | `null`  | When provided: strictly `> 0` and `<= price`; stored as `numeric(18,2)`                                                                                                                                | Optional promotional sale price; omitting clears any existing sale price                    |
+| `categoryId`    | `uuid`          | Yes      | —       | Non-empty UUID (`Guid != Guid.Empty`); must reference an existing category                                                                                                                             | Category identifier                                                                         |
+| `publisherId`   | `uuid`          | Yes      | —       | Non-empty UUID (`Guid != Guid.Empty`); must reference an existing publisher                                                                                                                            | Publisher identifier                                                                        |
+| `authorIds`     | `uuid[]`        | Yes      | —       | Non-empty array (`>= 1` UUID); repeat `authorIds` form fields for multiple authors                                                                                                                     | Complete replacement list of author identifiers (`_bookAuthors.Clear()` runs before adding) |
+| `image`         | `file` (binary) | No       | `null`  | Non-empty, max `1,048,576` bytes (1 MB / 1,024 KB); allowed MIME types and extensions: `image/jpeg` (`.jpg`, `.jpeg`), `image/png` (`.png`), `image/webp` (`.webp`); extension must match content type | Optional binary cover image upload (`IFormFile`) replacing the stored cover URN             |
+| `isRemoveImage` | `boolean`       | No       | `false` | `true` or `false`                                                                                                                                                                                      | When `true`, sets the book's `Image` column to `null` (takes precedence over `image`)       |
 
-- **Endpoint**: `PUT /api/v1/books`
-- **Command**: `UpdateBook` (updates [[entity|book]])
-- **Content type**: `multipart/form-data`
-- **Request fields**:
-  - Required: `id` (UUID identifying the book).
-  - Optional metadata and pricing: `name` (`minLength: 1`), `description`, `price` (`>= 0`), `priceSale` (`>= 0` or `null`).
-  - Optional relationships (UUIDs): `categoryId`, `publisherId`, `authorIds` (array of UUIDs).
-  - Optional cover controls: `image` (base64-encoded cover image or `null`) to replace the cover, or `isRemoveImage=true` to remove the existing cover.
-  - Omitted fields remain unchanged.
-- **Responses**:
-  - `204 No Content`: Book updated successfully; response body is empty.
-  - `400`: Invalid form data or validation failure.
-  - `404`: The book identified by `id` does not exist.
+## Behavior and side effects
+
+- **Optimistic concurrency:** When `If-Match` contains a valid integer ETag, `ETagEndpointFilter` populates `UpdateBookCommand.ExpectedVersion`. `UpdateBookHandler` compares `ExpectedVersion` against `book.RowVersion` and throws `DbUpdateConcurrencyException` on mismatch, which `GlobalExceptionHandler` maps to `412 Precondition Failed`.
+- **Transactional persistence:** `UpdateBookCommand` is decorated with `[Transactional]`, wrapping entity updates and `book_authors` replacement inside `TransactionBehavior<CatalogDbContext>`.
+- **Cover image handling:**
+  - `UpdateBookPreProcessor` uploads `image` (when non-null) to Azure Blob Storage (`catalog-blob`) via `BlobService.UploadFileAsync` and stores the returned URN in `ImageUrn`.
+  - `UpdateBookHandler` resolves the new column value as `isRemoveImage ? null : ImageUrn ?? book.Image`, preserving the existing cover URN when neither `image` nor `isRemoveImage=true` is sent.
+  - `UpdateBookPostProcessor` calls `BlobService.DeleteFileAsync(ImageUrn)` only when both `IsRemoveImage == true` and `ImageUrn is not null` (deleting a file uploaded in the same request). Clearing a cover with `isRemoveImage=true` alone sets `book.Image = null` in PostgreSQL without deleting the previously stored blob from `catalog-blob`.
+- **Cache invalidation:** `book.Update(...)` registers `BookChangedEvent(Id)`; `BookChangedEventHandler` removes FusionCache keys `book:{id}` and `book:summary:{id}` and invalidates tags `books:list` and `books:search`.
+- **Vector index queueing:** PostgreSQL triggers `books_vector_update` and `book_authors_vector_update` enqueue `book_id` into `pending_vector_updates` for asynchronous Qdrant embedding refresh by **Catalog Ingestion**.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                                                                                                                           | Recovery behavior                                                                       |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------- |
+| `400 Bad Request`           | FluentValidation failure (missing/empty `id`, `name`, `categoryId`, `publisherId`, or `authorIds`; `price <= 0`; `priceSale <= 0` or `> price`; length exceeded; invalid image size/type/extension) or malformed multipart payload (`HttpValidationProblemDetails`) | Fix invalid form fields or file upload; do not retry unchanged input                    |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                                                                                                                                                           | Acquire a valid Entra ID access token and retry                                         |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                                                                                                                                                     | Request the required Entra ID app role and scopes                                       |
+| `404 Not Found`             | No active book exists with the supplied `id` (`{ "detail": "The requested resource was not found." }`)                                                                                                                                                              | Verify the book UUID; do not treat `404` as a completed update                          |
+| `412 Precondition Failed`   | `If-Match` version does not match the book's current `RowVersion` (`ProblemDetails`)                                                                                                                                                                                | Fetch the latest book and `ETag` via `GET /api/v1/books/{id}`, merge changes, and retry |
+| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                                                                                                                                                            | Wait for the `Retry-After` interval before retrying                                     |
+| `500 Internal Server Error` | Foreign-key violation, Azure Blob Storage failure, or unhandled server error (`ProblemDetails` with `traceId`)                                                                                                                                                      | Verify referenced IDs exist and inspect Catalog API logs using `traceId`                |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[command|CreateBook]] — Create a new book listing with multipart upload.
+- [[command|DeleteBook]] — Soft-delete an existing book listing.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

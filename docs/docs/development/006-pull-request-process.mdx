@@ -9,55 +9,143 @@ badges:
     textColor: teal
 ---
 
-# Submit a pull request
+Use this guide to package a verified branch into a clean pull request that passes BookWorm's path-filtered CI pipelines and maintainer review on the first pass.
 
-## 1. Context & Problem
+## Prerequisites
 
-Integrating changes into a shared multi-service codebase requires consistent standards for clarity, automated verification, security, and peer review. Without a defined pull request process, maintainers spend unnecessary time interpreting ambiguous changes, tracking down missing tests or documentation updates, and resolving failing integration checks or merge conflicts.
+- Changes committed on a focused branch following [[doc|development/003-development-workflow]]
+- Relevant unit, contract, frontend, or documentation checks passing locally
+- GitHub CLI (`gh`) installed via `mise install` (optional; you can also open the PR in the GitHub web UI)
 
-## 2. Business Value
+## Steps
 
-- **Consistent quality and security**: Automated checks, code quality analysis, and peer review protect the main branch from regressions and unreviewed changes.
-- **Clear change traceability**: Standardized titles and structured summaries make it easy for project managers, architects, and developers to understand the scope and intent of every change.
-- **Safe vulnerability handling**: Directing security disclosures to private channels prevents premature exposure of potential risks.
+<Steps>
+<Step title="Run final local formatting and verification">
 
-## 3. How It Works
+Format all touched areas from the repository root:
 
-Every proposed change follows a structured journey from contributor preparation through automated verification and maintainer review before merging.
+<CodeGroup>
+
+```bash
+mise run format
+```
+
+</CodeGroup>
+
+Then run the checks matching your changed paths:
+
+- **Backend (`src/`, `tests/`):** `mise run test`
+- **Frontend (`src/Clients/`):** From `src/Clients`, run `bun run boundaries`, `bun run check-types`, `bun run lint`, `bun run test`, and `bun run build`
+- **Documentation (`docs/`):** From `docs/`, run `bun run check` and `bun run fitness`
+
+</Step>
+<Step title="Push your branch to your fork">
+
+<CodeGroup>
+
+```bash
+git push -u origin <branch-name>
+```
+
+</CodeGroup>
+
+Where:
+
+- `<branch-name>`: Your local branch name (for example, `feat/add-book-search`).
+
+</Step>
+<Step title="Create the pull request with a Conventional Commit title">
+
+Use `<type>: <concise summary>` where `<type>` is one of `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`. Fill out every section of `.github/pull_request_template.md`, link related issues, and update documentation if behavior or APIs changed:
+
+<CodeGroup>
+
+```bash
+gh pr create \
+  --base main \
+  --title "<type>: <concise summary>" \
+  --body-file .github/pull_request_template.md
+```
+
+</CodeGroup>
+
+Where:
+
+- `<type>`: Conventional Commit prefix (`feat`, `fix`, `docs`, `refactor`, `test`, or `chore`).
+- `<concise summary>`: Short imperative description of the change.
+
+</Step>
+<Step title="Monitor automated CI workflows">
+
+GitHub Actions runs path-filtered workflows automatically on every pull request:
+
+| Workflow file                                                | Triggered when           | What it checks                                                                                                                                                                        |
+| :----------------------------------------------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.github/workflows/pr-validation.yml`                        | Every PR                 | Path detection, `backend-shared.yml` (CSharpier format/style + analyzers), `frontend-shared.yml` (boundaries, types, lint, build, Vitest), Component Detection, and Dependency Review |
+| `.github/workflows/sonar.yml`                                | PRs touching source code | SonarCloud static analysis, `.trx` test results, backend MTP coverage XML, and frontend `lcov.info`                                                                                   |
+| `.github/workflows/docs.yml`                                 | PRs touching `docs/**`   | EventCatalog `bun run check`, `bun run fitness`, and static site build                                                                                                                |
+| `.github/workflows/contribution-guidelines-checker.lock.yml` | PRs                      | Validates contribution guideline compliance                                                                                                                                           |
+
+</Step>
+<Step title="Address review feedback and resolve conflicts">
+
+- Respond to maintainer comments and push follow-up commits to the same branch.
+- Rebase or merge `upstream/main` if merge conflicts appear.
+- Merging requires **at least one maintainer approval**, all required automated checks green, and zero merge conflicts.
+
+:::danger
+**Security vulnerabilities:** Do **not** open a public pull request or public GitHub issue for security bugs. Follow the private disclosure instructions in `.github/SECURITY.md`.
+:::
+
+</Step>
+</Steps>
+
+## Verification
+
+Check PR check status from the CLI:
+
+<CodeGroup>
+
+```bash
+gh pr checks
+```
+
+</CodeGroup>
+
+Expected output:
+
+<CodeGroup>
+
+```text
+All checks were successful
+```
+
+</CodeGroup>
+
+## Troubleshooting
+
+| Symptom                                                      | Cause                                                         | Fix                                                                                                                                                          |
+| :----------------------------------------------------------- | :------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend-shared.yml` fails on formatting or analyzers        | CSharpier or Roslyn analyzer check failed                     | Run `mise run format:cs` and `dotnet format analyzers BookWorm.slnx`, commit, and push                                                                       |
+| `frontend-shared.yml` fails on `boundaries` or `check-types` | Invalid cross-tier package import or TypeScript error         | Run `bun run boundaries` and `bun run check-types` in `src/Clients`, fix violations, and push                                                                |
+| `docs.yml` fails on `check` or `fitness`                     | EventCatalog lint, Prettier, or architecture fitness failure  | Run `mise run format:docs`, then `bun run check` and `bun run fitness` in `docs/`                                                                            |
+| `sonar.yml` fails quality gate on coverage                   | New domain logic falls below the 80% coverage target          | Add targeted TUnit or Vitest tests covering uncovered branches and verify with `mise run test:coverage` or `bunx turbo run test:coverage` (in `src/Clients`) |
+| Dependency Review check fails                                | Added package has a known vulnerability or disallowed license | Upgrade to a patched package version in `Directory.Packages.props` / `Versions.props` or `src/Clients/package.json`                                          |
+
+## Getting help
+
+- **Bugs:** Open a [Bug Report](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml).
+- **Features:** Open a [Feature Request](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml).
+- **Accessibility barriers:** Open an [Accessibility Issue](https://github.com/foxminchan/BookWorm/issues/new?template=accessibility.yml).
+- **Questions and ideas:** Start a thread in [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions).
+
+## Related documentation
+
+- [[doc|development/003-development-workflow]] — Branch naming and Husky pre-commit checks.
+- [[doc|development/005-testing]] — Reproduce backend and docs checks locally.
+- [[doc|frontend/004-testing-and-quality-gates]] — Reproduce frontend checks locally.
+- [[team|business-strategy]] — Maintainer roles and governance channels.
+
+## Pull request process
 
 <MermaidFileLoader file="mermaids/pull-request-process.mmd" />
-
-1. **Describe the change clearly**: Use a concise, categorized title and complete the pull request template summarizing what changed, the category of work, and any linked tracking items.
-2. **Meet quality and documentation expectations**: Ensure the change follows [[doc|development/004-engineering-standards]] and passes the relevant validations in [[doc|development/005-testing]]. Update documentation and usage examples whenever behavior or APIs change.
-3. **Pass automated validation**: Continuous integration pipelines inspect which areas of the repository changed and run the corresponding backend, frontend, or documentation checks, along with dependency reviews and static code quality analysis where applicable.
-4. **Complete peer review and merge**: Request review from maintainers, address feedback promptly, and ensure no merge conflicts exist. Merging requires at least one maintainer approval and all required automated checks passing.
-
-For questions, defect reports, or feature ideas, contributors rely on the repository's structured templates and guides—while keeping potential security vulnerabilities strictly in private reporting channels.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Path-filtered automation vs. running all suites**: Triggering backend, frontend, or documentation checks based on modified paths keeps feedback fast and avoids wasted compute, while cross-cutting changes still trigger multiple pipelines.
-- **Mandatory maintainer sign-off**: Requiring maintainer approval alongside automated checks preserves architectural consistency and quality, though review turnaround depends on volunteer maintainer availability.
-- **Separate private channel for security issues**: Keeping security reports out of public issue trackers protects users and systems, requiring contributors to follow a dedicated disclosure process rather than standard bug templates.
-
-## 5. Technical Reference
-
-### Pull request checklist
-
-1. **Title:** Use `<type>: <description>` with a Conventional Commit type: `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`.
-2. **Description:** Complete the [pull request template](https://github.com/foxminchan/BookWorm/blob/main/.github/pull_request_template.md), summarize the proposed changes, select the type of change, and complete the checklist. Link related issues when applicable.
-3. **Quality:** Follow [[doc|development/004-engineering-standards]], run `mise run format`, and run the relevant checks in [[doc|development/005-testing]].
-4. **Documentation:** Update documentation when functionality changes; include clear examples for API changes, and validate `docs/` changes with `bun run check` and `bun run fitness`.
-5. **CI/CD:** Ensure all required checks for the changed files pass. Backend and frontend checks are path-filtered, documentation changes are validated by the docs workflow, dependency review runs when the PR validation workflow is triggered, and SonarQube analysis applies to relevant source changes.
-6. **Review:** Request maintainer reviews and address feedback promptly.
-7. **Merge:** At least one maintainer approval, passing automated checks, and no merge conflicts are required.
-
-### Get help
-
-- Start with the repository [AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) and [README](https://github.com/foxminchan/BookWorm/blob/main/README.md).
-- Report bugs using the [bug report form](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml).
-- Propose features using the [feature request form](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml).
-- For security vulnerabilities, do **not** open a public issue; follow the process in [SECURITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/SECURITY.md).
-- For other questions, reach out through GitHub issues. Maintainers are volunteers; responses may take time.
-
-When asking for help, be respectful, include details, search for existing answers, and follow up if you find a solution. Avoid duplicate issues or demanding immediate responses.

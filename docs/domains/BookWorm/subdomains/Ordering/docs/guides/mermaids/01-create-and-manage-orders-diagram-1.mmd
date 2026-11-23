@@ -1,0 +1,15 @@
+flowchart LR
+	commerce["Commerce\n(Next.js 16 MFE)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	ordering["Ordering API\n(.NET 11 Minimal API)"]
+	basket["Basket API\n(.NET 11 + gRPC)"]
+	catalog["Catalog API\n(.NET 11 + gRPC)"]
+	orderingdb["orderingdb\n(PostgreSQL + Marten)"]
+	finance["Finance\n(Azure Functions + Durable Task)"]
+
+	commerce --> |"HTTPS: POST /ordering/api/v1/orders"| gateway
+	gateway --> |"HTTP: POST /api/v1/orders"| ordering
+	ordering --> |"gRPC: GetBasket"| basket
+	ordering --> |"gRPC: GetBooks"| catalog
+	ordering -->|"SQL + Event Stream"| orderingdb
+	ordering --> |"Kafka: UserCheckedOutIntegrationEvent"| finance

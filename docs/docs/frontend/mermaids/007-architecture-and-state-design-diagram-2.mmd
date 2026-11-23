@@ -1,0 +1,17 @@
+flowchart LR
+	ui["Feature Slices\n(React 19 + Formisch + Valibot)"]
+	rq["TanStack Query\n(@workspace/api-hooks)"]
+	jotai["Jotai Atoms\n(Auth flag, basket badge, feature flags)"]
+	client["ApiClient & SSE\n(@workspace/api-client + Axios + p-retry)"]
+	copilot["CopilotKit Runtime\n(/api/copilotkit, Storefront only)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	apis["Backend Services\n(Catalog, Basket, Ordering, Rating, Chat)"]
+
+	ui -->|"Hooks & SSR Hydration"| rq
+	ui -->|"Ephemeral UI / auth state"| jotai
+	jotai -->|"atomWithQuery (enabled when signed in)"| rq
+	rq -->|"Typed requests + ETag headers"| client
+	ui -->|"Streaming AI chat"| copilot
+	client -->|"HTTPS JSON / QUERY / SSE"| gateway
+	copilot -->|"HTTPS AG-UI + Bearer token"| gateway
+	gateway -->|"HTTP / Internal routes"| apis

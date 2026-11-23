@@ -9,52 +9,51 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+BookWorm separates authoritative customer reviews from catalog read performance by storing individual `Feedback` documents in **Rating API** (**Azure Cosmos DB**) and projecting derived average ratings and review counts onto **Catalog API** (**PostgreSQL**) over Kafka. If a customer submits feedback for a non-existent book, **Catalog API** emits a failure event so **Rating API** compensates by deleting the orphaned record without distributed locks.
 
-Customers expect to see average star ratings and review counts directly alongside book listings while browsing the catalog. However, individual customer reviews and ratings belong to the [[domain|reviews]] capability, whereas book listings belong to [[domain|catalog]].
+## Scope and constraints
 
-Allowing Catalog to reach directly into the Reviews database would tightly couple two independent business areas, while keeping rating summaries only in Reviews would slow down every catalog page load. This scenario solves both issues by maintaining a derived rating summary in Catalog that updates automatically via events—and cleans up invalid submissions if a referenced book does not exist.
+- **Scope:** Creating and deleting `Feedback` records in **Rating API**, asynchronous rating-summary updates in **Catalog API**, and invalid-book compensation back to **Rating API**.
+- **Out of scope:** AI-generated review summarization via `rating-agent` (see [[doc|arc42/06-runtime-view/004-conversational-book-discovery]]) and catalog search indexing (see [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]]).
+- **Key constraints:** **Rating API** uses **Azure Cosmos DB** (`ratingdb`, container `feedbacks`, partition key `/bookId`) with EF Core Cosmos and Wolverine Cosmos DB persistence (`UseCosmosDbPersistence`)—**not PostgreSQL**. **Catalog API** never queries Cosmos DB; it stores only the derived average rating and review count on `Book`.
 
-## 2. Business Value
+## Building block view
 
-- **Fast catalog browsing**: Book pages and search results display average ratings and review counts immediately without querying the Reviews store on every page view.
-- **Clean service independence**: Reviews and Catalog evolve, scale, and deploy independently without sharing a database.
-- **Data integrity across boundaries**: Automatic compensation removes feedback tied to non-existent books instead of leaving orphaned reviews or silently ignoring errors.
+| Building block              | Bounded context  | Technology                                                                                      | Owned state / responsibility                                                                                                            | Source path                                              |
+| :-------------------------- | :--------------- | :---------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| **Rating API**              | Reviews          | .NET 11 Minimal API, EF Core Cosmos, Wolverine (`UseCosmosDbPersistence`), Redis                | Authoritative individual `Feedback` records (`ratingdb`/`feedbacks`); publishes create/delete events and runs invalid-book compensation | `src/Services/Rating/BookWorm.Rating`                    |
+| **Catalog API**             | Catalog          | .NET 11 Minimal API, EF Core PostgreSQL (`catalogdb`), Wolverine PostgreSQL outbox/inbox, Redis | Authoritative `Book` catalog records plus derived rating summary (average rating and review count)                                      | `src/Services/Catalog/BookWorm.Catalog`                  |
+| **Kafka Broker** (`broker`) | Shared messaging | Kafka + CloudEvents JSON (partitioned by `BookId`, `FeedbackId`)                                | Transports feedback lifecycle events and compensation events with per-service native DLQs                                               | `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine` |
 
-## 3. How It Works
+## Runtime view
 
-1. **Submitting feedback**: A customer submits a rating or review for a book.
-2. **Saving the authoritative review**: Reviews validates the submission and saves the customer's [[entity|feedback]] in its own store.
-3. **Announcing new feedback**: After saving the review, Reviews publishes a notification announcing that new feedback was created.
-4. **Updating the book's rating summary**: Catalog receives that notification and recalculates the derived average rating and review count for the [[entity|book]]. The full feedback text and individual record remain owned by Reviews.
-5. **Compensating for invalid book references**: If Catalog discovers that the referenced book does not exist, it notifies Reviews that the rating update failed. Reviews responds by deleting the invalid feedback record so the system stays consistent without leaving orphaned data behind.
+This sequence diagram traces feedback creation, feedback deletion, and invalid-book compensation across **Rating API**, Kafka, and **Catalog API**.
 
-## 4. Trade-offs & Lessons Learned
+<MermaidFileLoader file="mermaids/003-feedback-and-rating-projection-diagram-1.mmd" />
 
-- **Eventual consistency for displayed ratings**: A customer's newly submitted review is saved immediately, while the aggregate rating shown on the book listing updates moments later asynchronously.
-- **Derived summary vs. source of truth**: Catalog's rating summary is strictly derived data for display convenience, not a second copy of customer reviews. Monitoring must track event processing and summary accuracy separately from the initial feedback submission.
-- **Explicit compensation over silent failure**: Rather than dropping failed updates or allowing ghost reviews for deleted/unknown books, explicit failure events keep both business areas aligned without distributed locks.
+### Step-by-step behavior
 
-## 5. Technical Reference
+1. **Feedback write in Reviews:** A customer (via **Storefront**) or administrator (via **Backoffice**) sends `POST /rating/api/v1/feedbacks` or `DELETE /rating/api/v1/feedbacks/{id}` through **API Gateway**. **Rating API** validates the payload (`FluentValidation`) and persists or removes the `Feedback` document in Azure Cosmos DB (`ratingdb` / `feedbacks`, partitioned by `/bookId`).
+2. **Event publication:** After committing the change, **Rating API** publishes `FeedbackCreatedIntegrationEvent` (`bookworm.{env}.rating.feedback-create`) or `FeedbackDeletedIntegrationEvent` (`bookworm.{env}.rating.feedback-delete`) using Wolverine Cosmos DB persistence. Both services partition Kafka messages by `BookId` and `FeedbackId` so concurrent updates for the same book process in partition order.
+3. **Derived projection update:** **Catalog API** consumes the event through its PostgreSQL Wolverine inbox (`wolverine` schema) and Redis idempotency guard (`IIntegrationEventIdempotencyGuard`), then recalculates the book's derived average rating and review count in `catalogdb` and invalidates affected FusionCache entries.
+4. **Invalid-book compensation:** If `FeedbackCreatedIntegrationEvent` references a `BookId` that does not exist in `catalogdb`, **Catalog API** publishes `BookUpdatedRatingFailedIntegrationEvent` (`bookworm.{env}.catalog.book-update-rating-failed`). **Rating API** consumes this event and deletes the orphaned `Feedback` document from Cosmos DB.
 
-<MermaidFileLoader file="mermaids/feedback-and-rating-projection.mmd" />
+## Consistency, retries, and operational boundaries
 
-### Event & Ownership Flow
+- **Eventual consistency window:** New or deleted reviews appear immediately in **Rating API**, while the aggregate rating displayed on catalog listings updates moments later after Kafka processing completes.
+- **Strict domain separation:** **Reviews** owns individual `Feedback` records (comment, rating value, reviewer); **Catalog** owns only the derived numeric rating summary. Never treat Catalog's projection as a copy of review history.
+- **Retry and dead-letter behavior:** Transient database or broker failures retry with Wolverine's `50ms`, `250ms`, and `1s` full-jitter cooldowns before moving exhausted envelopes to `bookworm.{env}.catalog.dead-letter-queue` or `bookworm.{env}.rating.dead-letter-queue` (7-day expiration).
 
-| Step | Component / Domain                                 | Technical Details                                                                                                                                                                                                      |
-| :--- | :------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1–2  | [[domain\|reviews]] / [[service\|rating-api]]      | Validates customer [[entity\|feedback]] and persists it in [[container\|rating-database]].                                                                                                                             |
-| 3    | [[service\|rating-api]]                            | Publishes [[event\|FeedbackCreatedIntegrationEvent]] after the write completes.                                                                                                                                        |
-| 4    | [[domain\|catalog]] / [[service\|catalog-api]]     | Consumes [[event\|FeedbackCreatedIntegrationEvent]] and updates the book-level average rating and review count projection on [[entity\|book]]. Catalog does not read [[container\|rating-database]].                   |
-| 5    | [[service\|catalog-api]] → [[service\|rating-api]] | If the referenced book does not exist, [[service\|catalog-api]] publishes [[event\|BookUpdatedRatingFailedIntegrationEvent]]; [[service\|rating-api]] consumes it and deletes the invalid [[entity\|feedback]] record. |
+## Quality scenarios and known risks
 
-### Operational Notes
+| Quality attribute / risk    | Scenario or exposure                                                                      | Current mitigation or gap                                                                                                                                  |
+| :-------------------------- | :---------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Read scalability**        | High traffic browses catalog pages with star ratings.                                     | **Catalog API** reads precomputed rating summaries from `catalogdb` and Redis FusionCache without cross-service calls to **Rating API**.                   |
+| **Cross-service integrity** | Client submits feedback for a deleted or fabricated `BookId`.                             | Explicit compensation via `BookUpdatedRatingFailedIntegrationEvent` deletes the invalid `Feedback` document from Cosmos DB.                                |
+| **Projection drift**        | Kafka consumer lag or DLQ buildup causes displayed rating counts to lag behind Cosmos DB. | Track Catalog consumer lag and `bookworm.{env}.catalog.dead-letter-queue` independently of Rating write availability; see Rating summary mismatch runbook. |
 
-- **Boundary enforcement**: Original feedback remains exclusively owned by [[domain|reviews]]; [[domain|catalog]] holds only the derived rating projection.
-- **Monitoring**: Track event-processing lag and projection consistency separately from [[service|rating-api]] write availability.
+## Related documentation
 
-### Related Documentation
-
-- [[flow|feedback-publication]]
-- [[service|rating-api]]
-- [[system|product-catalog-system]]
+- [[doc|arc42/06-runtime-view]] — Cross-scenario ownership and consistency rules.
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Wolverine Kafka durability across PostgreSQL and Cosmos DB hosts.
+- Catalog rating projection failure runbook — Operational recovery for failed projection events.

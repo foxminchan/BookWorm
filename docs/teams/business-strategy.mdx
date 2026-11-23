@@ -1,0 +1,55 @@
+---
+id: business-strategy
+name: Business Strategy
+summary: |
+  Defines BookWorm's product strategy, business priorities, and governance for the e-commerce platform across catalog, shopping, ordering, reviews, and conversational experiences.
+members:
+  - nhanxnguyen
+---
+
+This reference consolidates BookWorm's logical EventCatalog ownership teams (`business-strategy`, `contributor-team`, and `platform-team`), maps each role to its repository directories and documentation areas, and lists the official maintainer and issue-reporting channels.
+
+:::note
+BookWorm is an open-source reference repository maintained by Nhan Nguyen (`@foxminchan` / EventCatalog user `nhanxnguyen`). The three teams below represent **logical ownership roles** used in EventCatalog metadata (`owners:`) to keep product scope, service implementation, and shared infrastructure concerns clearly separated.
+:::
+
+## Logical ownership teams
+
+| Team ID             | Display name          | Owned responsibility                                                                                                                                                                         | Repository & documentation scope                                                                                                                                                             |
+| :------------------ | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `business-strategy` | **Business Strategy** | Product scope, domain priorities, commercial framing, and cross-domain trade-offs across all 6 bounded contexts (`Catalog`, `Shopping`, `Ordering`, `Reviews`, `Conversational`, `Platform`) | Domain narratives, bounded-context scope decisions, ubiquitous language alignment                                                                                                            |
+| `contributor-team`  | **Contributor Team**  | Domain models, backend microservices, HTTP/gRPC/Kafka contracts, Next.js 16 frontend apps, automated tests, and architecture/ADR documentation                                               | `src/Services/`, `src/Clients/`, `src/BuildingBlocks/`, `tests/`, `docs/adrs/`, `docs/docs/arc42/`, `docs/docs/development/`, `docs/docs/frontend/`                                          |
+| `platform-team`     | **Platform Team**     | Aspire AppHost orchestration, shared service defaults, Azure Container Apps topology, CI/CD workflows, observability, and security/RBAC guardrails (never owns domain business state)        | `src/Aspire/BookWorm.AppHost/`, `src/Aspire/BookWorm.ServiceDefaults/`, `src/Integrations/BookWorm.Hosting.Presidio/`, `.github/workflows/`, `docs/docs/platform/`, `docs/docs/operational/` |
+
+### Known repository filename typo
+
+- The legacy EventCatalog team file on disk is misspelled `docs/teams/bussiness-strategy.mdx` (double `s`), even though its `id` and published URL use `business-strategy`. Rename `docs/teams/bussiness-strategy.mdx` to `docs/teams/business-strategy.mdx` when applying documentation fixes to `docs/`.
+
+## Maintainer profile
+
+| Field                | Value                                                         |
+| :------------------- | :------------------------------------------------------------ |
+| **EventCatalog ID**  | `nhanxnguyen`                                                 |
+| **Name**             | Nhan Nguyen                                                   |
+| **GitHub**           | [@foxminchan](https://github.com/foxminchan)                  |
+| **LinkedIn**         | [linkedin.com/in/nxnhan](https://www.linkedin.com/in/nxnhan/) |
+| **Team memberships** | `business-strategy`, `contributor-team`, `platform-team`      |
+
+## Official contact and governance channels
+
+Use repository channels rather than personal email for all BookWorm issues, proposals, and vulnerability reports:
+
+| Purpose                      | Channel                                                                                                                                          |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bug reports**              | [GitHub Bug Report form](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml)                                              |
+| **Feature requests**         | [GitHub Feature Request form](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml)                                    |
+| **Accessibility barriers**   | [GitHub Accessibility Issue form](https://github.com/foxminchan/BookWorm/issues/new?template=accessibility.yml) (see `.github/ACCESSIBILITY.md`) |
+| **Questions & design ideas** | [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions)                                                                         |
+| **Security vulnerabilities** | Private disclosure only — follow `.github/SECURITY.md` (do **not** open a public issue)                                                          |
+| **Community standards**      | `.github/CODE-OF-CONDUCT.md` and `.github/CONTRIBUTING.md`                                                                                       |
+
+## Related documentation
+
+- [[doc|development/006-pull-request-process]] — PR review and merge requirements.
+- [[doc|development/004-engineering-standards]] — Service boundary and code quality rules.
+- [[doc|operational/001-azure-deployment-guide]] — Platform deployment guide.

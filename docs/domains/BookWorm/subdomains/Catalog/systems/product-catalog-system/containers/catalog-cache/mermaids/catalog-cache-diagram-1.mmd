@@ -1,0 +1,9 @@
+flowchart LR
+	client["Storefront / Backoffice / gRPC\n(Callers)"]
+	catalog["Catalog API\n(.NET 11 + FusionCache L1)"]
+	redis[("Redis\n(L2 Cache + Backplane + Lock)")]
+	db[("Catalog database\n(PostgreSQL: catalogdb)")]
+
+	client --> |"HTTPS / gRPC: Read book or dashboard"| catalog
+	catalog --> |"RESP: L2 Get/Set & Evict"| redis
+	catalog --> |"EF Core: Cache miss fallback"| db

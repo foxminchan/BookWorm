@@ -47,85 +47,90 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-## 1. Context & Problem
+Notification (`notification`) is an internal background worker in the Platform bounded context that consumes order lifecycle commands from Kafka, renders MJML email templates, and submits mail over SMTP through MailKit. Despite its legacy EventCatalog identifier (`notification-api`), it exposes no business HTTP or gRPC endpoints and maintains no PostgreSQL database or email outbox.
 
-Customers expect timely email updates whenever their order is placed, canceled, or completed. If order workflows sent emails directly, temporary slowdowns or outages in external email providers could block or fail checkout and order fulfillment. Isolating email formatting and delivery into a dedicated messaging service keeps core order processing fast and reliable.
+## Overview
 
-## 2. Business Value
+| Property                | Value                                                                                                                |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **Owner**               | Platform bounded context (`BookWorm.Notification`)                                                                   |
+| **Aspire resource ID**  | `notification`                                                                                                       |
+| **Source**              | `src/Services/Notification/BookWorm.Notification`                                                                    |
+| **Host & ports**        | `Microsoft.NET.Sdk.Worker` running `WebApplication` — HTTP `5259`, HTTPS `7036` (local); not routed via API Gateway  |
+| **Protocol / format**   | Kafka + Wolverine (CloudEvents JSON), SMTP via MailKit `5.0.0`                                                       |
+| **Persistence / state** | Redis (`redis`) via FusionCache + 24-hour `IIntegrationEventIdempotencyGuard` — **no PostgreSQL database or outbox** |
+| **Authentication**      | Internal worker (no public auth); Azure Managed Identity for Redis in Azure; `HMAC__Key` for log redaction           |
 
-- **Protected checkout and order flows**: Email rendering and provider delays never block upstream order processing.
-- **Consistent customer communication**: Centralizes email templates and status phrasing across placed, canceled, and completed order milestones.
-- **Resilient failure handling and privacy**: Built-in retry policies, dead-letter routing for exhausted failures, and privacy-conscious diagnostics help teams investigate issues without exposing sensitive customer details.
+:::note
+Notification does **not** use a PostgreSQL email outbox or scheduled resend/cleanup jobs. It processes Kafka commands directly with Redis-backed message-ID deduplication, MailKit SMTP resilience retries, and Wolverine native dead-letter routing.
+:::
 
-## 3. How It Works
+## Runtime architecture
 
-1. Despite its name, this service operates as a background messaging worker rather than exposing public web endpoints for sending emails or checking delivery status.
-2. It listens for three order-lifecycle instructions from Finance order orchestration: order placed, order canceled, and order completed.
-3. For each incoming instruction, it skips processing if the email address is missing or blank.
-4. When a valid email address is present, it maps the order status, applies a default customer greeting if no name was supplied, renders the email layout, and submits it through the configured email provider (a local test inbox in development, or the configured external provider in other environments).
-5. If formatting or submission fails, automatic retries run; messages that exhaust all retries are moved to a dedicated error queue for operator review.
+Notification consumes Finance order commands from Kafka, checks message-ID idempotency in Redis, renders the MJML template, and sends mail to Mailpit locally or SendGrid SMTP in Azure.
 
-## 4. Trade-offs & Lessons Learned
+<MermaidFileLoader file="mermaids/NotificationAPI-diagram-1.mmd" />
 
-- **At-least-once delivery vs. strict deduplication**: Because the service is stateless and separate order-status channels do not guarantee cross-channel ordering, repeated commands or upstream timeout retries can result in duplicate emails.
-- **No upfront syntax checks or delivery callbacks**: Email format validity is not checked at command receipt, mail-server acceptance does not guarantee inbox arrival, and no completion event is returned to Finance.
-- **Privacy-first diagnostics**: Operators rely on sanitized traces and structured logs rather than logging customer recipient details or rendered email content unnecessarily.
-- **Logical vs. runtime representation**: Catalog diagrams model outbound delivery as a logical send to the email provider even though actual runtime delivery uses standard mail submission protocols rather than web calls or event streams.
+## Consumed Kafka commands
 
-## 5. Technical Reference
+All inbound commands use CloudEvents JSON envelopes with W3C `traceparent`, `requestid`, and `UserId` propagation, partitioned by `OrderId`.
 
-### Overview
+| Command                           | Kafka topic                             | Producer                         | Action                                                               |
+| :-------------------------------- | :-------------------------------------- | :------------------------------- | :------------------------------------------------------------------- |
+| [[command\|PlaceOrderCommand]]    | `bookworm.{env}.finance.place-order`    | [[service\|order-orchestration]] | Renders and sends a new-order confirmation email; ignores `basketId` |
+| [[command\|CancelOrderCommand]]   | `bookworm.{env}.finance.cancel-order`   | [[service\|order-orchestration]] | Renders and sends a canceled-order email                             |
+| [[command\|CompleteOrderCommand]] | `bookworm.{env}.finance.complete-order` | [[service\|order-orchestration]] | Renders and sends a completed-order email                            |
 
-Notification API documents the messaging host inside
-[[system|notification-system]]. Despite its name, the current application maps
-only service-default HTTP endpoints (such as health checks), not email
-submission or status-query APIs. Its business input is Kafka messages handled
-by Wolverine.
+Notification publishes no application-level reply or completion event back to Finance or Ordering.
 
-### Consumed messages
+## Rendering, idempotency, and SMTP delivery
 
-| Message                           | Producer                    | Notification action                                             |
-| --------------------------------- | --------------------------- | --------------------------------------------------------------- |
-| [[command\|PlaceOrderCommand]]    | Finance order orchestration | Render a new-order email; the shared `basketId` is unused here. |
-| [[command\|CancelOrderCommand]]   | Finance order orchestration | Render a canceled-order email.                                  |
-| [[command\|CompleteOrderCommand]] | Finance order orchestration | Render a completed-order email.                                 |
+1. **Idempotency check:** Each handler (`PlaceOrderCommandHandler`, `CompleteOrderCommandHandler`, `CancelOrderCommandHandler`) wraps execution in `IIntegrationEventIdempotencyGuard` keyed by `(message.Id, handlerName)` with a 24-hour Redis/FusionCache window.
+2. **Recipient guard:** `OrderNotificationHelper.SendAsync` skips processing without error when `Email` is null, empty, or whitespace. It defaults a missing recipient name to `Customer`.
+3. **Template rendering:** `MjmlTemplateRenderer` (`Mjml.Net` `4.15.0`) compiles `_Layout.mjml` and `Orders/OrderEmail.mjml` into HTML, and `OrderMimeMessageBuilder` builds the MIME message.
+4. **SMTP submission:** `MailKitSender` submits the message over SMTP using the configured resilience pipeline (`AddMailResiliencePipeline`):
+   - **Development:** Local Mailpit container (`mailpit`, SMTP port `587`).
+   - **Publish / Azure:** Parameterized SMTP connection (`email`), defaulting to SendGrid SMTP (`smtp://smtp.sendgrid.net:587`).
 
-The attached AsyncAPI specification defines all three receive operations, topic
-addresses, message identities, payload schemas, and examples. Payloads are
-camelCase JSON inside the CloudEvents-compatible envelope. Optional trace
-context travels in `traceparent`. Finance partitions order commands by `OrderId`;
-this does not guarantee ordering across different topics or exactly-once emails.
-Notification publishes no application-level result event.
+### Configuration parameters
 
-### Email rendering and SMTP delivery
+| Parameter / key        | Scope            | Default / notes                    |
+| :--------------------- | :--------------- | :--------------------------------- |
+| `email-smtp-endpoint`  | Publish / Azure  | `smtp://smtp.sendgrid.net:587`     |
+| `email-smtp-username`  | Publish / Azure  | `apikey`                           |
+| `email-smtp-password`  | Publish / Azure  | Secret; kept out of source control |
+| `email-sender-address` | Publish / Azure  | Verified sender address            |
+| `email-sender-name`    | Publish / Azure  | Optional sender display name       |
+| `HMAC__Key`            | All environments | Key for structured log redaction   |
 
-Order handlers skip null, empty, or whitespace-only email addresses. For other
-values they map the order status, use `Customer` when the name is null, and
-render `Orders/OrderEmail` via `MjmlTemplateRenderer`. Notification submits the
-rendered message directly over SMTP using MailKit with a configured resilience
-pipeline (`AddMailResiliencePipeline`). Development uses MailPit; other
-environments use the configured email provider. SMTP acceptance does not prove
-delivery to the recipient.
+`RetryStrategyOptions` in `appsettings.json` sets 3 retries with a 1-second initial delay; `AddMailResiliencePipeline` applies exponential backoff and jitter. The configured timeout is 45 seconds (overriding the code's initial 30-second option). The SMTP client also has its own 10-second timeout.
 
-The catalog models outbound provider submission as
-[[service|notification-api]] sending [[command|SendMail]] to
-[[service|sendgrid-api]]. This is a logical mail-submission relationship, not
-an HTTP call or a Kafka publication. The runtime still uses MailKit over SMTP,
-with MailPit in development and SendGrid when configured as the provider.
+## Health endpoints and failure semantics
 
-### Failure semantics
+| Condition                                    | Behavior                                                                                                                                                     | Recovery behavior                                              |
+| :------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
+| Development health checks                    | Maps `/health` (readiness, includes `MailKitHealthCheck`) and `/alive` (liveness) only when `Environment.IsDevelopment()`                                    | Not mapped outside Development                                 |
+| Transient MJML or SMTP failure               | MailKit resilience pipeline retries; unhandled exceptions trigger Wolverine retry cooldown (`50ms`, `250ms`, `1s` with full jitter)                          | Automatic retry                                                |
+| Exhausted retries                            | Wolverine moves the failed message to [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]] (`bookworm.{env}.notification.dead-letter-queue`) | Inspect DLQ and logs per notification delivery backlog runbook |
+| Blank recipient email                        | Handler returns without sending or throwing                                                                                                                  | No retry; expected behavior                                    |
+| Duplicate Kafka delivery (same `message.Id`) | Skipped within 24 hours by Redis `IIntegrationEventIdempotencyGuard`                                                                                         | Safe no-op                                                     |
+| Finance timeout retry (new `message.Id`)     | Processed as a new command; can send an additional email                                                                                                     | At-least-once delivery trade-off                               |
+| Cross-topic ordering                         | Partitioning by `OrderId` orders events within a single topic, not across `place-order`, `complete-order`, and `cancel-order`                                | Design assumption                                              |
 
-- Rendering and sender failures propagate from order handlers. There is no
-  command-level email syntax validation.
-- A missing broker connection disables event-bus registration. Exhausted
-  Wolverine listener retries go to the native
-  [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] topic.
-- Repeated commands and Finance's placement retries can produce additional
-  emails. Notification is stateless and does not maintain a PostgreSQL outbox.
+:::warning
+SMTP acceptance from Mailpit or SendGrid does not guarantee inbox arrival, and Notification does not perform upfront email syntax validation or consume delivery webhooks.
+:::
 
-Use sanitized traces and structured logs to diagnose processing; do not log
-recipient details or rendered content unnecessarily.
+## Messages
 
-### Architecture
+<MessageTable format="all" limit={10} />
+
+## Related documentation
+
+- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka contract directory.
+- [[service|sendgrid-api]] — External email provider integration boundary.
+- [[service|order-orchestration]] — Upstream Finance workflow producing order email commands.
+- How to resolve a notification delivery backlog — Operational triage for SMTP failures and DLQ growth.
+- Platform scheduled work and notifications — Architectural rationale for Platform workers.
 
 <NodeGraph />

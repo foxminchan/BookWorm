@@ -10,35 +10,49 @@ badges:
     textColor: teal
 ---
 
-import Footer from "@catalog/components/footer.astro";
+BookWorm routes store-policy and customer-support questions to **QA Agent** (`qa`), an isolated specialist inside Chat API (`chatting`). QA Agent grounds every answer in version-controlled store-policy skill documents and hands off book-specific follow-ups to Book Agent, while structural governance rules prevent it from reading or mutating live customer accounts, baskets, or orders.
 
-## 1. Context & Problem
+## Context and motivation
 
-Customers frequently ask conversational support questions about store services, delivery, returns, refunds, billing, accounts, and orders. Without clear operational boundaries, an automated assistant could accidentally present general store policies as live confirmation of a customer's personal order or account status, or fail to clearly bridge questions that mix store policy with book inquiries.
+Customers regularly ask conversational questions about shipping speeds, return windows, refund timelines, password resets, gift cards, and order cancellations. In a microservices architecture, those topics sit adjacent to sensitive transactional domains—Shopping (Basket API) and Ordering (Ordering API).
 
-## 2. Business Value
+If a conversational agent blends general policy guidance with live transactional lookups or writes, two failure modes emerge:
 
-- **Consistent policy guidance**: Answers common store and support questions rapidly using authoritative store-policy context.
-- **Protected account and transaction integrity**: Eliminates false assurances about live order states or unauthorized record modifications.
-- **Clear multi-topic support**: Seamlessly handles requests that combine store-support questions with book inquiries while keeping each part distinct.
+- **False transaction confirmation:** An LLM can phrase a generic return or cancellation policy as if it verified the customer's personal order status.
+- **Over-privileged attack surface:** Granting a general support agent direct access to Basket API, Ordering API, or catalog search tools increases prompt-injection blast radius and blurs bounded-context ownership.
 
-## 3. How It Works
+BookWorm avoids both risks by keeping QA Agent strictly read-only, policy-grounded, and structurally disconnected from transactional APIs and MCP catalog tools.
 
-1. **Answer from Supplied Policy Context**: Store-support inquiries covering services, policies, accounts, orders, billing, delivery, returns, and refunds are answered using the store-policy information provided to the assistant. When the supplied context does not cover a question, the assistant states that limitation clearly.
-2. **Enforce the Account-Data Boundary**: The support specialist does not look up live personal accounts, shopping baskets, or individual orders, and cannot modify customer records. General policy rules are never presented as confirmation of an individual customer's transaction or account state. Whenever an answer requires unavailable personal details, the assistant explains the limitation and directs the customer to support.
-3. **Hand Off Book-Specific Questions**: If a customer-support conversation also requires book information, the book-specific portion is handed off to the book discovery specialist, and the response clearly separates general store guidance from book-specific details.
+## How it works
 
-## 4. Trade-offs & Lessons Learned
+When `DecisionRouterExecutor` (`Microsoft-Decision-1`) classifies an in-scope English request as a support or policy question—or when `Book Agent` transfers a policy question via `handoff_to_qa`—`QAWorkflowExecutor` runs `QA Agent` (`src/Services/Chat/BookWorm.Chat/Agents/CustomerSupport/qa-agent.yaml`).
 
-- **Policy-only self-service vs. live account integration**: Keeping the support specialist disconnected from live account, basket, and order lookups reduces security and state-mutation risks, at the cost of escalating account-specific inquiries to human support.
-- **Explicit separation in mixed responses**: Clearly distinguishing general store rules from book-specific answers prevents customers from misinterpreting policy context as personalized book or order confirmation.
+The diagram below shows how QA Agent loads policy context from the `store-policies` skill, enforces governance and privacy middleware, and hands off mixed book requests to Book Agent.
 
-## 5. Technical Reference
+<MermaidFileLoader file="mermaids/03-answer-store-questions-diagram-1.mmd" />
 
-- **Primary agent**: [[agent\|qa-agent]]
-- **Handoff target**: [[agent\|book-agent]] (for book-specific portions of mixed customer-support requests)
-- **Supported policy scope**: Store services, policies, accounts, orders, billing, delivery, returns, and refunds (sourced strictly from supplied store-policy context).
-- **Restricted operations**: No live account, Basket, or Order lookups; no modifications to customer records.
-- **Fallback behavior**: State explicitly when supplied context does not answer the question or when unavailable transaction/account details require directing the customer to support.
+Four architectural invariants govern QA Agent execution:
 
-<Footer />
+- **Skill-based policy grounding:** `QAAgentRegistration.cs` registers `AgentSkillsProvider` pointing to `Skills/store-policies/` (`SKILL.md` and `references/STORE_FAQ.md`). Covered domains include shipping and delivery tiers, 30-day returns and refunds, account and order guidance (such as the 1-hour cancellation window), gift cards, the BookPoints loyalty program, wishlists, pre-orders, and gift wrapping. When the skill files do not answer a question, QA Agent states the gap and directs the customer to human support rather than inventing policies.
+- **Structural tool isolation via Agent Governance:** `Policies/chat-agents.yaml` enforces `default_action: deny`. Rule `qa-agent-skills-and-handoff` permits `did:mesh:bookworm:qa` to call only `load_skill`, `read_skill_resource`, and `handoff_to_book`. Rule `qa-agent-deny-catalog-tools` (priority `70`) explicitly denies `search_catalog`, `get_book`, `list_categories`, and `list_authors`. Chat API registers no Basket API or Ordering API HTTP/gRPC clients, so QA Agent has no network path to live customer transactions.
+- **Privacy, guardrails, and lightweight compaction:** Every QA Agent model call runs through `UseAGUIClientContext()`, `UseDecisionToolSelection()`, `UsePIIMiddleware(sp)` (Presidio `presidio-analyzer` and `presidio-anonymizer`), `UseGuardrailMiddleware()`, and `CompactionPipelineFactory.CreateLight()` with `temperature: 0.5` and `maxOutputTokens: 1000`.
+- **Bidirectional mixed-intent handoffs:** `QAWorkflowExecutor` (`WorkflowRegistration.cs`) lets QA Agent hand book-specific portions of a mixed inquiry to `Book Agent` (`handoff_to_book`) after resolving the policy portion, and lets `Book Agent` hand policy follow-ups back to `QA Agent` (`handoff_to_qa`) or review analysis to `Rating Agent` (`handoff_to_rating`). Responses keep general policy rules distinct from book-specific catalog details.
+
+## Design trade-offs
+
+| Decision                                                                | Benefits                                                                                              | Costs and limits                                                                                                       |
+| :---------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| **Policy-only skill grounding without live Ordering or Basket clients** | Eliminates unauthorized account lookups, order mutations, and false confirmations of live order state | Customers asking for real-time order tracking or account edits must use Commerce (`/account`) or contact human support |
+| **Explicit catalog-tool denial on QA Agent (`priority: 70`)**           | Enforces clear separation of concerns and prevents QA Agent from issuing ungrounded book searches     | Mixed support-and-book messages incur an extra agent handoff hop to `Book Agent`                                       |
+| **Version-controlled Markdown skills (`SKILL.md` + `STORE_FAQ.md`)**    | Policy updates go through Git code review and deploy deterministically with Chat API                  | Policy changes require a Chat API redeployment rather than live CMS edits                                              |
+
+## Alternatives considered
+
+- **Granting QA Agent read-only OBO access to Ordering API and Basket API:** Rejected because exposing transactional customer records to a natural-language support agent expands PII exposure and prompt-injection risk; authenticated customers already manage baskets and order history directly in Commerce (`/basket`, `/account`).
+- **Merging store policies into Book Agent as one generalist agent:** Rejected because combining store-policy prompts with catalog search, parallel research delegation, planning modes, and Storefront UI tools degrades prompt focus and prevents enforcing distinct per-agent tool governance policies in `Policies/chat-agents.yaml`.
+
+## Related documentation
+
+- How BookWorm routes customer chat requests — How `Microsoft-Decision-1` selects `QA Agent` and coordinates handoffs.
+- Conversational architecture and domain boundaries reference — Complete executor, governance, and boundary tables.
+- How to diagnose unexpected chat routing or rejection — Triage for misrouted policy questions or missing handoffs.

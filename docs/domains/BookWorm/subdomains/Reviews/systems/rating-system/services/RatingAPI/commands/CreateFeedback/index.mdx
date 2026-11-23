@@ -18,39 +18,71 @@ sidebar:
   badge: "POST"
 ---
 
-## 1. Context & Problem
+`CreateFeedback` (`POST /api/v1/feedbacks`) creates an individual **Feedback** record for a Catalog book in **Rating API**, persists it to **Azure Cosmos DB** (`ratingdb`/`feedbacks`), publishes `FeedbackCreatedIntegrationEvent` to Kafka, and returns the generated UUIDv7 feedback identifier (`200 OK`).
 
-Customers need a reliable way to rate and review books in the BookWorm catalog. Without a dedicated creation command that validates inputs before saving, missing reviewer details or invalid scores could corrupt book ratings and erode customer trust.
+## Overview
 
-## 2. Business Value
+| Property                 | Value                                                                                                                                                                                                                                             |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Owner**                | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                                                                                                                |
+| **Source**               | `src/Services/Rating/BookWorm.Rating/Features/Create/CreateFeedbackEndpoint.cs`, `CreateFeedbackCommand.cs`, `CreateFeedbackValidator.cs`, `src/Services/Rating/BookWorm.Rating/Infrastructure/RatingDbContext.cs`                                |
+| **Protocol / format**    | HTTP `POST`, `application/json` request and response                                                                                                                                                                                              |
+| **Direct endpoint**      | `POST /api/v1/feedbacks` (local ports: HTTP `5278`, HTTPS `7003`)                                                                                                                                                                                 |
+| **API Gateway endpoint** | `POST /rating/api/v1/feedbacks` (YARP strips `/rating`)                                                                                                                                                                                           |
+| **Authentication**       | None enforced on `CreateFeedbackEndpoint` (no `.RequireAuthorization()` call and no fallback authorization policy in `BookWorm.Rating/Extensions/Extensions.cs`)                                                                                  |
+| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5; partitioned by `ClaimTypes.NameIdentifier` when authenticated, or client IP/`Host` when anonymous) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters |
+| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                                                                        |
 
-- **Reliable rating quality**: Input rules ensure every saved review includes a valid book reference, reviewer name, and a rating within the 0-through-5 scale.
-- **Clear submission tracking**: Returning the newly created review's unique identifier lets storefronts and downstream workflows reference the submission immediately.
-- **Consistent error handling**: Standardized validation feedback helps client applications surface actionable guidance to users on the first attempt.
+## Parameters and fields
 
-## 3. How It Works
+### Request headers
 
-This operation creates a [[entity|feedback]] record for a Catalog [[entity|book]]. The caller supplies the book's unique identifier, the reviewer's first and last name, an optional written comment, and a whole-number rating from 0 through 5.
+| Name            | Type     | Required | Default | Constraints             | Description                                                                                              |
+| :-------------- | :------- | :------- | :------ | :---------------------- | :------------------------------------------------------------------------------------------------------- |
+| `Content-Type`  | `string` | Yes      | —       | `application/json`      | JSON request media type                                                                                  |
+| `Authorization` | `string` | No       | —       | `Bearer <access-token>` | Optional Microsoft Entra ID JWT; when present, `ClaimTypes.NameIdentifier` partitions `PerUserRateLimit` |
 
-The service checks that all required information is present and valid. If the submission passes validation, the review is stored and its newly generated identifier is returned to the caller. If any field is missing or invalid, the submission is rejected with structured validation details explaining what failed.
+### Request body (`CreateFeedbackCommand`)
 
-## 4. Trade-offs & Lessons Learned
+| Name        | Type                | Required | Default | Constraints                                                                                                      | Description                                                                                                                                         |
+| :---------- | :------------------ | :------- | :------ | :--------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bookId`    | `string` (`uuid`)   | Yes      | —       | Non-empty UUID (`NotEmpty`; rejects `00000000-0000-0000-0000-000000000000`)                                      | Identifier of the Catalog book being reviewed; also used as the Cosmos DB partition key (`/bookId`)                                                 |
+| `firstName` | `string`            | Yes      | —       | Non-empty (`NotEmpty`), max `50` characters (`DataSchemaLength.Medium`); annotated `[PIIData]` for log redaction | Reviewer's first name (required by `CreateFeedbackValidator` despite nullable C# property in `openapi.yaml`)                                        |
+| `lastName`  | `string`            | Yes      | —       | Non-empty (`NotEmpty`), max `50` characters (`DataSchemaLength.Medium`); annotated `[PIIData]` for log redaction | Reviewer's last name (required by `CreateFeedbackValidator` despite nullable C# property in `openapi.yaml`)                                         |
+| `comment`   | `string` or `null`  | No       | `null`  | Max `1000` characters (`DataSchemaLength.Max`) when provided                                                     | Optional written review comment (present in OpenAPI `required` list because of C# positional record parameters, but accepts `null` or empty string) |
+| `rating`    | `integer` (`int32`) | Yes      | —       | Inclusive range `0`–`5` (`InclusiveBetween(0, 5)`)                                                               | Whole-number star rating for the book                                                                                                               |
 
-- **Strict upfront validation**: Rejecting incomplete or out-of-range submissions at the entry point protects stored feedback integrity, while requiring client interfaces to preserve user input and display field-level errors clearly.
-- **Minimal success response**: Returning only the generated feedback identifier keeps creation responses compact; callers that need the full saved record afterward retrieve it separately.
+### Success response (`200 OK`)
 
-## 5. Technical Reference
+| Name                           | Type              | Required | Default | Constraints                              | Description                                                |
+| :----------------------------- | :---------------- | :------- | :------ | :--------------------------------------- | :--------------------------------------------------------- |
+| Root JSON value (`FeedbackId`) | `string` (`uuid`) | Yes      | —       | Version 7 UUID (`Guid.CreateVersion7()`) | Generated unique identifier of the created feedback record |
+
+## Behavior and side effects
+
+- **Azure Cosmos DB persistence (not PostgreSQL):** `CreateFeedbackHandler` creates a `Feedback` entity with a UUIDv7 ID and saves it through `RatingDbContext` (EF Core Cosmos provider) to Azure Cosmos DB database `ratingdb`, container `feedbacks`, partitioned by `/bookId`, using ETag optimistic concurrency.
+- **Kafka integration event:** After `SaveChangesAsync` completes, `EventDispatchInterceptor` dispatches `FeedbackCreatedEvent`. `FeedbackCreatedEventHandler` maps it via `EventMapper` to `FeedbackCreatedIntegrationEvent` (`BookId`, `Rating`, `FeedbackId`) and publishes it through **Wolverine** (with `WolverineFx.CosmosDb` persistence) to Kafka topic `bookworm.{env}.rating.feedback-create`, partitioned by `BookId` and `FeedbackId`. **Catalog API** consumes this event to update the book's derived rating summary.
+- **Compensating rollback:** If **Catalog API** fails to update the book's rating summary and publishes `BookUpdatedRatingFailedIntegrationEvent`, `BookUpdatedRatingFailedIntegrationEventHandler` in **Rating API** deletes the newly created feedback record and invalidates caches.
+- **Redis / FusionCache invalidation:** `FeedbackCacheInvalidationHandler` removes cached feedback list entries tagged for `bookId` and clears the cached AI rating summary if its cached `ReviewCount` is `0`.
+- **PII log redaction:** `FirstName` and `LastName` carry `[PIIData]` so structured logging redacts reviewer names.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                                                                               | Recovery behavior                                                       |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| `400 Bad Request`           | Empty `bookId`, empty or >50-char `firstName`/`lastName`, >1000-char `comment`, `rating` outside `0`–`5`, or malformed JSON (`ValidationExceptionHandler`, `application/problem+json` `HttpValidationProblemDetails`)   | Fix the failing fields in `errors` and resubmit                         |
+| `409 Conflict`              | Azure Cosmos DB conflict (`HttpStatusCode.Conflict`) or concurrency exception wrapped in `InvalidOperationException` (`RatingDbContext.SaveEntitiesAsync` -> `GlobalExceptionHandler`, `ProblemDetails` with `traceId`) | Refresh state or verify whether feedback already exists before retrying |
+| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                                                              | Wait for the `Retry-After` interval before retrying                     |
+| `500 Internal Server Error` | Unexpected Cosmos DB, Kafka, or server failure (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                                                                              | Retry with exponential backoff; inspect Rating API logs using `traceId` |
+
+## Related documentation
+
+- [[service|rating-api]] — Service overview, Azure Cosmos DB storage, A2A gRPC server, and AI summarizer.
+- [[command|DeleteFeedback]] — Remove a feedback record as an administrator (`DELETE /api/v1/feedbacks/{id}`).
+- [[event|FeedbackCreatedIntegrationEvent]] — Kafka event published to `bookworm.{env}.rating.feedback-create`.
+- [[query|ListFeedbacks]] — Paginate feedback records for a book (`GET /api/v1/feedbacks`).
 
 <NodeGraph />
-
-### Request & Response Contract
-
-- **Endpoint**: `POST /api/v1/feedbacks`
-- **Request**: Send `application/json` with the required fields from the `CreateFeedbackCommand` contract (book UUID, reviewer name, optional comment, and integer rating from `0` through `5`).
-- **Success (`200`)**: Returns the generated feedback UUID as a JSON string.
-- **Validation Error (`400`)**: Returns `application/problem+json` with `HttpValidationProblemDetails`.
-
-### Schema
 
 <SchemaViewer
 	file="schema.json"

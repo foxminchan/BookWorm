@@ -56,7 +56,7 @@ sequenceDiagram
 					SMTP -->> Notification: Submission accepted
 					Notification ->> Outbox: Mark email sent
 				else Submission or sent-state save fails
-					Note over Notification,Outbox: Record may remain unsent; outcome can be uncertain
+					Note over Notification,Outbox: Record may remain unsent, outcome can be uncertain
 				end
 			else Recipient email is absent
 				Notification ->> Notification: Skip email work
@@ -79,5 +79,5 @@ sequenceDiagram
 				Note over Finance,Ordering: Saga cancellation does not cancel the Order
 			end
 		end
-		Note over Basket,Notification: Consumers run independently; retries can repeat their work
+		Note over Basket,Notification: Consumers run independently, retries can repeat their work
 	end

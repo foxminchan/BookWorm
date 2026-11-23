@@ -1,0 +1,24 @@
+flowchart LR
+	chat["Chat API\n(.NET 11 + AG-UI)"]
+	rating["Rating API\n(.NET 11 + A2A gRPC)"]
+	mcptools["MCP Tools\n(.NET 11 + /mcp)"]
+	catalog["Catalog API & Ingestion\n(.NET 11 + Azure Functions)"]
+	scheduler["Scheduler\n(.NET 11 + Quartz.NET)"]
+	notification["Notification\n(.NET 11 Kafka Worker)"]
+	presidio["Presidio\n(Analyzer & Anonymizer)"]
+	cosmos["Azure Cosmos DB\n(ratingdb / feedbacks)"]
+	blob["Azure Blob Storage\n(chatting-blob, catalog-blob)"]
+	kafka["Kafka\n(CloudEvents Broker)"]
+	qdrant["Qdrant\n(Catalog Vectors)"]
+
+	chat --> |"MCP HTTP: Read-only tools"| mcptools
+	mcptools --> |"gRPC: book.v1"| catalog
+	chat --> |"A2A gRPC: Summarize reviews"| rating
+	chat --> |"HTTP: PII detect & redact"| presidio
+	rating --> |"HTTP: PII detect & redact"| presidio
+	chat --> |"HTTPS: AG-UI sessions"| blob
+	rating --> |"HTTPS: EF Core Cosmos"| cosmos
+	scheduler --> |"Kafka: scheduler.process-vector-batch"| kafka
+	kafka --> |"KafkaTrigger: Vector batch"| catalog
+	catalog --> |"gRPC: Upsert embeddings"| qdrant
+	kafka --> |"Kafka: Order email commands"| notification

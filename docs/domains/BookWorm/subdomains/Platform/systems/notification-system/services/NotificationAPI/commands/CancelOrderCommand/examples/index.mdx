@@ -1,78 +1,12 @@
 ---
-summary: Show how Finance publishes the cancellation command from its saga.
+summary: Usage examples for Cancel order.
 ---
 
-## 1. Context & Problem
+## CloudEvents `data` payload (`application/json`)
 
-Teams integrating with order cancellations need a concrete example showing when a canceled-order email request is triggered, which customer and order fields are included, and where responsibility stops between Finance, Ordering, and Notification.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Cross-team clarity**: Gives product, business, and engineering teams a shared example of the exact customer details and order total included in a cancellation email.
-- **Safeguards against workflow confusion**: Clarifies that sending this request only asks for an email—it does not cancel the order or alter official order status.
-- **Faster onboarding**: Provides a ready-made reference of both the triggering condition and the sample message data.
-
-## 3. How It Works
-
-1. Finance receives confirmation that an order has been canceled, completes its internal tracking step, and checks whether both a customer name and email address are available.
-2. Only when both contact fields are nonblank does Finance issue a cancellation notification request carrying the order reference, customer details, and accepted order total.
-3. Notification maps the request to the canceled-order email template. If the email address is blank, Notification skips the work safely; otherwise, it renders the email, records it for sending, and submits it to the mail provider.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Completeness gate before sending**: Requiring both a nonblank customer name and email prevents sending incomplete emails, though orders missing either detail will not emit a cancellation email from this step.
-- **No return confirmation loop**: Submitting the message to the mail provider ends the flow without publishing a delivery-result event, keeping coordination simple while meaning submission does not confirm final inbox delivery.
-- **Strict status ownership**: Keeping order status solely in Ordering ensures notification logic never accidentally overrides business state.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Publish a canceled-order notification
-
-Finance's saga consumes the Order cancellation status event, marks its own saga
-as cancelled, and completes. It emits this command only when both the customer's
-name and email are nonblank. This requests an email; it does not cancel the
-Order or change its business status.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp OrderSaga.cs
-MarkCompleted();
-
-var messages = new OutgoingMessages();
-
-if (CanSendNotification)
-{
-    messages.Add(new CancelOrderCommand(OrderId, FullName!, Email!, EffectiveTotalMoney));
-}
-
-return messages;
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Command payload
-
-This is the camelCase message data inside BookWorm's CloudEvents-compatible
-envelope; the transport envelope is omitted. The command carries the Order ID,
-customer details, and accepted total used to render the canceled-order email.
-
-<CodeGroup dropdown>
-
-```json canceled-order-command.json
+```json
 {
 	"id": "019a1c00-0000-7000-8000-000000000002",
 	"creationDate": "2026-11-01T14:01:00Z",
@@ -85,10 +19,20 @@ customer details, and accepted total used to render the canceled-order email.
 
 </CodeGroup>
 
-### Notification handling
+## Finance Durable Functions activity publisher
 
-Notification maps the command to the canceled status for the email template;
-the Order's status is owned by Ordering. A blank email skips email work. For a
-nonblank email, Notification renders the message, persists an outbox record,
-and submits it through SMTP. Successful SMTP submission is not confirmation of
-delivery, and the command has no notification-result event.
+<CodeGroup>
+
+```csharp
+// src/Services/Finance/BookWorm.Finance/Features/Orders/OrderCancellation/PublishCancelOrderActivity.cs
+public sealed class PublishCancelOrderActivity(IMessageBus bus)
+{
+    [Function(nameof(PublishCancelOrderActivity))]
+    public Task RunAsync([ActivityTrigger] CancelOrderCommand command)
+    {
+        return bus.PublishAsync(command).AsTask();
+    }
+}
+```
+
+</CodeGroup>

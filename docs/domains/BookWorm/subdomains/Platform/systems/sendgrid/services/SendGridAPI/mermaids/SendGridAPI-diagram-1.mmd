@@ -1,0 +1,4 @@
+flowchart LR
+	notif["Notification\n(.NET 11 Worker + MailKit)"] --> |"Dev: SMTP :587"| mailpit["Mailpit\n(Local Test Inbox)"]
+	notif --> |"Publish/Azure: SMTP :587\n(apikey auth)"| sendgrid["SendGrid SMTP\n(smtp.sendgrid.net:587)"]
+	notif -.->|"Exhausted Retries"| dlq["Kafka DLQ\n(notification.dead-letter-queue)"]

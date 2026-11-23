@@ -1,0 +1,8 @@
+flowchart LR
+    gateway["API Gateway\n(YARP)"] -->|"HTTP: /api/v1/feedbacks*"| rating["Rating API\n(.NET 11 + A2A gRPC)"]
+    chat["Chat API\n(A2A Client)"] -->|"A2A gRPC (rating_read)"| rating
+    rating -->|"EF Core Cosmos +\nWolverineFx.CosmosDb"| cosmos["Rating Database\n(Azure Cosmos DB ratingdb)"]
+    rating -->|"Cache + Idempotency"| redis["Rating Cache\n(Redis)"]
+    rating -->|"MCP HTTP: get_book & prompts"| mcp["MCP Tools\n(Read-only Catalog)"]
+    rating -->|"HTTP: analyze / anonymize"| presidio["Presidio\n(PII Sidecars)"]
+    rating <-->|"Kafka: Feedback / Failure Events"| kafka["Kafka Broker\n(Wolverine)"]

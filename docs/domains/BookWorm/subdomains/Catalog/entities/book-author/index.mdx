@@ -29,43 +29,59 @@ owners:
   - contributor-team
 ---
 
-## 1. Context & Problem
+`BookAuthor` is a child entity of the `Book` aggregate that records one book-to-author pairing. It implements the many-to-many relationship between books and authors in PostgreSQL (`catalogdb`).
 
-In publishing, a [[entity|book]] frequently has multiple co-authors, and an [[entity|author]] often writes multiple books. Recording only a single author on a book—or a single book on an author—cannot accurately represent co-authorship without duplicating data. Catalog needs a dedicated link record to connect books and authors cleanly.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                                  |
+| :------------------------ | :----------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Catalog bounded context / **Catalog API** (`catalog`)                                                  |
+| **Parent aggregate**      | [[entity\|book]]                                                                                       |
+| **Source**                | `src/Services/Catalog/BookWorm.Catalog/Domain/AggregatesModel/BookAggregate/BookAuthor.cs`             |
+| **EF Core configuration** | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/EntityConfigurations/BookAuthorConfiguration.cs` |
+| **Backing store**         | PostgreSQL database `catalogdb`, table `book_authors` (`snake_case`)                                   |
+| **Base type**             | `Entity` (`Guid Id`); not an aggregate root                                                            |
 
-- **Accurate attribution:** Supports multi-author titles and complete author bibliographies without duplicating book or author records.
-- **Data integrity:** Prevents broken or orphaned links between books and authors in the catalog.
-- **Flexible discovery:** Lets customers navigate seamlessly from a book to all of its authors, and from an author to every book they wrote.
+## Parameters and fields
 
-## 3. How It Works
+| Name       | Type                | Required | Default               | Constraints                                                    | Description                               |
+| :--------- | :------------------ | :------- | :-------------------- | :------------------------------------------------------------- | :---------------------------------------- |
+| `id`       | `Guid`              | Yes      | `uuidv7()` (database) | Primary key                                                    | Unique link identifier                    |
+| `authorId` | `AuthorId` (`Guid`) | Yes      | —                     | FK to `authors.id`; `ON DELETE RESTRICT`                       | Linked author                             |
+| `bookId`   | `Guid`              | Yes      | —                     | EF Core shadow property; FK to `books.id`; `ON DELETE CASCADE` | Linked book; not exposed as a C# property |
 
-This association record represents a single pairing between one [[entity|book]] and one [[entity|author]]:
+## Invariants and behavior
 
-- **Many-to-many connection:** Because each pairing links one book and one author, a book can have multiple pairings (multiple authors) and an author can appear in multiple pairings (multiple books).
-- **Validity rule:** A pairing can only exist when both the referenced book and the referenced author already exist in the catalog, ensuring no link points to a missing record.
+- **Created through `Book`:** `Book` creates `BookAuthor` instances in its constructor, `SetMetadata(...)`, and `Update(...)`. `Update(...)` replaces the full set of links.
+- **Cascade from book:** Deleting a `books` row deletes its `book_authors` rows.
+- **Restrict from author:** PostgreSQL rejects deleting an `authors` row that still has `book_authors` rows.
+- **Soft-delete filter:** A global query filter (`!x.Book.IsDeleted`) hides links whose parent book is soft-deleted.
+- **No duplicate guard:** `BookAuthorConfiguration.cs` defines no unique index on `(book_id, author_id)`.
 
-## 4. Trade-offs & Lessons Learned
+## Relationships
 
-- **Explicit association vs. embedded lists:** Using a dedicated link record keeps the catalog normalized and straightforward to query from either side, at the slight operational cost of managing link records alongside book updates.
-- **Dependent lifecycle:** Because this record is not an independent top-level entity, its validity depends on the underlying book and author records remaining present.
-- **Current scope:** The pairing currently captures only which author wrote which book; future editorial needs such as author display order or contributor roles (for example, editor or translator) would be added to this relationship without altering the core book or author models.
+| Related entity     | Cardinality              | Mapping                           |
+| :----------------- | :----------------------- | :-------------------------------- |
+| [[entity\|book]]   | Many links to one book   | `book_id`, `ON DELETE CASCADE`    |
+| [[entity\|author]] | Many links to one author | `author_id`, `ON DELETE RESTRICT` |
 
-## 5. Technical Reference
+## Examples
 
-### Entity Overview
+### BookAuthor row
 
-- **Entity ID:** `book-author` (`BookAuthor`)
-- **Aggregate Root:** `false`
-- **Behavior:** Encapsulates the many-to-many relationship between [[entity|book]]s and [[entity|author]]s and enforces referential integrity, ensuring that `bookId` and `authorId` exist in their respective tables.
-- **Owners:** `contributor-team`
+<CodeGroup>
 
-### Entity Properties
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-000000000100",
+	"bookId": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+	"authorId": "0193f1a2-7b4c-7d8e-9f01-000000000010"
+}
+```
 
-<EntityPropertiesTable />
+</CodeGroup>
 
-### Entity Relationships
+## Related documentation
 
-- A book author is associated with one [[entity|book]]
-- A book author is associated with one [[entity|author]]
+- [[entity|book]] — Parent aggregate.
+- [[entity|author]] — Linked author aggregate.

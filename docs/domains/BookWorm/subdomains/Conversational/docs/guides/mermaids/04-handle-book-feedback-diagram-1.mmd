@@ -1,0 +1,16 @@
+flowchart LR
+	customer["Customer\n(Storefront Browser)"]
+	book["Book Agent\n(Chat API / book)"]
+	ratingAgent["Rating Agent\n(Rating API A2A gRPC)"]
+	ratingApi["Rating API\n(HTTP /api/v1/feedbacks)"]
+	cosmos["Azure Cosmos DB\n(ratingdb / feedbacks)"]
+	kafka["Kafka\n(Wolverine Events)"]
+	catalog["Catalog API\n(Derived Rating Summary)"]
+
+	customer --> |"AG-UI: Opinion or Review Question"| book
+	book --> |"A2A gRPC: Read-Only Summary (with Book ID)"| ratingAgent
+	ratingAgent --> |"EF Core Cosmos: Read Feedbacks"| cosmos
+	customer --> |"HTTPS: Formal Review Write"| ratingApi
+	ratingApi --> |"EF Core Cosmos: Persist Feedback"| cosmos
+	ratingApi --> |"Kafka: FeedbackCreated/Deleted"| kafka
+	kafka --> |"Kafka consume: Project rating summary"| catalog

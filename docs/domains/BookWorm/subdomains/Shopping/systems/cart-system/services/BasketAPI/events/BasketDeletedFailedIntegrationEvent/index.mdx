@@ -14,37 +14,62 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+`BasketDeletedFailedIntegrationEvent` (v1.0.0) signals that Basket API could not delete a submitted customer basket during post-checkout cleanup (`IBasketRepository.DeleteBasketAsync` returned `false`). Finance consumes this event to trigger compensating failure handling instead of stalling the checkout orchestration.
 
-During checkout cleanup, removing a customer's [[entity|basket]] can occasionally fail. If that failure went unreported, stale items could remain in the customer's cart or downstream checkout workflows would be left waiting without knowing cleanup did not succeed. Publishing an explicit failure signal lets recovery and notification workflows react promptly.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                 |
+| :-------------------- | :---------------------------------------------------------------------------------------------------- |
+| **Owner**             | Shopping bounded context (`Basket API`)                                                               |
+| **Producer**          | [[service\|basket-api]] (`PlaceOrderCommandHandler`)                                                  |
+| **Consumer**          | [[service\|order-orchestration]] (`OrderOrchestrator`)                                                |
+| **Source**            | `src/Services/Basket/BookWorm.Basket/IntegrationEvents/Events/BasketDeletedFailedIntegrationEvent.cs` |
+| **Protocol / format** | Kafka + CloudEvents JSON (Wolverine)                                                                  |
+| **Kafka topic**       | `bookworm.{env}.basket.delete-failed` (where `{env}` is the kebab-case environment name)              |
+| **Message identity**  | `BookWorm.Contracts.BasketDeletedFailedIntegrationEvent`                                              |
+| **Partition key**     | `OrderId` (preserves per-order saga ordering on Kafka)                                                |
+| **Trigger condition** | `IBasketRepository.DeleteBasketAsync` returns `false` while handling `PlaceOrderCommand`              |
 
-- **No silent failures**: Ensures failed cart cleanup is surfaced immediately instead of stalling checkout coordination.
-- **Automated recovery**: Allows ordering and support processes to trigger compensating actions when a basket cannot be cleared.
-- **Customer communication support**: Passes an optional customer email address so recovery workflows can notify the shopper when appropriate.
+## Parameters and fields
 
-## 3. How It Works
+The schema below defines the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema).
 
-1. During checkout cleanup, the basket service attempts to remove the submitted [[entity|basket]].
-2. When deletion does not succeed, the service emits a failure notification instead of a completion signal.
-3. The notification carries the order reference, basket reference, purchase total, and, when available, the customer's email address.
-4. Downstream consumers use this signal to start recovery or customer notification steps and never treat it as a successful cleanup.
+| Name           | Type                 | Required | Default                 | Constraints                                                                        | Description                                                            |
+| :------------- | :------------------- | :------- | :---------------------- | :--------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                                          | Unique identifier for this integration event instance.                 |
+| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent`                           | UTC timestamp when Basket API created the event.                       |
+| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key                                       | Identifier of the order whose submitted basket could not be deleted.   |
+| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID                                                                         | Identifier of the basket that Basket API failed to remove.             |
+| `email`        | `string \| null`     | No       | `null`                  | Email format when non-null; nullable in C# (`string?`) and optional in JSON Schema | Customer email used by downstream recovery notifications when present. |
+| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                                                       | Total purchase amount associated with the order.                       |
 
-## 4. Trade-offs & Lessons Learned
+:::note
+Consumers must handle `email` when it is `null` or omitted and must never interpret `BasketDeletedFailedIntegrationEvent` as a successful cleanup milestone.
+:::
 
-- **Dedicated failure stream vs. combined outcome**: Separating failure signals onto their own channel makes alerting, monitoring, and recovery routing straightforward.
-- **Optional customer email**: A customer email address may not always be available during recovery, so downstream notification logic must handle a missing address gracefully.
-- **Strict failure interpretation**: Consumers must never treat a failure event as completed cleanup, even when retrying recovery steps.
+### CloudEvents envelope headers
 
-## 5. Technical Reference
+| Header        | Value / source                                           | Purpose                                                      |
+| :------------ | :------------------------------------------------------- | :----------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.BasketDeletedFailedIntegrationEvent` | Explicit message identity for cross-service deserialization. |
+| `source`      | `urn:bookworm:bookworm-basket`                           | Identifies the producing service.                            |
+| `requestid`   | Propagated from incoming `PlaceOrderCommand`             | Correlates checkout and recovery logs across services.       |
 
-- **Publisher**: [[service|basket-api]]
-- **Channel**: [[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
-- **Envelope & Payload**: The event is carried in a CloudEvents envelope. The schema below describes the JSON data payload. `email` is nullable because downstream recovery may not always have a customer address.
+## Error handling and delivery guarantees
+
+| Condition                                                     | Behavior                                                                                      | Recovery behavior                                                                                                                                |
+| :------------------------------------------------------------ | :-------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Redis returns `false` (key missing or not deleted)            | `PlaceOrderCommandHandler` emits `BasketDeletedFailedIntegrationEvent`.                       | Finance advances its compensation branch and dispatches `DeleteBasketFailedCommand` to Ordering API.                                             |
+| Unhandled exception during Redis deletion                     | `PlaceOrderCommandHandler` releases the Redis idempotency lock (`ReleaseAsync`) and rethrows. | Wolverine retries with cooldown (`50ms`, `250ms`, `1s`, full jitter) and routes exhausted messages to `bookworm.{env}.basket.dead-letter-queue`. |
+| Deserialization failure (`JsonException` / `FormatException`) | Routed immediately to the consumer native Kafka DLQ without retries.                          | Validate payloads against `tests/pacts/Finance-Basket.json` before replaying.                                                                    |
+
+## Related documentation
+
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] — Kafka channel specification for `bookworm.{env}.basket.delete-failed`.
+- [[event|BasketDeletedCompleteIntegrationEvent]] — Companion success event for checkout basket cleanup.
+- [[service|basket-api]] — Producer service contract and Redis storage details.
+- [[entity|basket]] — Redis basket data model.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="Basket deletion failed schema" maxHeight="500" />

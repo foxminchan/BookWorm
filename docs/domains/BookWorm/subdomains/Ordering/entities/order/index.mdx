@@ -55,45 +55,98 @@ properties:
     description: Time the Order was last modified.
 ---
 
-## 1. Context & Problem
+`Order` is the Ordering aggregate root for an accepted purchase placed by a buyer. Ordering API owns it and persists it in PostgreSQL (`orderingdb`) through EF Core, with a Marten event store in the same database for order summaries.
 
-While a customer is browsing, their shopping basket is temporary and freely editable. Once they check out, however, the business needs a permanent, authoritative record of the accepted purchase tied to an authenticated [[entity|buyer]]. Without a dedicated Order record and clear lifecycle, BookWorm could not distinguish active shopping intent from committed purchases, preserve purchase-time pricing, or track whether a purchase succeeded or was cancelled.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                                              |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Ordering bounded context / **Ordering API** (`ordering`)                                                           |
+| **Source**                | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/OrderAggregate/Order.cs`                           |
+| **EF Core configuration** | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EntityConfigurations/OrderConfiguration.cs`                |
+| **Backing store**         | PostgreSQL database `orderingdb`, table `orders` (`snake_case`); Marten event store for `OrderSummary` projections |
+| **Base type**             | `AuditableEntity<OrderId>`, `IAggregateRoot`, `ISoftDelete`                                                        |
+| **Identifier**            | `OrderId` (Vogen value object wrapping `Guid`)                                                                     |
 
-- **Contractual purchase truth:** Establishes a reliable, auditable record of who placed the purchase, what items were ordered, and the total agreed upon at checkout.
-- **Price protection:** Locks in purchase-time item prices so subsequent catalog promotions or price updates never rewrite completed or in-progress orders.
-- **Clear business outcomes:** Provides customers, operations, and downstream workflows with a single, unambiguous order status (**New**, **Completed**, or **Cancelled**).
-- **Resilient boundaries:** Separates the purchase record from follow-up operational tasks such as basket cleanup and email notifications, ensuring delivery hiccups do not corrupt order truth.
+## Parameters and fields
 
-## 3. How It Works
+| Name             | Type               | Required | Default                    | Constraints                                                            | Description                                     |
+| :--------------- | :----------------- | :------- | :------------------------- | :--------------------------------------------------------------------- | :---------------------------------------------- |
+| `id`             | `OrderId` (`Guid`) | Yes      | `uuidv7()` (database)      | Primary key                                                            | Unique order identifier                         |
+| `buyerId`        | `BuyerId` (`Guid`) | Yes      | —                          | FK to `buyers.id`; indexed with `created_at`                           | Buyer who placed the order                      |
+| `status`         | `Status` (`byte`)  | Yes      | `New`                      | `New` = 0, `Cancelled` = 1, `Completed` = 2; indexed with `created_at` | Lifecycle status; serialized as a string        |
+| `note`           | `string`           | No       | —                          | Max 500 chars                                                          | Optional customer note                          |
+| `orderItems`     | `OrderItem[]`      | Yes      | —                          | Child rows in `order_items`; `ON DELETE CASCADE`; `AutoInclude()`      | Purchase-time lines; see [[entity\|order-item]] |
+| `totalPrice`     | `decimal`          | —        | Computed                   | `[NotMapped]`; sum of `price * quantity`                               | Order total; not persisted                      |
+| `isDeleted`      | `bool`             | Yes      | `false`                    | Global query filter `!IsDeleted`                                       | Soft-delete flag; independent of `status`       |
+| `createdAt`      | `DateTime`         | Yes      | `NOW() AT TIME ZONE 'UTC'` | UTC; indexed                                                           | Creation timestamp                              |
+| `lastModifiedAt` | `DateTime`         | No       | `NOW() AT TIME ZONE 'UTC'` | UTC                                                                    | Last modification timestamp                     |
+| `rowVersion`     | `uint`             | Yes      | Managed by PostgreSQL      | `.IsRowVersion()` mapped to `xmin`                                     | Optimistic concurrency token                    |
 
-An Order captures an authenticated [[entity|buyer]]'s accepted purchase using the basket contents and catalog pricing available at checkout:
+## Lifecycle rules
 
-- **Initial state and contents:** Every Order starts in the **New** status and contains one or more [[entity|order-item]] records, an optional note, and creation and modification timestamps.
-- **Calculated total:** The Order total is derived directly by adding up each item's purchase-time price multiplied by its quantity, keeping the total aligned with the recorded items.
-- **Terminal outcomes:** From **New**, an Order can transition to either **Completed** or **Cancelled**. Both outcomes are final.
-- **Visibility vs. business status:** An Order can be marked as hidden from active views (for example, if post-checkout basket cleanup fails) without erasing the historical record or changing its business status.
-- **Independent follow-up tracking:** Finance workflow progress, basket-deletion outcomes, and customer notification delivery are tracked separately from the Order's own lifecycle.
+`Order` delegates transitions to `OrderLifecycleDecider`. Only orders in `New` can move to a terminal state.
 
-## 4. Trade-offs & Lessons Learned
+| Current status | `MarkAsCompleted()`                                | `MarkAsCanceled()`                                 |
+| :------------- | :------------------------------------------------- | :------------------------------------------------- |
+| `New`          | Moves to `Completed`; raises `OrderCompletedEvent` | Moves to `Cancelled`; raises `OrderCancelledEvent` |
+| `Completed`    | Throws `OrderingDomainException`                   | Throws `OrderingDomainException`                   |
+| `Cancelled`    | Throws `OrderingDomainException`                   | Throws `OrderingDomainException`                   |
 
-- **Calculated total vs. stored total:** Deriving the total from item lines guarantees internal consistency between items and total, eliminating drift from a separately stored amount.
-- **Isolated business state vs. end-to-end tracking:** Keeping basket cleanup, workflow retries, and email delivery outside the Order's status protects the purchase record from downstream failures, though stakeholders must remember that Order status alone does not prove email delivery or external settlement.
-- **Separate removal flag vs. cancellation:** Separating record removal from the **Cancelled** status preserves auditability when cleanup fails, but requires reporting and support workflows to distinguish between hidden records and cancelled orders.
+- **Placement:** The constructor sets `status` to `New` and raises `OrderPlacedEvent`.
+- **Soft delete:** `Delete()` sets `isDeleted = true` without changing `status`. EF Core hides deleted orders and their items.
+- **Saga separation:** Finance orchestration progress, basket deletion outcomes, and email delivery are tracked outside `Order`.
 
-## 5. Technical Reference
+Repeated `Complete` actions on a completed order and repeated `Cancel` actions on a canceled order are idempotent in `OrderLifecycleDecider`; they return the existing state with no new transition. Completing a canceled order or canceling a completed order throws `OrderingDomainException`.
 
-- **Domain role:** Aggregate root (`aggregateRoot: true`) in the `Ordering` domain.
-- **Status values:** `New`, `Completed`, `Cancelled` (`Completed` and `Cancelled` are terminal).
-- **Key properties:**
-  - `id`, `buyerId`, `status`, `note`, `orderItems`, `createdAt`, `lastModifiedAt`
-  - `totalPrice`: Calculated sum of each `order-item`'s `price * quantity`; not persisted.
-  - `isDeleted`: Soft-delete flag, independent of `status` (Finance saga states, basket-deletion outcomes, and notification delivery are separate from this aggregate's lifecycle).
-- **Relationships:**
-  - Placed by one [[entity|buyer]] (`buyerId` → `buyer.id`, `relationType: placedBy`).
-  - Contains one or more [[entity|order-item]] records (`orderItems`).
+## Indexes
 
-### Entity Properties
+| Columns                  | Purpose                  |
+| :----------------------- | :----------------------- |
+| `(buyer_id, created_at)` | Buyer order history      |
+| `(status, created_at)`   | Status-filtered listings |
+| `created_at`             | Date-range queries       |
 
-<EntityPropertiesTable />
+## Relationships
+
+| Related entity         | Cardinality                    | Mapping                                     |
+| :--------------------- | :----------------------------- | :------------------------------------------ |
+| [[entity\|buyer]]      | Many orders to one buyer       | `buyer_id`                                  |
+| [[entity\|order-item]] | One order to many items        | `order_items.order_id`, `ON DELETE CASCADE` |
+| [[entity\|book]]       | Referenced through order items | Cross-service reference; no foreign key     |
+
+The `Buyer` relationship is nullable at the database-delete policy level: `BuyerConfiguration` sets `ON DELETE SET NULL`, while `OrderConfiguration` still excludes orphaned order items through the aggregate relationship. Buyer deletion does not cascade-delete accepted orders.
+
+## Examples
+
+### Order record
+
+<CodeGroup>
+
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-0000000a0001",
+	"buyerId": "0193f1a2-7b4c-7d8e-9f01-0000000b0001",
+	"status": "New",
+	"note": "Leave at the front desk.",
+	"orderItems": [
+		{
+			"id": "0193f1a2-7b4c-7d8e-9f01-0000000c0001",
+			"bookId": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+			"quantity": 2,
+			"price": 49.99
+		}
+	],
+	"totalPrice": 99.98,
+	"isDeleted": false,
+	"createdAt": "2026-11-25T10:00:00Z",
+	"lastModifiedAt": "2026-11-25T10:00:00Z"
+}
+```
+
+</CodeGroup>
+
+## Related documentation
+
+- [[entity|order-item]] — Purchase-time line items.
+- [[entity|buyer]] — Buyer profile and address.

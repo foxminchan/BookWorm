@@ -9,43 +9,32 @@ badges:
     textColor: blue
 ---
 
-This chapter defines the system boundary of the complete BookWorm commerce platform and its communication partners. Following arc42, it separates business-level information exchanges from the technical channels and mechanisms used to realize them.
+This chapter defines the whole-platform boundary of BookWorm—what runs inside the system, who interacts with it, and which external providers it integrates with. Following arc42, it separates domain-level business exchanges from the concrete protocols, gateways, and cloud services that realize them.
 
-## 1. Context & Problem
+## Platform boundary at a glance
 
-Every platform architecture needs a clear starting boundary: what is inside the system we build and operate, who uses it, and which external partners it relies on. Without separating business interactions from technical channels at this entry point, discussions quickly mix customer outcomes with transport and vendor details, making scope harder for stakeholders to validate.
+BookWorm operates as a distributed commerce platform built from three Next.js 16 microfrontends (MFEs) behind a YARP **API Gateway** and ten .NET 11 backend services across six bounded contexts, integrated with **Microsoft Entra ID**, **Microsoft Foundry**, and SMTP email delivery (**Mailpit** locally, **SendGrid** in cloud).
 
-## 2. Business Value
+The diagram below illustrates the high-level boundary between BookWorm's user roles, internal platform, and live external dependencies.
 
-- **Clear system boundaries:** Aligns Solution Architects, Project Managers, Business Analysts, and Developers on what BookWorm owns versus what external systems provide.
-- **Audience-friendly structure:** Lets business stakeholders review customer journeys and partner exchanges independently from technical integration mechanisms.
-- **Traceable documentation:** Connects the platform-wide overview directly to detailed business and technical context views without duplicating service-level specifications.
+<MermaidFileLoader file="mermaids/03-context-and-scope-diagram-1.mmd" />
 
-## 3. How It Works
+:::note
+External payment gateways and physical shipping fulfillment providers are **not implemented** in the current repository. **Finance** (`BookWorm.Finance`) is an Azure Functions + Durable Task Scheduler post-checkout saga that coordinates basket cleanup and email notifications rather than payment settlement.
+:::
 
-The BookWorm platform brings together catalog, shopping, ordering, reviews, conversational assistance, and shared platform capabilities for its customers. External identity, payment, fulfillment, notification, and AI infrastructure support selected interactions across the boundary.
+## Chapter map
 
-<MermaidFileLoader file="mermaids/bookworm-scope.mmd" />
+| Section                                                   | Focus                                                                                               | Primary audience                            |
+| :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- | :------------------------------------------ |
+| [[doc\|arc42/03-context-and-scope/001-overview]]          | In-scope bounded contexts, out-of-scope external neighbors, and boundary assumptions                | Product stakeholders, architects, engineers |
+| [[doc\|arc42/03-context-and-scope/002-business-context]]  | Black-box business actors, value flow, and inbound/outbound business data exchanges                 | Product stakeholders, analysts, architects  |
+| [[doc\|arc42/03-context-and-scope/003-technical-context]] | Concrete clients, YARP gateway, HTTP/gRPC/Kafka/AG-UI/MCP channels, and verified external providers | Architects, contributors, operators         |
 
-To keep both business and engineering perspectives clear, this chapter is organized into three focused views:
+## Related architecture documentation
 
-1. **Scope and assumptions:** Defines what sits inside and outside the BookWorm platform boundary and records overarching assumptions.
-2. **Business context:** Maps business actors, external partners, and the domain information exchanged across the boundary.
-3. **Technical context:** Maps documented communication mechanisms between capabilities and external neighbors while highlighting technical details that remain open.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Business vs. technical separation:** Splitting business context from technical context prevents stakeholder reviews from getting bogged down in infrastructure details, while keeping technical gaps visible for engineering teams.
-- **Overview vs. exhaustive specification:** The diagrams and summaries in this chapter are intentionally high-level. Keeping exact providers, communication protocols, message payloads, and deployment details in individual service documentation avoids stale duplication at the platform level.
-
-## 5. Technical Reference
-
-### Chapter Contents
-
-- [[doc|arc42/03-context-and-scope/001-overview]] defines what is inside and outside the system boundary and records context assumptions.
-- [[doc|arc42/03-context-and-scope/002-business-context]] shows business actors, external partners, and the domain information exchanged.
-- [[doc|arc42/03-context-and-scope/003-technical-context]] maps documented communication mechanisms and identifies technical details that remain open.
-
-### Scope Delegation
-
-- Exact external providers, protocols, payload schemas, and deployment details remain the responsibility of the relevant service and system documentation.
+- [[doc|arc42/00-c4-overview]] — Visual C4 Context and Container diagrams for the full platform.
+- [[doc|arc42/01-introduction-and-goals]] — Business purpose, requirements, and prioritized quality goals.
+- [[doc|arc42/02-architecture-constraints]] — Technical and organizational guardrails.
+- [[doc|arc42/05-building-block-view]] — Whitebox decomposition inside the BookWorm boundary.
+- [[doc|arc42/07-deployment-view]] — Local Aspire containers and Azure Container Apps topology.

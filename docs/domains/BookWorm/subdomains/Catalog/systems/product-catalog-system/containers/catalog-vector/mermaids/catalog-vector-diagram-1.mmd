@@ -1,0 +1,15 @@
+flowchart LR
+	catalog["Catalog API\n(.NET 11 REST + gRPC)"]
+	scheduler["Scheduler\n(Quartz.NET 5m cron)"]
+	ingestion["Catalog Ingestion\n(Azure Functions Worker)"]
+	foundry["Microsoft Foundry\n(Cohere EmbedV40)"]
+	db[("Catalog database\n(PostgreSQL: catalogdb)")]
+	qdrant[("Catalog vector\n(Qdrant: vectordb)")]
+
+	catalog --> |"HTTPS: Embed query"| foundry
+	catalog --> |"gRPC/HTTP: Hybrid search"| qdrant
+	catalog --> |"EF Core: Hydrate by book IDs"| db
+	scheduler --> |"Kafka: scheduler.process-vector-batch"| ingestion
+	ingestion --> |"Npgsql: Read/Ack queue"| db
+	ingestion --> |"HTTPS: Embed batch"| foundry
+	ingestion --> |"gRPC/HTTP: Upsert/Delete"| qdrant

@@ -10,13 +10,7 @@ export type AllureReportSuite = {
 	environments: string[];
 };
 
-export type AllureResultFeed = {
-	id: string;
-	name: string;
-	scope: string;
-	artifact: string;
-	workflow: string;
-};
+export const DEFAULT_REPORT_SUITE_ID = "unified";
 
 export const REPORT_SUITES: AllureReportSuite[] = [
 	{
@@ -87,36 +81,5 @@ export const REPORT_SUITES: AllureReportSuite[] = [
 			"Property & Fuzz Tests",
 			"E2E (Playwright BDD)",
 		],
-	},
-];
-
-export const RESULT_FEEDS: AllureResultFeed[] = [
-	{
-		id: "be-unit",
-		name: "Backend Unit Tests",
-		scope: "Microservices & BuildingBlocks",
-		artifact: "allure-results-be-unit",
-		workflow: "sonar.yml",
-	},
-	{
-		id: "be-contract",
-		name: "Backend Contract Tests",
-		scope: "Service & Messaging Contracts",
-		artifact: "allure-results-be-contract",
-		workflow: "sonar.yml",
-	},
-	{
-		id: "fe-bo",
-		name: "Backoffice Results",
-		scope: "Next.js Unit & E2E",
-		artifact: "allure-results-fe-bo",
-		workflow: "frontend-ci.yml",
-	},
-	{
-		id: "fe-sf",
-		name: "Storefront Results",
-		scope: "Next.js Unit & E2E",
-		artifact: "allure-results-fe-sf",
-		workflow: "frontend-ci.yml",
 	},
 ];

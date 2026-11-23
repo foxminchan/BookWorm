@@ -1,0 +1,70 @@
+---
+id: ProcessVectorBatchIntegrationEvent
+name: Process Vector Batch
+version: 1.0.0
+summary: |
+  Integration event published by Scheduler every five minutes to trigger
+  Catalog Ingestion vector batch processing over Kafka.
+owners:
+  - contributor-team
+badges:
+  - content: Integration Event
+    backgroundColor: orange
+    textColor: orange
+    icon: BoltIcon
+schemaPath: schema.json
+---
+
+`ProcessVectorBatchIntegrationEvent` (v1.0.0) is a lightweight scheduled trigger published every five minutes by Scheduler (`ProcessVectorBatchJob`) over Kafka. Catalog Ingestion (`ProcessVectorBatchFunction`) consumes this event to fetch changed catalog records from PostgreSQL (`catalogdb`), generate Cohere `EmbedV40` embeddings via Microsoft Foundry, and update Qdrant (`vectordb`).
+
+## Overview
+
+| Property              | Value                                                                                                                                          |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Platform bounded context (`Scheduler`)                                                                                                         |
+| **Producer**          | [[service\|scheduler-dashboard]] (`BookWorm.Scheduler`, Quartz `ProcessVectorBatchJob`)                                                        |
+| **Consumer**          | [[service\|catalog-ingestion]] (`BookWorm.Catalog.Ingestion`, Azure Function `ProcessVectorBatchFunction`, consumer group `catalog-ingestion`) |
+| **Source**            | `src/Services/Scheduler/BookWorm.Scheduler/IntegrationEvents/ProcessVectorBatchIntegrationEvent.cs`                                            |
+| **Protocol / format** | Kafka + CloudEvents JSON (Wolverine producer, Azure Functions `[KafkaTrigger]` consumer)                                                       |
+| **Kafka topic**       | `scheduler.process-vector-batch` (**unprefixed** — `AppendPrefix = false`)                                                                     |
+| **Message identity**  | `BookWorm.Contracts.ProcessVectorBatchIntegrationEvent`                                                                                        |
+| **Schedule**          | Quartz cron `0 0/5 * * * ?` (UTC, every 5 minutes, misfire `FireOnceNow`, defined in `src/Services/Scheduler/BookWorm.Scheduler/jobs.json`)    |
+| **Outbox**            | Wolverine PostgreSQL outbox (`schedulerdb`, `wolverine` schema)                                                                                |
+
+:::note
+Unlike every other BookWorm integration topic, `ProcessVectorBatchIntegrationEvent` sets `AppendPrefix = false` in `IntegrationMessageOwnerAttribute`. Its Kafka topic is always `scheduler.process-vector-batch` without the `bookworm.{env}.` prefix so the static Azure Functions `[KafkaTrigger]` attribute matches across environments.
+:::
+
+## Parameters and fields
+
+The event inherits only the two base fields from `IntegrationEvent` (`additionalProperties: false` in JSON Schema). Batch sizing, selection order, and vector upsert logic remain owned by Catalog Ingestion.
+
+| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                   |
+| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :------------------------------------------------------------ |
+| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier of the trigger event.                       |
+| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when `ProcessVectorBatchJob` created the event. |
+
+### CloudEvents envelope headers
+
+| Header        | Value / source                                          | Purpose                                                                     |
+| :------------ | :------------------------------------------------------ | :-------------------------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.ProcessVectorBatchIntegrationEvent` | Explicit message identity parsed by `CloudEventsMessageParser.Deserialize`. |
+| `source`      | `urn:bookworm:bookworm-scheduler`                       | Identifies the producing service.                                           |
+
+## Error handling and delivery guarantees
+
+| Condition                                | Behavior                                                                                                                                                                        | Recovery behavior                                                                                                                     |
+| :--------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------ |
+| Scheduler is stopped in local Aspire run | `BookWorm.Scheduler` is registered with `.WithExplicitStart()` in `AppHost.cs`, so periodic triggers do not fire until you start the resource manually in the Aspire dashboard. | Start `scheduler` in the Aspire dashboard or trigger `ProcessVectorBatchJob` from the Quartz dashboard (`/quartz`).                   |
+| Misfire during Scheduler downtime        | Quartz applies `FireOnceNow` misfire handling from `jobs.json`.                                                                                                                 | A single catch-up event is published when Scheduler resumes.                                                                          |
+| Catalog Ingestion processing failure     | `ProcessVectorBatchFunction` fails the Azure Functions Kafka trigger invocation.                                                                                                | Pending records remain eligible on the next five-minute run; inspect Catalog Ingestion logs and `tests/pacts/Catalog-Scheduler.json`. |
+
+## Related documentation
+
+- [[channel|scheduler.process-vector-batch]] — Unprefixed Kafka channel specification.
+- [[service|catalog-ingestion]] — Azure Functions consumer service.
+- [[doc|platform/005-quartz-schema]] — PostgreSQL `schedulerdb` tables backing `ProcessVectorBatchJob`.
+
+<NodeGraph />
+
+<SchemaViewer file="schema.json" />

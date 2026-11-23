@@ -27,44 +27,91 @@ protocols:
   - kafka
 ---
 
-## Overview
+`bookworm.{env}.catalog.dead-letter-queue` (v1.0.0) is the native Kafka dead-letter topic for Catalog API. Wolverine moves an incoming Feedback event here when Catalog API exhausts its retry policy or cannot deserialize the payload. A missing book is not a DLQ case; Catalog API publishes a compensation event instead.
 
-This channel is the native Kafka dead-letter topic configured for
-[[service|catalog-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName` and
-`EnableNativeDeadLetterQueue()`. When [[service|catalog-api]] cannot process
-incoming [[event|FeedbackCreatedIntegrationEvent]] messages from
-[[channel|bookworm.&#123;env&#125;.rating.feedback-create]] or
-[[event|FeedbackDeletedIntegrationEvent]] messages from
-[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]], Wolverine routes
-the failed envelopes to `bookworm.<environment>.catalog.dead-letter-queue`.
+## Channel information
 
 <ChannelInformation />
 
-## Failure policy and routing
+## Overview
 
-- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
-  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
-  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
-  `50ms`, `250ms`, and `1s` cooldown intervals with full jitter before calling
-  `MoveToErrorQueue()`.
-- **Immediate dead-lettering:** `JsonException` deserialization failures route
-  directly to the error queue without retries.
-- **Domain compensation vs. DLQ:** Missing-book conflicts during
-  `FeedbackCreatedIntegrationEvent` handling do not go to this DLQ; instead,
-  Catalog publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] on
-  [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]].
-- **Retention & expiration:** Wolverine configures durable dead-letter storage
-  expiration to 7 days (`DeadLetterQueueExpiration`).
+| Property              | Value                                                                                                                                                                                              |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                               |
+| **Topic pattern**     | `bookworm.{env}.catalog.dead-letter-queue`                                                                                                                                                         |
+| **Name derivation**   | `KafkaTopicRouter.CreateDeadLetterTopicName(applicationName, environmentName)`                                                                                                                     |
+| **Writer**            | Wolverine Kafka transport in Catalog API (`EnableNativeDeadLetterQueue()`)                                                                                                                         |
+| **Source listeners**  | [[channel\|bookworm.&#123;env&#125;.rating.feedback-create]] (`FeedbackCreatedIntegrationEvent`); [[channel\|bookworm.&#123;env&#125;.rating.feedback-delete]] (`FeedbackDeletedIntegrationEvent`) |
+| **Reader**            | None in code; operators inspect the topic manually                                                                                                                                                 |
+| **Protocol / format** | Kafka stream; original CloudEvents JSON record                                                                                                                                                     |
+| **Message store**     | Wolverine PostgreSQL durable inbox/outbox (`catalogdb`, `wolverine` schema)                                                                                                                        |
+| **Source**            | `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Services/Catalog/BookWorm.Catalog/IntegrationEvents/EventHandlers/`                                      |
 
-## Operational triage and recovery
+## Parameters and fields
 
-- Inspect [[service|catalog-api]] handler logs and [[container|catalog-database]]
-  connectivity when messages land here to separate transient database/broker
-  outages from schema contract errors.
-- Restore the unhealthy dependency and replay failed messages from authoritative
-  [[domain|reviews]] feedback state rather than patching `average_rating` or
-  `total_reviews` directly in [[container|catalog-database]].
+| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
+| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
+| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
 
-## Architecture diagram
+A dead-lettered record keeps the original CloudEvents value and Kafka key (`bookId`, from Rating API partitioning).
+
+Wolverine 6.65.1 adds `exception-type`, `exception-message`, `exception-stack` (truncated to 8,192 characters), `failed-at` (Unix milliseconds), and `original-destination` to native dead-letter records; Kafka records also include `original-partition` and `original-offset`. The delivery-attempt count is in the `attempts` header. See the [version-pinned diagnostic header reference](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#diagnostic-headers-on-dead-letter-messages).
+
+## Routing rules
+
+| Exception or condition                                                                                  | Result                                                                                                                                 | Source                                   |
+| :------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------- |
+| `TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException` | `3` retries at `50ms`, `250ms`, `1s` with full jitter, then DLQ                                                                        | `ConfigureDefaultErrorHandling`          |
+| `JsonException`, `FormatException`                                                                      | DLQ with no retries                                                                                                                    | `ConfigureDefaultErrorHandling`          |
+| Book missing on `FeedbackCreatedIntegrationEvent`                                                       | No DLQ; publishes `BookUpdatedRatingFailedIntegrationEvent` to [[channel\|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] | `FeedbackCreatedIntegrationEventHandler` |
+| Book missing on `FeedbackDeletedIntegrationEvent`                                                       | No DLQ; no-op                                                                                                                          | `FeedbackDeletedIntegrationEventHandler` |
+
+:::note
+`DeadLetterQueueExpiration = 7 days` applies to Wolverine durable storage in `catalogdb`. Kafka topic retention is configured on the broker.
+:::
+
+## Replay safety
+
+| Check                                              | Why it matters                                                                                                                                                                                        |
+| :------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catalogdb` and broker health                      | Separates transient outages from contract errors.                                                                                                                                                     |
+| Idempotency key `idempotency:{HandlerName}:{id:N}` | Both handlers run inside `IIntegrationEventIdempotencyGuard`, which releases the key on failure. A replay of a failed event re-runs; a replay of an already applied event within 24 hours is skipped. |
+| Authoritative Feedback state in Rating API         | Replay from Rating API data instead of patching `average_rating` or `total_reviews` in `catalogdb`.                                                                                                   |
+
+## Examples
+
+### Dead-lettered record value
+
+Kafka key: `0193f1b0-1111-7d8e-9f01-23456789abcd` (`bookId`)
+
+<CodeGroup>
+
+```json
+{
+	"specversion": "1.0",
+	"id": "0193f1b0-4a01-7d8e-9f01-23456789abcd",
+	"type": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent",
+	"source": "urn:bookworm:book-worm.rating",
+	"time": "2026-11-25T16:30:00Z",
+	"datacontenttype": "application/json",
+	"messagetype": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent",
+	"data": {
+		"id": "0193f1b0-4a01-7d8e-9f01-23456789abcd",
+		"creationDate": "2026-11-25T16:30:00Z",
+		"bookId": "0193f1b0-1111-7d8e-9f01-23456789abcd",
+		"rating": 5,
+		"feedbackId": "0193f1b0-3333-7d8e-9f01-23456789abcd"
+	}
+}
+```
+
+</CodeGroup>
+
+## Related documentation
+
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] — Source topic.
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]] — Source topic.
+- [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] — Compensation path for missing books.
+- [[service|catalog-api]] — Service and `catalogdb`.
 
 <NodeGraph />

@@ -1,38 +1,16 @@
-## 1. Context & Problem
+---
+summary: Usage examples for Create feedback.
+---
 
-Client applications and integrating teams need clear, runnable examples showing how to submit customer book feedback and how to interpret validation rejections. Without concrete examples, integrators risk sending incomplete payloads or mishandling out-of-range ratings in storefront forms.
+## Create feedback with curl
 
-## 2. Business Value
+<CodeGroup>
 
-- **Faster client onboarding**: Storefront and partner developers have ready-to-use examples for both happy-path submissions and error handling.
-- **Cleaner user experience**: Understanding the exact validation feedback format allows user interfaces to highlight invalid fields (such as an out-of-range rating) directly for customers.
-- **Fewer integration defects**: Standardizing request and error handling upfront prevents invalid review data from being dropped silently.
-
-## 3. How It Works
-
-To submit feedback for a book, the caller sends the target book's unique identifier, the reviewer's first and last name, an optional written comment, and a whole-number rating from 0 through 5.
-
-- **Valid submission**: The service records the feedback and returns the newly generated feedback identifier so the caller can reference or track the created review.
-- **Invalid submission**: When required fields are missing, the book identifier is malformed, or the rating falls outside the 0-through-5 range, the service rejects the request and returns structured validation errors identifying the problematic fields.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Fail-fast validation**: Rejecting the entire request on any field violation protects stored review integrity, though client apps should retain user-entered form text so customers can fix a single error without retyping their review.
-- **Identifier-only confirmation**: Returning only the generated feedback identifier keeps the confirmation lightweight, assuming the client already holds the submitted review details or will fetch the review list separately if needed.
-
-## 5. Technical Reference
-
-### 1. Create feedback for a book
-
-Submit the book UUID, reviewer details, optional comment, and a rating from 0 through 5 to `POST /api/v1/feedbacks` (`application/json`). A successful `200` response returns the new feedback UUID.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request POST "$BASE_URL/api/v1/feedbacks" \
+```bash
+curl --request POST "<gateway-url>/rating/api/v1/feedbacks" \
   --header "Content-Type: application/json" \
   --data '{
-    "bookId": "11111111-1111-1111-1111-111111111111",
+    "bookId": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
     "firstName": "Avery",
     "lastName": "Nguyen",
     "comment": "A thoughtful and engaging read.",
@@ -42,59 +20,30 @@ curl --request POST "$BASE_URL/api/v1/feedbacks" \
 
 </CodeGroup>
 
-The response body is a JSON string:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or use the direct Rating API URL without the `/rating` prefix).
+
+Expected response (`200 OK`):
+
+<CodeGroup>
 
 ```json
-"22222222-2222-2222-2222-222222222222"
+"0193f1a3-2c9d-7a4b-8e12-3456789abcde"
 ```
 
 </CodeGroup>
 
-The same request from TypeScript:
+## Validation error response (`400 Bad Request`)
 
-<CodeGroup dropdown>
-
-```ts create-feedback.ts
-const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
-const response = await fetch(`${baseUrl}/api/v1/feedbacks`, {
-	method: "POST",
-	headers: { "Content-Type": "application/json" },
-	body: JSON.stringify({
-		bookId: "11111111-1111-1111-1111-111111111111",
-		firstName: "Avery",
-		lastName: "Nguyen",
-		comment: "A thoughtful and engaging read.",
-		rating: 5,
-	}),
-});
-
-if (response.status === 400) {
-	throw new Error("CreateFeedback validation failed");
-}
-if (!response.ok) {
-	throw new Error(`CreateFeedback failed with ${response.status}`);
-}
-
-const feedbackId = (await response.json()) as string;
-console.log(`Created feedback ${feedbackId}`);
-```
-
-</CodeGroup>
-
-### 2. Handle validation errors
-
-Missing required fields, an invalid book UUID, or a rating outside the 0-through-5 range returns `400 Bad Request`.
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
 	"title": "One or more validation errors occurred.",
 	"status": 400,
 	"errors": {
-		"rating": ["The rating must be between 0 and 5."]
+		"Rating": ["'Rating' must be between 0 and 5. You entered 6."]
 	}
 }
 ```

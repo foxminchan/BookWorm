@@ -1,43 +1,25 @@
 ---
-summary: Create a SendGrid mail batch and preserve its identifier for a later mail submission.
+summary: Usage examples for Create mail batch.
 ---
 
-## 1. Context & Problem
+## Create a mail batch with curl
 
-When BookWorm needs to group related email notifications—such as messages intended for coordinated or scheduled delivery—it must first reserve a shared batch identifier from the email provider before submitting the individual emails.
+<CodeGroup>
 
-If an error occurs while creating that identifier, blindly requesting a new one can orphan tracking state or cause duplicate batches, leaving the notification workflow unable to tell whether a retry is safe.
+```bash
+curl --request POST "https://api.sendgrid.com/v3/mail/batch" \
+  --header "Authorization: Bearer <sendgrid-api-key>"
+```
 
-## 2. Business Value
+</CodeGroup>
 
-- **Coordinated batch tracking**: Grouping related messages under a single batch identifier makes scheduled sends easier to manage, audit, and correlate across systems.
-- **Safe failure recovery**: Preserving workflow state before retrying prevents duplicate batch creation and keeps operational diagnostics clear when provider responses are uncertain.
+Where:
 
-## 3. How It Works
+- `<sendgrid-api-key>`: A restricted SendGrid API key with the minimum permissions allowed for mail batch creation (external to BookWorm's current SMTP runtime). Supply it through a secret manager in real deployments.
 
-The batch-creation workflow follows two core rules:
+Expected response (`201 Created`):
 
-1. **Reserve and store the batch identifier first**: Before submitting messages that need to be grouped together, request a new batch identifier from SendGrid, store it within the notification workflow, and include it later in the [[command|SendMail]] request when required.
-2. **Reconcile before replacing on unknown errors**: If batch creation fails with an uncertain outcome from the provider, do not immediately generate a replacement batch identifier. Preserve the current workflow state so the Notification System can check what happened and decide whether a retry is safe.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Extra upfront step**: Reserving a batch identifier adds a separate call and state-persistence step before sending mail, so it should only be used when workflows genuinely require grouped or scheduled-send tracking.
-- **Reconciliation complexity**: Avoiding duplicate batches after an ambiguous failure requires keeping durable workflow state rather than treating batch creation as a stateless, throwaway call.
-
-## 5. Technical Reference
-
-### Step 1: Create a mail batch
-
-<Columns cols={2}>
-
-<Column>
-
-Create a mail batch before submitting messages that need to share a batch identifier. Store the returned `batch_id` with the notification workflow, then include it in the [[command|SendMail]] request when required.
-
-#### Example response
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
@@ -47,26 +29,20 @@ Create a mail batch before submitting messages that need to share a batch identi
 
 </CodeGroup>
 
-</Column>
+## Create a mail batch with C# `HttpClient`
 
-<Column>
+<CodeGroup>
 
-<CodeGroup dropdown>
-
-```csharp create-mail-batch.cs
+```csharp
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
 var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
-    ?? throw new InvalidOperationException("SENDGRID_API_KEY is required.");
+    ?? throw new InvalidOperationException("Set SENDGRID_API_KEY before calling SendGrid REST v3.");
 
-using var client = new HttpClient
-{
-	BaseAddress = new Uri("https://api.sendgrid.com")
-};
-client.DefaultRequestHeaders.Authorization =
-	new AuthenticationHeaderValue("Bearer", apiKey);
+using var client = new HttpClient { BaseAddress = new Uri("https://api.sendgrid.com") };
+client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
 using var response = await client.PostAsync("/v3/mail/batch", content: null);
 response.EnsureSuccessStatusCode();
@@ -77,19 +53,8 @@ var result = await response.Content.ReadFromJsonAsync<CreateMailBatchResponse>()
 Console.WriteLine(result.BatchId);
 
 internal sealed record CreateMailBatchResponse(
-	[property: JsonPropertyName("batch_id")] string BatchId);
+    [property: JsonPropertyName("batch_id")] string BatchId
+);
 ```
 
 </CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Step 2: Handle batch-creation failures
-
-- **Endpoint**: `POST https://api.sendgrid.com/v3/mail/batch`
-- **Authentication**: Bearer token supplied via `SENDGRID_API_KEY` environment/runtime secret configuration.
-- **Recovery rule**: Do not create a replacement `batch_id` after an unknown provider failure without reconciling the original request; preserve workflow state so the Notification System can determine whether a retry is safe.

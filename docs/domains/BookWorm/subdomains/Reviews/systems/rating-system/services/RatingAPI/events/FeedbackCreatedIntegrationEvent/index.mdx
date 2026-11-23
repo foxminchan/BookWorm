@@ -14,39 +14,62 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+`FeedbackCreatedIntegrationEvent` (v1.0.0) signals that Rating API persisted a new customer `Feedback` document in Azure Cosmos DB (`ratingdb` / `feedbacks`). Catalog API consumes this event to increment the target book's denormalized rating summary in PostgreSQL (`catalogdb`).
 
-When a customer submits a new rating for a book, the Reviews domain stores the individual feedback entry while the Catalog domain maintains and displays the book's overall rating summary. Coupling these two domains through synchronous calls or shared database access would slow down review submission and create tight operational dependencies. An integration event lets the Reviews service announce a newly committed rating asynchronously so Catalog can keep its book summaries up to date independently.
+## Overview
 
-## 2. Business Value
+| Property                 | Value                                                                                                                                                      |
+| :----------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                | Reviews bounded context (`Rating API`)                                                                                                                     |
+| **Producer**             | [[service\|rating-api]]                                                                                                                                    |
+| **Consumer**             | [[service\|catalog-api]] (`FeedbackCreatedIntegrationEventHandler`)                                                                                        |
+| **Source**               | `src/Services/Rating/BookWorm.Rating/IntegrationEvents/Events/FeedbackCreatedIntegrationEvent.cs`                                                          |
+| **Protocol / format**    | Kafka + CloudEvents JSON (Wolverine)                                                                                                                       |
+| **Kafka topic**          | `bookworm.{env}.rating.feedback-create` (where `{env}` is the kebab-case environment name)                                                                 |
+| **Message identity**     | `BookWorm.Contracts.FeedbackCreatedIntegrationEvent`                                                                                                       |
+| **Partition key**        | `BookId` (configured via `opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId")` so concurrent updates for one book land on the same partition) |
+| **Outbox / idempotency** | Published via Wolverine Cosmos DB persistence (`WolverineFx.CosmosDb`, `ratingdb`); consumed in Catalog API with 24-hour Redis idempotency keyed by `id`   |
 
-- **Responsive customer experience**: Submitting a book review succeeds as soon as the feedback is saved, without waiting for downstream catalog updates to finish.
-- **Fast catalog browsing**: Catalog keeps a pre-computed rating summary on each book record, avoiding expensive recalculations across all reviews during storefront page loads.
-- **Clear domain boundaries**: Reviews remains the sole source of truth for individual feedback records, while Catalog owns book metadata and display totals.
+## Parameters and fields
 
-## 3. How It Works
+The table below reflects the runtime C# contract (`FeedbackCreatedIntegrationEvent : IntegrationEvent`) serialized as camelCase JSON inside the CloudEvents envelope.
 
-1. A customer submits a feedback rating for a book, and the Reviews service saves the record.
-2. Once the feedback is safely persisted, Reviews publishes a notification stating that feedback was created, carrying the book identifier, the rating score, and the feedback identifier.
-3. The Catalog service receives the notification and adds the rating to that book's running rating summary.
-4. If Catalog cannot find the referenced book, it sends a failure notification back using the feedback identifier so Reviews can remove the orphaned feedback record.
+| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                                                        |
+| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
+| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique event identifier; used by Catalog API as the Redis idempotency key.                         |
+| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Rating API created the event.                                                   |
+| `bookId`       | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the book whose rating summary must be updated.                                       |
+| `rating`       | `integer`            | Yes      | —                       | `0`–`5` (`int`)                                          | Rating score to add to the book's denormalized rating summary.                                     |
+| `feedbackId`   | `string` (UUID)      | Yes      | —                       | Valid UUID                                               | Identifier of the newly created `Feedback` document, used for compensation if the book is missing. |
 
-## 4. Trade-offs & Lessons Learned
+:::warning
+**Schema drift notice:** The legacy EventCatalog file `schema.json` sets `"additionalProperties": false` and omits `id` and `creationDate` inherited from `IntegrationEvent`. Catalog API actively reads `id` for Redis idempotency; consumers must accept all five fields.
+:::
 
-- **Eventual consistency**: Because Catalog updates its rating summary asynchronously, a newly submitted rating may take a brief moment to appear on the book's catalog display.
-- **Compensating cleanup over distributed transactions**: Carrying the feedback identifier enables automatic cleanup when a book is missing in Catalog, avoiding complex cross-service locks.
-- **Duplicate delivery tolerance**: Because messaging channels guarantee at-least-once delivery, downstream handlers must remain safe when processing retries.
+### CloudEvents envelope headers
 
-## 5. Technical Reference
+| Header        | Value / source                                            | Purpose                                                      |
+| :------------ | :-------------------------------------------------------- | :----------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.FeedbackCreatedIntegrationEvent`      | Explicit message identity for cross-service deserialization. |
+| `source`      | `urn:bookworm:bookworm-rating`                            | Identifies the producing service.                            |
+| `requestid`   | Propagated from the HTTP `POST /api/v1/feedbacks` request | Correlates review creation with catalog projection updates.  |
 
-[[service|rating-api]] publishes this event after a new [[entity|feedback]] record is committed. The event contains the identifiers and rating value that [[service|catalog-api]] needs to update its denormalized [[entity|book]] rating summary.
+## Error handling and delivery guarantees
+
+| Condition                                                     | Behavior                                                                                                                        | Recovery behavior                                                           |
+| :------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------- |
+| Target book not found in `catalogdb`                          | `FeedbackCreatedIntegrationEventHandler` emits [[event\|BookUpdatedRatingFailedIntegrationEvent]] with `feedbackId`.            | Rating API reverts and deletes the orphaned `Feedback` record in Cosmos DB. |
+| Duplicate delivery within 24 hours                            | `IIntegrationEventIdempotencyGuard` skips duplicate processing using `idempotency:FeedbackCreatedIntegrationEventHandler:{id}`. | Prevents double-counting a rating on retries.                               |
+| Transient PostgreSQL or concurrency error                     | Wolverine retries with cooldown (`50ms`, `250ms`, `1s`) and full jitter.                                                        | Exhausted messages route to `bookworm.{env}.catalog.dead-letter-queue`.     |
+| Deserialization failure (`JsonException` / `FormatException`) | Routed directly to `bookworm.{env}.catalog.dead-letter-queue`.                                                                  | Validate payloads against `tests/pacts/Catalog-Rating.json`.                |
+
+## Related documentation
+
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] — Kafka channel specification for `bookworm.{env}.rating.feedback-create`.
+- [[event|BookUpdatedRatingFailedIntegrationEvent]] — Compensating event emitted when the referenced book does not exist.
+- [[event|FeedbackDeletedIntegrationEvent]] — Companion event for removing a deleted rating from Catalog API.
+- [[entity|feedback]] — Cosmos DB `Feedback` document schema.
 
 <NodeGraph />
-
-### Channel
-
-[[channel|bookworm.&#123;env&#125;.rating.feedback-create]]
-
-### Schema
 
 <SchemaViewer file="schema.json" title="Feedback created schema" maxHeight="500" />

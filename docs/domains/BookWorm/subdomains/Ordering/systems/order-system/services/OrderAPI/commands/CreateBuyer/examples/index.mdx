@@ -1,108 +1,37 @@
 ---
-summary: Create a Buyer profile using the authenticated customer's address.
+summary: Usage examples for Create Buyer.
 ---
 
-## 1. Context & Problem
+## Create a buyer profile through API Gateway
 
-Before a customer can maintain address information for ordering, the system needs a buyer profile tied to their verified identity. Asking customers to re-submit their identity or name creates unnecessary friction and opens the door to mismatched or spoofed profile details. Integrating teams need a clear example of how to register a buyer profile using only address details and how to handle validation errors.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster customer onboarding**: Callers only submit address fields, reducing form complexity and data entry errors.
-- **Stronger identity integrity**: Deriving the buyer's identity and name directly from their verified sign-in session prevents impersonation or mismatched records.
-- **Actionable validation feedback**: Returning structured field-level error messages allows frontend forms to highlight missing fields immediately for the user.
-
-## 3. How It Works
-
-1. The signed-in customer's application submits an address consisting of street, city, and province.
-2. The system reads the customer's identity and name automatically from their authenticated session rather than from the submitted details.
-3. If all required address fields are valid, the system creates the buyer profile and returns the newly generated buyer identifier.
-4. If any required address field (such as street) is missing or invalid, the request is rejected and field-specific validation messages are returned so the user can correct their input.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Session-derived identity and name**: Pulling identity and name from authentication claims eliminates client-side tampering, though it assumes the identity provider always supplies accurate, up-to-date name details.
-- **Minimal creation response**: Returning only the generated buyer identifier keeps creation fast and lightweight, meaning clients that need the full stored profile afterward must retain the submitted values or fetch the profile separately.
-- **Strict address validation**: Enforcing required fields upfront prevents incomplete buyer records from entering downstream order flows.
-
-## 5. Technical Reference
-
-Send the address as JSON to `POST /api/v1/buyers`. The service obtains the Buyer identity and name from the authenticated customer's bearer token.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request POST "$BASE_URL/api/v1/buyers" \
+```bash
+curl --request POST "https://<gateway-host>/ordering/api/v1/buyers" \
   --header "Authorization: Bearer <access-token>" \
   --header "Content-Type: application/json" \
+  --header "x-request-id: <request-id>" \
   --data '{
-    "street": "10 Example Street",
-    "city": "Ben Thanh",
+    "street": "123 Book Street",
+    "city": "District 1",
     "province": "Ho Chi Minh City"
   }'
 ```
 
 </CodeGroup>
 
-The same request from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-host>`: API Gateway hostname (or `localhost:7203` with `/api/v1/buyers` when calling Ordering API directly).
+- `<access-token>`: Entra ID JWT with role `customer` or `admin` and scopes `ordering_read` and `ordering_write`.
+- `<request-id>`: Unique client-generated idempotency key (for example, a UUID v7).
 
-```ts create-buyer.ts
-type CreateBuyerResponse = string;
+Expected response (`201 Created`, with header `Location: /api/v1/buyers/0193f1a2-6666-7d8e-9f01-23456789abcd`):
 
-const baseUrl = "https://api.example.com";
-const accessToken = "<access-token>";
-const response = await fetch(`${baseUrl}/api/v1/buyers`, {
-	method: "POST",
-	headers: {
-		Authorization: `Bearer ${accessToken}`,
-		"Content-Type": "application/json",
-	},
-	body: JSON.stringify({
-		street: "10 Example Street",
-		city: "Ben Thanh",
-		province: "Ho Chi Minh City",
-	}),
-});
-
-if (response.status === 400) {
-	throw new Error("CreateBuyer validation failed");
-}
-if (!response.ok) {
-	throw new Error(`CreateBuyer failed with ${response.status}`);
-}
-
-const buyerId = (await response.json()) as CreateBuyerResponse;
-console.log(`Created buyer ${buyerId}`);
-```
-
-</CodeGroup>
-
-`201 Created` returns the generated Buyer UUID:
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
-"66666666-6666-6666-6666-666666666666"
-```
-
-</CodeGroup>
-
-### Handle an Invalid Address
-
-Missing or invalid address fields return `400 Bad Request` with validation problem details:
-
-<CodeGroup dropdown>
-
-```json
-{
-	"title": "One or more validation errors occurred.",
-	"status": 400,
-	"errors": {
-		"Street": ["The Street field is required."]
-	}
-}
+"0193f1a2-6666-7d8e-9f01-23456789abcd"
 ```
 
 </CodeGroup>

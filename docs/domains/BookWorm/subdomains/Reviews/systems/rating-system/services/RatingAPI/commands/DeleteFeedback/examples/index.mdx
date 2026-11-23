@@ -1,69 +1,41 @@
-## 1. Context & Problem
+---
+summary: Usage examples for Delete feedback.
+---
 
-Administrative and moderation workflows need clear examples demonstrating how to remove an existing feedback entry and how to handle requests targeting a review that does not exist. Consistent error handling prevents confusing UI states when moderators act on stale or already-deleted records.
+## Delete feedback with curl
 
-## 2. Business Value
+<CodeGroup>
 
-- **Faster moderation integration**: Engineering teams building admin portals have verified request and error-handling patterns out of the box.
-- **Accurate operator feedback**: Distinguishing between a completed removal and a missing record helps admin tools inform staff accurately instead of failing silently or showing generic errors.
-
-## 3. How It Works
-
-To delete feedback, an authorized caller identifies the specific review using its unique identifier.
-
-- **Existing record**: The service removes the review and returns an empty success confirmation.
-- **Missing record**: If the provided identifier does not match any existing feedback, the service notifies the caller that the record was not found.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Explicit missing-record response vs. silent success**: Reporting when a feedback identifier does not exist helps interactive admin tools detect stale views or mistyped identifiers, though automated cleanup scripts must explicitly handle missing-record responses as non-fatal if desired.
-
-## 5. Technical Reference
-
-### 1. Delete feedback
-
-Send the feedback UUID in the path to `DELETE /api/v1/feedbacks/{id}`. A successful deletion returns `204 No Content` and has no response body.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request DELETE \
-  "$BASE_URL/api/v1/feedbacks/22222222-2222-2222-2222-222222222222"
+```bash
+curl --request DELETE "<gateway-url>/rating/api/v1/feedbacks/<feedback-id>" \
+  --header "Authorization: Bearer <admin-access-token>"
 ```
 
 </CodeGroup>
 
-The equivalent TypeScript request:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or use the direct Rating API URL without the `/rating` prefix).
+- `<feedback-id>`: UUID of an existing feedback record (for example, `0193f1a3-2c9d-7a4b-8e12-3456789abcde`).
+- `<admin-access-token>`: Entra ID JWT bearer token with role `admin` and scopes `rating_read` and `rating_write`.
 
-```ts delete-feedback.ts
-const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
-const feedbackId = "22222222-2222-2222-2222-222222222222";
-const response = await fetch(`${baseUrl}/api/v1/feedbacks/${feedbackId}`, {
-	method: "DELETE",
-});
+Expected response (`204 No Content`):
 
-if (response.status === 404) {
-	throw new Error("Feedback was not found");
-}
-if (!response.ok) {
-	throw new Error(`DeleteFeedback failed with ${response.status}`);
-}
+<CodeGroup>
+
+```text
+HTTP/1.1 204 No Content
 ```
 
 </CodeGroup>
 
-### 2. Handle a missing feedback record
+## Missing feedback response (`404 Not Found`)
 
-If the UUID does not identify an existing feedback record, the service returns `404 Not Found`.
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
-	"title": "Not Found",
-	"status": 404
+	"detail": "The requested resource was not found."
 }
 ```
 

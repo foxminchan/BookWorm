@@ -1,89 +1,42 @@
 ---
-summary: Cancel a New Order with an idempotent request.
+summary: Usage examples for Cancel order.
 ---
 
-## 1. Context & Problem
+## Cancel an order through API Gateway
 
-Customers or internal support flows sometimes need to cancel an active order shortly after placement. Because network connections and client applications can time out or retry automatically, sending a cancellation request without safeguards could cause confusion or inconsistent error handling. Teams integrating with Order management need a clear example showing how to request cancellation safely and interpret the response.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Safe retries without duplicate side effects**: Attaching a unique request tracking identifier guarantees a retried cancellation is handled once rather than causing repeated state transitions.
-- **Immediate confirmation for clients**: Returning the full updated order summary lets storefronts or support tools immediately display the cancelled status, total, and items without making a second lookup.
-- **Protected customer privacy**: Treating missing orders and unauthorized orders identically prevents callers from probing whether another customer's order exists.
-
-## 3. How It Works
-
-1. The caller authenticates and specifies the target order's unique identifier along with a unique request tracking identifier to protect against duplicate submissions. No additional request details are required.
-2. The system verifies that the order exists within the caller's permitted access scope and is eligible for cancellation.
-3. On success, the order status changes to **Cancelled**, and the caller receives the updated order summary—including the order identifier, order date, total amount, updated status, and line items (identifier, quantity, unit price, and book title).
-4. If the order does not exist or the caller is not permitted to access it, the system reports that the order could not be found.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Client-managed request tracking**: Requiring callers to supply and reuse a unique request identifier makes retries safe, though client implementations must reuse the same identifier when retrying a failed network call and generate a fresh one for any new action.
-- **Minimal cancellation input**: Omitting a request payload simplifies client integration, at the trade-off of not capturing a customer cancellation reason directly within this operation.
-- **Uniform not-found outcome**: Returning the same not-found response for both nonexistent and inaccessible orders improves security, though operational troubleshooting requires checking authorization logs separately.
-
-## 5. Technical Reference
-
-Provide the Order UUID in the `{orderId}` path parameter and a required `x-request-id` idempotency header. The operation has no request body.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request PATCH "$BASE_URL/api/v1/orders/44444444-44444444-4444-4444-4444-444444444444/cancel" \
+```bash
+curl --request PATCH "https://<gateway-host>/ordering/api/v1/orders/<order-id>/cancel" \
   --header "Authorization: Bearer <access-token>" \
-  --header "x-request-id: cancel-order-2026-001"
+  --header "x-request-id: <request-id>"
 ```
 
 </CodeGroup>
 
-The same request from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-host>`: API Gateway hostname (or `localhost:7203` with `/api/v1/orders/<order-id>/cancel` when calling Ordering API directly).
+- `<order-id>`: UUID of the order in `New` status.
+- `<access-token>`: Entra ID JWT with role `customer` or `admin` and scopes `ordering_read` and `ordering_write`.
+- `<request-id>`: Unique client-generated idempotency key (for example, a UUID v7).
 
-```ts cancel-order.ts
-const baseUrl = "https://api.example.com";
-const accessToken = "<access-token>";
-const orderId = "44444444-4444-4444-4444-444444444444";
-const response = await fetch(`${baseUrl}/api/v1/orders/${orderId}/cancel`, {
-	method: "PATCH",
-	headers: {
-		Authorization: `Bearer ${accessToken}`,
-		"x-request-id": "cancel-order-2026-001",
-	},
-});
+Expected response (`200 OK`):
 
-if (response.status === 404) {
-	throw new Error("Order was not found or is not accessible");
-}
-if (!response.ok) {
-	throw new Error(`CancelOrder failed with ${response.status}`);
-}
-
-const order = await response.json();
-console.log(order);
-```
-
-</CodeGroup>
-
-`200 OK` returns the updated Order details:
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
-	"id": "44444444-4444-4444-4444-444444444444",
-	"date": "2026-11-03T10:00:00Z",
+	"id": "0193f1a2-1111-7d8e-9f01-23456789abcd",
+	"date": "2026-11-25T10:00:00Z",
 	"total": 33.98,
 	"status": "Cancelled",
 	"items": [
 		{
-			"id": "55555555-5555-5555-5555-555555555555",
+			"id": "0193f1a2-5555-7d8e-9f01-23456789abcd",
 			"quantity": 2,
 			"price": 16.99,
-			"name": "Example book"
+			"name": null
 		}
 	]
 }

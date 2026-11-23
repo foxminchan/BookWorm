@@ -1,0 +1,10 @@
+flowchart LR
+	book["Book Agent\n(book)"]
+	researcher["Book Recommendation Researcher\n(Delegated Subagent)"]
+	mcp["MCP Tools\n(Streamable HTTP /mcp)"]
+	presidio["Presidio\n(Inherited PII Middleware)"]
+
+	book --> |"Tool: delegate_book_recommendation_researcher"| researcher
+	researcher --> |"MCP: search_catalog / get_book / list_*"| mcp
+	researcher --> |"HTTP Middleware: AnalyzeText / AnonymizeText"| presidio
+	researcher -->|"Evidence-backed shortlist + Book IDs"| book

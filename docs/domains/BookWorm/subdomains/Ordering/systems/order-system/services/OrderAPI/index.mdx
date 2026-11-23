@@ -124,110 +124,110 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-## 1. Context & Problem
+Ordering API (`ordering`) is the system of record in the Ordering bounded context for Buyer profiles, accepted Orders, purchase-time price snapshots, and Order lifecycle statuses (`New`, `Completed`, `Cancelled`). It exposes authenticated HTTP `v1` endpoints for Commerce and Backoffice (including Server-Sent Events (SSE) dashboard streaming), calls Basket API and Catalog API over gRPC during checkout and reporting, and coordinates post-checkout workflows with Finance over Kafka.
 
-In an online bookstore, customers need a reliable way to maintain their buyer profile, convert a shopping basket into an accepted order, and track order progress through fulfillment or cancellation. At the same time, business and finance teams need accurate purchase records captured at the exact price agreed to at checkout, clear audit history, and live operational summaries.
+## Overview
 
-Order API is the [[system|order-system]]'s authenticated service for maintaining [[entity|buyer]] profiles and accepted [[entity|order]]s. It coordinates checkout with the [[domain|shopping]] and [[domain|catalog]] domains while remaining the single source of truth for order data and business status.
+| Property                       | Value                                                                                                                                                                                                                      |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                      | Ordering bounded context (`BookWorm.Ordering`)                                                                                                                                                                             |
+| **Aspire resource ID**         | `ordering`                                                                                                                                                                                                                 |
+| **Source**                     | `src/Services/Ordering/BookWorm.Ordering`                                                                                                                                                                                  |
+| **Gateway path & local ports** | Gateway `/ordering/api/v1/*`; local HTTP `5244`, HTTPS `7203`                                                                                                                                                              |
+| **Protocols**                  | HTTP REST + SSE (`ApiVersions.V1`), gRPC clients → Basket & Catalog, Kafka + Wolverine                                                                                                                                     |
+| **Persistence & caching**      | PostgreSQL (`orderingdb`, EF Core + Marten event store w/ Async Daemon `DaemonLockId = 44444` + Wolverine outbox `wolverine` schema), Redis (`order-cache`: FusionCache, `IRequestManager` idempotency, distributed locks) |
+| **Authentication**             | Microsoft Entra ID JWT — `customer` or `admin` roles + `ordering_read`/`ordering_write`; Backoffice dashboard also requires `admin` + `catalog_read`; `HMAC__Key` for log redaction                                        |
 
-## 2. Business Value
+## Runtime architecture
 
-- **Financial accuracy at checkout:** Captures item quantities and active prices (preferring sale prices over regular prices when available) at the moment an order is placed so later catalog price changes never alter an accepted purchase.
-- **Strong customer privacy and governance:** Restricts customers to viewing their own profiles and orders, while granting administrators the visibility needed for customer support, auditing, and reporting.
-- **Protection against duplicate actions:** Guards order creation, completion, and cancellation against accidental repeat submissions and concurrent updates.
-- **Decoupled finance coordination:** Announces checkout and order status changes asynchronously to Finance and handles basket-cleanup outcomes without delaying customer checkout.
-- **Operational visibility:** Delivers store-wide order metrics, daily trends, category summaries, and live refreshed dashboard snapshots for back-office teams.
+Ordering API serves Commerce and Backoffice via the API Gateway, enriches checkouts from Basket API and Catalog API over gRPC, persists relational and Marten event-sourced state in PostgreSQL, uses Redis for buyer write locks and idempotency markers, and exchanges lifecycle messages with Finance over Kafka.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/OrderAPI-diagram-1.mmd" />
 
-Order API organizes its capabilities around five core responsibilities:
+## HTTP API (`ApiVersions.V1`)
 
-| Responsibility       | Description                                                                                                          |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Buyer profiles       | Create and retrieve Buyer profiles, update a Buyer's address, and provide administrative Buyer listing and deletion. |
-| Order lifecycle      | Create Orders, return Order details and history, and complete or cancel eligible Orders.                             |
-| Checkout snapshot    | Read the current basket and Catalog books, then preserve each item's selected price and quantity on the new Order.   |
-| Finance coordination | Publish checkout and Order status integration events and handle the basket-cleanup outcomes returned by Finance.     |
-| Back-office insight  | Provide an administrative dashboard and live refreshed dashboard snapshots.                                          |
+All routes require Microsoft Entra ID authentication (`ordering_read`/`ordering_write`), apply `PerUserRateLimit`, and are reachable through the API Gateway under `/ordering/api/v1/*`.
 
-### Key Business Rules & Behavior
+### Order endpoints
 
-1. **Identity ownership:** The authenticated customer's identity determines the Buyer; callers cannot place an order under another Buyer's identity.
-2. **Checkout validation:** During order creation, the service reads the customer's current basket and verifies all requested books against the catalog. If any book is missing from the catalog response, order creation is prevented.
-3. **Immutable purchase snapshot:** Each order starts in **New** status with its total calculated from the captured quantities and active prices (sale price when available, otherwise regular price). Later catalog price changes do not rewrite the accepted purchase, though reading order details may display current book titles for presentation.
-4. **Controlled status transitions:** Only a **New** order can transition to **Completed** or **Cancelled**. Requests to complete or cancel an order in any other status are rejected by the lifecycle rules. Soft-deleting an order is an administrative action that remains separate from business status.
-5. **Scoped availability:** Customers can only read their own orders and profile. Requests for missing orders, or orders outside a caller's permitted scope, are treated as unavailable.
-6. **Finance cleanup coordination:** When Finance reports that post-checkout basket cleanup succeeded, the outcome is logged without altering the order's status. When Finance reports that basket cleanup failed, the matching order (if it still exists) is soft-deleted without changing its business status.
+| Method   | Route (direct)                      | Access                           | Idempotency / notes                                                                                                   |
+| :------- | :---------------------------------- | :------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `POST`   | `/api/v1/orders`                    | `customer`                       | [[command\|CreateOrder]] — Requires `x-request-id` header; returns `201 Created` with Order ID and location           |
+| `GET`    | `/api/v1/orders`                    | `customer` (own) / `admin` (all) | [[query\|ListOrders]] — Paginated (default page `1`, size `20`); optional `Status` and `BuyerId` filters              |
+| `GET`    | `/api/v1/orders/{id}`               | `customer` (own) / `admin` (all) | [[query\|GetOrder]] — Enriches display titles from Catalog while keeping locked checkout prices                       |
+| `GET`    | `/api/v1/orders/{id}/history`       | Authenticated (scoped)           | Returns chronological Marten event-stream history for the Order                                                       |
+| `GET`    | `/api/v1/orders/{id}/summary`       | `admin`                          | Reconstructs event-sourced `OrderSummary` (supports `version` and `at` time-travel); returns stream version in `ETag` |
+| `PATCH`  | `/api/v1/orders/{orderId}/complete` | `admin` / authorized             | [[command\|CompleteOrder]] — Requires `x-request-id`; transitions `New` → `Completed` only                            |
+| `PATCH`  | `/api/v1/orders/{orderId}/cancel`   | `customer` / `admin`             | [[command\|CancelOrder]] — Requires `x-request-id`; transitions `New` → `Cancelled` only                              |
+| `DELETE` | `/api/v1/orders/{id}`               | `admin`                          | [[command\|DeleteOrder]] — Soft-deletes the Order without altering its business status                                |
 
-## 4. Trade-offs & Lessons Learned
+### Buyer endpoints
 
-- **Concurrency lock vs. duplicate-request protection:** A buyer-scoped lock serializes the order write so simultaneous checkouts for the same customer do not collide, but it does not replace explicit duplicate-request protection on create, complete, and cancel actions.
-- **Targeted lock scope:** The buyer-scoped lock covers the order write itself rather than the earlier basket and catalog reads, keeping checkout responsive while protecting persistence.
-- **Early duplicate markers:** Duplicate-request markers are recorded before an action finishes running. This blocks repeat submissions within the active window, but a marker alone is not proof that the earlier request succeeded.
-- **Live titles vs. locked prices:** Enriching order reads with current book titles keeps customer-facing displays up to date without compromising the locked purchase-time prices and quantities.
-- **Clear domain boundaries:** Basket remains the source of mutable pre-checkout state, Catalog remains the source of current book details and prices, and Finance coordinates post-checkout basket cleanup without owning order data or status.
+| Method   | Route (direct)           | Access               | Purpose                                                                                    |
+| :------- | :----------------------- | :------------------- | :----------------------------------------------------------------------------------------- |
+| `POST`   | `/api/v1/buyers`         | `customer`           | [[command\|CreateBuyer]] — Creates Buyer profile bound to authenticated customer identity  |
+| `GET`    | `/api/v1/buyers/me`      | `customer` / `admin` | [[query\|GetBuyer]] — Retrieves own Buyer profile (administrators may query another Buyer) |
+| `PATCH`  | `/api/v1/buyers/address` | `customer`           | [[command\|UpdateAddress]] — Updates current Buyer's shipping address                      |
+| `GET`    | `/api/v1/buyers`         | `admin`              | [[query\|ListBuyers]] — Lists Buyer profiles                                               |
+| `DELETE` | `/api/v1/buyers/{id}`    | `admin`              | [[command\|DeleteBuyer]] — Deletes a Buyer profile                                         |
 
-## 5. Technical Reference
+### Backoffice dashboard endpoints
 
-### HTTP API
+| Method | Route (direct)             | Access                   | Behavior                                                                                                                                         |
+| :----- | :------------------------- | :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/v1/dashboard`        | `admin` + `catalog_read` | Returns store-wide totals, 7 UTC daily buckets, category summaries (via Catalog `GetDashboard` gRPC), and 5 newest Orders; cached `15s` in Redis |
+| `GET`  | `/api/v1/dashboard/stream` | `admin` + `catalog_read` | Streams an initial SSE snapshot followed by refreshes every `15s`; terminates on token expiry or after `5` minutes                               |
 
-All routes are version 1, require authentication, and use per-user rate limiting. The `openapi-v1.yaml` specification documents the Order and Buyer routes listed here.
+### Error responses
 
-| Method   | Endpoint                            | Purpose                                                                  | Access and behavior                                                                                            |
-| -------- | ----------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `POST`   | `/api/v1/orders`                    | Create an Order from the current Buyer's basket.                         | Requires `x-request-id` as an idempotency key; returns `201 Created` with the Order ID and retrieval location. |
-| `GET`    | `/api/v1/orders/{id}`               | Retrieve Order details.                                                  | Customers can retrieve their own Orders; administrators can retrieve any Order.                                |
-| `GET`    | `/api/v1/orders/{id}/history`       | Retrieve chronological event-stream history for an Order.                | Authenticated callers can inspect the Order's event history.                                                   |
-| `GET`    | `/api/v1/orders/{id}/summary`       | Reconstruct the event-sourced Order summary (supports `version` / `at`). | Administrator-only; returns the stream version as an `ETag` header.                                            |
-| `GET`    | `/api/v1/orders`                    | List Orders with pagination and optional `Status` and `BuyerId` filters. | Defaults to page 1 with 20 items. Non-administrators are restricted to their own Buyer ID.                     |
-| `PATCH`  | `/api/v1/orders/{orderId}/complete` | Complete an Order.                                                       | Requires `x-request-id`; only a New Order can transition to Completed.                                         |
-| `PATCH`  | `/api/v1/orders/{orderId}/cancel`   | Cancel an Order.                                                         | Requires `x-request-id`; only a New Order can transition to Cancelled.                                         |
-| `DELETE` | `/api/v1/orders/{id}`               | Soft-delete an Order.                                                    | Administrator-only; does not change the Order's business status.                                               |
-| `POST`   | `/api/v1/buyers`                    | Create a Buyer profile.                                                  | The Buyer identity is associated with the authenticated customer.                                              |
-| `GET`    | `/api/v1/buyers/me`                 | Retrieve a Buyer profile.                                                | Customers retrieve their own profile; administrators may retrieve another Buyer.                               |
-| `PATCH`  | `/api/v1/buyers/address`            | Update a Buyer's address.                                                | Updates the current Buyer's profile.                                                                           |
-| `GET`    | `/api/v1/buyers`                    | List Buyer profiles.                                                     | Administrative operation.                                                                                      |
-| `DELETE` | `/api/v1/buyers/{id}`               | Delete a Buyer profile.                                                  | Administrative operation.                                                                                      |
+| Status                  | Condition                                                                                                         | Recovery behavior                                                    |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
+| `400 Bad Request`       | Missing `x-request-id`, validation error, missing book in Catalog, or invalid status transition (non-`New` order) | Fix request or verify order status; do not retry unchanged           |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID JWT                                                                         | Re-authenticate and retry                                            |
+| `403 Forbidden`         | Caller lacks required role (`admin` / `customer`) or scopes (`ordering_read`, `ordering_write`, `catalog_read`)   | Request token with required role and scopes                          |
+| `404 Not Found`         | Order or Buyer missing or outside caller's permitted scope                                                        | Verify resource ID and ownership                                     |
+| `409 Conflict`          | Duplicate `x-request-id` within the 1-hour Redis idempotency window or concurrent buyer checkout lock contention  | Inspect existing order status before generating a new `x-request-id` |
+| `429 Too Many Requests` | Global or `PerUserRateLimit` exceeded (`Retry-After` header returned)                                             | Wait for `Retry-After` interval and retry                            |
 
-Order reads and administrative deletes return `404 Not Found` when the Order does not exist or, for reads, is outside the caller's permitted scope. Completing or cancelling an Order in a status other than New is rejected by the domain lifecycle rules. The attached OpenAPI document does not currently include the dashboard routes.
+## Domain invariants, locking, and persistence
 
-### Back-office Dashboard Routes
+- **Locked checkout prices:** Every new Order begins in `New` status with line totals calculated from active Catalog prices (sale price when set, otherwise regular price). Later Catalog price edits never rewrite accepted Orders.
+- **Buyer-scoped write lock:** Redis serializes the Order write per Buyer (after Basket and Catalog gRPC reads) to prevent colliding concurrent checkouts without blocking reads.
+- **Early idempotency markers:** `IRequestManager` writes `x-request-id` markers in Redis for `1` hour _before_ handler completion; a recorded marker blocks duplicate submissions but does not by itself prove the first request succeeded.
+- **Marten event store:** Order domain events append to Marten streams in `orderingdb`, driving the live `OrderSummary` aggregation and asynchronous `OrderSummaryView` projection (`DaemonLockId = 44444`).
 
-- `GET /api/v1/dashboard` returns store-wide totals, seven UTC daily buckets, categories, and the five newest Orders. It requires an administrator role and the Catalog read scope.
-- `GET /api/v1/dashboard/stream` sends an initial server-sent event dashboard snapshot followed by refreshed snapshots every 15 seconds. The stream ends when the caller's token expires or after five minutes, whichever comes first. It has the same administrator and Catalog read-scope requirements.
+## Outbound gRPC calls
 
-### Service-to-service gRPC Calls
+| Query                       | Target service           | Auth mode                    | Purpose                                                                         |
+| :-------------------------- | :----------------------- | :--------------------------- | :------------------------------------------------------------------------------ |
+| [[query\|GetBasketGrpc]]    | [[service\|basket-api]]  | OBO token exchange           | Reads authenticated customer's basket items during checkout                     |
+| [[query\|GetBooksGrpc]]     | [[service\|catalog-api]] | Anonymous internal           | Batch-fetches active checkout prices and display titles (cached in Redis)       |
+| [[query\|GetDashboardGrpc]] | [[service\|catalog-api]] | OBO token exchange (`admin`) | Retrieves Catalog totals and category counts for Backoffice dashboard           |
+| [[query\|GetBookGrpc]]      | [[service\|catalog-api]] | Anonymous internal           | Registered `BookService.GetBookByIdAsync` helper; not called by active features |
 
-Order API produces the following synchronous queries; Basket API and Catalog API consume them. These calls do not travel through the integration-event channels.
+## Kafka messaging contracts
 
-| Query                       | Receiving service        | Use                                                                                                      |
-| --------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------- |
-| [[query\|GetBasketGrpc]]    | [[service\|basket-api]]  | Read the authenticated customer's basket during Order creation.                                          |
-| [[query\|GetBooksGrpc]]     | [[service\|catalog-api]] | Resolve checkout prices and enrich Order details with current book names; book batches are cached.       |
-| [[query\|GetBookGrpc]]      | [[service\|catalog-api]] | Implemented by the registered `BookService.GetBookByIdAsync` client helper; no current feature calls it. |
-| [[query\|GetDashboardGrpc]] | [[service\|catalog-api]] | Retrieve Catalog totals and category counts when refreshing the cached administrative dashboard.         |
+Wolverine persists outbound/inbound envelopes in `orderingdb` (`wolverine` schema), partitions by `OrderId`, and routes exhausted retries to [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]].
 
-The Basket client and the named Catalog dashboard client exchange the caller's token for the target service. Catalog book lookups use a separate client for the anonymous read methods.
+| Direction     | Message                                                 | Kafka topic                                               | Peer                             | Behavior                                                                          |
+| :------------ | :------------------------------------------------------ | :-------------------------------------------------------- | :------------------------------- | :-------------------------------------------------------------------------------- |
+| **Publishes** | [[event\|UserCheckedOutIntegrationEvent]]               | `bookworm.{env}.ordering.user-checked-out`                | [[service\|order-orchestration]] | Starts post-checkout Finance orchestration                                        |
+| **Publishes** | [[event\|OrderStatusChangedToCompleteIntegrationEvent]] | `bookworm.{env}.ordering.order-status-change-to-complete` | [[service\|order-orchestration]] | Triggers completion notification and closes workflow                              |
+| **Publishes** | [[event\|OrderStatusChangedToCancelIntegrationEvent]]   | `bookworm.{env}.ordering.order-status-change-to-cancel`   | [[service\|order-orchestration]] | Triggers cancellation notification and closes workflow                            |
+| **Consumes**  | [[command\|DeleteBasketCompleteCommand]]                | `bookworm.{env}.finance.delete-basket-complete`           | [[service\|order-orchestration]] | Logs successful basket cleanup; does not change Order status                      |
+| **Consumes**  | [[command\|DeleteBasketFailedCommand]]                  | `bookworm.{env}.finance.delete-basket-failed`             | [[service\|order-orchestration]] | Soft-deletes the matching Order (if present) without altering its business status |
 
-### Integration Messaging
+## Messages
 
-The service maps Order domain events to shared integration messages for Finance:
+<MessageTable format="all" limit={10} />
 
-- [[event|UserCheckedOutIntegrationEvent]] is published on [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] after an Order is placed.
-- [[event|OrderStatusChangedToCompleteIntegrationEvent]] is published on [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] after completion.
-- [[event|OrderStatusChangedToCancelIntegrationEvent]] is published on [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] after cancellation.
+## Related documentation
 
-The service also handles Finance's basket-cleanup outcomes:
-
-- [[command|DeleteBasketCompleteCommand]] is logged and does not change Order status.
-- [[command|DeleteBasketFailedCommand]] soft-deletes the matching Order, if it still exists, without changing its business status. Finance saga progress and Order status are separate lifecycles.
-
-### Persistence and Caching
-
-Buyer, Order, and Order Item records are persisted through the service's PostgreSQL-backed data context in [[container|order-database]]. The same database hosts Marten Order event streams and projections and Wolverine durable message storage. Order domain events update the `OrderSummary` and asynchronous `OrderSummaryView` projections and are mapped to the integration messages described above.
-
-[[container|order-cache]] documents Ordering's use of shared Redis for Buyer-scoped Order creation locks, one-hour idempotency request markers, cached Catalog book batches, and 15-second dashboard responses. The lock covers the Order write, not the earlier basket and Catalog reads. Idempotency markers are written before endpoint execution and are not proof that a request succeeded.
-
-### Architecture
+- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
+- [[service|order-orchestration]] — Downstream Finance Durable Task saga.
+- [[container|order-database]] — PostgreSQL relational, Marten, and Wolverine storage.
+- [[container|order-cache]] — Redis locks, idempotency, and dashboard cache.
+- Ordering consistency and ownership — Engineering invariants and boundaries.
+- How to resolve an order creation conflict or failure — Operational triage runbook.
 
 <NodeGraph />

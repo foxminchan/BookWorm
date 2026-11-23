@@ -18,57 +18,63 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`ListBuyers` queries **Ordering API** (`GET /api/v1/buyers`) to return a paginated slice of registered buyer profiles (`BuyerDto[]`) for store administrators. The endpoint requires the Microsoft Entra ID `admin` authorization policy and emits total item counts and navigation URIs in HTTP response headers.
 
-Support teams, administrators, and downstream integrations need a reliable way to browse customer [[entity|buyer]] profiles registered in the Ordering domain without loading the entire customer directory at once.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                                |
+| :-------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                              |
+| **Source**            | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/List/ListBuyersEndpoint.cs`, `ListBuyersQuery.cs`, `ListBuyersValidator.cs` |
+| **Protocol / format** | HTTP `GET /api/v1/buyers` (via API Gateway: `GET /ordering/api/v1/buyers`), `ApiVersions.V1`, JSON (`application/json`)              |
+| **Authentication**    | Microsoft Entra ID JWT required — `admin` policy (`admin` role; scopes `ordering_read`, `ordering_write`)                            |
+| **Rate limiting**     | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters        |
+| **Backing store**     | PostgreSQL (`orderingdb`, EF Core)                                                                                                   |
+| **Contract version**  | `1.0.0`                                                                                                                              |
 
-- **Scalable directory browsing**: Controlled paging keeps customer lookups fast and responsive as the buyer base grows.
-- **Controlled access**: Restricting access to authorized callers protects customer profile details such as names and delivery addresses.
-- **Consistent profile view**: Provides a single, predictable summary of each buyer's identifier, name, and address.
+## Parameters and fields
 
-## 3. How It Works
+### Query parameters
 
-1. An authorized caller requests a page of [[entity|buyer]] profiles by specifying which page to view and how many profiles to include per page.
-2. If paging preferences are omitted, the service applies standard default page settings.
-3. Ordering retrieves the matching slice of [[entity|buyer]] records and returns each buyer's identifier, name, and address.
+| Name        | Type      | Required | Default | Constraints                   | Description                               |
+| :---------- | :-------- | :------- | :------ | :---------------------------- | :---------------------------------------- |
+| `PageIndex` | `integer` | No       | `1`     | `> 0` (`ListBuyersValidator`) | 1-based page number to retrieve           |
+| `PageSize`  | `integer` | No       | `20`    | `> 0` (`ListBuyersValidator`) | Maximum number of buyer profiles per page |
 
-## 4. Trade-offs & Lessons Learned
+### Response headers
 
-- **Flat list without paging metadata**: Returning only the requested page of profiles keeps the response lightweight, though callers must inspect the number of returned items rather than relying on a total-count wrapper to determine whether more pages exist.
-- **No search or filter parameters**: Keeping the query focused on simple paged listing simplifies behavior and performance, while requiring callers to browse pages sequentially rather than filtering by name or address directly.
-- **Nullable profile fields**: Buyer names and addresses may be absent on some profiles, so consumers must handle missing text values gracefully in user interfaces and reports.
+`ListBuyersEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
 
-## 5. Technical Reference
+| Header             | Format                                    | Description                                                                                 |
+| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------ |
+| `Pagination-Count` | Integer string (for example, `128`)       | Total number of buyer profiles across all pages                                             |
+| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations |
 
-- **Endpoint**: `GET /api/v1/buyers`
-- **Status codes**: `200`
-- **Entities**: [[entity|buyer]]
+### Response schema (`BuyerDto[]`)
+
+A `200 OK` response body serializes `PagedResult<BuyerDto>` as a JSON array of `BuyerDto` objects.
+
+| Field        | Type             | Required | Constraints | Description                                    |
+| :----------- | :--------------- | :------- | :---------- | :--------------------------------------------- |
+| `[].id`      | `string`         | Yes      | UUID        | Unique identifier of the buyer profile         |
+| `[].name`    | `string \| null` | Yes      | Nullable    | Buyer display name (`null` when unset)         |
+| `[].address` | `string \| null` | Yes      | Nullable    | Formatted shipping address (`null` when unset) |
+
+## Error responses
+
+| Code / status           | Condition                                                                                                                    | Recovery behavior                                                  |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| `400 Bad Request`       | `PageIndex <= 0` or `PageSize <= 0`, or non-integer paging value (`application/problem+json` `HttpValidationProblemDetails`) | Fix paging parameters to positive integers; do not retry unchanged |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                                           | Re-authenticate and retry                                          |
+| `403 Forbidden`         | Authenticated caller does not satisfy the `admin` authorization policy                                                       | Authenticate with an administrator account                         |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                  | Wait for the `Retry-After` duration before retrying                |
+
+## Related documentation
+
+- [[service|order-api]] — Service overview, PostgreSQL persistence, and endpoints.
+- [[query|GetBuyer]] — Retrieve a single buyer profile.
+- [[entity|buyer]] — Domain model for buyer profiles.
 
 <NodeGraph />
-
-### Query parameters and response
-
-| Parameter   | Description                 | Default |
-| ----------- | --------------------------- | ------- |
-| `PageIndex` | Page number to return.      | `1`     |
-| `PageSize`  | Number of results per page. | `20`    |
-
-The OpenAPI contract documents the `200 OK` response as a JSON array of
-`BuyerDto` values containing ID, name, and address.
-
-### Query using CURL
-
-<CodeGroup dropdown>
-
-```sh list-buyers.sh
-curl -H "Authorization: Bearer <access-token>" \
-  "https://api.example.com/api/v1/buyers?PageIndex=1&PageSize=20"
-```
-
-</CodeGroup>
-
-### Schema
 
 <SchemaViewer file="schema.json" title="BuyerDto array JSON Schema" maxHeight="500" search="true" />

@@ -1,85 +1,12 @@
 ---
-summary: Show how Finance starts checkout coordination and publishes the shared order-placement command.
+summary: Usage examples for Place order.
 ---
 
-## 1. Context & Problem
+## CloudEvents `data` payload (`application/json`)
 
-When a customer finishes checking out and an order is placed, multiple parts of the business need to react right away: the customer's shopping basket needs to be cleared, and a confirmation email needs to be sent. If checkout had to coordinate directly with each downstream team one by one, changes in one area would risk breaking the others. Instead, Finance coordinates this handoff by issuing one shared order-placement instruction that interested capabilities can act on independently.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Coordinated post-checkout experience**: One shared order-placement instruction triggers both customer confirmation emails and basket cleanup after checkout.
-- **Resilient recovery when delays occur**: If checkout coordination takes too long to confirm progress, Finance can reissue the instruction so downstream follow-up tasks are not silently dropped.
-- **Clear service boundaries**: The notification capability focuses solely on customer communication and never creates or alters order records, reducing unintended side effects.
-
-## 3. How It Works
-
-1. After Ordering records a new order and announces that a customer has checked out, Finance stores the checkout details and starts coordinating follow-up actions.
-2. Finance sends a shared order-placement instruction intended for both Basket (to clean up the cart) and Notification (to email the customer), while also setting a retry timer in case coordination stalls.
-3. When Notification receives the instruction, it treats it strictly as a signal to send a new-order confirmation email—not as a request to create or place the order.
-4. If the customer's email address is blank or missing, Notification skips sending an email. Otherwise, it prepares the new-order email message, records an outbound mail entry, and hands the message off to the mail delivery server.
-5. Notification does not send a delivery-status update back to Finance, and mail-server handoff only confirms the server accepted the request rather than guaranteeing inbox delivery.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Shared instruction vs. separate messages**: Using one shared order-placement instruction for both Basket cleanup and Notification avoids extra coordination messages, though Notification receives a basket/buyer reference field that it does not need.
-- **Timeout retries can cause repeat emails**: Because Finance may reissue the instruction when a timeout occurs, Notification can process the same order again and create additional outbound mail records.
-- **Submission is not final delivery proof**: Handing off an email to the mail server is treated as completion by Notification with no return status event, so support teams should not equate mail-server acceptance with confirmed customer inbox delivery.
-
-## 5. Technical Reference
-
-### Start order coordination
-
-<Columns cols={2}>
-
-<Column>
-
-Finance consumes [[event|UserCheckedOutIntegrationEvent]] after Ordering places
-an Order. Its saga stores the checkout details and publishes
-[[command|PlaceOrderCommand]] to Basket and Notification. Notification uses the
-shared command to send a new-order email; Basket uses it for cleanup. A Finance
-timeout can reissue the command, so repeated delivery can create additional
-email outbox records.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp OrderSaga.cs
-var messages = new OutgoingMessages
-{
-    new PlaceOrderCommand(
-        saga.BasketId,
-        saga.FullName,
-        saga.Email,
-        saga.OrderId,
-        saga.EffectiveTotalMoney
-    ),
-    new PlaceOrderTimeout(@event.OrderId, settings.MaxRetryTimeout),
-};
-
-return (saga, messages);
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Command payload
-
-This is the camelCase message data inside BookWorm's CloudEvents-compatible
-envelope; the transport envelope is omitted. `basketId` currently contains the
-Order's Buyer ID. Notification does not use this field.
-
-<CodeGroup dropdown>
-
-```json new-order-command.json
+```json
 {
 	"id": "019a1c00-0000-7000-8000-000000000001",
 	"creationDate": "2026-11-01T14:00:00Z",
@@ -93,10 +20,20 @@ Order's Buyer ID. Notification does not use this field.
 
 </CodeGroup>
 
-### Notification handling
+## Finance Durable Functions activity publisher
 
-Notification maps the command to the new-order status for the email template;
-it does not create or place the Order. A blank email skips email work. For a
-nonblank email, Notification renders the message, persists an outbox record,
-and submits it through SMTP. Successful SMTP submission is not confirmation of
-delivery, and the command has no notification-result event.
+<CodeGroup>
+
+```csharp
+// src/Services/Finance/BookWorm.Finance/Features/Orders/PlaceOrder/PublishPlaceOrderActivity.cs
+public sealed class PublishPlaceOrderActivity(IMessageBus bus)
+{
+    [Function(nameof(PublishPlaceOrderActivity))]
+    public Task RunAsync([ActivityTrigger] PlaceOrderCommand command)
+    {
+        return bus.PublishAsync(command).AsTask();
+    }
+}
+```
+
+</CodeGroup>

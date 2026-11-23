@@ -23,55 +23,68 @@ model:
   version: "2025-11-18"
 ---
 
-## 1. Context & Problem
+QA Agent (`qa`) is the read-only customer support and store-policy specialist hosted in [[service|chat-api]]. Built with Microsoft Agent Framework (`1.28.0`), it answers non-book-specific operational questions using the `store-policies` skill context, never mutates business records, and hands book-specific follow-ups to [[agent|book-agent]].
 
-Shoppers frequently have questions about bookstore operations—such as shipping timelines, return eligibility, billing rules, account access, or general store services. Sending those operational questions through a book discovery assistant mixes policy guidance with product search, while allowing an AI assistant to guess missing policy rules or modify order records introduces serious customer-service and compliance risks.
+## Overview
 
-The QA Agent addresses this by serving as BookWorm's dedicated, read-only support specialist grounded strictly in supplied store-policy guidance.
+| Property             | Value                                                                                                                                                                                                                |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**            | Conversational bounded context — [[service\|chat-api]] (`chatting`)                                                                                                                                                  |
+| **Agent name / DID** | `qa` (`did:mesh:bookworm:qa`)                                                                                                                                                                                        |
+| **Source**           | `src/Services/Chat/BookWorm.Chat/Agents/CustomerSupport/qa-agent.yaml`, `src/Services/Chat/BookWorm.Chat/Agents/CustomerSupport/QAAgentRegistration.cs`, `src/Services/Chat/BookWorm.Chat/Policies/chat-agents.yaml` |
+| **Model deployment** | Shared Microsoft Foundry `chat` deployment (`FoundryModel.Microsoft.ModelRouter`)                                                                                                                                    |
+| **Skill context**    | `Skills/store-policies` (`AgentSkillsProvider`)                                                                                                                                                                      |
+| **Workflow entry**   | Routed by Microsoft-Decision-1 (`RouteTarget.QA`) or handed off from Book Agent (`handoff_to_qa`)                                                                                                                    |
 
-## 2. Business Value
+## Architecture and workflow boundaries
 
-- **Consistent customer-support answers:** Customers receive clear, uniform guidance on shipping, delivery, returns, refunds, accounts, orders, billing, and bookstore services.
-- **Safe, read-only boundary:** Because the agent cannot change business records, it eliminates the risk of unintended account, basket, or order modifications during chat.
-- **Honest handling of missing information:** When policy details are unavailable, the agent states that gap clearly rather than fabricating promises.
-- **Automatic privacy protection:** Customer questions and support replies are screened and redacted for personal information before reaching the AI model or the user.
+QA Agent executes inside `QAWorkflowExecutor` (`WorkflowRegistration.cs:80-86`), which allows handoffs from QA Agent to Book Agent (`handoff_to_book`) and from Book Agent to Rating Agent or back to QA Agent. QA Agent has no database access, no MCP catalog client, and no account or order mutation tools.
 
-## 3. How It Works
+The diagram shows how QA Agent handles routed support requests using `store-policies`, Presidio PII middleware, and handoffs to Book Agent.
 
-The QA Agent handles store-policy and customer-support questions in a controlled, read-only flow:
+<MermaidFileLoader file="mermaids/qa-agent-diagram-1.mmd" />
 
-1. **Privacy screening:** Every non-empty customer message and assistant reply passes through automated privacy filtering that detects and masks sensitive personal information. If privacy filtering fails, processing stops safely rather than bypassing protection.
-2. **Policy-grounded answers:** Using the store-policy information provided to it, the agent answers questions about delivery, returns, accounts, orders, billing, and store services without altering any business records.
-3. **Clear boundary disclosure:** When requested details are not covered by the supplied policy information, the agent explicitly informs the customer that those details are unavailable.
-4. **Specialist handoff for books:** If a support conversation shifts to book discovery, recommendations, or book-specific questions, the QA Agent hands the request to [[agent|book-agent]].
+## Supported topics and grounding rules
 
-## 4. Trade-offs & Lessons Learned
+Declared in `qa-agent.yaml`:
 
-- **Static policy context vs. live order integration:** Keeping the QA Agent read-only with no direct tools to look up or edit customer accounts and orders dramatically lowers security and operational risk, while meaning order-specific inquiries cannot be resolved directly in chat.
-- **Focused response budget:** Limiting output length and using moderate reasoning keeps answers concise and faithful to official policy wording.
-- **Fail-closed, buffered privacy checks:** Holding streaming output until personal data screening finishes prevents accidental disclosure of sensitive information typed during support chats, trading minor response latency for strong privacy compliance.
+- **Shipping & delivery:** Methods, costs, timeframes, tracking, international shipping, and delays.
+- **Returns & refunds:** Policy rules, procedures, processing times, exchanges, and damaged items.
+- **Account & orders:** Account management, password resets, order tracking/cancellation guidance, billing, and payment rules (read-only guidance; cannot look up or modify live orders).
+- **Store policies:** Privacy, terms, cookies, copyright, and accessibility.
+- **Services & features:** Gift cards, loyalty programs, wishlists, pre-orders, and gift wrapping.
+- **Missing-detail rule:** Never invents policies, prices, or account details; states explicitly when a detail is unavailable and directs the customer to the support channel. Never tailors policy answers based on inferred personal characteristics.
 
-## 5. Technical Reference
+## Runtime settings
 
-### Agent Configuration & Context
+Settings are declared in `qa-agent.yaml`:
 
-- **Skill context:** Receives the `store-policies` skill as context.
-- **Handoffs:** Book-specific requests are handed to [[agent|book-agent]].
-- **Inherited model provider:** The runtime uses the shared chat client; the agent definition does not specify a provider or model (catalog metadata lists `Microsoft` `model-router`, version `2025-11-18`).
+| Setting           | Value    | Rationale                                       |
+| :---------------- | :------- | :---------------------------------------------- |
+| `temperature`     | `0.5`    | Keeps policy explanations consistent and direct |
+| `maxOutputTokens` | `1000`   | Enforces concise support responses              |
+| `reasoningEffort` | `medium` | Balanced reasoning for policy interpretation    |
 
-### Privacy Middleware
+## Middleware and governance rules
 
-- The chat client registers `UsePIIMiddleware(sp)`.
-- Calls [[service|PresidioAPI]] through [[command|AnalyzeText]] for non-empty text and [[command|AnonymizeText]] when PII is detected, replacing detected values with `<PII>`.
-- Filters input and output text, buffering streaming responses before filtering and emitting them; failures propagate rather than bypassing privacy processing.
-- These are middleware HTTP calls, not model-selected tools or brokered messages.
+`QAAgentRegistration.AddQAAgent()` wraps the shared `IChatClient` and applies `WithBookWormGovernance(sp, key)` using `Policies/chat-agents.yaml` (`default_action: deny`):
 
-### Runtime Settings
+| Layer                                | Component / rule                                                 | Behavior                                                                                                                                    |
+| :----------------------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Middleware 1**                     | `UseAGUIClientContext()`                                         | Propagates active AG-UI client context                                                                                                      |
+| **Middleware 2**                     | `UseDecisionToolSelection()`                                     | Filters candidate tools via Microsoft-Decision-1 (`CreateQAAgentToolSelectionOptions()`)                                                    |
+| **Middleware 3**                     | `UsePIIMiddleware(sp)`                                           | Screens input and buffered streaming output via [[service\|PresidioAPI]] (`AnalyzeText` / `AnonymizeText` → `<PII>`); fails closed on error |
+| **Middleware 4**                     | `UseGuardrailMiddleware()`                                       | Enforces prompt and output guardrails                                                                                                       |
+| **Middleware 5**                     | `UseAIContextProviders(CompactionPipelineFactory.CreateLight())` | Applies lightweight history compaction                                                                                                      |
+| **Allow rules (priority 60)**        | `qa-agent-run`, `qa-agent-skills-and-handoff`                    | Permits `agent_run`, `agent_run_streaming`, `load_skill`, `read_skill_resource`, and `handoff_to_book` for `did:mesh:bookworm:qa`           |
+| **Explicit deny rule (priority 70)** | `qa-agent-deny-catalog-tools`                                    | Explicitly denies `search_catalog`, `get_book`, `list_categories`, and `list_authors` as defense-in-depth                                   |
+| **Conversation Guardian**            | `conversation_guardian` & `multi_turn_injection_patterns`        | Detects escalating rhetoric, offensive patterns, handoff loops (`max_conversation_turns: 30`), and multi-turn prompt injection              |
 
-- **Temperature:** `0.5`
-- **Maximum output:** `1,000` tokens
-- **Reasoning effort:** `medium`
+## Related documentation
 
-### Architecture
+- [[service|chat-api]] — Hosting AG-UI server, `chat-workflow` orchestration, and Microsoft-Decision-1 routing.
+- [[agent|book-agent]] — Target specialist for `handoff_to_book` transfers.
+- [[service|PresidioAPI]] — PII analysis and anonymization sidecars invoked by middleware.
+- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
 
 <NodeGraph />

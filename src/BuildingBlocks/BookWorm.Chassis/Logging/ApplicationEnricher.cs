@@ -19,17 +19,19 @@ internal sealed class ApplicationEnricher(
 
         var httpContext = httpContextAccessor.HttpContext;
 
-        if (httpContext is not null)
+        if (httpContext is null)
         {
-            var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
-
-            if (!string.IsNullOrEmpty(userId) && redactorProvider is not null)
-            {
-                userId = redactorProvider.GetRedactor(DataTaxonomy.PIIData).Redact(userId);
-            }
-
-            collector.Add(LoggingConstant.UserId, userId);
+            return;
         }
+
+        var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        if (!string.IsNullOrEmpty(userId) && redactorProvider is not null)
+        {
+            userId = redactorProvider.GetRedactor(DataTaxonomy.PIIData).Redact(userId);
+        }
+
+        collector.Add(LoggingConstant.UserId, userId);
     }
 }
 

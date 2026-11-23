@@ -1,0 +1,21 @@
+flowchart LR
+	browser["User Browser\n(Customer / Admin)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	mfes["Web Microfrontends\n(Storefront, Commerce, Backoffice)"]
+	apis["Backend APIs\n(Catalog, Basket, Ordering,\nRating, Chat, MCP Tools)"]
+	workers["Async Workers\n(Finance, Notification,\nScheduler, Ingestion)"]
+	kafka["Kafka Broker\n(Local / Confluent Cloud)"]
+	entra["Microsoft Entra ID\n(OAuth2 / OIDC / OBO)"]
+	foundry["Microsoft Foundry\n(HTTPS AI APIs)"]
+	smtp["SendGrid / Mailpit\n(SMTP Port 587)"]
+
+	browser -->|"HTTPS"| gateway
+	gateway -->|"HTTP (X-Mfe-Zone)"| mfes
+	gateway --> |"HTTP: /catalog, /basket,\n/ordering, /rating, /chatting"| apis
+	gateway --> |"HTTPS: /entra/*"| entra
+	apis <-->|"gRPC (v1, A2A) & MCP HTTP"| apis
+	apis <-->|"CloudEvents JSON"| kafka
+	workers <-->|"CloudEvents JSON"| kafka
+	apis <-->|"JWT / OBO / Agent IDs"| entra
+	apis --> |"HTTPS: LLM, Decision, Embed"| foundry
+	workers -->|"SMTP (587)"| smtp

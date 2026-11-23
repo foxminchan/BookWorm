@@ -1,0 +1,19 @@
+flowchart LR
+	users["Customers & Staff\n(HTTPS Browsers)"]
+	gateway["API Gateway\n(External YARP Container App)"]
+	mfes["Frontend Microfrontends\n(Storefront, Commerce, Backoffice)"]
+	apis["Backend APIs & Functions\n(10 .NET 11 Container Apps)"]
+	presidio["Presidio Sidecars\n(Analyzer & Anonymizer)"]
+	azuredata["Azure Managed Data\n(PostgreSQL, Cosmos DB, Redis, Blob, DTS)"]
+	foundry["Microsoft Foundry\n(ModelRouter, Decision-1, EmbedV40)"]
+	entra["Microsoft Entra ID\n(OIDC, RBAC, Agent Identities)"]
+	ext["External Providers\n(Confluent Kafka, Qdrant Cloud, SendGrid)"]
+
+	users -->|"HTTPS"| gateway
+	gateway -->|"Internal HTTP"| mfes
+	gateway -->|"Internal HTTP"| apis
+	apis --> |"Internal HTTP: 3000"| presidio
+	apis -->|"Managed Identity RBAC"| azuredata
+	apis -->|"CognitiveServicesUser RBAC"| foundry
+	gateway -->|"OIDC / Entra Proxy"| entra
+	apis -->|"TLS + External Conn Strings"| ext

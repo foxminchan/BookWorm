@@ -1,67 +1,40 @@
-## 1. Context & Problem
+---
+summary: Usage examples for Delete basket.
+---
 
-Storefront and integration developers need practical examples showing how to clear a customer's basket cleanly and how to handle the scenario where no active basket exists. Without clear examples, clients might send unnecessary payload data or fail unexpectedly when attempting to delete a basket that has already been removed.
+## Delete the active basket with curl
 
-## 2. Business Value
+<CodeGroup>
 
-- **Minimal integration effort**: Shows that deleting a basket requires no request payload, keeping client logic simple.
-- **Resilient storefront behavior**: Demonstrates how clients can recognize a missing-basket outcome and respond cleanly instead of crashing.
-
-## 3. How It Works
-
-1. **Deleting an active basket**: The client issues a deletion request with no input payload. When a basket exists, it is removed and the service confirms completion without returning any additional data.
-2. **Handling a missing basket**: If no basket exists to remove, the service notifies the client that the basket was not found so the caller can update its state or report the condition appropriately.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Treating missing baskets as explicit errors**: Because the service explicitly reports when no basket exists rather than silently succeeding, client applications must decide whether a missing basket during cleanup should raise an alert or simply be treated as already cleared.
-
-## 5. Technical Reference
-
-### 1. Delete a basket
-
-Delete the basket with no request body. A successful deletion returns `204 No Content`.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request DELETE "$BASE_URL/api/v1/baskets"
+```bash
+curl --request DELETE "<gateway-url>/basket/api/v1/baskets" \
+  --header "Authorization: Bearer <access-token>"
 ```
 
 </CodeGroup>
 
-The equivalent TypeScript request has no body:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or use the direct Basket API URL without the `/basket` prefix).
+- `<access-token>`: Entra ID JWT bearer token with role `customer` and scopes `basket_read` and `basket_write`.
 
-```ts delete-basket.ts
-const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
-const response = await fetch(`${baseUrl}/api/v1/baskets`, {
-	method: "DELETE",
-});
+Expected response (`204 No Content`):
 
-if (response.status === 404) {
-	throw new Error("Basket was not found");
-}
-if (!response.ok) {
-	throw new Error(`DeleteBasket failed with ${response.status}`);
-}
+<CodeGroup>
+
+```text
+HTTP/1.1 204 No Content
 ```
 
 </CodeGroup>
 
-The successful response has no payload.
+## Missing basket response (`404 Not Found`)
 
-### 2. Handle a missing basket
-
-If no basket can be found, the service returns `404 Not Found` with `application/problem+json`.
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
-	"title": "Not Found",
-	"status": 404
+	"detail": "The requested resource was not found."
 }
 ```
 

@@ -14,37 +14,63 @@ owners:
 schemaPath: schema.json
 ---
 
-## 1. Context & Problem
+`DeleteBasketFailedCommand` (v1.0.0) is a Kafka integration command published by **Finance** (Azure Functions + Azure Durable Task Scheduler `OrderOrchestrator`) instructing **Ordering API** to soft-delete an order whose post-checkout basket cleanup failed or whose orchestration rolled back. **Ordering API** marks the order deleted without transitioning its business status to `Cancelled`.
 
-During checkout, creating an order and clearing the customer's shopping basket happen across separate business domains. If the Finance process detects that cleaning up the basket failed after an order was already created, leaving that order active creates inconsistent customer records and breaks checkout recovery. The Ordering domain needs a clear recovery signal from Finance so [[service|order-api]] can cleanly remove the affected [[entity|order]] from active customer and operational views.
+## Overview
 
-## 2. Business Value
+| Property                 | Value                                                                                                                                                                                                                                                                                                                                                                                 |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Owner**                | Ordering bounded context — produced by [[service\|order-orchestration]], consumed by [[service\|order-api]]                                                                                                                                                                                                                                                                           |
+| **Source**               | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/Events/DeleteBasketFailedCommand.cs`, `IntegrationEvents/EventHandlers/DeleteBasketFailedCommandHandler.cs`, `src/Services/Finance/BookWorm.Finance/Features/Orders/BasketDeletion/PublishDeleteBasketFailedActivity.cs`, `Orchestration/Steps/BasketDeletedFailedStep.cs`, `Orchestration/Saga/OrderSagaCompensations.cs` |
+| **Protocol / format**    | Kafka + CloudEvents JSON (`CloudEventsOnlyKafkaMapper`, Wolverine)                                                                                                                                                                                                                                                                                                                    |
+| **Kafka topic**          | `bookworm.{env}.finance.delete-basket-failed` (where `{env}` is the kebab-case environment name)                                                                                                                                                                                                                                                                                      |
+| **Partition key**        | `OrderId` (preserves per-order message ordering on Kafka)                                                                                                                                                                                                                                                                                                                             |
+| **Consumer idempotency** | `IIntegrationEventIdempotencyGuard` backed by Redis/FusionCache (24-hour TTL keyed by `message.Id` and `DeleteBasketFailedCommandHandler`)                                                                                                                                                                                                                                            |
+| **Authentication**       | Internal Kafka broker transport (no HTTP endpoint or Microsoft Entra ID user token)                                                                                                                                                                                                                                                                                                   |
+| **Contract test**        | `tests/pacts/Ordering-Finance.json`                                                                                                                                                                                                                                                                                                                                                   |
 
-- **Consistent Customer Experience**: Prevents orphaned or unrecoverable orders from appearing in active order histories when basket cleanup fails.
-- **Accurate Reporting & Auditability**: Soft-deleting the record preserves the order's historical trail and original business status rather than misrepresenting it as a business cancellation.
-- **Clear Cross-Team Ownership**: Separates Finance-driven recovery coordination from Basket's own failure notifications, reducing ambiguity during incident triage.
+:::note
+`DeleteBasketFailedCommand` is distinct from [[event|BasketDeletedFailedIntegrationEvent]]. **Basket API** publishes `BasketDeletedFailedIntegrationEvent` to **Finance**; **Finance**'s Durable Functions `OrderOrchestrator` then publishes `DeleteBasketFailedCommand` to **Ordering API**.
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-1. When Finance encounters a failure during basket cleanup for a checkout workflow, it sends a basket-deletion-failed command to Ordering.
-2. [[service|order-api]] looks up the matching [[entity|order]] referenced by the notification.
-3. If the order still exists, [[service|order-api]] soft-deletes it so it is excluded from active views while keeping its business status unchanged.
-4. If the order no longer exists, no additional state change occurs.
+The table below describes the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema). All six properties are required in the contract, including nullable `email`.
 
-## 4. Trade-offs & Lessons Learned
+| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                                               |
+| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier assigned to the integration message; used as the idempotency guard key. |
+| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when **Finance** created the command.                                       |
+| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID                                               | Identifier of the basket whose cleanup failed.                                            |
+| `email`        | `string \| null`     | Yes      | `null`                  | Nullable email string                                    | Customer email address when available; present as `null` when unavailable.                |
+| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the affected order to soft-delete.                                          |
+| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                             | Total purchase amount associated with the order.                                          |
 
-- **Soft Delete vs. Cancelled Status**: Soft-deleting without changing the business status preserves the distinction between a technical checkout recovery and a genuine business cancellation, helping analytics and customer support teams interpret records accurately.
-- **Idempotent Recovery**: Checking whether the order still exists before soft-deleting prevents duplicate recovery messages from causing failures.
-- **Distinct Failure Signals**: Finance's recovery command serves a different coordination purpose than Basket's own deletion failure announcement; operations and monitoring teams should keep these two signals distinct.
-- **Required Contact Context**: Requiring customer email details in the contract (even when empty) ensures downstream support or audit reviews can always tell whether contact information was available at the time of failure.
+## Behavior and side effects
 
-## 5. Technical Reference
+- **Producer paths (Finance Durable Functions):** **Finance** publishes `DeleteBasketFailedCommand` via `PublishDeleteBasketFailedActivity` (3 retries, 5-second initial interval, 2.0 backoff) in two scenarios:
+  - **Direct basket-cleanup failure:** `BasketDeletedFailedStep` handles `BasketDeletedFailedIntegrationEvent` from **Basket API**, marks the orchestration failed, and publishes `DeleteBasketFailedCommand`.
+  - **LIFO Saga compensation:** `BasketDeletedCompleteStep` registers `PublishDeleteBasketFailedActivity` with `OrderSagaCompensations` after basket deletion succeeds; if a subsequent orchestration step throws `TaskFailedException` or `FinanceDomainException`, `OrderOrchestrator` runs registered compensations in reverse order.
+- **Consumer deduplication (Ordering API):** `DeleteBasketFailedCommandHandler` (`[WolverineHandler]`) executes inside `IIntegrationEventIdempotencyGuard.ExecuteAsync(message.Id, nameof(DeleteBasketFailedCommandHandler), ...)` using a 24-hour Redis/FusionCache lock so duplicate deliveries are skipped.
+- **Soft-delete without status mutation:** The handler fetches the order with `repository.GetByIdAsync(message.OrderId, ct)` (which respects EF Core's global `HasQueryFilter(x => !x.IsDeleted)`). If the order exists, it calls `order.Delete()` (`IsDeleted = true`) and saves via `UnitOfWork.SaveEntitiesAsync(ct)` without changing `Order.Status` or emitting domain/integration events. If the order is already soft-deleted or does not exist, the handler completes as a no-op.
 
-- **Handling Service & Entity**: [[service|order-api]] consumes this command from Finance to soft-delete the matching [[entity|order]] if it still exists, without transitioning the Order to Cancelled.
-- **Distinct Event**: This command is distinct from [[event|BasketDeletedFailedIntegrationEvent]], which Basket publishes as its own deletion failure result.
-- **Channel**: [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]]
-- **Schema & Envelope**: The payload contains `id`, `creationDate`, `basketId`, nullable `email`, `orderId`, and `totalMoney`. All fields, including `email`, are required by the AsyncAPI schema. The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
+## Error responses
 
-<SchemaViewer file="schema.json" title="Failed basket cleanup command payload" maxHeight="500" />
+| Code / status                           | Condition                                                                     | Recovery behavior                                                                                                                                       |
+| :-------------------------------------- | :---------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Order not found or already soft-deleted | `repository.GetByIdAsync(message.OrderId)` returns `null`                     | Handler exits cleanly without error (idempotent no-op).                                                                                                 |
+| Duplicate message ID within 24 hours    | `IIntegrationEventIdempotencyGuard` detects prior processing of `message.Id`  | Handler skips execution without re-querying PostgreSQL.                                                                                                 |
+| Transient database or broker failure    | PostgreSQL error or unhandled exception in `DeleteBasketFailedCommandHandler` | Wolverine retries with cooldown (`50ms`, `250ms`, `1s` with full jitter) and routes persistent failures to `bookworm.{env}.ordering.dead-letter-queue`. |
+
+## Related documentation
+
+- [[service|order-api]] — Consuming service, soft-delete filter, and Wolverine Kafka setup.
+- [[service|order-orchestration]] — Azure Durable Functions `OrderOrchestrator` and `OrderSagaCompensations`.
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]] — Kafka topic specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering API consumers.
+- [[command|DeleteBasketCompleteCommand]] — Companion command for successful basket cleanup.
+- [[event|BasketDeletedFailedIntegrationEvent]] — Upstream failure event from **Basket API** to **Finance**.
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="Failed basket cleanup command payload" maxHeight="500" />

@@ -1,89 +1,28 @@
 ---
-summary: List Orders with pagination and optional status and Buyer filters.
+summary: Usage examples for List Orders.
 ---
 
-## 1. Context & Problem
+## List new orders with curl
 
-Developers integrating order-history screens or administrative dashboards need practical examples of how to page and filter orders by status or buyer, as well as how to handle rejected filter inputs cleanly.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Consistent customer order history**: Shows teams how to request new, completed, or cancelled orders reliably while preserving user-scoped access.
-- **Resilient error handling**: Demonstrates how validation failures are structured so client applications can surface clear guidance instead of generic error messages.
-- **Faster client implementation**: Provides ready-to-adapt examples for both command-line testing and typed frontend integration.
-
-## 3. How It Works
-
-1. The client sends an authenticated request with paging settings and optional filters such as order status (`New`, `Cancelled`, or `Completed`) or buyer identifier.
-2. Ordering scopes non-administrator callers to their own authenticated buyer record, validates the supplied criteria, and returns matching order summaries containing identifier, date, total, and status.
-3. When a caller provides an unrecognized status or invalid parameter value, Ordering rejects the request and returns structured validation details so the client can correct the input.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Explicit validation failure handling**: Distinguishing invalid filter parameters from unexpected server failures lets client apps handle bad input gracefully, at the cost of requiring explicit checks on error responses.
-- **Server-side authorization over client trust**: Relying on the service to enforce buyer scoping means frontend code does not need to trust client-supplied buyer filters for security, though administrative interfaces must still check roles before exposing a buyer selector.
-
-## 5. Technical Reference
-
-### 1. List New Orders
-
-Use the query parameters to select a page and optionally filter by status or
-Buyer. Non-administrators are scoped to their authenticated Buyer.
-
-<CodeGroup dropdown>
-
-```sh
+```bash
 curl --request GET \
-  "$BASE_URL/api/v1/orders?PageIndex=1&PageSize=20&Status=New" \
+  "<gateway-url>/ordering/api/v1/orders?PageIndex=1&PageSize=20&Status=New" \
   --header "Authorization: Bearer <access-token>" \
   --header "Accept: application/json"
 ```
 
 </CodeGroup>
 
-The same query from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or direct Ordering API URL `https://localhost:7203` without the `/ordering` prefix).
+- `<access-token>`: Entra ID bearer token for a signed-in customer or administrator.
 
-```ts list-orders.ts
-type OrderDto = {
-	id: string;
-	date: string;
-	total: number;
-	status: "New" | "Cancelled" | "Completed";
-};
+Expected response (`200 OK` with `Pagination-Count` and `Link` headers):
 
-const baseUrl = "https://api.example.com";
-const accessToken = "<access-token>";
-const params = new URLSearchParams({
-	PageIndex: "1",
-	PageSize: "20",
-	Status: "New",
-});
-const response = await fetch(`${baseUrl}/api/v1/orders?${params.toString()}`, {
-	headers: {
-		Authorization: `Bearer ${accessToken}`,
-		Accept: "application/json",
-	},
-});
-
-if (response.status === 400) {
-	throw new Error("ListOrders validation failed");
-}
-if (!response.ok) {
-	throw new Error(`ListOrders failed with ${response.status}`);
-}
-
-const orders = (await response.json()) as OrderDto[];
-console.log(`Received ${orders.length} order(s)`);
-```
-
-</CodeGroup>
-
-The OpenAPI contract describes a `200 OK` response as an array of Order
-summaries:
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 [
@@ -98,12 +37,9 @@ summaries:
 
 </CodeGroup>
 
-### 2. Handle invalid filters
+Expected validation error (`400 Bad Request`):
 
-Invalid parameter values return `400 Bad Request` with validation problem
-details.
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
@@ -113,6 +49,47 @@ details.
 		"Status": ["The value is not valid."]
 	}
 }
+```
+
+</CodeGroup>
+
+## List new orders with TypeScript
+
+<CodeGroup>
+
+```typescript
+type OrderDto = {
+	id: string;
+	date: string;
+	total: number;
+	status: "New" | "Cancelled" | "Completed";
+};
+
+const gatewayUrl = "<gateway-url>";
+const accessToken = "<access-token>";
+const params = new URLSearchParams({
+	PageIndex: "1",
+	PageSize: "20",
+	Status: "New",
+});
+
+const response = await fetch(`${gatewayUrl}/ordering/api/v1/orders?${params.toString()}`, {
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		Accept: "application/json",
+	},
+});
+
+if (response.status === 400) {
+	throw new Error("ListOrders validation failed");
+}
+if (!response.ok) {
+	throw new Error(`ListOrders failed with ${response.status}`);
+}
+
+const totalOrders = Number(response.headers.get("Pagination-Count") ?? "0");
+const orders = (await response.json()) as OrderDto[];
+console.log(`Received ${orders.length} of ${totalOrders} order(s)`);
 ```
 
 </CodeGroup>

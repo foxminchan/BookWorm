@@ -7,6 +7,21 @@ export default {
 
 	organizationName: "BookWorm",
 	theme: "sapphire",
+	colorMode: {
+		default: "system",
+		allowToggle: true,
+	},
+	banner: {
+		message:
+			"Storefront has been decoupled into micro-frontends with a dedicated commerce app and shared shell.",
+		link: {
+			label: "Read the architecture guide",
+			href: "/docs/custom/frontend/006-microfrontend-architecture",
+		},
+		type: "info",
+		dismissible: true,
+		id: "microfrontend-architecture-2026",
+	},
 	homepageLink: "https://foxminchan.github.io/BookWorm/",
 	editUrl: "https://github.com/foxminchan/BookWorm/edit/main/docs",
 	output: "static",
@@ -29,6 +44,92 @@ export default {
 
 	navigation: {
 		pages: ["list:top-level-domains", "list:top-level-diagrams", "list:all"],
+		header: [
+			{
+				label: "Architecture",
+				href: "/visualiser/system-context-map",
+				match: "/visualiser",
+			},
+			{
+				label: "Docs",
+				href: "/docs/custom",
+				match: "/docs/custom",
+			},
+			{
+				label: "Schemas",
+				href: "/schemas/explorer",
+				match: "/schemas",
+			},
+			{
+				label: "Resources",
+				items: [
+					{
+						label: "Explore",
+						items: [
+							{
+								label: "Domains",
+								href: "/discover/domains",
+								icon: "Layers",
+								description: "Bounded contexts across BookWorm",
+							},
+							{
+								label: "Services",
+								href: "/discover/services",
+								icon: "Server",
+								description: "Microservices and message contracts",
+							},
+							{
+								label: "Events",
+								href: "/discover/events",
+								icon: "Zap",
+								description: "Domain and integration events",
+							},
+							{
+								label: "Flows",
+								href: "/discover/flows",
+								icon: "Workflow",
+								description: "End-to-end business workflows",
+							},
+							{
+								label: "Architecture Graph",
+								href: "/visualiser/graph",
+								icon: "Network",
+								description: "Catalog-wide interactive dependency graph",
+							},
+						],
+					},
+					{
+						label: "Quality & Organization",
+						items: [
+							{
+								label: "Test Reports",
+								href: "/custom/reports",
+								icon: "FlaskConical",
+								description: "Allure and TUnit test dashboards",
+							},
+							{
+								label: "Code Quality",
+								href: "https://sonarcloud.io/summary/overall?id=foxminchan_BookWorm&branch=main",
+								icon: "BarChart3",
+								description: "SonarCloud analysis and coverage metrics",
+							},
+							{
+								label: "OSSF Scorecard",
+								href: "https://scorecard.dev/viewer/?uri=github.com/foxminchan/BookWorm",
+								icon: "ShieldCheck",
+								description: "OpenSSF security posture and checks",
+							},
+							{
+								label: "Teams",
+								href: "/directory/teams",
+								icon: "Users",
+								description: "Domain and service ownership",
+							},
+						],
+					},
+				],
+			},
+		],
 		groups: [
 			{ id: "main", items: [{ id: "home" }, { id: "docs" }] },
 			{ id: "browse", label: "Browse", items: [{ id: "catalog" }, { id: "schemas" }] },
@@ -76,6 +177,7 @@ export default {
 				label: "Architecture",
 				items: [
 					{ label: "Overview", slug: "arc42" },
+					{ label: "C4 Overview", slug: "arc42/00-c4-overview" },
 					{
 						label: "1. Introduction and Goals",
 						slug: "arc42/01-introduction-and-goals",

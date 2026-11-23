@@ -1,0 +1,17 @@
+flowchart LR
+	scheduler["Scheduler\n(Quartz.NET + schedulerdb)"]
+	qdash["Quartz Dashboard\n(Entra ID OIDC admin)"]
+	kafka["Kafka\n(CloudEvents JSON)"]
+	ingestion["Catalog Ingestion\n(Azure Functions)"]
+	finance["Finance\n(Azure Functions + Durable Task)"]
+	notification["Notification\n(MailKit + Mjml.Net Worker)"]
+	redis["Redis\n(Idempotency Guard)"]
+	smtp["SMTP Provider\n(Mailpit Dev / SendGrid Cloud)"]
+
+	qdash -->|"Dashboard Agent"| scheduler
+	scheduler --> |"Kafka: scheduler.process-vector-batch"| kafka
+	kafka --> |"KafkaTrigger: catalog-ingestion"| ingestion
+	finance --> |"Kafka: bookworm.{env}.finance.*"| kafka
+	kafka --> |"Consumer: OrderId partition"| notification
+	notification -->|"24h Idempotency"| redis
+	notification --> |"SMTP: Port 587"| smtp

@@ -1,92 +1,37 @@
 ---
-summary: List catalog categories and distinguish an empty collection from a missing resource.
+summary: Usage examples for List categories.
 ---
 
-## 1. Context & Problem
+## List all categories with curl
 
-Client applications and partner integrations that render category filters or assign categories when creating and updating books need clear, practical examples of how to retrieve the category list. Without concrete guidance, integrators frequently treat an empty category list as a missing-resource error rather than a valid catalog state.
+<CodeGroup>
 
-## 2. Business Value
+```bash
+curl --request GET "<gateway-url>/catalog/api/v1/categories" \
+  --header "Accept: application/json"
+```
 
-- **Faster client onboarding**: Ready-to-use request and response examples reduce integration effort for frontend and partner teams.
-- **Reliable empty-state handling**: Clearly distinguishing an empty catalog from an error prevents broken dropdowns or confusing failure messages when no categories have been added yet.
-- **Accurate book classification**: Showing how unique category identifiers pair with display names helps teams pass valid category references when creating or updating books.
+</CodeGroup>
 
-## 3. How It Works
+Where:
 
-1. A client requests the category list from the catalog without providing a specific category identifier.
-2. The catalog responds with a list of category summaries, each pairing a unique identifier with a display name.
-3. Client applications display the names as selectable options and use the returned identifiers when creating or updating books.
-4. When the catalog has no categories yet, the request still succeeds and returns an empty list rather than reporting a missing resource.
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or direct Catalog API URL `https://localhost:7187` without the `/catalog` prefix).
 
-## 4. Trade-offs & Lessons Learned
+Expected response (`200 OK`):
 
-- **Empty collection over missing-resource signal**: Returning an empty list as a normal result simplifies error handling for client apps, though user interfaces should explicitly show an empty state when no options are available.
-- **Identifier-driven writes**: Requiring clients to look up category identifiers before creating or updating books protects data integrity, at the cost of an initial read call before submitting book changes.
+<CodeGroup>
 
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### 1. List categories
-
-The query returns `200` with an array of category summaries. Each item contains its UUID and display name.
-
-#### Response details
-
-- An empty collection is represented by `200` and `[]`.
-- The endpoint does not require a resource UUID.
-- Use the returned identifiers when creating or updating books.
-
-#### Example response
-
-<CodeGroup dropdown>
-
-```ts
-const categories: CategorySummary[] = [
+```json
+[
 	{
-		id: "5e4a1c9b-3f72-4b8d-a605-7c2e9f1d8430",
-		name: "Example Category",
+		"id": "11111111-1111-1111-1111-111111111111",
+		"name": "Science Fiction"
 	},
-];
+	{
+		"id": "88888888-8888-8888-8888-888888888888",
+		"name": "Technology"
+	}
+]
 ```
 
 </CodeGroup>
-
-#### Using this example
-
-Render the returned summaries as selectable category options; an empty array is a valid catalog state.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```ts list-categories.ts
-type CategorySummary = { id: string; name: string };
-
-const response = await fetch("https://api.example.com/api/v1/categories");
-if (!response.ok) {
-	throw new Error(`ListCategories failed with ${response.status}`);
-}
-
-const categories = (await response.json()) as CategorySummary[];
-for (const category of categories) {
-	console.log(`${category.id}: ${category.name}`);
-}
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### 2. Handle an empty catalog
-
-An empty collection is represented by `200` and `[]`, not by `404`.

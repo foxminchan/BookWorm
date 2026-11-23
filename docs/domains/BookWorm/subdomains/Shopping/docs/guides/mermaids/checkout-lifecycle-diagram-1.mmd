@@ -1,0 +1,20 @@
+sequenceDiagram
+	participant Commerce as Commerce (Next.js 16 MFE)
+	participant Basket as Basket API (.NET 11 + Redis)
+	participant Catalog as Catalog API (.NET 11 + gRPC)
+	participant Ordering as Ordering API (.NET 11 + orderingdb)
+	participant Finance as Finance (Azure Functions)
+
+	Commerce ->> Basket: HTTPS GET /basket/api/v1/baskets
+	Basket ->> Catalog: gRPC GetBooks (live titles & prices)
+	Catalog -->> Basket: Book details
+	Basket -->> Commerce: 200 OK (enriched basket)
+
+	Commerce ->> Ordering: HTTPS POST /ordering/api/v1/orders (x-request-id)
+	Ordering ->> Basket: gRPC GetBasket
+	Ordering ->> Catalog: gRPC GetBooks (lock PriceSale ?? Price)
+	Ordering -->> Commerce: 201 Created (orderId)
+	Ordering ->> Finance: Kafka UserCheckedOutIntegrationEvent
+
+	Finance ->> Basket: Kafka PlaceOrderCommand
+	Basket ->> Finance: Kafka BasketDeletedComplete / BasketDeletedFailed

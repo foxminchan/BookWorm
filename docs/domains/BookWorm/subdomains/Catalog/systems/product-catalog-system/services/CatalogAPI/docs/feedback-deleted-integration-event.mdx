@@ -9,105 +9,123 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+This reference defines the `FeedbackDeletedIntegrationEvent` Kafka integration contract consumed by **Catalog API** (`BookWorm.Catalog`) to remove a deleted review's score from a book's derived `average_rating` and `total_reviews` projection in PostgreSQL (`catalogdb`) when **Rating API** (`BookWorm.Rating`) deletes a `Feedback` document from Azure Cosmos DB (`ratingdb`/`feedbacks`).
 
-## 1. Context & Problem
+## Overview
 
-Because Catalog maintains a denormalized rating summary on each book for fast storefront discovery, removing a review or rating in the Rating capability would leave Catalog's displayed score and review count inaccurate unless Catalog is notified. Catalog needs an asynchronous contract to reflect deleted feedback without coupling review deletion directly to the catalog database.
+| Property              | Value                                                                                                                                                          |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner (producer)**  | Reviews bounded context — **Rating API** (`src/Services/Rating/BookWorm.Rating`)                                                                               |
+| **Consumer**          | Catalog bounded context — **Catalog API** (`src/Services/Catalog/BookWorm.Catalog`)                                                                            |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/IntegrationEvents/Events/FeedbackDeletedIntegrationEvent.cs`, `EventHandlers/FeedbackDeletedIntegrationEventHandler.cs` |
+| **Kafka topic**       | `bookworm.{env}.rating.feedback-delete` (`AppendPrefix = true`)                                                                                                |
+| **Message identity**  | `BookWorm.Contracts.FeedbackDeletedIntegrationEvent`                                                                                                           |
+| **Protocol / format** | Kafka + CloudEvents JSON (`CloudEventsOnlyKafkaMapper`), partitioned by `BookId` / `FeedbackId`                                                                |
+| **Idempotency**       | Redis-backed `IIntegrationEventIdempotencyGuard` (24-hour TTL keyed by `Id` + `FeedbackDeletedIntegrationEventHandler`)                                        |
+| **Contract tests**    | Pact messaging tests in `BookWorm.Catalog.ContractTests` and `tests/pacts/` (`Catalog-Rating`, `Rating-Catalog`)                                               |
 
-## 2. Business Value
+## Parameters and fields
 
-- **Trustworthy product ratings**: Ensures deleted or moderated reviews no longer skew a book's displayed rating summary.
-- **Resilient moderation and cleanup**: Rating deletions succeed independently even if Catalog processes the summary update later.
-- **Graceful handling of retired books**: If a book has already been removed from Catalog, the deletion notification completes without errors or unnecessary rollback traffic.
+| Name         | Type   | Required | Default   | Constraints                       | Description                                                                  |
+| :----------- | :----- | :------- | :-------- | :-------------------------------- | :--------------------------------------------------------------------------- |
+| `Id`         | `Guid` | Yes      | Generated | Inherited from `IntegrationEvent` | Unique event identifier used as the Redis idempotency key                    |
+| `BookId`     | `Guid` | Yes      | —         | Non-empty UUID                    | Target Catalog book identifier to adjust                                     |
+| `Rating`     | `int`  | Yes      | —         | `1`–`5`                           | Original star rating of the deleted feedback removed via `Book.RemoveRating` |
+| `FeedbackId` | `Guid` | Yes      | —         | Non-empty UUID                    | Identifier of the deleted Cosmos DB feedback record for traceability         |
 
-## 3. How It Works
+## Processing and error behavior
 
-1. When feedback is removed in the Rating service, it publishes a deletion notification containing the book identifier, the removed rating score, and the feedback identifier.
-2. The Catalog service receives this notification and looks up the referenced book.
-3. If the book exists, Catalog removes that rating score from the book's denormalized rating summary and persists the updated summary.
-4. If the book no longer exists in Catalog, no action is taken because there is no local rating summary left to adjust.
+| Condition                                | Handler behavior                                                                                                                                                             | Recovery / downstream effect                                                                                        |
+| :--------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| **Book exists (`TotalReviews > 1`)**     | Calls `book.RemoveRating(@event.Rating)` (`((AverageRating * TotalReviews) - rating) / (TotalReviews - 1)`, `TotalReviews--`) and commits via `UnitOfWork.SaveEntitiesAsync` | Updates `catalogdb` summary and invalidates cached book entry                                                       |
+| **Book exists (`TotalReviews <= 1`)**    | `book.RemoveRating` resets `AverageRating = 0` and `TotalReviews = 0` and commits                                                                                            | Prevents divide-by-zero or negative review counts                                                                   |
+| **Book missing (`book is null`)**        | Returns without writing or publishing any compensation event                                                                                                                 | Safe no-op; no local rating projection exists to adjust                                                             |
+| **Duplicate event within 24 hours**      | `IIntegrationEventIdempotencyGuard` skips re-execution for the same `@event.Id`                                                                                              | Prevents double-decrementing `TotalReviews` on Kafka redelivery                                                     |
+| **Transient DB or infrastructure error** | Exception propagates to Wolverine                                                                                                                                            | Wolverine retries (`50ms / 250ms / 1s` with full jitter), then routes to `bookworm.{env}.catalog.dead-letter-queue` |
 
-## 4. Trade-offs & Lessons Learned
+## Examples
 
-- **Silent no-op on missing books**: Unlike feedback creation—where a missing book requires compensating the new review—a missing book during deletion is safely ignored because no local projection remains to correct.
-- **Eventual consistency**: A short delay exists between deleting feedback and seeing the adjusted rating summary in Catalog.
-- **Delta adjustment reliance**: Updating the summary using the deleted rating value avoids recalculating from all historical reviews on every deletion, which assumes creation and deletion messages are not duplicated or permanently lost.
+### Contract record (`FeedbackDeletedIntegrationEvent.cs`)
 
-## 5. Technical Reference
+<CodeGroup>
 
-<Columns cols={2}>
+```csharp
+using BookWorm.Constants.Aspire;
+using Wolverine.Attributes;
 
-<Column>
+namespace BookWorm.Contracts;
 
-### Publish a deleted feedback rating
-
-Rating maps its `FeedbackDeletedEvent` domain event to the shared integration
-contract. Wolverine uses the chassis metadata to publish it to
-[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]].
-
-- `bookId` identifies the Catalog book to update.
-- `rating` is removed from the book's denormalized rating summary.
-- `feedbackId` identifies the deleted feedback record.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp FeedbackDeletedIntegrationEvent.cs
 [IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-delete")]
 [MessageIdentity("BookWorm.Contracts.FeedbackDeletedIntegrationEvent")]
-public sealed record FeedbackDeletedIntegrationEvent(
-    Guid BookId,
-    int Rating,
-    Guid FeedbackId
-) : IntegrationEvent;
-```
-
-```csharp EventMapper.cs
-FeedbackDeletedEvent feedbackDeletedEvent => new FeedbackDeletedIntegrationEvent(
-    feedbackDeletedEvent.BookId,
-    feedbackDeletedEvent.Rating,
-    feedbackDeletedEvent.FeedbackId
-)
+public sealed record FeedbackDeletedIntegrationEvent(Guid BookId, int Rating, Guid FeedbackId)
+    : IntegrationEvent;
 ```
 
 </CodeGroup>
 
-</Column>
+### Catalog consumer handler (`FeedbackDeletedIntegrationEventHandler.cs`)
 
-</Columns>
+<CodeGroup>
 
----
+```csharp
+using BookWorm.Chassis.EventBus.Idempotency;
+using BookWorm.Contracts;
+using Wolverine.Attributes;
 
-### Apply the deletion in Catalog
+namespace BookWorm.Catalog.IntegrationEvents.EventHandlers;
 
-Catalog removes the rating when the book exists. A missing book is a no-op
-because there is no local projection to correct.
-
-<CodeGroup dropdown>
-
-```csharp FeedbackDeletedIntegrationEventHandler.cs
-[WolverineHandler]
-public async Task Handle(
-    FeedbackDeletedIntegrationEvent @event,
-    CancellationToken cancellationToken
+internal sealed class FeedbackDeletedIntegrationEventHandler(
+    IBookRepository repository,
+    IIntegrationEventIdempotencyGuard? idempotencyGuard = null
 )
 {
-    var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
-
-    if (book is null)
+    [WolverineHandler]
+    public async Task Handle(
+        FeedbackDeletedIntegrationEvent @event,
+        CancellationToken cancellationToken
+    )
     {
-        return;
-    }
+        await idempotencyGuard.ExecuteAsync(
+            @event.Id,
+            nameof(FeedbackDeletedIntegrationEventHandler),
+            async ct =>
+            {
+                var book = await repository.GetByIdAsync(@event.BookId, ct);
 
-    book.RemoveRating(@event.Rating);
-    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+                if (book is null)
+                {
+                    return;
+                }
+
+                book.RemoveRating(@event.Rating);
+
+                await repository.UnitOfWork.SaveEntitiesAsync(ct);
+            },
+            cancellationToken: cancellationToken
+        );
+    }
 }
 ```
 
 </CodeGroup>
 
-<Footer />
+### Example JSON payload
+
+<CodeGroup>
+
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abce",
+	"bookId": "0193f1a2-1111-7d8e-9f01-234567890001",
+	"rating": 4,
+	"feedbackId": "0193f1a2-2222-7d8e-9f01-234567890002"
+}
+```
+
+</CodeGroup>
+
+## Related documentation
+
+- Catalog feedback-created contract reference — Companion contract for new feedback and missing-book compensation.
+- [[flow|feedback-publication]] — End-to-end Reviews-to-Catalog projection design.
+- How to resolve a Catalog rating summary mismatch — Operational runbook for rating drift and Cosmos DB reconciliation.

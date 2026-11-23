@@ -18,44 +18,72 @@ sidebar:
   badge: "PUT"
 ---
 
-## 1. Context & Problem
+`UpdateBasket` (`PUT /api/v1/baskets`) replaces the entire item collection of the authenticated customer's existing **Basket** in Redis and returns `204 No Content`. It requires an active basket to exist and rejects requests targeting a missing basket with `404 Not Found`.
 
-While browsing, customers frequently add books, adjust quantities, or remove items from their active [[entity|basket]] before checking out. If storefront clients only sent small incremental edits (such as adding one unit or removing a single item), network retries or out-of-order requests could leave the stored basket out of sync with what the customer sees on screen. Providing a single action that replaces the basket with the customer's full current selection keeps the cart accurate.
+## Overview
 
-## 2. Business Value
+| Property                 | Value                                                                                                                                                                                               |
+| :----------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                                                                 |
+| **Source**               | `src/Services/Basket/BookWorm.Basket/Features/Update/UpdateBasketEndpoint.cs`, `UpdateBasketCommand.cs`, `UpdateBasketValidator.cs`, `src/Services/Basket/BookWorm.Basket/Domain/CustomerBasket.cs` |
+| **Protocol / format**    | HTTP `PUT`, `application/json` request body, empty `204` response                                                                                                                                   |
+| **Direct endpoint**      | `PUT /api/v1/baskets` (local ports: HTTP `5052`, HTTPS `7155`)                                                                                                                                      |
+| **API Gateway endpoint** | `PUT /basket/api/v1/baskets` (YARP strips `/basket`)                                                                                                                                                |
+| **Authentication**       | Microsoft Entra ID JWT bearer token; default policy requires role `customer` and scopes `basket_read` and `basket_write`                                                                            |
+| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters                                                      |
+| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                          |
 
-- **Consistent shopping experience**: Customers see the exact items and quantities they confirmed, even after rapid cart edits or connection retries.
-- **Simpler storefront logic**: Client applications submit the current cart state directly without tracking a history of incremental changes.
-- **Protected data quality**: Missing book references, empty item lists, and invalid quantities are rejected before updating the stored basket.
+## Parameters and fields
 
-## 3. How It Works
+### Request headers
 
-When a customer edits their shopping cart, the storefront submits the complete, up-to-date list of items and quantities for the customer's active [[entity|basket]].
+| Name            | Type     | Required | Default | Constraints             | Description                                                                                                                             |
+| :-------------- | :------- | :------- | :------ | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| `Authorization` | `string` | Yes      | —       | `Bearer <access-token>` | Microsoft Entra ID JWT with role `customer`, scopes `basket_read` and `basket_write`, and a non-empty `ClaimTypes.NameIdentifier` claim |
+| `Content-Type`  | `string` | Yes      | —       | `application/json`      | JSON request media type                                                                                                                 |
 
-1. The service confirms that an active basket exists for the signed-in customer.
-2. It verifies that the submitted list contains at least one item, and that every item includes a book reference and a quantity greater than zero.
-3. If the basket does not exist or any validation rule fails, the request is rejected and the stored basket remains unchanged.
-4. When valid, the service replaces the entire stored item list with the newly submitted items and confirms the update without needing to echo the saved contents back.
+### Request body (`UpdateBasketCommand`)
 
-## 4. Trade-offs & Lessons Learned
+| Name               | Type                  | Required | Default | Constraints                                                                                                                                           | Description                                                  |
+| :----------------- | :-------------------- | :------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------- |
+| `items`            | `BasketItemRequest[]` | Yes      | —       | Non-empty array (`NotEmpty`)                                                                                                                          | Complete replacement list of items for the customer's basket |
+| `items[].id`       | `string`              | Yes      | —       | Non-empty string (`NotEmpty`); annotated with GUID syntax hint (`[StringSyntax(GuidFormat)]`), though UUID format is not enforced by FluentValidation | Identifier of the Catalog book                               |
+| `items[].quantity` | `integer` (`int32`)   | Yes      | —       | Greater than `0` (`>= 1`)                                                                                                                             | Updated unit quantity for the book                           |
 
-- **Full replacement vs. partial patches**: Replacing the entire item list simplifies server state and makes repeated submissions safe, but requires the caller to hold the full, authoritative cart state before updating.
-- **Last-write-wins behavior**: Because each update overwrites the whole collection, simultaneous edits from multiple browser tabs or devices will keep whichever update arrives last.
-- **Pre-order scope only**: Updating the basket only records book references and quantities; product titles, prices, and promotions are resolved separately when the basket is viewed.
+### Success response (`204 No Content`)
 
-## 5. Technical Reference
+Returns HTTP `204 No Content` with an empty response body.
 
-- **Command**: `UpdateBasketCommand`
-- **Endpoint**: `PUT /api/v1/baskets`
-- **Request**: `application/json` with the required `items` array; each item requires an `id` and `quantity`.
-- **Responses**:
-  - `204`: No response body (basket updated).
-  - `400`: `application/problem+json` with `HttpValidationProblemDetails`.
-  - `404`: `application/problem+json` with `ProblemDetails`.
+## Behavior and side effects
+
+- **Full-list replacement (last write wins):** `UpdateBasketHandler` resolves `userId` from `ClaimTypes.NameIdentifier`, loads `basket:{userId}` from Redis via `GetBasketAsync`, and calls `Guard.Against.NotFound(basket, userId)`. It then invokes `CustomerBasket.Update(...)`, which clears the existing item list and inserts the submitted items, writing the serialized JSON back to Redis via `StringSetAsync` with no TTL.
+- **No implicit creation:** Updating a customer who has no active basket returns `404 Not Found`. Call `POST /api/v1/baskets` to create a basket first, or call `DELETE /api/v1/baskets` to remove all items.
+- **No synchronous Catalog lookup:** `UpdateBasket` stores only book IDs and quantities; titles and prices are resolved on read in `GetBasket`.
+- **No Kafka integration events:** HTTP basket updates do not publish any Kafka or Wolverine integration events.
+
+:::note
+OpenAPI metadata (`ProducesPut()`) declares `404 Not Found` as `application/problem+json` (`ProblemDetails`), but at runtime `NotFoundExceptionHandler` (`src/BuildingBlocks/BookWorm.Chassis/Exceptions/NotFoundExceptionHandler.cs`) returns `application/json` with `{ "detail": "The requested resource was not found." }`.
+:::
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                                                      | Recovery behavior                                                                 |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Missing `items`, empty `items` array, empty `items[].id`, `items[].quantity <= 0`, or malformed JSON (`ValidationExceptionHandler`, `application/problem+json` `HttpValidationProblemDetails`) | Fix the failing fields reported in `errors` and resubmit                          |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                                             | Acquire a valid Entra ID access token and retry                                   |
+| `403 Forbidden`             | Valid token missing the `customer` role or the `basket_read`/`basket_write` scopes                                                                                                             | Request a token with the required role and scopes                                 |
+| `404 Not Found`             | No active basket exists in Redis for the authenticated customer (`NotFoundExceptionHandler` returns `application/json` `{ "detail": "The requested resource was not found." }`)                | Create a basket via `POST /api/v1/baskets` before updating                        |
+| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                                     | Wait for the `Retry-After` interval before retrying                               |
+| `500 Internal Server Error` | Unexpected Redis or server failure (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                                                                 | Retry with exponential backoff; inspect Basket API and Redis logs using `traceId` |
+
+## Related documentation
+
+- [[service|basket-api]] — Service overview, Redis storage, and authorization policy.
+- [[command|CreateBasket]] — Initialize a new basket (`POST /api/v1/baskets`).
+- [[command|DeleteBasket]] — Delete an active basket (`DELETE /api/v1/baskets`).
+- [[query|GetBasket]] — Retrieve the current basket enriched with Catalog data (`GET /api/v1/baskets`).
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer
 	file="schema.json"

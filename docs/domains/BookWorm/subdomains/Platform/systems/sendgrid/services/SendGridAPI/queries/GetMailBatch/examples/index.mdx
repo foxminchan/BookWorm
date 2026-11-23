@@ -1,43 +1,28 @@
 ---
-summary: Validate a SendGrid mail batch identifier before using it in a notification workflow.
+summary: Usage examples for Get mail batch.
 ---
 
-## 1. Context & Problem
+## Validate a mail batch identifier with curl
 
-When notification workflows group scheduled or related emails under a shared mail batch identifier, teams need a safe way to verify that a stored batch identifier is still valid before attaching new emails to it. If a workflow assumes an unrecognized or expired batch identifier is harmless—or treats validation success as proof that emails were sent—subsequent mail submissions can fail unexpectedly or be misreported.
+<CodeGroup>
 
-## 2. Business Value
+```bash
+curl --request GET \
+  "https://api.sendgrid.com/v3/mail/batch/<batch-id>" \
+  --header "Authorization: Bearer <sendgrid-api-key>" \
+  --header "Accept: application/json"
+```
 
-- **Prevents broken batch submissions:** Confirms a batch identifier is recognized by the email provider before a workflow attempts to attach messages to it.
-- **Eliminates silent workflow state errors:** Guides teams to treat unknown batches as explicit state failures rather than assuming the batch is usable later.
-- **Clarifies status boundaries:** Prevents operations and business stakeholders from mistaking batch existence for message submission or delivery confirmation.
+</CodeGroup>
 
-## 3. How It Works
+Where:
 
-1. **Supply the stored batch identifier:** Before reusing a previously created mail batch, the workflow checks the batch identifier with the external email provider using authenticated access.
-2. **Confirm identifier recognition:** If the provider confirms the identifier exists, the workflow knows the batch is recognized—though this check does not indicate whether any messages have been submitted or delivered under that batch.
-3. **Fail fast on unknown batches:** If the provider reports that the identifier is invalid or unknown, the workflow treats it as a workflow state error and stops rather than attempting to reference it in later email submissions.
+- `<batch-id>`: Mail batch identifier issued by SendGrid `POST /v3/mail/batch`.
+- `<sendgrid-api-key>`: SendGrid API key with mail batch access.
 
-## 4. Trade-offs & Lessons Learned
+Expected response (`200 OK`):
 
-- **Existence check vs. delivery tracking:** Validating a batch identifier only proves the provider recognizes the identifier; teams must still rely on BookWorm's own notification state to track whether messages were queued or submitted.
-- **Upfront validation cost vs. reliability:** Performing a pre-flight check adds an extra external call when resuming paused workflows, but prevents late submission failures caused by stale or missing batch state.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### 1. Retrieve a mail batch
-
-Provide the identifier returned by [[command|CreateMailBatch]]. A `200 OK` response
-confirms SendGrid recognizes the batch identifier; it does not show whether any
-message has been submitted or delivered.
-
-#### Example response
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
@@ -47,32 +32,31 @@ message has been submitted or delivered.
 
 </CodeGroup>
 
-</Column>
+## Validate a mail batch identifier with C# `HttpClient`
 
-<Column>
+<CodeGroup>
 
-<CodeGroup dropdown>
-
-```csharp get-mail-batch.cs
+```csharp
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
 var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
     ?? throw new InvalidOperationException("SENDGRID_API_KEY is required.");
-var batchId = "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw";
+var batchId = "<batch-id>";
 
 using var client = new HttpClient
 {
-	BaseAddress = new Uri("https://api.sendgrid.com")
+    BaseAddress = new Uri("https://api.sendgrid.com"),
 };
 client.DefaultRequestHeaders.Authorization =
-	new AuthenticationHeaderValue("Bearer", apiKey);
+    new AuthenticationHeaderValue("Bearer", apiKey);
 
 using var response = await client.GetAsync($"/v3/mail/batch/{batchId}");
-if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+if (response.StatusCode == HttpStatusCode.BadRequest)
 {
-	throw new InvalidOperationException("The mail batch identifier is invalid.");
+    throw new InvalidOperationException("The mail batch identifier is invalid.");
 }
 response.EnsureSuccessStatusCode();
 
@@ -82,18 +66,8 @@ var result = await response.Content.ReadFromJsonAsync<GetMailBatchResponse>()
 Console.WriteLine(result.BatchId);
 
 internal sealed record GetMailBatchResponse(
-	[property: JsonPropertyName("batch_id")] string BatchId);
+    [property: JsonPropertyName("batch_id")] string BatchId
+);
 ```
 
 </CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### 2. Handle an unknown mail batch
-
-Treat a missing batch as a workflow state error rather than an empty success.
-Do not assume it can be used by a later [[command|SendMail]] submission.

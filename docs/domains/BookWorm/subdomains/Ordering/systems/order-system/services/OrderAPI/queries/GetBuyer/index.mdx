@@ -18,53 +18,60 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`GetBuyer` queries **Ordering API** (`GET /api/v1/buyers/me`) to retrieve a buyer's profile (`id`, `name`, and `address`). Callers with the `admin` role retrieve the profile specified by the `Id` query parameter; all other authenticated callers are resolved to the buyer linked to their Microsoft Entra ID `NameIdentifier` claim.
 
-Customers need to view their saved [[entity|buyer]] details—such as their name and shipping address—during account management and checkout, while support administrators need to inspect a specific buyer's profile when assisting with orders. Providing this information safely requires enforcing ownership rules so customers cannot read another person's profile.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                         |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                       |
+| **Source**            | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/Get/GetBuyerEndpoint.cs`, `GetBuyerQuery.cs`                         |
+| **Protocol / format** | HTTP `GET /api/v1/buyers/me` (via API Gateway: `GET /ordering/api/v1/buyers/me`), `ApiVersions.V1`, JSON (`application/json`) |
+| **Authentication**    | Microsoft Entra ID JWT required (`customer` or `admin` role; scopes `ordering_read`, `ordering_write`)                        |
+| **Rate limiting**     | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters |
+| **Backing store**     | PostgreSQL (`orderingdb`, EF Core)                                                                                            |
+| **Contract version**  | `1.0.0`                                                                                                                       |
 
-- **Seamless customer experience:** Enables storefronts to display or prefill saved customer contact and address information.
-- **Privacy by design:** Ensures regular customers can only access their own buyer profile while authorized administrators can inspect any requested buyer.
-- **Single governed capability:** Consolidates self-service and administrative profile lookups behind one consistent query.
+## Parameters and fields
 
-## 3. How It Works
+### Query parameters
 
-1. An authenticated caller requests a [[entity|buyer]] profile and supplies a buyer identifier.
-2. The service checks the caller's authorization: standard customers are always resolved to the buyer profile tied to their own signed-in identity, while administrators can retrieve the specific buyer requested.
-3. If the resolved buyer profile exists, the service returns the buyer's identifier, name, and address.
-4. If no profile exists for the resolved buyer, the service reports that the profile was not found.
+| Name | Type            | Required | Default | Constraints         | Description                                                                                                                              |
+| :--- | :-------------- | :------- | :------ | :------------------ | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| `Id` | `string` (UUID) | Yes      | —       | Valid UUID (`Guid`) | Buyer identifier requested by `admin` callers; ignored for non-admin callers whose buyer ID is resolved from `ClaimTypes.NameIdentifier` |
 
-## 4. Trade-offs & Lessons Learned
+:::note
+Because `GetBuyerQuery` binds `Id` as a non-nullable `Guid`, non-admin clients must still supply a valid UUID query parameter even though Ordering API resolves their own authenticated buyer ID.
+:::
 
-- **Shared lookup vs. separate endpoints:** Routing both self-service and administrative lookups through one operation avoids duplicating retrieval logic, at the trade-off of requiring a buyer identifier even when a customer is only retrieving their own profile.
-- **Explicit missing-profile outcome:** Returning a not-found outcome when a profile does not exist means storefront journeys must handle new customers whose buyer profile has not been created yet.
+### Response schema (`BuyerDto`)
 
-## 5. Technical Reference
+A `200 OK` response returns a `BuyerDto` JSON object.
 
-Retrieves a [[entity|buyer]] profile from the `/buyers/me` endpoint (`GET /api/v1/buyers/me`). Administrators may retrieve another user's profile; other callers are resolved to the Buyer associated with their authenticated identity.
+| Field     | Type             | Required | Constraints | Description                                    |
+| :-------- | :--------------- | :------- | :---------- | :--------------------------------------------- |
+| `id`      | `string`         | Yes      | UUID        | Unique identifier of the buyer profile         |
+| `name`    | `string \| null` | Yes      | Nullable    | Buyer display name (`null` when unset)         |
+| `address` | `string \| null` | Yes      | Nullable    | Formatted shipping address (`null` when unset) |
 
-### Query parameters and response
+## Error responses
 
-- **Query parameter:** The OpenAPI contract requires an `Id` UUID query parameter.
-- **`200 OK`:** Returns a `BuyerDto` with the Buyer ID, name, and address.
-- **`404 Not Found`:** Returns `ProblemDetails` when the resolved Buyer profile does not exist.
+| Code / status           | Condition                                                                                                   | Recovery behavior                                                       |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| `400 Bad Request`       | Missing or malformed `Id` UUID query parameter (`application/problem+json`)                                 | Supply a valid UUID in the `Id` query parameter; do not retry unchanged |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                          | Re-authenticate and retry                                               |
+| `403 Forbidden`         | Authenticated principal lacks Ordering API roles or scopes                                                  | Request a token with `customer` or `admin` role and Ordering scopes     |
+| `404 Not Found`         | No buyer profile exists for the resolved buyer ID (`application/problem+json`)                              | Prompt the user to create a buyer profile via `CreateBuyer`             |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying                     |
 
-### Query using CURL
+## Related documentation
 
-<CodeGroup dropdown>
-
-```sh get-buyer.sh
-curl -H "Authorization: Bearer <access-token>" \
-  "https://api.example.com/api/v1/buyers/me?Id=<buyer-id>"
-```
-
-</CodeGroup>
-
-### Schema
-
-<SchemaViewer file="schema.json" title="BuyerDto JSON Schema" maxHeight="500" search="true" />
-
-### Architecture
+- [[service|order-api]] — Service overview, PostgreSQL persistence, and endpoints.
+- [[query|ListBuyers]] — Admin-only paginated listing of all buyer profiles.
+- [[command|CreateBuyer]] — Create a new buyer profile.
+- [[command|UpdateAddress]] — Update a buyer's shipping address.
+- [[entity|buyer]] — Domain model for buyer profiles.
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="BuyerDto JSON Schema" maxHeight="500" search="true" />

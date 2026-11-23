@@ -1,0 +1,15 @@
+flowchart LR
+	client["Storefront / Backoffice\n(Next.js 16 via API Gateway)"]
+	rating["Rating API\n(.NET 11 Minimal API)"]
+	cosmos["Azure Cosmos DB\n(ratingdb / feedbacks)"]
+	kafka["Kafka\n(CloudEvents JSON)"]
+	catalog["Catalog API\n(.NET 11 Minimal API)"]
+	catalogdb["catalogdb\n(PostgreSQL)"]
+
+	client --> |"HTTPS: POST / DELETE /rating/api/v1/feedbacks"| rating
+	rating -->|"Write / Delete Feedback"| cosmos
+	rating --> |"Kafka: rating.feedback-create / delete"| kafka
+	kafka -->|"Project Delta"| catalog
+	catalog -->|"Update average_rating & total_reviews"| catalogdb
+	catalog --> |"Kafka: catalog.book-update-rating-failed (if missing)"| kafka
+	kafka --> |"Compensate: Revert & Delete"| rating
