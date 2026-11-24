@@ -62,7 +62,7 @@ workflows:
         - 'github/gh-aw-actions@v1.2.2'
     '.github/workflows/pr-validation.yml':
         - 'actions/checkout@v7.0.1'
-        - 'actions/dependency-review-action@v5.0.0'
+        - 'actions/dependency-review-action@v5.0.1'
         - 'advanced-security/component-detection-dependency-submission-action@v0.2.0'
     '.github/workflows/release.yml':
         - 'actions/attest-build-provenance@v4.2.2'
@@ -138,9 +138,9 @@ dependencies:
         commit: 'sha1-45bfe0192ca1faeb007ade9deae92b16b8254a0d'
         owner_id: 44036562
         repo_id: 513659658
-    'actions/dependency-review-action@v5.0.0':
-        ref: 'v5.0.0'
-        commit: 'sha1-a1d282b36b6f3519aa1f3fc636f609c47dddb294'
+    'actions/dependency-review-action@v5.0.1':
+        ref: 'v5.0.1'
+        commit: 'sha1-bbc44d14a204704ccc493733616cd1e93a0321ec'
         owner_id: 44036562
         repo_id: 476372928
     'actions/deploy-pages@v5.0.1':
