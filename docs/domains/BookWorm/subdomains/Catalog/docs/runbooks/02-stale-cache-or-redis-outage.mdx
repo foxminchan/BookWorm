@@ -49,8 +49,11 @@ Compare the SQL result against `curl -sS "<gateway-url>/catalog/api/v1/books/<bo
 </Step>
 <Step title="Apply targeted recovery">
 
-> [!CAUTION]
-> Never run `FLUSHDB` or `FLUSHALL` on BookWorm's shared Redis instance (`redis`). The same Redis resource stores customer baskets (**Basket API**), distributed locks (**Ordering API**), and 24-hour `IIntegrationEventIdempotencyGuard` keys across services.
+<Admonition type="danger">
+	Never run `FLUSHDB` or `FLUSHALL` on BookWorm's shared Redis instance (`redis`). The same Redis
+	resource stores customer baskets (**Basket API**), distributed locks (**Ordering API**), and
+	24-hour `IIntegrationEventIdempotencyGuard` keys across services.
+</Admonition>
 
 - **Single stale book:** Delete only that book's detail and summary keys in Redis:
 

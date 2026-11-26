@@ -43,11 +43,11 @@ Catalog is BookWorm's Core domain for authoritative book information, classifica
 - **Out of scope:** Customer shopping baskets (`Shopping`), accepted order snapshots (`Ordering`), and individual customer feedback submissions (`Reviews`).
 - **Key constraints:** Catalog listing availability is not an inventory reservation held by a basket or a fulfillment guarantee owned by Ordering; price updates never rewrite already accepted orders.
 
-## C4 context and container view
+## Context and container view
 
-This container view shows Catalog API, the `Catalog Ingestion` Azure Functions worker, their dedicated data stores, and the synchronous and asynchronous contracts connecting neighboring contexts.
+This architecture view shows Catalog API, the `Catalog Ingestion` Azure Functions worker, their data stores, and the contracts connecting neighboring contexts.
 
-<MermaidFileLoader file="mermaids/Catalog-diagram-1.mmd" />
+<LikeC4View viewId="catalogContext" project="catalog" />
 
 ## Building block view
 

@@ -26,8 +26,11 @@ Use this runbook when **Catalog API** (`catalog`) publishes `BookUpdatedRatingFa
 
 Capture the `FeedbackId` from `BookUpdatedRatingFailedIntegrationEvent`, the CloudEvents `id`, W3C correlation/trace ID, environment (`<env>`), and failure UTC timestamp.
 
-> [!NOTE]
-> `BookUpdatedRatingFailedIntegrationEvent` carries only `FeedbackId`—it does not include `BookId`. Resolve `BookId` in Step 2 from Catalog logs (`FeedbackCreatedIntegrationEvent`) or from the `Feedback` document in Cosmos DB `ratingdb`/`feedbacks`.
+<Admonition type="note">
+	`BookUpdatedRatingFailedIntegrationEvent` carries only `FeedbackId`—it does not include `BookId`.
+	Resolve `BookId` in Step 2 from Catalog logs (`FeedbackCreatedIntegrationEvent`) or from the
+	`Feedback` document in Cosmos DB `ratingdb`/`feedbacks`.
+</Admonition>
 
 </Step>
 <Step title="Confirm whether the book is actually missing in Catalog">
@@ -70,8 +73,10 @@ Where:
 
 - `<feedback-id>`: Exact `FeedbackId` from `BookUpdatedRatingFailedIntegrationEvent`.
 
-> [!CAUTION]
-> Never delete feedback records by `bookId` alone. Compensation targets only the exact `FeedbackId` reported by `BookUpdatedRatingFailedIntegrationEvent`.
+<Admonition type="danger">
+	Never delete feedback records by `bookId` alone. Compensation targets only the exact `FeedbackId`
+	reported by `BookUpdatedRatingFailedIntegrationEvent`.
+</Admonition>
 
 </Step>
 <Step title="Check Kafka consumer health and dead-letter queues">

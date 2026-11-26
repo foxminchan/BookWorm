@@ -43,11 +43,11 @@ Conversational is BookWorm's Core domain for AI-assisted customer discovery and 
 - **Out of scope:** Mutating books (`Catalog`), modifying shopping baskets (`Shopping`), creating or canceling orders (`Ordering`), and persisting individual customer reviews (`Reviews`).
 - **Key constraints:** Chat API has no PostgreSQL database, no Redis cache, and no Kafka broker integration. Privacy middleware failures stop requests rather than forwarding unfiltered text.
 
-## C4 context and container view
+## Context and container view
 
-This container view shows how Storefront's CopilotKit UI streams requests through the API Gateway into Chat API and how Chat API connects to Microsoft Foundry, Presidio, MCP Tools, Rating API, and Azure Blob Storage.
+This architecture view shows how customers interact with Chat and how Conversational integrates with Catalog, Reviews, identity, and privacy services.
 
-<MermaidFileLoader file="mermaids/Conversational-diagram-1.mmd" />
+<LikeC4View viewId="conversationalContext" project="conversational" />
 
 ## Building block view
 

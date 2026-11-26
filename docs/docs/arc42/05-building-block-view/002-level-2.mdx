@@ -19,13 +19,13 @@ To preserve readability, BookWorm's Level-2 internals are split across two diagr
 
 This diagram shows how Catalog, Shopping, and Ordering separate transactional storage, caching, vector indexing, and durable workflow orchestration.
 
-<MermaidFileLoader file="mermaids/002-level-2-diagram-1.mmd" />
+<LikeC4View viewId="bookwormCommerceContainers" project="deployment" />
 
 ### AI, reviews, and platform internals
 
 This diagram shows how Reviews, Conversational, and Platform map to Cosmos DB, Azure Blob Storage, Presidio, Quartz PostgreSQL, and stateless Redis-guarded email delivery.
 
-<MermaidFileLoader file="mermaids/002-level-2-diagram-2.mmd" />
+<LikeC4View viewId="bookwormAIAndPlatformContainers" project="deployment" />
 
 ## 5.2.1 Edge and frontends
 

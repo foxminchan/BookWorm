@@ -57,7 +57,7 @@ The diagram shows how Rating API persists feedback documents and Wolverine envel
 | `firstName`      | `string`              | Yes      | Reviewer first name (annotated `[PIIData]` in command logging; max 50 chars in domain validation) |
 | `lastName`       | `string`              | Yes      | Reviewer last name (annotated `[PIIData]` in command logging; max 50 chars in domain validation)  |
 | `comment`        | `string`              | No       | Optional written review (up to `1,000` characters)                                                |
-| `rating`         | `int`                 | Yes      | Whole-number score validated as `0`–`5` in Rating API (no database-level check constraint)        |
+| `rating`         | `int`                 | Yes      | Whole-number score validated as `0`-`5` in Rating API (no database-level check constraint)        |
 | `createdAt`      | `DateTime`            | Yes      | UTC creation timestamp                                                                            |
 | `lastModifiedAt` | `DateTime?`           | No       | Optional UTC modification timestamp                                                               |
 | `_etag`          | `string`              | System   | Managed by Cosmos DB for optimistic concurrency (`UseETagConcurrency()`)                          |
@@ -104,7 +104,7 @@ AppHost provisions the `cosmos` account, `ratingdb` database, and `feedbacks` co
 ## Operational notes
 
 - **No SQL migrations:** Because `ratingdb` runs on Azure Cosmos DB, do not run PostgreSQL DDL scripts or EF Core SQL migrations against Rating.
-- **Service-layer validation required:** Always create or delete reviews through Rating API so rating bounds (`0`–`5`), PII redaction annotations, and `FeedbackCreatedIntegrationEvent` / `FeedbackDeletedIntegrationEvent` publications remain consistent.
+- **Service-layer validation required:** Always create or delete reviews through Rating API so rating bounds (`0`-`5`), PII redaction annotations, and `FeedbackCreatedIntegrationEvent` / `FeedbackDeletedIntegrationEvent` publications remain consistent.
 
 ## Related documentation
 

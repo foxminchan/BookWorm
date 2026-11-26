@@ -51,7 +51,7 @@ To keep creation, browsing, and deletion consistent, BookWorm needs a single aut
 
 - **Availability dependency:** Both the Rating service and [[agent|rating-agent]] depend on the database being available for feedback writes, listings, and summarization reads.
 - **Eventual consistency for consumers:** Because external domains cannot query the database directly, cross-domain views such as Catalog's rating summary must tolerate brief delays between a review change and its reflection elsewhere.
-- **API validation remains essential:** Database uniqueness and integrity rules complement, but do not replace, service-level validation of the 0–5 rating range and request rules.
+- **API validation remains essential:** Database uniqueness and integrity rules complement, but do not replace, service-level validation of the 0-5 rating range and request rules.
 - **Name uniqueness is not identity verification:** Preventing duplicate entries by book and reviewer name does not constitute verified customer identity; downstream callers should not treat it as proof of identity.
 - **No cross-database foreign keys:** A feedback entry can reference a book that Catalog later reports as missing. That mismatch is resolved via an asynchronous compensation flow rather than a direct cross-domain database constraint.
 
@@ -66,7 +66,7 @@ To keep creation, browsing, and deletion consistent, BookWorm needs a single aut
 - **Authoritative store:** [[container|rating-database]] (PostgreSQL) for the [[entity|feedback]] aggregate.
 - **Exclusive writer:** [[service|rating-api]].
 - **Validation & constraints:**
-  - `rating-api` validates ratings in the inclusive `0`–`5` range at the API boundary before persistence.
+  - `rating-api` validates ratings in the inclusive `0`-`5` range at the API boundary before persistence.
   - PostgreSQL enforces a uniqueness constraint on the book and reviewer name combination alongside relational integrity for feedback IDs, book IDs, reviewer details, and optional comments.
 - **Downstream contract boundary:** Projection events emitted to [[domain|catalog]] carry only identifiers and the rating value—omitting comment text and reviewer details.
 - **Dependencies:** Feedback listing, `rating-api` writes, and [[agent|rating-agent]] reads rely on PostgreSQL availability; missing-book references are handled asynchronously via the Catalog rejection compensation flow rather than cross-database foreign keys.

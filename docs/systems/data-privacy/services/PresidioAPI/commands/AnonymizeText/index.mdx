@@ -51,7 +51,7 @@ Pass `analyzer_results` computed against the exact same `text` string. Stale cha
 | :------------ | :-------- | :------- | :------ | :------------------------------ | :------------------------------------------------------------------- |
 | `start`       | `integer` | Yes      | —       | `>= 0`                          | Zero-based inclusive start character offset in `text`.               |
 | `end`         | `integer` | Yes      | —       | `> start`                       | Zero-based exclusive end character offset in `text`.                 |
-| `score`       | `number`  | Yes      | —       | `0.0`–`1.0`                     | Confidence score returned by Presidio Analyzer.                      |
+| `score`       | `number`  | Yes      | —       | `0.0`-`1.0`                     | Confidence score returned by Presidio Analyzer.                      |
 | `entity_type` | `string`  | Yes      | —       | Non-empty Presidio entity label | Entity type used to select the matching operator from `anonymizers`. |
 
 ### Supported `anonymizers` operator schemas

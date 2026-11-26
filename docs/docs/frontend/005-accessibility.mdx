@@ -83,8 +83,12 @@ Where:
 
 - `<gateway-url>`: Running Storefront or API Gateway base URL (for example, `https://localhost:5000`).
 
-> [!NOTE]
-> `@bookworm/commerce` currently has unit and component tests only (no standalone E2E suite); its basket and checkout accessibility journeys are verified through Storefront's `accessibility.feature` via the gateway. `@bookworm/backoffice` installs `@axe-core/playwright`, though it does not yet have a dedicated `accessibility.feature` file.
+<Admonition type="note">
+	`@bookworm/commerce` currently has unit and component tests only (no standalone E2E suite); its
+	basket and checkout accessibility journeys are verified through Storefront's
+	`accessibility.feature` via the gateway. `@bookworm/backoffice` installs `@axe-core/playwright`,
+	though it does not yet have a dedicated `accessibility.feature` file.
+</Admonition>
 
 There is no dedicated Backoffice `accessibility.feature` or Lighthouse CI workflow in the repository. No future plan is recorded; ask the Backoffice owners before describing either as planned.
 

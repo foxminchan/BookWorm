@@ -6,6 +6,7 @@ specification {
   }
   element system
   element container
+  element component
   element database {
     style {
       shape storage
@@ -43,7 +44,14 @@ model {
 
     storefront = container 'Storefront' {
       technology 'Next.js (Bun)'
-      description 'Customer-facing web client (internal ingress behind API gateway).'
+      description 'Customer-facing web client for public catalog browsing, authentication, and chat.'
+      style {
+        icon tech:nextjs-icon
+      }
+    }
+    commerce = container 'Commerce' {
+      technology 'Next.js (Bun)'
+      description 'Authenticated customer-facing web client for basket, checkout, and account routes.'
       style {
         icon tech:nextjs-icon
       }
@@ -57,7 +65,7 @@ model {
     }
     gateway = container 'API gateway' {
       technology 'YARP'
-      description 'Sole external ingress; routes /, /backoffice, /entra, /chatting, /rating, /ordering, /basket, and /catalog.'
+      description 'Sole external ingress; routes public, authenticated customer, and back-office traffic to the appropriate clients and APIs.'
       style {
         icon bootstrap:signpost-split
       }
@@ -96,6 +104,28 @@ model {
       description 'Coordinates checkout outcomes through Durable Task Scheduler orchestrations.'
       style {
         icon azure:function-apps
+      }
+
+      triggers = component 'Kafka trigger functions' {
+        description 'Consumes checkout, order-status, and basket-deletion events to start or signal workflows.'
+      }
+
+      orchestrator = component 'OrderOrchestrator' {
+        technology 'Azure Durable Functions'
+        description 'Coordinates durable post-checkout workflow state and invokes workflow steps.'
+      }
+
+      decider = component 'Order lifecycle decider' {
+        description 'Evaluates order workflow decisions and domain state transitions.'
+      }
+
+      workflowSteps = component 'Workflow steps' {
+        description 'Implements basket-deletion, order-status, timeout, and compensation steps.'
+      }
+
+      publishActivities = component 'Publish activities' {
+        technology 'Wolverine and Kafka'
+        description 'Publishes order and basket-cleanup commands to downstream services.'
       }
     }
     rating = container 'Rating' {
@@ -146,14 +176,6 @@ model {
         icon bootstrap:shield-lock
       }
     }
-    qdrant = database 'Vector search index' {
-      technology 'Qdrant Cloud'
-      description 'Cloud-hosted derived index maintained from Catalog data.'
-      style {
-        icon tech:qdrant-icon
-      }
-    }
-
     redis = database 'Redis' {
       technology 'Azure Managed Redis'
       description 'Balanced_B5 (HA, Entra ID auth, access keys disabled); Basket state and cache for Catalog, Ordering, and Rating.'
@@ -223,6 +245,13 @@ model {
       icon tech:sendgrid-icon
     }
   }
+  qdrant = database 'Vector search index' {
+    technology 'Qdrant Cloud'
+    description 'Cloud-hosted derived index maintained from Catalog data.'
+    style {
+      icon tech:qdrant-icon
+    }
+  }
   foundry = system 'Microsoft Foundry' {
     description 'AIServices S0 with Foundry-project + Application Insights; hosts chat (model-router), decision (Microsoft-Decision-1), and embedding (embed-v-4-0).'
     style {
@@ -232,12 +261,40 @@ model {
 
   customer -> bookworm.gateway 'accesses Storefront'
   staff -> bookworm.gateway 'accesses Back office'
+  customer -> bookworm 'uses the online bookstore'
+  staff -> bookworm 'administers the platform'
+  bookworm -> identity 'authenticates users and service requests' {
+    technology 'OpenID Connect and OAuth 2.0'
+  }
+  bookworm -> foundry 'uses AI inference and embedding services' {
+    technology 'HTTPS'
+  }
+  bookworm -> kafka 'exchanges integration events and commands' {
+    technology 'Kafka'
+  }
+  bookworm -> qdrant 'searches the derived catalog index' {
+    technology 'gRPC and HTTP'
+  }
+  bookworm -> smtp 'submits transactional email' {
+    technology 'SMTP'
+  }
   bookworm.gateway -> bookworm.storefront 'routes /'
+  bookworm.gateway -> bookworm.commerce 'routes /basket, /checkout, and /account'
   bookworm.gateway -> bookworm.backoffice 'routes /backoffice'
   bookworm.storefront -> bookworm.gateway 'calls APIs'
+  bookworm.commerce -> bookworm.gateway 'calls APIs'
   bookworm.backoffice -> bookworm.gateway 'calls APIs'
   bookworm.storefront -> identity 'authenticates users'
+  bookworm.commerce -> identity 'authenticates users'
   bookworm.backoffice -> identity 'authenticates users'
+
+  kafka -> bookworm.finance.triggers 'delivers checkout and order events'
+  bookworm.finance.triggers -> bookworm.finance.orchestrator 'starts or signals workflow'
+  bookworm.finance.orchestrator -> bookworm.finance.decider 'evaluates transitions'
+  bookworm.finance.orchestrator -> bookworm.finance.workflowSteps 'executes workflow steps'
+  bookworm.finance.orchestrator -> bookworm.durableTaskScheduler 'persists orchestration state'
+  bookworm.finance.workflowSteps -> bookworm.finance.publishActivities 'executes side effects'
+  bookworm.finance.publishActivities -> kafka 'publishes commands'
 
   bookworm.gateway -> bookworm.chat 'routes /chatting'
   bookworm.gateway -> bookworm.rating 'routes /rating'
@@ -247,7 +304,7 @@ model {
 
   bookworm.catalog -> bookworm.catalogDb 'reads and writes'
   bookworm.catalog -> bookworm.redis 'caches'
-  bookworm.catalog -> bookworm.qdrant 'searches'
+  bookworm.catalog -> qdrant 'searches'
   bookworm.catalog -> bookworm.blobStorage 'stores book images'
   bookworm.catalog -> foundry 'requests chat and embedding models'
   bookworm.shopping -> bookworm.redis 'reads and writes'
@@ -273,7 +330,7 @@ model {
   bookworm.mcp -> bookworm.rating 'reads rating data'
   bookworm.scheduler -> bookworm.schedulerDb 'persists schedules'
   bookworm.catalogIngestion -> bookworm.catalogDb 'reads pending changes'
-  bookworm.catalogIngestion -> bookworm.qdrant 'maintains derived index'
+  bookworm.catalogIngestion -> qdrant 'maintains derived index'
   bookworm.catalogIngestion -> bookworm.blobStorage 'uses host storage'
   bookworm.catalogIngestion -> foundry 'requests embeddings'
 
@@ -309,6 +366,7 @@ deployment {
 
       workloadGroup edge 'Client and gateway container apps' {
         instanceOf bookworm.storefront
+        instanceOf bookworm.commerce
         instanceOf bookworm.backoffice
         instanceOf bookworm.gateway
       }
@@ -389,7 +447,7 @@ deployment {
     }
 
     instanceOf kafka
-    instanceOf bookworm.qdrant
+    instanceOf qdrant
     instanceOf identity
     instanceOf smtp
   }

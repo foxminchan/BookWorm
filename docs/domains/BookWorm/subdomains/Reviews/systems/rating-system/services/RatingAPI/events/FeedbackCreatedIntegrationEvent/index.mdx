@@ -39,7 +39,7 @@ The table below reflects the runtime C# contract (`FeedbackCreatedIntegrationEve
 | `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique event identifier; used by Catalog API as the Redis idempotency key.                         |
 | `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Rating API created the event.                                                   |
 | `bookId`       | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the book whose rating summary must be updated.                                       |
-| `rating`       | `integer`            | Yes      | —                       | `0`–`5` (`int`)                                          | Rating score to add to the book's denormalized rating summary.                                     |
+| `rating`       | `integer`            | Yes      | —                       | `0`-`5` (`int`)                                          | Rating score to add to the book's denormalized rating summary.                                     |
 | `feedbackId`   | `string` (UUID)      | Yes      | —                       | Valid UUID                                               | Identifier of the newly created `Feedback` document, used for compensation if the book is missing. |
 
 :::warning

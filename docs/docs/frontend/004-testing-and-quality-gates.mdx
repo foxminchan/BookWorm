@@ -77,8 +77,11 @@ bunx turbo run test:coverage
 
 </CodeGroup>
 
-> [!NOTE]
-> `src/Clients/package.json` does not define a root `test:coverage` script. Use `bunx turbo run test:coverage` from `src/Clients`, or run `bun run test:coverage` inside an individual app directory such as `src/Clients/apps/storefront`.
+<Admonition type="note">
+	`src/Clients/package.json` does not define a root `test:coverage` script. Use `bunx turbo run
+	test:coverage` from `src/Clients`, or run `bun run test:coverage` inside an individual app
+	directory such as `src/Clients/apps/storefront`.
+</Admonition>
 
 </Step>
 <Step title="Verify production Next.js builds">

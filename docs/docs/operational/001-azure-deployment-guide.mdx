@@ -192,8 +192,12 @@ BookWorm includes a manual CI/CD workflow at `.github/workflows/apphost-cd.yml` 
 
 3. **Confirm Storefront and Backoffice respond through the gateway**
 
-   > [!NOTE]
-   > Backend `/health` and `/alive` endpoints are mapped only in `Development` (`src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`). In `Staging` and `Production`, verify availability through Container App status and gateway HTTP responses rather than curling `/health`.
+   <Admonition type="note">
+   	Backend `/health` and `/alive` endpoints are mapped only in `Development`
+   	(`src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`). In `Staging` and `Production`, verify
+   	availability through Container App status and gateway HTTP responses rather than curling
+   	`/health`.
+   </Admonition>
 
    ```bash
    curl -I "https://gateway.<aca-default-domain>/"
@@ -248,7 +252,7 @@ Remove unused Entra ID application registrations (`entra`, `bookworm-agent-bluep
 | `aspire deploy` fails with missing parameter error for `broker`, `vectordb`, or `email-*` | Required `ConnectionStrings__*` or `Parameters__email_*` environment variable is unset         | Export all required variables from Step 2 and re-run `aspire deploy`                                                         |
 | `AuthorizationFailed` during provisioning                                                 | Deploying identity lacks `User Access Administrator` or `Owner` role on the subscription       | Assign `Contributor` + `User Access Administrator` (or `Owner`) on `<subscription-id>`, then retry                           |
 | `Insufficient privileges` creating `entra` or `entra-agent-identities`                    | Deploying account cannot create Microsoft Graph applications or Federated Identity Credentials | Grant Application Administrator (or equivalent Microsoft Graph app creation permissions) in Entra ID                         |
-| Services log `403 Forbidden` or PostgreSQL token login errors right after first deploy    | Newly assigned Entra ID RBAC roles take 5–10 minutes to propagate                              | Wait 10 minutes and restart the failing Container App revision (see [[doc\|operational/003-incident-response-and-runbooks]]) |
+| Services log `403 Forbidden` or PostgreSQL token login errors right after first deploy    | Newly assigned Entra ID RBAC roles take 5-10 minutes to propagate                              | Wait 10 minutes and restart the failing Container App revision (see [[doc\|operational/003-incident-response-and-runbooks]]) |
 | Stale deployment state causes unexpected resource drift                                   | Cached Aspire deployment state in `~/.aspire/deployments` is out of sync                       | Re-run `aspire deploy` with `--clear-cache`                                                                                  |
 
 ## Related documentation

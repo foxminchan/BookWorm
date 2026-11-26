@@ -25,7 +25,7 @@ badges:
     textColor: teal
 ---
 
-Reviews is BookWorm's Supporting bounded context for individual customer book feedback (`Feedback` records containing a `BookId` reference, `0`–`5` integer rating, reviewer names, and optional comment). `Rating API` stores authoritative feedback in **Azure Cosmos DB** (`ratingdb` / `feedbacks` container partitioned by `/bookId`), publishes rating changes to Catalog over Kafka with compensating cleanup for missing books, and hosts the remote `Rating Agent` over HTTP and A2A gRPC.
+Reviews is BookWorm's Supporting bounded context for individual customer book feedback (`Feedback` records containing a `BookId` reference, `0`-`5` integer rating, reviewer names, and optional comment). `Rating API` stores authoritative feedback in **Azure Cosmos DB** (`ratingdb` / `feedbacks` container partitioned by `/bookId`), publishes rating changes to Catalog over Kafka with compensating cleanup for missing books, and hosts the remote `Rating Agent` over HTTP and A2A gRPC.
 
 ## Scope and constraints
 
@@ -33,11 +33,11 @@ Reviews is BookWorm's Supporting bounded context for individual customer book fe
 - **Out of scope:** Owning canonical book metadata (`Catalog`), managing baskets (`Shopping`), or processing orders (`Ordering`).
 - **Key constraints:** Rating API uses **Azure Cosmos DB** with `WolverineFx.CosmosDb` persistence and **no PostgreSQL database**. AI-generated feedback summaries never alter stored `Feedback` records or Catalog's numeric rating summary.
 
-## C4 context and container view
+## Context and container view
 
-This container view shows how Storefront, Backoffice, and Chat API interact with Rating API and how Rating API integrates with Azure Cosmos DB, Redis, Kafka, Presidio, Microsoft Foundry, and MCP Tools.
+This architecture view shows how customers and administrators interact with Rating and how Reviews integrates with Catalog, identity, and privacy services.
 
-<MermaidFileLoader file="mermaids/Reviews-diagram-1.mmd" />
+<LikeC4View viewId="ratingContext" project="reviews" />
 
 ## Building block view
 
@@ -49,7 +49,7 @@ This container view shows how Storefront, Backoffice, and Chat API interact with
 
 | Operation             | Protocol / path                            | Access and validation behavior                                                                                          |
 | :-------------------- | :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
-| Create feedback       | `POST /api/v1/feedbacks`                   | Validates `BookId`, reviewer names, comment length, and integer rating `0`–`5`                                          |
+| Create feedback       | `POST /api/v1/feedbacks`                   | Validates `BookId`, reviewer names, comment length, and integer rating `0`-`5`                                          |
 | List feedback         | `GET /api/v1/feedbacks`                    | Paginated, sortable list scoped by `BookId`                                                                             |
 | Delete feedback       | `DELETE /api/v1/feedbacks/{id}`            | Requires `admin` policy (`admin` role + `rating_read`/`rating_write`) and per-user rate limit; returns `404` if missing |
 | Summarize feedback    | `GET /api/v1/feedbacks/{bookId}/summarize` | Authenticated and per-user rate-limited; returns cached AI classification (`Best Seller`, `Good`, `Bad`, `No Data`)     |

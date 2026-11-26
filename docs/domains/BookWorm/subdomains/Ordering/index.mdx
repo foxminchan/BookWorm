@@ -44,11 +44,11 @@ Ordering is BookWorm's Core domain for committed customer purchases (`Buyer`, `O
 - **Out of scope:** Pre-order mutable baskets (`Shopping`), live book catalog descriptions (`Catalog`), external payment-provider settlement, physical shipping execution, and email rendering/transport (`Platform`).
 - **Key constraints:** Only explicit Ordering commands change an order's business status; Finance saga retries, timeouts, and Notification outcomes never mark an order `Completed` or `Cancelled`.
 
-## C4 context and container view
+## Context and container view
 
-This container view shows how Commerce and Backoffice interact with Ordering API and how Ordering API and Finance coordinate across gRPC, PostgreSQL, Azure Durable Task Scheduler, and Kafka.
+This architecture view shows how customers and administrators interact with Ordering and how Ordering coordinates with Shopping, Catalog, Finance, and Platform.
 
-<MermaidFileLoader file="mermaids/Ordering-diagram-1.mmd" />
+<LikeC4View viewId="orderingContext" project="ordering" />
 
 ## Building block view
 

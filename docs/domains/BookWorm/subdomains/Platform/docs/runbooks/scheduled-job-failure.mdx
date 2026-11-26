@@ -26,8 +26,10 @@ Use this runbook when a Quartz.NET job in **Scheduler** (`scheduler`) misses its
 
 Check `scheduler` state in Aspire Dashboard or Azure Container Apps.
 
-> [!NOTE]
-> In local Aspire runs, `scheduler` is configured with `.WithExplicitStart()` in `AppHost.cs`. Start the `scheduler` resource manually from Aspire Dashboard before expecting jobs to fire locally.
+<Admonition type="note">
+	In local Aspire runs, `scheduler` is configured with `.WithExplicitStart()` in `AppHost.cs`. Start
+	the `scheduler` resource manually from Aspire Dashboard before expecting jobs to fire locally.
+</Admonition>
 
 In local Development, check the liveness and readiness endpoints (Development only):
 

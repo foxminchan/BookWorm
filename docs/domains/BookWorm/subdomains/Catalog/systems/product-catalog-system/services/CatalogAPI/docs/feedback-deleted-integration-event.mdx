@@ -30,7 +30,7 @@ This reference defines the `FeedbackDeletedIntegrationEvent` Kafka integration c
 | :----------- | :----- | :------- | :-------- | :-------------------------------- | :--------------------------------------------------------------------------- |
 | `Id`         | `Guid` | Yes      | Generated | Inherited from `IntegrationEvent` | Unique event identifier used as the Redis idempotency key                    |
 | `BookId`     | `Guid` | Yes      | —         | Non-empty UUID                    | Target Catalog book identifier to adjust                                     |
-| `Rating`     | `int`  | Yes      | —         | `1`–`5`                           | Original star rating of the deleted feedback removed via `Book.RemoveRating` |
+| `Rating`     | `int`  | Yes      | —         | `1`-`5`                           | Original star rating of the deleted feedback removed via `Book.RemoveRating` |
 | `FeedbackId` | `Guid` | Yes      | —         | Non-empty UUID                    | Identifier of the deleted Cosmos DB feedback record for traceability         |
 
 ## Processing and error behavior

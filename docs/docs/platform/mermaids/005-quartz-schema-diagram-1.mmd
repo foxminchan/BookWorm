@@ -1,4 +1,62 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 erDiagram
+	%% Core Quartz.NET Job & Trigger Entities
+	qrtz_job_details {
+	string sched_name PK
+	string job_name PK
+	string job_group PK
+	string job_class_name
+}
+	qrtz_triggers {
+	string sched_name PK
+	string trigger_name PK
+	string trigger_group PK
+	string job_name FK
+	string trigger_state
+}
+	qrtz_cron_triggers {
+	string sched_name PK
+	string trigger_name PK
+	string cron_expression
+}
+	qrtz_simple_triggers {
+	string sched_name PK
+	string trigger_name PK
+	int repeat_count
+}
+	qrtz_simprop_triggers {
+	string sched_name PK
+	string trigger_name PK
+}
+	qrtz_blob_triggers {
+	string sched_name PK
+	string trigger_name PK
+	bytes blob_data
+}
+	qrtz_calendars {
+	string sched_name PK
+	string calendar_name PK
+}
+	qrtz_fired_triggers {
+	string sched_name PK
+	string entry_id PK
+	string state
+}
+	qrtz_job_status {
+	string job_name PK
+	string last_status
+}
+	qrtz_execution_history {
+	long id PK
+	string trigger_name FK
+	timestamp fired_at
+}
+	qrtz_misfire_history {
+	long id PK
+	string trigger_name FK
+	timestamp misfired_at
+}
+
 	qrtz_job_details ||--o{ qrtz_triggers : "schedules"
 	qrtz_job_details ||--o| qrtz_job_status : "summarizes"
 	qrtz_triggers ||--o| qrtz_cron_triggers : "extends"

@@ -73,6 +73,19 @@ specifications:
   - type: asyncapi
     path: asyncapi-v1.yml
     name: AsyncAPI V1
+attachments:
+  - url: https://foxminchan.github.io/BookWorm/docs/domains/reviews/1.0.0/engineering/feedback-contracts-and-integration
+    title: Feedback contracts and integration
+    description: HTTP routes, validation rules, Cosmos DB mapping, and Kafka contracts.
+    type: documentation
+  - url: https://foxminchan.github.io/BookWorm/docs/domains/reviews/1.0.0/guides/feedback-lifecycle
+    title: Feedback lifecycle
+    description: End-to-end lifecycle of customer feedback and its derived rating projection.
+    type: guides
+  - url: https://foxminchan.github.io/BookWorm/docs/domains/reviews/1.0.0/runbooks/catalog-rating-projection-failure
+    title: Recover a failed Catalog rating projection
+    description: Operational triage for BookUpdatedRatingFailedIntegrationEvent.
+    type: runbooks
 repository:
   language: C#
   url: "https://github.com/foxminchan/BookWorm"
@@ -115,7 +128,7 @@ Rating API serves HTTP feedback operations via the API Gateway and A2A gRPC summ
 
 | Status                  | Condition                                                                                                                   | Recovery behavior                                                 |
 | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
-| `400 Bad Request`       | Rating outside `0`–`5`, missing `bookId`/`firstName`/`lastName`, comment exceeds max length, or `PageIndex`/`PageSize <= 0` | Fix request fields; do not retry unchanged                        |
+| `400 Bad Request`       | Rating outside `0`-`5`, missing `bookId`/`firstName`/`lastName`, comment exceeds max length, or `PageIndex`/`PageSize <= 0` | Fix request fields; do not retry unchanged                        |
 | `401 Unauthorized`      | Missing, expired, or invalid Entra ID JWT                                                                                   | Re-authenticate and retry                                         |
 | `403 Forbidden`         | Caller lacks `admin` role (`DELETE`) or `rating_read`/`rating_write` scopes                                                 | Request token with required role and scopes                       |
 | `404 Not Found`         | Feedback ID not found on `DELETE`                                                                                           | Verify feedback ID                                                |
@@ -125,7 +138,7 @@ Rating API serves HTTP feedback operations via the API Gateway and A2A gRPC summ
 ## Feedback invariants and Cosmos DB persistence
 
 - **Authoritative store:** Azure Cosmos DB database `ratingdb`, container `feedbacks`, partitioned by `/bookId`. Other services must consume Kafka events and never query Cosmos DB directly.
-- **Validation rules:** `bookId`, `firstName`, and `lastName` are required; `rating` is an integer `0`–`5` inclusive; `comment` is optional within shared max text length; new IDs use client-generated UUID v7.
+- **Validation rules:** `bookId`, `firstName`, and `lastName` are required; `rating` is an integer `0`-`5` inclusive; `comment` is optional within shared max text length; new IDs use client-generated UUID v7.
 - **Uniqueness:** Prevents duplicate feedback for the same `(bookId, firstName, lastName)` combination.
 
 ## Read-time AI summarization (`rating-agent`)
@@ -152,13 +165,15 @@ Rating API uses Wolverine with `WolverineFx.CosmosDb` persistence, partitions by
 
 <MessageTable format="all" limit={10} />
 
-## Related documentation
+## Supporting documentation
+
+<Attachments />
+
+## Related catalog resources
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
 - [[agent|rating-agent]] — AI review summarization agent contract.
 - [[container|rating-database]] — Azure Cosmos DB (`ratingdb`/`feedbacks`) reference.
 - [[container|rating-cache]] — Redis FusionCache and idempotency reference.
-- Reviews feedback contracts — Domain engineering boundaries.
-- How to recover a failed Catalog rating projection — Operational recovery runbook.
 
 <NodeGraph />

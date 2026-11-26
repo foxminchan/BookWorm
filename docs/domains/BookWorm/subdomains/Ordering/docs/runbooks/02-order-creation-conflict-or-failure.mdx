@@ -62,8 +62,9 @@ Inspect `ordering` logs filtered by `<request-id>` and `<buyer-id>`:
 
 If `ordering` logs show Redis connection timeouts or lock acquisition errors, check `redis` health and connectivity in Aspire Dashboard or Azure Managed Redis monitoring.
 
-> [!CAUTION]
-> Do not flush Redis or bulk-delete idempotency or lock keys. Clearing Redis during an incident removes active duplicate-request markers and buyer write locks (`order-create:<buyer-id>`), risking duplicate orders across concurrent checkouts.
+<Admonition type="danger">
+Do not flush Redis or bulk-delete idempotency or lock keys. Clearing Redis during an incident removes active duplicate-request markers and buyer write locks (`order-create:<buyer-id>`), risking duplicate orders across concurrent checkouts.
+</Admonition>
 
 </Step>
 <Step title="Apply the safe recovery action">

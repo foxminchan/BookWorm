@@ -60,7 +60,7 @@ A `200 OK` response returns a `SummarizeResult` JSON object. Only `summary` is s
 | `evidence`       | `string`         | No       | —                                         | Supporting evidence produced by the quality assessment step (empty string when `reviewCount` is `0`)                |
 | `confidence`     | `string`         | No       | Free-form string                          | Confidence reported by the quality assessment step (empty string when `reviewCount` is `0`)                         |
 
-Classification is `NoData` when fewer than 3 reviews are present, the average is non-finite, or it is outside 0–5. Otherwise it is `Bad` when the average is below 3.5 or a dominant negative pattern is found; `TopRated` at an average of at least 4.5 with 50+ reviews or at least 4.0 with 200+ reviews; all other valid results are `Good`.
+Classification is `NoData` when fewer than 3 reviews are present, the average is non-finite, or it is outside 0-5. Otherwise it is `Bad` when the average is below 3.5 or a dominant negative pattern is found; `TopRated` at an average of at least 4.5 with 50+ reviews or at least 4.0 with 200+ reviews; all other valid results are `Good`.
 
 ## Error responses
 

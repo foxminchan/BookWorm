@@ -80,8 +80,10 @@ Fix the underlying broker, database, or handler failure first. Then choose the r
 - **Unprocessed DLQ messages:** Replay failed messages from `bookworm.<env>.catalog.dead-letter-queue` after fixing the root cause.
 - **Delta drift after partial failure or expired idempotency window:** `Book.AddRating` and `Book.RemoveRating` apply incremental delta math, and `IIntegrationEventIdempotencyGuard` deduplicates by `message.Id` for 24 hours in Redis. Replaying an already-applied event after 24 hours double-counts the rating. For confirmed multi-event drift, execute an approved data reconciliation setting `average_rating` and `total_reviews` directly from the authoritative Cosmos DB aggregate from Step 1, then invalidate `book:<book-id>` in Redis.
 
-> [!CAUTION]
-> Never invent or hand-edit `average_rating` or `total_reviews` without deriving the exact numbers from **Rating API**'s Cosmos DB `ratingdb`/`feedbacks` container.
+<Admonition type="danger">
+	Never invent or hand-edit `average_rating` or `total_reviews` without deriving the exact numbers
+	from **Rating API**'s Cosmos DB `ratingdb`/`feedbacks` container.
+</Admonition>
 
 </Step>
 </Steps>

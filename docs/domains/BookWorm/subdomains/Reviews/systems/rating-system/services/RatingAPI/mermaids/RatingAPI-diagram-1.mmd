@@ -1,3 +1,4 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
     gateway["API Gateway\n(YARP)"] -->|"HTTP: /api/v1/feedbacks*"| rating["Rating API\n(.NET 11 + A2A gRPC)"]
     chat["Chat API\n(A2A Client)"] -->|"A2A gRPC (rating_read)"| rating
@@ -6,3 +7,16 @@ flowchart LR
     rating -->|"MCP HTTP: get_book & prompts"| mcp["MCP Tools\n(Read-only Catalog)"]
     rating -->|"HTTP: analyze / anonymize"| presidio["Presidio\n(PII Sidecars)"]
     rating <-->|"Kafka: Feedback / Failure Events"| kafka["Kafka Broker\n(Wolverine)"]
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
+	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
+	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
+	class rating focal
+	class mcp,kafka service
+	class cosmos,redis store
+	class gateway,chat input
+	class presidio ext
+	linkStyle 0 stroke:#bf4520,stroke-width:2px
+	linkStyle 1 stroke:#bf4520,stroke-width:2px

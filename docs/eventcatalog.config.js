@@ -177,7 +177,7 @@ export default {
 				label: "Architecture",
 				items: [
 					{ label: "Overview", slug: "arc42" },
-					{ label: "C4 Overview", slug: "arc42/00-c4-overview" },
+					{ label: "Architecture Overview", slug: "arc42/00-c4-overview" },
 					{
 						label: "1. Introduction and Goals",
 						slug: "arc42/01-introduction-and-goals",

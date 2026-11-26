@@ -30,7 +30,7 @@ This reference defines the `FeedbackCreatedIntegrationEvent` Kafka integration c
 | :----------- | :----- | :------- | :-------- | :------------------------------------ | :----------------------------------------------------------------------------------------------------------------------- |
 | `Id`         | `Guid` | Yes      | Generated | Inherited from `IntegrationEvent`     | Unique event identifier used as the Redis idempotency key                                                                |
 | `BookId`     | `Guid` | Yes      | —         | Non-empty UUID                        | Target Catalog book identifier to update                                                                                 |
-| `Rating`     | `int`  | Yes      | —         | Validated by **Rating API** (`1`–`5`) | Star rating added to the book's running summary via `Book.AddRating`                                                     |
+| `Rating`     | `int`  | Yes      | —         | Validated by **Rating API** (`1`-`5`) | Star rating added to the book's running summary via `Book.AddRating`                                                     |
 | `FeedbackId` | `Guid` | Yes      | —         | Non-empty UUID                        | Authoritative Cosmos DB feedback identifier returned in `BookUpdatedRatingFailedIntegrationEvent` if the book is missing |
 
 ## Processing and error behavior

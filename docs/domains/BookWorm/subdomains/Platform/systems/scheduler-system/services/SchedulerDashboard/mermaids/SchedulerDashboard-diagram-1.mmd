@@ -1,6 +1,19 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
 	admin["Store Administrator\n(Browser)"] --> |"HTTPS OIDC (admin): /quartz"| dash["Quartz Dashboard\n(Container UI)"]
 	dash <-->|"Dashboard Agent\n(BookWorm.Scheduler.Jobs.*)"| sched["Scheduler\n(.NET 11 + Quartz.NET 4.8.1)"]
 	sched --> |"SQL: Quartz tables + Wolverine outbox"| db["Scheduler Database\n(PostgreSQL schedulerdb)"]
 	sched --> |"Kafka: scheduler.process-vector-batch"| kafka["Kafka Broker\n(Unprefixed topic)"]
 	kafka -->|"KafkaTrigger"| ingest["Catalog Ingestion\n(Azure Functions)"]
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
+	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
+	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
+	class sched focal
+	class dash,kafka,ingest service
+	class db store
+	class admin input
+	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	linkStyle 2 stroke:#bf4520,stroke-width:2px

@@ -1,4 +1,52 @@
 views {
+  view bookwormContext of bookworm {
+    title 'BookWorm system context'
+    include customer, staff, bookworm, identity, foundry, kafka, qdrant, smtp
+    autoLayout LeftRight
+  }
+
+  view bookwormWhitebox of bookworm {
+    title 'BookWorm containers - system white-box'
+    include customer, staff
+    include bookworm.storefront, bookworm.commerce, bookworm.backoffice, bookworm.gateway
+    include bookworm.catalog, bookworm.catalogIngestion, bookworm.shopping, bookworm.ordering
+    include bookworm.finance, bookworm.rating, bookworm.chat, bookworm.mcp
+    include bookworm.scheduler, bookworm.notification
+    include bookworm.presidioAnalyzer, bookworm.presidioAnonymizer
+    include kafka
+    autoLayout LeftRight
+  }
+
+  view bookwormCommerceContainers of bookworm {
+    title 'BookWorm containers - edge and commerce'
+    include customer, staff
+    include bookworm.gateway, bookworm.storefront, bookworm.commerce, bookworm.backoffice
+    include bookworm.catalog, bookworm.shopping, bookworm.ordering, bookworm.finance
+    include bookworm.catalogDb, bookworm.orderingDb, bookworm.redis, bookworm.durableTaskScheduler
+    include identity, kafka
+    autoLayout LeftRight
+  }
+
+  view bookwormAIAndPlatformContainers of bookworm {
+    title 'BookWorm containers - AI, Reviews, and Platform'
+    include customer
+    include bookworm.chat, bookworm.rating, bookworm.mcp
+    include bookworm.catalog, bookworm.catalogIngestion
+    include bookworm.scheduler, bookworm.notification
+    include bookworm.presidioAnalyzer, bookworm.presidioAnonymizer
+    include bookworm.ratingDb, bookworm.redis, bookworm.schedulerDb, bookworm.blobStorage
+    include qdrant, kafka, identity, foundry, smtp
+    autoLayout LeftRight
+  }
+
+  view financeComponents of bookworm.finance {
+    title 'Finance components'
+    include *
+    include kafka, bookworm.ordering, bookworm.shopping, bookworm.notification
+    include bookworm.durableTaskScheduler
+    autoLayout LeftRight
+  }
+
   deployment view bookwormDeployment {
     title 'BookWorm Azure deployment'
     include azure.**, external.**

@@ -3,19 +3,27 @@ config:
   treeView:
     showIcons: true
     defaultIconPack: material-icon-theme
+    filenameIcons:
+      turbo.json: turborepo
     extensionIcons:
       .mjs: javascript
       .ts: typescript
+      .json: json
 ---
 treeView-beta
   "apps/<app>/"
     "app/"
+    "atoms/"
     "components/"
     "config/"
     "features/"
     "hooks/"
     "lib/"
-    "env.mjs"
-    "instrumentation.ts"
     "__tests__/"
     "e2e/"
+    "env.mjs"
+    "instrumentation.ts"
+    "microfrontends.json"
+    "next.config.mjs"
+    "proxy.ts"
+    "turbo.json"

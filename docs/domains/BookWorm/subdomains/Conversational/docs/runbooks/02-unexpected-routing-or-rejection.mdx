@@ -54,8 +54,10 @@ If the reply came from a specialist instead, go to step 5.
 - It runs `GovernancePromptSafetyEvaluator`, which applies the `multi_turn_injection_patterns` in `Policies/chat-agents.yaml`.
 - It truncates prompts longer than 2,000 characters to the first 1,900 characters and appends `... [Message truncated due to length]`.
 
-> [!WARNING]
-> Truncation can cut off a book ID or the main question at the end of a long message. If a long prompt was misrouted, check whether the key detail was in the last part of the message.
+<Admonition type="warning">
+	Truncation can cut off a book ID or the main question at the end of a long message. If a long
+	prompt was misrouted, check whether the key detail was in the last part of the message.
+</Admonition>
 
 A legitimate question can trip the regex. For example, a customer asking for a book "where the hero must act as a spy" matches `act as a`. Record such false positives for engineering review.
 

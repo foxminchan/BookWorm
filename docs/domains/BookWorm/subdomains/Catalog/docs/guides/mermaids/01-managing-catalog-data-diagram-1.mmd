@@ -1,3 +1,4 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
 	cat["Category\n(Unique Name)"] --> |"1: N optional"| book["Book\n(PostgreSQL catalogdb)"]
 	pub["Publisher\n(Unique Name)"] --> |"1: N optional"| book
@@ -5,3 +6,15 @@ flowchart LR
 	book -->|"URN reference"| blob["Azure Blob Storage\n(catalog-blob)"]
 	rating["Rating API\n(Cosmos DB ratingdb)"] --> |"Kafka: average_rating & total_reviews"| book
 	book --> |"gRPC: authoritative price"| downstream["Basket API & Ordering API\n(Checkout Snapshot)"]
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
+	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
+	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
+	class book focal
+	class downstream service
+	class blob,rating store
+	class cat,pub,author input
+	linkStyle 0 stroke:#bf4520,stroke-width:2px
+	linkStyle 1 stroke:#bf4520,stroke-width:2px

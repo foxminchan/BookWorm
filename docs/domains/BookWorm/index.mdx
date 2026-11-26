@@ -36,11 +36,15 @@ BookWorm decomposes its online bookstore platform into six bounded contexts clas
 - **Out of scope:** External payment-provider settlement, physical shipping carrier execution, external SMTP delivery internals, AI model hosting internals, and external identity provider infrastructure (Microsoft Entra ID).
 - **Key constraints:** Bounded contexts never share databases; derived projections (Catalog rating summaries, Qdrant vectors, Marten order summaries) remain rebuildable from authoritative sources.
 
-## C4 context and container view
+## System context and container views
 
-This bounded-context map illustrates how customers and store administrators interact with BookWorm's edge applications and how the six bounded contexts collaborate across explicit protocols.
+These architecture views show BookWorm's external users and dependencies, followed by its edge applications, services, stores, and integration protocols.
 
-<MermaidFileLoader file="mermaids/BookWorm-diagram-1.mmd" />
+<LikeC4View viewId="bookwormContext" project="deployment" />
+
+<LikeC4View viewId="bookwormCommerceContainers" project="deployment" />
+
+<LikeC4View viewId="bookwormAIAndPlatformContainers" project="deployment" />
 
 ## Building block view
 
@@ -94,4 +98,4 @@ Three Next.js 16 applications run behind the YARP API Gateway (`gateway`): **Sto
 - Business capabilities and journey map — End-to-end customer journeys across contexts.
 - Domain principles and boundaries — Ownership matrix and anti-patterns.
 - [[doc|arc42/12-glossary]] — Canonical vocabulary across all domains.
-- [[doc|arc42/00-c4-overview]] — Whole-platform C4 Context and Container view.
+- [[doc|arc42/00-c4-overview]] — Whole-platform context and container views.

@@ -75,7 +75,7 @@ repository:
 | `firstName`      | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer first name                |
 | `lastName`       | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer last name                 |
 | `comment`        | `string`              | No        | —                       | Max 1,000 chars                      | Optional written review            |
-| `rating`         | `int`                 | Yes       | —                       | `0`–`5` inclusive                    | Score                              |
+| `rating`         | `int`                 | Yes       | —                       | `0`-`5` inclusive                    | Score                              |
 | `createdAt`      | `DateTime`            | Yes       | `DateTime.UtcNow`       | UTC                                  | Creation timestamp                 |
 | `lastModifiedAt` | `DateTime`            | No        | —                       | UTC                                  | Last modification timestamp        |
 
@@ -83,7 +83,7 @@ repository:
 
 ## Invariants and behavior
 
-- **Rating range:** The constructor throws `RatingDomainException("Rating must be between 0 and 5.")` outside `0`–`5`.
+- **Rating range:** The constructor throws `RatingDomainException("Rating must be between 0 and 5.")` outside `0`-`5`.
 - **No discriminator:** `HasNoDiscriminator()` stores documents without an EF Core type discriminator.
 - **Conflict handling:** `RatingDbContext.SaveEntitiesAsync` maps a Cosmos DB `409 Conflict` to `"A feedback from this author already exists for this book."` and a concurrency failure to `"The feedback was modified or deleted by another request."`.
 - **Domain events:** The constructor raises `FeedbackCreatedEvent(bookId, rating, id)`. `Remove()` raises `FeedbackDeletedEvent(bookId, rating, id)`. `Revert()` raises `FeedbackRevertedEvent(bookId)` after a downstream failure.

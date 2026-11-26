@@ -57,8 +57,10 @@ Follow [[doc|development/004-engineering-standards]]. During iteration, run the 
 - **Frontend change (`src/Clients`):** Run `bun run boundaries`, `bun run check-types`, `bun run lint`, and `bun run test` from `src/Clients` (see [[doc|frontend/004-testing-and-quality-gates]]).
 - **Documentation change (`docs/`):** Run `bun run check` and `bun run fitness` from `docs/`.
 
-> [!NOTE]
-> Do not start the full Aspire AppHost (`mise run run`) for routine code or documentation edits unless you need end-to-end runtime validation.
+<Admonition type="note">
+	Do not start the full Aspire AppHost (`mise run run`) for routine code or documentation edits
+	unless you need end-to-end runtime validation.
+</Admonition>
 
 </Step>
 <Step title="Format all modified files">

@@ -111,8 +111,11 @@ If a conversation lost its history after a restart, check Blob Storage:
 
 The `chatting` managed identity receives the `Storage Blob Data Contributor` role on the Storage Account for `chatting-blob`.
 
-> [!NOTE]
-> Book Agent file memory (`file_memory_*` tools) is separate from AG-UI sessions. It lives on the container's local file system and does not survive a container restart. Losing in-progress research notes after a restart is expected. Losing the conversation transcript is not.
+<Admonition type="note">
+	Book Agent file memory (`file_memory_*` tools) is separate from AG-UI sessions. It lives on the
+	container's local file system and does not survive a container restart. Losing in-progress
+	research notes after a restart is expected. Losing the conversation transcript is not.
+</Admonition>
 
 </Step>
 <Step title="Recover or escalate">

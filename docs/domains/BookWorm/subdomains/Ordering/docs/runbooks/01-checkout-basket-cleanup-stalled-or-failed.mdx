@@ -76,8 +76,13 @@ Match the observed Finance custom status to the exact runtime behavior in `Order
 - **`Status: BasketDeletionFailed`:** Finance sent `DeleteBasketFailedCommand` to Ordering API, which soft-deleted the order (`order.Delete()`) without transitioning `Status` to `Cancelled`.
 - **`TimeoutRetryCount` incrementing up to `MaxAttempts: 3`:** Finance runs a 30-minute timer (`MaxRetryTimeout: 00:30:00`) per loop iteration and reissues `PlaceOrderCommand` on timeout. Upon exhausting 3 attempts, Finance transitions its own status to `Cancelled` and publishes `CancelOrderCommand` to Notification (if recipient details exist), without calling Ordering API to cancel the order.
 
-> [!WARNING]
-> In the current `OrderOrchestrator` loop, a new 30-minute timer starts on each iteration even after `BasketDeleted` becomes `true` while the order remains open (`New`). If that timer fires, Finance reissues `PlaceOrderCommand`. Basket API deduplicates by `OrderId` (24-hour Redis guard), whereas Notification deduplicates by `message.Id`, so reissued commands can trigger duplicate customer emails.
+<Admonition type="warning">
+	In the current `OrderOrchestrator` loop, a new 30-minute timer starts on each iteration even after
+	`BasketDeleted` becomes `true` while the order remains open (`New`). If that timer fires, Finance
+	reissues `PlaceOrderCommand`. Basket API deduplicates by `OrderId` (24-hour Redis guard), whereas
+	Notification deduplicates by `message.Id`, so reissued commands can trigger duplicate customer
+	emails.
+</Admonition>
 
 </Step>
 <Step title="Recover safely without manual state patching">

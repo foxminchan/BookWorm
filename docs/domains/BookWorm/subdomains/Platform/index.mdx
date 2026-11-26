@@ -67,11 +67,11 @@ Platform is BookWorm's Generic bounded context for cross-cutting background sche
 - **Out of scope:** Owning books, baskets, orders, payments, or reviews; guaranteeing recipient inbox placement after SMTP acceptance; persisting a relational email-outbox database (Notification uses **no PostgreSQL database**).
 - **Key constraints:** Platform delivery outcomes and job completion statuses never mutate authoritative business state in upstream domains.
 
-## C4 context and container view
+## Context and container view
 
-This container view shows how Scheduler triggers `Catalog Ingestion` over Kafka and how Notification consumes Finance commands, checks Redis idempotency, and submits emails over SMTP.
+This architecture view shows how administrators and Finance interact with Platform, and how Scheduler, Notification, Catalog, and the SMTP provider integrate.
 
-<MermaidFileLoader file="mermaids/Platform-diagram-1.mmd" />
+<LikeC4View viewId="platformContext" project="platform" />
 
 ## Building block view
 

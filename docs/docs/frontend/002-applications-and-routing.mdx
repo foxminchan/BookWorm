@@ -45,28 +45,7 @@ Combines application runtime attributes (`FrontendExtensions.cs`, `next.config.m
 
 Every application under `src/Clients/apps/<app-name>/` follows a consistent thin-route structure, with app-specific extensions noted inline:
 
-<CodeGroup>
-
-```text
-apps/<app-name>/
-├── app/                     # Thin Next.js App Router layouts, pages, loading/error boundaries, API routes
-├── atoms/                   # App-local Jotai atoms (storefront: feature-flags-atom.ts)
-├── components/              # App-specific shared UI components
-├── config/                  # App titles, pagination defaults, navigation config
-├── features/                # Domain-aligned feature slices (UI, forms, tables, views)
-├── hooks/                   # App-local React hooks (backoffice: dashboard stats, CRUD/table hooks)
-├── lib/                     # App utilities (auth config, query client wiring, MSW bootstrap)
-├── __tests__/               # Vitest unit and component tests + setup.ts
-├── e2e/                     # Playwright BDD features and steps (storefront and backoffice only)
-├── env.mjs                  # Composed @workspace/env runtime validation schema
-├── instrumentation.ts       # OpenTelemetry registration via @workspace/otel
-├── microfrontends.json      # Multi-zone route manifest (storefront only; shared with commerce & AppHost)
-├── next.config.mjs          # createNextConfig(...) wrapper
-├── proxy.ts                 # Protected-route login redirect guard (commerce only)
-└── turbo.json               # Declares "tags": ["app"]
-```
-
-</CodeGroup>
+<MermaidFileLoader file="mermaids/app-folder-structure.mmd" />
 
 ## Route maps
 

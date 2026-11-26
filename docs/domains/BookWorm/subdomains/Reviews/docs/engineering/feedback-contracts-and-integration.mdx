@@ -50,7 +50,7 @@ All routes are versioned under `ApiVersions.V1` (`/api/v1/feedbacks`, routed ext
 | `firstName` | `string` | Yes      | Non-empty, max `50` chars (`DataSchemaLength.Medium`) | Tagged `[PIIData]` for log redaction                                                                   |
 | `lastName`  | `string` | Yes      | Non-empty, max `50` chars (`DataSchemaLength.Medium`) | Tagged `[PIIData]` for log redaction                                                                   |
 | `comment`   | `string` | No       | Max `1000` chars (`DataSchemaLength.Max`)             | Optional review text                                                                                   |
-| `rating`    | `int`    | Yes      | Inclusive integer `0`–`5`                             | Enforced in both `CreateFeedbackValidator` and `Feedback` domain constructor (`RatingDomainException`) |
+| `rating`    | `int`    | Yes      | Inclusive integer `0`-`5`                             | Enforced in both `CreateFeedbackValidator` and `Feedback` domain constructor (`RatingDomainException`) |
 
 ### `ListFeedbacksQuery` parameters
 
@@ -76,7 +76,7 @@ All Reviews and Catalog rating topics use CloudEvents JSON over Kafka, partition
 
 | Status                  | Condition                                                                                                                              | Recovery behavior                                               |
 | :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `400 Bad Request`       | Validation failure (empty `bookId`/`firstName`/`lastName`, `rating` outside `0`–`5`, `comment` > `1000` chars, or non-positive paging) | Fix request payload; do not retry unchanged                     |
+| `400 Bad Request`       | Validation failure (empty `bookId`/`firstName`/`lastName`, `rating` outside `0`-`5`, `comment` > `1000` chars, or non-positive paging) | Fix request payload; do not retry unchanged                     |
 | `401 Unauthorized`      | Missing or invalid Microsoft Entra ID token on `/summarize` or `DELETE`                                                                | Re-authenticate and retry                                       |
 | `403 Forbidden`         | Authenticated caller lacks `admin` policy on `DELETE /api/v1/feedbacks/{id}`                                                           | Use an administrator account                                    |
 | `404 Not Found`         | `DELETE` targets a nonexistent `FeedbackId` or `/summarize` targets an unknown book                                                    | Verify identifier; missing feedback is never converted to `204` |

@@ -19,7 +19,7 @@ BookWorm decouples customer email delivery from checkout workflows using a state
 
 - **Scope:** Outbound transactional order emails triggered by **Finance** (`PlaceOrderCommand`, `CompleteOrderCommand`, `CancelOrderCommand`) through **Notification**, and recurring platform jobs triggered by **Scheduler**.
 - **Out of scope:** Order lifecycle state transitions (owned by **Ordering API**), saga state management (owned by **Finance**), and downstream vector embedding computation (see [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]]).
-- **Key constraints:** Notification has no REST/gRPC API (exposing only `/health` and `/alive` in Development) and no relational database. Scheduler has no REST/gRPC API beyond the Entra ID–protected Quartz Dashboard (`/quartz`, `admin` role) and starts explicitly in local Aspire runs (`.WithExplicitStart()`).
+- **Key constraints:** Notification has no REST/gRPC API (exposing only `/health` and `/alive` in Development) and no relational database. Scheduler has no REST/gRPC API beyond the Entra ID-protected Quartz Dashboard (`/quartz`, `admin` role) and starts explicitly in local Aspire runs (`.WithExplicitStart()`).
 
 ## Building block view
 

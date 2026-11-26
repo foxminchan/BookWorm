@@ -1,3 +1,4 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 stateDiagram-v2
 	[*] --> New: POST /ordering/api/v1/orders
 	New --> Completed: Explicit complete transition
@@ -6,3 +7,6 @@ stateDiagram-v2
 	Completed --> [*]
 	Cancelled --> [*]
 	SoftDeleted --> [*]
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	class Completed focal

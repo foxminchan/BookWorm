@@ -1,38 +1,38 @@
 ---
-title: "C4 architecture overview"
-summary: "Explore BookWorm's C4 System Context and Container views across its three Next.js apps, YARP gateway, ten .NET services, and backing stores."
+title: "Architecture overview"
+summary: "Explore BookWorm's system context and container views across its three Next.js apps, YARP gateway, ten .NET services, and backing stores."
 owners:
   - contributor-team
 ---
 
-BookWorm is an online bookstore built on .NET 11, Aspire 17, Next.js 16, Wolverine, and Kafka across six bounded contexts. This page provides a single-page C4 System Context (Level 1) and Container (Level 2) overview showing every user actor, frontend microfrontend (MFE), backend service, AI platform dependency, and backing store.
+BookWorm is an online bookstore built on .NET 11, Aspire 17, Next.js 16, Wolverine, and Kafka across six bounded contexts. This page provides system context and container views showing every user actor, frontend microfrontend (MFE), backend service, AI platform dependency, and backing store.
 
 ## Scope and constraints
 
 - **Scope:** Covers the entire BookWorm platform—three Next.js 16 frontends (`Storefront`, `Commerce`, `Backoffice`), the YARP `API Gateway`, ten .NET 11 backend services and Azure Functions workers, two Presidio privacy containers, managed Azure stores, and external cloud providers.
 - **Key constraints:** Each bounded context owns its authoritative persistence; cross-service writes never share databases; only the `API Gateway` (and the Entra-protected Quartz Dashboard) expose external HTTP ingress; AI workflows remain strictly read-only with respect to commerce transactions.
 
-## C4 Level 1 — System context
+## Level 1 — System context
 
 This System Context diagram shows who interacts with BookWorm and which external cloud services support authentication, AI inference, messaging, vector search, and email delivery.
 
-<MermaidFileLoader file="mermaids/00-c4-overview-diagram-1.mmd" />
+<LikeC4View viewId="bookwormContext" project="deployment" />
 
-## C4 Level 2 — Container view
+## Level 2 — Container view
 
-Because BookWorm comprises 16 core Container Apps plus managed data stores, the Container view splits into two focused diagrams: the edge and core commerce containers, and the AI, reviews, and platform containers.
+The Container view is split into two focused diagrams: edge and commerce containers, followed by AI, Reviews, and Platform containers.
 
 ### Edge and core commerce containers
 
 This diagram maps external user traffic through the YARP `API Gateway` into the three Next.js 16 microfrontends and the Catalog, Shopping, and Ordering containers.
 
-<MermaidFileLoader file="mermaids/00-c4-overview-diagram-2.mmd" />
+<LikeC4View viewId="bookwormCommerceContainers" project="deployment" />
 
 ### AI, reviews, and platform containers
 
 This diagram shows how conversational book discovery, customer feedback, privacy redaction, vector ingestion, job scheduling, and email delivery connect to backing stores and external services.
 
-<MermaidFileLoader file="mermaids/00-c4-overview-diagram-3.mmd" />
+<LikeC4View viewId="bookwormAIAndPlatformContainers" project="deployment" />
 
 ## Building block inventory
 
@@ -69,7 +69,7 @@ Every deployable container app in `src/Aspire/BookWorm.AppHost/AppHost.cs` maps 
 ## Related architecture documentation and decisions
 
 - [[doc|arc42]] — Full 12-chapter architecture documentation index.
-- [[doc|arc42/05-building-block-view]] — Progressive Level 1–3 static decomposition.
+- [[doc|arc42/05-building-block-view]] — Progressive Level 1-3 static decomposition.
 - [[doc|arc42/06-runtime-view]] — End-to-end checkout, vector ingestion, feedback, chat, and notification sequences.
 - [[doc|arc42/07-deployment-view]] — Local vs. Azure Container Apps infrastructure topology.
 - [[doc|arc42/09-architecture-decisions]] — All 18 platform ADRs and 55 system ADRs, including the four superseding infrastructure records.

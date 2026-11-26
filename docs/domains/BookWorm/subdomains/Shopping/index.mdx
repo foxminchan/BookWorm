@@ -37,11 +37,11 @@ Shopping is BookWorm's Core bounded context for pre-purchase customer intent (`B
 - **Out of scope:** Owning canonical book details (`Catalog`), creating or managing accepted orders (`Ordering`), coordinating post-checkout sagas (`Finance`), and payment settlement (external to BookWorm).
 - **Key constraints:** A basket is mutable shopping intent, not an `Order` and not an inventory reservation. `Basket API` has no relational database; Redis is its system of record.
 
-## C4 context and container view
+## Context and container view
 
-This container view shows how the Commerce and Storefront microfrontends, Ordering API, Catalog API, and Finance interact with Basket API across HTTP, gRPC, Redis, and Kafka.
+This architecture view shows how customers, Catalog, Ordering, Finance, and the identity provider interact with Basket API and its Redis persistence.
 
-<MermaidFileLoader file="mermaids/Shopping-diagram-1.mmd" />
+<LikeC4View viewId="basketContext" project="basket" />
 
 ## Building block view
 

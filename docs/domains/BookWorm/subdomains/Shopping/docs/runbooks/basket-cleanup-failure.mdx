@@ -45,8 +45,11 @@ Where:
 - `<gateway-host>`: API Gateway hostname (or local Aspire gateway address).
 - `<order-id>`: UUID of the order associated with the cleanup failure.
 
-> [!CAUTION]
-> Do not delete a customer's basket until you confirm the downstream order was accepted. If the order was not accepted or its status is ambiguous, stop immediately and escalate to the Ordering/Finance owners.
+<Admonition type="danger">
+	Do not delete a customer's basket until you confirm the downstream order was accepted. If the
+	order was not accepted or its status is ambiguous, stop immediately and escalate to the
+	Ordering/Finance owners.
+</Admonition>
 
 </Step>
 <Step title="Distinguish the two verified `PlaceOrderCommandHandler` failure modes">

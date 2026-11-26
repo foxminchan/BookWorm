@@ -48,23 +48,7 @@ Verified against `src/Clients/package.json`, app manifests, and `.bun-version`:
 
 Directory structure of `src/Clients/`:
 
-<CodeGroup>
-
-```text
-src/Clients/
-├── apps/
-│   ├── backoffice/          # @bookworm/backoffice (staff admin dashboard)
-│   ├── commerce/            # @bookworm/commerce (authenticated customer MFE)
-│   └── storefront/          # @bookworm/storefront (public customer MFE + microfrontends.json)
-├── packages/                # 16 @workspace/* shared packages
-├── allurerc.mjs             # Root Allure 3 aggregation config
-├── bun.lock                 # Bun-managed lockfile
-├── eslint.config.js         # Root ESLint flat config
-├── package.json             # Workspace scripts and root devDependencies
-└── turbo.json               # Task graph, globalEnv, and dependency boundaries
-```
-
-</CodeGroup>
+<MermaidFileLoader file="mermaids/monorepo-layout.mmd" />
 
 ## Dependency boundary tiers
 

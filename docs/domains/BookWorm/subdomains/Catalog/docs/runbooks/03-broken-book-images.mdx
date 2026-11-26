@@ -91,8 +91,11 @@ Choose the recovery path matching your diagnosis:
 - **Blob deleted or missing, backup available:** Restore the blob to the exact same `<storage-account>`, container `catalog-blob`, and `<blob-name>` so the existing URN works without modifying PostgreSQL.
 - **Blob unrecoverable:** Upload a replacement cover (`image/jpeg`, `image/png`, or `image/webp`) or remove the image through **Backoffice** or **Catalog API** (`PUT /catalog/api/v1/books`) so `BlobService.UploadFileAsync` writes a valid new blob and updates `books.image` atomically.
 
-> [!CAUTION]
-> Do not hand-edit `books.image` in PostgreSQL unless you are executing an approved database-migration remediation (for example, after restoring a backup from another storage account). Manual edits bypass `BlobService` validation and can orphan blobs.
+<Admonition type="danger">
+	Do not hand-edit `books.image` in PostgreSQL unless you are executing an approved
+	database-migration remediation (for example, after restoring a backup from another storage
+	account). Manual edits bypass `BlobService` validation and can orphan blobs.
+</Admonition>
 
 </Step>
 </Steps>
