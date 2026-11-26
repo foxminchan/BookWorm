@@ -9,105 +9,274 @@ badges:
     textColor: red
 ---
 
-Use these runbooks when triaging production incidents across BookWorm's Azure Container Apps and managed dependencies.
+Use these symptom-first runbooks to diagnose and restore BookWorm workloads across Azure Container Apps, Microsoft Entra ID passwordless RBAC, Azure Durable Task Scheduler, Kafka vector ingestion, and Microsoft Foundry AI pipelines.
 
-## 1. Context & Problem
+## Quick triage index
 
-BookWorm operates across fifteen containerized applications, passwordless cloud identity roles, durable checkout workflows, scheduled search indexing, and AI-assisted chat and review pipelines. When a customer-facing symptom appears—such as failed deployments, stalled orders, missing search results, or unavailable chat—improvised troubleshooting slows recovery and increases the risk of misdiagnosing cross-service dependencies. On-call teams need structured, symptom-first runbooks to restore service quickly and safely.
+| Observed symptom                                                                 | Start here                                                                                                       |
+| :------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| Container App stuck in `Activating` / `Failed`, `ImagePullFailed`, or crash loop | [Runbook 1: Container App startup or image pull failure](#runbook-1-container-app-startup-or-image-pull-failure) |
+| `401`/`403`, PostgreSQL token login failure, or Redis `NOAUTH`/`NOPERM`          | [Runbook 2: Passwordless auth and RBAC failure](#runbook-2-passwordless-auth-and-rbac-failure)                   |
+| Orders stay in `New` status, baskets do not clear, or checkout emails never send | [Runbook 3: Order orchestration stall](#runbook-3-order-orchestration-stall)                                     |
+| New or updated books do not appear in semantic search                            | [Runbook 4: Vector search and catalog ingestion lag](#runbook-4-vector-search-and-catalog-ingestion-lag)         |
+| Chat API or Rating API returns `502`/`503`, HTTP `429`, or slow AI responses     | [Runbook 5: AI chat and PII redaction degradation](#runbook-5-ai-chat-and-pii-redaction-degradation)             |
 
-## 2. Business Value
+## Prerequisites
 
-- **Reduced Downtime on Critical Journeys:** Standardized triage paths protect revenue-critical flows like checkout orchestration and catalog search.
-- **Consistent On-Call Execution:** Clear symptom-to-resolution playbooks help engineers and operations responders act decisively without hunting across disparate configuration files.
-- **Safer Passwordless Operations:** Explicit permission checks prevent responders from weakening security controls (such as re-enabling static access keys) when diagnosing access errors.
-- **Faster AI & Search Recovery:** Dedicated diagnostics for rate limits, vector stores, and privacy sidecars keep AI features resilient under load.
+- **Azure CLI (`az` 2.x):** Signed in to the target subscription (`az login && az account set --subscription "<subscription-id>"`).
+- **Permissions:** `Contributor` on `<resource-group>` to inspect and restart Container App revisions, plus `Reader` on ACR, PostgreSQL, Redis, Cosmos DB, Storage, and Microsoft Foundry.
+- **Monitoring access:** Log Analytics and Aspire Dashboard access (see [[doc|operational/002-observability-and-diagnostics]]).
 
-## 3. How It Works
+## Runbook 1: Container App startup or image pull failure
 
-Each operational runbook maps observable business or platform symptoms to targeted checks across BookWorm's five main failure domains:
+**Symptoms:** A Container App revision stalls in `Activating` or `Failed`, or `ContainerAppSystemLogs_CL` reports `ImagePullFailed` or `ContainerTerminated`.
 
-1. **Container Startup & Rollout Failures:** When a service fails to activate or pull its software image, responders verify that the hosting environment still holds registry pull permissions, confirm the target image tag exists in the registry, and inspect startup logs for missing external connection settings. Because services run in single-active-revision mode, publishing a corrected image or secret replaces the broken instance right away.
-2. **Passwordless Access & Permission Errors:** Because BookWorm disables static access keys and uses managed identities across databases, caches, document stores, and blob storage, authorization errors usually indicate a missing role assignment—or a newly applied role that has not yet finished propagating across the identity directory, which typically takes five to ten minutes before a service restart takes effect.
-3. **Order Orchestration Stalls:** When customer orders pause after creation, teams verify that the durable workflow scheduler and its task hub are intact, confirm that the orchestration worker holds full storage ownership permissions, check event-streaming connectivity across ordering and notification services, and ensure any network allowlists include the hosting environment's outbound addresses.
-4. **Vector Search & Catalog Indexing Lag:** When newly added or updated books do not appear in semantic search, responders check the scheduler dashboard and database to confirm batch jobs are triggering ingestion events, then inspect the ingestion worker for AI embedding throttling, external vector store connectivity, or database and storage access errors.
-5. **AI Chat & Personal-Data Redaction Degradation:** When chat or rating assistance slows down or stops responding, teams verify the health of the personal-data analysis and anonymization containers, check AI model quota availability, and validate delegated agent credentials used when invoking shared model tools.
+1. **Inspect active revision status and system logs**
 
-## 4. Trade-offs & Lessons Learned
-
-- **Single-Revision Simplicity vs. Instant Rollback:** Using single active revision mode makes applying fixes straightforward because the corrected revision immediately takes over, but it leaves no warm standby revision for instant traffic splitting if a bad release slips through.
-- **Passwordless Security vs. Propagation Delay:** Eliminating static keys and connection passwords removes credential-leak risk, at the cost of waiting five to ten minutes for cloud role assignments to propagate during initial provisioning or permission repairs.
-- **Baseline AI Quotas Under Load:** Starting with minimal embedding and model throughput capacity keeps baseline costs low, but makes capacity throttling a primary suspect whenever bulk catalog updates or chat spikes occur.
-- **Shared Network Allowlist Coupling:** Tightening IP allowlists on the durable workflow scheduler improves security, yet requires careful synchronization with the container environment's outbound IP addresses to avoid silently stalling order sagas.
-
-## 5. Technical Reference
-
-### Runbook 1: Container App Startup or Image Pull Failures
-
-**Symptoms:** Revision stuck in `Activating` or `Failed`; `ImagePullFailed` or `ContainerTerminated` in `ContainerAppSystemLogs_CL`.
-
-**Diagnosis & Resolution:**
-
-1. Verify `aca_mi` (`mi-<token>`) still holds `AcrPull` (`7f951dda-4ed3-4680-a7ca-43fe172d538d`) on `acr<token>`.
-2. Confirm the target image tag exists in ACR:
    ```bash
-   az acr repository show-tags --name "<ACR_NAME>" --repository "<SERVICE_NAME>" --orderby time_desc
+   az containerapp revision list \
+     --name "<container-app-name>" \
+     --resource-group "<resource-group>" \
+     --query "[].{Revision:name, Active:properties.active, Health:properties.healthState, Provisioning:properties.provisioningState}" \
+     -o table
    ```
-3. Inspect container console logs for missing startup environment variables (external Kafka, Qdrant, or SMTP parameters).
-4. Because all apps use `activeRevisionsMode: 'Single'`, pushing a fixed image or correcting a secret immediately replaces the active revision.
 
----
+   Where:
+   - `<container-app-name>`: Target Container App (one of the 16 application Container Apps or `quartz-dashboard`).
+   - `<resource-group>`: Target Azure resource group name.
 
-### Runbook 2: Passwordless Auth & RBAC Failures (401 / 403)
+2. **Verify the environment Managed Identity holds `AcrPull`**
 
-**Symptoms:** `Login failed for token-identified principal` (PostgreSQL), `NOAUTH` / `NOPERM` (Redis), `403 Forbidden` (Cosmos DB / Storage / Foundry).
+   Confirm the shared Container Apps environment identity (`mi-<token>`) holds role `AcrPull` (`7f951dda-4ed3-4680-a7ca-43fe172d538d`) on the Azure Container Registry (`<acr-name>`).
 
-**Diagnosis & Resolution:**
+   ```bash
+   az role assignment list \
+     --scope "$(az acr show --name <acr-name> --resource-group <resource-group> --query id -o tsv)" \
+     --query "[?roleDefinitionName=='AcrPull'].{Principal:principalId, Role:roleDefinitionName}" \
+     -o table
+   ```
 
-1. **PostgreSQL:** Confirm the service's user-assigned managed identity is registered under `flexibleServers/administrators` in `postgres`.
-2. **Redis:** Verify an `accessPolicyAssignments` entry (`accessPolicyName: 'default'`) exists for the service's `principalId` on `redis/default`. Note that access keys are disabled by design.
-3. **Cosmos DB ([[service|rating-api]]):** Verify `rating-identity` holds the custom Cosmos DB Data Role assignment (`rating-roles-cosmos`).
-4. **Storage (`catalog-ingestion`, `finance`):** Azure Functions hosts require **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`), whereas APIs only require **Storage Blob Data Contributor** (`ba92f5b4-2d11-453d-a403-e96b0029c9fe`).
-5. Allow up to 5–10 minutes for newly created Entra RBAC assignments to propagate, then restart the affected Container App revision.
+   Where:
+   - `<acr-name>`: Azure Container Registry name (`acr<token>`).
 
----
+3. **Confirm the target image tag exists in ACR**
 
-### Runbook 3: Order Orchestration Stalls (`finance` / Durable Task Scheduler)
+   ```bash
+   az acr repository show-tags \
+     --name "<acr-name>" \
+     --repository "<service-name>" \
+     --orderby time_desc \
+     -o table
+   ```
 
-**Symptoms:** Checkout sagas stall after order creation; [[service|order-orchestration]] logs connection errors to `finance-taskhub`.
+   Where:
+   - `<service-name>`: Image repository name matching the failing Container App.
+
+4. **Check console logs for missing external parameters**
+
+   Stream startup console logs to catch missing external connection strings (`ConnectionStrings__broker`, `ConnectionStrings__vectordb`, or `Email__*` for `notification`):
+
+   ```bash
+   az containerapp logs show \
+     --name "<container-app-name>" \
+     --resource-group "<resource-group>" \
+     --type console \
+     --tail 100
+   ```
+
+5. **Redeploy or restart the revision**
+
+   All Container Apps run in single-active-revision mode (`activeRevisionsMode: 'Single'`), so re-running `aspire deploy` with the fixed image or configuration replaces the failing revision immediately.
+
+   The generated Bicep snapshot has 17 Container App resources: all 16 application workloads and `quartz-dashboard` use `activeRevisionsMode: 'Single'` and `minReplicas: 1`. It does not declare `maxReplicas`.
+
+## Runbook 2: Passwordless auth and RBAC failure
+
+**Symptoms:** `Login failed for token-identified principal` (PostgreSQL), `NOAUTH` or `NOPERM` (Redis), or `403 Forbidden` (Cosmos DB, Storage, or Microsoft Foundry).
+
+:::note
+Never re-enable static database passwords, Redis access keys, or Storage shared keys as a workaround. Verify which datastore the failing service actually owns before inspecting RBAC: PostgreSQL hosts **only** `catalogdb`, `orderingdb`, and `schedulerdb`. Notification (Redis + Kafka + SMTP), Finance (Durable Task Scheduler + Storage), Rating (Cosmos DB + Redis), Chat (Blob Storage), Basket (Redis), and MCP Tools (stateless) have **no PostgreSQL database**.
+:::
+
+1. **Verify the failing service's datastore RBAC assignment**
+
+   - **PostgreSQL (`catalog`, `catalog-ingestion`, `ordering`, `scheduler`):** Confirm the service's user-assigned Managed Identity is registered as an Entra ID administrator on the PostgreSQL Flexible Server:
+
+     ```bash
+     az postgres flexible-server ad-admin list \
+       --resource-group "<resource-group>" \
+       --server-name "<postgres-server-name>" \
+       -o table
+     ```
+
+   - **Azure Managed Redis (`catalog`, `basket`, `ordering`, `rating`, `notification`):** Confirm an `accessPolicyAssignments` entry (`default` policy) exists for the service's Managed Identity on the Redis cluster. Access keys are disabled by design.
+   - **Azure Cosmos DB (`rating` only):** Confirm `rating`'s Managed Identity holds the Cosmos DB SQL data role assignment on `ratingdb` (`feedbacks` container, partition key `/bookId`). Note that `DisableLocalAuth` is enforced in `Staging` and `Production` (`AzureExtensions.Cosmos.cs`).
+   - **Azure Storage (`catalog`, `chatting`, `catalog-ingestion`, `finance`):** Confirm role assignments on the storage account:
+     - `catalog` and `chatting`: **Storage Blob Data Contributor** (`ba92f5b4-2d11-453d-a403-e96b0029c9fe`).
+     - `catalog-ingestion` and `finance`: **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`, required by Azure Functions host storage).
+   - **Microsoft Foundry (`catalog`, `catalog-ingestion`, `chatting`, `rating`):** Confirm **Cognitive Services User** (`a97b65f3-24c7-4388-baec-2e87135dc908`).
+
+   ```bash
+   az role assignment list \
+     --resource-group "<resource-group>" \
+     --assignee "<managed-identity-principal-id>" \
+     --query "[].{Role:roleDefinitionName, Scope:scope}" \
+     -o table
+   ```
+
+   Where:
+   - `<postgres-server-name>`: Azure PostgreSQL Flexible Server name.
+   - `<managed-identity-principal-id>`: Object ID of the failing service's user-assigned Managed Identity.
+
+2. **Account for RBAC propagation delay and restart the revision**
+
+   Wait 5–10 minutes after creating or repairing a role assignment, then restart the active revision:
+
+   ```bash
+   az containerapp revision restart \
+     --name "<container-app-name>" \
+     --resource-group "<resource-group>" \
+     --revision "<active-revision-name>"
+   ```
+
+   Where:
+   - `<active-revision-name>`: Active revision name from `az containerapp revision list`.
+
+## Runbook 3: Order orchestration stall
+
+**Symptoms:** Orders remain in `New` status after checkout, customer baskets are not deleted, or checkout emails never arrive.
+
+<MermaidFileLoader file="mermaids/003-incident-response-and-runbooks-diagram-1.mmd" />
+
+1. **Inspect `finance` environment variables for Durable Task Scheduler**
+
+   Confirm `DTS_CONNECTION_STRING` (`Endpoint=...;Authentication=DefaultAzure`), `TASKHUB_NAME` (`finance-taskhub`), and `BrokerList` are populated on `finance` (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.DurableTask.cs`):
+
+   ```bash
+   az containerapp show \
+     --name finance \
+     --resource-group "<resource-group>" \
+     --query "properties.template.containers[0].env[?name=='DTS_CONNECTION_STRING' || name=='TASKHUB_NAME' || name=='BrokerList']" \
+     -o table
+   ```
+
+2. **Verify `finance` storage and network access**
+
+   - Confirm `finance`'s Managed Identity holds **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`) on the Azure Storage account (Finance has **no PostgreSQL database**).
+   - If you restricted `ipAllowlist` on `Microsoft.DurableTask/schedulers`, verify that the Container Apps environment's outbound static IPs are included.
+
+3. **Check Kafka topics and dead-letter queues across Ordering, Finance, Basket, and Notification**
+
+   Inspect `finance`, `basket`, and `notification` console logs and check these Kafka topics and native DLQs:
+   - Flow topics: `bookworm.{env}.ordering.user-checked-out`, `bookworm.{env}.finance.place-order`, `bookworm.{env}.basket.delete-complete`, `bookworm.{env}.basket.delete-failed`, `bookworm.{env}.finance.delete-basket-complete`, `bookworm.{env}.finance.delete-basket-failed`.
+   - Native DLQs: `bookworm.{env}.ordering.dead-letter-queue`, `bookworm.{env}.basket.dead-letter-queue`, `bookworm.{env}.notification.dead-letter-queue`.
+
+4. **If checkout emails specifically are missing, inspect Notification dependencies**
+
+   Verify `notification` can reach external Kafka (`broker`), Azure Managed Redis (`redis`, used for FusionCache and 24-hour idempotency—no PostgreSQL), and the external SendGrid SMTP endpoint (`Email__Endpoint`, `Email__Username`, `Email__Password`, `Email__From`).
+
+## Runbook 4: Vector search and catalog ingestion lag
+
+**Symptoms:** Newly created or edited books do not appear in semantic search, or `catalog-ingestion` logs batch failures.
+
+1. **Verify Scheduler is publishing batch trigger events**
+
+   Sign in to **Quartz Dashboard** at `https://quartz-dashboard.<aca-default-domain>/quartz` (requires Entra ID `admin` role) and inspect `ProcessVectorBatchJob` execution history (scheduled every 5 minutes UTC: `0 0/5 * * * ?`, stored in `schedulerdb`). Confirm `ProcessVectorBatchIntegrationEvent` is publishing to the unprefixed topic `scheduler.process-vector-batch`.
+
+2. **Inspect `catalog-ingestion` console logs**
+
+   ```bash
+   az containerapp logs show \
+     --name catalog-ingestion \
+     --resource-group "<resource-group>" \
+     --type console \
+     --tail 100
+   ```
+
+3. **Remediate the specific failure mode**
+
+   - **Microsoft Foundry HTTP `429` on `embedding` (`embed-v-4-0`):** Raise deployment capacity in Microsoft Foundry and allow the next 5-minute batch cycle to reprocess changed books.
+   - **Qdrant Cloud connectivity errors:** Verify `ConnectionStrings__vectordb` and Qdrant Cloud API key validity.
+   - **PostgreSQL (`catalogdb`) or Storage `403` errors:** Verify `catalog-ingestion` holds PostgreSQL Entra ID admin registration and **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`) on `storage` (Runbook 2).
+
+## Runbook 5: AI chat and PII redaction degradation
+
+**Symptoms:** **Chat API** (`chatting`) or **Rating API** (`rating`) returns HTTP `502`/`503`, HTTP `429`, or high response latency.
+
+1. **Check Presidio privacy sidecar health**
+
+   Verify `presidio-analyzer` and `presidio-anonymizer` Container Apps are `Running` and healthy on internal HTTP port `3000` (`/health`):
+
+   ```bash
+   az containerapp list \
+     --resource-group "<resource-group>" \
+     --query "[?name=='presidio-analyzer' || name=='presidio-anonymizer'].{Name:name, Status:properties.runningStatus}" \
+     -o table
+   ```
+
+2. **Check Microsoft Foundry model quota and throttling**
+
+   Inspect Application Insights **Failures** (linked to `Foundry-project`) for HTTP `429` responses on deployments `chat` (`model-router`), `decision` (`Microsoft-Decision-1`), or `embedding` (`embed-v-4-0`). Increase model capacity in Microsoft Foundry if requests are throttled under load.
+
+3. **Verify Entra Agent Identities for On-Behalf-Of (OBO) failures**
+
+   If `chatting` fails with `401`/`403` when calling **MCP Tools** (`mcptools`) or **Rating API** (`rating`) over Agent-to-Agent (A2A) gRPC:
+   - Confirm `chatting` has `AgentIdentities__DefaultAgentId` (`chatAgentId`) and `AgentIdentities__Agents__rating` (`ratingAgentId`), and `rating` has `AgentIdentities__DefaultAgentId` (`ratingAgentId`).
+   - Confirm the three Federated Identity Credentials provisioned by `src/Aspire/BookWorm.AppHost/Infra/entra-agent-identities.bicep` trust the parent Entra ID service principal with audience `api://AzureADTokenExchange`:
+     - `bookworm-parent-blueprint-fic` (on `bookworm-agent-blueprint-<unique-suffix>`)
+     - `bookworm-chat-agent-fic` (on `bookworm-chat-agent-<unique-suffix>`)
+     - `bookworm-rating-agent-fic` (on `bookworm-rating-agent-<unique-suffix>`)
+
+4. **Check Chat session storage and Rating Cosmos DB**
+
+   - **Chat API** persists AG-UI sessions only in Azure Blob Storage (`chatting-blob`, prefix `ag-ui/`) and has no PostgreSQL, Redis, or Kafka dependency.
+   - **Rating API** persists feedback records in Azure Cosmos DB (`ratingdb` / `feedbacks`, partition key `/bookId`) and caches in Redis—not PostgreSQL.
+
+## Verification
+
+After executing any runbook, confirm recovery:
+
+<CodeGroup>
+
+```bash
+az containerapp revision list \
+  --name "<container-app-name>" \
+  --resource-group "<resource-group>" \
+  --query "[?properties.active==\`true\`].{Revision:name, Health:properties.healthState, Replicas:properties.replicas}" \
+  -o table
+```
+
+</CodeGroup>
+
+Expected output:
+
+<CodeGroup>
+
+```text
+Revision                          Health    Replicas
+--------------------------------  --------  ----------
+ordering--<revision-suffix>       Healthy   1
+```
+
+</CodeGroup>
+
+Confirm error counts drop to zero in Log Analytics using the error query in [[doc|operational/002-observability-and-diagnostics]].
+
+## Troubleshooting
+
+| Symptom                                                         | Cause                                                                                                                                 | Fix                                                                                                               |
+| :-------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------- |
+| `az containerapp revision restart` succeeds, but errors persist | Underlying RBAC assignment or external secret is still invalid                                                                        | Re-verify role assignments (Runbook 2) or update secrets via `aspire deploy`                                      |
+| `scheduler` shows stopped in local run mode                     | `AppHost.cs` registers `scheduler` with `.WithExplicitStart()`                                                                        | Start `scheduler` manually from the Aspire Dashboard in local runs; in Azure publish mode, verify revision status |
+| Rate limiter returns `429 Too Many Requests` on API routes      | Global concurrency (`100`) / IP fixed window (`30 req/min`) or `PerUserRateLimit` token bucket (`30` burst, `20` per `10s`) triggered | Check `Retry-After` header and confirm whether traffic is legitimate burst load or abuse                          |
+
+## Related documentation
+
+- [[doc|operational/002-observability-and-diagnostics]] — Live Aspire Dashboard, CLI log streaming, and KQL queries.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Complete Managed Identity, OAuth2 scope, and Agent Identity matrix.
+- [[doc|platform/003-data-ai-and-messaging-resources]] — Exact datastore ownership and Kafka topic conventions.
+- [[doc|operational/004-security-hardening-checklist]] — Preventive controls for IP allowlists, quotas, and autoscaling.
 
 <NodeGraph id="order-orchestration" version="1.0.0" type="service" maxHeight="26" />
 
-**Diagnosis & Resolution:**
-
-1. Verify `durable_task_scheduler_connectionString` (`Authentication=DefaultAzure`) and `finance-taskhub` exist on the `Microsoft.DurableTask/schedulers` resource.
-2. Check that `finance-identity` has Storage Blob Data Owner on `storage` for the Azure Functions host.
-3. Confirm Kafka connectivity between [[service|order-api]], [[service|order-orchestration]], and [[service|notification-api]].
-4. If IP allowlisting was tightened on Durable Task Scheduler, verify the ACA environment's outbound static IPs are included in `ipAllowlist`.
-
----
-
-### Runbook 4: Vector Search & Catalog Ingestion Lag
-
-**Symptoms:** Newly added or updated books do not appear in semantic search; [[service|catalog-ingestion]] fails during batch processing.
-
 <NodeGraph id="catalog-ingestion" version="1.0.0" type="service" maxHeight="26" />
-
-**Diagnosis & Resolution:**
-
-1. Check [[service|sheduler-dashboard]] Quartz job history in [[container|sheduler-database]] to confirm [[event|ProcessVectorBatchIntegrationEvent]] is being published to [[channel|scheduler.process-vector-batch]].
-2. Inspect [[service|catalog-ingestion]] logs for:
-   - **Microsoft Foundry `embed-v-4-0` throttling (HTTP 429):** Check deployment capacity (`capacity: 1` by default) and retry behavior.
-   - **Qdrant Cloud connectivity:** Verify the external [[container|catalog-vector]] connection parameter and API key.
-   - **PostgreSQL / Storage access:** Verify `catalog-ingestion-identity` RBAC on `postgres` and `storage`.
-
----
-
-### Runbook 5: AI Chat & PII Redaction Degradation
-
-**Symptoms:** [[service|chat-api]] or [[service|rating-api]] returns 502/503 or slow responses.
-
-**Diagnosis & Resolution:**
-
-1. Check `presidio-analyzer` and `presidio-anonymizer` ([[service|PresidioAPI]]) container health on internal port `3000`.
-2. Check Microsoft Foundry deployments (`chat` / `model-router`, `decision` / `Microsoft-Decision-1`) for quota exhaustion in Azure AI Foundry.
-3. Verify `entra-agent-identities` Federated Identity Credentials (`bookworm-chat-agent-fic` and rating agent FIC) if on-behalf-of (OBO) token exchange fails when invoking [[service|mcp-server]].

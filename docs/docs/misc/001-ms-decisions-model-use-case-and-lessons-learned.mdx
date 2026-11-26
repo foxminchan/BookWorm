@@ -12,107 +12,79 @@ badges:
     textColor: teal
 ---
 
-# MS Decisions Model (`Microsoft-Decision-1`) in BookWorm Chat
+BookWorm's **Chat API** (`src/Services/Chat/BookWorm.Chat`) uses Microsoft Foundry's `Microsoft-Decision-1` ("System 1") model to evaluate safety, language, scope, specialist routing, and per-turn tool relevance in single-pass classification calls before invoking a generative chat model (`ModelRouter`). Replacing generative LLM router prompts with calibrated classification decisions cuts latency, lowers token spend, and enforces deterministic confidence thresholds (`0.5` for guardrails and tool selection; `0.6` for direct specialist routing before human-in-the-loop disambiguation).
 
-## 1. Context & Problem
+## Context and motivation
 
-In BookWorm's multi-agent chat experience ([[system|chat-system]]), two frequent steps occur before a specialist AI assistant generates a customer-facing response:
+Before a specialist AI agent answers a customer message on `/ag-ui`, Chat API must solve two high-frequency classification problems:
 
-1. **Request screening and routing**: Determining whether an incoming message is safe, written in English, and relevant to BookWorm, and deciding which specialist assistant should handle it.
-2. **Per-turn tool filtering**: Selecting which backend actions (tools) are genuinely relevant to the current turn out of all actions available to the assistant.
+1. **Request screening and specialist routing:** Decide whether the message is safe, written in English, and relevant to BookWorm (books, orders, or store policies), then select the right specialist agent (**Book**, **QA**, or **Rating**).
+2. **Per-turn tool filtering:** Choose which optional tools are relevant to the current conversation turn rather than sending every registered tool definition in every prompt.
 
-Both tasks are **classification decisions** (answering yes/no or multiple-choice questions) rather than open-ended text generation. Using a full conversational AI model for these rapid checks adds noticeable response delay, increases token costs, and risks formatting errors in structured responses.
+Both problems are binary (`Yes`/`No`) or multiple-choice classification tasks rather than open-ended generation. Solving them with a full generative LLM adds round-trip latency, consumes prompt tokens on every turn, and risks malformed structured JSON outputs.
 
-## 2. Business Value
+## How it works
 
-- **Faster customer responses**: Evaluating safety, language, scope, and routing in a single pass removes the latency of a separate conversational router call.
-- **Lower AI operating cost**: Filtering out irrelevant tools before invoking the assistant reduces token usage on every turn.
-- **Consistent, measurable governance**: Calibrated confidence thresholds provide repeatable rules for stopping unsafe, unsupported-language, or off-topic requests before specialist assistants run.
-- **Higher assistant accuracy**: Giving assistants only the tools relevant to the current conversation prevents distraction from unrelated actions.
+BookWorm deploys `FoundryModel.Microsoft.MicrosoftDecision1` alongside `FoundryModel.Microsoft.ModelRouter` in `BookWorm.AppHost` and accesses it through a provider-agnostic `IDecisionClient` contract (`BookWorm.Chassis.AI.Decisions`), implemented by `FoundrySystemOneDecisionClient` (`/providers/microsoft/v1/systemone`).
 
-## 3. How It Works
+### Use case 1: Single-pass screening and specialist routing
 
-BookWorm uses Microsoft Foundry's `Microsoft-Decision-1` model in [[system|chat-system]] to evaluate multiple yes/no and multiple-choice questions in a **single pass**, returning calibrated confidence scores for each decision.
+After deterministic rule-based validation (`InputValidationExecutor`), `DecisionRouterExecutor` evaluates four decision questions in a single `Microsoft-Decision-1` request:
 
-### Use Case 1: Single-Pass Screening & Routing
+| Question ID   | Decision type       | What it evaluates                                                                                              | Decision rule                                                                                                        |
+| :------------ | :------------------ | :------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| `is_safe`     | Binary (`Yes`/`No`) | Detects prompt-injection, jailbreak, or instruction-override attempts                                          | Confidence `< 0.5` stops the request (`UnsafeInput`)                                                                 |
+| `is_english`  | Binary (`Yes`/`No`) | Verifies the message is written in English                                                                     | Confidence `< 0.5` stops the request (`NonEnglish`)                                                                  |
+| `is_in_scope` | Binary (`Yes`/`No`) | Checks relevance to BookWorm books, orders, and store policies                                                 | Confidence `< 0.5` stops the request (`OutOfScope`)                                                                  |
+| `route`       | Choice              | Selects `book-agent`, `qa-agent`, or `rating-agent` (selected only when a specific book catalog ID is present) | Confidence `>= 0.6` routes directly; `< 0.6` triggers human-in-the-loop disambiguation via `RouteDisambiguationPort` |
 
-<MermaidFileLoader file="mermaids/decision-routing-and-safety-flow.mmd" />
+End-to-end single-pass screening, partial-response fallback, and specialist routing flow in Chat API:
 
-Before any specialist assistant is invoked, every incoming customer message goes through one combined pre-screening step that evaluates four checks at once:
+<MermaidFileLoader file="mermaids/001-ms-decisions-model-use-case-and-lessons-learned-diagram-1.mmd" />
 
-| Check          | Type     | What it evaluates                                                     | Decision Rule                                                          |
-| -------------- | -------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| **Safety**     | Yes / No | Detects prompt-injection, jailbreak, or instruction-override attempts | Confidence below 50% stops the request as unsafe                       |
-| **Language**   | Yes / No | Verifies the message is written in English                            | Confidence below 50% stops the request as unsupported language         |
-| **Scope**      | Yes / No | Checks relevance to BookWorm (books, orders, store policies, etc.)    | Confidence below 50% stops the request as out of scope                 |
-| **Specialist** | Choice   | Picks the best assistant: **Book**, **Q&A**, or **Rating**            | **Rating** is selected only when a specific book catalog ID is present |
+### Use case 2: Dynamic per-turn tool selection
 
-Combining safety, language, scope, and specialist routing into one step replaces a slower standalone router call and applies consistent, measurable thresholds.
+`DecisionToolSelectionMiddleware` (`UseDecisionToolSelection`) filters optional tools before each specialist LLM invocation:
 
-### Use Case 2: Dynamic Per-Turn Tool Selection
+1. If `ChatOptions.Tools` is empty or `NoneChatToolMode` is active, it forwards the request unchanged.
+2. Otherwise, it captures up to the last **6 messages** (`MaxContextMessages = 6`) as context and separates mandatory tools (`AlwaysIncludedToolNames` and `RequiredChatToolMode`) from optional candidate tools.
+3. It sends one binary decision question per candidate tool to `IDecisionClient.GetDecisionAsync`.
+4. Only candidate tools scoring `>= 0.5` (`ProbabilityThreshold = 0.5`) are merged with mandatory tools and passed to the inner `IChatClient`.
+5. If the decision call fails, times out, or returns zero tools, the middleware **fails open**, logs the error, and retains all original tools so the customer still receives a response.
 
-<MermaidFileLoader file="mermaids/decision-tool-selection-flow.mmd" />
+Per-turn tool filtering and fail-open recovery inside `DecisionToolSelectionMiddleware`:
 
-BookWorm's **Book** and **Q&A** assistants have access to many backend tools (for searching the catalog, looking up policies, and similar tasks). Instead of sending every tool description on every turn:
+<MermaidFileLoader file="mermaids/001-ms-decisions-model-use-case-and-lessons-learned-diagram-2.mmd" />
 
-1. The system reviews the recent conversation context (the last **6 messages** by default).
-2. It asks the decision model whether each optional tool is relevant to the current turn.
-3. Only tools scoring **50% confidence or higher** are passed to the AI assistant.
-4. Tools marked as **always included** or **explicitly required** for the current action bypass filtering so they are never removed.
+### Key engineering lessons
 
-## 4. Trade-offs & Lessons Learned
+- **Isolate vendor wire formats behind an internal contract:** Keeping `IDecisionClient` (`DecisionRequest`, `DecisionResponse`, `DecisionDefinition<T>`) decoupled from `SystemOneProtocolMapper` lets Chat API workflows remain independent of Microsoft Foundry protocol changes.
+- **Handle partial answers explicitly:** When `Microsoft-Decision-1` leaves `route` unanswered (`DecisionUnansweredException`), `HandlePartialResponse` still enforces any answered `is_safe`, `is_english`, or `is_in_scope` rejections and defaults the route to **Book Agent**—preventing both safety bypasses and avoidable chat crashes.
+- **Protect mandatory tools before filtering:** Partitioning always-included and explicitly required tools before invoking the decision model ensures required workflow tools are never pruned.
+- **Use AOT-safe source-generated JSON serialization:** `DecisionSerializationContext`, `ChatRoutingSerializationContext`, and `SystemOneSerializationContext` use compile-time `System.Text.Json` source generation (`UseStringEnumConverter = true`) to eliminate reflection overhead and preserve strict analyzer compliance.
+- **Layer probabilistic screening with deterministic controls:** `Microsoft-Decision-1` complements—never replaces—`InputValidationExecutor`, Presidio `PIIMiddleware`, and Agent Governance `GuardrailMiddleware`.
+- **Test cutoffs deterministically:** Unit tests (`DecisionRouterExecutorTests`, `WorkflowRegistrationTests`) inject simulated `IDecisionClient` stubs to verify boundary thresholds (`0.5` and `0.6`), partial responses, and fail-open paths offline without live Foundry calls.
 
-### 1. Isolate vendor-specific protocols from business logic
+`SystemOneProtocolMapper`, `ChatRoutingDecisionService`, `DecisionUnansweredException`, and `HandlePartialResponse` exist in the referenced source trees. No symbol named `DecisionSerializationContext` exists there.
 
-Early prototypes mixed Microsoft Foundry's specific payload format directly with client logic. Separating a reusable decision contract from the provider-specific protocol mapping keeps BookWorm's chat rules clean and makes it straightforward to swap or upgrade decision providers later without touching business workflows.
+## Design trade-offs
 
-### 2. Plan explicit fallbacks for partial or unanswered decisions
+| Decision                                                      | Benefits                                                                                             | Costs and limits                                                                                       |
+| :------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| **Single-pass System 1 classification** vs. generative router | Lower routing latency, lower token usage, and calibrated `0.0`–`1.0` scores                          | Requires maintaining explicit question definitions and tuning `0.5`/`0.6` thresholds as prompts evolve |
+| **Fail-open tool filtering**                                  | Preserves chat availability if the decision model times out or drops all optional tools              | Temporarily increases prompt token size during fallback turns                                          |
+| **HITL disambiguation below `0.6` route confidence**          | Avoids misrouting ambiguous customer questions to the wrong specialist agent                         | Adds an extra interactive user turn when intent is unclear                                             |
+| **Layered deterministic + AI safety checks**                  | Fast rejection of empty/malformed inputs plus PII redaction even if AI screening misses an edge case | Requires testing and maintaining three distinct middleware/executor layers                             |
 
-A decision model can occasionally skip an individual question or time out. Treating any partial response as a total failure would either drop valid safety blocks or break the customer's chat:
+## Alternatives considered
 
-- **Routing**: If the model skips the specialist selection question, the system still enforces any safety, language, or scope rejections it _did_ answer, and safely defaults to the **Book Assistant**.
-- **Tool selection**: Fails open—if the decision call fails, times out, or unexpectedly selects zero tools, the system logs the issue and keeps all original tools so the assistant can still respond.
+- **Full generative LLM router (`ModelRouter`):** Supports nuanced reasoning for ambiguous prompts, but adds multi-second latency and higher token cost on every turn and relies on brittle JSON prompt formatting.
+- **Regex and keyword routing only:** Runs in microseconds with zero model cost, but fails on natural-language book queries, paraphrased intent, and subtle prompt injections.
+- **Passing every tool unconditionally on every turn:** Eliminates tool-filtering middleware, but bloats prompt tokens and increases tool-selection errors as the tool catalog grows.
 
-### 3. Never filter out mandatory or explicitly required tools
+## Related documentation
 
-When a workflow explicitly requires a specific tool (or marks core tools as always available), those tools are separated before calling the decision model so they are guaranteed to reach the assistant.
-
-### 4. Pre-generate data formatting at build time for performance and reliability
-
-Generating data-serialization rules at compile time rather than inspecting structures at runtime eliminates runtime overhead, prevents deployment trimming warnings, and keeps the codebase compliant with strict static-analysis rules.
-
-### 5. Layer AI-based safety with deterministic checks
-
-AI-based safety screening is a strong first-pass filter, but it complements—rather than replaces—fast rule-based input validation (such as empty-input checks, length limits, and known pattern matching) and downstream privacy and guardrail filters.
-
-### 6. Test decision contracts and thresholds with simulated responses
-
-Because question definitions, descriptions, and the 50% confidence cutoff directly control user-facing behavior, automated unit and workflow tests use simulated decision clients to verify boundary cutoffs, fallback paths, and context propagation without calling a live AI endpoint.
-
-## 5. Technical Reference
-
-### Decision parameters and screening identifiers
-
-- **Confidence score range**: `0.0` to `1.0`, with a `0.5` (`50%`) cutoff threshold.
-- **Screening question IDs**: `is_safe` (Safety), `is_english` (Language), `is_in_scope` (Scope), and `route` (Specialist).
-- **Routing fallback**: Unanswered `route` defaults to the **Book Assistant** while preserving any answered `is_safe`, `is_english`, or `is_in_scope` rejections.
-- **Tool-selection context window**: Last `6` messages (`MaxContextMessages = 6`).
-
-### Implementation symbols
-
-| Concept                       | Implementation / Symbol                                                                                                                                                   |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Reusable decision package     | `BookWorm.Chassis.AI.Decisions` (`IDecisionClient`, `DecisionRequest`, `DecisionResponse`, `DecisionDefinition<T>`)                                                       |
-| Foundry integration           | `FoundrySystemOneDecisionClient`, `SystemOneProtocolMapper` (`/providers/microsoft/v1/systemone`, maps `Binary` → `"noul"`, `Choice`/`Score` → `"choice"`)                |
-| Request routing & screening   | `DecisionRouterExecutor`, `ChatRoutingDecisionService.EvaluateAsync`, `RouteTarget` (`UnsafeInput`, `NonEnglish`, `OutOfScope`)                                           |
-| Partial / unanswered handling | `DecisionUnansweredException`, `HandlePartialResponse`                                                                                                                    |
-| Tool selection middleware     | `DecisionToolSelectionMiddleware` (`UseDecisionToolSelection`), `MaxContextMessages = 6`, `ProbabilityThreshold = 0.5`, `AlwaysIncludedToolNames`, `RequiredChatToolMode` |
-| AOT-safe JSON serialization   | `DecisionSerializationContext`, `ChatRoutingSerializationContext`, `SystemOneSerializationContext` with `[JsonSourceGenerationOptions(UseStringEnumConverter = true)]`    |
-| Layered safety & validation   | `InputValidationExecutor`, `PIIMiddleware`, `GuardrailMiddleware`                                                                                                         |
-| Automated tests               | `DecisionRouterExecutorTests`, `WorkflowRegistrationTests`, `AGUIRunContext`                                                                                              |
-
-### Related documentation
-
-- [[adr|adr-007-system-one-decision-model-routing-and-tool-selection]]
-- [[adr|adr-001-chat-agent-orchestration-boundary]]
-- [[adr|adr-005-govern-agent-tools-per-agent]]
+- [[doc|development/001-developer-onboarding]] — How Chat API, MCP Tools, and Rating API fit into BookWorm's bounded contexts.
+- [[doc|arc42/09-architecture-decisions]] — Formal decision records for Chat orchestration, System 1 routing, and per-agent tool governance.
+- [[doc|platform/003-data-ai-and-messaging-resources]] — Microsoft Foundry deployments (`ModelRouter`, `MicrosoftDecision1`, `EmbedV40`) and Presidio configuration.
+- [[doc|operational/003-incident-response-and-runbooks]] — Diagnosing AI chat throttling, Presidio sidecar errors, and Entra Agent Identity failures.

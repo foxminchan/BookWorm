@@ -35,133 +35,77 @@ badges:
     icon: ShieldCheckIcon
 ---
 
-## 1. Context & Problem
+Catalog is BookWorm's Core domain for authoritative book information, classification metadata (`Author`, `Category`, `Publisher`), pricing, and availability. It serves low-latency reads over HTTP and gRPC, stores canonical data in PostgreSQL, maintains derived Qdrant search vectors through `Catalog Ingestion`, and projects aggregate rating summaries asynchronously from Reviews events.
 
-Catalog is the authoritative **Core Domain** for the [[entity|book]]s BookWorm offers. It turns [[entity|publisher]] and [[entity|author]] information into a trusted, searchable product proposition used by [[domain|shopping]], [[domain|reviews]], and other customer-facing experiences.
+## Scope and constraints
 
-Because the quality of product information directly drives customer discovery, conversion, and purchase accuracy, BookWorm needs a single domain responsible for defining what a book is, how it is classified, and what price and availability proposition is presented before checkout. Without explicit domain boundaries, product rules would fragment across shopping baskets, reviews, and order records.
+- **In scope:** Book CRUD lifecycle (with soft deletion and optimistic concurrency), author/category/publisher taxonomies, cover image storage, hybrid vector search indexing, and derived book rating summaries.
+- **Out of scope:** Customer shopping baskets (`Shopping`), accepted order snapshots (`Ordering`), and individual customer feedback submissions (`Reviews`).
+- **Key constraints:** Catalog listing availability is not an inventory reservation held by a basket or a fulfillment guarantee owned by Ordering; price updates never rewrite already accepted orders.
 
-### Domain scope and language
+## C4 context and container view
 
-Catalog owns the product representation of a book and its descriptive relationships:
+This container view shows Catalog API, the `Catalog Ingestion` Azure Functions worker, their dedicated data stores, and the synchronous and asynchronous contracts connecting neighboring contexts.
 
-- [[entity|book]] is the central record and stable product identity.
-- [[entity|author]], [[entity|publisher]], and [[entity|category]] provide discoverability and classification metadata.
-- [[entity|book-author]] models the many-to-many relationship between books and authors.
-- [[domain|reviews]] contributes rating information as a customer-feedback summary; Catalog does not own individual reviews.
+<MermaidFileLoader file="mermaids/Catalog-diagram-1.mmd" />
 
-Key domain distinctions:
+## Building block view
 
-- **Availability** describes whether a Catalog book can currently be offered—it is not a stock reservation owned by [[domain|shopping]] or a fulfilment promise owned by [[domain|ordering]].
-- **Price** is part of the Catalog product proposition, though checkout must still verify current purchase-time validity before accepting an order.
-- **Book identity** is shared through a stable identifier and published contracts, never by sharing Catalog's internal storage.
+| Building block                              | Bounded context | Technology                                             | Owned state / responsibility                                                                                                     | Source path                                       |
+| :------------------------------------------ | :-------------- | :----------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------ |
+| **Catalog API** (`catalog`)                 | Catalog         | .NET 11 Minimal API + gRPC (`book.v1.BookGrpcService`) | Authoritative CRUD for `Book`, `Author`, `Category`, `Publisher`, `BookAuthor`; hybrid search; rating projection handler         | `src/Services/Catalog/BookWorm.Catalog`           |
+| **Catalog Ingestion** (`catalog-ingestion`) | Catalog         | Azure Functions (`Azure.Functions.Sdk`)                | Kafka-triggered (`scheduler.process-vector-batch`) worker batch-refreshing Qdrant embeddings via Microsoft Foundry `embed-v-4-0` | `src/Services/Catalog/BookWorm.Catalog.Ingestion` |
 
-## 2. Business Value
+### Data stores and ownership
 
-- **Better product discovery and differentiation:** Meaningful [[entity|category]], [[entity|author]], and [[entity|publisher]] metadata—paired with differentiated search—helps shoppers find relevant books quickly.
-- **Consistent customer expectations:** Shoppers see reliable pricing, availability, and rating summaries prior to checkout.
-- **Autonomous downstream teams:** [[domain|shopping]] and [[domain|reviews]] can build customer experiences around stable [[entity|book]] identities and contracts without owning or altering Catalog business rules.
-- **Independent availability and fast browsing:** Product discovery remains fast and available even when Reviews or Ordering experience load or downtime.
-- **Clear accountability and auditability:** Business and engineering teams share one explicit contract for managing catalog information and tracing business-critical changes.
+- **PostgreSQL (`catalogdb`):** System of record for books, taxonomies, and the Wolverine transactional outbox/inbox (`wolverine` schema).
+- **Azure Blob Storage (`catalog-blob`):** Authoritative object storage for uploaded book cover images.
+- **Redis (`redis`):** Non-authoritative L2 FusionCache layer with Redis backplane and idempotency support.
+- **Qdrant (`vectordb`):** Derived, rebuildable vector index for hybrid text and semantic search.
 
-## 3. How It Works
+## Runtime view
 
-Catalog organizes product management and distribution around four core capabilities and clear interaction boundaries with neighboring domains.
+Catalog integrates with neighboring contexts through explicit synchronous and asynchronous contracts:
 
-### Capability map
-
-| Capability           | Responsibility                                                      | Strategic importance |
-| -------------------- | ------------------------------------------------------------------- | -------------------- |
-| Book management      | Create, update, retire, and retrieve book listings                  | Core                 |
-| Classification       | Maintain categories, authors, and publishers                        | Core                 |
-| Product proposition  | Expose price, availability, and rating summary for discovery        | Core                 |
-| Contract publication | Provide stable API and integration semantics to downstream contexts | Enabling             |
-
-### End-to-end interaction flow
-
-1. An authorized catalog business user maintains product information through the Catalog service.
-2. Catalog validates all business rules and stores the book along with its author, category, and publisher relationships.
-3. Customer-facing experiences read published product representations for browsing and discovery.
-4. [[domain|shopping]] verifies the current purchase-time proposition before accepting checkout.
-5. Downstream domains keep their own independent models (such as [[entity|basket]]s, [[entity|feedback]], or historical order snapshots) and never modify Catalog state directly.
-
-### Context boundaries
-
-| Relationship                   | Direction | Integration intent                                                    |
-| ------------------------------ | --------- | --------------------------------------------------------------------- |
-| Customer → Catalog             | Inbound   | Browse and inspect the product proposition                            |
-| Catalog → Shopping             | Upstream  | Shopping consumes book, price, and availability information           |
-| Catalog → Reviews              | Upstream  | Reviews uses Book identity and publishes feedback-derived context     |
-| Catalog → [[domain\|ordering]] | Reference | Ordering may retain a purchase snapshot; it does not own Catalog data |
+- **Synchronous reads (`book.v1.BookGrpcService`):** Basket API enriches basket items, Ordering API resolves checkout prices, and MCP Tools serves conversational discovery queries (`GetBook`, `GetBooks`, `GetDashboard`, `ListBooks`, `GetBookDetails`, `ListCategories`, `ListAuthors`).
+- **Asynchronous rating projection:** Catalog consumes `FeedbackCreatedIntegrationEvent` (`bookworm.{env}.rating.feedback-create`) and `FeedbackDeletedIntegrationEvent` (`bookworm.{env}.rating.feedback-delete`) to update derived `averageRating` and `totalReviews`. When a book does not exist, Catalog publishes `BookUpdatedRatingFailedIntegrationEvent` (`bookworm.{env}.catalog.book-update-rating-failed`) so Reviews compensates.
+- **Scheduled vector sync:** Every 5 minutes, Scheduler publishes `ProcessVectorBatchIntegrationEvent` to unprefixed topic `scheduler.process-vector-batch`; `Catalog Ingestion` refreshes pending book embeddings in Qdrant.
 
 ### Business invariants
 
-- Every active book has a stable identity.
-- Every book references valid category and publisher identities.
-- A discount price cannot be negative or higher than the original price.
-- An unavailable book must not be presented as available for a new purchase.
-- Catalog updates must never silently rewrite an already accepted order.
-- Reviews and Orders may keep historical snapshots, while Catalog remains the owner of the current product description.
+- Every active `Book` has a stable UUID, one `Category`, and one `Publisher`.
+- A discount price cannot be negative or greater than the original price.
+- Out-of-stock or soft-deleted books cannot be offered as available for new purchases.
+- Catalog updates never rewrite purchase-time prices already stored on an accepted `Order`.
 
-## 4. Trade-offs & Lessons Learned
+## Deployment and cross-cutting concerns
 
-### Architecture principles
+- **Hosting and ingress:** Catalog API runs behind the YARP API Gateway (`/catalog/{**remainder}`) with internal Container App ingress; `Catalog Ingestion` runs as an internal Azure Functions Container App with no public HTTP endpoint.
+- **Security and privacy:** Microsoft Entra ID JWT authorization enforces `catalog_read` by default, `business_user` or `admin` roles with `read`/`write` scopes for catalog management, and `admin` policy for administrative endpoints. Managed identities authenticate passwordlessly to PostgreSQL, Redis, Blob Storage, and Microsoft Foundry.
+- **Observability and resilience:** OpenTelemetry traces HTTP, gRPC, EF Core, and Kafka spans; Wolverine routes exhausted messages to `bookworm.{env}.catalog.dead-letter-queue`.
 
-- **Bounded ownership:** Catalog owns book metadata and product presentation; [[domain|shopping]] owns [[entity|basket]] and checkout decisions; [[domain|ordering]] owns the order lifecycle.
-- **Published language:** Downstream contexts consume explicit product contracts rather than importing internal Catalog models.
-- **Read consistency vs. coupling:** Product discovery may use fast read projections, whereas purchase acceptance must verify the current live proposition to avoid stale prices or availability.
-- **Contract-driven evolution:** Changes to published interfaces and messages must remain versioned and backward compatible for downstream consumers.
-- **Traceable decisions:** Business-critical edits to price, availability, or product identity must remain auditable.
+## Quality scenarios and known risks
 
-### Quality attributes and operational expectations
+| Quality attribute / risk | Scenario or exposure                                                                                                                                                                                                                                                 | Current mitigation or gap                                                                                        |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **Availability**         | Storefront discovery continues when Reviews or Ordering is degraded                                                                                                                                                                                                  | Catalog reads only local `catalogdb`, Redis, and Qdrant; never queries Reviews synchronously                     |
+| **Eventual consistency** | New or edited books lag in semantic search up to the 5-minute batch window                                                                                                                                                                                           | `Catalog Ingestion` processes queued revisions on `scheduler.process-vector-batch`; see Vector index lag runbook |
+| **Audit retention**      | Catalog persists current book price state and standard audit timestamps, but no historical price versions. Orders separately persist the purchase-time item price. Any retention requirement for backups or external audit records is not defined in the repository. | Source model and schema                                                                                          |
 
-| Concern       | High-level expectation                                                          |
-| ------------- | ------------------------------------------------------------------------------- |
-| Availability  | Product discovery should remain available independently of Reviews and Ordering |
-| Consistency   | The purchase path must not accept stale price or availability data              |
-| Performance   | Browsing and product lookup should support low-latency reads                    |
-| Evolvability  | Consumers should be insulated from internal persistence changes                 |
-| Observability | Catalog changes and rejected updates should be traceable by product identity    |
-| Security      | Catalog administration is restricted to authorized business users               |
+## Related architecture decisions
 
-### Architectural checkpoints to confirm
+| ADR                                             | Decision summary                                                     | Status   |
+| :---------------------------------------------- | :------------------------------------------------------------------- | :------- |
+| ADR-BW-004: Explicit HTTP and gRPC contracts    | Expose versioned REST `/api/v1/*` and `book.v1` gRPC interfaces      | Proposed |
+| ADR-BW-006: Service-owned business state        | Isolate `catalogdb` ownership inside Catalog                         | Proposed |
+| ADR-BW-007: Derived eventually consistent views | Treat Qdrant vectors and rating summaries as rebuildable projections | Proposed |
 
-These solution-architecture decisions are intentionally flagged for ongoing confirmation rather than assumed:
+## Related documentation
 
-- Whether downstream product data is delivered synchronously, via events, or through both patterns.
-- Whether availability is mastered inside Catalog or integrated from a dedicated inventory capability.
-- Whether rating summaries are refreshed synchronously or via a Reviews projection.
-- What retention and audit policy governs historical price and availability snapshots.
-
-### Value chain insight
-
-Product search is where BookWorm differentiates, sitting closest to the shopper and furthest from commodity. Underlying data stores and compute infrastructure are treated as standard building blocks—bought or adopted rather than custom-built.
-
-## 5. Technical Reference
-
-### Subdomain scope identifiers
-
-- **Subdomain ID:** `catalog` (version `1.0.0`, owned by `business-strategy`)
-- **System:** `product-catalog-system` (`1.0.0`)
-- **Core Entities:** `book`, `author`, `category`, `publisher`, `book-author` (`1.0.0`)
-- **Shared Contract Guidance:** Consumers depend on published API endpoints and integration contracts rather than Catalog persistence schemas; API and message evolution must be explicitly versioned.
-
-### Value Chain (Wardley Map)
-
-<MermaidFileLoader file="mermaids/catalog-wardley-map.mmd" />
-
-### Solution-Architecture View
-
-<LikeC4View viewId="catalogContext" project="catalog" />
-
-### Cloud & Infrastructure Architecture
-
-<MermaidFileLoader file="mermaids/catalog-architecture.mmd" />
-
-### Architecture Graph
-
-Where Catalog sits in the wider architecture — its systems and messages, and the neighbouring domains it talks to.
+- Managing catalog data — How catalog managers maintain books and taxonomies.
+- Search and discovery — How hybrid search and filtering behave.
+- [[flow|product-ingestion]] — End-to-end vector indexing sequence.
+- Catalog consistency and ownership — Authoritative vs. derived data reference.
+- Catalog change checklist — Contract and schema verification checklist.
 
 <ArchitectureGraph />
-
-The diagram above shows the domain's systems, how they relate, and the people who interact with them.

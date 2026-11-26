@@ -1,0 +1,19 @@
+flowchart LR
+	storefront["Storefront\n(Next.js 16 + AG-UI)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	chat["Chat API\n(Agent Framework /ag-ui)"]
+	foundry["Microsoft Foundry\n(ModelRouter + Decision-1)"]
+	blob["Azure Blob Storage\n(chatting-blob / ag-ui/)"]
+	presidio["Presidio Sidecars\n(PII Analyzer/Anonymizer)"]
+	mcp["MCP Tools\n(mcptools /mcp)"]
+	catalog["Catalog API\n(.NET 11 gRPC)"]
+	rating["Rating API\n(.NET 11 A2A gRPC)"]
+
+	storefront --> |"HTTPS: /chatting/ag-ui"| gateway
+	gateway --> |"HTTP/HTTPS: /ag-ui"| chat
+	chat --> |"HTTPS: Sessions"| blob
+	chat --> |"HTTPS: Route & LLM"| foundry
+	chat --> |"HTTP/HTTPS: PII Redact"| presidio
+	chat --> |"MCP HTTP: Catalog Tools"| mcp
+	mcp --> |"gRPC: BookGrpcService"| catalog
+	chat --> |"A2A gRPC: Review Analysis"| rating

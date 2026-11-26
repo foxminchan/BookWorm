@@ -1,10 +1,36 @@
-## List anonymizers with `HttpClient`
+---
+summary: Usage examples for Get anonymizers.
+---
 
-The Anonymizer returns the names of its built-in operators.
+## Query built-in anonymizers with curl
 
-<CodeGroup dropdown>
+<CodeGroup>
 
-```csharp GetAnonymizers.cs
+```bash
+curl --fail "<presidio-anonymizer-url>/anonymizers"
+```
+
+</CodeGroup>
+
+Where:
+
+- `<presidio-anonymizer-url>`: Base URL of the `presidio-anonymizer` container (resolved from the Aspire Dashboard or `ConnectionStrings__presidio-anonymizer`).
+
+The upstream OpenAPI example for `200 OK` lists these operators; it is not asserted as the complete response from the mutable `latest` image. The upstream [Anonymizer API tests](https://github.com/data-privacy-stack/presidio/blob/main/e2e-tests/tests/test_api_anonymizer.py) currently expect an additional `custom` entry. Treat either list as upstream reference data, not a guarantee about BookWorm's deployed image.
+
+<CodeGroup>
+
+```json
+["hash", "mask", "redact", "replace", "encrypt"]
+```
+
+</CodeGroup>
+
+## Query built-in anonymizers with C# `HttpClient`
+
+<CodeGroup>
+
+```csharp
 using System.Net.Http.Json;
 
 var anonymizerUrl = Environment.GetEnvironmentVariable("ANONYMIZER_URL")

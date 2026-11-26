@@ -1,0 +1,25 @@
+flowchart TD
+	msg["Customer Message\n(AG-UI /ag-ui)"]
+	validate["InputValidationExecutor\n(Deterministic Rules)"]
+	reject1["Short-Circuit Rejection\n(Empty / Pattern Match)"]
+	router["DecisionRouterExecutor\n(ChatRoutingDecisionService)"]
+	model["FoundrySystemOneDecisionClient\n(Microsoft-Decision-1)"]
+	partial["HandlePartialResponse\n(Keep Guardrails, Default Book)"]
+	guard{"EvaluateGuardrails\n(Threshold 0.5)"}
+	unsafe["Boundary Response\n(UnsafeInput / NonEnglish / OutOfScope)"]
+	conf{"Route Confidence\n>= 0.6?"}
+	hitl["RouteDisambiguationPort\n(HITL Disambiguation)"]
+	agents["Specialist Handoff\n(Book / QA / Rating A2A)"]
+
+	msg -->|"HTTP SSE"| validate
+	validate -->|"Invalid"| reject1
+	validate -->|"Valid"| router
+	router --> |"HTTPS: /providers/microsoft/v1/systemone"| model
+	model -->|"DecisionUnansweredException"| partial
+	partial --> guard
+	model -->|"DecisionResponse"| guard
+	guard -->|"Any guardrail < 0.5"| unsafe
+	guard -->|"All guardrails >= 0.5"| conf
+	conf -->|"No (< 0.6)"| hitl
+	hitl -->|"User choice"| agents
+	conf -->|"Yes (>= 0.6)"| agents

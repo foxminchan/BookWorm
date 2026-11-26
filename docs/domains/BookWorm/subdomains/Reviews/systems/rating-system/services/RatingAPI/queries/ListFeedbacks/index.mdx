@@ -18,50 +18,71 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`ListFeedbacks` queries **Rating API** (`GET /api/v1/feedbacks`) for a paginated, sorted page of customer feedback records belonging to a single Catalog book. The endpoint is publicly readable, caches pages in FusionCache for 10 minutes, and emits total counts and navigation links in HTTP response headers.
 
-Customers browsing a [[entity|book]] in the BookWorm storefront rely on individual [[entity|feedback]] entries—ratings and written comments—from other readers to decide whether a title fits their needs. Popular books can accumulate hundreds or thousands of reviews over time, making it impractical to load every review at once without slowing down the storefront or overwhelming the reader.
+## Overview
 
-At the same time, callers requesting reviews need predictable sorting, paging, and clear validation feedback whenever required information is missing or formatted incorrectly.
+| Property                  | Value                                                                                                                                                        |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                           |
+| **Source**                | `src/Services/Rating/BookWorm.Rating/Features/List/ListFeedbacksEndpoint.cs`, `ListFeedbacksQuery.cs`, `ListFeedbacksValidator.cs`                           |
+| **Protocol / format**     | HTTP `GET /api/v1/feedbacks` (via API Gateway: `GET /rating/api/v1/feedbacks`), `ApiVersions.V1`, JSON (`application/json`)                                  |
+| **Authentication**        | None required (public read endpoint)                                                                                                                         |
+| **Rate limiting**         | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                                |
+| **Persistence & caching** | Queries Azure Cosmos DB (`ratingdb` / `feedbacks`, partition key `/bookId`); caches results in FusionCache (L1 + Redis L2) for 10 minutes tagged by `BookId` |
+| **Contract version**      | `1.0.0`                                                                                                                                                      |
 
-## 2. Business Value
-
-- **Responsive customer browsing**: Breaking reviews into manageable pages keeps book detail pages fast regardless of how many reviews a title has accumulated.
-- **Better reader discovery**: Sorting options allow storefront experiences to highlight the highest-rated or most critical reviews first according to customer preference.
-- **Predictable integration**: Consistent defaults and clear validation errors reduce integration guesswork for frontend and partner teams.
-
-## 3. How It Works
-
-1. A caller requests feedback for a single [[entity|book]] by supplying that book's unique identifier.
-2. The caller may optionally specify which page to view, how many reviews to include per page, which field to sort by, and whether to reverse the sort order. When omitted, sensible defaults are applied (starting at the first page, returning 20 entries per page, sorted by rating in ascending order).
-3. Before retrieving reviews, the request is validated. If the book identifier or any paging or sorting option is invalid, the request is rejected immediately with clear validation details explaining what needs to be fixed.
-4. For valid requests, a stable slice of matching [[entity|feedback]] entries is returned for display.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Bounded single-book scope**: Requiring a specific book identifier prevents accidental platform-wide review scans and keeps read performance predictable as total review volume grows.
-- **Page-based navigation vs. live additions**: Standard page-and-size navigation is easy to pair with storefront page controls, though newly submitted reviews arriving mid-browse can cause minor shifts between pages.
-- **Explicit validation at the boundary**: Rejecting malformed inputs upfront prevents ambiguous empty results and helps callers distinguish bad requests from books that simply have no reviews yet.
-
-## 5. Technical Reference
-
-- **Endpoint**: `GET /api/v1/feedbacks`
-- **Success response**: `200 OK` returning a JSON array of `FeedbackDto` objects.
-- **Validation error response**: `400 Bad Request` using `application/problem+json` and `HttpValidationProblemDetails`.
-
-<NodeGraph />
+## Parameters and fields
 
 ### Query parameters
 
-| Parameter      | Required | Default  | Description                                                |
-| -------------- | -------- | -------- | ---------------------------------------------------------- |
-| `BookId`       | Yes      | —        | Identifies the Catalog book whose feedback is returned.    |
-| `PageIndex`    | No       | `1`      | Page number to retrieve.                                   |
-| `PageSize`     | No       | `20`     | Number of feedback records per page.                       |
-| `OrderBy`      | No       | `Rating` | Field used to order the returned feedback.                 |
-| `IsDescending` | No       | `false`  | Controls ascending (`false`) or descending (`true`) order. |
+| Name           | Type            | Required | Default    | Constraints                                     | Description                                                        |
+| :------------- | :-------------- | :------- | :--------- | :---------------------------------------------- | :----------------------------------------------------------------- |
+| `BookId`       | `string` (UUID) | Yes      | —          | Valid UUID                                      | Identifier of the Catalog book whose feedback records are returned |
+| `PageIndex`    | `integer`       | No       | `1`        | `> 0` (`ListFeedbacksValidator`)                | 1-based page number to retrieve                                    |
+| `PageSize`     | `integer`       | No       | `20`       | `> 0` (`ListFeedbacksValidator`)                | Maximum number of feedback records per page                        |
+| `OrderBy`      | `string`        | No       | `"Rating"` | Property name supported by `FeedbackFilterSpec` | Field used to sort feedback records                                |
+| `IsDescending` | `boolean`       | No       | `false`    | `true` or `false`                               | Sorts descending when `true` and ascending when `false`            |
 
-### Schema
+`OrderBy` recognizes `Rating` and `CreatedAt`. Any other value falls back to `Rating`; ties are ordered by feedback ID.
+
+### Response headers
+
+`ListFeedbacksEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
+
+| Header             | Format                                    | Description                                                                                                          |
+| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| `Pagination-Count` | Integer string (for example, `42`)        | Total number of feedback records matching `BookId` across all pages                                                  |
+| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations preserving query filters |
+
+### Response schema (`FeedbackDto[]`)
+
+A `200 OK` response body serializes `PagedResult<FeedbackDto>` as a JSON array of `FeedbackDto` objects (`additionalProperties: false`).
+
+| Field          | Type                | Required | Constraints      | Description                                   |
+| :------------- | :------------------ | :------- | :--------------- | :-------------------------------------------- |
+| `[].id`        | `string`            | Yes      | UUID             | Unique identifier of the feedback record      |
+| `[].firstName` | `string \| null`    | Yes      | Nullable         | First name of the reviewer                    |
+| `[].lastName`  | `string \| null`    | Yes      | Nullable         | Last name of the reviewer                     |
+| `[].comment`   | `string \| null`    | Yes      | Nullable         | Written review text left by the reviewer      |
+| `[].rating`    | `integer \| string` | Yes      | `int32`, `0`–`5` | Numeric star rating submitted by the reviewer |
+| `[].bookId`    | `string`            | Yes      | UUID             | Identifier of the reviewed Catalog book       |
+
+## Error responses
+
+| Code / status           | Condition                                                                                                                         | Recovery behavior                                        |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| `400 Bad Request`       | Missing/malformed `BookId` or invalid `PageIndex`/`PageSize` (`<= 0`) (`application/problem+json` `HttpValidationProblemDetails`) | Correct invalid query parameters; do not retry unchanged |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                       | Wait for the `Retry-After` duration before retrying      |
+
+## Related documentation
+
+- [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and endpoints.
+- [[query|SummarizeFeedback]] — Generate an AI summary and classification for a book's feedback.
+- [[command|CreateFeedback]] — Submit a new customer feedback record.
+- [[entity|feedback]] — Domain model for individual customer reviews.
+
+<NodeGraph />
 
 <SchemaViewer
 	file="schema.json"

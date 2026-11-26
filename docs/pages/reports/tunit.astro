@@ -11,7 +11,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 	sidebar={false}
 	fullWidth={true}
 >
-	<div class="flex h-[calc(100vh-4rem)] flex-col">
+	<div class="flex h-[calc(100vh-var(--ec-header-offset,4rem))] flex-col">
 		<div
 			class="border-b border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-page-bg))] px-6 py-4"
 		>
@@ -85,9 +85,9 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 						</p>
 						<a
 							href={`${base}/custom/reports`}
-							class="mt-4 inline-block rounded-lg bg-[rgb(var(--ec-accent))] px-4 py-2 text-sm font-medium text-[rgb(var(--ec-accent-text))]"
+							class="mt-4 inline-block rounded-lg bg-[rgb(var(--ec-button-bg))] px-4 py-2 text-sm font-medium text-[rgb(var(--ec-button-text))] transition-colors hover:bg-[rgb(var(--ec-button-bg-hover))]"
 						>
-							Back to Test Reports Overview
+							Back to Unified Test Report
 						</a>
 					</div>
 				</div>
@@ -144,8 +144,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 				for (const btn of buttons) {
 					const active = btn.dataset.path === entry.path;
 					btn.className = active
-						? "w-full rounded-lg bg-[rgb(var(--ec-accent))] px-2.5 py-2 text-left text-xs font-medium text-[rgb(var(--ec-accent-text))]"
-						: "w-full rounded-lg px-2.5 py-2 text-left text-xs text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-accent-subtle))] hover:text-[rgb(var(--ec-page-text))]";
+						? "w-full rounded-lg bg-[rgb(var(--ec-button-bg))] px-2.5 py-2 text-left text-xs font-medium text-[rgb(var(--ec-button-text))]"
+						: "w-full rounded-lg px-2.5 py-2 text-left text-xs text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-content-hover))] hover:text-[rgb(var(--ec-page-text))]";
 				}
 			}
 

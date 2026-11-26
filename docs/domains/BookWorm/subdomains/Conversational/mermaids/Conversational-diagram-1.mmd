@@ -1,0 +1,19 @@
+flowchart LR
+	storefront["Storefront\n(Next.js 16 + CopilotKit)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	chat["Chat API\n(.NET 11 + Agent Framework)"]
+	foundry["Microsoft Foundry\n(ModelRouter + Decision-1)"]
+	presidio["Presidio Sidecars\n(Analyzer + Anonymizer)"]
+	mcp["MCP Tools\n(.NET 11 Streamable HTTP)"]
+	catalog["Catalog API\n(.NET 11 gRPC)"]
+	rating["Rating API\n(.NET 11 A2A gRPC)"]
+	blob["Chat Session Storage\n(Azure Blob: chatting-blob)"]
+
+	storefront --> |"HTTPS: /api/copilotkit"| gateway
+	gateway --> |"AG-UI: /chatting/ag-ui"| chat
+	chat --> |"HTTPS: Decisions & LLM"| foundry
+	chat --> |"HTTP: 3000: Analyze/Anonymize"| presidio
+	chat --> |"MCP HTTP: /mcp"| mcp
+	mcp --> |"gRPC: BookGrpcService"| catalog
+	chat --> |"A2A gRPC: Rating Agent"| rating
+	chat --> |"Blob SDK: ag-ui/*"| blob

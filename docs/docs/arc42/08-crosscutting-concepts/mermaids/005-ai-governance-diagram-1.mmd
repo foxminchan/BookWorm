@@ -1,0 +1,13 @@
+flowchart LR
+	in["User Prompt\n(AG-UI / A2A)"]
+	screen["1. Input Validation\n(Length + Prompt Injection)"]
+	route["2. Decision Router + HITL\n(MicrosoftDecision1 + RequestPort)"]
+	pii["3. Presidio & Guardrails\n(PII Anonymization + Untrusted Isolation)"]
+	gov["4. Governance Kernel\n(Deny-by-Default YAML + Circuit Breaker)"]
+	tools["5. Scoped Tools & Models\n(ModelRouter, MCP Tools, Rating A2A)"]
+
+	in -->|"Entra JWT + Claims Isolation"| screen
+	screen -->|"Accepted"| route
+	route -->|"In-Scope Route"| pii
+	pii -->|"Redacted Context"| gov
+	gov -->|"Policy Allowed"| tools

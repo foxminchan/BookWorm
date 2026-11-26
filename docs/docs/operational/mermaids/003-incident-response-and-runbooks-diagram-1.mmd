@@ -1,0 +1,12 @@
+flowchart LR
+	ordering["Ordering API\n(.NET 11 + Marten)"]
+	kafka["Kafka Broker\n(Wolverine CloudEvents)"]
+	finance["Finance\n(Azure Functions + DTS)"]
+	basket["Basket API\n(.NET 11 + Redis)"]
+	notification["Notification\n(.NET 11 + Redis + SMTP)"]
+
+	ordering --> |"Kafka: UserCheckedOutIntegrationEvent"| kafka
+	kafka -->|"KafkaTrigger"| finance
+	finance --> |"Kafka: PlaceOrderCommand"| kafka
+	kafka -->|"Consume"| basket
+	kafka -->|"Consume"| notification

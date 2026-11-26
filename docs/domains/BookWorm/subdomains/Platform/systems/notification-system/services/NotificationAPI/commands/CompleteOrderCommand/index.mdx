@@ -14,41 +14,58 @@ owners:
   - contributor-team
 ---
 
-## 1. Context & Problem
+`CompleteOrderCommand` (`BookWorm.Contracts.CompleteOrderCommand`) is an asynchronous Kafka integration command published by **Finance** and consumed by **Notification** to render and submit a completed-order customer email. It never mutates order state in **Ordering API**.
 
-Once an order is finalized, customers expect a completion confirmation email summarizing their order reference and final amount. Finance needs a dedicated request to trigger that communication without embedding email layout formatting or delivery mechanics inside financial orchestration.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                                                                                                                                                                                                                         |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | **Finance** (`finance`) produces; **Notification** (`notification`) consumes                                                                                                                                                                                                                                                  |
+| **Source**            | `src/Services/Finance/BookWorm.Finance/Features/Orders/OrderCompletion/PublishCompleteOrderActivity.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/Events/CompleteOrderCommand.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/EventHandlers/CompleteOrderCommandHandler.cs` |
+| **Protocol / format** | Kafka + **Wolverine**, CloudEvents JSON (`CloudEventsOnlyKafkaMapper`), camelCase payload                                                                                                                                                                                                                                     |
+| **Kafka topic**       | `bookworm.{env}.finance.complete-order` (`[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "complete-order")]`)                                                                                                                                                                                           |
+| **Partition key**     | `OrderId` (`opts.MessagePartitioning.ByPropertyNamed(nameof(OrderId))`)                                                                                                                                                                                                                                                       |
+| **Dead-letter queue** | `bookworm.{env}.notification.dead-letter-queue`                                                                                                                                                                                                                                                                               |
+| **Authentication**    | Internal Kafka broker transport (Confluent Cloud in publish mode; local Kafka container in development)                                                                                                                                                                                                                       |
 
-- **Clear post-purchase confirmation**: Keeps customers informed when their order completes, reinforcing trust with accurate order totals.
-- **Fault-tolerant defaults**: Safely skips requests without an email address and falls back to `"Customer"` when a name is missing, avoiding unnecessary processing errors.
-- **Clean service boundaries**: Preserves Ordering as the sole owner of order completion while letting Notification focus on message rendering and sending.
+:::note
+`CompleteOrderCommand` requests a completion confirmation email only. To transition an order's authoritative status to `Completed`, call the Ordering API HTTP command in [[command|CompleteOrder]].
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-1. When an order reaches completion, Finance publishes a complete-order notification request carrying a unique request identifier, timestamp, order reference, order total, and optional customer name and email address.
-2. If the email address is missing or blank, the notification service skips email processing cleanly.
-3. Otherwise, it defaults a missing customer name to `"Customer"`, prepares the completed-order email, logs a delivery record, and submits the email to the mail provider.
-4. Any sending error propagates for retry handling, and no delivery-result event is returned after provider acceptance.
+| Name           | Type                    | Required | Default                               | Constraints                     | Description                                                                                     |
+| :------------- | :---------------------- | :------- | :------------------------------------ | :------------------------------ | :---------------------------------------------------------------------------------------------- |
+| `id`           | `string` (UUID v7)      | Yes      | Generated (`IntegrationEvent`)        | Valid UUID                      | Unique integration message identifier used for 24-hour Redis deduplication in **Notification**. |
+| `creationDate` | `string` (ISO 8601 UTC) | Yes      | Generated (`IntegrationEvent`)        | Valid `date-time`               | UTC timestamp when the command record was instantiated.                                         |
+| `orderId`      | `string` (UUID)         | Yes      | —                                     | Valid UUID; Kafka partition key | Identifier of the completed order.                                                              |
+| `fullName`     | `string` or `null`      | No       | `"Customer"` (in Notification mapper) | Nullable                        | Customer display name; **Notification** maps `null` to `"Customer"`.                            |
+| `email`        | `string` or `null`      | No       | —                                     | Nullable                        | Recipient email address; null, empty, or whitespace values skip email rendering and delivery.   |
+| `totalMoney`   | `number` (`decimal`)    | Yes      | —                                     | C# `decimal`                    | Final order total displayed in the completion email template.                                   |
 
-## 4. Trade-offs & Lessons Learned
+`additionalProperties` is `false` in the command JSON Schema.
 
-- **Email request vs. order completion**: Handling this command only sends a customer email—it does not complete the order or confirm business completion.
-- **Potential duplicate submissions**: Re-deliveries or repeated commands can result in duplicate completion emails because requests are not deduplicated across submissions.
-- **Acceptance vs. recipient delivery**: Mail-provider acceptance confirms the send request was queued, not that the email landed in the recipient's inbox.
+## Behavior and side effects
 
-## 5. Technical Reference
+- **Finance publishing trigger:** When **Ordering API** publishes `OrderStatusChangedToCompleteIntegrationEvent`, **Finance** (`BookWorm.Finance`, Azure Durable Functions `OrderOrchestrator`) executes `OrderCompletedStep`. After updating orchestration state, it invokes `PublishCompleteOrderActivity` only when `order.CanSendNotification` is `true` (nonblank customer name and email), then completes the orchestration.
+- **Idempotency (Redis + FusionCache):** `CompleteOrderCommandHandler` wraps execution in `IIntegrationEventIdempotencyGuard.ExecuteAsync(message.Id, nameof(CompleteOrderCommandHandler), ...)` with a 24-hour TTL keyed by `idempotency:CompleteOrderCommandHandler:<id>`. Kafka redeliveries with the same `id` are deduplicated within 24 hours; newly published commands with a different `id` execute again.
+- **Stateless email rendering and delivery:** **Notification** has no SQL database and writes no email outbox table. `ContractToModelMapper.ToOrder()` maps the command to Notification's internal `Status.Completed` model, `OrderNotificationHelper.SendAsync` skips null/whitespace `email`, renders `Orders/OrderEmail` with `MjmlTemplateRenderer`, builds a `MimeMessage` via `OrderMimeMessageBuilder`, and submits through `MailKitSender` (SMTP to **Mailpit** locally or **SendGrid** SMTP in publish mode).
+- **No return event:** **Notification** publishes no delivery-status event back to **Finance**. SMTP server acceptance confirms provider handoff, not final inbox delivery.
 
-- **Channel & consumer**: Published by Finance's order saga through [[channel|bookworm.&#123;env&#125;.finance.complete-order]] and consumed by [[service|notification-api]].
-- **Message contract**:
-  - Wolverine message identity: `BookWorm.Contracts.CompleteOrderCommand`
-  - Inherited fields: `id` (UUID v7), `creationDate` (UTC timestamp)
-  - Business fields: `orderId`, `totalMoney` (C# decimal), nullable `fullName` (null becomes `Customer`), nullable `email`
-  - This command carries the payload schema (`schema.json`); Notification's AsyncAPI specification provides examples.
-- **Handler behavior**:
-  - Maps the command to the completed-order email status without mutating the order or confirming completion.
-  - Null, empty, or whitespace-only `email` addresses skip email work.
-  - Otherwise renders `Orders/OrderEmail`, saves an email outbox record, submits through SMTP, and marks the record sent on success.
-  - Failures propagate; there is no notification result event.
+## Error responses
+
+| Code / status                                                                                                                                       | Condition                                                               | Recovery behavior                                                                                                                                                             |
+| :-------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transient SMTP failure (`CommandException` where `IsTransient`, `ProtocolException`, `IOException`, `TimeoutException`, `TimeoutRejectedException`) | Temporary SMTP server or network error during `MailKitSender.SendAsync` | Retried inside **Notification**'s Polly resilience pipeline (circuit breaker + exponential backoff with jitter + 30-second default timeout).                                  |
+| `NotificationException`                                                                                                                             | Permanent SMTP failure or exhausted Polly resilience pipeline           | Propagates to **Wolverine**, which retries with cooldown `50ms` / `250ms` / `1s` (full jitter) before routing the message to `bookworm.{env}.notification.dead-letter-queue`. |
+| Blank or null `email`                                                                                                                               | Command arrives without a recipient email address                       | Handler returns without error and skips template rendering and SMTP submission.                                                                                               |
+
+## Related documentation
+
+- [[command|CompleteOrder]] — Ordering API HTTP command that completes an order and emits `OrderStatusChangedToCompleteIntegrationEvent`.
+- [[channel|bookworm.&#123;env&#125;.finance.complete-order]] — Kafka channel configuration for `bookworm.{env}.finance.complete-order`.
+- [[event|OrderStatusChangedToCompleteIntegrationEvent]] — Upstream Ordering event that triggers `OrderCompletedStep`.
+- [[service|notification-api]] — Stateless email worker architecture and SMTP configuration.
+- [[service|order-orchestration]] — Finance Durable Functions orchestrator.
 
 <NodeGraph />

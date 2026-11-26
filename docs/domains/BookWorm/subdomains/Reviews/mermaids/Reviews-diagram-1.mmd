@@ -1,0 +1,22 @@
+flowchart LR
+	clients["Storefront & Backoffice\n(Next.js 16 via YARP)"]
+	chat["Chat API\n(.NET 11 A2A Client)"]
+	rating["Rating API\n(.NET 11 + A2A gRPC)"]
+	cosmos["Rating Database\n(Cosmos DB: ratingdb/feedbacks)"]
+	redis["Rating Cache\n(Redis + FusionCache)"]
+	kafka["Kafka\n(Wolverine CloudEvents)"]
+	catalog["Catalog API\n(.NET 11 Consumer)"]
+	presidio["Presidio Sidecars\n(HTTP :3000)"]
+	foundry["Microsoft Foundry\n(ModelRouter)"]
+	mcp["MCP Tools\n(Streamable HTTP /mcp)"]
+
+	clients --> |"HTTPS: /rating/api/v1/feedbacks"| rating
+	chat --> |"A2A gRPC: Rating Agent"| rating
+	rating -->|"EF Core Cosmos + Wolverine"| cosmos
+	rating -->|"Summary cache + idempotency"| redis
+	rating --> |"Kafka: FeedbackCreated / Deleted"| kafka
+	kafka -->|"Update rating summary"| catalog
+	catalog --> |"Kafka: BookUpdatedRatingFailed"| kafka
+	rating --> |"HTTP: PII redaction"| presidio
+	rating --> |"HTTPS: LLM summarize"| foundry
+	rating -->|"MCP HTTP"| mcp

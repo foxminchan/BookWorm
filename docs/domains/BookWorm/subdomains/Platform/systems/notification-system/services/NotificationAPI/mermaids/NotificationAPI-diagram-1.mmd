@@ -1,0 +1,6 @@
+flowchart LR
+	finance["Finance\n(Azure Functions)"] --> |"Kafka: Place/Complete/CancelOrderCommand"| kafka["Kafka Broker\n(CloudEvents JSON)"]
+	kafka -->|"Wolverine consumer\n(partitioned by OrderId)"| notif["Notification\n(.NET 11 Worker)"]
+	notif --> |"Redis: 24h idempotency guard"| redis["Redis\n(FusionCache)"]
+	notif --> |"SMTP: MailKit + Mjml.Net"| smtp["Mailpit (Local) /\nSendGrid SMTP (Azure)"]
+	notif -.->|"Exhausted retries"| dlq["Kafka DLQ\n(notification.dead-letter-queue)"]

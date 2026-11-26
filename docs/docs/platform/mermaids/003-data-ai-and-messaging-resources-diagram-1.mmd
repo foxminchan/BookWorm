@@ -1,0 +1,19 @@
+flowchart LR
+	catalog["Catalog API\n(.NET 11)"]
+	ordering["Ordering API\n(.NET 11)"]
+	scheduler["Scheduler\n(Quartz.NET)"]
+	rating["Rating API\n(.NET 11)"]
+	chat["Chat API\n(.NET 11)"]
+	finance["Finance\n(Azure Functions)"]
+	pg["PostgreSQL\n(catalogdb, orderingdb, schedulerdb)"]
+	cosmos["Cosmos DB\n(ratingdb / feedbacks)"]
+	blob["Azure Storage\n(catalog-blob, chatting-blob)"]
+	dts["Durable Task Scheduler\n(finance-taskhub)"]
+
+	catalog --> |"EF Core: catalogdb"| pg
+	ordering --> |"EF Core + Marten: orderingdb"| pg
+	scheduler --> |"Quartz store: schedulerdb"| pg
+	rating --> |"EF Core Cosmos: feedbacks"| cosmos
+	catalog --> |"Blob: catalog-blob"| blob
+	chat --> |"Blob: chatting-blob"| blob
+	finance --> |"DefaultAzure: orchestrations"| dts

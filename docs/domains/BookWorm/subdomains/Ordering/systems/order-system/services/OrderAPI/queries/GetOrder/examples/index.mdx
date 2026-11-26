@@ -1,89 +1,28 @@
 ---
-summary: Retrieve Order details by identifier.
+summary: Usage examples for Get Order.
 ---
 
-## 1. Context & Problem
+## Retrieve an order with curl
 
-Developers building customer order-history pages and back-office support tools need practical examples showing how to retrieve an order by its identifier and how to handle cases where the requested order is unavailable or outside the caller's permissions.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Accelerated client development:** Provides verified request and response examples for displaying order totals, statuses, and purchased items.
-- **Consistent security handling:** Illustrates how missing and unauthorized orders surface identically so client apps handle both cleanly without leaking account data.
-
-## 3. How It Works
-
-1. An authenticated caller requests an order using its unique identifier.
-2. The service verifies that the order exists and that the caller is either the customer who owns it or an administrator.
-3. When authorized, the service returns the order's identifier, placement date, total amount, current status (such as New, Cancelled, or Completed), and line items with quantities, unit prices, and optional item names.
-4. When the order does not exist or belongs to another customer outside the caller's scope, the service reports that the order is unavailable.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Uniform unavailable response:** Returning the same unavailable outcome for nonexistent orders and out-of-scope orders prevents unauthorized users from probing whether an order identifier belongs to another buyer.
-- **Nullable item names:** Because an item's display name may be empty, user interfaces should fall back gracefully instead of assuming a title is always present.
-
-## 5. Technical Reference
-
-### 1. Retrieve an Order
-
-Provide an Order UUID in the path. Customers can retrieve their own Orders; administrators can retrieve any Order.
-
-<CodeGroup dropdown>
-
-```sh
+```bash
 curl --request GET \
-  "$BASE_URL/api/v1/orders/44444444-4444-4444-4444-444444444444" \
+  "<gateway-url>/ordering/api/v1/orders/44444444-4444-4444-4444-444444444444" \
   --header "Authorization: Bearer <access-token>" \
   --header "Accept: application/json"
 ```
 
 </CodeGroup>
 
-The same query from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or direct Ordering API URL `https://localhost:7203` without the `/ordering` prefix).
+- `<access-token>`: Entra ID bearer token for the owning customer or an administrator.
 
-```ts get-order.ts
-type OrderDetailDto = {
-	id: string;
-	date: string;
-	total: number;
-	status: "New" | "Cancelled" | "Completed";
-	items: Array<{
-		id: string;
-		quantity: number;
-		price: number;
-		name: string | null;
-	}>;
-};
+Expected response (`200 OK`):
 
-const baseUrl = "https://api.example.com";
-const accessToken = "<access-token>";
-const orderId = "44444444-4444-4444-4444-444444444444";
-const response = await fetch(`${baseUrl}/api/v1/orders/${orderId}`, {
-	headers: {
-		Authorization: `Bearer ${accessToken}`,
-		Accept: "application/json",
-	},
-});
-
-if (response.status === 404) {
-	throw new Error("Order was not found or is not accessible");
-}
-if (!response.ok) {
-	throw new Error(`GetOrder failed with ${response.status}`);
-}
-
-const order = (await response.json()) as OrderDetailDto;
-console.log(`${order.status}: ${order.total}`);
-```
-
-</CodeGroup>
-
-`200 OK` returns the Order and its item details:
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
@@ -104,17 +43,57 @@ console.log(`${order.status}: ${order.total}`);
 
 </CodeGroup>
 
-### 2. Handle an unavailable Order
+Expected response when unavailable (`404 Not Found`):
 
-An unknown Order or one outside the caller's permitted scope returns `404 Not Found`.
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
 	"title": "Not Found",
 	"status": 404
 }
+```
+
+</CodeGroup>
+
+## Retrieve an order with TypeScript
+
+<CodeGroup>
+
+```typescript
+type OrderDetailDto = {
+	id: string;
+	date: string;
+	total: number;
+	status: "New" | "Cancelled" | "Completed";
+	items: Array<{
+		id: string;
+		quantity: number;
+		price: number;
+		name: string | null;
+	}>;
+};
+
+const gatewayUrl = "<gateway-url>";
+const accessToken = "<access-token>";
+const orderId = "44444444-4444-4444-4444-444444444444";
+
+const response = await fetch(`${gatewayUrl}/ordering/api/v1/orders/${orderId}`, {
+	headers: {
+		Authorization: `Bearer ${accessToken}`,
+		Accept: "application/json",
+	},
+});
+
+if (response.status === 404) {
+	throw new Error("Order was not found or is not accessible");
+}
+if (!response.ok) {
+	throw new Error(`GetOrder failed with ${response.status}`);
+}
+
+const order = (await response.json()) as OrderDetailDto;
+console.log(`${order.status}: ${order.total}`);
 ```
 
 </CodeGroup>

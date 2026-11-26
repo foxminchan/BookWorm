@@ -1,0 +1,8 @@
+flowchart LR
+	ordering["Ordering API\n(PostgreSQL Outbox)"] --> |"Kafka: ordering.user-checked-out"| finance["Finance\n(Durable Functions OrderOrchestrator)"]
+	finance --> |"Kafka: finance.place-order"| basket["Basket API\n(Redis Delete)"]
+	finance --> |"Kafka: finance.place-order"| notify["Notification\n(Redis Guard + MailKit SMTP)"]
+	basket --> |"Kafka: basket.delete-complete / failed"| finance
+	finance --> |"Kafka: finance.delete-basket-complete / failed"| ordering
+	notify -->|"SMTP 587"| smtp["Mailpit (Local) /\nSendGrid SMTP (Azure)"]
+	finance --> |"Timeout exhausted: finance.cancel-order"| notify

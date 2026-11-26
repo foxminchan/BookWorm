@@ -18,38 +18,47 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`ListPublishers` queries **Catalog API** (`GET /api/v1/publishers`) to return all registered book publishers as an unpaginated JSON array (`PublisherDto[]`). The endpoint is publicly readable, returns `[]` with `200 OK` when no publishers exist, and caches the directory in FusionCache.
 
-Storefront views, catalog administration tools, and integrations need a reliable way to retrieve every book publisher known to the Catalog. Without a dedicated publisher listing operation, consumers would have to maintain duplicate lists or infer publishers from existing books, causing inconsistent filters and form validation issues.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                                                          |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                           |
+| **Source**                | `src/Services/Catalog/BookWorm.Catalog/Features/Publishers/List/ListPublishersEndpoint.cs`, `ListPublishersQuery.cs`           |
+| **Protocol / format**     | HTTP `GET /api/v1/publishers` (via API Gateway: `GET /catalog/api/v1/publishers`), `ApiVersions.V1`, JSON (`application/json`) |
+| **Authentication**        | None required (public read endpoint)                                                                                           |
+| **Rate limiting**         | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters  |
+| **Persistence & caching** | PostgreSQL (`catalogdb`, EF Core) cached in FusionCache (L1 + Redis L2, key `CatalogCacheKeys.Publishers`)                     |
+| **Contract version**      | `1.0.0`                                                                                                                        |
 
-- **Consistent publisher data**: Storefronts and management tools always present the same authoritative set of [[entity|publisher]] records.
-- **Simple integration**: Consumers retrieve all publishers in one step without managing search parameters or pagination.
-- **Clean empty-state behavior**: Returning an empty list when no publishers are registered avoids unnecessary error handling during initial setup.
+## Parameters and fields
 
-## 3. How It Works
+### Request parameters
 
-1. A consumer requests the list of publishers from the Catalog without providing any filters, request body, or pagination parameters.
-2. The Catalog gathers every known [[entity|publisher]] record.
-3. The response delivers the complete list, where each entry provides a unique identifier and an optional display name.
-4. When no publishers exist in the Catalog, the operation completes normally and returns an empty list.
+`ListPublishers` accepts no path parameters, query parameters, or request body.
 
-## 4. Trade-offs & Lessons Learned
+### Response schema (`PublisherDto[]`)
 
-- **Unpaginated response**: Returning all publishers in one payload keeps client integration simple while the publisher list remains manageable; pagination would be required if the catalog scaled to a very large publisher directory.
-- **Optional display name**: Because the publisher display name is optional in the response contract, client interfaces should handle missing names safely when displaying options.
+A `200 OK` response returns a JSON array of `PublisherDto` objects (`additionalProperties: false`).
 
-## 5. Technical Reference
+| Field     | Type             | Required | Constraints | Description                                |
+| :-------- | :--------------- | :------- | :---------- | :----------------------------------------- |
+| `[].id`   | `string`         | Yes      | UUID        | Unique identifier of the publisher         |
+| `[].name` | `string \| null` | Yes      | Nullable    | Publisher display name (`null` when unset) |
 
-- **Endpoint**: `GET /api/v1/publishers`
-- **Request**: Does not require a request body, path parameters, or query parameters.
-- **Response**: Returns HTTP `200` with a JSON array of objects containing `id` and nullable `name` for every catalog [[entity|publisher]]. Returns `200` with `[]` when no resources are available.
+## Error responses
 
-### Architecture
+| Code / status           | Condition                                                                                                   | Recovery behavior                                   |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :-------------------------------------------------- |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and endpoints.
+- [[command|CreatePublisher]] — Create a new catalog publisher.
+- [[entity|publisher]] — Domain model for catalog publishers.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

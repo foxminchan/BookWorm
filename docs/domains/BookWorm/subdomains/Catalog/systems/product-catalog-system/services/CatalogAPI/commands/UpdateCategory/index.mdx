@@ -18,42 +18,55 @@ sidebar:
   badge: "PUT"
 ---
 
-## 1. Context & Problem
+`UpdateCategory` updates the display name of an existing category in **Catalog API** (`PUT /api/v1/categories`) and returns `204 No Content`. Callers pass both `id` and `name` in the JSON request body rather than using a path parameter.
 
-Storefront navigation and browsing depend on clear, well-named book categories. Over time, merchandising teams may rename a [[entity|category]] to improve customer clarity, fix typos, or align with taxonomy updates without breaking existing links to books.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                        |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                         |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Categories/Update/`                                                          |
+| **Protocol / format** | HTTP `PUT`, JSON request (`application/json`), empty response body (`204 No Content`)                                        |
+| **Endpoint**          | Direct: `PUT /api/v1/categories` (local HTTP `5100`, HTTPS `7187`); API Gateway: `PUT /catalog/api/v1/categories`            |
+| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
+| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                     |
+| **Idempotency**       | Naturally idempotent for repeated requests with the same `id` and `name`; no `x-request-id` header is enforced               |
+| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                   |
 
-- **Improved discoverability**: Clear category labels help shoppers browse and filter the catalog more effectively.
-- **Seamless taxonomy maintenance**: Renaming a category updates its display label in place without needing to reassign every book in that category.
-- **Safe retries**: Submitting the same rename request more than once yields the same result without side effects.
+## Parameters and fields
 
-## 3. How It Works
+### Request body (`application/json`)
 
-An authorized user or system supplies the category's unique identifier along with the new display name.
+`StringTrimmerJsonConverter` trims leading and trailing whitespace from string properties during deserialization.
 
-1. The catalog checks that both the unique identifier and a non-empty display name are provided and valid.
-2. When the category exists, its display name is updated and the system returns an empty confirmation. Submitting the exact same name again leaves the record unchanged.
-3. If the input is invalid or no category matches the provided identifier, the system rejects the request and leaves catalog data untouched.
+| Name   | Type     | Required | Default | Constraints                                                                        | Description                               |
+| :----- | :------- | :------- | :------ | :--------------------------------------------------------------------------------- | :---------------------------------------- |
+| `id`   | `uuid`   | Yes      | —       | Non-empty UUID (`Guid != Guid.Empty`, `CategoryId`)                                | Identifier of the category to update      |
+| `name` | `string` | Yes      | —       | Non-empty, max `50` chars (`DataSchemaLength.Medium`), unique in `categories.name` | Replacement display name for the category |
 
-## 4. Trade-offs & Lessons Learned
+## Behavior and side effects
 
-- **In-place rename vs. category migration**: Renaming an existing category preserves all book associations automatically, though it assumes the category's meaning remains consistent rather than splitting into separate genres.
-- **Empty confirmation on success**: Returning no body content keeps responses lightweight, requiring clients to treat the acknowledgement as completion or refresh cached category lists separately.
+- **Persistence and uniqueness:** Loads the category by `id`, updates `Category.Name` in PostgreSQL (`catalogdb`), and saves changes. `CategoryConfiguration.cs` enforces a unique index on `categories.name`; renaming to another existing category's name raises an unhandled database exception mapped to `500 Internal Server Error` by `GlobalExceptionHandler`.
+- **Cache invalidation:** Dispatches `CategoryUpdatedEvent` on save; `CategoryChangedEventHandler` removes `catalog:categories:v1` and invalidates FusionCache tags `book` and `books:list`.
+- **Vector index queueing:** PostgreSQL trigger `categories_vector_update` (`BEFORE UPDATE OR DELETE ON categories`) enqueues all `book_id` rows with matching `category_id` into `pending_vector_updates` for asynchronous Qdrant refresh by **Catalog Ingestion**.
 
-## 5. Technical Reference
+## Error responses
 
-- **Endpoint**: `PUT /api/v1/categories`
-- **Command**: `UpdateCategory` (updates [[entity|category]])
-- **Request contract**: JSON payload requiring `id` (UUID) and a non-empty `name` (`minLength: 1`, `additionalProperties: false`).
-- **Idempotency**: Submitting the same `name` for an existing `id` is idempotent.
-- **Responses**:
-  - `204 No Content`: Category updated successfully; response body is empty.
-  - `400`: Validation failure (e.g., invalid UUID or empty `name`).
-  - `404`: No category exists with the supplied UUID.
+| Code / status               | Condition                                                                                                                             | Recovery behavior                                                      |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------- |
+| `400 Bad Request`           | `id` is empty or invalid UUID, `name` is missing, empty, whitespace-only, or exceeds `50` characters (`HttpValidationProblemDetails`) | Fix the request body; do not retry unchanged input                     |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                             | Acquire a valid Entra ID access token and retry                        |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                       | Request the required Entra ID app role and scopes                      |
+| `404 Not Found`             | No category exists with the supplied `id` (`{ "detail": "The requested resource was not found." }`)                                   | Verify the UUID; do not treat `404` as a completed update              |
+| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                              | Wait for the `Retry-After` interval before retrying                    |
+| `500 Internal Server Error` | Duplicate `name` violating the `categories.name` unique index or unhandled server error (`ProblemDetails` with `traceId`)             | Check for a conflicting category name and inspect logs using `traceId` |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[command|CreateCategory]] — Create a new category record.
+- [[command|DeleteCategory]] — Permanently delete a category with no active books.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

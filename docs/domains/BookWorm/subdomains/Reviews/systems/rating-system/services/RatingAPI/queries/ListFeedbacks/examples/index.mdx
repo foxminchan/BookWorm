@@ -1,51 +1,26 @@
 ---
-summary: List feedback for a book with paging and ordering.
+summary: Usage examples for List feedbacks.
 ---
 
-## 1. Context & Problem
+## List feedback for a book with curl
 
-Teams building storefront screens or integrating with the Reviews capability need concrete, ready-to-use examples showing how to request paged feedback for a book and how invalid inputs are reported. Without shared examples of valid requests, expected output fields, and validation errors, developers can misinterpret optional defaults or handle malformed requests inconsistently.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster team onboarding**: Copy-ready request and response examples shorten the time needed to wire up book review listings.
-- **Consistent error handling**: Demonstrating how validation errors are structured helps client applications surface actionable feedback rather than generic failures.
-- **Fewer integration defects**: Showing exact response fields—including optional reviewer names and comments—prevents storefront rendering bugs when customers submit a rating without text.
-
-## 3. How It Works
-
-1. **Retrieving paged feedback**: The caller asks for feedback belonging to a single book while specifying the target page, page size, rating sort order, and descending direction. The service returns a matching list of feedback entries, each carrying an entry identifier, optional reviewer first and last name, optional comment, rating, and associated book identifier.
-2. **Handling invalid requests**: If the caller provides a malformed book identifier, invalid paging values, or unsupported sorting options, the request is rejected before data retrieval and returns a structured validation error explaining which input failed.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Handling optional customer fields**: Because reviewer names and written comments are optional, consuming user interfaces must handle missing values gracefully instead of assuming every review contains text and a full name.
-- **Separating validation mistakes from service outages**: Distinguishing client input errors from unexpected system failures lets storefront applications handle bad inputs cleanly without triggering outage alerts.
-
-## 5. Technical Reference
-
-### List feedback for a book
-
-<Columns cols={2}>
-
-<Column>
-
-Pass the required `BookId` and optional paging and ordering parameters. The
-query returns `200 OK` with a JSON array of feedback records.
-
-<CodeGroup dropdown>
-
-```sh
+```bash
 curl --request GET \
-  "$BASE_URL/api/v1/feedbacks?BookId=11111111-1111-1111-1111-111111111111&PageIndex=1&PageSize=20&OrderBy=Rating&IsDescending=true" \
+  "<gateway-url>/rating/api/v1/feedbacks?BookId=11111111-1111-1111-1111-111111111111&PageIndex=1&PageSize=20&OrderBy=Rating&IsDescending=true" \
   --header "Accept: application/json"
 ```
 
 </CodeGroup>
 
-Example response:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or direct Rating API URL `https://localhost:7003` without the `/rating` prefix).
+
+Expected response (`200 OK` with `Pagination-Count` and `Link` headers):
+
+<CodeGroup>
 
 ```json
 [
@@ -62,13 +37,27 @@ Example response:
 
 </CodeGroup>
 
-</Column>
+Expected validation error (`400 Bad Request`):
 
-<Column>
+<CodeGroup>
 
-<CodeGroup dropdown>
+```json
+{
+	"title": "One or more validation errors occurred.",
+	"status": 400,
+	"errors": {
+		"BookId": ["The value is not a valid UUID."]
+	}
+}
+```
 
-```ts list-feedbacks.ts
+</CodeGroup>
+
+## List feedback with TypeScript
+
+<CodeGroup>
+
+```typescript
 type FeedbackDto = {
 	id: string;
 	firstName: string | null;
@@ -86,8 +75,8 @@ const params = new URLSearchParams({
 	IsDescending: "true",
 });
 
-const baseUrl = process.env.BASE_URL ?? "https://api.example.com";
-const response = await fetch(`${baseUrl}/api/v1/feedbacks?${params}`);
+const gatewayUrl = "<gateway-url>";
+const response = await fetch(`${gatewayUrl}/rating/api/v1/feedbacks?${params}`);
 
 if (response.status === 400) {
 	throw new Error("ListFeedbacks validation failed");
@@ -96,33 +85,9 @@ if (!response.ok) {
 	throw new Error(`ListFeedbacks failed with ${response.status}`);
 }
 
+const totalItems = Number(response.headers.get("Pagination-Count") ?? "0");
 const feedbacks = (await response.json()) as FeedbackDto[];
-console.log(`Received ${feedbacks.length} feedback record(s)`);
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Handle invalid query parameters
-
-Malformed UUIDs, invalid paging values, or unsupported parameter values return
-`400 Bad Request` with `application/problem+json`.
-
-<CodeGroup dropdown>
-
-```json
-{
-	"title": "One or more validation errors occurred.",
-	"status": 400,
-	"errors": {
-		"BookId": ["The value is not a valid UUID."]
-	}
-}
+console.log(`Received ${feedbacks.length} of ${totalItems} feedback record(s)`);
 ```
 
 </CodeGroup>

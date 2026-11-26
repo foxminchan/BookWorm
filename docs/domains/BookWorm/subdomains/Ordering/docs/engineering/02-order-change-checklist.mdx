@@ -10,97 +10,78 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+This reference defines the mandatory contract, persistence, lifecycle, security, and test checks for pull requests modifying **Ordering API** (`ordering`) or its integration with **Finance** (`finance`), **Basket API** (`basket`), and **Catalog API** (`catalog`).
 
-## 1. Context & Problem
+## Overview
 
-Ordering sits at the center of BookWorm's checkout experience, connecting the customer's shopping basket, the book catalog, financial coordination, and downstream notifications. Because multiple teams and systems depend on how Orders are created, priced, stored, and transitioned, even a seemingly small change can silently break checkout, skew financial tracking, or leak private customer details. Delivery teams need a shared pre-change verification checklist to keep business rules, ownership boundaries, and integration agreements intact before releasing changes.
+| Property              | Value                                                                                                                                                                             |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Ordering bounded context (`Ordering API`, `Finance`)                                                                                                                              |
+| **Source**            | `src/Services/Ordering/BookWorm.Ordering/`, `src/Services/Finance/BookWorm.Finance/`                                                                                              |
+| **Protocol / format** | HTTP v1 (`/api/v1/orders`, `/api/v1/buyers`, `/api/v1/dashboard`), gRPC clients (`basket.v1`, `book.v1`), Kafka CloudEvents JSON (Wolverine)                                      |
+| **Authentication**    | Microsoft Entra ID JWT (`customer` or `admin` roles; `ordering_read`, `ordering_write` scopes); admin-only for `DELETE /api/v1/orders/{id}` and `GET /api/v1/orders/{id}/summary` |
 
-## 2. Business Value
+## Integration boundary overview
 
-- **Revenue & price integrity:** Ensures accepted customer purchases retain their exact selected books, quantities, and prices regardless of later catalog price updates.
-- **Clear cross-team boundaries:** Keeps Ordering, Basket, and Finance responsibilities separated, reducing coordination friction and unintended side effects across services.
-- **Operational reliability & privacy:** Prevents duplicate order creation, protects buyer address and contact details, and keeps order status trustworthy across all channels.
-- **Predictable delivery:** Gives solution architects, product managers, analysts, and engineers a repeatable quality gate before merging changes.
+Ordering API reads Basket API and Catalog API over gRPC during checkout, persists accepted orders in PostgreSQL, coordinates idempotency and locks in Redis, and exchanges checkout and lifecycle messages with Finance over Kafka.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/02-order-change-checklist-diagram-1.mmd" />
 
-Before merging any change to Ordering, the delivery team verifies nine operational and design areas alongside six core business rules:
+## Pre-merge verification checklist
 
-- **Customer-facing & background agreements:** Update documented order operations and background business event definitions whenever checkout, completion, cancellation, or order lookup behavior changes.
-- **Cross-system coordination:** Keep Basket, Ordering, and Finance ownership boundaries explicit whenever post-checkout basket-cleanup behavior changes.
-- **Immutable purchase snapshot:** Preserve the rule that every accepted Order item locks in its book reference, positive quantity, and selected non-negative price, and that the Order total equals the sum of those line totals. Later Catalog updates must never rewrite an accepted purchase.
-- **Strict Order lifecycle:** Restrict status changes solely to moving from **New** to **Completed** or from **New** to **Cancelled**. Keep administrative removal from active view and Finance's coordination workflow outcomes completely separate from Order status.
-- **Data storage & reporting views:** Keep database documentation and change plans updated whenever Buyer, Order, Order item, event history, or reporting data changes, and keep derived reporting views separate from the authoritative Order record.
-- **Access control & duplicate protection:** Preserve customer and administrator permission boundaries along with unique request-tracking behavior for creation, completion, and cancellation. Treat a temporary request marker only as a record that an attempt was received—never as proof that the operation succeeded.
-- **Downstream consumers & privacy:** Check how Finance and downstream listeners react to checkout and Order status updates, avoid exposing buyer address or contact details unnecessarily, and correlate checkout investigations by Order ID without treating logs or notifications as the authoritative source of Order status.
+Verify every affected area before merging a change to `BookWorm.Ordering`:
 
-**Core business rules that must pass verification:**
+- [ ] **HTTP API v1 contracts:** Update OpenAPI v1 metadata and endpoint documentation for any change to `POST /api/v1/orders`, `GET /api/v1/orders`, `GET /api/v1/orders/{id}`, `GET /api/v1/orders/{id}/history`, `GET /api/v1/orders/{id}/summary`, `PATCH /api/v1/orders/{orderId}/complete`, `PATCH /api/v1/orders/{orderId}/cancel`, `DELETE /api/v1/orders/{id}`, buyer routes, or dashboard routes.
+- [ ] **Kafka integration events:** Keep CloudEvents schemas and Pact contracts aligned for `UserCheckedOutIntegrationEvent` (`bookworm.{env}.ordering.user-checked-out`), `OrderStatusChangedToCompleteIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-complete`), and `OrderStatusChangedToCancelIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-cancel`), all partitioned by `OrderId`.
+- [ ] **Basket cleanup handoff:** Verify Finance's `DeleteBasketCompleteCommand` (`bookworm.{env}.finance.delete-basket-complete`) and `DeleteBasketFailedCommand` (`bookworm.{env}.finance.delete-basket-failed`) handlers. Keep Basket API, Ordering API, and Finance ownership boundaries distinct.
+- [ ] **Immutable purchase snapshot:** Preserve the rule that each `OrderItem` stores `BookId`, positive quantity, and checkout unit price (`PriceSale ?? Price`), and that order total equals the sum of recorded line totals. Later Catalog API price updates never rewrite an accepted order.
+- [ ] **Strict order lifecycle:** Restrict business status transitions to `New` → `Completed` and `New` → `Cancelled`. Keep soft deletion (`IsDeleted`) and Finance orchestration state separate from order `Status`.
+- [ ] **Persistence and projections:** Add EF Core migrations and update schema notes when modifying `Buyer`, `Order`, or `OrderItem` tables in `orderingdb` (PostgreSQL `snake_case`), Wolverine `wolverine` outbox/inbox tables, or Marten event streams (`OrderSummary`, `OrderSummaryView`).
+- [ ] **Authorization and idempotency:** Preserve `customer` and `admin` policy boundaries, `PerUserRateLimit`, and `WithIdempotency()` (`x-request-id` required on `POST` and `PATCH`; Redis key `{METHOD}:{PATH}:{x-request-id}` with 3600-second TTL, deleted automatically on unhandled exceptions or `>= 500` responses).
+- [ ] **Buyer-scoped write lock:** Keep the Redis distributed lock (`order-create:{userId}`, 1-minute timeout) around `Order` persistence so concurrent checkout requests for the same buyer cannot race.
+- [ ] **Privacy and correlation:** Keep buyer street addresses and personal data out of routine logs and error payloads. Correlate checkout and saga traces by `OrderId` and W3C trace context without treating logs or emails as authoritative order status.
 
-1. An Order cannot be created without its required basket items and valid books in Catalog.
-2. The saved Order total always equals the sum of its recorded item prices and quantities.
-3. Only a **New** Order can be completed or cancelled, and neither final state can be reopened.
-4. Successful basket cleanup does not change Order status; an explicit cleanup failure may hide the Order from active view without recording a cancellation.
-5. Exhausting Finance workflow retries updates Finance's own coordination state, never Ordering's status.
-6. Repeated submissions and concurrent creation attempts cannot bypass duplicate-request checks or Buyer-level concurrency locks.
+## Core invariants to test
 
-## 4. Trade-offs & Lessons Learned
+| Invariant                         | Verification requirement                                                                                                                       | Owning code path                                                                              |
+| :-------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| **Valid checkout inputs**         | Order creation fails when the basket is missing/empty or any `BookId` fails to resolve in Catalog API                                          | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Create/`                             |
+| **Locked purchase total**         | Persisted order total equals the sum of recorded item unit prices (`PriceSale ?? Price`) multiplied by quantities                              | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/OrderAggregate/`              |
+| **Terminal status immutability**  | Only a `New` order can transition to `Completed` or `Cancelled`; neither terminal state can reopen or switch                                   | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/OrderAggregate/`              |
+| **Cleanup vs. status separation** | `DeleteBasketCompleteCommand` leaves status `New`; `DeleteBasketFailedCommand` soft-deletes the order without changing status to `Cancelled`   | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/EventHandlers/`                    |
+| **Finance timeout isolation**     | Finance timeout exhaustion (`MaxAttempts: 3`, 30-minute timer) cancels Finance's orchestration in `finance-taskhub`, never Ordering's `Status` | `src/Services/Finance/BookWorm.Finance/Features/Orders/Orchestration/`                        |
+| **Idempotency and lock safety**   | Duplicate `x-request-id` requests return `409 Conflict`, and concurrent creations for the same buyer cannot bypass `order-create:{userId}`     | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Filters/IdempotencyEndpointFilter.cs` |
 
-- **Locked purchase snapshots vs. live catalog sync:** Capturing prices and items at checkout protects customers from unexpected post-checkout price changes, at the cost of requiring explicit reconciliation if a catalog entry is later corrected.
-- **Decoupled lifecycle vs. apparent status mismatch:** Keeping Finance workflow states and soft-deletion separate from the **New** / **Completed** / **Cancelled** lifecycle prevents misleading status transitions, though teams must be careful never to infer Order status from emails or cleanup state.
-- **Conservative duplicate markers:** Treating a temporary request marker as proof of an attempt rather than proof of completion prevents accidental duplicate orders during retries, even though unclear failures require verification before retrying.
+## Verification commands
 
-## 5. Technical Reference
+Run formatting, unit tests, architecture tests, and Pact contract tests from the repository root before opening a pull request:
 
-### Before merging
+<CodeGroup>
 
-- [ ] **HTTP contract:** Update the OpenAPI v1 document and the relevant
-      [[command\|CreateOrder]], [[command\|CompleteOrder]],
-      [[command\|CancelOrder]], [[query\|GetOrder]], or
-      [[query\|ListOrders]] documentation.
-- [ ] **Message contract:** For changes to checkout or status integration,
-      update the Order API AsyncAPI contract and the corresponding event
-      schemas: [[event\|UserCheckedOutIntegrationEvent]],
-      [[event\|OrderStatusChangedToCompleteIntegrationEvent]], or
-      [[event\|OrderStatusChangedToCancelIntegrationEvent]].
-- [ ] **Cross-system coordination:** If basket-cleanup handling changes,
-      verify Finance's AsyncAPI contract and the
-      [[command\|DeleteBasketCompleteCommand]] /
-      [[command\|DeleteBasketFailedCommand]] behavior. Keep the Basket,
-      Ordering, and Finance ownership boundaries explicit.
-- [ ] **Purchase snapshot:** Preserve the invariant that an Order item stores
-      its book ID, positive quantity, and selected non-negative price, and
-      that the total equals the sum of item line totals. Later Catalog changes
-      must not rewrite an accepted purchase.
-- [ ] **Lifecycle:** Keep status transitions limited to New → Completed or
-      New → Cancelled. Treat soft deletion and Finance saga outcomes as
-      separate from Order status.
-- [ ] **Persistence:** Update the Order Database documentation and schema
-      migration when changing Buyer, Order, Order Item, event-stream, or
-      projection data. Keep derived projections distinct from the authoritative
-      aggregate.
-- [ ] **Access and idempotency:** Preserve buyer/admin authorization rules and
-      the required `x-request-id` behavior for Order creation, completion, and
-      cancellation. A Redis request marker is not proof that the operation
-      succeeded.
-- [ ] **Consumers:** Check Finance's handling of checkout and Order status
-      events, plus downstream consumers of the shared integration channels.
-- [ ] **Privacy and observability:** Avoid exposing Buyer address or contact
-      data unnecessarily. Correlate checkout and saga investigation by Order
-      ID without treating logs or notifications as the source of Order status.
+```bash
+mise run format
+mise run build
+mise run test
+```
 
-### Invariants to test
+</CodeGroup>
 
-- An Order cannot be created without its required basket items and resolvable
-  Catalog books.
-- The persisted Order total is computed from its recorded item prices and
-  quantities.
-- Only a New Order can be completed or cancelled, and neither terminal state
-  can be reopened.
-- Basket-cleanup success does not change Order status; failure may soft-delete
-  the Order without registering a cancellation.
-- Finance timeout exhaustion changes Finance saga state, not Ordering state.
-- Repeated requests and concurrent Order creation do not bypass the documented
-  idempotency and Buyer-scoped lock behavior.
+To run targeted Ordering unit tests during local iteration:
 
-<Footer />
+<CodeGroup>
+
+```bash
+dotnet test src/Services/Ordering/BookWorm.Ordering.UnitTests/BookWorm.Ordering.UnitTests.csproj
+```
+
+</CodeGroup>
+
+Verify that both Ordering–Finance Pact suites pass when modifying integration events or commands (`tests/pacts/Ordering-Finance.json` and `tests/pacts/Finance-Ordering.json`).
+
+## Related documentation
+
+- Ordering consistency and data ownership reference — Authoritative stores, snapshots, and derived projections.
+- Create and manage orders — Lifecycle mental model and checkout behavior.
+- Order and Finance status boundaries — How Ordering status stays separate from Finance orchestration.
+- How to troubleshoot order creation conflicts and failures — Operational procedure for `409 Conflict` and lock errors.
+- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts.

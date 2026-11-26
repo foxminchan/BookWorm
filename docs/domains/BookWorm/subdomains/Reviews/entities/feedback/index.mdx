@@ -52,48 +52,76 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-## 1. Context & Problem
+`Feedback` is the Reviews aggregate root for one customer's rating and optional comment about a book. Rating API owns it and persists it in Azure Cosmos DB, not PostgreSQL.
 
-BookWorm needs a dedicated business record to represent an individual customer's review of a book without embedding customer comments or reviewer identities inside the product catalog itself. Placing review details directly on the [[entity|book]] record would bloat catalog lookups and blur ownership between merchandising and customer feedback.
+## Overview
 
-The Feedback entity serves as the central record in [[domain|reviews]] for one customer's rating and optional written comment about a single book, keeping review history cleanly separated from product metadata owned by Catalog.
+| Property                  | Value                                                                                                         |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------ |
+| **Owner**                 | Reviews bounded context / **Rating API** (`rating`)                                                           |
+| **Source**                | `src/Services/Rating/BookWorm.Rating/Domain/FeedbackAggregator/Feedback.cs`                                   |
+| **EF Core configuration** | `src/Services/Rating/BookWorm.Rating/Infrastructure/EntityConfigurations/FeedbackConfiguration.cs`            |
+| **Backing store**         | Azure Cosmos DB database `ratingdb`, container `feedbacks`, partition key `/bookId` (EF Core Cosmos provider) |
+| **Base type**             | `AuditableEntity<FeedbackId>`, `IAggregateRoot`                                                               |
+| **Identifier**            | `FeedbackId` (Vogen value object wrapping `Guid`); generated as UUID v7 in the constructor                    |
+| **Concurrency**           | Cosmos DB `_etag` (`UseETagConcurrency()`); `RowVersion` is ignored                                           |
 
-## 2. Business Value
+## Parameters and fields
 
-- **Clear accountability**: Establishes one authoritative record for customer ratings, reviewer attribution, and audit timestamps.
-- **Spam and duplicate prevention**: Enforces a single review per named reviewer for each book, protecting rating credibility.
-- **Consistent scoring**: Guarantees every stored rating falls within an integer 0-to-5 scale so downstream averages remain accurate.
-- **Safe concurrent updates**: Tracks modification history and change versions to prevent accidental overwrites when records are updated or removed.
+| Name (JSON)      | Type                  | Required  | Default                 | Constraints                          | Description                        |
+| :--------------- | :-------------------- | :-------- | :---------------------- | :----------------------------------- | :--------------------------------- |
+| `id`             | `FeedbackId` (`Guid`) | Yes       | `Guid.CreateVersion7()` | Document ID                          | Unique feedback identifier         |
+| `bookId`         | `Guid`                | Yes       | —                       | Partition key; non-empty             | Catalog book the feedback concerns |
+| `firstName`      | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer first name                |
+| `lastName`       | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer last name                 |
+| `comment`        | `string`              | No        | —                       | Max 1,000 chars                      | Optional written review            |
+| `rating`         | `int`                 | Yes       | —                       | `0`–`5` inclusive                    | Score                              |
+| `createdAt`      | `DateTime`            | Yes       | `DateTime.UtcNow`       | UTC                                  | Creation timestamp                 |
+| `lastModifiedAt` | `DateTime`            | No        | —                       | UTC                                  | Last modification timestamp        |
 
-## 3. How It Works
+`FirstName` and `LastName` are nullable in `Feedback.cs`. `CreateFeedbackValidator` enforces the API-level required and length rules.
 
-Each Feedback record represents one customer's submission for a specific [[entity|book]]:
+## Invariants and behavior
 
-1. **Identity and attribution**: When created, the record receives a unique identifier along with creation timing. It requires a target book reference, the reviewer's first and last name, and a whole-number rating from 0 through 5.
-2. **Optional commentary**: Customers may include an optional written comment alongside their star rating.
-3. **Uniqueness rule**: The system enforces that the combination of book, reviewer first name, and reviewer last name is unique, preventing the same named reviewer from submitting duplicate reviews for the same book.
-4. **Lifecycle notifications**: Creating or removing a Feedback record triggers lifecycle events so Catalog can update its derived average rating and review count without storing individual review records.
+- **Rating range:** The constructor throws `RatingDomainException("Rating must be between 0 and 5.")` outside `0`–`5`.
+- **No discriminator:** `HasNoDiscriminator()` stores documents without an EF Core type discriminator.
+- **Conflict handling:** `RatingDbContext.SaveEntitiesAsync` maps a Cosmos DB `409 Conflict` to `"A feedback from this author already exists for this book."` and a concurrency failure to `"The feedback was modified or deleted by another request."`.
+- **Domain events:** The constructor raises `FeedbackCreatedEvent(bookId, rating, id)`. `Remove()` raises `FeedbackDeletedEvent(bookId, rating, id)`. `Revert()` raises `FeedbackRevertedEvent(bookId)` after a downstream failure.
+- **Rating summary:** Rating API publishes `FeedbackCreatedIntegrationEvent` and `FeedbackDeletedIntegrationEvent`. Catalog API updates `Book.averageRating` and `Book.totalReviews` from them.
 
-## 4. Trade-offs & Lessons Learned
+No Cosmos DB unique-key policy for `(bookId, firstName, lastName)` is declared in `AppHost.cs` or `FeedbackConfiguration`. Duplicate-review prevention is not guaranteed by database constraints.
 
-- **Name-based uniqueness vs. account ID**: Enforcing uniqueness on book plus reviewer first and last name keeps the model simple, though two distinct customers with the exact same name reviewing the same book would conflict under this rule.
-- **Derived summary separation**: Keeping Catalog's average rating and review count outside the Feedback entity prevents cross-domain coupling and keeps review writes fast, at the cost of eventual consistency between a review change and the displayed catalog score.
+Neither `FeedbackConfiguration` nor the generated `cosmos.bicep` declares a unique-key policy. The generated container only sets `/bookId` as its partition key; uniqueness by reviewer name is not guaranteed by the repository deployment artifacts. Separately managed Azure configuration was not inspected.
 
-## 5. Technical Reference
+## Relationships
 
-### Overview
+| Related entity   | Cardinality                       | Mapping                                             |
+| :--------------- | :-------------------------------- | :-------------------------------------------------- |
+| [[entity\|book]] | Many feedback records to one book | `bookId`; cross-service reference and partition key |
 
-Feedback is the [[domain|reviews]] aggregate root for one customer's rating and optional comment about a [[entity|book]]. It owns the customer-feedback lifecycle while Catalog remains the owner of book identity and product metadata.
+## Examples
 
-The aggregate generates its identifier as UUID v7 when constructed. Its `bookId`, `firstName`, and `lastName` are required, and its `rating` must be an integer from 0 through 5. The persistence model also enforces a unique combination of Book ID, first name, and last name, preventing duplicate feedback from the same named reviewer for one book.
+### Cosmos DB document
 
-Creating Feedback raises a feedback-created domain event; removing it raises a feedback-deleted domain event. Reviews publishes the corresponding integration events so Catalog can update its derived rating summary without storing individual feedback.
+<CodeGroup>
 
-### Entity properties
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-0000000d0001",
+	"bookId": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+	"firstName": "Linh",
+	"lastName": "Tran",
+	"comment": "Clear explanations of bounded contexts.",
+	"rating": 5,
+	"createdAt": "2026-11-25T11:00:00Z",
+	"lastModifiedAt": null
+}
+```
 
-<EntityPropertiesTable />
+</CodeGroup>
 
-### Relationships
+Cosmos DB adds system properties such as `_etag` and `_ts` to stored documents.
 
-- Feedback belongs to one [[entity|book]] through `bookId`.
-- Catalog derives a rating summary from feedback-created and feedback-deleted events; that summary does not become part of the Feedback aggregate.
+## Related documentation
+
+- [[entity|book]] — Holds the derived rating summary.

@@ -1,0 +1,9 @@
+flowchart LR
+	ordering["Ordering API\n(.NET 11)"] --> |"Kafka: Checkout / Complete / Cancel"| kafka["Kafka Broker\n(CloudEvents JSON)"]
+	basket["Basket API\n(.NET 11)"] --> |"Kafka: DeleteComplete / DeleteFailed"| kafka
+	kafka -->|"5 Kafka Triggers"| finance["Finance\n(Azure Functions + Durable Task)"]
+	finance <-->|"State & 30m Timers"| dts["Durable Task Scheduler\n(finance-taskhub)"]
+	finance -->|"Durable Activities (Wolverine)"| kafka
+	kafka -->|"PlaceOrderCommand"| basket
+	kafka -->|"Place / Complete / CancelOrderCommand"| notif["Notification\n(Email Worker)"]
+	kafka -->|"DeleteBasketComplete / FailedCommand"| ordering

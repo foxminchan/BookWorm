@@ -1,0 +1,9 @@
+flowchart LR
+	apps["BookWorm Container Apps\n(.NET 11, Functions, Next.js 16)"]
+	dash["Aspire Dashboard\n(Managed ACA Component)"]
+	law["Azure Log Analytics\n(30d non-Prod / 90d Prod)"]
+	ai["Application Insights\n(Linked to Foundry-project)"]
+
+	apps --> |"OTLP: Traces, Metrics, Logs"| dash
+	apps -->|"Stdout/Stderr & ACA Events"| law
+	apps -->|"AI & Agent Telemetry"| ai

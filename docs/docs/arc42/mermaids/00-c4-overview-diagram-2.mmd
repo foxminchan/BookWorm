@@ -1,0 +1,24 @@
+flowchart LR
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	storefront["Storefront\n(Next.js 16 MFE)"]
+	commerce["Commerce\n(Next.js 16 MFE)"]
+	backoffice["Backoffice\n(Next.js 16 Admin App)"]
+	catalog["Catalog API\n(.NET 11 + gRPC)"]
+	basket["Basket API\n(.NET 11 + gRPC)"]
+	ordering["Ordering API\n(.NET 11 + Marten)"]
+	finance["Finance\n(Azure Durable Functions)"]
+	postgres["PostgreSQL Flexible Server\n(catalogdb, orderingdb)"]
+	redis["Azure Managed Redis\n(Basket State & Cache)"]
+	dts["Durable Task Scheduler\n(finance-taskhub)"]
+
+	gateway --> |"HTTP: / & /backoffice & /checkout/*"| storefront
+	gateway --> |"HTTP: /basket, /checkout/*, /account/*"| commerce
+	gateway --> |"HTTP: /backoffice/*"| backoffice
+	gateway --> |"HTTP: /catalog/*, /basket/*, /ordering/*"| ordering
+	ordering --> |"gRPC: GetBasket"| basket
+	ordering --> |"gRPC: GetBooks"| catalog
+	basket --> |"gRPC: GetBook"| catalog
+	catalog --> |"SQL: EF Core"| postgres
+	ordering --> |"SQL: EF Core & Marten"| postgres
+	basket --> |"RESP: Basket State"| redis
+	finance --> |"gRPC: Orchestration State"| dts

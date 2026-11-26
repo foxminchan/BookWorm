@@ -18,38 +18,48 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`ListCategories` queries **Catalog API** (`GET /api/v1/categories`) to return all registered book categories as an unpaginated JSON array (`CategoryDto[]`). The endpoint is publicly readable, returns `[]` with `200 OK` when no categories exist, and caches the taxonomy in FusionCache.
 
-Storefront interfaces, administrative tools, and external clients need a direct way to retrieve all book categories known to the Catalog. Without a dedicated category listing query, consumers would have to hardcode category lists or derive them piecemeal from book records, leading to inconsistent navigation menus and validation mismatches.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                                                          |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                           |
+| **Source**                | `src/Services/Catalog/BookWorm.Catalog/Features/Categories/List/ListCategoriesEndpoint.cs`, `ListCategoriesQuery.cs`           |
+| **Protocol / format**     | HTTP `GET /api/v1/categories` (via API Gateway: `GET /catalog/api/v1/categories`), `ApiVersions.V1`, JSON (`application/json`) |
+| **Authentication**        | None required (public read endpoint)                                                                                           |
+| **Rate limiting**         | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters  |
+| **Persistence & caching** | PostgreSQL (`catalogdb`, EF Core) cached in FusionCache (L1 + Redis L2, key `CatalogCacheKeys.Categories`)                     |
+| **Contract version**      | `1.0.0`                                                                                                                        |
 
-- **Consistent user experience**: Every storefront filter and catalog management screen displays the same authoritative list of [[entity|category]] options.
-- **Minimal integration effort**: Consumers can load the complete taxonomy in a single request without configuring filters or pagination.
-- **Predictable empty-catalog behavior**: An unpopulated catalog returns a valid empty list rather than an error, keeping client workflows clean during setup.
+## Parameters and fields
 
-## 3. How It Works
+### Request parameters
 
-1. A consumer requests the list of categories from the Catalog without supplying any search filters, parameters, or page controls.
-2. The Catalog retrieves every known [[entity|category]] record.
-3. The response returns the full list of categories, each containing a unique identifier and an optional display name.
-4. If no categories are currently available, the Catalog treats this as a normal outcome and returns an empty list.
+`ListCategories` accepts no path parameters, query parameters, or request body.
 
-## 4. Trade-offs & Lessons Learned
+### Response schema (`CategoryDto[]`)
 
-- **Unpaginated response**: Delivering all categories at once keeps client code simple and assumes the category taxonomy remains relatively small; pagination would need to be introduced if the list grew significantly.
-- **Optional display name**: Because a category's display name can be absent in the response contract, client applications should handle missing names gracefully when rendering labels.
+A `200 OK` response returns a JSON array of `CategoryDto` objects (`additionalProperties: false`).
 
-## 5. Technical Reference
+| Field     | Type             | Required | Constraints | Description                               |
+| :-------- | :--------------- | :------- | :---------- | :---------------------------------------- |
+| `[].id`   | `string`         | Yes      | UUID        | Unique identifier of the category         |
+| `[].name` | `string \| null` | Yes      | Nullable    | Category display name (`null` when unset) |
 
-- **Endpoint**: `GET /api/v1/categories`
-- **Request**: Does not require a request body, path parameters, or query parameters.
-- **Response**: Returns HTTP `200` with a JSON array of objects containing `id` and nullable `name` for every catalog [[entity|category]]. Returns `200` with `[]` when no resources are available.
+## Error responses
 
-### Architecture
+| Code / status           | Condition                                                                                                   | Recovery behavior                                   |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :-------------------------------------------------- |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and endpoints.
+- [[query|ListCategoriesGrpc]] — Internal gRPC contract used by MCP Tools.
+- [[command|CreateCategory]] — Create a new catalog category.
+- [[entity|category]] — Domain model for catalog categories.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

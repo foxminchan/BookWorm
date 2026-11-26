@@ -21,43 +21,70 @@ styles:
   icon: /icons/database/redis.svg
 ---
 
-## 1. Context & Problem
+Catalog cache is the non-authoritative, read-through caching layer used by [[service|catalog-api]] in front of [[container|catalog-database]]. It uses FusionCache (`2.10.0`) with an in-process L1 memory tier, a Redis L2 distributed tier, and a Redis backplane to accelerate book detail reads and dashboard summaries across service replicas.
 
-Individual [[entity|book]] detail lookups and catalog dashboard summaries (total book counts and counts per category) are read repeatedly by storefronts and internal users. Hitting [[container|catalog-database]] for every repeated lookup or dashboard view adds avoidable query load and response latency.
+## Overview
 
-## 2. Business Value
+| Property               | Value                                                                                                                |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **Owner**              | Catalog bounded context — [[service\|catalog-api]] (`catalog`)                                                       |
+| **Aspire resource ID** | `redis` (shared Azure Managed Redis resource)                                                                        |
+| **Source**             | `src/BuildingBlocks/BookWorm.Chassis/Caching/`, `src/Services/Catalog/BookWorm.Catalog/Features/Books/CachedBook.cs` |
+| **Engine**             | FusionCache (`2.10.0`) + Redis (local container + RedisInsight in development; Azure Managed Redis in cloud)         |
+| **Authoritative**      | No (`authoritative: false`, `readWrite`)                                                                             |
+| **Classification**     | `internal`                                                                                                           |
+| **Retention**          | Transient (all entries are disposable and repopulated from `catalogdb`)                                              |
 
-- **Faster read performance:** Frequently requested book details and dashboard summaries are served quickly from memory instead of waiting on repeated database queries.
-- **Protected database capacity:** Offloading hot read traffic preserves primary database resources for writes, filtering, and complex queries.
-- **Zero data-loss risk:** Because the cache is strictly non-authoritative and transient, it can be cleared or rebuilt at any time without affecting permanent catalog records.
+## Architecture and caching tiers
 
-## 3. How It Works
+Catalog API registers FusionCache through `BookWorm.Chassis`, pairing local in-process memory (L1) with the shared Redis cluster (L2), a Redis backplane for cross-replica eviction notifications, and Redis distributed locking to prevent cache stampedes.
 
-[[service|catalog-api]] uses Catalog Cache as a read-through performance layer in front of [[container|catalog-database]]:
+The diagram shows how Catalog API resolves cache hits across L1 and Redis L2 before falling back to PostgreSQL.
 
-- **Book lookups:** When a book is requested by ID, Catalog API checks the cache first. On a miss, it loads the book from the database, saves a copy in the cache, and returns the response. Whenever a book changes, an internal event immediately evicts that book's cached entry so the next lookup retrieves the updated record.
-- **Dashboard summary:** The catalog dashboard summary (containing total book count and per-category counts) is cached briefly for 15 seconds and automatically refreshes from the database once that window expires.
+<MermaidFileLoader file="mermaids/catalog-cache-diagram-1.mmd" />
 
-## 4. Trade-offs & Lessons Learned
+- **Disposable by design:** Never treat cached entries as the system of record for books, authors, categories, or publishers. Cache misses repopulate from `catalogdb`.
+- **Resilience defaults (`BookWorm.Chassis`):** FusionCache uses `System.Text.Json` serialization, a 2-hour fail-safe window, soft/hard factory timeouts, and Redis distributed locks for cache-miss coordination.
+- **Shared Redis resource:** Catalog API shares the `redis` resource with Basket API, Ordering API, Rating API, and Notification. Catalog API also uses Redis for its 24-hour integration event idempotency guard (`IIntegrationEventIdempotencyGuard`).
 
-- **Brief dashboard staleness:** Dashboard totals use a 15-second expiration window rather than instant event-driven eviction, meaning counts can lag real-time edits by a few seconds in exchange for lower database churn.
-- **Disposable by design:** Cache entries must always be treated as disposable. Never treat the cache as the authority for [[entity|book]], [[entity|author]], [[entity|category]], or [[entity|publisher]] data—misses simply repopulate from [[container|catalog-database]].
-- **Monitoring slow reads:** When investigating slow catalog reads or unexpected staleness, operators should check cache metrics, connectivity, and network latency alongside database health.
+## Cached entries and invalidation
 
-## 5. Technical Reference
+| Cached data                          | Logical key            | Authoritative source              | Expiration                   | Invalidation strategy                                                               |
+| :----------------------------------- | :--------------------- | :-------------------------------- | :--------------------------- | :---------------------------------------------------------------------------------- |
+| **Book lookup by ID** (`CachedBook`) | `book:{id}`            | `catalogdb` (`books` + relations) | `Caching:Expiration` default | Event-driven eviction on book mutations; propagated to replicas via Redis backplane |
+| **Catalog dashboard summary**        | `catalog:dashboard:v1` | `catalogdb` aggregate query       | `15 seconds`                 | Time-based TTL expiration (no event-driven eviction)                                |
+
+The shared `Caching:Expiration` default is 30 minutes. Catalog list queries cache `CachedBookPage` values as the resolved page payload under their own feature cache key.
+
+### Cached book payload scope
+
+`CachedBook` (`src/Services/Catalog/BookWorm.Catalog/Features/Books/CachedBook.cs`) caches the pre-DTO book projection before SAS URL resolution:
+
+- **Fields included:** `Id`, `Name`, `Description`, `Image` (permanent blob URN, not an expiring SAS URL), `Price`, `PriceSale`, `Status`, `Category`, `Publisher`, `Authors`, `AverageRating`, `TotalReviews`, and `Version` (`RowVersion`).
+- **Why SAS URLs are excluded:** Caching the permanent URN ensures each API read resolves a valid, non-expired SAS URL from [[container|catalog-blob]].
+
+## Hosting and environment provisioning
+
+AppHost provisions the shared `redis` resource via `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Redis.cs`.
+
+| Environment           | Provisioning & SKU                                                      | High availability | Local tooling |
+| :-------------------- | :---------------------------------------------------------------------- | :---------------- | :------------ |
+| **Local development** | Local Redis container (`ContainerLifetime.Persistent`) with data volume | Single container  | RedisInsight  |
+| **Azure Development** | Azure Managed Redis (`BalancedB0`)                                      | Disabled          | —             |
+| **Azure Staging**     | Azure Managed Redis (`BalancedB1`)                                      | Enabled           | —             |
+| **Azure Production**  | Azure Managed Redis (`BalancedB5`)                                      | Enabled           | —             |
+
+## Operational notes
+
+- **Dashboard staleness window:** Dashboard totals (`catalog:dashboard:v1`) can lag live catalog writes by up to `15 seconds` because they expire by TTL rather than domain-event eviction.
+- **Observability:** Inspect FusionCache OpenTelemetry metrics and traces (`ZiggyCreatures.Caching.Fusion.OpenTelemetry`) alongside Redis connectivity and latency when diagnosing slow Catalog reads.
+- **Flush blast radius:** Clearing the shared Redis instance is safe for Catalog durability, but it simultaneously clears active customer baskets in [[container|basket-database]], locks/idempotency markers in [[container|order-cache]], and cached summaries in [[container|rating-cache]].
+
+## Related documentation
+
+- [[service|catalog-api]] — Owning service read/write paths and domain event eviction handlers.
+- [[container|catalog-database]] — Authoritative PostgreSQL system of record behind this cache.
+- [[container|catalog-blob]] — SAS URL resolution for `CachedBook.Image` URNs.
+- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
 
 <NodeGraph />
-
-- **Container configuration:** `azure-managed-redis` (`catalog-cache`), `readWrite`, `authoritative: false`, `classification: internal`, `retention: transient`, `residency: eastasia`.
-- **Caching architecture:** `catalog-api` registers `FusionCache` combining an in-process L1 cache with a Redis-backed distributed cache. Values are serialized as JSON. Default entry duration is controlled by `Caching:Expiration`, with per-entry overrides where specified.
-- **Cached entries & invalidation:**
-
-| Data                          | Key                    | Source           | Expiration           |
-| ----------------------------- | ---------------------- | ---------------- | -------------------- |
-| [[entity\|book]] lookup by ID | `book:{id}`            | Catalog Database | `Caching:Expiration` |
-| Catalog dashboard summary     | `catalog:dashboard:v1` | Catalog Database | 15 seconds           |
-
-- **Behavior details:**
-  - `book:{id}` caches the book read before it is mapped to the API response; book changes publish a domain event with the `book:{id}` key so the cache handler removes the entry.
-  - `catalog:dashboard:v1` stores total book count and per-category counts and refreshes when its 15-second TTL expires.
-  - **Observability:** Monitor FusionCache metrics and traces, as well as Redis connectivity and latency, when diagnosing slow catalog reads.

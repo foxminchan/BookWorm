@@ -14,68 +14,87 @@ sidebar:
   badge: "gRPC"
 ---
 
-## 1. Context & Problem
+`GetBooksGrpc` invokes the internal `book.v1.BookGrpcService/GetBooks` gRPC unary RPC on **Catalog API** to fetch compact commercial summaries (ID, name, price, sale price, and stock status) for multiple books in a single round trip. **Basket API** calls this RPC to enrich basket items on read, and **Ordering API** calls it during checkout and order detail enrichment.
 
-Customer baskets and orders routinely contain several different [[entity|book]]s at once. If [[service|basket-api]] or [[service|order-api]] had to ask [[service|catalog-api]] about each item one by one during basket display, checkout, or order viewing, latency would climb quickly and internal traffic would multiply with basket size.
+## Overview
 
-## 2. Business Value
+| Property                | Value                                                                                                                                                                                                    |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner (gRPC server)** | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                     |
+| **Primary callers**     | **Basket API** (`basket`) for basket enrichment; **Ordering API** (`ordering`) for checkout and order detail enrichment                                                                                  |
+| **Source**              | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs`                                                             |
+| **Protocol / format**   | gRPC unary RPC (`book.v1.BookGrpcService/GetBooks`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"`                                                                  |
+| **Authentication**      | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                                                                                     |
+| **Caching & batching**  | Deduplicates `book_ids`, resolves hits per ID in FusionCache (`BookSummary`), batch-queries PostgreSQL (`catalogdb`) only for misses, populates cache, and returns matches in deduplicated request order |
+| **Contract version**    | `1.0.0`                                                                                                                                                                                                  |
 
-- **Faster checkout and basket loading**: Fetches current names, prices, and availability for an entire set of books in one round trip.
-- **Lower infrastructure load**: Replaces repeated per-item calls with a single compact batch lookup.
-- **Reliable order and basket accuracy**: Ensures [[service|basket-api]] and [[service|order-api]] validate and display up-to-date catalog pricing and stock status before orders are finalized or displayed.
-- **Caching friendliness**: Supports batch caching in [[service|order-api]] to further improve responsiveness on repeated order views.
+:::note
+`GetBooks` silently omits unknown book IDs rather than throwing `StatusCode.NotFound`, and returns an empty `GetBooksResponse` when `book_ids` is empty. Callers must reconcile returned `books` against requested `book_ids`.
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-1. A consuming service—such as [[service|basket-api]] when enriching a shopping basket, or [[service|order-api]] during checkout and order detail enrichment—collects the unique identifiers of all [[entity|book]]s it needs to verify.
-2. It sends that list of identifiers in a single direct request to [[service|catalog-api]].
-3. [[service|catalog-api]] looks up the matching [[entity|book]] records synchronously and returns a compact summary (identity, pricing, and availability) for the requested items in one response.
-4. Where appropriate, [[service|order-api]] caches the returned batch to avoid redundant calls for frequently accessed order details.
+### Request message (`GetBooksRequest`)
 
-## 4. Trade-offs & Lessons Learned
+| Field      | Protobuf type     | Tag | Constraints                | Description                                            |
+| :--------- | :---------------- | :-- | :------------------------- | :----------------------------------------------------- |
+| `book_ids` | `repeated string` | `1` | Valid UUIDs (`Guid.Parse`) | List of book UUIDs to fetch (deduplicated server-side) |
 
-- **Synchronous request-response vs. event-driven replication**: Using a direct synchronous lookup instead of an integration-event channel avoids maintaining duplicated catalog read tables inside [[service|basket-api]] and [[service|order-api]] and guarantees fresh pricing at checkout, though it introduces a runtime dependency on [[service|catalog-api]] availability.
-- **Compact projection**: Returning only compact book fields keeps batch responses fast and small; callers needing full descriptions or author metadata must use a detailed lookup instead.
-- **Batch caching trade-off**: Caching book batches in [[service|order-api]] improves speed and resilience, but teams must ensure cache lifetimes remain aligned with acceptable freshness for price or availability changes.
+### Response message (`GetBooksResponse`)
 
-## 5. Technical Reference
+| Field                | Protobuf type              | Tag | Description                                                      |
+| :------------------- | :------------------------- | :-- | :--------------------------------------------------------------- |
+| `books`              | `repeated GetBookResponse` | `1` | Matched book summaries in deduplicated request order             |
+| `books[].id`         | `string`                   | `1` | Book UUID                                                        |
+| `books[].name`       | `string`                   | `2` | Book title                                                       |
+| `books[].price`      | `DecimalValue`             | `3` | Regular unit price (`int64 units`, `sfixed32 nanos`)             |
+| `books[].price_sale` | `DecimalValue`             | `4` | Promotional sale price (omitted/null when no sale applies)       |
+| `books[].status`     | `BookStatus`               | `5` | `BOOK_STATUS_IN_STOCK` (`1`) or `BOOK_STATUS_OUT_OF_STOCK` (`2`) |
 
-`GetBooks` is a read-only RPC defined in the `book.v1` gRPC contract (`BookGrpcService`) that returns compact [[entity|book]] representations for multiple requested book identifiers in a single synchronous service-to-service call (not an integration-event channel).
+### Protobuf contract
 
-- **Producers / Callers**:
-  - [[service|basket-api]] produces this query to enrich basket items.
-  - [[service|order-api]] produces this query during checkout and Order detail enrichment, caching book batches.
-- **Consumer**: [[service|catalog-api]] consumes the query.
-- **Request**: `GetBooksRequest` containing one or more book UUIDs in `book_ids`.
-- **Response**: `GetBooksResponse` containing a repeated collection of `GetBookResponse` values.
+<CodeGroup>
 
-<NodeGraph />
+```protobuf
+edition = "2023";
 
-### Schema
+package book.v1;
 
-<Schema file="schema.proto" lang="protobuf" title="GetBooks gRPC schema" />
+service BookGrpcService {
+  rpc GetBooks (GetBooksRequest) returns (GetBooksResponse);
+}
 
-### Examples
+message GetBooksRequest {
+  repeated string book_ids = 1;
+}
 
-<CodeGroup dropdown>
+message GetBooksResponse {
+  repeated GetBookResponse books = 1;
+}
 
-```csharp title="GetBooks gRPC example"
-using Grpc.Net.Client;
-using BookWorm.Catalog.Grpc.Services;
-
-using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
-var client = new BookGrpcService.BookGrpcServiceClient(channel);
-
-var request = new GetBooksRequest();
-request.BookIds.Add("0192f4d8-5f3c-7a11-b5dd-2c9e4a6f8b20");
-request.BookIds.Add("0192f4d8-5f3c-7a11-b5dd-2c9e4a6f8b21");
-
-var response = await client.GetBooksAsync(request);
-
-foreach (var book in response.Books)
-{
-  Console.WriteLine($"{book.Name}: {book.Status}");
+message GetBookResponse {
+  string id = 1;
+  string name = 2;
+  DecimalValue price = 3;
+  DecimalValue price_sale = 4;
+  BookStatus status = 5;
 }
 ```
 
 </CodeGroup>
+
+## Error responses
+
+| Code / status        | Condition                                                                                        | Recovery behavior                           |
+| :------------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------ |
+| `Unknown` (`2`)      | Any entry in `book_ids` is not a valid UUID (`BookService.GetBooks` calls `Guid.Parse` directly) | Validate all UUIDs before calling           |
+| `Unavailable` (`14`) | Catalog API is unreachable                                                                       | Retry within the budgeted resilience policy |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and gRPC services.
+- [[query|GetBasket]] — Basket API endpoint that enriches items via `GetBooks`.
+- [[query|GetOrder]] — Ordering API endpoint that enriches order line-item names via `GetBooks`.
+- [[query|GetBookGrpc]] — Single-book compact gRPC RPC.
+
+<NodeGraph />

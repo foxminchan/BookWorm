@@ -1,0 +1,20 @@
+sequenceDiagram
+	participant Commerce as Commerce (Next.js 16 MFE)
+	participant Ordering as Ordering API (.NET 11 + Postgres/Marten)
+	participant Kafka as Kafka (CloudEvents)
+	participant Finance as Finance (Durable Functions)
+	participant Basket as Basket API (.NET 11 + Redis)
+	participant Notify as Notification (.NET 11 Worker)
+
+	Commerce ->> Ordering: HTTPS POST /ordering/api/v1/orders
+	Ordering ->> Ordering: Resolve Basket & Catalog gRPC, save New order
+	Ordering -->> Commerce: 201 Created (orderId)
+	Ordering ->> Kafka: UserCheckedOutIntegrationEvent
+	Kafka ->> Finance: Start OrderOrchestrator (finance-taskhub)
+	Finance ->> Kafka: PlaceOrderCommand
+	Kafka ->> Basket: Delete customer basket
+	Kafka ->> Notify: Send placement email
+	Ordering ->> Kafka: OrderStatusChangedToComplete / CancelIntegrationEvent
+	Kafka ->> Finance: Finalize OrderOrchestrator
+	Finance ->> Kafka: CompleteOrderCommand / CancelOrderCommand
+	Kafka ->> Notify: Send completion or cancellation email

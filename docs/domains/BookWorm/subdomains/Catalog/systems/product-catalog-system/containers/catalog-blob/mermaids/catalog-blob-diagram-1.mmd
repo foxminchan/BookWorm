@@ -1,0 +1,10 @@
+flowchart LR
+	client["Storefront / Backoffice\n(Next.js 16 MFE)"]
+	catalog["Catalog API\n(.NET 11 Minimal API)"]
+	db[("Catalog database\n(PostgreSQL: books.image URN)")]
+	blob[("Catalog blob storage\n(Azure Blob: catalog-blob)")]
+
+	client --> |"HTTPS: Multipart upload / GET book"| catalog
+	catalog --> |"EF Core: Persist/read URN"| db
+	catalog --> |"HTTPS: Upload / Delete / Sign SAS"| blob
+	client --> |"HTTPS: GET image via read-only SAS"| blob

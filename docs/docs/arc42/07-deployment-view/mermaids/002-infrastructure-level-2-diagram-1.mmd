@@ -1,0 +1,19 @@
+flowchart LR
+	gateway["API Gateway\n(External YARP Ingress)"]
+	qdash["Quartz Dashboard\n(External OIDC Admin UI)"]
+	frontends["Storefront, Commerce, Backoffice\n(Internal Next.js 16 Apps)"]
+	commerce["Catalog, Basket, Ordering, Finance\n(Internal Commerce Apps)"]
+	ai["Chat API, Rating API, MCP Tools\n(Internal AI Apps)"]
+	platform["Scheduler, Notification, Presidio\n(Internal Platform & Privacy Apps)"]
+	managed["Azure Managed Stores & AI\n(Postgres, Cosmos, Redis, Blob, DTS, Foundry)"]
+	external["External Cloud Services\n(Kafka, Qdrant Cloud, SendGrid SMTP)"]
+
+	gateway -->|"Internal HTTP"| frontends
+	gateway -->|"Internal HTTP"| commerce
+	gateway -->|"Internal HTTP"| ai
+	qdash -->|"Internal HTTP"| platform
+	commerce -->|"Managed Identity"| managed
+	ai -->|"Managed Identity"| managed
+	ai --> |"Internal HTTP: 3000"| platform
+	commerce -->|"TLS Conn String"| external
+	platform -->|"TLS Conn String"| external

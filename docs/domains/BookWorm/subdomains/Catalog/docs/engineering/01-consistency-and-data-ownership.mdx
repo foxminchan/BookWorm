@@ -10,69 +10,60 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+This reference defines which data stores in the **Catalog** bounded context are authoritative systems of record, which are disposable or replayable derived projections, and how mutations propagate across PostgreSQL, Redis, Qdrant, Azure Blob Storage, and Kafka.
 
-## 1. Context & Problem
+## Overview
 
-The Catalog capability serves several different needs at once: displaying accurate book details and prices for checkout, delivering fast page loads during browsing, powering semantic and keyword search, storing cover images, and showing customer rating summaries. If all of those workloads relied on a single data layer or treated search indexes and fast-read copies as official product records, heavy browsing would slow down core operations or risk exposing stale prices during a purchase.
+| Property              | Value                                                                                                                             |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (`BookWorm.Catalog`, `BookWorm.Catalog.Ingestion`)                                                        |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog`, `src/Services/Catalog/BookWorm.Catalog.Ingestion`                                        |
+| **Protocol / format** | PostgreSQL (`catalogdb`), Redis (FusionCache), Qdrant (`vectordb`), Azure Blob Storage (`catalog-blob`), Kafka (CloudEvents JSON) |
+| **Authentication**    | Managed Identity RBAC in Azure; Aspire local emulators/containers in Development                                                  |
 
-BookWorm resolves this by clearly separating what is authoritative and permanent from what is derived, temporary, and rebuildable.
+## Store and projection ownership matrix
 
-## 2. Business Value
+| Store / projection                                                     | Aspire resource ID            | Role                                                                                                                      | Rebuildable           | Consistency model                                                                        | Authoritative source                                    |
+| :--------------------------------------------------------------------- | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------ | :-------------------- | :--------------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| **Catalog database** (PostgreSQL)                                      | `catalogdb`                   | System of record for books, authors, categories, publishers, `pending_vector_updates`, and Wolverine outbox/inbox         | No                    | Strong (ACID)                                                                            | Self                                                    |
+| **Catalog cover blobs** (Azure Blob Storage)                           | `catalog-blob`                | Binary cover artwork (`image/jpeg`, `image/png`, `image/webp`) referenced by URN (`urn:{account}:{container}:{blobName}`) | No                    | Strong per blob; read-only SAS URLs expire (`SasExpiryHours = 1` default)                | Self                                                    |
+| **Catalog read cache** (Redis + FusionCache)                           | `redis`                       | L1 + L2 read cache with Redis backplane and 2-hour fail-safe                                                              | Yes (disposable)      | Eventual / short-lived (`Caching:Expiration = 00:30:00`; `catalog:dashboard:v1` = `15s`) | `catalogdb`                                             |
+| **Catalog vector index** (Qdrant)                                      | `vectordb`                    | Derived semantic + keyword search candidates (`data-bookworm-snippets`) keyed by book UUID                                | Yes (full re-enqueue) | Eventual (5-minute Kafka batch queue, max 200 items/run)                                 | `catalogdb`                                             |
+| **Book rating summary** (`average_rating`, `total_reviews` on `books`) | `catalogdb` (derived columns) | Local aggregate projection for storefront browsing and sorting                                                            | Yes (replayable)      | Eventual (Kafka events `bookworm.{env}.rating.feedback-create` / `feedback-delete`)      | **Rating API** Azure Cosmos DB (`ratingdb`/`feedbacks`) |
 
-- **Purchase accuracy and trust**: Price and availability checks for buying decisions always come from the authoritative catalog record, never from temporary fast-read copies or search results.
-- **Fast browsing and search**: Dedicated read and search layers absorb high customer traffic without slowing down core catalog updates.
-- **Safe operational recovery**: Temporary speedups, search indexes, and rating summaries can be discarded, rebuilt, or replayed at any time without losing official book records or cover imagery.
-- **Clean cross-domain boundaries**: Rating summaries appear alongside books without transferring ownership of customer reviews away from the Reviews domain.
+## Change propagation pipeline
 
-## 3. How It Works
+This flowchart shows how catalog writes, scheduled vector ingestion, and Reviews rating events propagate across Catalog's authoritative and derived stores.
 
-Catalog separates its information into permanent sources of truth and disposable or replayable helper views:
+<MermaidFileLoader file="mermaids/01-consistency-and-data-ownership-diagram-1.mmd" />
 
-- **Authoritative book records and cover images**: The official catalog record is strongly consistent and cannot be rebuilt from elsewhere; cover image files are likewise permanent assets linked by reference.
-- **Temporary read copies and search indexes**: Short-lived performance copies and queue-driven search indexes follow updates shortly after a change and can be completely regenerated if needed.
-- **Customer rating summaries**: Aggregate ratings shown in Catalog are projections sourced from customer feedback in [[domain|reviews]] and can be replayed from review activity.
+### Write-path propagation guarantees
 
-### How a book update flows through Catalog
+1. **Transactional persistence (`catalogdb`):** **Catalog API** validates and commits changes to PostgreSQL (`catalogdb`). Database triggers atomically upsert affected `book_id` rows into `pending_vector_updates`, coalescing repeated edits under a new `revision` UUID and `updated_at` timestamp.
+2. **Cache invalidation (`redis`):** Domain event handling removes the affected `book:{id}` key in FusionCache and propagates invalidation across instances via the Redis backplane. Dashboard totals (`catalog:dashboard:v1`) expire naturally every `15` seconds (`GetCatalogDashboardQuery.cs`).
+3. **Asynchronous vector indexing (`vectordb`):** Every five minutes in UTC (`0 0/5 * * * ?`), **Scheduler** publishes `ProcessVectorBatchIntegrationEvent` to `scheduler.process-vector-batch`, triggering **Catalog Ingestion**. Under PostgreSQL advisory lock `740031001`, the worker reads up to `200` pending updates, generates Microsoft Foundry (`Cohere.EmbedV40`) embeddings, updates or deletes Qdrant vectors, and acknowledges only rows whose `(book_id, revision)` pair matches the batch snapshot.
+4. **Cross-domain rating projection (`ratingdb` -> `catalogdb`):** **Catalog API** consumes `FeedbackCreatedIntegrationEvent` and `FeedbackDeletedIntegrationEvent` through Redis-backed `IIntegrationEventIdempotencyGuard` (24-hour TTL) and updates `average_rating` and `total_reviews` on `books`.
 
-1. **Validate and save**: An update to a [[entity|book]] is validated and saved in the authoritative catalog store.
-2. **Clear stale read copies**: A change notification clears the short-lived fast-read copy for that book so browsers fetch fresh information.
-3. **Queue search updates safely**: The change is recorded for search indexing; if multiple edits happen rapidly for the same book, they are combined so only the latest version needs indexing.
-4. **Update search without losing concurrent edits**: A background worker processes queued updates in batches, coordinates exclusive access per batch, and only marks an item complete if no newer edit arrived while it was working—ensuring concurrent updates are never overwritten or lost.
+## Cache key inventory (`CatalogCacheKeys.cs`)
 
-## 4. Trade-offs & Lessons Learned
+| Key / tag pattern                                                      | Scope                                | Default TTL / invalidation                                   |
+| :--------------------------------------------------------------------- | :----------------------------------- | :----------------------------------------------------------- |
+| `book:{id}`                                                            | Single book detail                   | `Caching:Expiration` (`00:30:00`); invalidated on book write |
+| `book:summary:{id}`                                                    | Compact book summary                 | `Caching:Expiration` (`00:30:00`); invalidated on book write |
+| `catalog:dashboard:v1`                                                 | Backoffice catalog dashboard metrics | `15` seconds (`GetCatalogDashboardQuery.cs`)                 |
+| `catalog:categories:v1`, `catalog:authors:v1`, `catalog:publishers:v1` | Taxonomy reference lists             | `Caching:Expiration` (`00:30:00`)                            |
+| `catalog:books:list:v1:{sha256}`                                       | Filtered book listing page           | Tagged `books:list`; `Caching:Expiration` (`00:30:00`)       |
+| `catalog:books:search:v1:{sha256}:{pageSize}`                          | Hybrid search result page            | Tagged `books:search`; `Caching:Expiration` (`00:30:00`)     |
 
-- **Eventual alignment vs. immediate search visibility**: Search results and rating summaries update asynchronously right after a book or review changes. Accepting a brief propagation lag keeps customer edits fast and isolates search outages from core catalog management.
-- **Strict guardrails against stale reads**: Fast-read copies and search indexes must never be used to decide purchase price or stock availability; violating this boundary could let customers check out with outdated pricing.
-- **Discipline when expanding search fields**: Adding new searchable book attributes requires updating both the text preparation logic and the change-detection mechanism so search indexes do not silently fall out of sync.
-- **Idempotency and concurrency safety**: Re-processing the same book update must always produce the exact same search record, and version checks before acknowledging queued work prevent concurrent edits from being lost.
+## Contributor invariants
 
-## 5. Technical Reference
+- **Never use derived stores for purchase decisions:** **Ordering API** and **Basket API** must read prices and book existence through `book.v1.BookGrpcService` backed by authoritative `catalogdb` data—never from Qdrant records or stale client caches.
+- **Keep indexed text and triggers synchronized:** When adding a searchable book attribute, update both `VectorBatchProcessor.ReadBatchAsync` and the PostgreSQL triggers populating `pending_vector_updates`.
+- **Keep ingestion idempotent:** Re-processing the same `book_id` must overwrite the Qdrant `TextSnippet` deterministically by UUID.
+- **Treat cache and vector stores as disposable:** Design code and tests so clearing Redis cache entries or rebuilding Qdrant from `catalogdb` never loses authoritative data.
 
-### Store and projection matrix
+## Related documentation
 
-| Store / data                                    | Role                              | Rebuildable | Consistency              |
-| ----------------------------------------------- | --------------------------------- | ----------- | ------------------------ |
-| [[container\|catalog-database]]                 | System of record                  | No          | Strong                   |
-| [[container\|catalog-cache]]                    | Read optimization                 | Yes         | Short-lived, invalidated |
-| [[container\|catalog-vector]]                   | Derived search index              | Yes         | Eventual (queue-driven)  |
-| [[container\|catalog-blob]]                     | Image bytes                       | No          | Referenced by URN        |
-| Rating summary via [[query\|SummarizeFeedback]] | Projection of [[domain\|reviews]] | Replayable  | Eventual (messages)      |
-
-### Change propagation pipeline
-
-<MermaidFileLoader file="mermaids/catalog-change-propagation.mmd" />
-
-1. API validates and commits the change to PostgreSQL ([[container|catalog-database]]).
-2. A domain event invalidates `book:{id}` in [[container|catalog-cache]].
-3. Database triggers upsert the [[entity|book]] into `pending_vector_updates`, coalescing repeated changes by `book_id` with a new `revision`.
-4. [[service|catalog-ingestion]] processes batches under an advisory lock and acknowledges an item only if its `revision` is unchanged, so concurrent edits are never lost.
-
-### Rules for contributors
-
-- Add new indexed fields by updating both the searchable text builder and the triggers that enqueue changes.
-- Never read price or availability for a purchase decision from [[container|catalog-cache]] or the [[container|catalog-vector]] record.
-- Keep ingestion idempotent: re-processing a book must produce the same index record.
-- Treat cache and vector stores as disposable in design and in tests.
-
-<Footer />
+- [[flow|product-ingestion]] — Detailed walkthrough of PostgreSQL triggers, advisory lock `740031001`, and Qdrant batching.
+- Catalog change checklist reference — Pre-merge checklist for Catalog schema, contract, cache, and search updates.
+- How to resolve a Catalog stale cache or Redis outage — Safe cache invalidation and Redis fallback procedures.

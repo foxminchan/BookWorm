@@ -1,4 +1,4 @@
-node_modules
+﻿node_modules
 .eventcatalog-core
 dist
 build
@@ -7,3 +7,16 @@ bun.lock
 # mermaid-formatter strips indentation from treeView-beta diagrams
 docs/frontend/mermaids/monorepo-layout.mmd
 docs/frontend/mermaids/app-folder-structure.mmd
+
+# mermaid-formatter rewrites <--> and -.-> into invalid Mermaid syntax (and changes sequence diagrams)
+docs/arc42/03-context-and-scope/mermaids/03-context-and-scope-diagram-1.mmd
+docs/arc42/06-runtime-view/mermaids/005-notification-delivery-and-maintenance-diagram-2.mmd
+docs/frontend/mermaids/006-microfrontend-architecture-diagram-1.mmd
+domains/BookWorm/subdomains/Catalog/systems/product-catalog-system/services/CatalogAPI/mermaids/CatalogAPI-diagram-1.mmd
+domains/BookWorm/subdomains/Catalog/systems/product-catalog-system/services/CatalogIngestion/mermaids/CatalogIngestion-diagram-1.mmd
+domains/BookWorm/subdomains/Conversational/systems/mcp-tools/services/MCPServer/mermaids/MCPServer-diagram-1.mmd
+domains/BookWorm/subdomains/Ordering/docs/engineering/mermaids/01-order-consistency-and-data-ownership-diagram-1.mmd
+domains/BookWorm/subdomains/Ordering/mermaids/Ordering-diagram-2.mmd
+domains/BookWorm/subdomains/Ordering/systems/order-system/services/OrderAPI/mermaids/OrderAPI-diagram-1.mmd
+domains/BookWorm/subdomains/Reviews/systems/rating-system/services/RatingAPI/mermaids/RatingAPI-diagram-1.mmd
+domains/BookWorm/subdomains/Shopping/diagrams/checkout-interaction/mermaids/checkout-interaction.mmd

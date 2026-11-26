@@ -1,0 +1,11 @@
+flowchart LR
+	start["1. Root Domain\n(bookworm.md)"]
+	sub["2. Subdomain Architecture\n(catalog, ordering, ...)"]
+	flows["3. Runtime Flows\n(flows/*.md)"]
+	eng["4. Engineering & ADRs\n(reference + adrs)"]
+	ops["5. Domain Runbooks\n(how-to/domain-runbooks)"]
+
+	start -->|"Pick context"| sub
+	sub -->|"Trace cross-service path"| flows
+	flows -->|"Check invariants & decisions"| eng
+	eng -->|"Verify operational recovery"| ops

@@ -10,71 +10,74 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+This reference specifies which stores own authoritative order data, what **Ordering API** (`ordering`) snapshots at checkout, which views and caches are derived or transient, and how **Finance** (`finance`) maintains separate workflow state.
 
-## 1. Context & Problem
+## Overview
 
-An order touches several moving parts across BookWorm: a customer's mutable shopping basket, changing product catalog prices, durable order records, read-optimized views, temporary caches, and a post-checkout finance workflow. Without clear rules on which data store is authoritative at each stage, later catalog price changes could distort past orders, or temporary workflow states could be mistaken for the official order status.
+| Property                       | Value                                                                                                                              |
+| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                      | Ordering bounded context (`Ordering API`, `Finance`)                                                                               |
+| **Primary store**              | PostgreSQL (`orderingdb`): EF Core relational tables (`snake_case`), Marten event store, Wolverine `wolverine` outbox/inbox schema |
+| **Coordination & cache store** | Redis (`redis`): FusionCache L1/L2, HTTP idempotency markers, buyer write locks, integration event idempotency guards              |
+| **Finance workflow store**     | Azure Durable Task Scheduler (`durable-task-scheduler` / `finance-taskhub`) + Azure Storage host storage (no PostgreSQL database)  |
+| **Source**                     | `src/Services/Ordering/BookWorm.Ordering/`, `src/Services/Finance/BookWorm.Finance/`                                               |
 
-This document establishes what Ordering owns, what is locked in at checkout, and which data is derived or transient.
+## Data ownership topology
 
-## 2. Business Value
+Each service writes only to its own backing store and shares state across bounded contexts through gRPC queries or Kafka messages.
 
-- **Financial accuracy:** Guarantees that an accepted order preserves the exact items, quantities, and prices agreed at checkout, even when catalog prices or promotions change later.
-- **Operational reliability:** Prevents duplicate order submissions and race conditions through explicit coordination markers while keeping permanent order records isolated in durable storage.
-- **Clear reporting & support:** Helps teams know which store to trust when reconciling order status, customer notifications, or summary dashboards.
+<MermaidFileLoader file="mermaids/01-order-consistency-and-data-ownership-diagram-1.mmd" />
 
-## 3. How It Works
+## Sources of truth matrix
 
-### Authoritative records vs. temporary data
+| Data                                  | Backing resource                                         | Owning service | Role and consistency model                                                                                                                                                                                   |
+| :------------------------------------ | :------------------------------------------------------- | :------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Buyers, Orders, OrderItems**        | PostgreSQL `orderingdb` (EF Core)                        | Ordering API   | Authoritative transactional system of record for buyer profiles, accepted orders, locked purchase items, and `Status` (`New`, `Completed`, `Cancelled`).                                                     |
+| **Order event streams & projections** | PostgreSQL `orderingdb` (Marten, `DaemonLockId = 44444`) | Ordering API   | Authoritative event stream for order audit history (`GET /api/v1/orders/{id}/history`) and derived live/async projections (`OrderSummary`, `OrderSummaryView`); never replaces the `Order` aggregate.        |
+| **Outbox and inbox messages**         | PostgreSQL `orderingdb` (`wolverine` schema)             | Ordering API   | Durable transactional messaging buffer guaranteeing atomic commit with order mutations.                                                                                                                      |
+| **Idempotency markers & write locks** | Redis (`redis`)                                          | Ordering API   | Transient coordination state: HTTP request markers (`{METHOD}:{PATH}:{x-request-id}`, 3600s TTL), buyer creation locks (`order-create:{userId}`, 60s TTL), and 24-hour integration event idempotency guards. |
+| **Catalog & dashboard caches**        | Redis (`redis`, FusionCache)                             | Ordering API   | Non-authoritative read-through caches reducing read latency; safe to invalidate without losing orders.                                                                                                       |
+| **Active shopping basket**            | Redis (`redis`, key `basket:{userId}`)                   | Basket API     | Mutable pre-order customer intent; read once over gRPC during checkout and deleted asynchronously afterward.                                                                                                 |
+| **Catalog books & current prices**    | PostgreSQL `catalogdb`                                   | Catalog API    | Authoritative live product catalog; consulted over gRPC during checkout and optionally for display title enrichment on reads, never retroactively rewriting accepted order totals.                           |
+| **Post-checkout orchestration state** | Azure Durable Task Scheduler (`finance-taskhub`)         | Finance        | Independent orchestration state (`Placed`, `Completed`, `Cancelled`, `BasketDeletionFailed`, `Failed`) correlated by `OrderId`; never authoritative for Ordering's `Status`.                                 |
 
-Ordering's primary database is the authoritative system of record for buyer profiles, accepted orders, purchase-time items, and order events. Other data involved in the journey plays supporting roles:
+## Checkout snapshot rules
 
-- **Shopping basket:** Represents mutable customer intent before checkout; it is read when creating an order, not stored as an ongoing source of truth.
-- **Catalog details and prices:** Current product information is consulted during checkout, after which the accepted order keeps its own purchase-time price record.
-- **Cache storage:** Holds temporary performance caches along with short-lived coordination locks and duplicate-request checks.
-- **Finance workflow:** Tracks post-checkout coordination (such as clearing the basket and requesting customer emails) separately from the order's business status.
+During `POST /api/v1/orders`, Ordering API performs these deterministic snapshot steps:
 
-### Capturing the checkout snapshot
+1. Reads the authenticated customer's basket over gRPC (`basket.v1.BasketGrpcService/GetBasket`).
+2. Resolves every distinct `BookId` over gRPC (`book.v1.BookGrpcService/GetBooks`). Missing books fail validation with `404 Not Found` and abort order creation.
+3. Selects each item's checkout unit price using `book.PriceSale ?? book.Price` (active sale price if set, otherwise regular price).
+4. Persists immutable `OrderItem` records (`BookId`, `Quantity`, `Price`) under a buyer-scoped Redis lock (`order-create:{userId}`, 1-minute timeout) and computes the order total from those recorded line totals.
 
-When a customer checks out, Ordering reads the current basket and resolves each book through Catalog. For every item, Ordering records the book identifier, requested quantity, and unit price—selecting the sale price if one is active, or the regular price otherwise—and calculates the order total from those locked values.
+Subsequent edits to Basket API or Catalog API prices never modify an accepted order's items or total. Read endpoints may enrich output with current book titles for display, but stored purchase prices remain immutable.
 
-Future changes to the customer's basket or Catalog prices never rewrite an accepted order's items or total. Order read responses may display current book titles for convenience, but that display enrichment never replaces the stored purchase snapshot.
+## Redis coordination boundaries
 
-### Separate order and finance lifecycles
+Redis (`redis`) supports both performance caching and active write coordination in Ordering API:
 
-Ordering owns the order's business status (**New**, **Completed**, or **Cancelled**), while Finance coordinates basket cleanup and customer notifications:
+| Key pattern or mechanism            | TTL                         | Behavior and failure semantics                                                                                                                                                                                                                    |
+| :---------------------------------- | :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `{METHOD}:{PATH}:{x-request-id}`    | 3600s (1 hour)              | Created atomically (`When.NotExists`) before `POST`/`PATCH` handlers run. Duplicate requests receive `409 Conflict`. Automatically deleted if the handler throws an exception or returns `>= 500`. Does **not** store a replayable response body. |
+| `order-create:{userId}`             | 60s (1 minute)              | Distributed lock acquired after Basket/Catalog gRPC lookups, guarding only the PostgreSQL write. Contention throws `InvalidOperationException` (`"Other process is already creating an order"`).                                                  |
+| `IIntegrationEventIdempotencyGuard` | 24 hours                    | FusionCache-backed guard deduplicating inbound Kafka commands such as `DeleteBasketFailedCommand` by `message.Id`.                                                                                                                                |
+| FusionCache L1/L2 entries           | Configurable (2h fail-safe) | Non-authoritative response caching for Catalog lookups and dashboard reads.                                                                                                                                                                       |
 
-- Clearing the shopping basket does not automatically mark an order as **Completed**.
-- If basket cleanup fails, Ordering may mark the order as soft-deleted without changing its business status.
-- If Finance exhausts its timeout retries, it can cancel its own coordination workflow and request a cancellation email without cancelling the order in Ordering.
-- Sending a notification request does not prove an order status changed or that an email was delivered.
+:::warning
+Do not flush Redis broadly during incidents. Flushing removes active HTTP idempotency markers and buyer write locks alongside read caches, exposing concurrent checkouts to duplicate order creation.
+:::
 
-## 4. Trade-offs & Lessons Learned
+## Ordering vs. Finance boundary rules
 
-- **Immutable checkout snapshots vs. live catalog reads:** Copying prices at checkout protects historical totals from catalog edits, while still requiring live or cached catalog lookups if read APIs enrich responses with current book titles.
-- **Cache serves coordination, not just speed:** Because Ordering relies on temporary cache storage for creation locks and duplicate-request detection, flushing cache entries can disrupt in-flight coordination or duplicate protection—even though committed orders remain safely stored in the primary database.
-- **Eventual consistency for read projections:** Summary projections and dashboard caches are derived from order events and are convenient for reporting, but teams must consult the authoritative Ordering state rather than derived views or notification records when verifying order status.
+- **Ordering owns business status:** Only explicit calls to `POST /api/v1/orders`, `PATCH /api/v1/orders/{orderId}/complete`, and `PATCH /api/v1/orders/{orderId}/cancel` change an order's `Status`.
+- **Basket cleanup success:** `DeleteBasketCompleteCommand` is logged by Ordering API; the order remains `New`.
+- **Basket cleanup failure:** `DeleteBasketFailedCommand` calls `order.Delete()` (soft delete), hiding the order from standard queries without setting `Status` to `Cancelled`.
+- **Finance retry exhaustion:** When Finance reaches `MaxAttempts: 3` (30-minute timer intervals), Finance transitions its own orchestration status in `finance-taskhub` to `Cancelled` and publishes `CancelOrderCommand` to Notification. Finance never calls Ordering API to cancel the order.
+- **Email notifications:** Notification is a stateless worker with no order authority; email delivery never proves an order changed status.
 
-## 5. Technical Reference
+## Related documentation
 
-### Sources of truth
-
-| Data                            | Owner and role                                                                                       | Consistency                                                                     |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [[container\|order-database]]   | Authoritative Buyer profiles, Orders, purchase-time items, Order events, and durable message storage | PostgreSQL-backed                                                               |
-| [[container\|order-cache]]      | Distributed locks, idempotency markers, cached Catalog responses, and dashboard responses            | Transient; may affect coordination as well as read latency                      |
-| Shopping basket                 | Mutable customer intent before checkout                                                              | Read during Order creation; not copied as an authoritative basket               |
-| Catalog book details and prices | Current product information                                                                          | Resolved during checkout; not the source for an accepted Order's recorded price |
-| Finance saga                    | Post-checkout coordination state                                                                     | Separate persisted workflow, correlated by Order ID                             |
-
-### Checkout & ownership symbols
-
-- **Checkout creation:** [[service\|order-api]] creates [[entity\|order]] and [[entity\|order-item]] records (book ID, requested quantity, selected unit price: sale price if present else regular price, and derived Order total).
-- **Derived & transient stores:**
-  - Marten event streams persist Order placement, completion, and cancellation events.
-  - `OrderSummary` and asynchronous `OrderSummaryView` projections are derived from those events and do not replace the authoritative Order aggregate.
-  - Dashboard and Catalog response caches in [[container\|order-cache]] (Redis) are non-authoritative; Redis also stores creation locks and request markers for duplicate-request detection.
-- **Related ADRs:** [[adr\|adr-001-postgresql-order-system-of-record]], [[adr\|adr-002-preserve-checkout-purchase-snapshot]], and [[adr\|adr-003-separate-order-status-from-finance-saga]].
-
-<Footer />
+- Ordering change checklist reference — Pre-merge verification checklist and test commands.
+- Order and Finance status boundaries — Architectural rationale for separating Ordering and Finance lifecycles.
+- How to troubleshoot stalled or failed checkout basket cleanup — Incident triage for Finance retries and soft-deleted orders.
+- How to troubleshoot order creation conflicts and failures — Safe recovery for `409 Conflict` and Redis lock failures.

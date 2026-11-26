@@ -1,0 +1,16 @@
+flowchart LR
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	rating["Rating API\n(.NET 11 Minimal API)"]
+	cosmos["Azure Cosmos DB\n(ratingdb / feedbacks)"]
+	redis["Redis\n(FusionCache + Idempotency)"]
+	catalog["Catalog API\n(.NET 11 + catalogdb)"]
+	mcp["MCP Tools\n(Read-Only Catalog MCP)"]
+	foundry["Microsoft Foundry\n(LLM + Presidio PII)"]
+
+	gateway --> |"HTTPS: /rating/api/v1/feedbacks"| rating
+	rating --> |"EF Core Cosmos: /bookId"| cosmos
+	rating -->|"Cache + 24h Guard"| redis
+	rating --> |"Kafka: rating.feedback-create / delete"| catalog
+	catalog --> |"Kafka: catalog.book-update-rating-failed"| rating
+	rating --> |"MCP: get_book"| mcp
+	rating --> |"Agent Framework: rating-agent"| foundry

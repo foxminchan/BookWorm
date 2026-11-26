@@ -14,66 +14,73 @@ sidebar:
   badge: "gRPC"
 ---
 
-## 1. Context & Problem
+`ListBooksGrpc` invokes the internal `book.v1.BookGrpcService/ListBooks` gRPC unary RPC on **Catalog API** to search and list books with full `BookItem` metadata (descriptions, images, pricing, stock status, relationships, and rating summaries). **MCP Tools** calls this RPC to power its `search_catalog` tool.
 
-Internal platform services—especially AI assistants helping customers discover titles—need a fast way to search the Catalog and retrieve rich [[entity|book]] details in a single interaction. Relying on separate lookups for pricing, availability, ratings, and related catalog attributes would slow down discovery and complicate internal integrations.
+## Overview
 
-## 2. Business Value
+| Property                         | Value                                                                                                                                                                                                                                                                               |
+| :------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner (gRPC server)**          | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                                                                                                |
+| **Primary caller**               | **MCP Tools** (`mcptools`, `search_catalog` tool)                                                                                                                                                                                                                                   |
+| **Source**                       | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs`                                                                                                                                        |
+| **Protocol / format**            | gRPC unary RPC (`book.v1.BookGrpcService/ListBooks`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"`                                                                                                                                            |
+| **Authentication**               | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                                                                                                                                                                |
+| **Delegation, search & caching** | Dispatches `ListBooksQuery(Search: search)` with fixed defaults (`PageIndex = 1`, `PageSize = 20`, `OrderBy = "Name"`, `IsDescending = false`); uses Qdrant (`vectordb`) hybrid search (5-minute FusionCache) when `search` is non-empty and caches filtered pages for `60 seconds` |
+| **Contract version**             | `1.0.0`                                                                                                                                                                                                                                                                             |
 
-- **Rich single-call discovery**: Internal tools receive complete book context—descriptions, images, pricing, availability, [[entity|category]], [[entity|publisher]], [[entity|author]] details, and rating summaries—without stitching together multiple requests.
-- **Responsive customer assistance**: Optional keyword filtering enables quick catalog searches and recommendations for interactive assistants.
-- **Low-friction internal access**: Anonymous read access lets internal services query public catalog inventory without user-specific credentials.
+:::note
+Because `BookService.ListBooks` delegates to `ListBooksQuery` without exposing paging fields, responses are capped at the default first page of **20 books** sorted by `Name` ascending. Callers requiring multi-page traversal or price/relationship filters must use HTTP [[query|ListBooks]].
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-1. An internal consumer—such as [[service|mcp-server]]—sends a book search request to [[service|catalog-api]], optionally including a search phrase.
-2. If the search phrase is omitted or blank, the catalog returns its default list of [[entity|book]] records without applying a text filter.
-3. When a search phrase is provided, the catalog finds matching books and returns each record with its description, images, price, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary.
-4. The consuming service uses the returned collection to answer user catalog searches.
+### Request message (`ListBooksRequest`)
 
-## 4. Trade-offs & Lessons Learned
+| Field    | Protobuf type | Tag | Constraints                                  | Description                                                                         |
+| :------- | :------------ | :-- | :------------------------------------------- | :---------------------------------------------------------------------------------- |
+| `search` | `string`      | `1` | Optional; blank/whitespace treated as `null` | Free-text search term executed via hybrid vector search against Qdrant (`vectordb`) |
 
-- **Simplified search surface**: Exposing only an optional text search parameter keeps the internal contract lightweight for assistant queries, though internal callers needing price ranges or multi-attribute filtering must use the full query interface instead.
-- **Full metadata per item**: Including descriptions, relationships, and rating summaries on every returned book avoids follow-up calls, at the cost of larger payloads compared to lightweight summaries.
-- **Anonymous internal access**: Allowing unauthenticated internal reads reduces friction for service-to-service consumers, assuming only publicly shareable catalog data is returned and internal network boundaries are enforced.
+### Response message (`ListBooksResponse`)
 
-## 5. Technical Reference
+| Field   | Protobuf type       | Tag | Description                                                                                                                                                                  |
+| :------ | :------------------ | :-- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `books` | `repeated BookItem` | `1` | Up to 20 matching books with full metadata (empty collection if zero matches). See [[query\|GetBookDetailsGrpc]] for all `BookItem`, `DecimalValue`, and `BookStatus` fields |
 
-The `ListBooks` RPC returns matching [[entity|book]] records with their descriptions, images, pricing, availability status, [[entity|category]], [[entity|publisher]], [[entity|author]]s, and rating summary through the `book.v1` gRPC contract. It is an anonymous read operation exposed for internal service-to-service clients.
+### Protobuf contract
 
-- **Producer**: [[service|mcp-server]] invokes `BookService.ListBooksAsync` to power the `search_catalog` MCP tool.
-- **Consumer**: [[service|catalog-api]] handles the request by dispatching `ListBooksQuery`.
+<CodeGroup>
 
-<NodeGraph />
+```protobuf
+edition = "2023";
 
-### Contract
+package book.v1;
 
-Send a `ListBooksRequest` with an optional `search` string (empty or whitespace returns the default list without a search filter). The response is `ListBooksResponse`, containing a repeated collection of `BookItem` values.
+service BookGrpcService {
+  rpc ListBooks (ListBooksRequest) returns (ListBooksResponse);
+}
 
-### Schema
+message ListBooksRequest {
+  string search = 1;
+}
 
-<Schema file="schema.proto" lang="protobuf" title="ListBooks gRPC schema" />
-
-### Examples
-
-<CodeGroup dropdown>
-
-```csharp title="ListBooks gRPC example"
-using Grpc.Net.Client;
-using BookWorm.Catalog.Grpc.Services;
-
-using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
-var client = new BookGrpcService.BookGrpcServiceClient(channel);
-
-var response = await client.ListBooksAsync(new ListBooksRequest
-{
-    Search = "microservices"
-});
-
-foreach (var book in response.Books)
-{
-    Console.WriteLine($"{book.Name} ({book.AverageRating}/5)");
+message ListBooksResponse {
+  repeated BookItem books = 1;
 }
 ```
 
 </CodeGroup>
+
+## Error responses
+
+| Code / status        | Condition                                                                                      | Recovery behavior                           |
+| :------------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------------ |
+| `Unavailable` (`14`) | Catalog API (or backing Qdrant/PostgreSQL dependency during an uncached search) is unreachable | Retry within the budgeted resilience policy |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL/Qdrant persistence, and gRPC services.
+- [[service|mcp-server]] — Primary caller exposing the `search_catalog` MCP tool.
+- [[query|ListBooks]] — Public HTTP `QUERY /api/v1/books` supporting pagination and rich filters.
+- [[query|GetBookDetailsGrpc]] — Full `BookItem` field schema and single-book lookup.
+
+<NodeGraph />

@@ -1,0 +1,28 @@
+flowchart LR
+	customer["Customer\n(Browser)"]
+	staff["Store Staff\n(Browser)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	storefront["Storefront & Commerce\n(Next.js 16 MFEs)"]
+	backoffice["Backoffice\n(Next.js 16 App)"]
+	catalog["Catalog & Ingestion\n(.NET 11 + Azure Functions)"]
+	shopping["Basket API\n(.NET 11 + Redis)"]
+	ordering["Ordering API & Finance\n(.NET 11 + Durable Functions)"]
+	reviews["Rating API\n(.NET 11 + Cosmos DB)"]
+	conv["Chat API & MCP Tools\n(.NET 11 + Agent Framework)"]
+	platform["Notification & Scheduler\n(.NET 11 + Quartz.NET)"]
+
+	customer -->|"HTTPS"| gateway
+	staff --> |"HTTPS: /backoffice"| gateway
+	gateway -->|"HTTP"| storefront
+	gateway -->|"HTTP"| backoffice
+	gateway --> |"HTTP: /catalog"| catalog
+	gateway --> |"HTTP: /basket"| shopping
+	gateway --> |"HTTP: /ordering"| ordering
+	gateway --> |"HTTP: /rating"| reviews
+	gateway --> |"HTTP: /chatting"| conv
+	ordering -->|"gRPC"| shopping
+	ordering -->|"gRPC"| catalog
+	ordering -->|"Kafka"| platform
+	reviews -->|"Kafka"| catalog
+	conv -->|"MCP & A2A"| catalog
+	conv -->|"A2A gRPC"| reviews

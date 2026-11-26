@@ -10,86 +10,55 @@ badges:
     textColor: teal
 ---
 
-import Footer from "@catalog/components/footer.astro";
+Use this guide to navigate BookWorm's domain architecture documentation in the right order—from the top-level bounded-context map down to individual flows, engineering references, and operational runbooks. To set up your machine and run BookWorm locally, follow [[doc|development/000-local-quickstart]]; for the broader repository contributor overview, start with [[doc|development/001-developer-onboarding]].
 
-## 1. Context & Problem
+## Context and motivation
 
-BookWorm is an online bookstore covering book discovery, basket management, checkout, order tracking, customer feedback, and conversational assistance. Without a clear map of how these areas fit together and which team owns each decision, newcomers—whether architects, project managers, analysts, or developers—can easily misunderstand boundaries, route questions to the wrong group, or introduce changes in the wrong part of the platform.
+BookWorm spans 10 deployable .NET 11 backend services/functions and 3 Next.js 16 web applications across six bounded contexts. Reading individual endpoint docs or runbooks before understanding domain ownership leads contributors to place business rules in the wrong service or bypass explicit contracts. Following a top-down reading path builds an accurate mental model before you edit code.
 
-This guide serves as the entry point to [[domain|BookWorm]], explaining the platform's business scope, how documentation is organized, and where accountability lives.
+## How it works
 
-## 2. Business Value
+This reading path moves from whole-system architecture down to service contracts and operational runbooks.
 
-- **Faster onboarding**: Gives any new contributor a structured path from high-level business strategy down to system behavior and operational guides.
-- **Clear team accountability**: Removes ambiguity over who owns business rules, system operations, and domain decisions.
-- **Safer change delivery**: Reduces the risk of cross-team conflicts and accidental coupling by clarifying ownership boundaries up front.
-
-## 3. How It Works
+<MermaidFileLoader file="mermaids/01-getting-started-diagram-1.mmd" />
 
 ### Recommended reading order
 
-Navigate the documentation in five steps so you understand both what BookWorm does and why it is structured this way:
+1. **Whole-system map:** Read [[domain|BookWorm]] and the [[doc|arc42/00-c4-overview]] to see how all six bounded contexts and three edge apps fit together.
+2. **Owning subdomain:** Open the relevant bounded-context page ([[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], or [[domain|platform]]) to inspect its services, persistence stores, and invariants.
+3. **End-to-end runtime flows:** Review the affected flow under `explanation/architecture/flows/` (such as [[flow|user-checkout]] or [[flow|agent-orchestration]]) before altering cross-service messages.
+4. **Engineering standards and ADRs:** Check domain engineering checklists, [[doc|development/004-engineering-standards]], and [[doc|arc42/09-architecture-decisions]] before changing contracts or schemas.
+5. **Runbooks:** Consult the domain runbooks under `how-to/domain-runbooks/` when diagnosing production or staging incidents.
 
-1. Start with [[domain|BookWorm]] for strategic direction and the overall landscape map.
-2. Read the subdomain pages to understand business responsibilities and ownership boundaries.
-3. Review the system pages for concrete boundaries between major components.
-4. Consult guides and runbooks when handling operational issues or recurring change patterns.
-5. Check interaction agreements and flows before altering any cross-area behavior.
+### Subdomain ownership summary
 
-### Subdomains and ownership
+For full team charters and repository maintainers, see [[team|business-strategy]].
 
-Each business area has a designated domain owner accountable for its scope and business decisions:
+| Subdomain                      | Core responsibility                                                 | Recorded domain owner                                                       |
+| :----------------------------- | :------------------------------------------------------------------ | :-------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**        | Book metadata, pricing, availability, and hybrid vector search      | Business Strategy _(system co-owned by Platform Team and Contributor Team)_ |
+| **[[domain\|shopping]]**       | Customer-scoped mutable basket and pre-order checkout handoff       | Business Strategy                                                           |
+| **[[domain\|ordering]]**       | Accepted orders, purchase-time snapshots, and Finance checkout saga | Business Strategy                                                           |
+| **[[domain\|reviews]]**        | Individual customer feedback (`Cosmos DB`) and AI summaries         | Business Strategy                                                           |
+| **[[domain\|conversational]]** | Privacy-filtered multi-agent chat and read-only Catalog MCP tools   | Contributor Team                                                            |
+| **[[domain\|platform]]**       | Recurring Quartz jobs and stateless Kafka-to-SMTP email delivery    | Platform Team                                                               |
 
-| Subdomain                  | Responsibility                                            | Domain owner                |
-| -------------------------- | --------------------------------------------------------- | --------------------------- |
-| [[domain\|catalog]]        | Book information, pricing, availability, and search       | [[team\|business-strategy]] |
-| [[domain\|shopping]]       | Customer basket and pre-order checkout                    | [[team\|business-strategy]] |
-| [[domain\|ordering]]       | Accepted orders and their business lifecycle              | [[team\|business-strategy]] |
-| [[domain\|reviews]]        | Customer feedback and ratings                             | [[team\|business-strategy]] |
-| [[domain\|conversational]] | Customer-facing AI assistance and book discovery          | [[team\|contributor-team]]  |
-| [[domain\|platform]]       | Scheduled work and shared email notification capabilities | [[team\|platform-team]]     |
+## Design trade-offs
 
-### Team responsibilities
+| Decision                                                              | Benefits                                                                                                                               | Costs and limits                                                                                         |
+| :-------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- |
+| **Separate domain ownership from system implementation co-ownership** | Business stakeholders steer domain scope while Platform and Contributor engineers share technical stewardship (for example, `Catalog`) | Contributors must verify both domain boundaries and technical owners before proposing contract changes   |
+| **Dedicated reading guide separate from hands-on setup**              | Keeps architecture orientation concise and avoids duplicating `mise` / Aspire setup commands across pages                              | Developers looking to run code locally must follow the link to [[doc\|development/000-local-quickstart]] |
 
-| Team                        | How it contributes                                                                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [[team\|business-strategy]] | Owns the root BookWorm domain and the Catalog, Shopping, Ordering, and Reviews subdomains in the current catalog.                                      |
-| [[team\|contributor-team]]  | Develops and maintains the platform; it is the recorded owner of Conversational and implements systems and services across multiple subdomains.        |
-| [[team\|platform-team]]     | Maintains shared infrastructure and is the recorded owner of the Platform subdomain. It also co-owns the Product Catalog System with Contributor Team. |
+## Alternatives considered
 
-### Ownership boundaries to keep in mind
+- **Combining local setup, engineering standards, and domain orientation into one monolithic onboarding page:** Mixes Diátaxis tutorials, reference, and explanation, making the page too long for returning readers and prone to setup-command drift.
 
-- **Catalog** owns book details, prices, and availability. Other areas consume that information through their own agreed models.
-- **Shopping** owns the active basket before purchase. Clearing a basket does not prove an order was completed.
-- **Ordering** owns the accepted order and its official business status. Financial workflow progress or email delivery does not alter that status.
-- **Reviews** owns customer feedback. Displaying a rating summary in Catalog does not transfer ownership of the underlying reviews.
-- **Conversational** can answer questions and research options, but Catalog remains the source of book facts; conversational assistance does not directly view or modify live basket or order state.
-- **Platform** runs scheduled tasks and delivers notifications, without owning the business records of the areas it supports.
+## Related documentation
 
-## 4. Trade-offs & Lessons Learned
-
-- **Domain ownership vs. system co-ownership**: A single team may own business direction for a subdomain while different teams build or co-own the underlying systems (for example, [[system|product-catalog-system]] is co-owned by Platform Team and Contributor Team even though Business Strategy owns the Catalog subdomain). Separating business accountability from implementation ownership scales better, provided teams check resource-level ownership before acting.
-- **Discipline at boundaries**: Requiring changes to happen inside the owning context and cross boundaries only through explicit agreements adds upfront coordination, but prevents fragile hidden dependencies across teams.
-
-## 5. Technical Reference
-
-### Metadata and ownership conventions
-
-- Domain-level accountability is recorded in each subdomain's EventCatalog `owners` metadata field.
-- Exact system and service ownership should always be verified in the `owners` field on the resource itself (such as [[system|product-catalog-system]], co-owned by [[team|platform-team]] and [[team|contributor-team]]).
-
-### Cross-boundary integration rules
-
-- Make data and behavior changes inside the owning bounded context.
-- Communicate across bounded contexts only through documented APIs, events, commands, or queries.
-- Never access another context's database directly.
-
-### Pre-change checklist
-
-1. Read [[domain|BookWorm]] for strategic classification, business invariants, and the full context map.
-2. Open the relevant subdomain page and review its scope and systems.
-3. Read the target resource's engineering docs, architecture decisions, and message definitions before modifying a service or contract.
-4. Use subdomain guides and runbooks for common tasks and operational troubleshooting.
-5. Confirm every change belongs to the right owner, preserves context boundaries, and updates contracts alongside documentation.
-
-<Footer />
+- [[doc|development/000-local-quickstart]] — Guided local quickstart tutorial.
+- [[doc|development/001-developer-onboarding]] — Contributor onboarding overview.
+- Business capabilities and customer journeys — End-to-end customer journeys across domains.
+- Domain principles and boundaries — Ownership rules and pre-change boundary gate.
+- [[team|business-strategy]] — Canonical team charters and maintainers.
+- [[doc|arc42/12-glossary]] — Shared platform and domain terms.

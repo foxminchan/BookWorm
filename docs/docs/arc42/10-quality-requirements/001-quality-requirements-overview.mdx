@@ -9,80 +9,52 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+This page organizes BookWorm's quality requirements into three priority tiers (`P1`–`P3`), a nine-branch quality tree, and a scenario-mapping matrix connecting business concerns to the 17 measurable checks in [[doc|arc42/10-quality-requirements/002-quality-scenarios]]. Use it during architecture reviews to separate non-negotiable invariants from tradeable engineering goals.
 
-High-level architectural goals can easily remain abstract unless they are mapped to specific stakeholder concerns and concrete verification scenarios. Across BookWorm, teams need a shared way to decide which qualities are non-negotiable—such as order accuracy and access control—versus which qualities can be balanced against delivery speed or infrastructure cost.
+## Priority tiers
 
-This page bridges the chapter introduction in [[doc|arc42/10-quality-requirements]] and the detailed measurable tests in [[doc|arc42/10-quality-requirements/002-quality-scenarios]].
+These tiers evaluate detailed scenarios without replacing the ordered top-five goals in [[doc|arc42/01-introduction-and-goals/003-quality-goals]]. Lower-tier goals (`P2`, `P3`) must never silently weaken a `P1` invariant.
 
-## 2. Business Value
+| Tier               | Meaning                                                                                                        | Permitted compromise                                                                              |
+| :----------------- | :------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **P1 — Essential** | Protects business correctness, access boundaries, privacy, AI governance, and durable work.                    | No silent violation. Any unmet requirement needs explicit risk acceptance and a remediation plan. |
+| **P2 — Important** | Protects independent change, incident diagnosis, interactive responsiveness, recovery, and customer usability. | Trade-offs require recorded evidence and must not weaken any `P1` requirement.                    |
+| **P3 — Desirable** | Improves engineering effectiveness after essential and important requirements are met.                         | May be deferred with an explicit owner and review trigger.                                        |
 
-A structured quality overview helps business, product, operations, and engineering stakeholders make aligned decisions:
+## Quality tree
 
-- **Clear non-negotiables:** Separates essential correctness, privacy, and durability rules from nice-to-have improvements.
-- **Faster architecture reviews:** Connects each business concern to named reviewer groups and specific scenarios so nothing falls through the cracks.
-- **Shared vocabulary:** Gives technical and non-technical stakeholders a common map from customer impact to system design choices.
+The diagram below organizes BookWorm's nine quality concern areas and maps each branch to its `QR` scenario identifiers and highest priority tier.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/001-quality-requirements-overview-diagram-1.mmd" />
 
-BookWorm evaluates quality concerns using three priority tiers and nine concern areas that feed directly into detailed scenarios.
+## Quality concerns and scenario mapping
 
-### Priority convention
+Labels follow the pragmatic [arc42 Q42 model](https://quality.arc42.org/); one scenario can support multiple quality attributes.
 
-These tiers are a proposed way to evaluate the detailed scenarios. They do not replace the ordered top-five goals in section 1.2.
+| Quality concern                    | Q42 labels               | BookWorm-specific requirement                                                                                                            | Scenarios                          | Proposed reviewers                                         |
+| :--------------------------------- | :----------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------- | :--------------------------------------------------------- |
+| **Correctness**                    | `#reliable`              | Base purchases on authoritative **Catalog** and **Basket** facts; keep `Order` status distinct from post-checkout coordination outcomes. | `QR-01`, `QR-02`                   | Product stakeholders; Ordering and Shopping teams          |
+| **Interoperability**               | `#flexible`, `#testable` | Keep REST, gRPC, and Kafka contracts explicit, owned, and compatible with supported consumers.                                           | `QR-03`                            | Producer and consumer service teams                        |
+| **Deployability**                  | `#flexible`, `#operable` | Release compatible changes in one service without forcing unrelated services to redeploy.                                                | `QR-04`                            | Service and platform teams                                 |
+| **Modifiability**                  | `#flexible`, `#testable` | Change business rules inside the owning bounded context without cross-service database edits or hidden coupling.                         | `QR-05`, `QR-17`                   | Domain teams; architecture leadership                      |
+| **Operability**                    | `#operable`              | Identify the owning capability and actual stored or queued execution state of any failed or delayed operation.                           | `QR-06`                            | Operations and support teams                               |
+| **Reliability and recoverability** | `#reliable`, `#operable` | Preserve queued work, surface uncertain external deliveries, and validate availability and restoration objectives.                       | `QR-07`, `QR-08`, `QR-13`, `QR-14` | Catalog, Notification, platform, and operations teams      |
+| **Security and privacy**           | `#secure`                | Enforce service-specific **Microsoft Entra ID** policies and prevent sensitive-data disclosure across APIs, AI models, and telemetry.    | `QR-09`, `QR-10`, `QR-15`          | API and AI service teams; platform teams                   |
+| **Performance efficiency**         | `#efficient`             | Bound interactive customer latency under a reproducible workload, separately from asynchronous freshness.                                | `QR-12`                            | Product, Catalog, Shopping, Ordering, and operations teams |
+| **Usability and accessibility**    | `#usable`                | Provide clear validation and failure feedback and keep the core purchase journey keyboard- and screen-reader-accessible.                 | `QR-11`, `QR-16`                   | Product stakeholders; frontend teams                       |
 
-| Tier               | Meaning                                                                          | Permitted compromise                                                                                 |
-| ------------------ | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **P1 - Essential** | Protect business correctness, access boundaries, and durable work.               | No silent violation. An unmet requirement needs explicit risk acceptance and a remediation decision. |
-| **P2 - Important** | Protect independent change, diagnosis, responsiveness, and the customer journey. | Trade-offs require evidence and must not weaken a P1 requirement.                                    |
-| **P3 - Desirable** | Improve engineering effectiveness after essential and important requirements.    | May be deferred with an owner and a review condition.                                                |
+## Traceability to solution strategy
 
-### Nine quality concern areas
+- **`QR-01` and `QR-02`** refine **Correctness** through bounded-context data ownership and explicit separation of `Order` state from **Finance** saga and **Notification** outcomes.
+- **`QR-03`** refines **Interoperability** through Pact contract verification and Protocol Buffer compatibility checks.
+- **`QR-04`** refines **Deployability** through mixed-version release and rollback rehearsals.
+- **`QR-05` and `QR-17`** refine **Modifiability** through Vertical Slice Architecture, `BookWorm.ArchTests`, and `turbo boundaries`.
+- **`QR-06`** refines **Operability** through OpenTelemetry correlation, Quartz execution history, Durable Task state, and Kafka native dead-letter queues (DLQs).
 
-1. **Correctness:** Base purchases on authoritative facts and keep order status distinct from background coordination outcomes.
-2. **Interoperability:** Keep service interfaces explicit, owned, and compatible with supported consumers.
-3. **Deployability:** Release compatible changes in one service without forcing unrelated services to redeploy.
-4. **Modifiability:** Change business rules inside their owning capability without cross-service database edits or hidden coupling.
-5. **Operability:** Identify the owning capability and actual stored state of any failed or delayed operation.
-6. **Reliability and recoverability:** Preserve queued work, surface uncertain external deliveries, and validate availability and restoration objectives.
-7. **Security and privacy:** Enforce service-specific access rules and prevent sensitive-data disclosure across user interfaces, AI models, and operational logs.
-8. **Performance efficiency:** Bound interactive customer response times under reproducible load, separately from background freshness.
-9. **Usability and accessibility:** Provide clear validation and failure feedback and keep the core purchase journey accessible to all users.
+## Related architecture documentation
 
-## 4. Trade-offs & Lessons Learned
-
-- **Coverage map, not a compliance score:** The quality tree organizes BookWorm's actual concerns rather than claiming every generic industry quality characteristic applies.
-- **Strict hierarchy of compromise:** P2 and P3 goals (such as speed or developer convenience) must never silently weaken P1 essentials (such as authoritative pricing, access control, or durable work).
-- **Proposed reviewers, not final sign-off:** Reviewer roles listed for each concern are starting proposals; named approvers and agreed budgets still require formal stakeholder sign-off.
-
-## 5. Technical Reference
-
-### Quality tree diagram
-
-Labels use the pragmatic [arc42 Q42 model](https://quality.arc42.org/); one scenario may contribute to several qualities.
-
-<MermaidFileLoader file="mermaids/bookworm-quality-tree.mmd" />
-
-### Quality concern and scenario mapping
-
-| Quality concern                    | Q42 labels               | BookWorm-specific requirement                                                                                               | Scenarios                  | Proposed reviewers                                         |
-| ---------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------- |
-| **Correctness**                    | `#reliable`              | Base purchases on owned, authoritative facts and preserve the distinction between Order status and coordination outcomes.   | QR-01, QR-02               | Product stakeholders; Ordering and Shopping teams          |
-| **Interoperability**               | `#flexible`, `#testable` | Keep contracts explicit, owned, and compatible with supported consumers.                                                    | QR-03                      | Producer and consumer service teams                        |
-| **Deployability**                  | `#flexible`, `#operable` | Release a compatible service change without requiring unrelated releases.                                                   | QR-04                      | Service and platform teams                                 |
-| **Modifiability**                  | `#flexible`, `#testable` | Change a rule in its owning capability without cross-service database edits or hidden coupling.                             | QR-05, QR-17               | Domain teams; architecture leadership                      |
-| **Operability**                    | `#operable`              | Identify the owner and actual processing state of a failed or delayed operation.                                            | QR-06                      | Operations and support teams                               |
-| **Reliability and recoverability** | `#reliable`, `#operable` | Preserve queued work, expose uncertain delivery, and validate availability and restoration objectives.                      | QR-07, QR-08, QR-13, QR-14 | Catalog, Notification, platform, and operations teams      |
-| **Security and privacy**           | `#secure`                | Enforce service-specific access policies and prevent sensitive-data disclosure across API, model, and telemetry boundaries. | QR-09, QR-10, QR-15        | API and AI service teams; platform teams                   |
-| **Performance efficiency**         | `#efficient`             | Bound interactive latency under a reproducible workload, separately from asynchronous freshness.                            | QR-12                      | Product, Catalog, Shopping, Ordering, and operations teams |
-| **Usability and accessibility**    | `#usable`                | Give understandable validation and failure feedback and keep the core purchase journey accessible.                          | QR-11, QR-16               | Product stakeholders; client teams                         |
-
-### Traceability to the architectural strategy
-
-- **QR-01 and QR-02** refine correctness through owned state and explicit runtime outcomes.
-- **QR-03** refines interoperability through contract compatibility.
-- **QR-04** refines deployability through mixed-version release verification.
-- **QR-05** refines modifiability through local ownership and boundary checks.
-- **QR-06** refines operability through diagnosis of actual execution and persisted state.
-
-The architectural responses are summarized in [[doc|arc42/04-solution-strategy]]. The [[doc|arc42/09-architecture-decisions]] records their rationale; the linked ADRs remain authoritative for status and scope.
+- [[doc|arc42/10-quality-requirements/002-quality-scenarios]] — Detailed acceptance criteria and verification evidence for `QR-01`–`QR-17`.
+- [[doc|arc42/01-introduction-and-goals/003-quality-goals]] — Authoritative top-five priority order.
+- [[doc|arc42/04-solution-strategy]] — Architectural responses to these quality concerns.
+- [[doc|arc42/09-architecture-decisions]] — Authoritative status and rationale for governing decisions.
+- [[doc|arc42/11-risks-and-technical-debt]] — Open exposures linked to these scenarios.

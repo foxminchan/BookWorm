@@ -18,19 +18,72 @@ sidebar:
   badge: "POST"
 ---
 
+The `AnalyzeText` command (`POST /analyze`) requests PII detection from the internal **Presidio** Analyzer sidecar (`presidio-analyzer`). In BookWorm, **Chat API** and **Rating API** call this endpoint through `BookWorm.Chassis` before anonymizing user-supplied text.
+
 ## Overview
 
-The `AnalyzeText` command asks [[service|PresidioAPI]] Analyzer to detect PII in text. The request accepts either a single string or an array of strings and can restrict entity types, configure a score threshold, or request decision explanations.
+| Property                  | Value                                                                                                                                                                                                                                     |
+| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Data privacy sidecar (`presidio-analyzer`, image `ghcr.io/data-privacy-stack/presidio-analyzer:latest`)                                                                                                                                   |
+| **Source**                | `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/Clients/IPresidioAnalyzer.cs`, `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/PresidioContracts.cs`, `src/Integrations/BookWorm.Hosting.Presidio/PresidioResourceBuilderExtensions.cs` |
+| **Protocol / format**     | HTTP `POST /analyze`, `application/json` (container port `3000`; HTTPS with developer certificate locally, HTTP in publish mode)                                                                                                          |
+| **Authentication**        | Internal sidecar only (no Microsoft Entra ID token; not routed through the YARP API Gateway)                                                                                                                                              |
+| **Consumers in BookWorm** | **Chat API** (`chatting`), **Rating API** (`rating`) via `AddPresidio()` and `IPresidioService`                                                                                                                                           |
+| **Health check**          | `GET /health` on the `presidio-analyzer` endpoint                                                                                                                                                                                         |
 
-Analyzer and Anonymizer may be deployed at separate endpoints. Use the configured Analyzer address rather than assuming a shared service URL.
+:::note
+**Presidio** Analyzer (`presidio-analyzer`) and Anonymizer (`presidio-anonymizer`) run as separate containers with independent connection strings (`ConnectionStrings:presidio-analyzer` and `ConnectionStrings:presidio-anonymizer`). Never assume a shared base URL.
+:::
+
+## Parameters and fields
+
+### Request body (`application/json`)
+
+| Name                      | Type                   | Required | Default                                          | Constraints                           | Description                                                                                                  |
+| :------------------------ | :--------------------- | :------- | :----------------------------------------------- | :------------------------------------ | :----------------------------------------------------------------------------------------------------------- |
+| `text`                    | `string` or `string[]` | Yes      | —                                                | Non-empty text or array of strings    | Input text to scan for PII entities. BookWorm's `AnalyzerRequest` sends a single `string`.                   |
+| `language`                | `string`               | Yes      | `"en"` (BookWorm client)                         | Two-character ISO 639-1 language code | Language model used for PII recognition.                                                                     |
+| `correlation_id`          | `string`               | No       | —                                                | —                                     | Caller-supplied correlation identifier echoed for request tracing.                                           |
+| `score_threshold`         | `number`               | No       | `0.0` in Presidio's stock analyzer configuration | Floating-point confidence floor       | Minimum confidence score required to include a detection in the response. BookWorm omits this request field. |
+| `entities`                | `string[]`             | No       | —                                                | Valid Presidio entity names           | Optional allowlist of PII entity types (for example, `PERSON`, `EMAIL_ADDRESS`).                             |
+| `return_decision_process` | `boolean`              | No       | `false`                                          | —                                     | When `true`, includes recognizer decision-process metadata per detection.                                    |
+| `ad_hoc_recognizers`      | `object[]`             | No       | —                                                | Presidio recognizer objects           | Request-scoped custom pattern or deny-list recognizers.                                                      |
+| `context`                 | `string[]`             | No       | —                                                | —                                     | Surrounding context words that can boost recognizer confidence.                                              |
+
+### Response body (`200 OK`, `application/json`)
+
+For a single-string request, Presidio Analyzer returns a JSON array of detection objects. For a batch (`string[]`) request, it returns an array of detection arrays (one per input string).
+
+| Name                   | Type      | Required | Default | Constraints                                      | Description                                                                                                                                                                                                                                                  |
+| :--------------------- | :-------- | :------- | :------ | :----------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `entity_type`          | `string`  | Yes      | —       | Presidio entity label                            | Detected PII category (for example, `PERSON`, `EMAIL_ADDRESS`).                                                                                                                                                                                              |
+| `start`                | `integer` | Yes      | —       | `>= 0`                                           | Zero-based inclusive start character index in `text`.                                                                                                                                                                                                        |
+| `end`                  | `integer` | Yes      | —       | `> start`                                        | Zero-based exclusive end character index in `text`.                                                                                                                                                                                                          |
+| `score`                | `number`  | Yes      | —       | `0.0`–`1.0`                                      | Confidence score assigned by the recognizer.                                                                                                                                                                                                                 |
+| `analysis_explanation` | `object`  | No       | —       | Present when `return_decision_process` is `true` | Optional recognizer details: `recognizer`, `pattern_name`, `pattern`, `original_score`, `score`, `textual_explanation`, `score_context_improvement`, `supportive_context_word`, and `validation_result` (not deserialized by BookWorm's `AnalyzerResponse`). |
+
+The upstream schema types `recognizer`, `pattern_name`, `pattern`, `textual_explanation`, and `supportive_context_word` as strings; `original_score`, `score`, and `score_context_improvement` as numbers; and `validation_result` as a nullable boolean. These properties are optional in the schema. Examples show `null` for `pattern_name` and `pattern`, although those two properties are not marked nullable in the schema.
+
+The [upstream Presidio OpenAPI schema](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) defines the request field but no default. The current upstream [stock analyzer configuration](https://github.com/data-privacy-stack/presidio/blob/main/presidio-analyzer/presidio_analyzer/conf/default_analyzer.yaml) sets `default_score_threshold: 0`. BookWorm does not send a per-request threshold, so that source configuration uses `0.0`; because the container uses a mutable `latest` tag, this does not prove that a deployed image has not changed or overridden its configuration.
+
+## Behavior and side effects
+
+- **Read-only analysis:** `POST /analyze` performs stateless NLP and pattern-based PII detection and mutates no persistent state.
+- **BookWorm client defaults:** `PresidioService.AnonymizeAsync` (`src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/PresidioService.cs`) skips calls when `text` is null or whitespace, invokes `IPresidioAnalyzer.AnalyzeAsync(new AnalyzerRequest(text, Language: "en"))`, throws `JsonException` if the deserialized response is null, and returns the original text unchanged when the returned array is empty.
+- **PII logging restriction:** Do not log raw `text` payloads or unredacted detection excerpts when handling customer input.
+
+## Error responses
+
+The upstream OpenAPI document lists only `200 OK` for `POST /analyze`; it does not define error status codes or an error-body schema. The upstream [Analyzer API tests](https://github.com/data-privacy-stack/presidio/blob/main/e2e-tests/tests/test_api_analyzer.py) currently assert `500` with `{"error":"No matching recognizers were found to serve the request."}` for an unsupported language, and `400` for a malformed ad hoc recognizer. These are upstream test observations, not a contract for BookWorm's mutable `latest` image.
+
+## Related documentation
+
+- [[command|AnonymizeText]] — Transform text using detections returned by `AnalyzeText`.
+- [[service|PresidioAPI]] — Overview of the Presidio Analyzer and Anonymizer sidecars.
+- [[query|GetRecognizers]] — List active Presidio Analyzer recognizers.
+- [[query|GetSupportedEntities]] — List detectable PII entity types.
 
 <NodeGraph />
-
-## Request and response
-
-Send `application/json` with the required `text` and ISO 639-1 `language`. A `200 OK` response contains detected entity types, start and end offsets, and confidence scores. For a batch request, the response contains one result array per input string.
-
-## Schema
 
 <SchemaViewer
 	file="schema.json"

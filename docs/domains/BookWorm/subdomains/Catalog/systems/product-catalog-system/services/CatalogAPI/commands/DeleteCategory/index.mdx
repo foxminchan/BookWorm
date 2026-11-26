@@ -18,40 +18,55 @@ sidebar:
   badge: "DELETE"
 ---
 
-## 1. Context & Problem
+`DeleteCategory` permanently deletes a category record from **Catalog API** (`DELETE /api/v1/categories/{id}`) and returns `204 No Content`. The command rejects deletion with `400 Bad Request` when any active book references the category.
 
-Categories organize the bookstore catalog for browsing, filtering, and merchandising. Over time, temporary, duplicate, or discontinued categories must be retired so customers and staff do not see unused taxonomy entries. Without a formal removal capability, obsolete categories accumulate and degrade catalog navigation.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                             |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                              |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Categories/Delete/`                                                               |
+| **Protocol / format** | HTTP `DELETE`, path parameter only, empty response body (`204 No Content`)                                                        |
+| **Endpoint**          | Direct: `DELETE /api/v1/categories/{id}` (local HTTP `5100`, HTTPS `7187`); API Gateway: `DELETE /catalog/api/v1/categories/{id}` |
+| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)      |
+| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                          |
+| **Idempotency**       | Not idempotent across retries; repeating a completed delete returns `404 Not Found`; no `x-request-id` header is enforced         |
+| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-- **Cleaner catalog taxonomy:** Keeps browsing menus and category filters focused on active, meaningful groupings.
-- **Lightweight administration:** Lets authorized tools or administrators remove an unwanted category using only its unique identifier.
-- **Predictable state:** Gives callers an unambiguous confirmation when removal completes, or a clear notice if the category does not exist.
+## Parameters and fields
 
-## 3. How It Works
+### Path parameters
 
-1. A caller identifies the specific [[entity|category]] to remove using its unique identifier, without needing to supply any extra data.
-2. The catalog service checks whether a category with that identifier exists.
-3. If found, the category is permanently deleted and an empty confirmation is returned to the caller.
-4. If no matching category exists, nothing is modified and the service informs the caller that the category could not be found.
+`DELETE /api/v1/categories/{id}` accepts no request body.
 
-## 4. Trade-offs & Lessons Learned
+| Name | Type   | Required | Default | Constraints                                                          | Description                                 |
+| :--- | :----- | :------- | :------ | :------------------------------------------------------------------- | :------------------------------------------ |
+| `id` | `uuid` | Yes      | —       | Valid UUID (`CategoryId`); must not be referenced by any active book | Unique identifier of the category to delete |
 
-- **Permanent catalog change:** Deletion permanently removes the category rather than hiding it temporarily. Confirming that no active books depend on the category before removal helps preserve catalog integrity.
-- **Missing-record semantics:** Reporting an absent category as not found protects against mistyped identifiers. Workflows should treat an already-missing category as deleted only when that assumption is explicitly safe.
+## Behavior and side effects
 
-## 5. Technical Reference
+- **Referential integrity guard:** Before loading the category, `DeleteCategoryValidator` runs `BookFilterSpec([categoryId], null)` against active (non-soft-deleted) books. If any active book references the category, FluentValidation fails with `400 Bad Request` (`"Category has books and cannot be deleted"`).
+- **Hard delete and foreign-key handling:** `Category` does not implement `ISoftDelete`; `DeleteCategoryHandler` calls `repository.Delete(category)` to remove the row permanently from PostgreSQL (`categories`). For any soft-deleted book rows still referencing the category, `BookConfiguration.cs` configures `OnDelete(DeleteBehavior.SetNull)`, setting their `category_id` to `NULL`.
+- **Cache invalidation:** Dispatches `CategoryDeletedEvent` on save; `CategoryChangedEventHandler` removes `catalog:categories:v1` and invalidates FusionCache tags `book` and `books:list`.
+- **Vector index queueing:** PostgreSQL trigger `categories_vector_update` (`BEFORE UPDATE OR DELETE ON categories`) enqueues any linked `book_id` rows into `pending_vector_updates` for asynchronous Qdrant reconciliation by **Catalog Ingestion**.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                           | Recovery behavior                                                              |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------- |
+| `400 Bad Request`           | Category is still linked to one or more active books (`"Category has books and cannot be deleted"`), or `{id}` is not a valid UUID (`HttpValidationProblemDetails`) | Reassign or delete linked books first, or fix the UUID; do not retry unchanged |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                                                           | Acquire a valid Entra ID access token and retry                                |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                                                     | Request the required Entra ID app role and scopes                              |
+| `404 Not Found`             | No category exists with the supplied `{id}` (`{ "detail": "The requested resource was not found." }`)                                                               | Verify the UUID; treat as already absent only if your workflow allows it       |
+| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                                                            | Wait for the `Retry-After` interval before retrying                            |
+| `500 Internal Server Error` | Unhandled server or PostgreSQL failure (`ProblemDetails` with `traceId`)                                                                                            | Inspect Catalog API logs using `traceId`                                       |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[command|CreateCategory]] — Create a new category record.
+- [[command|UpdateCategory]] — Rename an existing category.
 
 <NodeGraph />
-
-### Endpoint & Contract
-
-- **Operation:** `DELETE /api/v1/categories/{id}`
-- **Path parameter:** `{id}` — UUID of the category resource to delete.
-- **Request body:** None.
-- **Success response:** `204 No Content` with an empty body.
-- **Missing resource response:** `404` when no category exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

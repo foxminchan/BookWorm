@@ -1,0 +1,16 @@
+flowchart LR
+	req["Incoming HTTP Request\n(via API Gateway)"]
+	rl["Rate Limiter\n(Concurrency + Fixed Window / Token Bucket)"]
+	idem["IdempotencyEndpointFilter\n(Ordering POST/PATCH: Redis SET NX)"]
+	val["ValidationBehavior\n(Mediator + FluentValidation)"]
+	handler["Command / Query Handler\n(Domain & Persistence)"]
+	err["Exception Handlers\n(Validation / NotFound / Global + LogFlush)"]
+
+	req -->|"HTTPS"| rl
+	rl -->|"Allowed"| idem
+	rl -->|"Quota Exceeded"| err
+	idem -->|"New x-request-id"| val
+	idem -->|"Duplicate Key (409)"| err
+	val -->|"Valid"| handler
+	val -->|"ValidationException (400)"| err
+	handler -->|"Unhandled / Domain Fault"| err

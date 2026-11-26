@@ -9,100 +9,50 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+BookWorm is an online bookstore and commerce platform built with .NET 11, Aspire 17, and Next.js 16 that supports book discovery, basket management, checkout, order lifecycle tracking, customer reviews, and AI-assisted guidance. To prevent data-ownership blur as capabilities grow, BookWorm decomposes its domain into six bounded contexts with explicit integration contracts and keeps commodity infrastructure outside its core business logic.
 
-BookWorm is an online bookstore and commerce platform designed to deliver a dependable end-to-end shopping experience—not merely a static list of products. Customers need to discover books, build a basket, submit a purchase, track their orders, share reviews, and receive conversational assistance.
+## Business purpose and user roles
 
-Supporting all of those activities inside a single, undifferentiated business model creates a common architectural problem: as capabilities grow, data ownership blurs, rules overlap, and a change in one area unexpectedly breaks another. BookWorm therefore organizes its platform as a portfolio of cooperating capabilities where each area retains clear ownership of its business meaning and data—for example, book facts remain authoritative in [[domain|catalog]], while [[domain|ordering]] takes ownership of an [[entity|order]] only after checkout acceptance.
+BookWorm serves two primary user groups through three Next.js 16 microfrontends (MFEs) routed behind a single YARP **API Gateway**:
 
-This introduction sets the high-level business purpose, capability boundaries, and external scope for the entire platform. It complements—rather than replaces—the detailed domain, service, contract, flow, and operational entries in the catalog.
+- **Customers:** Discover and search books, converse with an AI shopping assistant (**Storefront**), manage a persisted basket, submit checkout requests, track accepted orders (**Commerce**), and publish book reviews.
+- **Store administrators and business users:** Manage books, authors, categories, publishers, customer orders, buyer records, and feedback moderation through **Backoffice**, and monitor scheduled jobs through the Quartz Dashboard.
 
-## 2. Business Value
+## Platform scope and bounded contexts
 
-- **Dependable customer journey**: Shoppers browse authoritative book information and pricing, check out using their saved basket, and receive clear accountability for accepted orders, reviews, and assistance.
-- **Clear organizational ownership**: Each capability area owns its business rules and records, reducing cross-team friction and limiting the blast radius when requirements evolve.
-- **Clean external boundaries**: Relying on specialized external providers for identity, payment settlement, shipping fulfillment, email delivery, and AI model hosting keeps commodity operations outside BookWorm's core business scope.
-- **Shared alignment across roles**: Gives business stakeholders, product managers, analysts, architects, and engineers a common baseline before diving into detailed service or contract specifications.
+Each bounded context owns its domain rules and authoritative persistence. No service accesses another context's database directly.
 
-## 3. How It Works
+| Bounded context    | Deployable services                    | Authoritative responsibility                                                                                                                                       |
+| :----------------- | :------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Catalog**        | **Catalog API**, **Catalog Ingestion** | Authoritative book facts, authors, categories, publishers, pricing, cover assets, hybrid vector search, and derived rating summary                                 |
+| **Shopping**       | **Basket API**                         | Customer-scoped mutable pre-order `Basket` state stored in Redis                                                                                                   |
+| **Ordering**       | **Ordering API**, **Finance**          | Accepted `Order` aggregates, purchase-time snapshots, lifecycle statuses (`New`, `Cancelled`, `Completed`), and Durable Task post-checkout coordination            |
+| **Reviews**        | **Rating API**                         | Individual customer `Feedback` records in Azure Cosmos DB and AI-generated review summaries                                                                        |
+| **Conversational** | **Chat API**, **MCP Tools**            | Multi-agent book discovery and store-policy assistance grounded in Catalog and Reviews via Microsoft Agent Framework, AG-UI, A2A, and Model Context Protocol (MCP) |
+| **Platform**       | **Notification**, **Scheduler**        | Enabling capabilities—Kafka-triggered transactional emails and Quartz.NET scheduled jobs—without owning business domain state                                      |
 
-The [[domain|BookWorm]] platform divides responsibilities across six focused business and enabling capabilities:
+## System boundary and external dependencies
 
-- **[[domain|catalog]]**: Serves as the authoritative source for book information, pricing, and availability.
-- **[[domain|shopping]]**: Manages the customer's persisted [[entity|basket]] and guides the checkout experience using current Catalog information.
-- **[[domain|ordering]]**: Assumes ownership of an [[entity|order]]'s lifecycle and fulfillment tracking once a purchase is accepted at checkout.
-- **[[domain|reviews]]**: Captures and displays customer [[entity|feedback]] linked to books without taking over ownership of Catalog product data.
-- **[[domain|conversational]]**: Provides book discovery and store-assistance experiences grounded in Catalog information, without assuming ownership of product or order records.
-- **[[domain|platform]]**: Supplies shared supporting capabilities—such as scheduled background processing and email notification delivery—without altering or owning business state belonging to other capabilities.
+The diagram below shows the complete BookWorm platform boundary, its two user roles, its six internal bounded contexts, and its verified external providers.
 
-Around this core, BookWorm integrates with external systems and providers for customer authentication, payment settlement, physical order fulfillment, email delivery, and AI response generation. Their internal business logic and operations remain outside BookWorm's system boundary.
+<MermaidFileLoader file="mermaids/001-introduction-diagram-1.mmd" />
 
-The following high-level use case diagram summarizes BookWorm's principal customer-facing goals and external system interactions:
+### Verified vs. unimplemented external boundaries
 
-```plantuml
-@startuml
-left to right direction
-skinparam packageStyle rectangle
+- **Implemented external integrations:** **Microsoft Entra ID** handles user authentication, role/scope authorization (`admin`, `business_user`, `customer`), and Entra Agent Identities. **Microsoft Foundry** hosts the `chat` (`ModelRouter`), `decision` (`MicrosoftDecision1`), and `embedding` (Cohere `EmbedV40`) models. **SendGrid** SMTP (cloud) and **Mailpit** (local) deliver outbound emails. In cloud deployments, **Confluent Cloud** provides Kafka and **Qdrant Cloud** provides vector storage. Internal **Presidio** sidecars handle PII detection and anonymization.
+- **Out-of-scope conceptual boundaries:** External payment settlement gateways and physical shipping fulfillment providers are **not implemented** in the current BookWorm repository. **Finance** (`BookWorm.Finance`) is an Azure Functions + Durable Task Scheduler post-checkout saga that coordinates basket cleanup and notification commands—it does not process payments.
 
-actor Customer
-actor "Identity provider" as IdentityProvider
-actor "Payment provider" as PaymentProvider
-actor "Fulfillment provider" as FulfillmentProvider
-actor "Email delivery provider" as EmailProvider
-actor "AI model provider" as AIProvider
+## Architectural scope trade-offs
 
-rectangle "BookWorm commerce platform" {
-  (Discover and browse books) as Browse
-  (Manage basket) as Basket
-  (Complete checkout) as Checkout
-  (Track orders) as TrackOrders
-  (Submit a book review) as Review
-  (Get conversational assistance) as Assistance
-  (Authenticate customer) as Authenticate
-  (Settle payment) as SettlePayment
-  (Fulfill order) as FulfillOrder
-  (Send email notifications) as SendEmail
-  (Generate AI response) as GenerateResponse
-}
+- **Bounded contexts over a shared model:** Isolating domain data prevents hidden cross-service coupling and protects checkout invariants, at the cost of requiring explicit REST, gRPC, and Kafka contracts between services.
+- **Enabling platform vs. business ownership:** Keeping **Notification** and **Scheduler** strictly supportive prevents shared infrastructure from accumulating commerce logic or becoming a deployment bottleneck.
+- **Delegated commodity services:** Relying on **Microsoft Entra ID**, **Microsoft Foundry**, and managed SMTP/Kafka/Qdrant services lets teams focus on bookstore domain logic while enforcing strict boundary contracts.
 
-Customer -- Browse
-Customer -- Basket
-Customer -- Checkout
-Customer -- TrackOrders
-Customer -- Review
-Customer -- Assistance
-Customer -- Authenticate
-IdentityProvider -- Authenticate
-PaymentProvider -- SettlePayment
-FulfillmentProvider -- FulfillOrder
-EmailProvider -- SendEmail
-AIProvider -- GenerateResponse
-@enduml
-```
+## Related architecture documentation
 
-## 4. Trade-offs & Lessons Learned
-
-- **Bounded contexts over a shared business model**: Keeping capabilities separate prevents hidden data coupling and protects business invariants, at the cost of requiring explicit agreements and disciplined handoffs whenever two capabilities interact.
-- **Enabling platform vs. business owner**: Shared utilities such as scheduling and email delivery must remain strictly supporting infrastructure. Allowing shared utilities to take ownership of business rules or state creates bottlenecks and obscures accountability.
-- **External partner boundaries**: Delegating identity, payments, fulfillment, email, and AI hosting speeds delivery of core commerce features, while requiring BookWorm to treat those neighbors strictly through their external boundaries rather than relying on their internal operations.
-- **Audience and scope**: Business stakeholders use this view to align on scope, engineers use it to preserve ownership and contract boundaries, and operations and architecture teams use it to guide cross-cutting decisions (see [[doc|arc42/01-introduction-and-goals/004-stakeholders]]).
-
-## 5. Technical Reference
-
-- **Internal BookWorm domains and core entities**:
-  - Platform root: [[domain|BookWorm]]
-  - Product truth: [[domain|catalog]]
-  - Basket & checkout: [[domain|shopping]] (owns [[entity|basket]])
-  - Order lifecycle: [[domain|ordering]] (owns [[entity|order]])
-  - Customer reviews: [[domain|reviews]] (owns [[entity|feedback]])
-  - Assistance: [[domain|conversational]]
-  - Shared platform services: [[domain|platform]]
-- **External systems referenced in the catalog**:
-  - Identity provider: [[system|identity-provider]]
-  - Email delivery provider: [[system|sendgrid]]
-  - Additional neighbors (payment settlement, fulfillment execution, and AI model hosting) are mapped at the system boundary in [[doc|arc42/03-context-and-scope]].
-- **Related arc42 documentation**:
-  - Essential requirements: [[doc|arc42/01-introduction-and-goals/002-requirements-overview]]
-  - Stakeholder roles and concerns: [[doc|arc42/01-introduction-and-goals/004-stakeholders]]
-  - Architecture constraints: [[doc|arc42/02-architecture-constraints]]
-  - System context and neighbors: [[doc|arc42/03-context-and-scope]]
+- [[doc|arc42/01-introduction-and-goals/002-requirements-overview]] — Essential functional and architectural requirements (`BW-R1`–`BW-R8`).
+- [[doc|arc42/01-introduction-and-goals/003-quality-goals]] — Top five prioritized quality goals and acceptance evidence.
+- [[doc|arc42/01-introduction-and-goals/004-stakeholders]] — Stakeholder roles and their documentation needs.
+- [[doc|arc42/02-architecture-constraints]] — Technical, organizational, and coding constraints.
+- [[doc|arc42/03-context-and-scope]] — Detailed business and technical context views.
+- [[doc|arc42/00-c4-overview]] — Visual C4 Context and Container diagrams.

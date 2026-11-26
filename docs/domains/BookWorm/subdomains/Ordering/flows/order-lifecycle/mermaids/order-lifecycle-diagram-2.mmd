@@ -1,0 +1,8 @@
+stateDiagram-v2
+	[*] --> New: POST /ordering/api/v1/orders
+	New --> Completed: Explicit complete transition
+	New --> Cancelled: Explicit cancel transition
+	New --> SoftDeleted: DeleteBasketFailedCommand (IsDeleted = true)
+	Completed --> [*]
+	Cancelled --> [*]
+	SoftDeleted --> [*]

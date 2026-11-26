@@ -1,0 +1,7 @@
+flowchart LR
+	finance["Finance\n(Azure Durable Functions)"] --> |"Kafka: Place/Complete/CancelOrderCommand"| kafka["Kafka Broker\n(CloudEvents JSON)"]
+	kafka -->|"Wolverine consumer"| worker["Notification\n(.NET 11 Worker)"]
+	worker -->|"Check/set message.Id (24h TTL)"| redis["Redis\n(FusionCache Idempotency)"]
+	worker -->|"Render Orders/OrderEmail.mjml"| mjml["Mjml.Net + MIME\n(In-Process)"]
+	mjml -->|"SMTP port 587 (MailKit + Polly)"| smtp["Mailpit (Local) /\nSendGrid SMTP (Azure)"]
+	worker -->|"After retries (50ms/250ms/1s)"| dlq["Kafka Native DLQ\n(notification.dead-letter-queue)"]

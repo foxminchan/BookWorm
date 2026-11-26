@@ -14,39 +14,67 @@ related:
   - id: adr-bw-003-aspire-shared-service-defaults
   - id: adr-bw-010-cross-boundary-correlation
   - id: adr-bw-015-explicit-environment-configuration
+decisionMakers:
+  - platform-team
+x-scope: "Whole system"
 ---
 
-## Context
+## Context and problem statement
 
-Failures span HTTP, gRPC, messages, background work, and external dependencies. Isolated text logs cannot consistently explain where work failed or which capability owns the outcome.
+BookWorm executes user journeys across three Next.js 16 microfrontends, YARP API Gateway, eight ASP.NET Core / worker hosts, two Azure Functions apps, Kafka topics, and external AI/SMTP dependencies. Local unstructured text logs cannot connect failures across asynchronous boundaries or quantify latency and error rates reliably.
 
-## Decision
-
-Reuse shared structured logging and OpenTelemetry instrumentation, W3C trace context, and configured OTLP export. Preserve environment-sensitive sampling and verify host health endpoint mapping for each deployment. Use request and message context for diagnosis without logging raw request or response values.
-
-Process health and execution traces do not replace queries of the owning business state.
+BookWorm needs one vendor-neutral observability baseline that correlates logs, traces, and metrics across all hosts while minimizing sensitive data exposure and telemetry volume.
 
 ## Decision drivers
 
-- Diagnosis across independently executing services.
-- Consistent telemetry mechanisms without a mandatory production backend.
-- Data minimization and controlled telemetry volume.
+- **Cross-service diagnosis:** Correlate distributed spans, metrics, and structured logs across HTTP, gRPC, Kafka, Durable Functions, and frontend requests.
+- **Vendor neutrality:** Standardize on OpenTelemetry and OTLP export without hard-coding a single observability vendor inside application code.
+- **Privacy and cost control:** Redact personal data from logs and apply environment-appropriate trace and log sampling.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                         | Assessment                                                                   |
-| ----------------------------------- | ---------------------------------------------------------------------------- |
-| Local logs only                     | Has low setup cost but weakens cross-service diagnosis.                      |
-| Fully sample every production trace | Improves coverage while increasing volume and cost without an agreed budget. |
-| Hard-code one observability vendor  | Simplifies one deployment while exceeding the documented backend choice.     |
+1. Standardize on OpenTelemetry (`1.21.0`), OTLP export, structured logging with redaction, and environment-sensitive sampling
+2. Rely on local unstructured console logs per service
+3. Sample 100% of traces and logs unconditionally in all environments
+4. Hard-code a proprietary observability SDK across every service
 
-## Consequences
+## Decision outcome
 
-- Operators can correlate configured signals across boundaries.
-- Sampling can omit individual executions; export requires an endpoint and operational backend.
-- Production probes, redaction registration, retention, and alert thresholds need deployment verification.
-- No numerical service-level objective follows from instrumentation alone.
+Chosen option: **Standardize on OpenTelemetry (`1.21.0`), OTLP export, structured logging with redaction, and environment-sensitive sampling**, because it provides unified diagnostics in both the local Aspire Dashboard and Azure Container Apps monitoring backends without locking services to one telemetry vendor.
 
-## Evidence
+`BookWorm.ServiceDefaults` enables W3C `ActivityIdFormat`, ASP.NET Core / HttpClient / gRPC / Runtime / `BookWorm` metrics and traces (excluding `/health` and `/alive` noise), request latency telemetry, structured log enrichment, global and per-request log buffering, and OTLP export whenever `OTEL_EXPORTER_OTLP_ENDPOINT` is configured. Development uses `AlwaysOnSampler` and trace-based log sampling, whereas non-Development environments apply random probabilistic sampling. Azure Functions hosts (`finance`, `catalog-ingestion`) add `UseFunctionsWorkerDefaults()`, and the Next.js microfrontends (`storefront`, `commerce`, `backoffice`) emit OTLP traces through `@workspace/otel`. Services that handle personal data (such as Notification and Basket API) register redaction (`AddRedaction()`, `[PIIData]`). Health endpoints (`/health`, `/alive`) are mapped via `MapDefaultEndpoints()` in Development only; production probe paths and telemetry retention (Log Analytics: 90 days in Production, 30 days in non-Production) are configured at the hosting layer.
 
-See [[doc|arc42/08-crosscutting-concepts/004-observability]] and [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]].
+### Consequences
+
+- **Positive:** Developers inspect correlated frontend-to-backend traces locally in the Aspire Dashboard (`https://localhost:17290`) and operators query the same OTLP signals in cloud environments.
+- **Negative:** Probabilistic sampling in non-Development environments omits some individual executions, and telemetry export depends on a configured `OTEL_EXPORTER_OTLP_ENDPOINT` and backend collector.
+- **Follow-up:** Verify production health probes, alert thresholds, and redaction coverage during environment promotion; instrumentation alone does not establish numerical SLOs or replace querying authoritative business state.
+
+## Pros and cons of the options
+
+### Standardize on OpenTelemetry (`1.21.0`), OTLP export, structured logging with redaction, and environment-sensitive sampling
+
+- **Good**, because backend .NET services, Azure Functions, and Next.js frontends share W3C trace propagation and OTLP export.
+- **Good**, because `[PIIData]` redaction and probabilistic sampling control privacy risk and ingestion cost.
+- **Bad**, because teams must verify that OTLP endpoints and log-redaction registrations are active in every deployed environment.
+
+### Rely on local unstructured console logs per service
+
+- **Good**, because services require no telemetry exporter configuration.
+- **Bad**, because operators lose distributed span correlation, latency histograms, and automated error-rate dashboards.
+
+### Sample 100% of traces and logs unconditionally in all environments
+
+- **Good**, because every execution appears in the trace backend.
+- **Bad**, because high-traffic production ingestion inflates storage cost without an approved observability budget.
+
+### Hard-code a proprietary observability SDK across every service
+
+- **Good**, because one vendor's proprietary features work out of the box.
+- **Bad**, because it breaks portability between the local Aspire Dashboard and alternative cloud telemetry backends.
+
+## Verification and links
+
+- **Verified against:** `src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`, `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.ContainerApp.cs`, `src/Services/Finance/BookWorm.Finance/Program.cs`, `src/Services/Notification/BookWorm.Notification/Infrastructure/Senders/MailKit/MailKitSender.cs`, `src/Clients/packages/otel/`
+- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/004-observability]], [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]], [[doc|operational/002-observability-and-diagnostics]]
+- **Related ADRs:** ADR-BW-003, ADR-BW-010, ADR-BW-015, [[doc|arc42/09-architecture-decisions]]

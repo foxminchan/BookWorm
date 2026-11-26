@@ -1,0 +1,16 @@
+flowchart LR
+	browser["User Browser\n(Customer / Staff)"]
+	entra["Microsoft Entra ID\n(OIDC / JWT / Agent IDs)"]
+	gw["API Gateway\n(YARP Public Ingress)"]
+	fe["Storefront, Commerce, Backoffice\n(Next.js 16 + Better Auth)"]
+	apis["Backend APIs\n(Catalog, Basket, Ordering, Rating, Chat, MCP)"]
+	presidio["Presidio\n(Analyzer & Anonymizer :3000)"]
+	foundry["Microsoft Foundry\n(ModelRouter / Decision1)"]
+
+	browser -->|"HTTPS"| gw
+	gw -->|"HTTP Zones"| fe
+	fe <-->|"OAuth2 / OIDC via /entra"| entra
+	gw -->|"HTTPS + Entra ID JWT"| apis
+	apis -->|"Validate JWT & Roles/Scopes"| entra
+	apis --> |"HTTP/S: Anonymize PII"| presidio
+	apis --> |"HTTPS: Redacted Prompts"| foundry

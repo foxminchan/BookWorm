@@ -1,0 +1,8 @@
+flowchart LR
+	commerce["Commerce\n(Next.js 16 MFE)"] --> |"HTTPS: /basket/api/v1/baskets"| gateway["API Gateway\n(YARP)"]
+	gateway --> |"HTTP: /api/v1/baskets"| basket["Basket API\n(.NET 11 + gRPC)"]
+	ordering["Ordering API\n(.NET 11)"] --> |"gRPC: GetBasket"| basket
+	basket --> |"gRPC: GetBooks"| catalog["Catalog API\n(.NET 11 + gRPC)"]
+	basket --> |"Redis: basket:{customerId}"| redis["Basket Database\n(Redis)"]
+	kafka["Kafka Broker\n(Wolverine)"] -->|"PlaceOrderCommand"| basket
+	basket -->|"BasketDeletedComplete / Failed"| kafka

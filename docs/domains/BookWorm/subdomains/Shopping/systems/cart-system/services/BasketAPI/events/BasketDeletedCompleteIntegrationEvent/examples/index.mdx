@@ -1,104 +1,18 @@
 ---
-summary: Publish and consume the successful basket deletion outcome.
+summary: Usage examples for Basket deletion completed.
 ---
 
-## 1. Context & Problem
+## Event payload
 
-Engineering teams working on checkout coordination need a clear, end-to-end reference showing how the basket service reports successful cart cleanup and how the ordering workflow safely consumes that confirmation.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster delivery onboarding**: Provides a verified blueprint for publishing and handling the cleanup confirmation across services.
-- **Consistent order correlation**: Ensures the order reference, basket reference, and purchase total travel together so downstream steps can match the right order.
-- **Safer message handling**: Reinforces duplicate-safe processing so repeated message deliveries do not disrupt order coordination.
-
-## 3. How It Works
-
-1. When checkout cleanup deletes the customer's submitted basket, the basket service emits a completion notification containing the order reference, basket reference, and purchase total.
-2. The messaging platform routes this notification to the completion stream.
-3. The ordering workflow receives the notification and records the cleanup result against the order.
-4. Because message delivery guarantees at-least-once arrival, the consumer is structured so handling the same notification multiple times produces the same safe outcome.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Carrying coordination context in the payload**: Including the order reference and purchase total alongside the basket reference prevents extra read lookups on the consumer side, while requiring producer and consumer to keep those fields aligned.
-- **Consumer-side idempotency**: Relying on at-least-once delivery keeps publishing straightforward and resilient, placing the responsibility on consumers to tolerate duplicate messages.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Publish successful cleanup
-
-Basket publishes this event after the checkout workflow deletes the submitted
-basket. Wolverine uses the integration-message metadata to route it to
-[[channel|bookworm.&#123;env&#125;.basket.delete-complete]].
-
-- `orderId` correlates cleanup with the accepted order.
-- `basketId` identifies the deleted customer basket.
-- `totalMoney` carries the purchase total used by downstream coordination.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp BasketDeletedCompleteIntegrationEvent.cs
-[IntegrationMessageOwner(ServiceName = Services.Basket, TopicName = "delete-complete")]
-[MessageIdentity("BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent")]
-public sealed record BasketDeletedCompleteIntegrationEvent(
-    Guid OrderId,
-    Guid BasketId,
-    decimal TotalMoney
-) : IntegrationEvent;
-```
-
-```csharp PlaceOrderCommandHandler.cs
-if (basketDeleted)
+```json
 {
-    await bus.PublishAsync(
-        new BasketDeletedCompleteIntegrationEvent(
-            command.OrderId,
-            command.BasketId,
-            command.TotalMoney
-        )
-    );
-}
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Consume the cleanup outcome
-
-Ordering receives the successful outcome and records the coordination result
-for the order workflow. Consumers should make this handling idempotent because
-the Kafka channel provides at-least-once delivery.
-
-<CodeGroup dropdown>
-
-```csharp DeleteBasketCompleteCommandHandler.cs
-[WolverineHandler]
-public Task Handle(
-    DeleteBasketCompleteCommand message,
-    CancellationToken cancellationToken
-)
-{
-    logger.LogInformation(
-        "Basket deletion completed for Order {OrderId}, Amount: {TotalMoney}",
-        message.OrderId,
-        message.TotalMoney
-    );
-
-    return Task.CompletedTask;
+	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+	"creationDate": "2026-11-25T16:15:00Z",
+	"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
+	"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
+	"totalMoney": 59.98
 }
 ```
 

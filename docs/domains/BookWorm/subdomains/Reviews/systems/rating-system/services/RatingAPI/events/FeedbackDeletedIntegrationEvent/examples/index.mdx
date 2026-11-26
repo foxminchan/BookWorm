@@ -1,113 +1,18 @@
 ---
-summary: Publish a feedback-deleted event and remove the rating in Catalog.
+summary: Usage examples for Feedback deleted.
 ---
 
-## 1. Context & Problem
+## Event payload
 
-When a feedback record is removed in Reviews, Catalog must subtract that specific rating from the book's summary without querying the Reviews database or failing if the book itself has already been removed from the catalog.
-
-## 2. Business Value
-
-- **End-to-end alignment**: Gives architects, analysts, and developers a clear example of how deletion flows across service boundaries.
-- **Graceful edge-case handling**: Shows that missing books are handled safely without generating spurious errors or retries.
-- **Minimal cross-service coupling**: Demonstrates how passing the removed rating value avoids extra lookup calls between services.
-
-## 3. How It Works
-
-1. **Publish the deletion notification**: After committing a feedback deletion, the Reviews service maps its internal deletion event into a public notification carrying the book identifier, the deleted rating value, and the feedback identifier, and publishes it on the feedback-delete channel.
-2. **Deliver the message payload**: The messaging channel delivers those three fields to subscribers.
-3. **Subtract the rating in Catalog**: Catalog looks up the book; if present, it subtracts the rating from the book's summary. If the book does not exist, Catalog finishes cleanly without making any changes.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Carrying the rating value in the deletion event**: Because the feedback record is already deleted in Reviews, including the rating score in the event ensures Catalog can adjust its totals without needing a reverse lookup.
-- **Silent no-op on missing books**: Treating a missing book as a safe no-op prevents dead-letter buildup when a book has already been removed from Catalog.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Publish a deleted feedback rating
-
-Rating API maps the committed feedback-deleted domain event to the integration
-contract and publishes it to
-[[channel|bookworm.&#123;env&#125;.rating.feedback-delete]].
-
-- `bookId` identifies the Catalog book to update.
-- `rating` is removed from the book's denormalized rating summary.
-- `feedbackId` identifies the deleted feedback record.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp FeedbackDeletedIntegrationEvent.cs
-[IntegrationMessageOwner(ServiceName = Services.Rating, TopicName = "feedback-delete")]
-[MessageIdentity("BookWorm.Contracts.FeedbackDeletedIntegrationEvent")]
-public sealed record FeedbackDeletedIntegrationEvent(
-    Guid BookId,
-    int Rating,
-    Guid FeedbackId
-) : IntegrationEvent;
-```
-
-```csharp EventMapper.cs
-FeedbackDeletedEvent feedbackDeletedEvent => new FeedbackDeletedIntegrationEvent(
-    feedbackDeletedEvent.BookId,
-    feedbackDeletedEvent.Rating,
-    feedbackDeletedEvent.FeedbackId
-)
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Payload
-
-<CodeGroup dropdown>
+<CodeGroup>
 
 ```json
 {
-	"bookId": "11111111-1111-1111-1111-111111111111",
+	"id": "0193f1a2-4b02-7d8e-9f01-23456789abcd",
+	"creationDate": "2026-11-25T16:19:45Z",
+	"bookId": "0193f1a2-5555-7d8e-9f01-23456789abcd",
 	"rating": 5,
-	"feedbackId": "22222222-2222-2222-2222-222222222222"
-}
-```
-
-</CodeGroup>
-
-### Consume the rating update
-
-Catalog removes the rating when the book exists. A missing book is a no-op
-because there is no local projection to correct.
-
-<CodeGroup dropdown>
-
-```csharp FeedbackDeletedIntegrationEventHandler.cs
-[WolverineHandler]
-public async Task Handle(
-    FeedbackDeletedIntegrationEvent @event,
-    CancellationToken cancellationToken
-)
-{
-    var book = await repository.GetByIdAsync(@event.BookId, cancellationToken);
-
-    if (book is null)
-    {
-        return;
-    }
-
-    book.RemoveRating(@event.Rating);
-    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
+	"feedbackId": "0193f1a2-3333-7d8e-9f01-23456789abcd"
 }
 ```
 

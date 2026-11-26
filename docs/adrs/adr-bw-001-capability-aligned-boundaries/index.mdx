@@ -13,38 +13,67 @@ appliesTo:
 related:
   - id: adr-bw-006-service-owned-business-state
   - id: adr-bw-017-compatible-contract-evolution
+decisionMakers:
+  - contributor-team
+x-scope: "Whole system"
 ---
 
-## Context
+## Context and problem statement
 
-Catalog, Shopping, Ordering, Reviews, Conversational, and Platform change for different business reasons. A common business model or technical-layer decomposition would make changes cross ownership boundaries and obscure accountability.
+Catalog, Shopping, Ordering, Reviews, Conversational, and Platform evolve for distinct business reasons and at different paces. Organizing BookWorm around a shared business model or technical layers forces routine changes across ownership boundaries and obscures accountability for business outcomes.
 
-## Decision
-
-Retain the capability-aligned bounded-context decomposition. Each context owns its model and behavior; independently deployable services expose explicit contracts to other contexts. Shared infrastructure supplies technical mechanisms, not a common business layer.
-
-This records the whole-system decomposition, not the internal structure or workflow choice of any one system.
+BookWorm requires a whole-system decomposition rule that keeps business logic with its owning capability while allowing shared libraries to supply technical mechanisms.
 
 ## Decision drivers
 
-- Modifiability: keep a business-rule change with its owner.
-- Deployability: isolate compatible changes without requiring a platform-wide release.
-- Correctness: make responsibility for an accepted business outcome unambiguous.
+- **Modifiability:** Keep each business-rule change confined to a single owning capability.
+- **Deployability:** Release compatible changes independently without coordinating a platform-wide deployment.
+- **Correctness:** Assign unambiguous responsibility for every accepted business outcome.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                       | Assessment                                                                                           |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Single deployable monolith        | Simpler runtime coordination, but conflicts with the documented independent-service direction.       |
-| Modular monolith                  | Preserves logical modules with less distribution cost, but changes the established deployment model. |
-| Services split by technical layer | Separates technology while spreading one business change across multiple services.                   |
+1. Retain capability-aligned bounded contexts with independently deployable services
+2. Consolidate into a single deployable monolith
+3. Refactor into a modular monolith
+4. Split services by technical layer
 
-## Consequences
+## Decision outcome
 
-- Ownership and impact analysis follow business capabilities.
-- Cross-context work requires contracts, failure handling, and operational correlation.
-- Distribution increases deployment and diagnostic complexity; independence is conditional on compatible interfaces.
+Chosen option: **Retain capability-aligned bounded contexts with independently deployable services**, because it aligns service ownership, data authority, and release boundaries directly with BookWorm's six business domains.
 
-## Evidence
+Each bounded context owns its domain model, persistence, and runtime behavior, exposing explicit HTTP, gRPC, or Kafka contracts to other contexts. Shared packages under `src/BuildingBlocks/` provide technical mechanisms rather than a shared business layer. This record governs whole-system decomposition, not the internal design of any individual service.
 
-The [[doc|arc42/04-solution-strategy]] and [[doc|arc42/05-building-block-view]] establish the decomposition. This proposed record reconstructs its rationale; the recording date is not an original approval date.
+### Consequences
+
+- **Positive:** Impact analysis, code ownership, and domain evolution follow clear business capabilities across all 10 backend services and 3 frontend applications.
+- **Negative:** Cross-context workflows require explicit contracts, failure compensation, and distributed correlation, increasing operational and diagnostic complexity.
+- **Follow-up:** Enforce bounded-context dependency rules continuously through `tests/BookWorm.ArchTests` and confirm formal acceptance status with platform maintainers.
+
+## Pros and cons of the options
+
+### Retain capability-aligned bounded contexts with independently deployable services
+
+- **Good**, because business rules and schema changes stay with one accountable owner.
+- **Good**, because services can scale and deploy independently when contracts remain compatible.
+- **Bad**, because distributed execution adds network latency, partial failure modes, and observability overhead.
+
+### Consolidate into a single deployable monolith
+
+- **Good**, because in-process calls eliminate network hops and simplify local transactions.
+- **Bad**, because it conflicts with BookWorm's established independent-service architecture and couples release cycles across all domains.
+
+### Refactor into a modular monolith
+
+- **Good**, because logical modules preserve domain boundaries with lower infrastructure overhead.
+- **Bad**, because it reverses the established microservices deployment model and still shares a single release unit and runtime failure domain.
+
+### Split services by technical layer
+
+- **Good**, because teams can specialize in isolated technical tiers.
+- **Bad**, because a single business feature spans multiple services and blurs accountability for domain invariants.
+
+## Verification and links
+
+- **Verified against:** `BookWorm.slnx`, `src/Aspire/BookWorm.AppHost/AppHost.cs`, `tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj`
+- **Related architecture:** [[doc|arc42/04-solution-strategy]], [[doc|arc42/05-building-block-view]], [[doc|arc42/00-c4-overview]]
+- **Related ADRs:** ADR-BW-006, ADR-BW-017, [[doc|arc42/09-architecture-decisions]]

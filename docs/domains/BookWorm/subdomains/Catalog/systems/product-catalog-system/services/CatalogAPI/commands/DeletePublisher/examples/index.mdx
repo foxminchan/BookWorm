@@ -1,74 +1,48 @@
 ---
-summary: Delete a publisher from the Catalog API and handle missing-resource responses.
+summary: Usage examples for Delete publisher.
 ---
 
-## 1. Context & Problem
+## Delete a publisher with curl
 
-Admin portals and catalog maintenance integrations need a dependable way to remove outdated publisher records and respond properly when a publisher cannot be found. Without clear guidance on handling successful confirmations versus missing-record notices, client applications risk displaying stale publisher lists or repeatedly retrying invalid requests.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Accurate admin views:** Ensures client applications remove a publisher from local display only after receiving confirmation from the catalog.
-- **Reduced operational noise:** Discourages blind retries on incorrect identifiers by clearly separating missing records from completed deletions.
-- **Consistent integration behavior:** Gives engineering and QA teams a shared reference for expected success and missing-publisher paths.
-
-## 3. How It Works
-
-1. Before deleting a publisher, the operator or workflow verifies that no books still depend on that publisher.
-2. The client submits a removal request containing the publisher's unique identifier.
-3. Once the catalog confirms the removal succeeded, the client clears that publisher from its local state.
-4. If the catalog reports that the publisher does not exist, the client treats it as a missing resource rather than a completed deletion and verifies the identifier before retrying.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Strict missing-resource reporting:** Treating a missing publisher as an error surfaces stale UI state or wrong identifiers immediately instead of masking them as success.
-- **Pre-deletion verification:** Checking book dependencies ahead of time prevents accidental disruption to catalog records linked to that publisher.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### 1. Delete an existing publisher
-
-Delete by UUID. A successful deletion returns `204 No Content` and has no response body.
-
-#### Operational notes
-
-- Confirm that books no longer depend on the publisher before deleting it.
-- Treat `404` as a missing resource, not as a successful deletion.
-- Retry only after checking that the UUID is correct.
-
-#### Example response
-
-<CodeGroup dropdown>
-
-```ts
-const response = { status: 204, body: null };
+```bash
+curl --fail-with-body -i -X DELETE "<gateway-url>/catalog/api/v1/publishers/<publisher-id>" \
+  -H "Authorization: Bearer <access-token>"
 ```
 
 </CodeGroup>
 
-#### Using this example
+Where:
 
-Remove the publisher from local state after receiving `204 No Content`.
+- `<gateway-url>`: Base URL of the BookWorm API Gateway.
+- `<publisher-id>`: UUID of the publisher to delete.
+- `<access-token>`: Entra ID JWT satisfying the `business_user` policy.
 
-</Column>
+Expected response:
 
-<Column>
+<CodeGroup>
 
-<CodeGroup dropdown>
+```text
+HTTP/1.1 204 No Content
+```
 
-```ts delete-publisher.ts
-const publisherId = "5e4a1c9b-3f72-4b8d-a605-7c2e9f1d8430";
-const response = await fetch(`https://api.example.com/api/v1/publishers/${publisherId}`, {
+</CodeGroup>
+
+## Delete a publisher with TypeScript
+
+<CodeGroup>
+
+```typescript
+const response = await fetch("<gateway-url>/catalog/api/v1/publishers/<publisher-id>", {
 	method: "DELETE",
+	headers: { Authorization: "Bearer <access-token>" },
 });
 
 if (response.status === 404) {
 	throw new Error("Publisher was not found");
 }
+
 if (!response.ok) {
 	throw new Error(`DeletePublisher failed with ${response.status}`);
 }
@@ -76,12 +50,18 @@ if (!response.ok) {
 
 </CodeGroup>
 
-</Column>
+Where:
 
-</Columns>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway.
+- `<publisher-id>`: UUID of the publisher to delete.
+- `<access-token>`: Entra ID JWT satisfying the `business_user` policy.
 
----
+Expected response:
 
-### 2. Handle a missing publisher
+<CodeGroup>
 
-An unknown UUID returns `404` with problem details. Confirm the identifier before retrying.
+```text
+HTTP/1.1 204 No Content
+```
+
+</CodeGroup>

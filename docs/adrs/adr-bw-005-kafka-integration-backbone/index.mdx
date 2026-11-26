@@ -15,38 +15,67 @@ related:
   - id: adr-bw-010-cross-boundary-correlation
   - id: adr-003-finance-kafka-order-correlation
   - id: adr-001-notification-kafka-command-intake
+decisionMakers:
+  - platform-team
+x-scope: "Whole system"
 ---
 
-## Context
+## Context and problem statement
 
-BookWorm coordinates work across capabilities without requiring every consumer to finish inside the initiating request. Several documented flows already use Kafka through a shared event framework.
+BookWorm coordinates checkout orchestration, basket cleanup, email notifications, rating projections, and scheduled vector-index refreshes across independent services. Executing downstream work synchronously inside the initiating request couples latency and availability across bounded contexts.
 
-## Decision
-
-Retain Kafka through Wolverine as the configured asynchronous integration backbone for those flows. Producers and consumers use owned message contracts and routing metadata. A missing broker connection means the shared framework does not configure that transport; asynchronous capability must be verified in the deployed host.
-
-This is a whole-system transport choice, not a replacement for the Finance or Notification intake ADRs, nor a requirement to replace every local queue.
+BookWorm needs one standard asynchronous transport backbone for cross-capability integration events and commands without imposing a broker on services that have no asynchronous messaging role.
 
 ## Decision drivers
 
-- Decouple request latency from downstream processing.
-- Reuse the existing messaging framework and contract conventions.
-- Keep ownership explicit across asynchronous boundaries.
+- **Decoupling:** Isolate request latency and uptime from downstream asynchronous consumers.
+- **Standardization:** Reuse one messaging library, CloudEvents serialization format, topic-naming convention, and dead-letter queue pattern.
+- **Explicit ownership:** Keep message contracts, topic names, and partition keys owned by the publishing bounded context.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                                    | Assessment                                                                          |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Synchronous calls for all coordination         | Simplifies immediate outcomes but couples availability and execution time.          |
-| Different broker per integration               | Allows local choices but adds adapters and operational variation.                   |
-| Database polling for all cross-capability work | Can preserve local work but lacks the established shared integration contract path. |
+1. Use Apache Kafka through Wolverine as the configured asynchronous integration backbone
+2. Coordinate all cross-capability workflows through synchronous HTTP or gRPC calls
+3. Adopt different message brokers per bounded context
+4. Coordinate cross-capability work through shared database polling
 
-## Consequences
+## Decision outcome
 
-- Consumers can process independently of the originating request.
-- Broker deployment, routing, permissions, and failure diagnosis become operational responsibilities.
-- Ordering, replay, retention, and delivery guarantees must be checked for the actual configuration rather than assumed system-wide.
+Chosen option: **Use Apache Kafka through Wolverine as the configured asynchronous integration backbone**, because it decouples producers from consumers while standardizing serialization, correlation, partitioning, and dead-letter routing across messaging-enabled hosts.
 
-## Evidence
+Eight backend services connect to Kafka (`catalog`, `catalog-ingestion`, `basket`, `ordering`, `rating`, `notification`, `scheduler`, and `finance`), while Chat API and MCP Tools intentionally omit Kafka because they operate synchronously. `BookWorm.Chassis` configures Wolverine (`WolverineFx.Kafka` `6.65.1`) with CloudEvents JSON serialization, topic naming (`bookworm.{environment-kebab}.{owner-service}.{topic-name}` by default, or `{owner-service}.{topic-name}` when `AppendPrefix = false` as in `scheduler.process-vector-batch`), per-service dead-letter queues (`bookworm.{environment-kebab}.{service-kebab}.dead-letter-queue`), and jittered retries (`50ms`, `250ms`, `1s`). Locally, Aspire runs a Kafka container with Kafka UI; in cloud deployments, `ConnectionStrings__broker` connects to Confluent Cloud.
 
-See [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] and [[doc|arc42/07-deployment-view/001-infrastructure-level-1]]. Local flows remain in the related system ADRs.
+### Consequences
+
+- **Positive:** Services publish domain outcomes without waiting for downstream consumers to complete, and partition keys (`OrderId`, `BookId`, `FeedbackId`) preserve per-entity ordering.
+- **Negative:** Broker provisioning, topic permissions, consumer lag monitoring, and dead-letter triage become ongoing operational responsibilities, and a missing broker connection string disables Kafka transport registration on a host.
+- **Follow-up:** Verify per-service durability and idempotency boundaries under ADR-BW-008 and confirm message correlation rules under ADR-BW-010.
+
+## Pros and cons of the options
+
+### Use Apache Kafka through Wolverine as the configured asynchronous integration backbone
+
+- **Good**, because producers and consumers evolve and scale independently using one shared CloudEvents and topic-routing convention.
+- **Good**, because partitioned logs support replay and deterministic per-entity ordering.
+- **Bad**, because Kafka introduces operational complexity for retention, partitioning, and dead-letter recovery.
+
+### Coordinate all cross-capability workflows through synchronous HTTP or gRPC calls
+
+- **Good**, because callers observe immediate success or failure within one request.
+- **Bad**, because any downstream outage or latency spike blocks checkout, feedback submission, or maintenance jobs.
+
+### Adopt different message brokers per bounded context
+
+- **Good**, because each service can pick a broker optimized for its local pattern.
+- **Bad**, because every cross-context integration requires bridge adapters and duplicated operational runbooks.
+
+### Coordinate cross-capability work through shared database polling
+
+- **Good**, because local work stays inside a single relational database.
+- **Bad**, because polling breaks service-owned persistence boundaries (ADR-BW-006) and lacks BookWorm's standardized integration contracts.
+
+## Verification and links
+
+- **Verified against:** `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Aspire/BookWorm.AppHost/AppHost.cs`
+- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], [[doc|arc42/07-deployment-view]], [[doc|platform/003-data-ai-and-messaging-resources]]
+- **Related ADRs:** ADR-BW-008, ADR-BW-010, [[doc|arc42/09-architecture-decisions]]

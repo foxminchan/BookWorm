@@ -9,57 +9,52 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+BookWorm governs its AI workflows across **Chat API**, **Rating API**, and **MCP Tools** using layered controls from `BookWorm.Chassis.AI`, `Microsoft.AgentGovernance.Extensions.*` (`5.0.0`), **Presidio**, and **Microsoft Entra Agent Identities**. Every AI request is screened before reaching a language model, anonymized for PII across model boundaries, isolated per user identity, and constrained by declarative deny-by-default YAML tool policies.
 
-BookWorm's conversational and rating AI capabilities cross sensitive service and trust boundaries: they accept free-form customer text, send prompts to language model providers, and invoke internal tools on behalf of workflows. Without coordinated guardrails, AI features are exposed to prompt-manipulation attacks, accidental leakage of personally identifiable information (PII), excessive provider usage, or unauthorized tool execution.
+## Defense-in-depth AI governance pipeline
 
-BookWorm composes input screening, privacy anonymization, untrusted-content separation, and policy-driven tool governance around these AI paths so safety, privacy, and authorization are treated as a single boundary concern.
+This flowchart shows the five sequential governance layers applied to customer prompts, agent handoffs, and tool invocations.
 
-## 2. Business Value
+<MermaidFileLoader file="mermaids/005-ai-governance-diagram-1.mmd" />
 
-- **Customer privacy protection:** Personal information is masked before text leaves BookWorm for a language model and handled consistently on return.
-- **Safer AI behavior:** Suspicious prompt-injection attempts and oversized inputs are blocked before reaching specialized agents.
-- **Controlled tool access and cost:** Explicit allow/deny rules, rate limits, and overload circuit breakers ensure agents can only run approved actions within safe limits.
-- **Repeatable governance for product teams:** Shared building blocks make it straightforward to review and enforce consistent AI rules when adding or updating agent capabilities.
+## Five governance layers
 
-## 3. How It Works
+1. **Pre-agent input screening (`InputValidationExecutor`):** Before any specialist agent runs, **Chat API** trims empty messages, enforces maximum prompt length, checks suspicious injection patterns, and invokes `GovernancePromptSafetyEvaluator`. Rejected prompts terminate immediately without consuming model tokens.
+2. **Scoped routing and human-in-the-loop (HITL) disambiguation:** `DecisionRouterExecutor` calls **Microsoft Foundry** `MicrosoftDecision1` (`IDecisionClient`) to verify English language and bookstore domain scope. Low-confidence in-scope prompts pause at `RequestPort` for customer disambiguation rather than guessing a specialist route.
+3. **Privacy anonymization and untrusted-content isolation:** **Chat API** and **Rating API** wrap model clients with **Presidio** `PIIMiddleware` (anonymizing PII before prompts reach **Microsoft Foundry** `ModelRouter` and filtering outputs on return) and `GuardrailMiddleware` (marking user prompts and tool outputs as untrusted to separate them from system instructions).
+4. **Agent identity and tenant isolation:** **Chat API** enforces `UseClaimsBasedAgentIsolation()` so session state and tool calls stay bound to the authenticated caller's claims. Cross-service agent calls (`Chat` → `Rating` over A2A gRPC) authenticate using **Microsoft Entra Agent Identities** (`blueprintAppId`, `chatAgentId`, `ratingAgentId` provisioned via `entra-agent-identities.bicep`) with federated credentials.
+5. **Declarative deny-by-default policy enforcement:** `GovernanceKernel` loads `BookWorm.Chassis` `Policies/default.yaml` plus service-specific policy files using a `deny-overrides` conflict strategy, security rings, `DecisionToolSelectionMiddleware`, and a failure circuit breaker.
 
-BookWorm protects AI workflows through four sequential layers of defense:
+## Per-service governance policies
 
-1. **Pre-agent input screening:** Before a user request reaches an AI agent, the workflow trims empty input, enforces a maximum content length, checks for suspicious prompt-manipulation patterns, and consults an injection detector. Rejected requests stop immediately without reaching an agent.
-2. **Privacy anonymization:** Personal data in text sent to and returned from AI models is masked using a dedicated privacy service so sensitive customer details are minimized across model boundaries.
-3. **Untrusted content isolation and output guardrails:** Guardrail rules mark user-provided text and external tool outputs as untrusted—keeping them separate from trusted system instructions—and filter known injection or prompt-leakage patterns.
-4. **Policy-based tool governance:** Every tool an agent can call is governed by declarative policy files using a strict deny-by-default approach where denials override approvals. Policies enforce which tools are allowed, apply rate limits, and support a circuit breaker if failures spike.
+| Service                                  | Policy file                  | Default action | Key enforced rules & thresholds                                                                                                                                                                                                                                                                                                                                                                 |
+| :--------------------------------------- | :--------------------------- | :------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Shared baseline** (`BookWorm.Chassis`) | `Policies/default.yaml`      | `deny`         | `deny-overrides` conflict resolution, security rings, injection detection, circuit breaker                                                                                                                                                                                                                                                                                                      |
+| **Chat API** (`BookWorm.Chat`)           | `Policies/chat-agents.yaml`  | `deny`         | Per-agent DID allowlists (`did:mesh:bookworm:book`, `book-catalog-researcher`, `book-recommendation-researcher`, `qa`); explicitly denies catalog tools to `qa` (priority `70`); **Conversation Guardian** (`max_conversation_turns: 30`, `max_retry_cycles: 3`, `loop_window_seconds: 300`, escalation/offensive composite break at `0.8`); multi-turn injection detection                     |
+| **Rating API** (`BookWorm.Rating`)       | `Policies/rating-agent.yaml` | `deny`         | Blocks all write/mutation tools (priority `100`); blocks destructive SQL DDL/DML (`DROP`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `EXEC`, priority `95`); allows read tools (priority `50`); rate-limits `GetCustomerReviews` to `30/minute`; regex PII detection for email, phone, and credit cards                                                                                          |
+| **MCP Tools** (`BookWorm.McpTools`)      | `Policies/mcp-tools.yaml`    | `deny`         | Blocks dangerous tools (shell, file write/delete, raw HTTP, priority `100`); allows read-only catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`, priority `50`); rate-limits to `100/minute`; **MCP tool-poisoning detection** (invisible Unicode, hidden Markdown comments, hidden instructions, base64/hex encoded payloads, exfiltration, privilege escalation) |
 
-When teams add or modify an AI agent, they follow a standard governance checklist: grant only the minimum tools and data needed, keep untrusted content separated from system instructions, apply PII masking across privacy boundaries, test allow/deny/rate-limit/injection/failure scenarios, and verify policy configuration at startup.
+:::note
+**Explicit opt-in scope:** Governance policies and Presidio PII middleware are wired into **Chat API**, **Rating API**, and **MCP Tools** (Presidio on Chat and Rating; MCP governance on MCP Tools). New AI features or model integrations do not inherit these controls automatically unless registered at startup.
+:::
 
-## 4. Trade-offs & Lessons Learned
+## Developer change checklist
 
-- **Defense-in-depth is not a 100% guarantee:** Pattern matching, injection detectors, and policy rules reduce risk significantly, but no filter catches every possible adversarial prompt or sensitive string. Policies and tool permissions must be reviewed carefully—especially before production launch.
-- **Controls are capability-scoped, not universal:** Governance, PII masking, and guardrail components are explicitly wired into BookWorm's Conversational Chat and Rating summarization workflows. Teams must not assume new AI features or model integrations inherit these protections automatically without registering them.
-- **Least privilege and startup validation matter:** Relying on permissive defaults or misconfigured policy file paths can weaken boundaries silently; explicit per-service policies and startup checks are essential.
+When adding or modifying an AI agent, model integration, or MCP tool:
 
-## 5. Technical Reference
+1. Grant each agent only the minimum tools and data required, and declare explicit `allow` rules under `default_action: deny` in the service's YAML policy.
+2. Keep untrusted user input and external tool outputs separated from system instructions via `GuardrailMiddleware`.
+3. Register **Presidio** `PIIMiddleware` on every chat client whose prompts or responses cross an external model boundary.
+4. Add unit tests covering allow, deny, rate-limit, prompt-injection, and circuit-breaker failure cases for every new tool.
+5. Verify policy file copy-to-output paths and startup validation whenever editing `Policies/*.yaml`.
 
-### Protected AI Capabilities & Workflows
+## Trade-offs and operational limits
 
-- **[[domain|conversational]] / [[service|chat-api]]:**
-  - Pre-routing workflow trims empty input, enforces bounded content length, rejects suspicious prompt-injection patterns, and consults the configured governance injection detector before handoff to specialized agents; formats the selected agent's response.
-  - Agent clients register [[service|PresidioAPI]]-backed PII anonymization and guardrail middleware that marks user and tool content as untrusted and filters selected injection or prompt-leakage patterns.
-  - Agents are wrapped with the shared governance kernel, and function-call middleware applies governance policies to tool invocations.
-- **[[service|rating-api]] / [[agent|rating-agent]]:**
-  - Registers the same shared governance kernel, [[service|PresidioAPI]] PII anonymization, and chat-client guardrail building blocks for its summarization agent ([[agent|rating-agent]]).
-  - Scope note: these protections are evidenced in [[service|chat-api]] and [[service|rating-api]] only; verify registration on any other AI-enabled code or model integration.
+- **Defense-in-depth reduces risk but is not absolute:** Pattern matching, `MicrosoftDecision1` scope checks, and Presidio detectors cannot catch every novel adversarial prompt or obfuscated PII string. Review policy files and agent tool lists before every production release.
+- **Read-only commerce invariant:** No AI agent or MCP tool holds write permissions against **Catalog API**, **Basket API**, or **Ordering API**. Preserving this boundary prevents conversational ambiguity from triggering unintended purchases.
 
-### Governance Kernel & Policy Configuration
+## Related documentation
 
-- **Shared governance kernel:** Loads policy files from configuration, applies a `deny-overrides` conflict strategy, and supports security rings, prompt-injection detection, and a circuit breaker.
-- **Default & service policies:** The default policy defines deny-by-default tool access with explicit allow, deny, and rate-limit rules. [[service|chat-api]] and [[service|rating-api]] supply additional service-specific policy files; effective permissions are governed by those policy rules plus registered agent tools.
-
-### Developer Change Checklist
-
-1. Give each agent only the tools and data it needs, and define permitted operations in its policy file.
-2. Keep untrusted user and tool output separate from trusted instructions.
-3. Apply input and output PII handling ([[service|PresidioAPI]]) wherever model requests cross a privacy boundary.
-4. Test allow, deny, rate-limit, prompt-injection, and failure cases for each registered tool.
-5. Recheck policy file deployment paths and startup validation whenever policy configuration changes.
+- [[doc|arc42/06-runtime-view/004-conversational-book-discovery]] — Runtime sequence for `chat-workflow`, HITL `RequestPort`, MCP Tools, and A2A gRPC.
+- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] — Microsoft Entra ID roles, Agent Identities, and STRIDE threat model.
+- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — Rationale for routing with `MicrosoftDecision1`.

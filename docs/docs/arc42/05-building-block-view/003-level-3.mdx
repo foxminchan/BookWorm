@@ -9,95 +9,49 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+This Level-3 view opens `Finance` (`src/Services/Finance/BookWorm.Finance/`), the only building block expanded beyond Level 2 because its durable workflow coordinates post-checkout outcomes across Ordering, Shopping, and Platform. `Finance` runs as an isolated Azure Functions worker (`Azure.Functions.Sdk`) backed by Azure Durable Task Scheduler (`finance-taskhub`) and coordinates basket cleanup and order lifecycle emails—it does not process payments and uses no PostgreSQL database.
 
-Completing a customer checkout involves multiple independent capabilities: Ordering accepts and owns the order, Shopping must clear the customer's basket, and Platform Notification must send lifecycle emails. Embedding cross-capability follow-up logic directly inside Ordering or Shopping would blur responsibilities and tangle business rules with workflow tracking.
+## Level-3 component diagram
 
-To keep those boundaries clean, BookWorm isolates post-checkout coordination in the [[service|order-orchestration]] building block (Finance orchestration). This Level-3 view opens that coordination component to show its internal parts and how they interact with neighboring capabilities without duplicating step-by-step runtime sequences.
+This diagram shows how inbound Kafka triggers enter `OrderOrchestrator`, apply domain decisions and workflow steps, persist orchestration state in Durable Task Scheduler, and publish outbound commands over Kafka.
 
-## 2. Business Value
+<MermaidFileLoader file="mermaids/003-level-3-diagram-1.mmd" />
 
-- **Reliable post-checkout follow-through:** Tracks every order's coordination progress individually so basket cleanup and email notifications happen consistently across service boundaries.
-- **Clean business ownership:** Keeps Ordering focused on order truth, Shopping focused on basket state, and Notification focused on email delivery.
-- **Centralized resilience:** Manages workflow timeouts and retry policies in one dedicated coordination component instead of repeating coordination logic across services.
+## Internal components
 
-## 3. How It Works
+| Component                                | Responsibility                                                                                                                                                                                                                                                                       | Source path (`src/Services/Finance/BookWorm.Finance/`)                                     |
+| :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
+| **Kafka trigger functions**              | Consume Kafka integration events (`UserCheckedOutTrigger`, `OrderCompletedTrigger`, `OrderCancelledTrigger`, and basket deletion outcome triggers) and start or signal the correlated orchestration instance                                                                         | `Features/Orders/PlaceOrder/`, `OrderCompletion/`, `OrderCancellation/`, `BasketDeletion/` |
+| **OrderOrchestrator and workflow steps** | Drive deterministic durable orchestration per `OrderId` using `IOrderWorkflowStep` implementations (`BasketDeletedCompleteStep`, `BasketDeletedFailedStep`, `OrderCompletedStep`, `OrderCancelledStep`, `PlaceOrderTimeoutStep`) and `OrderSagaCompensations`                        | `Features/Orders/Orchestration/` (`Models/`, `Saga/`, `Steps/`)                            |
+| **Order aggregate and decider**          | Encapsulate pure workflow state transitions (`Order`, `OrderLifecycleDecider`, `OrderStatus`, `CustomerContact`, `Money`) and domain events (`OrderPlacedEvent`, `BasketDeletedEvent`, `OrderTimeoutRetriedEvent`, `OrderCompletedEvent`, `OrderCancelledEvent`, `OrderFailedEvent`) | `Domain/AggregatesModel/OrderAggregate/`, `Domain/Events/`                                 |
+| **Publish activities**                   | Execute side-effecting outbound Kafka command publication through Wolverine (`PublishPlaceOrderActivity`, `PublishCompleteOrderActivity`, `PublishCancelOrderActivity`, and basket outcome reporting activities)                                                                     | `Features/Orders/PlaceOrder/`, `OrderCompletion/`, `OrderCancellation/`                    |
+| **Integration contracts**                | Define the five inbound integration events and five outbound integration commands partitioned by `OrderId`                                                                                                                                                                           | `Contracts/IntegrationEvents/`, `Contracts/IntegrationCommands/`                           |
+| **Durable Task Scheduler state**         | Persist orchestration history, timers, and external event queues in `durable-task-scheduler` (`finance-taskhub`) plus Azure Storage host state (`storage`)                                                                                                                           | `src/Aspire/BookWorm.AppHost/Infra/durable-task-scheduler.bicep`                           |
 
-Finance orchestration acts as a dedicated coordinator for each order after checkout:
+## Contract boundary summary
 
-1. **Starts tracking at checkout:** When Ordering announces an order checkout, Finance opens a coordination record linked to that specific order.
-2. **Requests basket cleanup:** Finance asks Shopping to remove the submitted basket and waits for an explicit success or failure result, then reports that outcome back to Ordering.
-3. **Requests lifecycle emails:** As checkout and order status updates arrive—and when recipient details are available—Finance asks Platform Notification to send placement, completion, or cancellation emails.
-4. **Respects authority boundaries:** Throughout the workflow, Finance stores only its own coordination progress. Ordering remains the authority for order status, Shopping remains the authority for basket contents, and Notification remains the authority for email rendering and delivery.
+| Direction | Message contract                               | Kafka topic (`bookworm.{env}.*`)           | Peer service                 |
+| :-------- | :--------------------------------------------- | :----------------------------------------- | :--------------------------- |
+| Inbound   | `UserCheckedOutIntegrationEvent`               | `ordering.user-checked-out`                | `Ordering API`               |
+| Inbound   | `OrderStatusChangedToCompleteIntegrationEvent` | `ordering.order-status-change-to-complete` | `Ordering API`               |
+| Inbound   | `OrderStatusChangedToCancelIntegrationEvent`   | `ordering.order-status-change-to-cancel`   | `Ordering API`               |
+| Inbound   | `BasketDeletedCompleteIntegrationEvent`        | `basket.delete-complete`                   | `Basket API`                 |
+| Inbound   | `BasketDeletedFailedIntegrationEvent`          | `basket.delete-failed`                     | `Basket API`                 |
+| Outbound  | `PlaceOrderCommand`                            | `finance.place-order`                      | `Basket API`, `Notification` |
+| Outbound  | `CompleteOrderCommand`                         | `finance.complete-order`                   | `Notification`               |
+| Outbound  | `CancelOrderCommand`                           | `finance.cancel-order`                     | `Notification`               |
+| Outbound  | `DeleteBasketCompleteCommand`                  | `finance.delete-basket-complete`           | `Ordering API`               |
+| Outbound  | `DeleteBasketFailedCommand`                    | `finance.delete-basket-failed`             | `Ordering API`               |
 
-## 4. Trade-offs & Lessons Learned
+## Authority and boundary rules
 
-- **Coordination timeouts do not cancel orders:** A timeout or cancellation inside Finance reflects a coordination outcome only—it never automatically cancels the customer's order in Ordering.
-- **Requesting a notification does not prove delivery:** Publishing an email request confirms that Finance handed off the instruction, while Notification owns rendering and actual delivery tracking.
-- **Dedicated coordination store vs. embedded logic:** Maintaining a separate coordination component and data store adds an operational component to manage, but keeps cross-service workflow state out of core order and basket domains.
-- **Structural clarity without contract duplication:** Concrete message definitions, retry settings, and failure scenarios are maintained in the Finance system and flow documentation so this structural view stays focused on boundaries.
+- **Coordination state is separate from business status:** `Finance` persists orchestration progress per `OrderId` in Durable Task Scheduler, while `Ordering API` remains the sole authority for official order status (`New`, `Cancelled`, `Completed`).
+- **Timeouts are coordination outcomes:** A `PlaceOrderTimeoutStep` timeout or compensation inside `Finance` records a coordination outcome; it never mutates `Ordering API` status directly without an explicit message contract.
+- **Command publication does not prove email delivery:** Publishing `PlaceOrderCommand`, `CompleteOrderCommand`, or `CancelOrderCommand` transfers responsibility to `Notification`, which enforces Redis idempotency and SMTP submission independently.
+- **No payment processing:** Despite the service name, `Finance` handles post-checkout workflow orchestration rather than payment gateway execution.
 
-## 5. Technical Reference
+## Related documentation and architecture decisions
 
-This level refines the Level-2 [[service|order-orchestration]] building block, whose persisted saga coordinates checkout outcomes across Ordering, Shopping, and Platform Notification. It describes Finance's internal building blocks and the contracts at its boundary; it is not a runtime sequence.
-
-### 5.3.1 White box: Finance orchestration
-
-Finance is refined to Level 3 because its persisted saga coordinates checkout outcomes across Ordering, Shopping, and Platform Notification.
-
-#### Overview diagram
-
-```plantuml
-@startuml
-left to right direction
-skinparam componentStyle rectangle
-
-component "Ordering\ncheckout and status messages" as OrderAPI
-component "Shopping\ncleanup request and result" as Basket
-component "Platform Notification\nemail commands" as Notification
-
-package "Finance orchestration" {
-    component "Message intake" as Intake
-    component "Order saga state machine" as Saga
-    component "Command and result routing" as Outbound
-    component "Saga and message persistence" as Persistence
-    database "Finance database\nsaga state and message envelopes" as FinanceDB
-
-    Intake --> Saga
-    Saga --> Outbound
-    Saga --> Persistence
-    Persistence --> FinanceDB
-}
-
-OrderAPI --> Intake : checkout and Order status
-Basket --> Intake : deletion result
-Outbound --> Basket : delete submitted basket
-Outbound --> OrderAPI : report basket outcome
-Outbound --> Notification : request placement,\ncompletion, or cancellation email
-@enduml
-```
-
-**Purpose.** Finance consumes checkout and Order-status messages, records coordination state for each Order, requests Basket cleanup, handles cleanup outcomes, and requests lifecycle notifications. It owns saga state, not Order status, Basket contents, or email delivery state.
-
-| Internal building block                    | Responsibility                                                                                                                                          | Main source location                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| **Saga state machine**                     | Correlates workflow state by Order ID, tracks Basket cleanup and Order lifecycle outcomes, and applies configured timeout and retry behavior.           | [[service\|order-orchestration]] (`Saga/`)                                                 |
-| **Finance message contracts**              | Defines the messages consumed from Ordering and the commands/results exchanged with Ordering, Shopping, and Notification.                               | `Services/Finance/BookWorm.Finance/Constracts/`                                            |
-| **Message and persistence infrastructure** | Connects the saga to the message transport and persists saga and message-envelope state.                                                                | `Services/Finance/BookWorm.Finance/Infrastructure/`                                        |
-| **Finance database**                       | [[container\|finance-database]] stores Finance-owned saga state and message persistence; it is not the system of record for Orders, Baskets, or emails. | `domains/BookWorm/subdomains/Ordering/systems/finance-system/containers/finance-database/` |
-
-#### Internal relationships
-
-1. Finance message contracts provide the input and output types used by the saga and its service integrations.
-2. The saga state machine interprets checkout, Basket-deletion, and Order-status messages and updates its own correlated workflow state.
-3. Message infrastructure routes outgoing requests and results and persists the saga and message envelopes in the Finance database.
-4. Ordering remains authoritative for Order status; Shopping remains authoritative for Basket contents; Notification remains authoritative for email rendering and delivery state.
-
-#### Important interface behavior
-
-- An Order checkout event starts a Finance saga correlated to that Order.
-- Finance asks Shopping to delete the submitted Basket and handles the explicit success or failure result.
-- Finance emits notification commands for placement, completion, or cancellation where recipient details are available; command publication does not prove delivery.
-- A Finance timeout or saga cancellation is a coordination outcome, not by itself an Order cancellation.
-
-The concrete message names, retry settings, and failure cases are maintained in the Finance system and flow documentation so this structural view does not duplicate their contract definitions.
+- [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] — Step-by-step runtime sequence for checkout, retries, and compensation.
+- ADR-Finance-Durable-Task-Scheduler — Superseding decision moving Finance orchestration from PostgreSQL to Azure Durable Task Scheduler.
+- ADR-BW-005: Kafka integration backbone — Shared CloudEvents messaging over Kafka.

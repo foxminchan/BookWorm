@@ -18,44 +18,73 @@ sidebar:
   badge: "POST"
 ---
 
-## 1. Context & Problem
+The `CreateBuyer` command (`POST /api/v1/buyers`) creates a `Buyer` profile in **Ordering API** (v1.0.0) using the supplied shipping address while deriving the buyer's identifier and name from the authenticated Microsoft Entra ID token. External callers reach this endpoint through the YARP **API Gateway** at `/ordering/api/v1/buyers`.
 
-Before a customer can place orders or maintain delivery records in the Ordering subdomain, the platform needs a dedicated [[entity|buyer]] profile tied to their account. Because customers already sign in through the central identity system, asking them to re-enter their name or internal account identifiers would add friction and create the risk of mismatched customer records.
+## Overview
 
-This capability establishes a buyer profile from the customer's shipping address alone while deriving identity details directly from their verified sign-in session.
+| Property                    | Value                                                                                                                                              |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                   | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                            |
+| **Source**                  | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/Create/CreateBuyerEndpoint.cs`, `CreateBuyerCommand.cs`, `CreateBuyerValidator.cs`        |
+| **Protocol / format**       | HTTP `POST`, `application/json` request and response (API version `v1`)                                                                            |
+| **Gateway endpoint**        | `POST /ordering/api/v1/buyers`                                                                                                                     |
+| **Direct service endpoint** | `POST /api/v1/buyers` (local ports: HTTP `5244`, HTTPS `7203`)                                                                                     |
+| **Authentication**          | Microsoft Entra ID JWT — default policy: role `customer` or `admin` plus scopes `ordering_read` and `ordering_write`                               |
+| **Idempotency**             | Required `x-request-id` header (`IdempotencyEndpointFilter`, Redis key `POST:{path}:{x-request-id}`, 3600s TTL)                                    |
+| **ETag**                    | Not used                                                                                                                                           |
+| **Rate limit**              | `PerUserRateLimit` token bucket (30 burst, 20 tokens / 10s, queue limit 5) plus global concurrency (100) and IP fixed-window (30 req/min) limiters |
 
-## 2. Business Value
+## Parameters and fields
 
-- **Faster customer onboarding:** Customers only enter their street, city, and province, avoiding redundant personal information entry.
-- **Stronger identity integrity:** Binding the buyer profile directly to the verified sign-in identity prevents impersonation and keeps customer records consistent across orders.
-- **Immediate input quality:** Incomplete or invalid address submissions are rejected upfront with clear validation feedback before an order is attempted.
+### Request headers
 
-## 3. How It Works
+| Name           | Type     | Required | Default | Constraints               | Description                                                         |
+| :------------- | :------- | :------- | :------ | :------------------------ | :------------------------------------------------------------------ |
+| `x-request-id` | `string` | Yes      | —       | Non-empty, non-whitespace | Client-generated idempotency key tracked in Redis for 3600 seconds. |
 
-1. A signed-in customer submits their address details (street, city, and province) to create a [[entity|buyer]] profile.
-2. The ordering service checks that all required address fields are present and valid.
-3. Rather than accepting customer-supplied identity fields, the service derives the buyer's unique identifier and name directly from the customer's authenticated identity.
-4. Once validated, the buyer profile is created and the new buyer identifier is returned for use in subsequent ordering steps.
-5. If required address details are missing or invalid, the profile is not created and validation details are returned so the input can be corrected.
+### Request body (`application/json`, `CreateBuyerCommand`)
 
-## 4. Trade-offs & Lessons Learned
+| Name       | Type     | Required | Default | Constraints                                                                  | Description                     |
+| :--------- | :------- | :------- | :------ | :--------------------------------------------------------------------------- | :------------------------------ |
+| `street`   | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | Street address of the buyer.    |
+| `city`     | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | City or district of the buyer.  |
+| `province` | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | Province or state of the buyer. |
 
-- **Derived identity over user-supplied profile data:** Reading the buyer identifier and name from the authenticated identity prevents spoofing and identity drift, at the cost of requiring customers to be authenticated before creating a buyer profile.
-- **Focused initial address scope:** Requiring only street, city, and province keeps buyer creation lightweight and predictable, though supporting multiple saved addresses or extra contact fields later requires separate capabilities.
+### Response (`201 Created`)
 
-## 5. Technical Reference
+| Location          | Type                | Required | Default | Constraints                                             | Description                                                      |
+| :---------------- | :------------------ | :------- | :------ | :------------------------------------------------------ | :--------------------------------------------------------------- |
+| `Location` header | `string` (URI path) | Yes      | —       | Resolved via `GetBuyerEndpoint` (`/api/v1/buyers/{id}`) | Relative path to fetch the created buyer profile.                |
+| Response body     | `string` (UUID)     | Yes      | —       | `BuyerId` UUID matching caller's `NameIdentifier` claim | Newly created buyer identifier serialized as a JSON UUID string. |
 
-- **Operation:** `POST /api/v1/buyers`
-- **Content-Type:** `application/json`
-- **Required fields:** `street`, `city`, `province`
-- **Identity derivation:** Derives the Buyer ID and name from the authenticated customer's identity.
-- **Responses:**
-  - `201 Created`: Returns the Buyer ID as a JSON UUID.
-  - `400 Bad Request`: Returns validation problem details.
+## Behavior and side effects
+
+- **Identity derivation:** `CreateBuyerHandler` extracts `BuyerId` from `ClaimTypes.NameIdentifier` (must be a valid GUID) and `Name` from `ClaimConstants.Name` (`"name"` claim), falling back to `"anonymous"` if the name claim is absent. `BuyerConfiguration` constrains the `name` column to 20 characters (`DataSchemaLength.Small`).
+- **Persistence:** Persists the `Buyer` aggregate and its owned `Address` value object to PostgreSQL (`orderingdb`) inside a `[Transactional]` unit of work. Emits no domain events or Kafka integration events.
+- **PII redaction:** `Street`, `City`, and `Province` carry `[property: PIIData]` so structured logging redacts address fields automatically.
+- **Idempotency key lifecycle:** `IdempotencyEndpointFilter` claims `POST:{path}:{x-request-id}` in Redis for 3600 seconds. Reusing the same `x-request-id` returns `409 Conflict`. On HTTP `5xx` or an unhandled exception, the filter deletes the key so retries can proceed.
+
+`CreateBuyerHandler` derives the buyer ID from the authenticated user's ID, so a second request for that user can collide with the existing primary key even when its `x-request-id` is new. `GlobalExceptionHandler` does not map PostgreSQL/EF persistence exceptions specially; an unhandled database exception falls through to HTTP `500` with the generic problem title. This is inferred from the source exception mapping, not a live database test.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                                           | Recovery behavior                                                                                    |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Missing `x-request-id` header, empty/whitespace address field, field exceeding 50 characters (`ValidationProblemDetails`), or non-GUID `NameIdentifier` claim (`ArgumentException`) | Fix headers, payload fields, or token claims; do not retry unchanged.                                |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                                  | Acquire a fresh Entra ID access token and retry.                                                     |
+| `403 Forbidden`             | Authenticated caller lacks `customer`/`admin` role or `ordering_read`/`ordering_write` scopes                                                                                       | Request the required Entra ID role and scopes before retrying.                                       |
+| `409 Conflict`              | `x-request-id` was already processed for this path within the 3600-second Redis TTL (`ProblemDetails`)                                                                              | Treat as a duplicate submission and fetch the buyer profile with `GET /ordering/api/v1/buyers/{id}`. |
+| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limits                                                                                                                            | Wait for the `Retry-After` header interval before retrying.                                          |
+| `500 Internal Server Error` | Unhandled persistence error (such as duplicate `BuyerId` primary key or `Name` exceeding 20 characters)                                                                             | Inspect Ordering API logs and verify whether the buyer profile already exists.                       |
+
+## Related documentation
+
+- [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[command|UpdateAddress]] — Update the authenticated customer's address.
+- [[command|DeleteBuyer]] — Administrative permanent removal of a buyer profile.
+- [[entity|buyer]] — Buyer aggregate schema and address value object.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer
 	file="schema.json"

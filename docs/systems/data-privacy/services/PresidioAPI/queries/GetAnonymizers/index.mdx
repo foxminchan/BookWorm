@@ -18,27 +18,49 @@ sidebar:
   badge: "GET"
 ---
 
+`GetAnonymizers` queries the upstream Presidio Anonymizer HTTP service (`GET /anonymizers`) to list its built-in anonymization operator names. This endpoint is an upstream capability discovery query; BookWorm's runtime PII middleware calls only `POST /anonymize` with the `replace` operator and does not call `GET /anonymizers`.
+
 ## Overview
 
-The `GetAnonymizers` query lists the built-in operators available from [[service|PresidioAPI]] Anonymizer.
+| Property              | Value                                                                                                                                                   |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Owner**             | Data privacy external integration (**Presidio**, Aspire resource `presidio-anonymizer`)                                                                 |
+| **Source**            | `src/Integrations/BookWorm.Hosting.Presidio/PresidioResourceBuilderExtensions.cs`, `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/PresidioService.cs` |
+| **Protocol / format** | HTTP `GET /anonymizers`, JSON response (`application/json`)                                                                                             |
+| **Network & TLS**     | Internal sidecar on container port `3000` (HTTPS with developer certificate in local Aspire run mode; internal HTTP in Azure Container Apps)            |
+| **Authentication**    | None (internal service-to-service network boundary; not exposed through API Gateway)                                                                    |
+| **Contract version**  | `1.0.0`                                                                                                                                                 |
+
+:::note
+BookWorm's `PresidioService` (`IPresidioAnonymizer`) sends only `POST /anonymize` using the built-in `replace` operator with `"new_value": "<PII>"`. Use `GET /anonymizers` for diagnostics or when evaluating additional operators during development.
+:::
+
+## Parameters and fields
+
+### Request parameters
+
+`GET /anonymizers` accepts no path, query, or body parameters.
+
+### Response schema
+
+The `200 OK` response body is a JSON array of strings (`GetAnonymizersResponse`).
+
+| Field      | Type       | Required | Constraints                   | Description                                                                                                                            |
+| :--------- | :--------- | :------- | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| Root value | `string[]` | Yes      | Array of operator identifiers | Names of built-in anonymization operators supported by Presidio Anonymizer, such as `hash`, `mask`, `redact`, `replace`, and `encrypt` |
+
+## Error responses
+
+The upstream [Presidio OpenAPI document](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) lists only `200 OK` for `GET /anonymizers` and defines no non-200 response schema. The exact error statuses and payloads from the mutable `latest` image are not established by that specification.
+
+## Related documentation
+
+- [[service|PresidioAPI]] — Service overview and privacy middleware integration.
+- [[command|AnonymizeText]] — Runtime `POST /anonymize` command used by Chat API and Rating API.
+- [[query|GetRecognizers]] — List available PII recognizers in Presidio Analyzer.
+- [[query|GetSupportedEntities]] — List detectable PII entity types in Presidio Analyzer.
 
 <NodeGraph />
-
-## Response
-
-A `200 OK` response returns an array of supported operator names, such as `hash`, `mask`, `redact`, `replace`, and `encrypt`.
-
-### Query using cURL
-
-<CodeGroup dropdown>
-
-```sh GetAnonymizers.sh
-curl "$ANONYMIZER_URL/anonymizers"
-```
-
-</CodeGroup>
-
-## Schema
 
 <SchemaViewer
 	file="schema.json"

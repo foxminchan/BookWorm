@@ -10,109 +10,128 @@ badges:
     textColor: orange
 ---
 
-import Footer from "@catalog/components/footer.astro";
+Use this runbook when an order exists in **Ordering API** (`ordering`) but the customer's shopping basket remains populated, **Finance** (`finance`) has not reported a cleanup outcome, a cancellation email arrived for a `New` order, or an order disappeared after a basket-deletion failure. For Basket API Redis errors directly, see How to recover a failed basket cleanup.
 
-## 1. Context & Problem
+## Prerequisites
 
-Once checkout creates an Order, Finance's background workflow is responsible for clearing the customer's shopping basket. Because this process happens asynchronously across multiple services, basket cleanup can stall, fail explicitly, or exhaust its scheduled retries. When that happens, customers or operators may see a still-populated basket, receive a cancellation email while the Order still shows **New**, or find that the Order has disappeared from active view. Support and operations teams need a safe diagnostic and recovery playbook that keeps authoritative Order records intact.
+- Read access to **Ordering API** (`GET /api/v1/orders/{id}` or `GET /api/v1/orders`) with an authorized administrator Microsoft Entra ID token.
+- Read access to **Aspire Dashboard** (locally) or **Azure Log Analytics** (Azure Container Apps) for `ordering`, `finance`, `basket`, and `notification` logs and OpenTelemetry traces.
+- Read access to **Azure Durable Task Scheduler** (`finance-taskhub`) orchestration history for `OrderOrchestrator`.
+- Read access to **Kafka UI** (locally) or **Confluent Cloud** to inspect topic lag and dead-letter queues (DLQs).
 
-## 2. Business Value
+## Steps
 
-- **Protects commercial data integrity:** Prevents operators from issuing forced completions, forced cancellations, or manual database edits just to make screens match.
-- **Speeds up incident triage:** Gives responders a clear sequence to correlate Ordering and Finance records by Order ID and route issues to the right owning team.
-- **Prevents misdiagnosis of duplicate work:** Documents a known timeout behavior so teams preserve message history and understand why repeated notifications or basket commands may appear.
+<Steps>
+<Step title="Check the authoritative order status in Ordering API">
 
-## 3. How It Works
+Query Ordering API first and record the order's `Status` separately from Finance's workflow state. Never infer order status from basket contents, Finance custom status, or emails.
 
-**Common symptoms:**
+<CodeGroup>
 
-- An Order was created, yet the buyer's basket still appears to contain items.
-- Finance has not reported a basket-deletion result.
-- A cancellation email was requested even though the Order still reads **New**.
-- The Order is no longer visible after a basket-deletion failure.
+```bash
+curl -sS -H "Authorization: Bearer <admin-token>" \
+  "https://<gateway-host>/ordering/api/v1/orders/<order-id>"
+```
 
-**Investigation & recovery flow:**
+</CodeGroup>
 
-1. **Verify Order status first:** Look up the Order when visible and record its business status separately from Finance's workflow state.
-2. **Correlate across services:** Use the Order ID to confirm whether the checkout event was published and whether Finance started its corresponding workflow.
-3. **Interpret the basket-cleanup outcome:**
-   - **Success:** Finance reports completion to Ordering; the Order remains **New** (cleanup success does not complete the Order).
-   - **Explicit failure:** Finance reports the failure to Ordering, and Ordering hides the Order from active view if it still exists without changing its business status.
-   - **No outcome:** Finance retries on a bounded schedule (an initial attempt plus two timed reissues, exhausting on the third timeout). Upon exhaustion, Finance marks its workflow cancelled and may request a cancellation email if recipient details exist, without cancelling the Order in Ordering.
-4. **Watch for known timeout reissues:** Under current Finance behavior, successful basket cleanup does not cancel the scheduled timeout. An open workflow can therefore hit later timeouts and reissue the placement command to both Basket and Notification, causing repeated work.
-5. **Recover safely:** Never infer Order status from basket contents, Finance workflow state, or emails. Do not trigger completion or cancellation just to match a soft-deleted state, do not manually edit records as a first response, and preserve the Order ID, timestamps, and workflow history when escalating.
+Where:
 
-## 4. Trade-offs & Lessons Learned
+- `<admin-token>`: Valid Microsoft Entra ID bearer token with the `admin` role and `ordering_read` scope.
+- `<gateway-host>`: API Gateway hostname (or local Aspire gateway address).
+- `<order-id>`: UUID of the affected order.
 
-- **Bounded retries vs. indefinite retries:** Limiting timed retries to a fixed number of attempts prevents stalled workflows from looping indefinitely, while requiring operator escalation if a transient outage outlasts the retry window.
-- **Uncancelled timers on open workflows:** Because Finance does not currently cancel its timeout after successful cleanup, downstream Basket and Notification consumers can receive duplicate commands, and responders must not assume single-delivery notifications.
-- **No manual record patching:** Avoiding ad-hoc edits or artificial status transitions preserves an accurate audit trail for root-cause investigation.
+If the endpoint returns `404 Not Found` for a previously created order, note that Ordering API may have soft-deleted the record after receiving `DeleteBasketFailedCommand`.
 
-## 5. Technical Reference
+</Step>
+<Step title="Correlate the checkout event and Finance orchestration by Order ID">
 
-### Symptoms
+Inspect OpenTelemetry traces and logs for `<order-id>` across `ordering` and `finance`:
 
-- An Order was created, but the buyer's basket still appears populated.
-- The Finance workflow has not reported a basket-deletion outcome.
-- A cancellation notification was requested even though the Order still reads
-  **New**.
-- The Order is no longer visible after a basket-deletion failure.
+- Confirm `ordering` published `UserCheckedOutIntegrationEvent` to `bookworm.<env>.ordering.user-checked-out`.
+- Confirm `finance` started an `OrderOrchestrator` instance in `finance-taskhub` and inspect its custom status payload (`OrderId`, `Status`, `BasketDeleted`, `TimeoutRetryCount`, `FailureReason`).
 
-### Diagnose
+Where:
 
-1. Retrieve the Order using `GET /api/v1/orders/{id}` when it is visible. Record
-   its status separately from Finance's saga state.
-2. Correlate Ordering and Finance activity by Order ID. Check whether
-   [[event\|UserCheckedOutIntegrationEvent]] was published and whether Finance
-   created the corresponding saga.
-3. In [[service\|order-orchestration]], inspect the processing of
-   [[command|PlaceOrderCommand]] and the Basket deletion-result messages:
-   [[event|BasketDeletedCompleteIntegrationEvent]] and
-   [[event|BasketDeletedFailedIntegrationEvent]].
-4. Interpret the result:
-   - Success causes Finance to report
-     [[command\|DeleteBasketCompleteCommand]]; it does not complete the Order.
-   - Failure causes Finance to report
-     [[command\|DeleteBasketFailedCommand]]. Ordering soft-deletes the Order
-     if it still exists, without changing its business status.
-   - With no result, Finance retries according to its persisted timeout
-     workflow. The checked-in configuration uses a 30-minute delay and
-     `MaxAttempts: 3`: the initial command plus two reissues, with exhaustion
-     on the third timeout.
-5. After retry exhaustion, Finance marks its saga Cancelled and can request a
-   cancellation email when recipient details are available. It does not call
-   Ordering's cancellation endpoint.
+- `<env>`: Environment kebab-case segment (for example, `development`, `staging`, or `production`).
 
-The current Finance behavior does not cancel the timeout after successful
-basket cleanup. A still-open saga can therefore receive later timeouts and
-reissue [[command|PlaceOrderCommand]]; the command is consumed by both Basket and
-Notification, so repeated processing can repeat work.
+</Step>
+<Step title="Inspect basket cleanup messages and dead-letter queues">
 
-### Recover
+Check Kafka consumer lag and DLQ depth for the checkout cleanup topics:
 
-- Confirm the Order's actual status through Ordering; do not infer it from
-  basket contents, Finance saga state, or an email.
-- If an explicit basket failure was reported, treat the resulting soft delete
-  separately from Order status. Do not issue a completion or cancellation
-  operation just to make the visible state match the saga.
-- If the saga has no recorded outcome after its configured retries, inspect
-  the relevant service and message-processing logs, then escalate to the
-  responsible team. Do not manually edit saga or Order records as a first
-  response.
-- If repeated [[command|PlaceOrderCommand]] processing is observed after cleanup
-  succeeded, preserve the Order ID, message timestamps, and saga history for
-  investigation; do not assume Notification delivery was exactly once.
+- Outbound placement command: `bookworm.<env>.finance.place-order` (consumed by `basket` and `notification`).
+- Basket cleanup outcomes: `bookworm.<env>.basket.delete-complete` and `bookworm.<env>.basket.delete-failed` (consumed by `finance`).
+- Ordering cleanup notifications: `bookworm.<env>.finance.delete-basket-complete` and `bookworm.<env>.finance.delete-basket-failed` (consumed by `ordering`).
+- Native per-service DLQs: `bookworm.<env>.basket.dead-letter-queue`, `bookworm.<env>.ordering.dead-letter-queue`, and `bookworm.<env>.notification.dead-letter-queue`.
 
-### Escalation
+Do not copy raw message payloads containing customer email addresses or PII into incident tickets.
 
-- Contact [[team\|contributor-team]] for Finance saga and message-processing
-  issues.
-- Contact [[team\|business-strategy]] for Order API, Order status, or
-  soft-delete behavior.
-- Include the Order ID, environment, observed saga state, message outcome,
-  and timestamps in the incident report.
+</Step>
+<Step title="Interpret the orchestration outcome and known timer behavior">
 
-See [[adr\|adr-004-finance-bounded-scheduled-retries]] and
-[[adr\|adr-005-finance-separate-workflow-and-order-status]].
+Match the observed Finance custom status to the exact runtime behavior in `OrderOrchestrator`:
 
-<Footer />
+- **`BasketDeleted: true` and `Status: Placed`:** Finance sent `DeleteBasketCompleteCommand` to Ordering API. Ordering logs the event and keeps the order `New`—cleanup success does not complete the order.
+- **`Status: BasketDeletionFailed`:** Finance sent `DeleteBasketFailedCommand` to Ordering API, which soft-deleted the order (`order.Delete()`) without transitioning `Status` to `Cancelled`.
+- **`TimeoutRetryCount` incrementing up to `MaxAttempts: 3`:** Finance runs a 30-minute timer (`MaxRetryTimeout: 00:30:00`) per loop iteration and reissues `PlaceOrderCommand` on timeout. Upon exhausting 3 attempts, Finance transitions its own status to `Cancelled` and publishes `CancelOrderCommand` to Notification (if recipient details exist), without calling Ordering API to cancel the order.
+
+> [!WARNING]
+> In the current `OrderOrchestrator` loop, a new 30-minute timer starts on each iteration even after `BasketDeleted` becomes `true` while the order remains open (`New`). If that timer fires, Finance reissues `PlaceOrderCommand`. Basket API deduplicates by `OrderId` (24-hour Redis guard), whereas Notification deduplicates by `message.Id`, so reissued commands can trigger duplicate customer emails.
+
+</Step>
+<Step title="Recover safely without manual state patching">
+
+- Restore any unhealthy dependency (`basket`, `redis`, `finance`, `ordering`, or Kafka broker connectivity) so pending messages drain through normal consumers.
+- Do not issue `PATCH /api/v1/orders/{orderId}/complete` or `PATCH /api/v1/orders/{orderId}/cancel` to make Ordering match a soft-deleted record or a timed-out Finance orchestration.
+- Do not manually edit rows in `orderingdb` or orchestration history in `finance-taskhub` as a first response.
+- If repeated `PlaceOrderCommand` dispatches occurred after `BasketDeleted: true`, preserve `<order-id>`, timestamps, and orchestration history and escalate to the Finance/Ordering maintainers.
+
+</Step>
+</Steps>
+
+## Verification
+
+Confirm that the authoritative order state, orchestration status, and message queues are consistent:
+
+<CodeGroup>
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" \
+  -H "Authorization: Bearer <admin-token>" \
+  "https://<gateway-host>/ordering/api/v1/orders/<order-id>"
+```
+
+</CodeGroup>
+
+Expected output (for an active order):
+
+<CodeGroup>
+
+```text
+200
+```
+
+</CodeGroup>
+
+Confirm in telemetry and Kafka monitoring that:
+
+- No new errors appear in `finance`, `basket`, or `ordering` logs for `<order-id>`.
+- Per-service DLQ depth has stopped growing.
+- Ordering API `Status` matches the expected commercial state (`New`, `Completed`, or `Cancelled`), recorded independently from Finance custom status.
+
+## Troubleshooting
+
+| Symptom                                                                                         | Cause                                                                                                                                                          | Fix                                                                                                                     |
+| :---------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| Order is `New`, basket still has items, `TimeoutRetryCount` increases every 30 minutes          | `basket` consumer or `redis` is unavailable, or `PlaceOrderCommand` landed in `bookworm.<env>.basket.dead-letter-queue`                                        | Restore `basket` / `redis` connectivity and follow How to recover a failed basket cleanup                               |
+| Customer received a cancellation email, but `GET /api/v1/orders/<order-id>` still returns `New` | Finance exhausted `MaxAttempts: 3` timeouts, marked its orchestration `Cancelled`, and sent `CancelOrderCommand` to Notification without canceling in Ordering | Verify whether checkout should proceed or be explicitly canceled in Ordering; do not assume Ordering canceled the order |
+| `GET /api/v1/orders/<order-id>` returns `404 Not Found` after checkout                          | Basket deletion returned `false`, triggering `BasketDeletedFailedIntegrationEvent` → `DeleteBasketFailedCommand` → `order.Delete()` soft delete                | Confirm `BasketDeletionFailed` in `finance-taskhub` and escalate to Ordering owners with `<order-id>` and timestamps    |
+| Duplicate order-placed emails arrive every 30 minutes while order stays `New`                   | Open `OrderOrchestrator` loop creates a new 30-minute timer even after `BasketDeleted: true`; reissued `PlaceOrderCommand` carries a new `message.Id`          | Preserve `<order-id>`, orchestration history, and message timestamps and escalate to Finance maintainers                |
+
+## Related documentation
+
+- Order and Finance status boundaries — Architectural model separating Ordering status from Finance orchestration.
+- How to recover a failed basket cleanup — Basket-side triage and recovery steps.
+- How to troubleshoot order creation conflicts and failures — Triage for `POST /api/v1/orders` errors and Redis locks.
+- Ordering consistency and data ownership reference — Authoritative stores and integration boundaries.

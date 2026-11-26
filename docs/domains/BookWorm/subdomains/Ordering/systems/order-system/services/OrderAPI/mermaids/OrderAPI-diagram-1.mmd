@@ -1,0 +1,7 @@
+flowchart LR
+    gateway["API Gateway\n(YARP)"] -->|"HTTP / SSE: /api/v1/*"| ordering["Ordering API\n(.NET 11 + Marten)"]
+    ordering -->|"gRPC: GetBasket"| basket["Basket API\n(.NET 11 + gRPC)"]
+    ordering -->|"gRPC: GetBooks / GetDashboard"| catalog["Catalog API\n(.NET 11 + gRPC)"]
+    ordering -->|"SQL + Event Store + Outbox"| pg["Order Database\n(PostgreSQL orderingdb)"]
+    ordering -->|"Locks + Idempotency + Cache"| redis["Order Cache\n(Redis)"]
+    ordering <-->|"Kafka: Checkout / Status / Cleanup"| kafka["Kafka Broker\n(Wolverine)"]

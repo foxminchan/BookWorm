@@ -1,0 +1,33 @@
+sequenceDiagram
+	participant Finance as Finance\n(Azure Durable Functions)
+	participant Kafka as Kafka Broker\n(CloudEvents JSON)
+	participant Notif as Notification\n(.NET 11 Worker)
+	participant Redis as Redis\n(Idempotency Guard)
+	participant Smtp as Mailpit / SendGrid\n(SMTP :587)
+	participant DLQ as Kafka DLQ\n(notification.dead-letter-queue)
+
+	Finance ->> Kafka: Publish PlaceOrder / CompleteOrder / CancelOrderCommand (key: OrderId)
+	Kafka ->> Notif: Deliver CloudEvents command
+	Notif ->> Redis: Atomic SET NX idempotency:{handler}:{eventId} (TTL 24h)
+
+	alt Duplicate event ID
+		Redis -->> Notif: Key already exists (skip)
+	else New event ID
+		Redis -->> Notif: Lock acquired
+
+		alt Recipient email is null or blank
+			Notif ->> Notif: Skip email rendering and send
+		else Valid recipient email
+			Notif ->> Notif: Render Orders/OrderEmail.mjml + _Layout.mjml (Mjml.Net)
+			Notif ->> Smtp: MailKit SMTP submit (Polly circuit breaker + jitter retry + 30s timeout)
+
+			alt Transient SMTP failure after Polly retries
+				Smtp -->> Notif: Failure
+				Notif ->> Redis: Release idempotency key
+				Notif -->> Kafka: Wolverine retry (50ms / 250ms / 1s jitter)
+				Kafka ->> DLQ: Route exhausted message (7-day retention)
+			else Accepted by SMTP server
+				Smtp -->> Notif: 250 OK (SMTP accepted)
+			end
+		end
+	end

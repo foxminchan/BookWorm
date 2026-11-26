@@ -28,6 +28,7 @@ badges:
   - content: Ownership
     backgroundColor: purple
     textColor: purple
+x-scope: "`product-catalog-system`, [[service|catalog-api]], [[container|catalog-database]]"
 ---
 
 ## 1. Context & Problem
@@ -66,7 +67,7 @@ If a newly created feedback notification arrives for a book that does not exist 
 ## 5. Technical Reference
 
 - **Related decision:** [[adr|adr-001-postgresql-system-of-record]]
-- **Scope:** `product-catalog-system`, [[service|catalog-api]], [[container|catalog-database]]
+
 - **Stored projection columns:** `average_rating` and `total_reviews` on the book record in PostgreSQL (read-only projection; must not be exposed as writable fields on business-user book create/update operations). Excluded from Qdrant search records.
 - **Integration event handling:**
   - [[event|FeedbackCreatedIntegrationEvent]]: Identifies both book and feedback; adds the feedback rating to `average_rating` and increments `total_reviews`. If the target book does not exist, `catalog-api` publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] using the feedback ID.

@@ -1,0 +1,11 @@
+flowchart LR
+	operator["Operator\n(Entra ID admin)"]
+	dashboard["Quartz Dashboard\n(UI at /quartz)"]
+	scheduler["Scheduler\n(.NET 11 Quartz.NET)"]
+	db[("Scheduler database\n(PostgreSQL: schedulerdb)")]
+	kafka["Kafka Broker\n(scheduler.process-vector-batch)"]
+
+	operator --> |"HTTPS: OIDC /quartz"| dashboard
+	dashboard --> |"HTTP: Dashboard Agent"| scheduler
+	scheduler --> |"Npgsql: qrtz_* + wolverine"| db
+	scheduler --> |"Kafka: CloudEvents"| kafka

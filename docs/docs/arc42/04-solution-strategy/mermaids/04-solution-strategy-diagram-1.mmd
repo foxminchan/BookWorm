@@ -1,0 +1,18 @@
+flowchart LR
+	q1["1. Correctness"]
+	q2["2. Interoperability"]
+	q3["3. Deployability"]
+	q4["4. Modifiability"]
+	q5["5. Operability"]
+
+	ddd["Bounded Contexts &\nPolyglot Persistence"]
+	contracts["gRPC, REST v1 &\nWolverine + Kafka"]
+	aspire["Aspire 17 & YARP\nMulti-Zone MFEs"]
+	vsa["Vertical Slice Architecture &\nMediator.SourceGenerator"]
+	obs["OpenTelemetry, Durable Task,\nQuartz & Native DLQs"]
+
+	q1 -->|"Authoritative checkout & snapshots"| ddd
+	q2 -->|"PactNet & Buf schema checks"| contracts
+	q3 -->|"aspire deploy & turbo --affected"| aspire
+	q4 -->|"ArchUnitNET & turbo boundaries"| vsa
+	q5 -->|"W3C traces & execution stores"| obs

@@ -29,111 +29,74 @@ badges:
     icon: ShieldCheckIcon
 ---
 
-## 1. Context & Problem
+Shopping is BookWorm's Core bounded context for pre-purchase customer intent (`Basket` and `Basket Item`). `Basket API` stores customer-scoped baskets authoritatively in **Redis** (with no SQL database), enriches item titles and live prices from `Catalog API` over gRPC at read time, exposes `basket.v1.BasketGrpcService` to `Ordering API` during checkout, and cleans up submitted baskets asynchronously when Finance issues `PlaceOrderCommand`.
 
-Every online bookstore needs a seamless bridge between a shopper browsing books and a confirmed order entering fulfilment. Without a dedicated bounded context for that pre-purchase journey, cart management, live price presentation, checkout confirmation, and order creation quickly collapse into a single coupled workflow—making it difficult to evolve pricing, prevent duplicate orders, or isolate failures.
+## Scope and constraints
 
-The **Shopping** subdomain solves this by owning the customer-facing path from selecting a [[entity|book]] in a personal [[entity|basket]] through handing an accepted purchase over to [[domain|ordering]] and the Finance workflow. Because cart and checkout behavior directly shape conversion and customer trust, Shopping is classified as a **Core Domain** and **Business Critical** capability, while deliberately leaving product descriptions in [[domain|catalog]], order lifecycles in [[domain|ordering]], and payment settlement in Finance.
+- **In scope:** Creating, retrieving, replacing (whole-set update), and deleting an authenticated customer's basket; enriching basket display items with live Catalog metadata; executing post-checkout basket cleanup and signaling explicit success or failure outcomes.
+- **Out of scope:** Owning canonical book details (`Catalog`), creating or managing accepted orders (`Ordering`), coordinating post-checkout sagas (`Finance`), and payment settlement (external to BookWorm).
+- **Key constraints:** A basket is mutable shopping intent, not an `Order` and not an inventory reservation. `Basket API` has no relational database; Redis is its system of record.
 
-## 2. Business Value
+## C4 context and container view
 
-- **Higher conversion and smoother storefront experience:** Gives shoppers a fast, reliable way to add books, review live regular and sale prices, adjust quantities, or clear their cart before buying.
-- **Safe conversational commerce:** Supports adding items through the storefront assistant while requiring explicit customer confirmation so automated suggestions never alter a cart unexpectedly.
-- **Protection against duplicate purchases:** Ensures an accepted checkout cleans up the submitted basket so customers cannot accidentally submit the same purchase twice.
-- **Clear operational visibility:** Turns post-checkout cleanup into explicit success or failure outcomes rather than silent state changes, enabling reliable recovery when downstream issues occur.
-- **Independent service evolution:** Keeps pre-order shopping responsive and decoupled from order-history views, catalog administration, and payment settlement.
+This container view shows how the Commerce and Storefront microfrontends, Ordering API, Catalog API, and Finance interact with Basket API across HTTP, gRPC, Redis, and Kafka.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/Shopping-diagram-1.mmd" />
 
-Shopping manages the transient purchase context for each authenticated customer using clear domain concepts and strict boundaries:
+## Building block view
 
-### Domain language
+| Building block            | Bounded context | Technology                                                 | Owned state / responsibility                                                                                                                     | Source path                           |
+| :------------------------ | :-------------- | :--------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
+| **Basket API** (`basket`) | Shopping        | .NET 11 Minimal API + gRPC (`basket.v1.BasketGrpcService`) | Authoritative Redis basket persistence (`IBasketRepository`), FusionCache + Redis idempotency guard, Catalog gRPC client, Kafka cleanup listener | `src/Services/Basket/BookWorm.Basket` |
 
-- **[[entity|basket]]:** The customer's current collection of selected book references and requested quantities.
-- **[[entity|basket-item]]:** A single book reference paired with a positive requested quantity; it does not take over ownership of Catalog's [[entity|book]] entity.
-- **Checkout:** The boundary moment where the current basket is submitted to the order workflow.
-- **Purchase handoff:** The coordination step that provides Ordering and Finance with everything needed to process an order without sharing Shopping's internal basket model.
+### HTTP and gRPC surface (`/api/v1`)
 
-### Customer & checkout flow
+| Contract                                | Purpose                                                                        | Authorization and rules                                                   |
+| :-------------------------------------- | :----------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| `GET /api/v1/baskets`                   | Retrieve the authenticated customer's basket enriched with live Catalog prices | `customer` role + `basket_read`, `basket_write`; per-user rate limit      |
+| `POST /api/v1/baskets`                  | Create a basket with at least one item (`quantity > 0`)                        | `customer` role + `basket_read`, `basket_write`                           |
+| `PUT /api/v1/baskets`                   | Replace the basket's entire item collection as a set                           | Whole-set replacement; Commerce removes items when quantity drops to zero |
+| `DELETE /api/v1/baskets`                | Clear the authenticated customer's basket                                      | `customer` role + `basket_read`, `basket_write`                           |
+| `basket.v1.BasketGrpcService.GetBasket` | Internal gRPC lookup invoked by Ordering API during checkout                   | Internal service-to-service gRPC                                          |
 
-1. **Manage the basket:** An authenticated customer creates a basket with at least one book, reviews enriched product details (names, regular and sale prices, quantities, and totals), replaces the item selection when making changes (treating zero-quantity changes in the storefront as item removal), or clears the basket entirely.
-2. **Confirm conversational actions:** When shoppers use the storefront's conversational assistant to add items, the assistant must obtain explicit customer confirmation before modifying the basket.
-3. **Hand off at checkout:** At checkout, Shopping passes the purchase intent to [[domain|ordering]] and the Finance workflow, where purchase-time validity, payment, and fulfilment are owned.
-4. **Clean up and signal outcome:** Once checkout hands off the purchase, Shopping deletes the submitted basket and emits an explicit completion or failure signal so the order workflow knows whether cleanup succeeded.
+## Runtime view
 
-### Capability map
+1. **Basket management:** Authenticated shoppers view and edit `/basket` inside the **Commerce** microfrontend (`@bookworm/commerce`), while `@workspace/storefront-shell` keeps the shared header basket counter synchronized across Storefront and Commerce. Adding items through conversational assistance requires explicit customer confirmation before mutating Basket API.
+2. **Checkout read:** When the shopper checks out in Commerce, Ordering API calls `basket.v1.BasketGrpcService.GetBasket` to read item IDs and quantities, then resolves live pricing from Catalog API.
+3. **Post-checkout cleanup:** Finance publishes `PlaceOrderCommand` (`bookworm.{env}.finance.place-order`). Basket API deletes the customer's Redis basket (guarded by Redis idempotency) and publishes either `BasketDeletedCompleteIntegrationEvent` (`bookworm.{env}.basket.delete-complete`) or `BasketDeletedFailedIntegrationEvent` (`bookworm.{env}.basket.delete-failed`).
 
-| Capability            | Responsibility                                                    | Strategic importance |
-| --------------------- | ----------------------------------------------------------------- | -------------------- |
-| Basket lifecycle      | Create, retrieve, replace, and delete a customer's basket         | Core                 |
-| Basket composition    | Maintain book references and positive requested quantities        | Core                 |
-| Purchase presentation | Show item details, sale prices, quantities, and calculated totals | Core                 |
-| Checkout coordination | Hand an accepted basket to Ordering and the Finance workflow      | Core                 |
-| Failure signalling    | Publish explicit basket-deletion success or failure outcomes      | Enabling             |
+### Business invariants
 
-### Context boundaries
+- Every basket belongs to one authenticated customer identifier and requires at least one item with a positive quantity on creation.
+- Basket updates replace the full item set rather than merging partial diffs.
+- Basket items store only book UUIDs and quantities—never copied Catalog descriptions or locked Order prices.
+- A `BasketDeletedFailedIntegrationEvent` signals explicit cleanup failure and must never be treated as successful cleanup or payment status.
 
-| Relationship        | Direction          | Integration intent                                                   |
-| ------------------- | ------------------ | -------------------------------------------------------------------- |
-| Customer → Shopping | Inbound            | Add books, manage quantities, inspect totals, and start checkout     |
-| Catalog → Shopping  | Upstream reference | Supply book identity and product information used by the basket view |
-| Shopping → Ordering | Handoff            | Submit the basket for order creation and confirmation                |
-| Shopping → Finance  | Coordination       | Participate in the `place-order` workflow and basket cleanup         |
+## Deployment and cross-cutting concerns
 
-## 4. Trade-offs & Lessons Learned
+- **Hosting and ingress:** `basket` runs behind the YARP API Gateway (`/basket/{**remainder}`) with internal Container App ingress.
+- **Security and privacy:** Microsoft Entra ID enforces the `customer` role with `basket_read` and `basket_write` scopes, plus `HMAC__Key` signing and structured log redaction. `basket-identity` accesses Azure Managed Redis passwordlessly via Entra ID `default` access policy.
+- **Observability and resilience:** OpenTelemetry correlates HTTP, gRPC, Redis, and Kafka spans by `OrderId`; exhausted Kafka consumers route to `bookworm.{env}.basket.dead-letter-queue`.
 
-- **A basket is not an Order:** Keeping the basket strictly as transient, pre-order intent prevents Ordering from depending on Shopping's internal storage, even though checkout must transfer full purchase details during the handoff.
-- **Catalog remains the authority for product data:** Reading live book metadata and prices at display time ensures accuracy without duplicating Catalog ownership, though downstream checkout must still validate purchase-time prices and availability.
-- **Whole-set basket replacement over incremental merging:** Replacing the full item set on updates prevents ambiguous partial-merge bugs and keeps customer-scoped state predictable.
-- **Explicit handoff and cleanup signalling:** Crossing domain boundaries with asynchronous commands and outcome events avoids shared database tables, while requiring idempotent consumers and clear rules so a cleanup outcome is never mistaken for payment completion.
-- **Per-user isolation and protection:** Scoping every action to an authenticated customer and applying per-user rate limits protects availability while preserving low-latency storefront performance.
+## Quality scenarios and known risks
 
-## 5. Technical Reference
+| Quality attribute / risk | Scenario or exposure                                            | Current mitigation or gap                                                                      |
+| :----------------------- | :-------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| **Performance**          | High-frequency basket reads during storefront browsing          | Authoritative Redis persistence + FusionCache keeps reads sub-millisecond                      |
+| **Consistency**          | Duplicate `PlaceOrderCommand` delivery during Finance retries   | Redis idempotency guard (`IIntegrationEventIdempotencyGuard`) prevents unintended side effects |
+| **Read dependency**      | Catalog API unavailable during `GET /api/v1/baskets` enrichment | Catalog gRPC calls use Aspire standard resilience with budgeted retries                        |
 
-### Owned system and interaction surface
+## Related architecture decisions
 
-The [[system|cart-system]] contains the [[service|basket-api]], an internal HTTP and gRPC service secured per user. Its API supports:
+| ADR                                          | Decision summary                                                         | Status   |
+| :------------------------------------------- | :----------------------------------------------------------------------- | :------- |
+| ADR-BW-004: Explicit HTTP and gRPC contracts | Expose REST `/api/v1/baskets` and `basket.v1` gRPC server                | Proposed |
+| ADR-BW-006: Service-owned business state     | Isolate Redis basket ownership inside Shopping without shared SQL tables | Proposed |
 
-| Operation                | Purpose                                      |
-| ------------------------ | -------------------------------------------- |
-| `GET /api/v1/baskets`    | Retrieve the authenticated customer's basket |
-| `POST /api/v1/baskets`   | Create a basket with its initial items       |
-| `PUT /api/v1/baskets`    | Replace the basket's current items           |
-| `DELETE /api/v1/baskets` | Clear the authenticated customer's basket    |
+## Related documentation
 
-The storefront can also expose these capabilities through conversational actions. Adding an item through the assistant requires explicit customer confirmation before the Basket API is updated.
-
-### Checkout interaction
-
-See [[diagram|checkout-interaction]] for the source-backed sequence from checkout through basket cleanup. It records the completion and failure paths that the Finance workflow receives after it issues [[command|PlaceOrderCommand]].
-
-### Technical invariants & architecture principles
-
-- Basket operations require an authenticated customer and are subject to the Basket API's per-user rate limit.
-- A newly created basket contains at least one item; quantities must be greater than zero (setting an item to zero is treated by the storefront as a removal flow).
-- Basket updates replace the current item set rather than merging arbitrary state into the existing basket.
-- Shopping consumes published product representations and identifiers; it must not mutate Catalog data directly or expose its basket persistence model as an Order model.
-- Checkout crosses the bounded-context boundary through commands and integration events rather than shared database tables.
-- Basket deletion failure is represented by [[event|BasketDeletedFailedIntegrationEvent]]; consumers must not interpret it as a successful cleanup.
-- Once a purchase is accepted, Ordering owns the Order lifecycle; Shopping owns only the pre-order basket experience.
-
-### Quality attributes and operational concerns
-
-| Concern       | High-level expectation                                                |
-| ------------- | --------------------------------------------------------------------- |
-| Security      | Every basket endpoint is authenticated and scoped to the current user |
-| Consistency   | Checkout cleanup is explicit and duplicate basket reuse is prevented  |
-| Availability  | Basket reads and updates remain independent from order-history views  |
-| Performance   | Basket reads and writes support the low-latency storefront journey    |
-| Resilience    | Completion and failure events make cross-service cleanup observable   |
-| Accessibility | Storefront basket changes provide confirmation and status feedback    |
-
-### Architecture Graph
-
-The graph below shows Shopping's owned system and its relationship to the customer purchase journey.
+- [[flow|user-checkout]] — End-to-end checkout, cleanup, and recovery sequence.
+- [[domain|ordering]] — Downstream authoritative `Order` lifecycle.
+- [[doc|arc42/12-glossary]] — Canonical `Basket`, `Basket item`, and `Checkout` definitions.
 
 <NodeGraph mode="full" search="false" legend="false" />
-
-### Cloud & Infrastructure Architecture
-
-<MermaidFileLoader file="mermaids/shopping-architecture.mmd" />

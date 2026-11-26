@@ -1,0 +1,33 @@
+sequenceDiagram
+	participant UI as Storefront\n(Next.js 16 + AG-UI)
+	participant Chat as Chat API\n(Agent Framework /ag-ui)
+	participant Blob as Azure Blob Storage\n(chatting-blob/ag-ui/)
+	participant Dec as Microsoft Foundry\n(MicrosoftDecision1)
+	participant PII as Presidio\n(Analyzer & Anonymizer)
+	participant LLM as Microsoft Foundry\n(ModelRouter)
+	participant MCP as MCP Tools\n(/mcp -> Catalog gRPC)
+	participant Rating as Rating API\n(A2A gRPC /agents)
+
+	UI ->> Chat: HTTPS POST /chatting/ag-ui (Entra ID JWT, PerUserRateLimit)
+	Chat ->> Blob: Load conversation session state
+	Chat ->> Chat: InputValidationExecutor (length + prompt-injection check)
+	Chat ->> Dec: DecisionRouterExecutor (language, scope, route confidence)
+
+	alt Low confidence in-scope route
+		Chat -->> UI: RequestPort HITL disambiguation prompt
+		UI ->> Chat: Customer selects intended route
+	end
+
+	alt Book or QA specialist
+		Chat ->> PII: Anonymize PII in outbound prompt
+		Chat ->> LLM: Run BookAgent (or sub-researchers) / QAAgent
+		LLM ->> MCP: MCP Streamable HTTP: search_catalog / get_book (Policies/mcp-tools.yaml)
+		MCP -->> LLM: Grounded Catalog facts
+		LLM -->> Chat: Draft response (PII-checked)
+	else Rating specialist (book ID present)
+		Chat ->> Rating: Remote A2A gRPC (Entra Agent Identity, rating_read scope)
+		Rating -->> Chat: Grounded review summary
+	end
+	Chat ->> Chat: ResponseFormatterExecutor
+	Chat ->> Blob: Persist updated session transcript
+	Chat -->> UI: Stream formatted AG-UI response

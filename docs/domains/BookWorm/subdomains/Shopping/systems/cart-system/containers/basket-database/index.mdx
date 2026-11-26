@@ -19,45 +19,92 @@ styles:
   icon: /icons/database/redis.svg
 ---
 
-## 1. Context & Problem
+The Basket database is the authoritative Redis key-value store owned exclusively by [[service|basket-api]] in the Shopping bounded context. It persists each authenticated customer's active pre-checkout book selections while keeping product metadata in [[service|catalog-api]] and accepted purchases in [[service|order-api]].
 
-Online shoppers need a fast, dedicated place to keep their active selections as they browse, add books, and adjust quantities before checkout. Storing this temporary pre-order state inside a permanent order database would slow down everyday browsing and mix unconfirmed shopping intent with completed purchases. At the same time, storing full product descriptions inside the cart would duplicate catalog information and create stale pricing.
+## Overview
 
-## 2. Business Value
+| Property               | Value                                                                                                                                                 |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**              | Shopping bounded context — [[service\|basket-api]] (`basket`)                                                                                         |
+| **Aspire resource ID** | `redis` (shared Azure Managed Redis resource)                                                                                                         |
+| **Source**             | `src/Services/Basket/BookWorm.Basket/Infrastructure/Repositories/BasketRepository.cs`, `src/Services/Basket/BookWorm.Basket/Domain/CustomerBasket.cs` |
+| **Engine**             | Redis (local container + RedisInsight in development; Azure Managed Redis in cloud)                                                                   |
+| **Authoritative**      | Yes (`readWrite`) for active pre-checkout baskets                                                                                                     |
+| **Classification**     | `internal`                                                                                                                                            |
+| **Retention**          | Transient (persisted until replaced, explicitly deleted, or cleared after checkout)                                                                   |
 
-- **Responsive shopping experience**: Supports quick cart reads and updates during active browsing.
-- **Strict customer isolation**: Keeps each authenticated customer's basket separate and private.
-- **Lean, clean data boundaries**: Stores only selections and quantities while leaving product pricing and confirmed orders to their rightful owning domains.
-- **Safe post-checkout cleanup**: Tracks basket lifecycle state so checked-out carts can be cleared cleanly and not accidentally reused.
+## Architecture and data boundaries
 
-## 3. How It Works
+Basket API is the sole service that reads from or writes to customer basket keys in Redis. Basket API has no relational SQL database; it resolves current book titles and prices from Catalog API over gRPC at read time and deletes the basket key upon receiving the post-checkout `PlaceOrderCommand` from Finance.
 
-Basket Database holds each authenticated customer's active [[entity|basket]] along with its [[entity|basket-item]]s—specifically the chosen [[entity|book]] identifiers, positive quantities, and the lifecycle information needed to clear the cart after checkout.
+The diagram shows how Basket API persists customer baskets in Redis while hydrating product details from Catalog API and reporting cleanup results over Kafka.
 
-Only the cart service is permitted to read from or write to this store, using the customer's verified identity to isolate each basket. When a basket is updated, the entire item selection is replaced at once rather than merged piece by piece. Product names, prices, and other metadata are never stored here; instead, they are pulled fresh from [[domain|catalog]] whenever a customer views their basket. After checkout, deleting the basket is handled as an explicit cleanup step whose success or failure is announced to downstream systems.
+<MermaidFileLoader file="mermaids/basket-database-diagram-1.mmd" />
 
-## 4. Trade-offs & Lessons Learned
+- **Not a record of accepted orders:** Once checkout starts, [[service|order-api]] persists the immutable purchase snapshot in [[container|order-database]]. Downstream workflows never treat Redis basket records as confirmed orders.
+- **No duplicated catalog metadata:** Titles, descriptions, and prices are never stored in Redis. Basket API fetches current metadata over gRPC when serving basket views.
+- **Shared Redis resource:** Basket API shares the `redis` resource with Catalog API, Ordering API, Rating API, and Notification. Basket API also uses this Redis connection for FusionCache and its 24-hour integration event idempotency guard (`IIntegrationEventIdempotencyGuard`).
 
-- **Not a record of completed purchases**: This store holds transient customer-session data only. [[domain|ordering]] owns every accepted order once checkout begins, and downstream workflows must never read order state from Basket Database.
-- **Single-writer discipline**: Restricting direct access to one owning service prevents hidden dependencies across teams, though it makes that service and store availability critical for active cart edits.
-- **Read-time dependency on Catalog**: Keeping product metadata out of the basket store avoids synchronization bugs, at the cost of needing [[domain|catalog]] available to display full book details.
+## Key model and data structure
 
-## 5. Technical Reference
+`BasketRepository` accesses Redis directly via `IConnectionMultiplexer` and serializes `CustomerBasket` using source-generated `System.Text.Json` with camelCase property names (`BasketSerializationContext`).
+
+| Property                 | Specification                                                                                                                    |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| **Key pattern**          | `basket:{userId}` where `{userId}` is the authenticated customer's GUID                                                          |
+| **Redis type**           | `STRING` (UTF-8 JSON payload)                                                                                                    |
+| **TTL / expiration**     | No explicit TTL is passed to `StringSetAsync`; entries persist until updated, deleted by the customer, or deleted after checkout |
+| **Write semantics**      | Full-document replacement (`CustomerBasket.Update` clears existing items and writes the complete new item list)                  |
+| **Validation invariant** | A `CustomerBasket` must contain at least one `BasketItem` (`BasketDomainException` if empty)                                     |
+
+Neither the AppHost Redis configuration nor the generated `redis.bicep` declares an eviction policy. The generated artifact therefore does not establish what happens to idle basket keys under memory pressure; verify any policy configured outside this repository.
+
+### Stored JSON payload example
+
+<CodeGroup>
+
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
+	"items": [
+		{
+			"id": "0193f1a2-1111-7d8e-9f01-234567890001",
+			"quantity": 2
+		}
+	]
+}
+```
+
+</CodeGroup>
+
+## Operations and cleanup behavior
+
+| Operation                   | Redis command                | Behavior                                                                                                                                                                                                   |
+| :-------------------------- | :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Read basket**             | `GET basket:{userId}`        | Returns deserialized `CustomerBasket` or `null` when absent. Basket API enriches items with Catalog gRPC details before returning HTTP/gRPC responses.                                                     |
+| **Create or update basket** | `SET basket:{userId} <json>` | Overwrites the entire basket document atomically with the supplied item set; does not merge partial patches.                                                                                               |
+| **Delete basket**           | `DEL basket:{userId}`        | Triggered by customer delete requests or post-checkout `PlaceOrderCommand` handling. Checkout cleanup publishes `BasketDeletedCompleteIntegrationEvent` or `BasketDeletedFailedIntegrationEvent` to Kafka. |
+
+## Hosting and environment provisioning
+
+AppHost provisions the shared `redis` resource via `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Redis.cs`.
+
+| Environment           | Provisioning & SKU                                                      | High availability | Local tooling |
+| :-------------------- | :---------------------------------------------------------------------- | :---------------- | :------------ |
+| **Local development** | Local Redis container (`ContainerLifetime.Persistent`) with data volume | Single container  | RedisInsight  |
+| **Azure Development** | Azure Managed Redis (`BalancedB0`)                                      | Disabled          | —             |
+| **Azure Staging**     | Azure Managed Redis (`BalancedB1`)                                      | Enabled           | —             |
+| **Azure Production**  | Azure Managed Redis (`BalancedB5`)                                      | Enabled           | —             |
+
+:::warning
+Because `redis` is shared across five backend services, flushing the entire Redis instance clears active customer baskets, cached Catalog/Ordering/Rating responses, distributed locks, and active 24-hour integration event idempotency markers simultaneously.
+:::
+
+## Related documentation
+
+- [[service|basket-api]] — Owning service REST/gRPC endpoints, authorization, and Kafka handlers.
+- [[container|order-database]] — Authoritative PostgreSQL store for confirmed purchases after checkout.
+- [[container|catalog-cache]] — Sibling logical workload on the shared Redis resource.
+- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
 
 <NodeGraph />
-
-- **Container metadata**:
-  - `technology`: `redis`
-  - `authoritative`: `true`
-  - `access_mode`: `readWrite`
-  - `classification`: `internal`
-  - `retention`: `transient`
-- **Access & key model**: [[service|basket-api]] is the sole documented reader and writer, addressing baskets via customer-scoped keys derived from the authenticated customer identity.
-- **Stored data**:
-  - Customer-scoped [[entity|basket]] records
-  - [[entity|basket-item]] entries ([[entity|book]] IDs and positive requested quantities)
-  - Basket lifecycle state for post-checkout deletion and reuse prevention
-- **Write & cleanup behavior**:
-  - Basket replacement writes the complete item set rather than merging partial edits.
-  - [[domain|catalog]] metadata is resolved via the Catalog contract at read time rather than persisted.
-  - Checkout deletion is an explicit cleanup operation whose success or failure is published through basket integration events.

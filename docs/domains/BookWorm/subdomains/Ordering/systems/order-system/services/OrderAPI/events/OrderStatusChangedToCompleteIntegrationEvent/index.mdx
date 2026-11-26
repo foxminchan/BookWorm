@@ -13,36 +13,63 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+`OrderStatusChangedToCompleteIntegrationEvent` (v1.0.0) reports that Ordering API transitioned an `Order` aggregate from `New` to `Completed`. Finance consumes this event to complete its Durable Task orchestration instance and dispatch `CompleteOrderCommand` to Notification; it confirms an authoritative order status change and is neither a completion request nor an email delivery receipt.
 
-When an order finishes processing and transitions from New to Completed, Finance needs reliable confirmation of the order's final status and purchase total. Without a dedicated completion event, Finance would lack an authoritative signal to finalize its financial tracking and initiate post-completion customer communications.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                              |
+| :-------------------- | :----------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Ordering bounded context (`Ordering API`)                                                                          |
+| **Producer**          | [[service\|order-api]]                                                                                             |
+| **Consumer**          | [[service\|order-orchestration]] (`OrderOrchestrator`)                                                             |
+| **Source**            | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/Events/OrderStatusChangedToCompleteIntegrationEvent.cs` |
+| **Protocol / format** | Kafka + CloudEvents JSON (Wolverine)                                                                               |
+| **Kafka topic**       | `bookworm.{env}.ordering.order-status-change-to-complete` (where `{env}` is the kebab-case environment name)       |
+| **Message identity**  | `BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent`                                                  |
+| **Partition key**     | `OrderId` (preserves per-order saga ordering on Kafka)                                                             |
+| **Outbox**            | Wolverine PostgreSQL outbox (`orderingdb`, `wolverine` schema) with EF Core transactional middleware               |
 
-- **Clear Ownership Boundaries**: Communicates an accepted order's completed status and purchase amount to Finance without confusing a status report with a completion request or an email delivery receipt.
-- **Reliable Financial Reconciliation**: Ensures Finance receives the authoritative purchase details needed to close out completed orders.
-- **Consistent Contract Shape**: Keeps every payload structurally complete, helping downstream teams build predictable, low-maintenance integrations.
+## Parameters and fields
 
-## 3. How It Works
+The schema below defines the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema). All seven properties are present in the serialized contract, including nullable `fullName` and `email`.
 
-1. After an [[entity|order]] transitions from New to Completed, [[service|order-api]] publishes the order completed event to the ordering completion channel.
-2. The event message provides a unique event identifier, creation timestamp, order identifier, customer reference, optional customer name and email address, and the purchase total.
-3. Finance consumes the event to record the completed business status and purchase details rather than treating it as a request to complete the order or confirmation that a customer notification was sent.
+| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                                    |
+| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier for this integration event instance.                         |
+| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Ordering API created the event.                             |
+| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the completed `Order`.                                           |
+| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID (currently populated from `Order.BuyerId`)    | Buyer-linked basket reference supplied by Ordering `EventMapper`.              |
+| `fullName`     | `string \| null`     | Yes      | `null`                  | Nullable string                                          | Customer full name when available on the buyer record.                         |
+| `email`        | `string \| null`     | Yes      | `null`                  | Nullable email format                                    | Customer email address when available; Finance skips email dispatch if absent. |
+| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                             | Total purchase amount associated with the completed order.                     |
 
-## 4. Trade-offs & Lessons Learned
+:::note
+The current Ordering `EventMapper` populates `basketId` with the order's `BuyerId`. Downstream consumers must not assume `basketId` was independently resolved from Basket API.
+:::
 
-- **Buyer reference in the basket field**: The current mapping populates the basket reference field with the order's buyer identifier, so consumers must not assume it contains independently resolved basket data.
-- **Mandatory structure for optional fields**: Customer full name and email remain required properties in the contract even when empty, preserving a consistent structure while requiring consumers to handle absent values.
-- **Business message vs. transport envelope**: The documented contract covers only the business data inside the platform's event envelope, leaving transport-level headers separate.
+### CloudEvents envelope headers
 
-## 5. Technical Reference
+| Header        | Value / source                                                    | Purpose                                                                     |
+| :------------ | :---------------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent` | Explicit message identity for cross-service deserialization.                |
+| `source`      | `urn:bookworm:bookworm-ordering`                                  | Identifies the producing service.                                           |
+| `requestid`   | Propagated from the triggering HTTP request                       | Correlates order completion across Ordering API, Finance, and Notification. |
 
-- **Producer**: [[service|order-api]]
-- **Channel**: [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]]
-- **Payload Fields**: `id`, `creationDate`, `orderId`, `basketId`, nullable `fullName` and `email`, and `totalMoney`. All fields are required by the AsyncAPI schema, including the nullable fields.
-- **Mapping Note**: The current `EventMapper` supplies the Order's Buyer ID as `basketId`. Consumers must not assume this field is independently resolved basket data.
-- **Envelope Note**: The schema describes camelCase JSON data inside the BookWorm CloudEvents-compatible envelope, not the complete transport envelope.
+## Error handling and delivery guarantees
 
-<SchemaViewer file="schema.json" title="Order completion event payload" maxHeight="500" />
+| Condition                               | Behavior                                                                                                            | Recovery behavior                                                                     |
+| :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------ |
+| `email` or `fullName` is `null`         | Payload remains valid; Finance checks `order.CanSendNotification` before dispatching `CompleteOrderCommand`.        | Consumers must tolerate `null` contact fields without failing deserialization.        |
+| Transient broker or orchestration error | Wolverine outbox guarantees at-least-once publication from `orderingdb`; Kafka trigger retries delivery to Finance. | Inspect Durable Task Scheduler state and `bookworm.{env}.ordering.dead-letter-queue`. |
+| Contract mismatch                       | Caught in CI by Pact consumer/provider verification.                                                                | Verify against `tests/pacts/Finance-Ordering.json`.                                   |
+
+## Related documentation
+
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] — Kafka channel specification.
+- [[event|OrderStatusChangedToCancelIntegrationEvent]] — Companion event for `New` to `Cancelled` transitions.
+- [[event|UserCheckedOutIntegrationEvent]] — Initial order placement event.
+- [[entity|order]] — Ordering aggregate schema and status lifecycle.
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="Order completion event payload" maxHeight="500" />

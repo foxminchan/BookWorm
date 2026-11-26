@@ -21,64 +21,65 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`SummarizeFeedback` queries **Rating API** (`GET /api/v1/feedbacks/{id}/summarize`) to return a synthesized summary, application-computed rating metrics, classification, supporting evidence, and confidence for a book's customer feedback. The operation is read-only, requires Microsoft Entra ID authentication, and caches results in FusionCache (6 hours when feedback exists; 1 minute when no feedback exists).
 
-Readers evaluating a [[entity|book]] rarely have time to read through dozens or hundreds of individual [[entity|feedback]] entries, and a simple star average does not explain _why_ readers liked or disliked a title. BookWorm needs an on-demand way to distill reader sentiment into a concise narrative takeaway backed by objective rating metrics, supporting evidence, and a quality check—without altering stored review records.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                                                                                                                                                                          |
+| :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                                                                                                             |
+| **Source**                | `src/Services/Rating/BookWorm.Rating/Features/Summarize/SummarizeFeedbackEndpoint.cs`, `SummarizeFeedbackQuery.cs`                                                                                                                             |
+| **Protocol / format**     | HTTP `GET /api/v1/feedbacks/{id}/summarize` (via API Gateway: `GET /rating/api/v1/feedbacks/{id}/summarize`), `ApiVersions.V1`, JSON (`application/json`)                                                                                      |
+| **Authentication**        | Microsoft Entra ID JWT required (`.RequireAuthorization()`)                                                                                                                                                                                    |
+| **Rate limiting**         | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                                                                                                                  |
+| **Caching & AI pipeline** | FusionCache L1 + Redis L2 (`6 hours` when `reviewCount > 0`, `1 minute` when `reviewCount == 0`); invokes the Microsoft Agent Framework map-reduce-assess workflow backed by Microsoft Foundry and Presidio PII redaction when feedback exists |
+| **Contract version**      | `1.0.0`                                                                                                                                                                                                                                        |
 
-- **Faster customer decisions**: Shoppers quickly understand common praise, recurring criticisms, and overall standing before buying.
-- **Trustworthy insights**: Pairing a generated summary with exact review count, average rating, supporting evidence, and confidence keeps recommendations transparent and verifiable.
-- **Lower processing cost on unreviewed titles**: Books with zero reviews bypass the summarization pipeline altogether, returning an immediate empty-state summary.
-- **Safe read-only behavior**: Summaries and classifications are computed on demand without creating, modifying, or deleting customer feedback.
+:::note
+A book with zero feedback records returns `200 OK` with `"classification": "NoData"` and does **not** invoke the AI model workflow. Do not treat `404 Not Found` or `5xx` errors as equivalent to `NoData`.
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-1. A caller requests a summary for a specific [[entity|book]] using the book's identifier.
-2. If the book has no recorded [[entity|feedback]], the capability immediately returns a standard "no feedback found" message with zero reviews, no average rating, and empty evidence and confidence—without running the summarization workflow.
-3. When feedback exists, the capability calculates exact rating metrics (review count and arithmetic average rating) and executes the summarization workflow shown in [[diagram|rating-summarizer-workflow]].
-4. The workflow splits reviews into parallel batches, combines their takeaways into a unified summary, and runs a quality assessment step. If quality needs improvement, the summary is refined; once approved, application rules assign a classification alongside supporting evidence and a confidence indication.
-5. This classification is a read-time insight and is never persisted back to storage.
-6. If the target cannot be found or a downstream dependency fails, an error is returned rather than falsely reporting "no feedback."
+### Path parameters
 
-## 4. Trade-offs & Lessons Learned
+| Name | Type                | Required | Default | Constraints | Description                                        |
+| :--- | :------------------ | :------- | :------ | :---------- | :------------------------------------------------- |
+| `id` | `string` (`BookId`) | Yes      | —       | Valid UUID  | Unique identifier of the Catalog book to summarize |
 
-- **Read-time insights vs. stored summaries**: Computing summaries and classifications at read time guarantees results reflect the latest feedback without extra storage synchronization, at the cost of running the workflow on demand.
-- **Application-owned rules for numbers and labels**: Computing the average rating, review count, and final classification with deterministic business rules—rather than leaving them to generative text—prevents inaccurate math or inconsistent category labels.
-- **Strict separation of empty state and failures**: Treating "no reviews yet" as a valid result while surfacing missing targets or workflow failures as errors ensures storefront users are not shown misleading "no feedback" messages during outages.
-- **Quality-gated refinement**: Checking summary quality and refining weak drafts improves accuracy and provides supporting evidence, while adding extra steps for larger review sets.
+### Response schema (`SummarizeResult`)
 
-## 5. Technical Reference
+A `200 OK` response returns a `SummarizeResult` JSON object. Only `summary` is strictly required in the OpenAPI schema; clients should handle all remaining fields defensively.
 
-- **Endpoint**: `GET /api/v1/feedbacks/{id}/summarize`
-- **Path parameter**: `id` (required) — Catalog [[entity|book]] identifier.
-- **Read-only guarantee**: This query does not create, update, or delete feedback, and `classification` is not persisted.
+| Field            | Type             | Required | Constraints                               | Description                                                                                                         |
+| :--------------- | :--------------- | :------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| `summary`        | `string`         | Yes      | —                                         | Generated narrative summary of customer feedback, or `"No feedback found for this book."` when `reviewCount` is `0` |
+| `classification` | `string`         | No       | Enum: `NoData`, `Bad`, `Good`, `TopRated` | Application-derived classification computed by deterministic business rules (not persisted)                         |
+| `averageRating`  | `number \| null` | No       | `double` or `null`                        | Arithmetic mean rating across included feedback records (`null` when `reviewCount` is `0`)                          |
+| `reviewCount`    | `integer`        | No       | `int32`                                   | Number of feedback records included in the summary (`0` when unreviewed)                                            |
+| `evidence`       | `string`         | No       | —                                         | Supporting evidence produced by the quality assessment step (empty string when `reviewCount` is `0`)                |
+| `confidence`     | `string`         | No       | Free-form string                          | Confidence reported by the quality assessment step (empty string when `reviewCount` is `0`)                         |
+
+Classification is `NoData` when fewer than 3 reviews are present, the average is non-finite, or it is outside 0–5. Otherwise it is `Bad` when the average is below 3.5 or a dominant negative pattern is found; `TopRated` at an average of at least 4.5 with 50+ reviews or at least 4.0 with 200+ reviews; all other valid results are `Good`.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                   | Recovery behavior                                                |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                          | Re-authenticate and retry                                        |
+| `403 Forbidden`             | Authenticated principal lacks Rating API authorization                                                      | Request a token with the required Rating API scopes              |
+| `404 Not Found`             | Target resource or summary could not be found (`application/problem+json`)                                  | Surface an unavailable/not-found state; do not treat as `NoData` |
+| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying              |
+| `500 Internal Server Error` | Downstream Microsoft Foundry, Presidio, or Cosmos DB failure                                                | Retry with exponential backoff; do not fall back to `NoData`     |
+
+## Related documentation
+
+- [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and AI governance.
+- [[agent|rating-agent]] — AI agent configuration and Presidio privacy middleware.
+- [[query|ListFeedbacks]] — Retrieve paginated individual customer reviews for a book.
+- [[entity|feedback]] — Domain model for individual customer reviews.
 
 <NodeGraph />
-
-### Response contract (`200 OK`, `application/json`)
-
-The OpenAPI `SummarizeResult` schema requires only `summary`; the remaining fields are optional in the contract.
-
-| Field            | Type             | Description                                                                              |
-| ---------------- | ---------------- | ---------------------------------------------------------------------------------------- |
-| `summary`        | string, required | Generated feedback summary.                                                              |
-| `classification` | string           | `NoData`, `Bad`, `Good`, or `TopRated`, determined by application-owned rules.           |
-| `averageRating`  | number or null   | Application-computed arithmetic mean; null when there are no reviews.                    |
-| `reviewCount`    | integer          | Number of feedback records included in the summary.                                      |
-| `evidence`       | string           | Supporting evidence from the final quality assessment.                                   |
-| `confidence`     | string           | Confidence from the final quality assessment; the contract does not restrict its values. |
-
-### No feedback and error responses
-
-- **No feedback (`200 OK`)**: Returns `summary` = `"No feedback found for this book."`, `classification` = `"NoData"`, `reviewCount` = `0`, `averageRating` = `null`, and empty `evidence` and `confidence`. This path does not invoke the model workflow; lack of feedback is not itself a `404`.
-- **Not found / errors (`404 Not Found`)**: Returns `application/problem+json` with `ProblemDetails`. Dependency and workflow failures must not be represented as successful no-feedback results.
-
-### Summarizer workflow
-
-The workflow partitions the input across parallel map executors, joins their results, and reduces them. Quality assessment either sends the reduction for refinement or proceeds to classification. See [[diagram|rating-summarizer-workflow]] for the complete workflow.
-
-### Schema
 
 <SchemaViewer
 	file="schema.json"

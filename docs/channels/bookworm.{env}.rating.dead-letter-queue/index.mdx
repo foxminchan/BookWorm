@@ -27,42 +27,89 @@ protocols:
   - kafka
 ---
 
-## Overview
+`bookworm.{env}.rating.dead-letter-queue` (v1.0.0) is the native Kafka dead-letter topic for Rating API. Wolverine routes incoming `BookUpdatedRatingFailedIntegrationEvent` envelopes here when Rating API exhausts its retry policy or cannot deserialize the payload. Rating API persists Feedback records and Wolverine messages in Azure Cosmos DB (`ratingdb`), not PostgreSQL.
 
-This channel is the native Kafka dead-letter topic configured for
-[[service|rating-api]] by `KafkaTopicRouter.CreateDeadLetterTopicName` and
-`EnableNativeDeadLetterQueue()`. When [[service|rating-api]] cannot process
-incoming [[event|BookUpdatedRatingFailedIntegrationEvent]] messages from
-[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]],
-Wolverine routes the failed envelopes to
-`bookworm.<environment>.rating.dead-letter-queue`.
+## Channel information
 
 <ChannelInformation />
 
-## Failure policy and routing
+## Overview
 
-- **Transient retries before DLQ:** `ConfigureDefaultErrorHandling` in
-  `WolverineHostExtensions` retries `TimeoutException`, `HttpRequestException`,
-  `DbUpdateConcurrencyException`, and transient `NpgsqlException` errors at
-  `50ms`, `250ms`, `1s` cooldown intervals with full jitter before calling
-  `MoveToErrorQueue()`.
-- **Immediate dead-lettering:** `JsonException` deserialization failures route
-  directly to the error queue without retries.
-- **Persistence & expiration:** [[service|rating-api]] uses Wolverine Cosmos DB
-  persistence alongside [[container|rating-database]], with 7-day
-  `DeadLetterQueueExpiration`.
+| Property              | Value                                                                                                                                                                                                                                                                        |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                                                                                                                                           |
+| **Topic pattern**     | `bookworm.{env}.rating.dead-letter-queue`                                                                                                                                                                                                                                    |
+| **Name derivation**   | `KafkaTopicRouter.CreateDeadLetterTopicName(applicationName, environmentName)`                                                                                                                                                                                               |
+| **Writer**            | Wolverine Kafka transport in Rating API (`EnableNativeDeadLetterQueue()`)                                                                                                                                                                                                    |
+| **Source listener**   | [[channel\|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] (`BookUpdatedRatingFailedIntegrationEvent`)                                                                                                                                                          |
+| **Reader**            | None in code; operators inspect the topic manually                                                                                                                                                                                                                           |
+| **Protocol / format** | Kafka stream; original CloudEvents JSON record                                                                                                                                                                                                                               |
+| **Message store**     | Wolverine Cosmos DB persistence (`WolverineFx.CosmosDb` in `ratingdb`; no PostgreSQL)                                                                                                                                                                                        |
+| **Source**            | `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `src/Services/Rating/BookWorm.Rating/IntegrationEvents/EventHandlers/BookUpdatedRatingFailedIntegrationEventHandler.cs` |
 
-## Operational triage and recovery
+## Parameters and fields
 
-- Confirm in [[service|catalog-api]] whether the referenced book is truly absent
-  before compensating; if the book exists, stop and escalate as a contract or
-  projection defect.
-- Once any transient [[container|rating-database]] or broker outage is resolved,
-  dead-lettered [[event|BookUpdatedRatingFailedIntegrationEvent]] messages can
-  be replayed safely because `BookUpdatedRatingFailedIntegrationEventHandler`
-  deletes by `feedbackId` and treats an already-missing feedback record as an
-  idempotent no-op.
+| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
+| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
+| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
 
-## Architecture diagram
+A dead-lettered record preserves the original `BookUpdatedRatingFailedIntegrationEvent` CloudEvents value and Kafka key (`feedbackId`, from Catalog API partitioning).
+
+Wolverine 6.65.1 adds `exception-type`, `exception-message`, `exception-stack` (truncated to 8,192 characters), `failed-at` (Unix milliseconds), and `original-destination` to native dead-letter records; Kafka records also include `original-partition` and `original-offset`. The delivery-attempt count is in the `attempts` header. See the [version-pinned diagnostic header reference](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#diagnostic-headers-on-dead-letter-messages).
+
+## Routing rules
+
+| Exception                                                                                               | Retries before DLQ                                                                                                  | Source                                                                                                                           |
+| :------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------- |
+| `TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException` | `3` retries at `50ms`, `250ms`, `1s` with full jitter, then DLQ                                                     | `ConfigureDefaultErrorHandling`                                                                                                  |
+| `JsonException`, `FormatException`                                                                      | None (immediate DLQ)                                                                                                | `ConfigureDefaultErrorHandling`                                                                                                  |
+| Cosmos DB errors (`CosmosException`)                                                                    | Not matched by a configured rule; Wolverine's continuation fallback moves the message to the native DLQ immediately | `WolverineHostExtensions.ConfigureDefaultErrorHandling`; Wolverine 6.65.1 `FailureRuleCollection.DetermineExecutionContinuation` |
+
+BookWorm configures exception-specific policies but does not set a catch-all `MaximumAttempts` rule. An exception that matches none of them, including `CosmosException`, uses Wolverine 6.65.1's `MoveToErrorQueue` fallback and reaches the native DLQ on the first failure. The [version-pinned continuation fallback](https://github.com/JasperFx/wolverine/blob/V6.65.1/src/Wolverine/ErrorHandling/FailureRuleCollection.cs) and [dead-letter guide](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#when-does-a-message-get-dead-lettered) distinguish this configured-policy case from the general default used when no error policies are configured.
+
+:::note
+`DeadLetterQueueExpiration = 7 days` applies to Wolverine's durable Cosmos DB storage (`ratingdb`). Kafka topic retention for `bookworm.{env}.rating.dead-letter-queue` is governed by broker configuration.
+:::
+
+## Replay safety
+
+| Check                                           | Why it matters                                                                                                                                                                                                                                                                                                          |
+| :---------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Verify book absence in Catalog API**          | Confirm the referenced book is truly missing before replaying; if the book exists in `catalogdb`, stop and investigate a projection or contract defect.                                                                                                                                                                 |
+| **Cosmos DB (`ratingdb` / `feedbacks`) health** | Restore Cosmos DB connectivity before replaying envelopes that failed due to transient store outages.                                                                                                                                                                                                                   |
+| **Idempotency and revert behavior**             | `BookUpdatedRatingFailedIntegrationEventHandler` uses `IIntegrationEventIdempotencyGuard` (`idempotency:BookUpdatedRatingFailedIntegrationEventHandler:{id:N}`, 24-hour TTL), releases the key on failure, calls `feedback.Revert()` then deletes the record, and treats an already-missing `Feedback` as a safe no-op. |
+
+## Examples
+
+### Dead-lettered record value
+
+Kafka key: `0193f1b0-3333-7d8e-9f01-23456789abcd` (`feedbackId`)
+
+<CodeGroup>
+
+```json
+{
+	"specversion": "1.0",
+	"id": "0193f1b0-4c01-7d8e-9f01-23456789abcd",
+	"type": "BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent",
+	"source": "urn:bookworm:book-worm.catalog",
+	"time": "2026-11-25T16:30:01Z",
+	"datacontenttype": "application/json",
+	"messagetype": "BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent",
+	"data": {
+		"id": "0193f1b0-4c01-7d8e-9f01-23456789abcd",
+		"creationDate": "2026-11-25T16:30:01Z",
+		"feedbackId": "0193f1b0-3333-7d8e-9f01-23456789abcd"
+	}
+}
+```
+
+</CodeGroup>
+
+## Related documentation
+
+- [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] — Source compensating event channel.
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] — Upstream channel whose failure triggers compensation.
+- [[service|rating-api]] — Service architecture and Cosmos DB (`ratingdb`) persistence.
 
 <NodeGraph />

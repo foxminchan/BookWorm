@@ -1,0 +1,11 @@
+flowchart LR
+	ordering["Ordering API\n(.NET 11 Minimal API)"]
+	ef[("EF Core Tables\n(buyers, orders, order_items)")]
+	marten[("Marten Event Store\n(Events + OrderSummaryView)")]
+	wolverine[("Wolverine Schema\n(wolverine outbox/inbox)")]
+	kafka["Kafka Broker\n(ordering.* topics)"]
+
+	ordering --> |"EF Core: Transactional writes"| ef
+	ordering --> |"Marten: Append + Async Daemon"| marten
+	ordering --> |"Wolverine: Outbox envelopes"| wolverine
+	wolverine --> |"Kafka: Partitioned by OrderId"| kafka

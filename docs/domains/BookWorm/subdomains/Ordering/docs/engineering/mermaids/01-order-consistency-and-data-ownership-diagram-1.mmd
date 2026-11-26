@@ -1,0 +1,15 @@
+flowchart LR
+    ordering["Ordering API\n(.NET 11 Minimal API)"]
+    orderingdb["orderingdb\n(PostgreSQL + EF Core + Marten)"]
+    redis["redis\n(Redis + FusionCache)"]
+    basket["Basket API\n(.NET 11 + gRPC)"]
+    catalog["Catalog API\n(.NET 11 + gRPC)"]
+    finance["Finance\n(Azure Functions)"]
+    dts["finance-taskhub\n(Durable Task Scheduler)"]
+
+    ordering -->|"SQL + Outbox + Events"| orderingdb
+    ordering -->|"Locks + Markers + Cache"| redis
+    ordering -->|"gRPC: GetBasket"| basket
+    ordering -->|"gRPC: GetBooks"| catalog
+    ordering <-->|"Kafka: ordering.* / finance.*"| finance
+    finance -->|"Orchestration State"| dts

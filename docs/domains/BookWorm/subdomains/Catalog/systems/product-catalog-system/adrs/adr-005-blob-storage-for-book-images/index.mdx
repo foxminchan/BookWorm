@@ -24,6 +24,7 @@ badges:
   - content: Data
     backgroundColor: blue
     textColor: blue
+x-scope: "`product-catalog-system`, [[service|catalog-api]], [[container|catalog-blob]], [[container|catalog-database]]"
 ---
 
 ## 1. Context & Problem
@@ -61,7 +62,7 @@ Whenever a client or storefront requests book details, Catalog API checks that t
 ## 5. Technical Reference
 
 - **Related decision:** [[adr|adr-001-postgresql-system-of-record]]
-- **Scope:** `product-catalog-system`, [[service|catalog-api]], [[container|catalog-blob]], [[container|catalog-database]]
+
 - **Asset identity and URN contract:**
   - Uploaded blobs receive a unique `UUIDv7`-based `blobName` and retain their uploaded content type.
   - The stable reference persisted on the book record has the format `urn:{account}:{container}:{blobName}`.

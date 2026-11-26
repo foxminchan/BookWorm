@@ -1,0 +1,8 @@
+flowchart LR
+	storefront["Storefront\n(Next.js 16 + CopilotKit)"] --> |"HTTPS: /chatting/ag-ui"| gateway["API Gateway\n(YARP)"]
+	gateway --> |"HTTP: /ag-ui"| chat["Chat API\n(.NET 11 + Agent Framework)"]
+	chat --> |"Blob: ag-ui/*"| blob["Chat Session Blob\n(Azure Blob Storage)"]
+	chat --> |"HTTPS: ModelRouter / Decision-1"| foundry["Microsoft Foundry\n(AI Models)"]
+	chat --> |"HTTP/HTTPS: analyze / anonymize"| presidio["Presidio\n(Analyzer + Anonymizer)"]
+	chat --> |"MCP HTTP: /mcp"| mcp["MCP Tools\n(Read-only Catalog)"]
+	chat -->|"A2A gRPC"| rating["Rating API\n(rating-agent)"]

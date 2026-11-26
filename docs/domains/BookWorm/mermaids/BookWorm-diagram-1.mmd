@@ -1,0 +1,24 @@
+flowchart LR
+	customer["Customer\n(Storefront & Commerce MFEs)"]
+	staff["Store Administrator\n(Backoffice)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	catalog["Catalog\n(Catalog API + Ingestion)"]
+	shopping["Shopping\n(Basket API)"]
+	ordering["Ordering\n(Ordering API + Finance)"]
+	reviews["Reviews\n(Rating API)"]
+	conv["Conversational\n(Chat API + MCP Tools)"]
+	platform["Platform\n(Notification + Scheduler)"]
+
+	customer -->|"HTTPS"| gateway
+	staff --> |"HTTPS: /backoffice"| gateway
+	gateway -->|"HTTP / AG-UI"| catalog
+	gateway -->|"HTTP"| shopping
+	gateway -->|"HTTP"| ordering
+	gateway -->|"HTTP"| reviews
+	gateway --> |"AG-UI: /chatting/ag-ui"| conv
+	shopping --> |"gRPC: BookGrpcService"| catalog
+	ordering --> |"gRPC: Basket & Book"| shopping
+	ordering --> |"Kafka: Order commands"| platform
+	reviews --> |"Kafka: Feedback events"| catalog
+	conv -->|"MCP + A2A gRPC"| catalog
+	platform --> |"Kafka: ProcessVectorBatch"| catalog

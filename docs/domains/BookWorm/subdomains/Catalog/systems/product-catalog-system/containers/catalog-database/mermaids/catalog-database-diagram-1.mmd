@@ -1,0 +1,13 @@
+flowchart LR
+	catalog["Catalog API\n(.NET 11 REST + gRPC)"]
+	ingestion["Catalog Ingestion\n(Azure Functions Worker)"]
+	db[("Catalog database\n(PostgreSQL: catalogdb)")]
+	blob[("Catalog blob storage\n(Azure Blob: catalog-blob)")]
+	qdrant[("Catalog vector\n(Qdrant: vectordb)")]
+	kafka["Kafka Broker\n(Wolverine Outbox)"]
+
+	catalog --> |"EF Core: Domain + wolverine"| db
+	catalog --> |"HTTPS: Upload/SAS URN"| blob
+	catalog --> |"Kafka: CloudEvents"| kafka
+	ingestion --> |"Npgsql: Read/Ack pending_vector_updates"| db
+	ingestion --> |"gRPC/HTTP: Upsert/Delete vectors"| qdrant

@@ -14,64 +14,72 @@ sidebar:
   badge: "gRPC"
 ---
 
-## 1. Context & Problem
+`ListCategoriesGrpc` invokes the internal `book.v1.BookGrpcService/ListCategories` gRPC unary RPC on **Catalog API** to return all registered book categories (`CategoryItem`) without pagination. **MCP Tools** calls this RPC to power its `list_categories` tool.
 
-Internal services and assistant integrations across BookWorm often need to discover every book [[entity|category]] available in the catalog. For example, [[service|mcp-server]] needs the full list of categories so AI assistants and automated tools can guide users or filter book searches without keeping a separate copy of catalog taxonomy data.
+## Overview
 
-Providing a dedicated internal read operation from [[service|catalog-api]] gives downstream services a single, authoritative source for category choices without forcing them through public web-facing endpoints.
+| Property                | Value                                                                                                                                         |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner (gRPC server)** | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                          |
+| **Primary caller**      | **MCP Tools** (`mcptools`, `list_categories` tool)                                                                                            |
+| **Source**              | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs`  |
+| **Protocol / format**   | gRPC unary RPC (`book.v1.BookGrpcService/ListCategories`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"` |
+| **Authentication**      | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                          |
+| **Caching**             | Dispatches `ListCategoriesQuery`, backed by PostgreSQL (`catalogdb`) and FusionCache (L1 + Redis L2, key `CatalogCacheKeys.Categories`)       |
+| **Contract version**    | `1.0.0`                                                                                                                                       |
 
-## 2. Business Value
+## Parameters and fields
 
-- **Consistent catalog taxonomy**: Internal services and assistant tools always present the same up-to-date set of categories managed in the catalog.
-- **Fast service-to-service integration**: Lightweight internal communication keeps category lookups responsive when supporting interactive tools or automated workflows.
-- **Frictionless access to reference data**: Because category names are non-sensitive catalog metadata, internal consumers can fetch them without managing user credentials.
+### Request message (`ListCategoriesRequest`)
 
-## 3. How It Works
+`ListCategoriesRequest` is an empty Protobuf message with no fields.
 
-1. An internal consumer—such as [[service|mcp-server]] powering its category discovery tool—sends a simple read request to [[service|catalog-api]] with no filtering parameters required.
-2. [[service|catalog-api]] retrieves all currently available [[entity|category]] records from the catalog.
-3. The service returns the full collection of categories, providing each category's unique identifier and display name.
-4. No user authentication is required because the operation exposes only read-only public reference data for internal callers.
+### Response message (`ListCategoriesResponse`)
 
-## 4. Trade-offs & Lessons Learned
+| Field               | Protobuf type           | Tag | Description                                                               |
+| :------------------ | :---------------------- | :-- | :------------------------------------------------------------------------ |
+| `categories`        | `repeated CategoryItem` | `1` | All catalog categories (empty collection if none exist)                   |
+| `categories[].id`   | `string`                | `1` | Category UUID                                                             |
+| `categories[].name` | `string`                | `2` | Category display name (mapped to empty string `""` if null in source DTO) |
 
-- **Unpaginated full collection**: Returning every category in a single response keeps internal callers simple and works well for a compact, slowly changing taxonomy, though pagination would be needed if the number of categories grew substantially.
-- **Strict internal contract**: Dedicated service-to-service communication improves efficiency between BookWorm services, but requires internal consumers and providers to stay aligned when the message structure evolves.
-- **Anonymous internal access**: Omitting user authorization streamlines integration for reference lookups, so this operation must remain strictly limited to non-sensitive category identifiers and names.
+### Protobuf contract
 
-## 5. Technical Reference
+<CodeGroup>
 
-The `ListCategories` RPC returns all available [[entity|category]] records in the Catalog through the `book.v1` gRPC contract. It is an anonymous read operation exposed for internal service-to-service clients.
+```protobuf
+edition = "2023";
 
-- **Producer**: [[service|mcp-server]] invokes this query in its `BookService.ListCategoriesAsync` client to power the `list_categories` MCP tool.
-- **Consumer**: [[service|catalog-api]] handles the call by dispatching `ListCategoriesQuery`.
-- **Contract**: Send an empty `ListCategoriesRequest`. The response is `ListCategoriesResponse`, containing a repeated collection of `CategoryItem` values (`id` and `name`).
+package book.v1;
 
-### Architecture
+service BookGrpcService {
+  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse);
+}
 
-<NodeGraph />
+message ListCategoriesRequest {}
 
-### Schema
+message ListCategoriesResponse {
+  repeated CategoryItem categories = 1;
+}
 
-<Schema file="schema.proto" lang="protobuf" title="ListCategories gRPC schema" />
-
-### Examples
-
-<CodeGroup dropdown>
-
-```csharp title="ListCategories gRPC example"
-using Grpc.Net.Client;
-using BookWorm.Catalog.Grpc.Services;
-
-using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
-var client = new BookGrpcService.BookGrpcServiceClient(channel);
-
-var response = await client.ListCategoriesAsync(new ListCategoriesRequest());
-
-foreach (var category in response.Categories)
-{
-    Console.WriteLine($"{category.Id}: {category.Name}");
+message CategoryItem {
+  string id = 1;
+  string name = 2;
 }
 ```
 
 </CodeGroup>
+
+## Error responses
+
+| Code / status        | Condition                  | Recovery behavior                           |
+| :------------------- | :------------------------- | :------------------------------------------ |
+| `Unavailable` (`14`) | Catalog API is unreachable | Retry within the budgeted resilience policy |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and gRPC services.
+- [[service|mcp-server]] — Primary caller exposing the `list_categories` MCP tool.
+- [[query|ListCategories]] — Public HTTP endpoint (`GET /api/v1/categories`).
+- [[entity|category]] — Domain model for catalog categories.
+
+<NodeGraph />

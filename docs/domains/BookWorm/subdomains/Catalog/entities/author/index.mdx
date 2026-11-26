@@ -19,41 +19,57 @@ owners:
   - contributor-team
 ---
 
-## 1. Context & Problem
+`Author` is the Catalog aggregate root for a person credited on one or more books. Catalog API owns it and persists it in PostgreSQL (`catalogdb`).
 
-A bookstore catalog needs a consistent way to represent the people who write [[entity|book]]s. If author names were stored only as plain text on each book, the same creator could end up spelled differently across titles, making author-based search unreliable and requiring repetitive edits whenever an author's name changes.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                              |
+| :------------------------ | :------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Catalog bounded context / **Catalog API** (`catalog`)                                              |
+| **Source**                | `src/Services/Catalog/BookWorm.Catalog/Domain/AggregatesModel/AuthorAggregate/Author.cs`           |
+| **EF Core configuration** | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/EntityConfigurations/AuthorConfiguration.cs` |
+| **Backing store**         | PostgreSQL database `catalogdb`, table `authors` (`snake_case`)                                    |
+| **Base type**             | `Entity<AuthorId>`, `IAggregateRoot`                                                               |
+| **Identifier**            | `AuthorId` (Vogen value object wrapping `Guid`)                                                    |
 
-- **Data consistency:** Keeps each author's display name uniform across every book they have written.
-- **Better discovery:** Enables customers to browse and filter the catalog reliably by author.
-- **Reduced editorial effort:** Allows catalog teams to update an author's record once rather than editing every associated title.
+`Author` has no audit timestamps, row version, or soft-delete flag.
 
-## 3. How It Works
+## Parameters and fields
 
-An Author represents an individual creator who writes [[entity|book]]s in the catalog:
+| Name          | Type                | Required | Default               | Constraints                   | Description                                 |
+| :------------ | :------------------ | :------- | :-------------------- | :---------------------------- | :------------------------------------------ |
+| `id`          | `AuthorId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                   | Unique author identifier                    |
+| `name`        | `string`            | Yes      | —                     | Non-whitespace; max 100 chars | Author display name                         |
+| `bookAuthors` | `BookAuthor[]`      | —        | `[]`                  | Inverse navigation            | Links to books; see [[entity\|book-author]] |
 
-- Each author has a unique identity and a display name.
-- **Naming rule:** An author's name cannot be left blank—the catalog enforces a non-empty name both when an author is created and whenever an existing author is updated.
-- **Book association:** Authors are connected to books through a dedicated [[entity|book-author]] relationship, allowing one author to be credited on many books and a single book to credit multiple co-authors.
+## Invariants and behavior
 
-## 4. Trade-offs & Lessons Learned
+- **Name required:** Setting `Name` to null or whitespace throws `CatalogDomainException("Author name must be provided.")`. The rule applies in the constructor and in `UpdateName(...)`.
+- **Delete restriction:** `book_authors.author_id` uses `ON DELETE RESTRICT`. PostgreSQL rejects deleting an author that is still linked to a book.
+- **Domain events:** The constructor raises `AuthorCreatedEvent`, `UpdateName(...)` raises `AuthorUpdatedEvent`, and `Remove()` raises `AuthorDeletedEvent`.
 
-- **Separate record vs. embedded text:** Managing Author as its own standalone record avoids duplicate author data across books, at the cost of maintaining an explicit link between books and authors.
-- **Minimal initial profile:** Limiting the model to an identifier and a display name keeps onboarding and data entry simple, though future capabilities such as biographies, pen names, or distinguishing authors who share the same name would require adding fields later.
+## Relationships
 
-## 5. Technical Reference
+| Related entity   | Cardinality  | Mapping                                                             |
+| :--------------- | :----------- | :------------------------------------------------------------------ |
+| [[entity\|book]] | Many-to-many | Through [[entity\|book-author]] (`author_id`, `ON DELETE RESTRICT`) |
 
-### Entity Overview
+## Examples
 
-- **Aggregate Root:** `true` (`id: author`)
-- **Behavior:** Stores the author's unique identifier and required name, enforces a non-empty name during creation and updates, and links to [[entity|book]]s via the **BookAuthor** ([[entity|book-author]]) join entity.
-- **Owners:** `contributor-team`
+### Author record
 
-### Entity Properties
+<CodeGroup>
 
-<EntityPropertiesTable />
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-000000000010",
+	"name": "Eric Evans"
+}
+```
 
-### Entity Relationships
+</CodeGroup>
 
-- An author is associated with [[entity|book]]s through the **BookAuthor** ([[entity|book-author]]) join entity.
+## Related documentation
+
+- [[entity|book]] — Aggregate that credits authors.
+- [[entity|book-author]] — Join entity and delete rules.

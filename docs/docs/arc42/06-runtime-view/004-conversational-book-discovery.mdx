@@ -9,57 +9,60 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+**Chat API** (`BookWorm.Chat`) executes a Microsoft Agent Framework multi-agent workflow (`chat-workflow`) exposed over the AG-UI protocol (`/ag-ui`) to help shoppers discover books, summarize reviews, and answer store policy questions. Every turn passes through prompt-safety validation, **Microsoft Foundry** `MicrosoftDecision1` routing with human-in-the-loop (HITL) `RequestPort` disambiguation, **Presidio** PII anonymization, and read-only **MCP Tools** or remote **Agent-to-Agent (A2A) gRPC** calls—without ever mutating baskets or orders.
 
-Customers often want conversational help finding books, checking reviews, or asking general store questions rather than manually filtering catalog pages. At the same time, an AI assistant must stay safe, stay within supported topics, provide accurate book facts from [[domain|catalog]], and never accidentally alter shopping baskets or place real orders.
+## Scope and constraints
 
-This scenario defines how [[domain|conversational]] validates incoming prompts, routes each request to the right specialist assistant, runs deeper parallel research when needed, and enforces strict commerce boundaries.
+- **Scope:** End-to-end conversational request processing from **Storefront** through **API Gateway** to **Chat API**, **MCP Tools**, **Catalog API**, **Rating API**, **Presidio**, and **Microsoft Foundry**.
+- **Out of scope:** Order checkout and basket writes (owned by **Ordering API** and **Basket API**; chat responses are advisory only) and asynchronous vector indexing (see [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]]).
+- **Key constraints:**
+  - **Chat API** stores AG-UI session state solely in **Azure Blob Storage** (`chatting-blob`, `BlobNamePrefix = "ag-ui/"`). It uses **no PostgreSQL, no Redis, and no Kafka**.
+  - `/ag-ui` requires the `customer` policy (`customer` role + `chatting_read`/`chatting_write` scopes) and enforces the `PerUserRateLimit` token-bucket limiter (`30` tokens max, `20` per `10s`, queue `5`).
+  - Only three specialist domains exist (`book`, `qa`, remote `rating`) plus two catalog sub-researchers (`book-catalog-researcher`, `book-recommendation-researcher`). **No Sentiment Agent exists in BookWorm.**
 
-## 2. Business Value
+## Building block view
 
-- **Guided customer discovery**: Shoppers get tailored book recommendations, catalog facts, rating summaries, and store answers in one conversational experience.
-- **Prompt safety and focus**: Empty, unsafe, off-topic, or unsupported-language messages are stopped early before consuming specialist AI capacity.
-- **Faster answers for complex queries**: Multi-part discovery questions can research book facts and personalized recommendations at the same time before combining them into a single clear reply.
-- **Zero accidental transactions**: Strict read-only boundaries guarantee the chat assistant cannot modify customer baskets, place orders, or promise locked-in prices.
+| Building block        | Bounded context  | Technology                                                                                        | Owned state / responsibility                                                                                                            | Source path                                  |
+| :-------------------- | :--------------- | :------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------- |
+| **Storefront**        | Edge (Frontend)  | Next.js 16, `@ag-ui/client`, CopilotKit `2.0.0-rc.65`                                             | Customer chat UI streaming AG-UI turns and HITL disambiguation prompts                                                                  | `src/Clients/apps/storefront`                |
+| **Chat API**          | Conversational   | .NET 11, Microsoft Agent Framework `1.28.0`, AG-UI `/ag-ui`, Azure Blob Storage (`chatting-blob`) | Runs `chat-workflow`, stores `ag-ui/` transcripts, enforces `Policies/chat-agents.yaml` and claims-based agent isolation                | `src/Services/Chat/BookWorm.Chat`            |
+| **Microsoft Foundry** | External AI      | `ModelRouter` (`chat`), `MicrosoftDecision1` (`decision`)                                         | Routes prompts (`IDecisionClient`) and generates specialist agent responses                                                             | `src/Aspire/BookWorm.AppHost/AppHost.cs`     |
+| **Presidio**          | Privacy sidecars | `presidio-analyzer` & `presidio-anonymizer` (port `3000`)                                         | Detects and anonymizes PII before prompts leave BookWorm and on model output                                                            | `src/Integrations/BookWorm.Hosting.Presidio` |
+| **MCP Tools**         | Conversational   | .NET 11, Model Context Protocol Streamable HTTP (`/mcp`, stateless)                               | Exposes read-only Catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`) governed by `Policies/mcp-tools.yaml` | `src/Services/McpTools/BookWorm.McpTools`    |
+| **Rating API**        | Reviews          | .NET 11, A2A gRPC (`MapGrpcA2A`), `/agents` discovery, Cosmos DB (`ratingdb`)                     | Hosts `rating` agent (`rating-agent.yaml`) to summarize customer feedback over A2A gRPC                                                 | `src/Services/Rating/BookWorm.Rating`        |
 
-## 3. How It Works
+## Runtime view
 
-1. **Receiving and screening the message**: A customer sends a question through the chat experience. An initial safety check rejects blank messages or suspected prompt-manipulation attempts right away.
-2. **Routing to the right specialist**: Validated messages enter a routing step that checks language and topic scope, then directs the request:
-   - Book discovery questions (and general review questions without a specific book identifier) go to the book specialist.
-   - Store policy or account questions go to the general Q&A specialist.
-   - Rating or review questions targeting a specific book identifier go to the rating specialist.
-   - Unsupported topics or non-English requests receive a polite boundary response without further processing.
-3. **Direct answers vs. parallel research**: The book specialist answers simple questions directly. For broader or multi-faceted discovery requests, it can dispatch two research assistants in parallel—one focused on verified catalog facts and another focused on recommendations—and then synthesize their findings.
-4. **Grounded responses**: Specialists look up authoritative book data through scoped catalog tools rather than guessing from memory, then return the formatted response to the customer.
+This sequence diagram traces an AG-UI chat turn through input screening, `MicrosoftDecision1` routing, optional HITL disambiguation, specialist tool/A2A execution, and response formatting.
 
-## 4. Trade-offs & Lessons Learned
+<MermaidFileLoader file="mermaids/004-conversational-book-discovery-diagram-1.mmd" />
 
-- **Safety checks add upfront filtering**: Rejecting suspicious or out-of-scope prompts early protects downstream specialists and costs, though overly strict filters can occasionally block edge-case phrasing.
-- **Advisory responses, not commitments**: Assistant replies reflect the information available through catalog tools at that moment; they do not reserve inventory, guarantee prices, or create an [[entity|order]].
-- **Strict read-only commerce boundary**: Keeping chat workflows completely separated from [[entity|basket]] mutations and order-creation flows prevents conversational ambiguity from triggering unintended purchases.
+### Workflow stages
 
-## 5. Technical Reference
+1. **Session load and input validation:** **Chat API** authenticates the caller via Microsoft Entra ID (`customer` policy), enforces `PerUserRateLimit` and claims-based agent isolation (`UseClaimsBasedAgentIsolation()`), loads session state from `chatting-blob` (`ag-ui/`), and runs `InputValidationExecutor` (`PromptValidationService` + `GovernancePromptSafetyEvaluator`). Empty messages, oversized prompts, or detected prompt-injection patterns short-circuit immediately to a rejection output.
+2. **Decision routing (`MicrosoftDecision1`):** Accepted prompts enter `DecisionRouterExecutor`, which calls **Microsoft Foundry** `MicrosoftDecision1` (`IDecisionClient`) instead of a general-purpose LLM router. It verifies English language and domain scope, routing to `Book`, `QA`, or `Rating`, or short-circuiting out-of-scope/non-English requests with a boundary message.
+3. **Human-in-the-loop (HITL) disambiguation:** When `DecisionRouterExecutor` flags a low-confidence in-scope prompt (`NeedsDisambiguation == true`), `RouteDisambiguationPrepExecutor` pauses the workflow at `RequestPort` so the customer can clarify intent in **Storefront**. `RouteDisambiguationResolutionExecutor` then resumes execution to the chosen specialist.
+4. **Specialist execution and inter-agent handoffs:**
+   - **Book workflow (`BookWorkflowExecutor`):** Runs `book` agent (`book-agent.yaml`) with `book-catalog` skills, read-only **MCP Tools**, and optional parallel delegation to `book-catalog-researcher` and `book-recommendation-researcher`. Can hand off to `rating` or `qa` when a query spans domains.
+   - **QA workflow (`QAWorkflowExecutor`):** Runs `qa` agent (`qa-agent.yaml`) with `store-policies` skills (catalog MCP tools explicitly denied in `Policies/chat-agents.yaml` at priority `70`). Can hand off to `book` if catalog lookup is needed.
+   - **Rating workflow (`RatingWorkflowExecutor`):** Invokes **Rating API**'s remote `rating` agent over **A2A gRPC** (`A2A.Grpc.AspNetCore`), discovered via Rating's `/agents` endpoint and authorized with Microsoft Entra Agent Identities (`chatAgentId` / `ratingAgentId`) and the `rating_read` scope.
+5. **Privacy, governance, and formatting:** Model requests and outputs pass through **Presidio** PII anonymization and guardrail middleware. Tool calls are checked against `Policies/chat-agents.yaml` (deny-by-default, conversation guardian thresholds) and `Policies/mcp-tools.yaml` (tool-poisoning and dangerous-tool blocks). `ResponseFormatterExecutor` normalizes the final reply before persisting the session to `chatting-blob` and streaming over AG-UI.
 
-<MermaidFileLoader file="mermaids/conversational-book-discovery.mmd" />
+## Read-only commerce boundaries
 
-### Workflow & Routing Reference
+- **No backend mutations from chat agents:** Neither **Chat API** nor **MCP Tools** mutates **Catalog API**, **Basket API**, or **Ordering API** state, and Chat emits no Kafka events. Any storefront UI actions (such as displaying a book card or triggering client-side basket interactions) execute within the customer's browser session under standard API authorization.
+- **Advisory responses only:** Assistant answers reflect live tool responses at query time and never reserve inventory or lock prices.
 
-| Stage | Component / Agent                               | Technical Behavior                                                                                                                                                                                                                                                                                                              |
-| :---- | :---------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1     | [[service\|chat-api]]                           | Receives customer request on the AG-UI endpoint.                                                                                                                                                                                                                                                                                |
-| 2     | Input validation                                | Rejects empty or detected prompt-injection input with a rejection response before specialist routing; passes accepted input to `DecisionRouterExecutor` (`Microsoft-Decision-1`).                                                                                                                                               |
-| 3     | `DecisionRouterExecutor`                        | Checks language and scope, routing to [[agent\|book-agent]] (book requests and review requests without a catalog ID), [[agent\|qa-agent]] (store or account questions), or [[agent\|rating-agent]] (review/rating requests with a book catalog ID). Unsupported or non-English requests short-circuit with a boundary response. |
-| 4     | [[agent\|book-agent]]                           | Handles straightforward requests directly; for complex discovery, delegates independent research in parallel to [[agent\|book-catalog-researcher]] and [[agent\|book-recommendation-researcher]] and synthesizes their outputs.                                                                                                 |
-| 5     | [[system\|mcp-tools]] / [[service\|mcp-server]] | Provides scoped read access to [[domain\|catalog]] facts; the workflow formats and returns the final assistant response.                                                                                                                                                                                                        |
+## Quality scenarios and known risks
 
-### Guardrails & Boundaries
+| Quality attribute / risk | Scenario or exposure                                                            | Current mitigation or gap                                                                                                                                                            |
+| :----------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Privacy**              | Customer pastes an email address, phone number, or credit card into chat.       | **Presidio** middleware anonymizes PII before prompts reach **Microsoft Foundry** and filters model outputs.                                                                         |
+| **Abuse & cost control** | Caller floods `/ag-ui` or attempts multi-turn prompt injection / A2A loops.     | `PerUserRateLimit` token bucket, `InputValidationExecutor`, and `Policies/chat-agents.yaml` conversation guardian (`max_conversation_turns: 30`, `max_retry_cycles: 3`) bound abuse. |
+| **Availability**         | **Rating API** A2A endpoint or **MCP Tools** is unreachable during a chat turn. | Failures surface as bounded workflow errors; **Chat API** remains stateless apart from `chatting-blob` transcripts and requires no database recovery.                                |
 
-- Chat agents do **not** mutate [[domain|catalog]], place [[entity|order]] records, mutate [[entity|basket]] state, or publish commerce lifecycle events.
-- Responses are informational only and do not represent a reservation or price guarantee.
+## Related documentation
 
-### Related Documentation
-
-- [[flow|agent-orchestration]]
-- [[service|chat-api]]
-- [[system|mcp-tools]]
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] — Policy files, Presidio middleware, Entra Agent Identities, and tool security rules.
+- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] — Identity, claims-based agent isolation, and STRIDE threat model.
+- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — Design rationale for routing with `MicrosoftDecision1`.

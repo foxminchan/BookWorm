@@ -10,91 +10,112 @@ badges:
     textColor: orange
 ---
 
-import Footer from "@catalog/components/footer.astro";
+Use this guide when **Catalog API** returns outdated book details after a database update, when Backoffice dashboard totals appear stale, or when Redis connectivity errors increase Catalog read latency. Catalog's cache is disposable—PostgreSQL (`catalogdb`) is always the source of truth—and FusionCache (L1 memory + L2 Redis + Redis backplane + 2-hour fail-safe) falls back to `catalogdb` during Redis outages.
 
-## 1. Context & Problem
+## Prerequisites
 
-The catalog uses a high-speed read cache to serve frequently viewed [[entity|book]] details and administrative dashboard metrics without overloading the primary database. If an update fails to invalidate a cached entry, customers can see outdated book prices or metadata; if the cache service becomes unreachable, catalog reads slow down and increase load on the primary database.
+- Read access to PostgreSQL (`catalogdb`) and **Catalog API** logs/OpenTelemetry traces.
+- Access to Redis (`redis-cli` or RedisInsight locally; Azure Managed Redis console/CLI in Azure).
 
-## 2. Business Value
+## Steps
 
-- **Continuous storefront availability:** Because the cache is strictly disposable and reads fall back to the primary database, a cache outage degrades performance rather than causing a total catalog outage.
-- **Rapid price and data correction:** Enables support and operations teams to clear single stale items or flush the catalog cache safely with zero risk of data loss.
-- **Clear operational boundaries:** Reinforces that the cache is never an authoritative store, preventing misuse during incidents or recovery.
+<Steps>
+<Step title="Confirm the authoritative value in PostgreSQL (`catalogdb`)">
 
-## 3. How It Works
+Query `catalogdb` to verify the book's current persisted values:
 
-### Symptoms and background
+<CodeGroup>
 
-Stale-cache or outage incidents show up when a [[entity|book]] displays old information after an update, dashboard summary figures appear outdated, or catalog read response times climb alongside cache connectivity errors.
+```sql
+SELECT id, name, price_original_price, price_discount_price, average_rating, total_reviews, is_deleted
+FROM books
+WHERE id = '<book-id>';
+```
 
-The read cache is completely disposable. Whenever a book changes, its individual cached entry is automatically removed, while dashboard summaries refresh on a brief time-to-live window. The primary catalog database always remains the authoritative source of truth.
+</CodeGroup>
 
-### Diagnosis and recovery flow
+Where:
 
-1. **Confirm the source of truth:** Verify that the primary database holds the expected book values and compare them with what catalog read lookups return.
-2. **Pinpoint the cause:** If read responses differ from the database, invalidation failed—inspect catalog service logs for failed change handling. If reads are slow or failing overall, check cache connectivity, latency, and caching telemetry.
-3. **Apply targeted recovery:**
-   - **Single stale book:** Remove that book's cached entry or wait for its expiration window; the next read automatically repopulates it from the primary database.
-   - **Widespread staleness:** Flush the catalog cache keys. This is safe and only introduces temporary extra load on the primary database while entries warm back up.
-   - **Cache outage:** Reads fall back to the primary database through the cached query path, raising latency and database load. Restore cache availability and scale or rate-limit API traffic if the database comes under pressure.
-4. **Verify recovery:** Confirm that book reads return the authoritative database values and that read latency and database load return to baseline.
+- `<book-id>`: Target book UUID.
 
-## 4. Trade-offs & Lessons Learned
+Compare the SQL result against `curl -sS "<gateway-url>/catalog/api/v1/books/<book-id>"`. If they match, the cache is not stale.
 
-- **Disposable cache vs. persistent store:** Treating the cache as strictly disposable allows safe flushes during staleness incidents, accepting temporary database load spikes while cold entries repopulate (see [[adr|adr-004-fusioncache-redis-for-catalog-reads]]).
-- **Automatic database fallback vs. failing fast:** Falling back to the primary database keeps the catalog available during cache outages, though high read volume can strain the database unless capacity scaling or rate limiting is ready.
-- **Short timer for dashboard aggregates:** Using a short expiration window for dashboard summaries avoids complex multi-entity invalidation logic while accepting brief summary lag.
+</Step>
+<Step title="Identify whether the issue is a missed invalidation or a Redis outage">
 
-## 5. Technical Reference
+- **Single book or dashboard stale:** Check **Catalog API** logs for failed domain-event cache invalidation (`book:<book-id>` has default `Caching:Expiration` = `00:30:00` in `BookWorm.Catalog/appsettings.json`; `catalog:dashboard:v1` expires every `15` seconds).
+- **High read latency or Redis errors:** Check Redis health (`redis-cli -u "<redis-url>" PING`), Azure Managed Redis metrics, and FusionCache OpenTelemetry traces (`BookWorm` meter).
 
-### Symptoms
+</Step>
+<Step title="Apply targeted recovery">
 
-- A [[entity|book]] shows old data after an update.
-- Dashboard numbers look outdated.
-- Catalog read latency rises, or errors mention Redis connectivity.
+> [!CAUTION]
+> Never run `FLUSHDB` or `FLUSHALL` on BookWorm's shared Redis instance (`redis`). The same Redis resource stores customer baskets (**Basket API**), distributed locks (**Ordering API**), and 24-hour `IIntegrationEventIdempotencyGuard` keys across services.
 
-### Background
+- **Single stale book:** Delete only that book's detail and summary keys in Redis:
 
-[[container|catalog-cache]] is disposable. Keys: `book:{id}` (default
-`Caching:Expiration`) and `catalog:dashboard:v1` (15 seconds). Book changes
-remove the matching `book:{id}` entry.
+  ```bash
+  redis-cli -u "<redis-url>" UNLINK "book:<book-id>" "book:summary:<book-id>"
+  ```
 
-### Diagnose
+  Where:
+  - `<redis-url>`: Connection URI for the target Redis instance.
+  - `<book-id>`: Target book UUID.
 
-1. Confirm the database holds the expected value (it is the source of truth).
-2. Compare with what [[query|GetBook]] returns.
-3. If they differ, the entry was not invalidated: look for failed change
-   handling in [[service|catalog-api]] logs.
-4. If reads are slow or failing, check Redis connectivity and latency and the
-   FusionCache metrics and traces.
+  Because FusionCache also maintains an in-process L1 memory cache, direct Redis key deletion clears L2 immediately, while L1 entries on running replicas refresh via backplane invalidation or TTL expiry (`00:30:00`).
 
-### Recover
+- **Wide Catalog staleness:** Evict only Catalog-prefixed keys (`catalog:*` and `book:*`) using non-blocking `SCAN` + `UNLINK` rather than flushing the database:
 
-- **Single stale book:** delete the `book:{id}` key, or wait for expiry. The
-  next read repopulates from [[container|catalog-database]].
-- **Wide staleness:** flush the Catalog cache keys. This is safe; only
-  temporary extra database load results.
-- **Redis down:** reads fall back to the database through the cached query
-  path, so expect higher latency and database load. Restore Redis, and
-  scale or rate-limit the API if the database is under pressure.
+  ```bash
+  redis-cli -u "<redis-url>" --scan --pattern "catalog:*" | xargs -r redis-cli -u "<redis-url>" UNLINK
+  redis-cli -u "<redis-url>" --scan --pattern "book:*" | xargs -r redis-cli -u "<redis-url>" UNLINK
+  ```
 
-### Verify
+  Expect temporary extra read load on `catalogdb` while entries warm back up.
 
-- [[query|GetBook]] returns the database value.
-- Latency and database load return to baseline.
+- **Redis outage:** **Catalog API** automatically falls back to `catalogdb` (or FusionCache fail-safe for up to 2 hours on cached keys). Monitor `catalogdb` CPU and PgBouncer connection saturation, restore Redis availability, and adjust **Catalog API** rate limits or replica scaling if `catalogdb` comes under pressure.
 
-### Prevention
+</Step>
+</Steps>
 
-Never read Redis as an authority and never write catalog data there. See
-[[adr|adr-004-fusioncache-redis-for-catalog-reads]].
+## Verification
 
-### Contact
+Fetch the book through **API Gateway** and confirm it returns the authoritative PostgreSQL values and baseline latency:
 
-- **Contact point:** [[team\|platform-team]] for Redis or infrastructure
-  incidents; [[team\|contributor-team]] for Catalog API or cache-invalidation
-  code issues.
-- For urgent incidents, use the responsible team's established support or
-  on-call channel. A specific channel or rotation is not documented here.
+<CodeGroup>
 
-<Footer />
+```bash
+curl -sS "<gateway-url>/catalog/api/v1/books/<book-id>"
+```
+
+</CodeGroup>
+
+Expected output:
+
+<CodeGroup>
+
+```json
+{
+	"id": "<book-id>",
+	"name": "<expected-title>",
+	"price": 29.99
+}
+```
+
+</CodeGroup>
+
+Confirm Redis responds normally (`PING` returns `PONG`) and `catalogdb` read latency returns to baseline.
+
+## Troubleshooting
+
+| Symptom                                                               | Cause                                                                          | Fix                                                                                                                                                               |
+| :-------------------------------------------------------------------- | :----------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Single book still shows old data immediately after `UNLINK` in Redis  | **Catalog API** replica is still serving its in-process FusionCache L1 entry   | Trigger a no-op update through **Catalog API** to broadcast a backplane invalidation, wait for `Caching:Expiration` (`00:30:00`), or restart the affected replica |
+| Dashboard totals lag by a few seconds                                 | `catalog:dashboard:v1` uses a 15-second TTL (`GetCatalogDashboardQuery.cs`)    | Wait 15 seconds and re-fetch; no manual eviction is required                                                                                                      |
+| Rising `catalogdb` CPU and slow `GET /catalog/api/v1/books` responses | Redis is unreachable and FusionCache is falling back to PostgreSQL             | Restore Azure Managed Redis connectivity; monitor `catalogdb` connections and enforce rate limits until Redis recovers                                            |
+| Widespread stale list/search pages after a schema or DTO deployment   | Cached JSON shape changed without bumping key version in `CatalogCacheKeys.cs` | Evict `catalog:*` and `book:*` keys with `SCAN` + `UNLINK`, and bump the version suffix (`v2`) in `CatalogCacheKeys.cs`                                           |
+
+## Related documentation
+
+- Catalog consistency and data ownership reference — Complete `CatalogCacheKeys.cs` inventory and disposable-cache contract.
+- Catalog change checklist reference — Pre-merge cache invalidation and key-versioning rules.

@@ -1,60 +1,57 @@
 ---
-summary: List Buyer profiles using page index and page size.
+summary: Usage examples for List Buyers.
 ---
 
-## 1. Context & Problem
+## List buyer profiles with curl
 
-Frontend and integration developers building buyer-lookup screens or back-office directories need concrete request and response examples showing how to authenticate, request a specific page of buyer profiles, and handle optional profile fields.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster integration onboarding**: Ready-to-use request and response examples reduce guesswork when connecting client applications to Ordering.
-- **Consistent paging behavior**: Demonstrating explicit page selection helps teams implement predictable multi-page directory views.
-- **Safer UI rendering**: Highlighting that buyer names and addresses can be empty prevents display bugs in customer-facing or administrative screens.
-
-## 3. How It Works
-
-1. The client attaches valid caller authorization credentials and specifies the desired page number and page size.
-2. Ordering verifies caller authorization and returns the requested page of buyer profiles containing each buyer's identifier, name, and address.
-3. The client renders the returned profiles and advances the page number when loading additional entries.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Explicit page tracking on the client**: Because the response is a plain list of buyer profiles without total-page counts, client screens must track the current page number and inspect returned page sizes to control next-page navigation.
-- **Handling optional profile attributes**: Treating name and address as optional in client code prevents runtime errors when partial buyer records are returned.
-
-## 5. Technical Reference
-
-### 1. List Buyer profiles
-
-Use `PageIndex` and `PageSize` to select the page to return.
-
-<CodeGroup dropdown>
-
-```sh
+```bash
 curl --request GET \
-  "$BASE_URL/api/v1/buyers?PageIndex=1&PageSize=20" \
-  --header "Authorization: Bearer <access-token>" \
+  "<gateway-url>/ordering/api/v1/buyers?PageIndex=1&PageSize=20" \
+  --header "Authorization: Bearer <admin-access-token>" \
   --header "Accept: application/json"
 ```
 
 </CodeGroup>
 
-The same query from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or direct Ordering API URL `https://localhost:7203` without the `/ordering` prefix).
+- `<admin-access-token>`: Entra ID bearer token with the `admin` role and Ordering API scopes.
 
-```ts list-buyers.ts
+Expected response (`200 OK` with `Pagination-Count` and `Link` headers):
+
+<CodeGroup>
+
+```json
+[
+	{
+		"id": "66666666-6666-6666-6666-666666666666",
+		"name": "Avery Nguyen",
+		"address": "10 Example Street, Ben Thanh, Ho Chi Minh City"
+	}
+]
+```
+
+</CodeGroup>
+
+## List buyer profiles with TypeScript
+
+<CodeGroup>
+
+```typescript
 type BuyerDto = {
 	id: string;
 	name: string | null;
 	address: string | null;
 };
 
-const baseUrl = "https://api.example.com";
-const accessToken = "<access-token>";
+const gatewayUrl = "<gateway-url>";
+const accessToken = "<admin-access-token>";
 const params = new URLSearchParams({ PageIndex: "1", PageSize: "20" });
-const response = await fetch(`${baseUrl}/api/v1/buyers?${params.toString()}`, {
+
+const response = await fetch(`${gatewayUrl}/ordering/api/v1/buyers?${params.toString()}`, {
 	headers: {
 		Authorization: `Bearer ${accessToken}`,
 		Accept: "application/json",
@@ -65,24 +62,9 @@ if (!response.ok) {
 	throw new Error(`ListBuyers failed with ${response.status}`);
 }
 
+const totalBuyers = Number(response.headers.get("Pagination-Count") ?? "0");
 const buyers = (await response.json()) as BuyerDto[];
-console.log(`Received ${buyers.length} buyer(s)`);
-```
-
-</CodeGroup>
-
-`200 OK` returns an array of Buyer profiles:
-
-<CodeGroup dropdown>
-
-```json
-[
-	{
-		"id": "66666666-6666-6666-6666-666666666666",
-		"name": "Avery Nguyen",
-		"address": "10 Example Street, Ben Thanh, Ho Chi Minh City"
-	}
-]
+console.log(`Received ${buyers.length} of ${totalBuyers} buyer(s)`);
 ```
 
 </CodeGroup>

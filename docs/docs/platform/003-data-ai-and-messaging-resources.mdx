@@ -9,112 +9,156 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+This reference lists the stateful, AI, and messaging resources that `src/Aspire/BookWorm.AppHost/AppHost.cs` provisions or connects to. It covers environment-tier SKUs, data ownership per service, and the conventions for external dependencies.
 
-An online bookstore with AI-assisted discovery has widely varying data needs: strict transactional integrity for orders and book inventory, sub-second response times for shopping baskets and cached catalog reads, flexible document storage for customer reviews, durable object storage for book assets and conversation histories, semantic vector search, generative AI models, and reliable event delivery across decoupled services.
+## Overview
 
-Provisioning separate infrastructure servers for every single service would drive up cost and operational overhead, whereas letting services share tables or schemas would erode domain boundaries. BookWorm resolves this by separating logical data ownership per business domain while consolidating onto managed cloud infrastructure where appropriate and removing static passwords and shared keys.
+| Property                    | Value                                                                                                                                                        |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                   | BookWorm platform (AppHost)                                                                                                                                  |
+| **Source**                  | `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.*.cs`, `Infra/durable-task-scheduler.bicep` |
+| **Azure-managed resources** | `postgres`, `redis`, `cosmos`, `storage`, `durable-task-scheduler`, `Foundry` / `Foundry-project`                                                            |
+| **External resources**      | `broker` (Kafka), `vectordb` (Qdrant Cloud), SMTP relay (SendGrid)                                                                                           |
+| **Authentication**          | Microsoft Entra ID RBAC with user-assigned Managed Identities; see [[doc\|platform/004-identity-and-rbac-matrix]]                                            |
 
-## 2. Business Value
+## Data ownership per service
 
-- **Resilience & Business Continuity**: Zone-redundant relational databases, high-availability in-memory caching, geo-zone-redundant storage, and 35-day geo-redundant backups protect critical order, catalog, and operational data against infrastructure outages.
-- **Reduced Credential Risk**: Disabling local database passwords, cache access keys, and storage shared keys in favor of centralized role-based identity eliminates static secret sprawl and simplifies security audits.
-- **Cost & Performance Alignment**: Matching each workload to its ideal storage pattern—relational for core commerce, in-memory cache for baskets, serverless document storage for reviews, and consumption-based workflow orchestration—keeps performance high without over-provisioning.
-- **Turnkey AI & Semantic Discovery**: Managed chat, decision, and embedding models paired with an external vector store enable natural-language book search and intelligent workflows without maintaining custom machine-learning infrastructure.
+Each bounded context owns its state. PostgreSQL hosts **only** three databases: `catalogdb`, `orderingdb`, and `schedulerdb`.
 
-## 3. How It Works
+| Service                                 | Primary store                                                | Cache / idempotency               | Messaging                         | Other                                            |
+| :-------------------------------------- | :----------------------------------------------------------- | :-------------------------------- | :-------------------------------- | :----------------------------------------------- |
+| Catalog API (`catalog`)                 | PostgreSQL `catalogdb`                                       | Redis                             | Kafka + PostgreSQL outbox/inbox   | Qdrant `vectordb`, Blob `catalog-blob`, Foundry  |
+| Catalog Ingestion (`catalog-ingestion`) | PostgreSQL `catalogdb` (read)                                | —                                 | Kafka trigger + PostgreSQL outbox | Qdrant `vectordb` (write), Foundry, host storage |
+| Basket API (`basket`)                   | Redis                                                        | Redis                             | Kafka                             | No SQL database                                  |
+| Ordering API (`ordering`)               | PostgreSQL `orderingdb` (EF Core + Marten event store)       | Redis                             | Kafka + PostgreSQL outbox/inbox   | —                                                |
+| Finance (`finance`)                     | Durable Task Scheduler `finance-taskhub`                     | —                                 | Kafka                             | Host storage; no PostgreSQL                      |
+| Rating API (`rating`)                   | Cosmos DB `ratingdb` / `feedbacks` (partition key `/bookId`) | Redis                             | Kafka + Cosmos DB persistence     | Foundry; no PostgreSQL                           |
+| Chat API (`chatting`)                   | Blob `chatting-blob` (prefix `ag-ui/`)                       | —                                 | —                                 | Foundry; no PostgreSQL, Redis, or Kafka          |
+| MCP Tools (`mcptools`)                  | — (stateless)                                                | —                                 | —                                 | —                                                |
+| Notification (`notification`)           | —                                                            | Redis (FusionCache + idempotency) | Kafka                             | MailKit + Mjml.Net over SMTP; no PostgreSQL      |
+| Scheduler (`scheduler`)                 | PostgreSQL `schedulerdb` (Quartz store)                      | —                                 | Kafka + PostgreSQL outbox/inbox   | —                                                |
 
-BookWorm enforces strict logical ownership of data per business capability while sharing underlying managed cloud services where practical.
+The diagram shows which services use each Azure-managed store.
 
-- **Relational & Scheduled Data**: Catalog data, order records, and scheduled job state reside in separate logical relational databases on a shared, zone-redundant server with automated connection pooling and multi-week geo-redundant backups.
-- **High-Speed Caching & Shopping Baskets**: Active shopping baskets and frequently queried catalog, order, and rating data use a shared, encrypted, high-availability in-memory cache.
-- **Reviews, Files & Host State**: Customer book feedback is stored in a serverless document database partitioned by book so review lookups remain fast as ratings grow. Book media, chat session histories, and background workflow host state live in geo-redundant object storage with public access disabled.
-- **Workflow Orchestration & AI Platform**: Multi-step order checkout orchestration relies on a dedicated consumption-based task scheduler, while conversational AI, decisioning, and text-embedding generation run through a centralized managed AI platform with integrated telemetry.
-- **External Messaging, Search & Email**: Cross-service integration events travel over an external event broker, semantic book embeddings are maintained in an external vector database, and transactional customer emails are sent via an external email relay.
+<MermaidFileLoader file="mermaids/003-data-ai-and-messaging-resources-diagram-1.mmd" />
 
-## 4. Trade-offs & Lessons Learned
+## Azure-managed resources by environment
 
-- **Shared Hosts vs. Blast Radius**: Hosting multiple domain databases on one relational server and sharing one enterprise cache cuts cost and administrative overhead, but requires monitoring so heavy traffic or maintenance in one domain does not degrade neighboring services.
-- **Scheduler Network Hardening Needed**: The generated infrastructure definition for the durable task scheduler currently allows broad network access and must be restricted to trusted addresses before production deployment (tracked in [[doc|operational/004-security-hardening-checklist]]).
-- **External Dependencies Outside the Cloud Resource Group**: Keeping event streaming, vector search, and email delivery on external platforms provides specialized capabilities and flexibility, at the cost of injecting connection parameters outside the core cloud boundary.
-- **Baseline Serverless & Model Quotas**: Using serverless document capacity and baseline AI model allocations minimizes idle spend early on, though higher production volume will require capacity increases and active throttling alerts.
+### PostgreSQL Flexible Server (`postgres`)
 
-## 5. Technical Reference
+Source: `AzureExtensions.Postgres.cs`.
 
-BookWorm separates state ownership per bounded context while sharing underlying Azure-managed infrastructure instances where appropriate. All Azure-managed data and AI services disable local/shared-key authentication in favor of Microsoft Entra ID RBAC.
+| Property             | `Development`                            | `Staging`                            | `Production`                         |
+| :------------------- | :--------------------------------------- | :----------------------------------- | :----------------------------------- |
+| SKU / tier           | `Standard_B1ms` (Burstable)              | `Standard_D2ds_v5` (General Purpose) | `Standard_D4ds_v5` (General Purpose) |
+| High availability    | Disabled                                 | Zone-redundant (zones 1 and 2)       | Zone-redundant (zones 1 and 2)       |
+| Backup retention     | 7 days                                   | 14 days                              | 35 days                              |
+| Geo-redundant backup | Disabled                                 | Disabled                             | Enabled                              |
+| Storage              | 32 GB, auto-grow disabled                | 128 GB, auto-grow enabled            | 256 GB, auto-grow enabled            |
+| PgBouncer            | Disabled                                 | Enabled                              | Enabled                              |
+| Databases            | `catalogdb`, `orderingdb`, `schedulerdb` | Same                                 | Same                                 |
 
-### Azure-Managed Data & Caching Services
+The generated Bicep snapshot specifies PostgreSQL engine version `16`, enables Microsoft Entra authentication, and disables password authentication. This corrects the legacy PostgreSQL 18 claim.
 
-#### PostgreSQL Flexible Server (`postgres`)
+### Azure Managed Redis (`redis`)
 
-| Property               | Value                                                                                            |
-| :--------------------- | :----------------------------------------------------------------------------------------------- |
-| **SKU / Tier**         | `Standard_D4ds_v5` (General Purpose)                                                             |
-| **Engine Version**     | PostgreSQL `18`                                                                                  |
-| **Storage**            | `256 GB` with auto-grow enabled                                                                  |
-| **High Availability**  | Zone-redundant HA across two availability zones                                                  |
-| **Backups**            | 35-day retention with geo-redundant backup storage                                               |
-| **Connection Pooling** | PgBouncer enabled                                                                                |
-| **Authentication**     | Microsoft Entra ID authentication only (password auth disabled)                                  |
-| **Databases**          | [[container\|catalog-database]], [[container\|order-database]], [[container\|sheduler-database]] |
+Source: `AzureExtensions.Redis.cs`. Consumers: `catalog`, `basket`, `ordering`, `rating`, `notification`.
 
-#### Azure Managed Redis (`redis`)
+| Property          | `Development` | `Staging`    | `Production` |
+| :---------------- | :------------ | :----------- | :----------- |
+| SKU               | `BalancedB0`  | `BalancedB1` | `BalancedB5` |
+| High availability | Disabled      | Enabled      | Enabled      |
 
-| Property              | Value                                                                                                                               |
-| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **SKU**               | `Balanced_B5` (Enterprise Redis)                                                                                                    |
-| **High Availability** | Enabled                                                                                                                             |
-| **Transport & Port**  | TLS 1.2+ on port `10000`                                                                                                            |
-| **Authentication**    | Access keys disabled; Entra ID `default` access policy assignment per identity                                                      |
-| **Consumers**         | [[service\|basket-api]] ([[container\|basket-database]]), [[service\|catalog-api]], [[service\|order-api]], [[service\|rating-api]] |
+The generated Bicep snapshot configures the Redis database TLS port as `10000` and disables access-key authentication. It assigns each workload the database access policy named `default` through `accessPolicyAssignments`.
 
-#### Azure Cosmos DB (`cosmos`)
+### Azure Cosmos DB (`cosmos`)
 
-| Property                 | Value                                                                          |
-| :----------------------- | :----------------------------------------------------------------------------- |
-| **API & Capacity Mode**  | NoSQL API, Serverless                                                          |
-| **Consistency Level**    | Session                                                                        |
-| **Authentication**       | Local authentication disabled; custom Cosmos DB RBAC role assignment           |
-| **Database & Container** | [[container\|rating-database]] (`feedbacks` container, partitioned by book ID) |
-| **Owner**                | [[service\|rating-api]]                                                        |
+Source: `AzureExtensions.Cosmos.cs`. Owner: `rating` only. Database `ratingdb`, container `feedbacks`, partition key `/bookId`.
 
-#### Azure Storage (`storage`)
+| Property                   | `Development` | `Staging`  | `Production`                                   |
+| :------------------------- | :------------ | :--------- | :--------------------------------------------- |
+| Capacity mode              | Serverless    | Serverless | Provisioned throughput (no `EnableServerless`) |
+| Local (key) authentication | Enabled       | Disabled   | Disabled                                       |
 
-| Property             | Value                                                                                                                      |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| **SKU / Redundancy** | `Standard_GZRS` (Geo-zone-redundant storage)                                                                               |
-| **Security Posture** | Shared-key access disabled, public blob access disabled, TLS 1.2+ enforced                                                 |
-| **Endpoints**        | Blob, Queue, Table, and Data Lake (`dfs`)                                                                                  |
-| **Usage**            | [[container\|catalog-blob]], [[container\|chat-session-blob]], Azure Functions host state (`catalog-ingestion`, `finance`) |
+The generated Cosmos template specifies Session consistency and includes the `EnableServerless` capability, with no explicit RU/s throughput value. However, that snapshot conflicts with `AzureExtensions.Cosmos.cs`, which adds `EnableServerless` only outside Production. Use the source's environment condition for the Production behavior; the `temp/` artifact does not establish a Production-specific Cosmos deployment.
 
-### Orchestration & AI Platform
+### Azure Storage (`storage`)
 
-#### Azure Durable Task Scheduler (`durable-task-scheduler`)
+Source: `AzureExtensions.Storage.cs`. Provisioned in publish mode only.
 
-- **Resource:** `Microsoft.DurableTask/schedulers@2025-11-01` (`Consumption` SKU).
-- **Task Hub:** `finance-taskhub`, used exclusively by [[service|order-orchestration]].
-- **Authentication:** `Authentication=DefaultAzure` via `finance-identity`.
-- **Network Note:** `ipAllowlist` is currently `['0.0.0.0/0']` in the generated Bicep and should be restricted for production (see [[doc|operational/004-security-hardening-checklist]]).
+| Property           | `Development`  | `Staging`      | `Production`    |
+| :----------------- | :------------- | :------------- | :-------------- |
+| SKU                | `Standard_LRS` | `Standard_ZRS` | `Standard_GZRS` |
+| Access tier        | Hot            | Hot            | Hot             |
+| Public blob access | Disabled       | Disabled       | Disabled        |
+| Minimum TLS        | 1.2            | 1.2            | 1.2             |
 
-#### Microsoft Foundry (`Foundry` & `Foundry-project`)
+| Usage                                            | Consumer                       | Role                          |
+| :----------------------------------------------- | :----------------------------- | :---------------------------- |
+| Blob container `catalog-blob`                    | `catalog`                      | Storage Blob Data Contributor |
+| Blob container `chatting-blob` (prefix `ag-ui/`) | `chatting`                     | Storage Blob Data Contributor |
+| Azure Functions host storage                     | `finance`, `catalog-ingestion` | Storage Blob Data Owner       |
 
-| Property                       | Configuration                                                                              |
-| :----------------------------- | :----------------------------------------------------------------------------------------- |
-| **Account Kind & SKU**         | `AIServices`, `S0` (`disableLocalAuth: true`, `allowProjectManagement: true`)              |
-| **Capability Host**            | `foundry-caphost` (`capabilityHostKind: 'Agents'`, `enablePublicHostingEnvironment: true`) |
-| **Chat Model Deployment**      | `chat` → `model-router` (`2025-11-18`, `GlobalStandard`, capacity `1`)                     |
-| **Decision Model Deployment**  | `decision` → `Microsoft-Decision-1` (`1`, `GlobalStandard`, capacity `1`)                  |
-| **Embedding Model Deployment** | `embedding` → `embed-v-4-0` (Cohere, `6`, `GlobalStandard`, capacity `1`)                  |
-| **Observability**              | `Foundry-project` provisions and links an Application Insights instance                    |
+Blob CORS rule: methods `GET`, `HEAD`, `OPTIONS`; allowed headers and exposed headers `*`; allowed origins `*`; `MaxAgeInSeconds = 3600`.
 
-The neighborhood around [[service|catalog-ingestion]] illustrates how PostgreSQL, Storage, Microsoft Foundry, and Qdrant interact during embedding generation:
+:::warning
+The Blob CORS rule allows every origin (`AllowedOrigins = ["*"]`). Restrict it to the gateway domain before Production, as described in [[doc|operational/004-security-hardening-checklist]].
+:::
+
+### Azure Durable Task Scheduler (`durable-task-scheduler`)
+
+Source: `Infra/durable-task-scheduler.bicep`, `AzureExtensions.DurableTask.cs`. Owner: `finance` only.
+
+| Property                           | Value                                                       |
+| :--------------------------------- | :---------------------------------------------------------- |
+| Resource type                      | `Microsoft.DurableTask/schedulers@2025-11-01`               |
+| SKU                                | `Consumption` (allowed: `Consumption`, `Dedicated`)         |
+| Task hub                           | `finance-taskhub`                                           |
+| Connection string                  | `Endpoint=<scheduler-endpoint>;Authentication=DefaultAzure` |
+| Environment variables on `finance` | `DTS_CONNECTION_STRING`, `TASKHUB_NAME`                     |
+| Network                            | `ipAllowlist: ['0.0.0.0/0']` (restrict before Production)   |
+| Run mode                           | Durable Task Scheduler emulator container                   |
+
+### Microsoft Foundry (`Foundry`, `Foundry-project`)
+
+Source: `AppHost.cs`, `Components.cs`. Consumers: `catalog`, `catalog-ingestion`, `chatting`, `rating` (role Cognitive Services User).
+
+| Deployment name | Model                                                                | Purpose                              |
+| :-------------- | :------------------------------------------------------------------- | :----------------------------------- |
+| `chat`          | `FoundryModel.Microsoft.ModelRouter` (`model-router`)                | Chat completions and agent reasoning |
+| `decision`      | `FoundryModel.Microsoft.MicrosoftDecision1` (`Microsoft-Decision-1`) | Chat workflow routing decisions      |
+| `embedding`     | `FoundryModel.Cohere.EmbedV40` (`embed-v-4-0`)                       | Catalog vector embeddings            |
+
+The generated Bicep snapshot specifies Foundry account SKU `S0` and an `Agents` capability host with public hosting enabled. Deployments use `model-router` version `2025-11-18`, `Microsoft-Decision-1` version `1`, and `embed-v-4-0` version `6`; each has `GlobalStandard` capacity `1`. The `Foundry-project` module creates the `Foundry-project-ai` Application Insights component and links it using an `AppInsights` project connection.
+
+## External dependencies
+
+These resources sit outside the Azure resource group. `aspire deploy` receives them as connection strings or parameters.
+
+| Resource                  | Configuration key                                                                                                                                                            | Consumers                                                                                              | Run-mode equivalent                 |
+| :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- | :---------------------------------- |
+| Kafka (`broker`)          | `ConnectionStrings__broker`                                                                                                                                                  | `catalog`, `catalog-ingestion`, `basket`, `ordering`, `rating`, `notification`, `scheduler`, `finance` | Kafka container + Kafka UI          |
+| Qdrant Cloud (`vectordb`) | `ConnectionStrings__vectordb`                                                                                                                                                | `catalog`, `catalog-ingestion`                                                                         | Qdrant container                    |
+| SMTP relay (SendGrid)     | `Parameters__email_smtp_endpoint`, `Parameters__email_smtp_username`, `Parameters__email_smtp_password`, `Parameters__email_sender_address`, `Parameters__email_sender_name` | `notification`                                                                                         | Mailpit container (SMTP port `587`) |
+
+### Kafka messaging conventions
+
+Source: `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/`.
+
+| Convention         | Value                                                                                      |
+| :----------------- | :----------------------------------------------------------------------------------------- |
+| Library            | Wolverine with Kafka transport                                                             |
+| Default topic name | `bookworm.{env}.{owner-service}.{topic-name}`                                              |
+| Unprefixed topic   | `scheduler.process-vector-batch` (`AppendPrefix = false`)                                  |
+| Dead-letter queue  | `bookworm.{env}.{service}.dead-letter-queue` (one per service)                             |
+| Serialization      | CloudEvents JSON; propagates W3C trace context, `requestid`, and `UserId`                  |
+| Retry policy       | Cooldowns of `50ms`, `250ms`, and `1s` with full jitter, then the native dead-letter queue |
+
+## Related documentation
+
+- [[doc|platform/002-compute-and-container-apps]] — Workloads that consume these resources.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Role assignments for each resource.
+- [[doc|operational/004-security-hardening-checklist]] — Network, backup, and quota hardening.
+- [[doc|operational/003-incident-response-and-runbooks]] — Datastore and messaging recovery steps.
 
 <ArchitectureGraph id="catalog-ingestion" type="service" depth="2" maxHeight="28" />
-
-### External Infrastructure Dependencies
-
-The following dependencies are hosted outside the Azure resource group and injected as deployment parameters:
-
-- **Kafka Broker:** Carries asynchronous integration events and commands across [[service|catalog-api]], [[service|catalog-ingestion]], [[service|basket-api]], [[service|order-api]], [[service|order-orchestration]], [[service|rating-api]], [[service|sheduler-dashboard]], and [[service|notification-api]].
-- **Qdrant Cloud ([[container|catalog-vector]]):** External vector database updated by [[service|catalog-ingestion]] and queried by [[service|catalog-api]].
-- **SMTP / [[system|sendgrid]]:** External SMTP relay used by [[service|notification-api]] for transactional email delivery.

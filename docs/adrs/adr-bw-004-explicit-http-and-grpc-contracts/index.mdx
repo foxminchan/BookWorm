@@ -14,36 +14,67 @@ related:
   - id: adr-bw-005-kafka-integration-backbone
   - id: adr-bw-017-compatible-contract-evolution
   - id: adr-004-use-domain-apis-as-mcp-backends
+decisionMakers:
+  - contributor-team
+x-scope: "Whole system"
 ---
 
-## Context
+## Context and problem statement
 
-Checkout, basket presentation, and domain adapters need current information from another capability. Direct access to its persistence or handler classes couples the consumer to implementation details.
+Checkout validation, basket enrichment, and AI tool adapters require synchronous reads from another bounded context. Allowing a consumer to query another service's database or invoke its internal handlers couples services to private implementation details and bypasses domain validation and authorization.
 
-## Decision
-
-Use the owning service's published request-response contract. Retain HTTP APIs with OpenAPI descriptions where provided and the defined Basket and Catalog gRPC interfaces with Protocol Buffer schemas. Select the existing contract appropriate to the interaction; do not make gRPC universal or convert asynchronous workflows into synchronous call chains.
+BookWorm needs a clear boundary rule governing synchronous request-response integration across services.
 
 ## Decision drivers
 
-- Interoperability and explicit ownership.
-- Typed, reviewable interface shapes.
-- Separation of public semantics from internal persistence.
+- **Ownership:** Keep public interface semantics strictly separated from internal persistence models and handlers.
+- **Interoperability:** Provide typed, reviewable contracts suited to both external web clients and internal service-to-service calls.
+- **Boundary clarity:** Match the transport protocol to the interaction pattern without forcing asynchronous workflows into synchronous chains.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                | Assessment                                                                                |
-| -------------------------- | ----------------------------------------------------------------------------------------- |
-| Direct database reads      | Avoids a network API but bypasses ownership and leaks schema details.                     |
-| HTTP-only standardization  | Simplifies protocol variety but replaces established gRPC consumers.                      |
-| gRPC for every interaction | Provides consistent typed calls but does not fit every external or asynchronous boundary. |
+1. Use service-owned versioned HTTP APIs and Protocol Buffer gRPC contracts
+2. Read another service's database directly for synchronous lookups
+3. Standardize every synchronous interaction on HTTP JSON only
+4. Standardize every synchronous interaction on gRPC only
 
-## Consequences
+## Decision outcome
 
-- Consumers depend on an explicit contract rather than another service's internals.
-- Synchronous calls create runtime availability and latency dependencies.
-- HTTP and Protocol Buffer contracts require separate validation and consumer migration practices.
+Chosen option: **Use service-owned versioned HTTP APIs and Protocol Buffer gRPC contracts**, because it protects internal models while choosing the right protocol for each consumer boundary.
 
-## Evidence
+External clients and the YARP API Gateway call versioned HTTP Minimal APIs (`ApiVersions.V1`, `/api/v1/...`) documented with OpenAPI schemas. Internal service-to-service lookups use explicit Protocol Buffer (`edition = "2023"`) gRPC contracts: `book.v1.BookGrpcService` (served by Catalog API for Basket API, Ordering API, and MCP Tools), `basket.v1.BasketGrpcService` (served by Basket API for Ordering API), and A2A gRPC (served by Rating API for Chat API). Multi-step workflows that do not require an immediate synchronous response continue to use asynchronous Kafka messaging under ADR-BW-005.
 
-See [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] and [[doc|arc42/05-building-block-view]]. The MCP backend detail remains in [[adr|adr-004-use-domain-apis-as-mcp-backends]].
+### Consequences
+
+- **Positive:** Consumers depend solely on explicit, versioned contracts rather than private schemas or handler classes.
+- **Negative:** Synchronous calls introduce runtime latency and availability coupling, and teams must maintain separate linting and evolution workflows for OpenAPI and `.proto` contracts.
+- **Follow-up:** Run Protocol Buffer linting and breaking-change checks alongside API contract reviews per ADR-BW-017.
+
+## Pros and cons of the options
+
+### Use service-owned versioned HTTP APIs and Protocol Buffer gRPC contracts
+
+- **Good**, because HTTP APIs serve browser microfrontends and gateway callers cleanly while gRPC gives internal services strongly typed, low-overhead calls.
+- **Good**, because owning services enforce authentication, authorization, and validation at the boundary.
+- **Bad**, because maintaining both HTTP and gRPC endpoints adds serialization and contract-governance surface area.
+
+### Read another service's database directly for synchronous lookups
+
+- **Good**, because it avoids network serialization overhead.
+- **Bad**, because it breaks bounded-context encapsulation, leaks internal table schemas, and bypasses domain authorization rules.
+
+### Standardize every synchronous interaction on HTTP JSON only
+
+- **Good**, because every client and server shares one HTTP tooling stack.
+- **Bad**, because it replaces established typed gRPC contracts (`BookGrpcService`, `BasketGrpcService`, A2A gRPC) and loses compile-time Protobuf schema guarantees.
+
+### Standardize every synchronous interaction on gRPC only
+
+- **Good**, because all synchronous contracts use one binary schema language.
+- **Bad**, because browser clients, webhooks, and external HTTP callers require HTTP/JSON or gateway transcoding anyway.
+
+## Verification and links
+
+- **Verified against:** `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Basket/BookWorm.Basket/Grpc/Protos/basket/v1/basket.proto`, `src/Aspire/BookWorm.AppHost/Extensions/Proxy/ApiGatewayProxyBuilder.cs`
+- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], [[doc|arc42/05-building-block-view]], [[doc|platform/006-api-and-contracts]]
+- **Related ADRs:** ADR-BW-005, ADR-BW-017, [[doc|arc42/09-architecture-decisions]]

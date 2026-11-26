@@ -1,64 +1,30 @@
 ---
-summary: Soft-delete an Order as an administrator.
+summary: Usage examples for Delete order.
 ---
 
-## 1. Context & Problem
+## Soft-delete an order through API Gateway
 
-Support and operations administrators occasionally need to remove an Order from active customer and operational views—such as when cleaning up invalid, duplicate, or test orders—without altering historical order records or triggering a customer cancellation workflow. Clear usage examples help internal tooling teams implement this administrative action safely and handle missing orders predictably.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Safe Administrative Cleanup**: Guides developers and operators on hiding obsolete or erroneous orders without destroying underlying audit records.
-- **Faster Tooling Integration**: Provides ready-to-use request and error-handling examples for internal admin dashboards and operational scripts.
-- **Predictable Error Handling**: Demonstrates how calling tools should distinguish a missing order from an unexpected failure.
-
-## 3. How It Works
-
-1. An administrator submits a removal request identifying the target Order, without supplying any additional request details.
-2. The service verifies that the requester holds administrator permissions.
-3. If the Order exists, the service marks it as soft-deleted and confirms success without returning order details.
-4. If no matching Order exists, the service reports that the Order was not found so the administrative tool can surface an accurate message.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Soft Delete Over Hard Delete**: Marking the Order as deleted rather than physically erasing it preserves historical traceability, while requiring downstream queries to respect the deletion marker.
-- **Admin-Only Authorization**: Requiring administrator credentials prevents unauthorized users from hiding active orders, though customer-facing cancellations must use dedicated customer flows instead.
-- **Explicit Missing-Order Handling**: Reporting when an Order does not exist helps operators catch mistyped or already-removed identifiers instead of silently treating them as newly deleted.
-
-## 5. Technical Reference
-
-The endpoint requires administrator authorization and has no request body.
-
-<CodeGroup dropdown>
-
-```sh
-curl --request DELETE "$BASE_URL/api/v1/orders/44444444-4444-4444-4444-444444444444" \
+```bash
+curl --request DELETE "https://<gateway-host>/ordering/api/v1/orders/<order-id>" \
   --header "Authorization: Bearer <admin-access-token>"
 ```
 
 </CodeGroup>
 
-The same request from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-host>`: API Gateway hostname (or `localhost:7203` with `/api/v1/orders/<order-id>` when calling Ordering API directly).
+- `<order-id>`: UUID of the order to soft-delete.
+- `<admin-access-token>`: Entra ID JWT with role `admin` and scopes `ordering_read` and `ordering_write`.
 
-```ts delete-order.ts
-const baseUrl = "https://api.example.com";
-const adminToken = "<admin-access-token>";
-const orderId = "44444444-4444-4444-4444-444444444444";
-const response = await fetch(`${baseUrl}/api/v1/orders/${orderId}`, {
-	method: "DELETE",
-	headers: { Authorization: `Bearer ${adminToken}` },
-});
+Expected response:
 
-if (response.status === 404) {
-	throw new Error("Order was not found");
-}
-if (!response.ok) {
-	throw new Error(`DeleteOrder failed with ${response.status}`);
-}
+<CodeGroup>
+
+```text
+HTTP/1.1 204 No Content
 ```
 
 </CodeGroup>
-
-`204 No Content` confirms the Order was soft-deleted. There is no response body.

@@ -18,41 +18,62 @@ sidebar:
   badge: "POST"
 ---
 
-## 1. Context & Problem
+`CreateCategory` creates a new book category in **Catalog API** (`POST /api/v1/categories`) and returns its generated UUIDv7 identifier as a JSON string. Callers use the returned identifier when assigning categories in [[command|CreateBook]] and [[command|UpdateBook]].
 
-Customers and merchandisers rely on clear subject groupings to browse, filter, and organize books across the BookWorm storefront. Without a dedicated way to introduce new categories into the catalog, product teams cannot structure emerging genres or keep book classification consistent as inventory grows.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                        |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                         |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Categories/Create/`                                                          |
+| **Protocol / format** | HTTP `POST`, JSON request (`application/json`), JSON string response                                                         |
+| **Endpoint**          | Direct: `POST /api/v1/categories` (local HTTP `5100`, HTTPS `7187`); API Gateway: `POST /catalog/api/v1/categories`          |
+| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
+| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                     |
+| **Idempotency**       | Not idempotent; duplicate names fail the PostgreSQL unique index, and no `x-request-id` header is enforced                   |
+| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                   |
 
-- **Structured catalog growth**: Enables merchandisers and onboarding workflows to add new product categories quickly as inventory expands.
-- **Data consistency**: Ensures every book category is registered centrally with a valid name and a stable unique identifier rather than ad-hoc labels.
-- **Safer downstream references**: Returning a system-generated unique identifier allows books and reporting tools to link to the category reliably even if its display name is updated later.
+## Parameters and fields
 
-## 3. How It Works
+### Request body (`application/json`)
 
-1. A catalog operator or onboarding workflow submits a request to create a new [[entity|category]] with a display name.
-2. The catalog validates that a non-empty name has been provided.
-3. When the input is valid, the catalog stores the new category and returns its generated unique identifier so downstream workflows can immediately assign books to it.
-4. When the name is missing or blank, the request is rejected with a validation error and no category record is created.
+`StringTrimmerJsonConverter` trims leading and trailing whitespace from string properties during deserialization.
 
-## 4. Trade-offs & Lessons Learned
+| Name   | Type     | Required | Default | Constraints                                                                        | Description                  |
+| :----- | :------- | :------- | :------ | :--------------------------------------------------------------------------------- | :--------------------------- |
+| `name` | `string` | Yes      | —       | Non-empty, max `50` chars (`DataSchemaLength.Medium`), unique in `categories.name` | Display name of the category |
 
-- **Minimal required input**: Requiring only a non-empty name keeps category creation fast and low-friction, while deferring richer merchandising attributes (such as descriptions or hierarchy metadata) to separate capabilities.
-- **Identifier stability over name keys**: Using a generated unique identifier rather than the category name as the primary reference prevents broken links across books if category names are later refined.
-- **Fail-fast validation**: Rejecting empty or missing names upfront keeps poor-quality taxonomy entries out of the catalog; callers should fix invalid input before retrying rather than repeating the same request.
+### Response body (`200 OK`)
 
-## 5. Technical Reference
+`CreateCategoryEndpoint` returns `200 OK` (not `201 Created`) without a `Location` header.
 
-Creates a [[entity|category]] and returns its generated UUID.
+| Name       | Type     | Required | Default | Constraints           | Description                                         |
+| :--------- | :------- | :------- | :------ | :-------------------- | :-------------------------------------------------- |
+| Root value | `string` | Yes      | —       | UUIDv7 (`CategoryId`) | Generated unique identifier of the created category |
 
-- **Operation**: `POST /api/v1/categories`
-- **Request contract**: JSON request body requiring a non-empty `name`.
-- **Responses**:
-  - `200`: Response body is a JSON string containing the new category UUID.
-  - `400`: A validation problem is returned when `name` is missing or empty.
+## Behavior and side effects
+
+- **Persistence and uniqueness:** Inserts a new row into the `categories` table in PostgreSQL (`catalogdb`) with a database-generated UUIDv7 primary key. `CategoryConfiguration.cs` enforces a unique index on `categories.name`; submitting an existing category name raises an unhandled database exception mapped to `500 Internal Server Error` by `GlobalExceptionHandler`.
+- **Cache invalidation:** Dispatches `CategoryCreatedEvent` on save; `CategoryChangedEventHandler` removes the FusionCache key `catalog:categories:v1`.
+- **Search vectors:** No vector-index trigger runs on `categories` insert; `categories_vector_update` fires only on `UPDATE` or `DELETE`.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                         | Recovery behavior                                                               |
+| :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| `400 Bad Request`           | `name` is missing, empty, whitespace-only, exceeds `50` characters, or JSON payload is malformed (`HttpValidationProblemDetails`) | Fix the request body; do not retry unchanged input                              |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                         | Acquire a valid Entra ID access token and retry                                 |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                   | Request the required Entra ID app role and scopes                               |
+| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                          | Wait for the `Retry-After` interval before retrying                             |
+| `500 Internal Server Error` | Duplicate `name` violating the `categories.name` unique index or unhandled server error (`ProblemDetails` with `traceId`)         | Check existing categories for a duplicate name and inspect logs using `traceId` |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[command|UpdateCategory]] — Rename an existing category.
+- [[command|DeleteCategory]] — Remove a category with no active books.
+- [[command|CreateBook]] — Assign a category to a new book listing.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

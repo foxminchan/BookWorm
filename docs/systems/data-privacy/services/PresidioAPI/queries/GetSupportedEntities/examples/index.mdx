@@ -1,12 +1,55 @@
-## List supported entities with `HttpClient`
+---
+summary: Usage examples for Get supported entities.
+---
 
-The optional `language` parameter selects the Analyzer language. These are
-available capabilities and do not imply that every entity type is enabled by
-the calling application's privacy policy.
+## Query supported English entities with curl
 
-<CodeGroup dropdown>
+<CodeGroup>
 
-```csharp GetSupportedEntities.cs
+```bash
+curl --fail --get --data-urlencode "language=en" "<presidio-analyzer-url>/supportedentities"
+```
+
+</CodeGroup>
+
+Where:
+
+- `<presidio-analyzer-url>`: Base URL of the `presidio-analyzer` container (resolved from the Aspire Dashboard or `ConnectionStrings__presidio-analyzer`).
+
+Illustrative response (`200 OK`, from the upstream OpenAPI example; the installed image may expose a different list):
+
+<CodeGroup>
+
+```json
+[
+	"PHONE_NUMBER",
+	"US_DRIVER_LICENSE",
+	"US_PASSPORT",
+	"LOCATION",
+	"CREDIT_CARD",
+	"CRYPTO",
+	"UK_NHS",
+	"US_SSN",
+	"US_BANK_NUMBER",
+	"EMAIL_ADDRESS",
+	"DATE_TIME",
+	"IP_ADDRESS",
+	"PERSON",
+	"IBAN_CODE",
+	"NRP",
+	"US_ITIN",
+	"MEDICAL_LICENSE",
+	"URL"
+]
+```
+
+</CodeGroup>
+
+## Query supported entities with C# `HttpClient`
+
+<CodeGroup>
+
+```csharp
 using System.Net.Http.Json;
 
 var analyzerUrl = Environment.GetEnvironmentVariable("ANALYZER_URL")

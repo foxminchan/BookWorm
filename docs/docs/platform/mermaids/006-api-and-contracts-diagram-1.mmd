@@ -1,0 +1,5 @@
+flowchart LR
+	gateway["API Gateway\n(YARP)"] -->|"HTTP v1 / SSE / AG-UI"| apis["Core APIs\n(Catalog, Basket, Ordering, Rating, Chat)"]
+	apis <-->|"gRPC / MCP / A2A"| internal["Internal AI & Tools\n(MCP Tools, Presidio, Foundry)"]
+	apis <-->|"Kafka CloudEvents"| broker["Kafka Broker\n(Wolverine)"]
+	broker <-->|"Triggers & Commands"| workers["Background Workers\n(Finance, Notification, Scheduler, Catalog Ingestion)"]

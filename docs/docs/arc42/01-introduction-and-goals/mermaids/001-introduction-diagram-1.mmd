@@ -1,0 +1,24 @@
+flowchart LR
+	customer["Customer\n(Storefront & Commerce)"]
+	admin["Store Administrator\n(Backoffice & Quartz UI)"]
+
+	subgraph bookworm["BookWorm Platform (.NET 11 + Aspire 17 + Next.js 16)"]
+		catalog["Catalog\n(Catalog API, Ingestion)"]
+		shopping["Shopping\n(Basket API)"]
+		ordering["Ordering\n(Ordering API, Finance)"]
+		reviews["Reviews\n(Rating API)"]
+		conversational["Conversational\n(Chat API, MCP Tools)"]
+		platform["Platform\n(Notification, Scheduler)"]
+	end
+
+	entra["Microsoft Entra ID\n(Identity & Agent IDs)"]
+	foundry["Microsoft Foundry\n(LLM, Decision & Embeddings)"]
+	smtp["SendGrid / Mailpit\n(SMTP Email Delivery)"]
+
+	customer -->|"HTTPS via YARP"| bookworm
+	admin -->|"HTTPS via YARP / OIDC"| bookworm
+	bookworm <-->|"OAuth2 / OIDC / OBO"| entra
+	conversational --> |"HTTPS: Model & Decision API"| foundry
+	catalog --> |"HTTPS: Embeddings API"| foundry
+	reviews --> |"HTTPS: LLM Summary API"| foundry
+	platform -->|"SMTP (Port 587)"| smtp

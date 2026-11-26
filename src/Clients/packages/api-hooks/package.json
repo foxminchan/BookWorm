@@ -23,11 +23,11 @@
     "check-types": "bun ../../node_modules/@typescript/native/bin/tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.108.2"
+    "@tanstack/react-query": "^5.108.4"
   },
   "devDependencies": {
-    "@types/node": "^24.19.2",
-    "@types/react": "^19.3.0",
+    "@types/node": "^24.19.4",
+    "@types/react": "^19.3.3",
     "@workspace/api-client": "workspace:*",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/types": "workspace:*",

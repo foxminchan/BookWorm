@@ -1,0 +1,5 @@
+flowchart LR
+	chat["Chat API\n(4 Chat Agents)"] --> |"1. POST /analyze"| analyzer["Presidio Analyzer\n(Container: 3000)"]
+	rating["Rating API\n(Rating Agent)"] -->|"1. POST /analyze"| analyzer
+	chat --> |"2. POST /anonymize\n(if PII detected)"| anonymizer["Presidio Anonymizer\n(Container: 3000)"]
+	rating -->|"2. POST /anonymize\n(if PII detected)"| anonymizer

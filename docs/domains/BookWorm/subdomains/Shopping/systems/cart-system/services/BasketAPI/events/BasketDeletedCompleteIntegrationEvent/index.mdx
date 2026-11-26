@@ -14,37 +14,59 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+`BasketDeletedCompleteIntegrationEvent` (v1.0.0) signals that Basket API removed a submitted customer basket during post-checkout cleanup. Finance consumes this event to advance the order orchestration saga; it confirms basket deletion only and does not imply order completion.
 
-Once a customer submits an order at checkout, their temporary shopping [[entity|basket]] needs to be cleared so purchased items do not linger in the cart. Downstream checkout workflows also need an explicit confirmation that cleanup succeeded before advancing coordination steps, rather than assuming the basket was removed.
+## Overview
 
-## 2. Business Value
+| Property                      | Value                                                                                                   |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------ |
+| **Owner**                     | Shopping bounded context (`Basket API`)                                                                 |
+| **Producer**                  | [[service\|basket-api]] (`PlaceOrderCommandHandler`)                                                    |
+| **Consumer**                  | [[service\|order-orchestration]] (`OrderOrchestrator`)                                                  |
+| **Source**                    | `src/Services/Basket/BookWorm.Basket/IntegrationEvents/Events/BasketDeletedCompleteIntegrationEvent.cs` |
+| **Protocol / format**         | Kafka + CloudEvents JSON (Wolverine)                                                                    |
+| **Kafka topic**               | `bookworm.{env}.basket.delete-complete` (where `{env}` is the kebab-case environment name)              |
+| **Message identity**          | `BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent`                                              |
+| **Partition key**             | `OrderId` (preserves per-order saga ordering on Kafka)                                                  |
+| **Persistence / idempotency** | Redis-backed 24-hour idempotency guard (`idempotency:PlaceOrderCommandHandler:{orderId}`)               |
 
-- **Clean post-checkout experience**: Shoppers start their next visit with a fresh, empty cart instead of seeing items from an order they already placed.
-- **Reliable workflow coordination**: Downstream order processes receive clear confirmation that basket cleanup succeeded.
-- **Clear milestone boundaries**: Keeps cart cleanup distinct from payment settlement and order completion so workflows do not advance on false assumptions.
+## Parameters and fields
 
-## 3. How It Works
+The schema below defines the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema).
 
-1. During checkout cleanup, the basket service removes the customer's submitted [[entity|basket]].
-2. Once removal succeeds, the service broadcasts a completion notification carrying the order reference, the deleted basket reference, and the purchase total.
-3. Downstream checkout processes listen for this confirmation to continue coordination for that order.
-4. This confirmation only means the basket was cleared—it does not indicate that payment has settled or that the order itself is complete.
+| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                     |
+| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :-------------------------------------------------------------- |
+| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier for this integration event instance.          |
+| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Basket API created the event.                |
+| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the order whose submitted basket was deleted.     |
+| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID                                               | Identifier of the Redis basket removed during checkout cleanup. |
+| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                             | Total purchase amount associated with the order.                |
 
-## 4. Trade-offs & Lessons Learned
+### CloudEvents envelope headers
 
-- **Explicit confirmation vs. silent cleanup**: Emitting a dedicated completion notification adds a messaging step to checkout, but gives downstream workflows visibility into cleanup outcomes.
-- **Duplicate delivery tolerance**: Because messaging channels can deliver notifications more than once, consumers must handle repeated confirmations safely without applying coordination updates twice.
-- **Narrow meaning**: Treating this event strictly as a basket-cleanup milestone avoids coupling cart removal to payment or fulfillment guarantees.
+Wolverine attaches standard CloudEvents metadata plus BookWorm envelope headers via `CloudEventHeaderPolicy`:
 
-## 5. Technical Reference
+| Header        | Value / source                                             | Purpose                                                      |
+| :------------ | :--------------------------------------------------------- | :----------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent` | Explicit message identity for cross-service deserialization. |
+| `source`      | `urn:bookworm:bookworm-basket`                             | Identifies the producing service.                            |
+| `requestid`   | Propagated from incoming `PlaceOrderCommand`               | End-to-end correlation across HTTP and Kafka hops.           |
 
-- **Publisher**: [[service|basket-api]]
-- **Channel**: [[channel|bookworm.&#123;env&#125;.basket.delete-complete]]
-- **Envelope & Payload**: The event is carried in a CloudEvents envelope. The schema below describes the JSON data payload.
+## Error handling and delivery guarantees
+
+| Condition                                                     | Behavior                                                                                                                                             | Recovery behavior                                                                                      |
+| :------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| Duplicate `PlaceOrderCommand` within 24 hours                 | `PlaceOrderCommandHandler` detects the Redis idempotency key for `OrderId` and re-emits `BasketDeletedCompleteIntegrationEvent` without re-deleting. | Finance handles duplicate external events idempotently within the Durable Task orchestration instance. |
+| Transient broker or consumer error                            | Wolverine retries with cooldown (`50ms`, `250ms`, `1s`) and full jitter.                                                                             | After retries are exhausted, Wolverine routes the message to the consumer dead-letter queue (DLQ).     |
+| Deserialization failure (`JsonException` / `FormatException`) | Routed immediately to the native Kafka DLQ without retries.                                                                                          | Inspect the payload against Pact contract `tests/pacts/Finance-Basket.json` before replaying.          |
+
+## Related documentation
+
+- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] — Kafka channel specification for `bookworm.{env}.basket.delete-complete`.
+- [[event|BasketDeletedFailedIntegrationEvent]] — Companion failure event when Redis deletion returns `false`.
+- [[service|basket-api]] — Producer service contract and Redis storage details.
+- [[entity|basket]] — Redis basket data model.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="Basket deletion completed schema" maxHeight="500" />

@@ -10,38 +10,46 @@ badges:
     textColor: teal
 ---
 
-import Footer from "@catalog/components/footer.astro";
+When a customer shares praise, criticism, or an opinion about a book during chat, **Book Agent** (`book`) responds empathetically inside the conversation without creating, modifying, or deleting any official review record. Authoritative `Feedback` records live exclusively in the Reviews subdomain (Rating API backed by Azure Cosmos DB), and BookWorm keeps conversational discussion strictly separate from persisted review writes and Catalog rating summaries.
 
-## 1. Context & Problem
+## Context and motivation
 
-During a chat session, customers often share opinions, praise, or complaints about a book. Without clear conversational boundaries, an assistant could accidentally imply that a casual chat comment has been saved as an official product review or has changed the book's public rating.
+Customers naturally blend three different intents in bookstore conversations:
 
-## 2. Business Value
+1. **Sharing an informal opinion** (_"I loved the pacing of Dune, give me something similar"_).
+2. **Asking for an analysis of existing reviews** (_"What do readers say about Dune?"_).
+3. **Submitting, editing, or deleting a public review** that affects a book's rating summary.
 
-Setting clear expectations preserves customer trust and keeps review data accurate:
+Treating informal chat comments as official reviews creates silent data-integrity bugs and misleads customers into believing a casual message updated a book's public rating. Conversely, refusing to engage with emotional book feedback makes recommendations feel robotic. BookWorm separates empathetic conversational handling, read-only review summarization, and authoritative review persistence into three distinct paths.
 
-- Customers are not misled into thinking an informal comment was published as a verified review.
-- BookWorm maintains a clean separation between conversational assistance and authoritative review records.
-- Customers who want to submit, edit, or remove a formal review are guided directly to the proper channel.
+## How it works
 
-## 3. How It Works
+The diagram below contrasts the two read-only Conversational paths (inline feedback response in Book Agent and read-only review analysis via Rating Agent over A2A gRPC) against the separate authoritative Reviews write path through Rating API and Kafka.
 
-When a customer shares an opinion about a book in chat:
+<MermaidFileLoader file="mermaids/04-handle-book-feedback-diagram-1.mmd" />
 
-1. **Acknowledge with empathy**: The assistant validates the customer's sentiment and responds helpfully in the conversation.
-2. **Do not claim a review was saved**: Unless a formal review submission was actually completed and confirmed, the assistant must never say that feedback was saved, published, or used to update a rating.
-3. **Separate opinion from store facts**: Personal comments in chat do not alter official book details such as price, availability, or average ratings.
-4. **Guide to the formal channel when needed**: If the customer wants to leave, update, or delete a rating—or report an issue with an existing review—the assistant directs them to the official Reviews or support workflow.
+Four architectural invariants enforce this separation:
 
-## 4. Trade-offs & Lessons Learned
+- **Inline sentiment inference with no Sentiment Agent:** `book-agent.yaml` instructs Book Agent to infer customer sentiment from emotional book feedback, acknowledge it naturally, and use it to shape follow-up recommendations without exposing raw sentiment labels unless asked. BookWorm has **no separate Sentiment Agent** and no sentiment microservice.
+- **Zero write path from Chat API to Reviews:** Chat API has no Kafka producer, no Cosmos DB connection, and no Rating API write tools. `Policies/chat-agents.yaml` permits `Book Agent` to call `handoff_to_rating` for read-only analysis, never to create or delete `Feedback` records. Book Agent must never claim that a chat comment was saved, published, or used to update a book's rating.
+- **ID-gated read-only review summarization:** When a customer asks to summarize reviews or analyze rating quality signals without providing a book ID, `DecisionRouterExecutor` routes the request to `Book Agent`. Book Agent resolves the exact catalog ID via `search_catalog` (asking for clarification if multiple titles match, or stopping if no title matches) and then hands off to `Rating Agent` over A2A gRPC with the book ID and title stated explicitly. `Rating Agent` is terminal and read-only.
+- **Formal reviews stay in Reviews and project asynchronously to Catalog:** Customers who want to submit, update, or remove an official review use the Storefront review flow backed by Rating API (`/api/v1/feedbacks`), which persists `Feedback` documents in Azure Cosmos DB (`ratingdb`/`feedbacks`, partitioned by `/bookId`) and publishes `FeedbackCreatedIntegrationEvent` or `FeedbackDeletedIntegrationEvent` over Kafka so Catalog API updates its derived rating summary.
 
-- **Helpful tone vs. data authority**: Keeping the assistant empathetic without granting it implicit authority over review records avoids silent data discrepancies and prevents false customer expectations.
-- **Clear escalation**: Explicitly routing formal review actions to the Reviews domain keeps responsibilities clean and auditable.
+## Design trade-offs
 
-## 5. Technical Reference
+| Decision                                                          | Benefits                                                                                                                        | Costs and limits                                                                                             |
+| :---------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------- |
+| **Keep chat feedback non-persistent and read-only**               | Prevents accidental review publication, preserves auditability in Reviews, and avoids misleading customers about rating updates | Customers who want to publish an opinion shared in chat must submit a formal review through the Reviews flow |
+| **Handle emotional sentiment inline in Book Agent**               | Removes the latency, network hop, and operational cost of a dedicated sentiment agent while keeping tone natural                | Sentiment inference is scoped to the conversational turn rather than stored as structured analytics          |
+| **Require a resolved single book ID before Rating Agent handoff** | Keeps `Rating Agent` focused strictly on Cosmos DB review analysis without duplicating MCP catalog search logic                 | Title-only review questions take an extra catalog-resolution step in `Book Agent` before handoff             |
 
-- **Owning / Participating Domains**: [[domain|conversational]], [[domain|reviews]]
-- **Primary Agent**: [[agent\|book-agent]]
-- **Boundary Rule**: Conversational messages do not persist `Feedback` records in the Reviews domain or mutate Catalog rating projections.
+## Alternatives considered
 
-<Footer />
+- **Adding a dedicated Sentiment Agent in Chat API:** Rejected because modern foundation models invoked by `Book Agent` (`Microsoft Foundry` `ModelRouter`) already infer conversational sentiment reliably inline, avoiding extra orchestration hops and governance surface area.
+- **Adding a `submit_feedback` write tool to Book Agent:** Rejected because persisting public reviews requires explicit customer intent, structured rating validation, and authenticated Reviews ownership boundaries; granting Chat API write access would couple Conversational directly to Reviews persistence and Kafka event publication.
+
+## Related documentation
+
+- How BookWorm handles book discovery and recommendations — How Book Agent resolves titles via MCP Tools before handing off.
+- How BookWorm routes customer chat requests — How ID-present vs. title-only review requests are routed.
+- Conversational architecture and domain boundaries reference — Complete bounded-context ownership matrix.

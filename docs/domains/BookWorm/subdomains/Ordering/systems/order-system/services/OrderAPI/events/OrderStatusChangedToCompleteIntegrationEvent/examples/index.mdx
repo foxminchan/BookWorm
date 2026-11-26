@@ -1,130 +1,21 @@
 ---
-summary: Report an Order transition from New to Completed to Finance.
+summary: Usage examples for Order completed.
 ---
 
-## 1. Context & Problem
+## Event payload
 
-Once an order completes its lifecycle and moves from New to Completed, Finance must be notified so it can finalize its internal tracking and trigger customer completion communications when contact details are present. Conflating this status report with a command to complete the order—or with confirmation that an email was delivered—would blur ownership boundaries between Ordering and Finance.
+<CodeGroup>
 
-## 2. Business Value
-
-- **End-to-End Traceability**: Provides a distinct completion event identifier alongside the order identifier so teams can correlate completion directly with the original checkout.
-- **Financial Accuracy**: Preserves the accepted purchase total from the completed order for consistent Finance reconciliation.
-- **Controlled Customer Notifications**: Allows Finance to finalize its workflow reliably while emitting a completion notification only when both customer name and email are available.
-
-## 3. How It Works
-
-1. After an [[entity|order]] transitions from New to Completed, [[service|order-api]] publishes a completion status event containing its own event identifier, timestamp, order identifier, customer reference, optional customer name and email, and the accepted purchase amount.
-2. This event reports an already completed order to Finance; it does not ask Finance to complete the order or confirm that an email has been delivered.
-3. Finance copies the event details into its tracking workflow, updates its state to Completed, and finalizes.
-4. Finance issues a separate completion notification command only when both the customer's full name and email address are non-blank.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Status fact vs. orchestration command**: Reporting completion as a past-tense business fact allows Ordering to own order state transitions while Finance independently controls workflow closure and notification dispatch.
-- **Required fields with optional contact values**: Keeping customer name and email in the message structure even when empty simplifies contract validation, while requiring Finance to guard notification triggers on non-blank values.
-- **Buyer identifier in the basket field**: Because the current mapper supplies the order's buyer identifier in the basket reference field, consumers must not treat it as independently resolved basket information.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Publish Order completion
-
-[[service|order-api]] publishes this event after an Order transitions from
-New to Completed, through
-[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]].
-
-- `id` identifies this event, separately from the earlier checkout event.
-- `orderId` correlates the completed Order with its checkout.
-- `basketId` currently contains the Order's Buyer ID, supplied by `EventMapper`.
-- `fullName` and `email` remain required even when their values are `null`.
-- `totalMoney` preserves the accepted purchase amount.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp OrderStatusChangedToCompleteIntegrationEvent.cs
-[IntegrationMessageOwner(
-    ServiceName = Services.Ordering,
-    TopicName = "order-status-change-to-complete"
-)]
-[MessageIdentity("BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent")]
-public sealed record OrderStatusChangedToCompleteIntegrationEvent(
-    Guid OrderId,
-    Guid BasketId,
-    string? FullName,
-    string? Email,
-    decimal TotalMoney
-) : IntegrationEvent;
-```
-
-```csharp EventMapper.cs
-OrderCompletedEvent completedEvent => new OrderStatusChangedToCompleteIntegrationEvent(
-    (Guid)completedEvent.Order.Id,
-    (Guid)completedEvent.Order.BuyerId,
-    fullName,
-    email,
-    completedEvent.Order.TotalPrice
-)
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Payload
-
-<CodeGroup dropdown>
-
-```json completed-order-payload.json
+```json
 {
-	"id": "019a1c00-0000-7000-8000-000000000002",
-	"creationDate": "2026-11-01T14:05:00Z",
-	"orderId": "44444444-4444-4444-4444-444444444444",
-	"basketId": "11111111-1111-1111-1111-111111111111",
-	"fullName": "Example Customer",
-	"email": "customer@example.com",
-	"totalMoney": 49.95
+	"id": "0193f1a2-7d02-7d8e-9f01-23456789abcd",
+	"creationDate": "2026-11-25T16:30:00Z",
+	"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
+	"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
+	"fullName": "Alex Reader",
+	"email": "reader@example.com",
+	"totalMoney": 59.98
 }
-```
-
-</CodeGroup>
-
-### Report business status
-
-The example shows the camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope. It reports an already completed Order to
-Finance; it does not request completion or confirm email delivery. Finance's
-[[command|CompleteOrderCommand]] is a separate message.
-
-Finance's saga copies the event details, sets its state to Completed, and
-finalizes. It emits the notification command only when both email and full
-name are nonblank. This excerpt shows the outgoing-message selection after
-the state update:
-
-<CodeGroup dropdown>
-
-```csharp OrderSaga.cs
-MarkCompleted();
-
-var messages = new OutgoingMessages();
-
-if (CanSendNotification)
-{
-    messages.Add(new CompleteOrderCommand(OrderId, FullName!, Email!, EffectiveTotalMoney));
-}
-
-return messages;
 ```
 
 </CodeGroup>

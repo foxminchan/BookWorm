@@ -1,62 +1,57 @@
 ---
-summary: Retrieve the current Buyer's profile or, as an administrator, a selected Buyer.
+summary: Usage examples for Get Buyer.
 ---
 
-## 1. Context & Problem
+## Retrieve a buyer profile with curl
 
-Teams building storefront account screens, checkout flows, and administrative support tools need concrete examples of how to request a buyer profile and interpret the returned data. Without clear usage examples, callers can easily misunderstand how identity rules differ between regular customers and administrators.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster integration:** Gives client and partner teams copy-ready request and response examples that shorten development and testing time.
-- **Fewer authorization mistakes:** Clarifies how a single buyer lookup supports both customer self-service and administrative inspection without exposing one customer's profile to another.
-- **Safer UI handling:** Shows which profile fields can be empty so user interfaces handle incomplete buyer profiles gracefully.
-
-## 3. How It Works
-
-1. An authenticated caller requests a buyer profile and passes a buyer identifier with the request.
-2. If the caller is a standard customer, the service resolves the profile linked to that customer's own signed-in identity.
-3. If the caller is an administrator, the service looks up the specific buyer profile matching the requested identifier.
-4. When the profile exists, the service returns the buyer's identifier, name, and address; if not, it reports that the profile could not be found.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Uniform contract vs. redundant parameter:** Requiring a buyer identifier on every call keeps the contract identical for customers and administrators, though customer-facing clients still need to supply a buyer identifier even when the server resolves their own authenticated account.
-- **Optional customer details:** Because a buyer's name or address may be unset, client applications should treat both fields as optional when rendering profile screens.
-
-## 5. Technical Reference
-
-### 1. Retrieve a Buyer profile
-
-The OpenAPI contract requires an `Id` query parameter. Non-administrators are resolved to the Buyer associated with their authenticated identity.
-
-<CodeGroup dropdown>
-
-```sh
+```bash
 curl --request GET \
-  "$BASE_URL/api/v1/buyers/me?Id=66666666-6666-6666-6666-666666666666" \
+  "<gateway-url>/ordering/api/v1/buyers/me?Id=<buyer-id>" \
   --header "Authorization: Bearer <access-token>" \
   --header "Accept: application/json"
 ```
 
 </CodeGroup>
 
-The same query from TypeScript:
+Where:
 
-<CodeGroup dropdown>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway (or direct Ordering API URL `https://localhost:7203` without the `/ordering` prefix).
+- `<buyer-id>`: Valid UUID (used directly for `admin` callers; required for parameter binding on customer calls).
+- `<access-token>`: Entra ID bearer token authorized for Ordering API.
 
-```ts get-buyer.ts
+Expected response (`200 OK`):
+
+<CodeGroup>
+
+```json
+{
+	"id": "66666666-6666-6666-6666-666666666666",
+	"name": "Avery Nguyen",
+	"address": "10 Example Street, Ben Thanh, Ho Chi Minh City"
+}
+```
+
+</CodeGroup>
+
+## Retrieve a buyer profile with TypeScript
+
+<CodeGroup>
+
+```typescript
 type BuyerDto = {
 	id: string;
 	name: string | null;
 	address: string | null;
 };
 
-const baseUrl = "https://api.example.com";
+const gatewayUrl = "<gateway-url>";
 const accessToken = "<access-token>";
 const buyerId = "66666666-6666-6666-6666-666666666666";
+
 const params = new URLSearchParams({ Id: buyerId });
-const response = await fetch(`${baseUrl}/api/v1/buyers/me?${params.toString()}`, {
+const response = await fetch(`${gatewayUrl}/ordering/api/v1/buyers/me?${params.toString()}`, {
 	headers: {
 		Authorization: `Bearer ${accessToken}`,
 		Accept: "application/json",
@@ -72,20 +67,6 @@ if (!response.ok) {
 
 const buyer = (await response.json()) as BuyerDto;
 console.log(buyer.name);
-```
-
-</CodeGroup>
-
-`200 OK` returns the Buyer profile:
-
-<CodeGroup dropdown>
-
-```json
-{
-	"id": "66666666-6666-6666-6666-666666666666",
-	"name": "Avery Nguyen",
-	"address": "10 Example Street, Ben Thanh, Ho Chi Minh City"
-}
 ```
 
 </CodeGroup>

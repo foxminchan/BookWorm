@@ -1,0 +1,7 @@
+flowchart LR
+	browser["Customer / Staff\n(Browser)"] --> |"HTTPS: Sign in / OIDC"| fe["Storefront / Backoffice\n(Next.js 16 + Better Auth)"]
+	fe <-->|"OAuth 2.0 / OIDC\n(/api/auth/oauth2/callback/microsoft-entra-id)"| entra["Microsoft Entra ID\n(External OAuth API)"]
+	fe -->|"HTTPS + Bearer JWT"| gateway["API Gateway\n(YARP)"]
+	gateway -->|"HTTP + Bearer JWT"| apis["Protected APIs\n(Catalog, Basket, Ordering, Rating, Chat)"]
+	apis -->|"OBO / Agent Identity Token Exchange"| entra
+	apis -->|"Authorized internal call"| downstream["MCP Tools / Rating A2A"]

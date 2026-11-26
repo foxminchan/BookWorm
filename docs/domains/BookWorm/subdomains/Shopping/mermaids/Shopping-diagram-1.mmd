@@ -1,0 +1,20 @@
+flowchart LR
+	commerce["Commerce MFE\n(Next.js 16: /basket, /checkout)"]
+	storefront["Storefront MFE\n(Next.js 16: header badge)"]
+	gateway["API Gateway\n(YARP Reverse Proxy)"]
+	basket["Basket API\n(.NET 11 Minimal API + gRPC)"]
+	redis["Basket Store\n(Redis: IBasketRepository)"]
+	catalog["Catalog API\n(.NET 11 gRPC)"]
+	ordering["Ordering API\n(.NET 11 gRPC Client)"]
+	kafka["Kafka\n(Wolverine CloudEvents)"]
+	finance["Finance\n(Durable Task Saga)"]
+
+	commerce --> |"HTTPS: /basket/api/v1/baskets"| gateway
+	storefront --> |"HTTPS: Basket count"| gateway
+	gateway -->|"HTTP"| basket
+	basket -->|"Authoritative store + idempotency"| redis
+	basket --> |"gRPC: book.v1.BookGrpcService"| catalog
+	ordering --> |"gRPC: basket.v1.GetBasket"| basket
+	finance --> |"Kafka: PlaceOrderCommand"| kafka
+	kafka -->|"Consume cleanup command"| basket
+	basket --> |"Kafka: BasketDeleted Complete/Failed"| kafka

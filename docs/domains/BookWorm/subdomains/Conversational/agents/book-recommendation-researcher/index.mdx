@@ -40,58 +40,68 @@ model:
   version: "2025-11-18"
 ---
 
-## 1. Context & Problem
+Book Recommendation Researcher (`book-recommendation-researcher`) is an internal delegated subagent initialized by [[agent|book-agent]] inside [[service|chat-api]]. It curates concise, catalog-verified book shortlists matching stated customer preferences and constraints using [[service|mcp-server]], returning book IDs and supporting catalog facts for Book Agent to synthesize.
 
-When customers ask for reading suggestions or gift ideas, an AI assistant can easily drift into recommending titles the store does not sell, exaggerating popularity or ratings, or making unstated assumptions about the customer's background. At the same time, blending preference discovery with general chat and factual verification in a single step slows down multi-part requests.
+## Overview
 
-The Book Recommendation Researcher solves this by acting as an internal recommendation specialist for [[agent|book-agent]], curating preference-matched shortlists backed strictly by BookWorm's live catalog.
+| Property             | Value                                                                                                                                                                                                                         |
+| :------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**            | Conversational bounded context — [[service\|chat-api]] (`chatting`)                                                                                                                                                           |
+| **Parent agent**     | [[agent\|book-agent]] (initialized via `InitSubAgent`, invoked via `delegate_book_recommendation_researcher`)                                                                                                                 |
+| **Agent name / DID** | `book-recommendation-researcher` (`did:mesh:bookworm:book-recommendation-researcher`)                                                                                                                                         |
+| **Source**           | `src/Services/Chat/BookWorm.Chat/Agents/BookSearch/recommendation-researcher.yaml`, `src/Services/Chat/BookWorm.Chat/Agents/BookSearch/BookAgentRegistration.cs`, `src/Services/Chat/BookWorm.Chat/Policies/chat-agents.yaml` |
+| **Model deployment** | Inherits Book Agent's middleware-wrapped Microsoft Foundry `chat` client (`FoundryModel.Microsoft.ModelRouter`)                                                                                                               |
+| **Workflow role**    | Internal delegated tool only — not a top-level `chat-workflow` route or handoff target                                                                                                                                        |
 
-## 2. Business Value
+## Architecture and delegation boundary
 
-- **Catalog-verified recommendations:** Every suggested title exists in BookWorm's catalog and includes supporting product evidence so customers never hit dead-end recommendations.
-- **Ethical, bias-aware personalization:** Prohibiting demographic assumptions and fabricated popularity or rating claims builds customer trust.
-- **Concurrent execution for complex asks:** Working in parallel with catalog fact-finding lets [[agent|book-agent]] respond faster to multi-faceted customer inquiries.
-- **Consistent privacy safeguards:** Inheriting the parent agent's privacy screening protects customer preferences and personal details automatically.
+Book Agent invokes Book Recommendation Researcher via `SubAgentFactory.Create(...)` in parallel with [[agent|book-catalog-researcher]] when a customer request combines open-ended preference matching with catalog fact-finding.
 
-## 3. How It Works
+The diagram shows how Book Recommendation Researcher runs inside Book Agent's shared middleware pipeline and queries MCP Tools for catalog evidence.
 
-The Book Recommendation Researcher supports [[agent|book-agent]] as an internal delegated specialist:
+<MermaidFileLoader file="mermaids/book-recommendation-researcher-diagram-1.mmd" />
 
-1. **Receives customer preferences:** When a request involves finding books that fit stated interests, genres, or themes, [[agent|book-agent]] delegates shortlist discovery to this researcher.
-2. **Searches catalog options:** It explores matching titles, categories, authors, and full book details using official catalog capabilities.
-3. **Delivers an evidence-backed shortlist:** It returns a concise shortlist containing book identifiers and supporting catalog facts—without inferring customer demographics or inventing availability, ratings, popularity, prices, or bibliographic details.
-4. **Protected by shared privacy filtering:** All text entering and leaving the researcher passes through the same personal-information screening inherited from [[agent|book-agent]].
+## Runtime settings
 
-## 4. Trade-offs & Lessons Learned
+Settings are declared in `recommendation-researcher.yaml`:
 
-- **Catalog-only shortlist vs. open-ended suggestions:** Restricting recommendations to verified catalog matches prevents hallucinated titles, even though sparse catalog coverage for niche topics can yield a shorter list.
-- **Balanced creativity vs. factual discipline:** Allowing slightly higher flexibility than pure fact-finding helps match nuanced reader preferences, while strict grounding rules keep all product claims verifiable.
-- **No demographic inference:** Relying solely on preferences explicitly shared by the customer avoids stereotyping and privacy risks, at the cost of asking clarifying preferences when prompts are vague.
+| Setting                  | Value    | Rationale                                                                                                                         |
+| :----------------------- | :------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `temperature`            | `0.4`    | Slightly higher flexibility than pure fact-finding (`0.2`) to match nuanced reader preferences while preserving catalog grounding |
+| `maxOutputTokens`        | `1200`   | Concise shortlist with book IDs and supporting facts                                                                              |
+| `reasoningEffort`        | `medium` | Balanced reasoning for preference-to-catalog matching                                                                             |
+| `allowMultipleToolCalls` | `true`   | Allows parallel catalog exploration within one turn                                                                               |
+| `chatToolMode`           | `auto`   | Model selects required catalog tools                                                                                              |
 
-## 5. Technical Reference
+## Allowed tools, grounding rules, and governance
 
-### Initialization & Model Inheritance
+`Policies/chat-agents.yaml` enforces `default_action: deny`. For `did:mesh:bookworm:book-recommendation-researcher`, only agent execution (`agent_run`, `agent_run_streaming`) and four read-only MCP catalog tools are permitted:
 
-- **Parent agent:** Initialized by [[agent|book-agent]] via `InitSubAgent` and exposed as a delegated tool.
-- **Inherited model provider:** The agent definition does not specify a provider or model; it inherits the shared chat client (`Microsoft` `model-router`, version `2025-11-18`).
+| Tool name         | Parameters                         | Purpose                                                |
+| :---------------- | :--------------------------------- | :----------------------------------------------------- |
+| `search_catalog`  | `description` (`string`, required) | Searches the catalog by theme, keyword, or description |
+| `get_book`        | `id` (`string`, required)          | Retrieves full details for a candidate book UUID       |
+| `list_categories` | None                               | Lists all available book categories                    |
+| `list_authors`    | None                               | Lists all authors available in the catalog             |
 
-### Privacy Middleware
+- **Grounding and fairness rules:** Uses catalog tool results as its sole factual source. Never infers customer demographics or invents availability, ratings, prices, popularity, or bibliographic details.
+- **Explicit boundaries:** Has no handoff tools, no planning/todo tools, no file-memory tools, and no storefront AG-UI tools.
 
-- This subagent does not register a separate PII middleware; `InitSubAgent` receives [[agent|book-agent]]'s chat client already wrapped with `UsePIIMiddleware(sp)`.
-- Input and output text passes through [[service|PresidioAPI]] via [[command|AnalyzeText]] and, when PII is detected, [[command|AnonymizeText]].
-- These are middleware HTTP calls, not model-selected tools or brokered messages.
+## Inherited middleware pipeline
 
-### Runtime Settings
+`InitSubAgent` passes Book Agent's already-wrapped `IChatClient` (`BookAgentRegistration.cs:38-48`), so every model call inherits:
 
-- **Temperature:** `0.4`
-- **Maximum output:** `1,200` tokens
-- **Reasoning effort:** `medium`
-- **Multiple tool calls:** `enabled`
+- `UseAGUIClientContext()` — Propagates active AG-UI run context.
+- `UseDecisionToolSelection()` — Filters candidate tools via Microsoft-Decision-1.
+- `UsePIIMiddleware(sp)` — Screens input and output text via [[service|PresidioAPI]] (`AnalyzeText` and `AnonymizeText` replacing detected PII with `<PII>`); fails closed on error.
+- `UseGuardrailMiddleware()` — Enforces prompt and output guardrails.
+- `UseAIContextProviders(CompactionPipelineFactory.CreateFull(...))` — Applies context compaction.
 
-### Tools
+## Related documentation
 
-<AgentTools />
-
-### Architecture
+- [[agent|book-agent]] — Parent coordinating agent and full middleware/governance specification.
+- [[agent|book-catalog-researcher]] — Sibling delegated subagent for factual catalog lookups.
+- [[service|mcp-server]] — Read-only Catalog MCP server exposing the four catalog tools.
+- [[service|chat-api]] — Hosting service and `chat-workflow` orchestration.
 
 <NodeGraph />

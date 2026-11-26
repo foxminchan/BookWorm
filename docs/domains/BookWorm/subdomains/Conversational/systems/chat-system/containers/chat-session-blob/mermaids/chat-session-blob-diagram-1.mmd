@@ -1,0 +1,9 @@
+flowchart LR
+	storefront["Storefront\n(Next.js 16 + CopilotKit AG-UI)"]
+	chat["Chat API\n(.NET 11 Agent Framework)"]
+	blob[("Chat session blob storage\n(Azure Blob: chatting-blob, ag-ui/)")]
+	foundry["Microsoft Foundry\n(Models + FoundryMemoryProvider)"]
+
+	storefront --> |"HTTPS: /chatting/ag-ui"| chat
+	chat --> |"HTTPS: Read/Write ag-ui/* sessions"| blob
+	chat --> |"HTTPS: Inference & Memory"| foundry

@@ -1,132 +1,21 @@
 ---
-summary: Report an Order transition from New to Cancelled with nullable customer details.
+summary: Usage examples for Order cancelled.
 ---
 
-## 1. Context & Problem
+## Event payload
 
-When an active order is cancelled, downstream capabilities—particularly Finance—must be informed promptly so they can close out order tracking and avoid unnecessary processing. However, customer contact details such as full name and email address may not always be available at cancellation time, yet Finance still needs a consistent record of the cancellation and accepted purchase total.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Clear Lifecycle Reporting**: Communicates an authoritative transition from New to Cancelled without ambiguity, separating confirmed cancellations from soft deletions or pending cancellation requests.
-- **Consistent Financial Reconciliation**: Preserves the order identifier and accepted purchase amount in every cancellation notice so financial records remain accurate.
-- **Safe Customer Notification Handling**: Allows Finance to skip customer email notifications cleanly when contact details are absent while still finalizing internal workflow state.
-
-## 3. How It Works
-
-1. After an [[entity|order]] moves from New to Cancelled, [[service|order-api]] publishes a cancellation status event containing the event identifier, timestamp, order identifier, customer reference, optional customer name and email, and the accepted purchase amount.
-2. This event reports a completed status change—it is neither a request to cancel nor a record deletion, and it remains distinct from basket-cleanup failure recovery.
-3. Finance consumes the event, copies the relevant details into its tracking workflow, marks its state as Cancelled, and completes the workflow.
-4. Before issuing a customer cancellation notification, Finance verifies that both the customer's full name and email address are non-blank; when either value is absent, no notification is emitted.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Fact-based notification vs. command**: Broadcasting an already-completed cancellation decouples order management from Finance's internal workflow rules and notification policies.
-- **Structurally required optional contact fields**: Including customer name and email as required fields that may carry empty values guarantees a consistent message shape for consumers, while shifting the responsibility to Finance to check for non-blank values before notifying customers.
-- **Shared identifier in the basket field**: Because the current mapping populates the basket reference with the order's buyer identifier, downstream consumers must not assume this field represents independently resolved basket data.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Publish Order cancellation
-
-[[service|order-api]] publishes this event after an Order transitions from
-New to Cancelled, through
-[[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]].
-
-- `id` identifies this integration event; `creationDate` is its UTC timestamp.
-- `orderId` identifies the cancelled Order.
-- `basketId` currently contains the Order's Buyer ID, supplied by `EventMapper`.
-- `fullName` and `email` are included as `null` when unavailable, not omitted.
-- `totalMoney` preserves the accepted purchase amount.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp OrderStatusChangedToCancelIntegrationEvent.cs
-[IntegrationMessageOwner(
-    ServiceName = Services.Ordering,
-    TopicName = "order-status-change-to-cancel"
-)]
-[MessageIdentity("BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent")]
-public sealed record OrderStatusChangedToCancelIntegrationEvent(
-    Guid OrderId,
-    Guid BasketId,
-    string? FullName,
-    string? Email,
-    decimal TotalMoney
-) : IntegrationEvent;
-```
-
-```csharp EventMapper.cs
-OrderCancelledEvent orderCancelledEvent =>
-    new OrderStatusChangedToCancelIntegrationEvent(
-        (Guid)orderCancelledEvent.Order.Id,
-        (Guid)orderCancelledEvent.Order.BuyerId,
-        fullName,
-        email,
-        orderCancelledEvent.Order.TotalPrice
-    )
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Payload
-
-<CodeGroup dropdown>
-
-```json cancelled-order-payload.json
+```json
 {
-	"id": "019a1c00-0000-7000-8000-000000000003",
-	"creationDate": "2026-11-01T14:05:00Z",
-	"orderId": "55555555-5555-5555-5555-555555555555",
-	"basketId": "11111111-1111-1111-1111-111111111111",
-	"fullName": null,
-	"email": null,
-	"totalMoney": 49.95
+	"id": "0193f1a2-6c01-7d8e-9f01-23456789abcd",
+	"creationDate": "2026-11-25T16:25:00Z",
+	"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
+	"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
+	"fullName": "Alex Reader",
+	"email": "reader@example.com",
+	"totalMoney": 59.98
 }
-```
-
-</CodeGroup>
-
-### Distinguish cancellation from recovery
-
-The example shows the camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope. This event reports a business-status
-transition, not a soft deletion or a request to cancel. Finance's
-[[command|CancelOrderCommand]] and basket-cleanup failure recovery are separate
-messages and behaviors.
-
-Finance's saga copies the event details, sets its state to Cancelled, and
-finalizes. Notification requires both email and full name to be nonblank,
-so the `null` values above produce no cancellation notification command.
-This excerpt shows the outgoing-message selection after the state update:
-
-<CodeGroup dropdown>
-
-```csharp OrderSaga.cs
-MarkCompleted();
-
-var messages = new OutgoingMessages();
-
-if (CanSendNotification)
-{
-    messages.Add(new CancelOrderCommand(OrderId, FullName!, Email!, EffectiveTotalMoney));
-}
-
-return messages;
 ```
 
 </CodeGroup>

@@ -9,80 +9,69 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+BookWorm enforces identity, least-privilege authorization, and data privacy across three distinct boundaries: external web/API ingress through **API Gateway** (YARP) backed by **Microsoft Entra ID**, AI agent and tool execution guarded by **Presidio** and Entra Agent Identities, and privacy-aware structured logging with HMAC redaction. Shared helpers in `BookWorm.Chassis` reduce duplication, but each service must explicitly wire and test its own boundary controls.
 
-BookWorm processes customer orders, user feedback, and conversational search requests across multiple independent services and AI-assisted experiences. Because data crosses service entry points, external AI model providers, and operational logs, the platform faces risks of unauthorized access, tampered inputs, unintended exposure of personally identifiable information (PII) or credentials, and excessive resource consumption. Teams need consistent cross-cutting security and privacy boundaries without assuming that every service automatically enforces identical rules.
+## Trust boundaries overview
 
-## 2. Business Value
+This flowchart maps BookWorm's external edge, internal API authorization, agent-to-agent identity, and PII redaction boundaries.
 
-- **Protects customer trust and privacy:** Masks personal and sensitive data before it reaches external AI models or operational logs, reducing data-exposure risk.
-- **Enforces least-privilege access:** Combines user roles and granular service permissions so standard customers, reporters, and administrators only reach authorized capabilities.
-- **Prevents silent security assumptions:** Clarifies which protections are actively wired versus merely available as shared platform helpers, reducing gaps when launching new services or AI agents.
-- **Guides consistent design reviews:** Equips architects, product managers, and developers with a threat-model lens and a clear four-step checklist whenever introducing new endpoints or AI capabilities.
+<MermaidFileLoader file="mermaids/001-security-and-privacy-diagram-1.mmd" />
 
-## 3. How It Works
+## Identity and authorization
 
-BookWorm applies security and privacy controls at three primary boundaries: where requests enter a service, where an AI assistant processes user or tool content, and where operational events are recorded.
+**Microsoft Entra ID** is the sole identity provider for BookWorm (Keycloak is not used). Frontend apps (**Storefront** and **Backoffice**) authenticate users via `better-auth` (`@workspace/auth`, callback `/api/auth/oauth2/callback/microsoft-entra-id`) through the `/entra` gateway proxy; **Commerce** shares the authenticated customer session (`WithoutEntraId()` in AppHost).
 
-1. **Identity and access control:** User authentication relies on a central identity provider. At service boundaries (as documented in Ordering), incoming requests are verified for a valid login token, and access policies combine the caller's role (such as standard user, reporter, or administrator) with service-specific permissions. Shared helpers do not make every service identical—each service must explicitly wire and verify its own entry rules.
-2. **AI privacy and safety guardrails:** On the customer chat and rating assistant paths, incoming and outgoing text passes through privacy-redaction middleware that masks personal information before it reaches an AI model and after the model responds. Input length limits, content guardrails, and tool-governance policies (including rate limits, circuit breakers, and default-deny tool rules) help protect against tampered prompts, privilege escalation, and resource exhaustion.
-3. **Privacy-aware logging:** Operational logging is designed to record action types and field names rather than full customer payloads. Shared classification and redaction helpers allow services to mask sensitive values and obscure PII when enabled on a host.
+Backend APIs validate Entra ID JWT bearer tokens using `Microsoft.Identity.Web` (`AddDefaultAuthentication()`). Three application roles exist in Entra ID: **`admin`**, **`business_user`**, and **`customer`**.
 
-When introducing any new service endpoint or AI agent, teams follow a four-step **boundary checklist**:
+:::note
+The shared `RequireScope` helper accepts a request when the token contains **any** of the listed scopes—not every listed scope. Verify each endpoint's exact role and scope policy rather than assuming default policies cover mutating actions.
+:::
 
-1. Define who may call it and which role and permission authorize the operation.
-2. Keep tokens, credentials, PII, and user content out of logs unless there is a documented and approved need.
-3. If an AI model receives user data, determine whether it needs the raw value and apply the established PII and governance middleware.
-4. Confirm the control is registered on the actual service path—a shared helper is not automatically active everywhere.
+### Per-service authorization matrix
 
-## 4. Trade-offs & Lessons Learned
+| Service / resource                           | Authentication                      | Roles & scopes enforced                                                                                                                                  | Additional identity controls                                                                      |
+| :------------------------------------------- | :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **Catalog API**                              | Entra ID JWT                        | Default: `catalog_read`; `business_user`: `business_user` or `admin` + `catalog_read`/`catalog_write`; `admin`: `admin` + `catalog_read`/`catalog_write` | —                                                                                                 |
+| **Basket API**                               | Entra ID JWT                        | Default: `customer` + `basket_read`, `basket_write`                                                                                                      | HMAC redaction (`HMAC__Key`)                                                                      |
+| **Ordering API**                             | Entra ID JWT                        | Default: `customer` or `admin` + `ordering_read`/`ordering_write`; explicit `admin` and `customer` policies                                              | HMAC redaction (`HMAC__Key`); `x-request-id` idempotency                                          |
+| **Rating API**                               | Entra ID JWT + Entra Agent Identity | `admin`: `admin` + `rating_read`/`rating_write`; `read`: `rating_read` (protects A2A gRPC)                                                               | `ratingAgentId` federated identity                                                                |
+| **Chat API**                                 | Entra ID JWT + Entra Agent Identity | Default & `customer`: `customer` + `chatting_read`/`chatting_write`; `admin`: `admin` + `chatting_read`/`chatting_write`                                 | `chatAgentId` / `ratingAgentId`; `UseClaimsBasedAgentIsolation()`; `PerUserRateLimit` on `/ag-ui` |
+| **MCP Tools**                                | Entra ID JWT                        | Default: `mcptools_read` on `/mcp` (`RequireAuthorization()`)                                                                                            | Not routed via YARP; CORS restricted to gateway origin; `Policies/mcp-tools.yaml`                 |
+| **Quartz Dashboard**                         | Entra ID OIDC                       | `admin` role for `/quartz` UI                                                                                                                            | —                                                                                                 |
+| **Finance, Catalog Ingestion, Notification** | Internal only (no public API)       | Azure Managed Identity RBAC (`CognitiveServicesUser`, Storage, Cosmos, Redis)                                                                            | Notification enables HMAC redaction (`HMAC__Key`)                                                 |
 
-- **Reusable platform helpers vs. explicit per-service activation:** Shared authentication, logging-redaction, and AI-privacy helpers reduce duplicated effort, but availability in shared libraries does not guarantee every service enables them. Each service boundary must be verified individually.
-- **Privacy redaction vs. data minimization:** Anonymizing text before sending it to an AI model is an important processing safeguard, yet it does not replace limiting what data is collected or deciding whether an agent needs that data in the first place.
-- **Flexible permission matching vs. strict endpoint checks:** Accepting a request when a token holds _any_ one of several listed permissions simplifies policy reuse, which means teams must carefully verify each endpoint's exact role and permission requirements so privileges are never broader than intended.
-- **Operational correlation vs. immutable auditing:** Propagating request and user identifiers helps trace failures, but correlation metadata is not a tamper-proof audit trail; operations requiring formal attribution and retention need explicit audit coverage.
-- **High-level threat modeling vs. runtime validation:** The documented threat assessment highlights boundary risks to check during design and deployment, rather than serving as a penetration test or proof that every control is active across all services.
+For cloud deployments, `src/Aspire/BookWorm.AppHost/Infra/entra-agent-identities.bicep` provisions Federated Identity Credentials (FICs) and Microsoft Graph service principals for `blueprintAppId`, `chatAgentId`, and `ratingAgentId`, eliminating long-lived client secrets for agent-to-agent calls.
 
-## 5. Technical Reference
+## Personal and sensitive data protection
 
-### Security Boundaries
+- **Presidio PII anonymization (AI boundary):** **Chat API** and **Rating API** register `PIIMiddleware` backed by `presidio-analyzer` and `presidio-anonymizer` (container port `3000`; HTTPS with dev cert locally, internal HTTP in Container Apps). Presidio masks PII before text leaves BookWorm for **Microsoft Foundry** and filters model responses on return. This is a processing safeguard, not a substitute for data minimization.
+- **Privacy-aware CQRS logging:** `LoggingBehavior` in `BookWorm.Chassis.CQRS` logs command/query type names, elapsed duration, and property names without serializing raw request or response values. Properties marked with data-classification attributes are explicitly logged as redacted.
+- **HMAC log redaction:** `BookWorm.Chassis.Logging` defines separate classifications for sensitive data (masked) and PII (deterministic HMAC redaction using `HMAC__Key`). **Basket API**, **Ordering API**, and **Notification** currently wire `AddRedaction()`; verify host registration when adding new services that handle customer data.
 
-<MermaidFileLoader file="mermaids/security-boundaries.mmd" />
+## STRIDE threat model
 
-Security controls are applied at the boundaries where a request enters a service, where an AI agent processes content, and where application data is recorded. They complement service ownership; a shared identity provider or redaction helper does not make every service's policy identical.
+This design-time threat model covers BookWorm's API edge, messaging boundaries, AI agent workflows, and operational logging. Use it to guide design reviews and deployment hardening—it does not replace penetration testing.
 
-The diagram distinguishes the API identity and authorization path from the AI data-protection path. The AI path applies to [[service|chat-api]] and [[service|rating-api]] agent clients, including the [[agent|rating-agent]], where the middleware is registered; it is not a universal control on every model integration.
+| STRIDE category            | BookWorm threat scenario                                                                | Implemented safeguards & deployment checks                                                                                                                                                                                                                                          |
+| :------------------------- | :-------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Spoofing**               | Attacker presents a forged or stolen token to an API or impersonates an internal agent. | Entra ID JWT validation (`Microsoft.Identity.Web`), role+scope policies, Better Auth OIDC, and Entra Agent Identity FICs (`chatAgentId`, `ratingAgentId`). Verify issuer, audience, and HTTPS enforcement at **API Gateway**.                                                       |
+| **Tampering**              | Caller manipulates HTTP payloads, prompts, MCP tool definitions, or Kafka messages.     | `FluentValidation` on commands, `InputValidationExecutor` + `GuardrailMiddleware` in **Chat API**, `Policies/mcp-tools.yaml` tool-poisoning detection, and Buf `.proto` / Pact contract verification.                                                                               |
+| **Repudiation**            | User or service denies initiating an order or downstream saga step.                     | W3C trace IDs, `x-request-id`, and `UserId` propagate across HTTP and Kafka envelopes (`UserIdEnvelopeMiddleware`), and `GlobalExceptionHandler` returns `traceId`. Correlation is not an immutable audit log; add explicit audit storage where regulatory attribution is required. |
+| **Information disclosure** | PII, credentials, or prompts leak to LLM providers, logs, or telemetry.                 | **Presidio** PII anonymization on **Chat API** and **Rating API**, non-serializing CQRS logging, `AddRedaction()` on Basket/Ordering/Notification, and `AllowBlobPublicAccess = false` on Azure Storage. Confirm `DisableLocalAuth = true` on Cosmos DB in non-Dev.                 |
+| **Denial of service**      | Caller floods APIs or triggers expensive LLM/tool loops.                                | Global chained rate limiter (`100` concurrent, `30 req/min` per IP/Host), `PerUserRateLimit` token bucket on `/ag-ui`, Kestrel HTTP/2 limits, `Policies/chat-agents.yaml` conversation guardian (`max_conversation_turns: 30`), and `Policies/mcp-tools.yaml` (`100/minute`).       |
+| **Elevation of privilege** | Caller or agent invokes an admin endpoint or disallowed tool.                           | Explicit `admin` / `business_user` / `customer` policies, `UseClaimsBasedAgentIsolation()`, and deny-by-default governance policies with `deny-overrides`. Audit every endpoint because `RequireScope` matches any listed scope.                                                    |
 
-### Identity and Authorization
+## New boundary review checklist
 
-Entra ID is the identity provider used by the application. [[service|order-api]] configures bearer authentication and token introspection, then applies authorization policies that combine a role with service-specific OAuth scopes. Its default policy requires an authenticated user with the user role and an Ordering read or write scope; the admin and reporter policies make their own role and scope requirements explicit.
+Before shipping a new endpoint, worker, or AI agent:
 
-The shared `RequireScope` helper accepts a request when the token contains **any** of the scopes listed by the policy. It does not require every listed scope. Endpoint-level authorization still needs to be checked against the policy and role expected for that operation.
+1. Define the exact Entra ID role (`admin`, `business_user`, or `customer`) and service scopes required, and verify the policy is attached at the endpoint boundary.
+2. Keep tokens, credentials, PII, and raw user payloads out of logs; wire `AddRedaction()` if the host processes classified fields.
+3. For any AI model or tool integration, confirm whether raw customer data is required and wire **Presidio** `PIIMiddleware` plus a deny-by-default governance policy YAML file.
+4. Verify runtime registration in startup extensions—shared helpers in `BookWorm.Chassis` are inactive unless wired by the host.
 
-These policies are evidenced in [[system|order-system]]'s authorization setup. Do not infer that every API uses the same policy: verify each service's startup and endpoint configuration when adding or reviewing a new boundary.
+## Related documentation
 
-### Personal and Sensitive Data
-
-- [[service|chat-api]] and [[service|rating-api]] agent clients register Presidio-backed middleware that anonymizes text sent to the model and text returned by it. This is a processing safeguard, not a substitute for limiting the data collected or deciding which data an agent needs.
-- The shared logging building block defines separate classifications for sensitive data and personally identifiable information (PII). Its redactors mask sensitive values and apply deterministic HMAC redaction to PII when a host enables the helper.
-- The CQRS logging behavior records message and response type names and property names, rather than serializing request or response values. Properties marked as classified are explicitly logged as redacted.
-- [[service|order-api]] currently wires the shared logging redaction helper. Treat the helper's availability as reusable capability, not evidence that every host has enabled the same redaction configuration.
-
-### STRIDE Threat Model
-
-This high-level assessment covers the documented Ordering identity and authorization path, Chat and Rating agent paths, their model and tool interactions, and operational logging. It identifies threats to validate during design and deployment; it is not a penetration test or a claim that every control is enabled on every service. The diagram shows the main trust boundaries and representative STRIDE threats.
-
-<MermaidFileLoader file="mermaids/security-stride-threat-model.mmd" />
-
-| STRIDE category            | BookWorm threat scenario                                                                                   | Documented safeguards and deployment checks                                                                                                                                                                                                                      |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Spoofing**               | An attacker impersonates a user or reuses a forged or stolen token to call an API.                         | Ordering configures Entra ID bearer authentication, token introspection, and role-and-scope authorization. Verify token validation, transport protection, and token lifetime at each deployed API; do not assume every service shares Ordering's policy.         |
-| **Tampering**              | A caller manipulates API input, user/tool content, model output, or a message crossing a service boundary. | Chat validates input and applies guardrails to untrusted content; service contracts define boundary shapes. Validate data at each receiving boundary and verify message integrity and compatibility in the configured transport.                                 |
-| **Repudiation**            | A user or service denies initiating an API operation or downstream work.                                   | Request and user identifiers can be propagated for correlation, and exceptions include a trace identifier. Correlation is not an immutable audit trail; confirm actor attribution, audit coverage, and retention for operations that require it.                 |
-| **Information disclosure** | PII, credentials, or user content escapes through model requests, responses, logs, or telemetry.           | Chat and Rating register Presidio-backed anonymization; CQRS logging avoids serializing request and response values, and redaction helpers are available. Confirm redaction is enabled on each host and review model-provider and telemetry data handling.       |
-| **Denial of service**      | Excessive requests or expensive agent/tool/model work exhausts service or provider capacity.               | Chat bounds accepted input length; governance policies support tool rate limits and a circuit breaker. Confirm effective per-service and provider quotas, timeouts, concurrency limits, and failure behavior in deployment.                                      |
-| **Elevation of privilege** | A caller gains access to an operation or agent tool beyond their intended role.                            | Ordering policies combine roles and scopes; the shared scope helper accepts any listed scope. The governance kernel supports deny-overrides and deny-by-default tool policies. Verify each endpoint's exact policy and each agent's registered tool permissions. |
-
-### Related Documentation
-
-See [[doc|arc42/03-context-and-scope/003-technical-context]] for the system's external identity and integration boundaries.
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] — Prompt screening, YAML governance policies, and MCP tool security.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Complete Azure Managed Identity and Entra ID RBAC role assignments.
+- [[doc|operational/004-security-hardening-checklist]] — Pre-production security verification steps.

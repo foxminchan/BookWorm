@@ -9,64 +9,49 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+BookWorm protects domain behavior, service boundaries, and cross-service contracts through a layered automated verification strategy spanning backend **TUnit** (`1.87.12`) on **Microsoft.Testing.Platform (MTP)**, **Pact** messaging contract tests, **ArchUnitNET** structural fitness checks, **Buf** `.proto` compatibility checks, and frontend **Vitest**, **Playwright BDD**, **axe-core**, and **Turborepo** workspace boundary gates.
 
-In a distributed system of independently evolving services, schemas, AI policies, and web interfaces, no single type of test can prove that everything works safely. Isolated logic tests cannot catch broken communication contracts between services, while full end-to-end tests are too slow and coarse-grained to verify every business rule, security boundary, or edge case.
+## Verification layers and verified inventory
 
-BookWorm relies on a layered verification strategy so changes are checked at the right level—protecting business logic, service interfaces, architectural boundaries, and key customer journeys together.
+| Layer                                 | Tooling & runner                                                                                                                                      | Verified repository scope                                                                                                                                                                                                      | Primary command                           |
+| :------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------- |
+| **Backend unit tests**                | **TUnit** `1.87.12` + **MTP**, `Shouldly` `4.3.0`, `Moq` `4.21.0`, `Bogus` `35.6.5`, `Allure.TestingPlatform` (xUnit, NUnit, and MSTest are not used) | **9 `.UnitTests` projects**: Basket, Catalog, Chat, Finance, McpTools, Notification, Ordering, Rating, Scheduler                                                                                                               | `mise run test` (`test:unit`)             |
+| **Consumer-driven contract tests**    | **PactNet** `5.0.1` + `BookWorm.Testing` (consumer-then-provider order)                                                                               | **7 `.ContractTests` projects** (Basket, Catalog, Finance, Notification, Ordering, Rating, Scheduler) producing **8 committed pact files** in `tests/pacts/`                                                                   | `mise run test` (`test:contracts`)        |
+| **Backend architecture tests**        | **TngTech.ArchUnitNET.TUnit** `0.13.5`                                                                                                                | **1 project** (`tests/BookWorm.ArchTests`) checking Dependencies, Domain rules, Features (endpoints/handlers), and Infrastructure/Saga conventions                                                                             | `mise run test` (`test:unit`)             |
+| **gRPC schema checks**                | **Buf** CLI (`buf.yaml` in Catalog and Basket `Grpc/Protos/`)                                                                                         | Lints `edition = "2023"` `.proto` schemas (`BookGrpcService`, `BasketGrpcService`) and checks breaking changes against baseline                                                                                                | `mise run setup:buf`                      |
+| **Frontend unit & component tests**   | **Vitest** `^5.1.2`, `@testing-library/react`, `happy-dom`, `@vitest/coverage-v8`, `fast-check` (Storefront), `allure-vitest`                         | Covers **Storefront**, **Commerce**, **Backoffice**, and shared `@workspace/*` packages                                                                                                                                        | `bun run test` (from `src/Clients`)       |
+| **Frontend E2E, BDD & accessibility** | **Playwright** `^1.65.1`, `playwright-bdd` (`bddgen`), **`@axe-core/playwright`**, `allure-playwright`                                                | **9 Storefront** BDD features (`accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery`) + **6 Backoffice** BDD features | `bun run e2e` (from `src/Clients`)        |
+| **Frontend workspace boundaries**     | **Turborepo** (`turbo boundaries`)                                                                                                                    | Enforces 4-tier dependency graph (`config` → `foundation` → `domain` → `app`) across 3 apps and 16 packages                                                                                                                    | `bun run boundaries` (from `src/Clients`) |
+| **Pre-commit & CI quality gates**     | Husky (`.husky/pre-commit`), CSharpier `1.4.1`, Roslyn analyzers, SonarCloud (`sonar.yml`), EventCatalog linter/fitness (`docs.yml`)                  | Enforces formatting, warnings-as-errors, code coverage (`.trx`, MTP `.xml`, frontend `lcov.info`), and docs link/fitness checks                                                                                                | `mise run format` / GitHub Actions        |
 
-## 2. Business Value
+:::note
+**Contract test execution order:** Consumer tests (`Category=PactConsumer`) must run before provider verification (`Category=PactProvider`) because providers validate against the pact JSON files generated by consumers in `tests/pacts/`. `mise run test` enforces this sequence automatically.
+:::
 
-- **Fewer production regressions:** Logic errors, breaking interface changes, and boundary violations are caught early before services reach deployment.
-- **Safe independent team delivery:** Contract and schema compatibility checks allow producers and consumers to release independently without silent integration failures.
-- **Sustained architectural health:** Automated structural checks prevent accidental coupling and boundary drift as the codebase expands.
-- **Shared quality accountability:** A clear cross-cutting checklist ensures critical non-functional concerns—security, privacy, validation, duplicate protection, messaging, and AI governance—are verified alongside feature work.
+## Cross-cutting verification matrix
 
-## 3. How It Works
+When changing a shared library (`BookWorm.Chassis`, `BookWorm.ServiceDefaults`, `@workspace/*`) or service boundary, verify behavior at the owning boundary:
 
-BookWorm validates changes across five complementary verification layers:
+| Concern                     | Evidence to verify                                                                                                                                                                        |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Authorization**           | Unauthenticated calls return `401`; missing Entra ID role (`admin`, `business_user`, `customer`) or missing service scope returns `403`.                                                  |
+| **Privacy**                 | Classified log fields redact via `AddRedaction()`; AI agent prompts and outputs pass through **Presidio** `PIIMiddleware`.                                                                |
+| **Validation and errors**   | Invalid payloads produce field-grouped `400` `ValidationProblemDetails`; concurrency faults return `412`; unhandled exceptions return `500` with `traceId` and zero internal details.     |
+| **Idempotency and retries** | Duplicate `x-request-id` returns `409 Conflict` in **Ordering API**; `5xx`/exceptions release the Redis key; duplicate Kafka `message.Id` skips cleanly in `FusionCacheIdempotencyGuard`. |
+| **Messaging**               | Pact consumer and provider tests pass across all 8 messaging pairs; CloudEvents correlation headers (`requestid`, `UserId`, W3C trace) survive hops.                                      |
+| **AI governance**           | `Policies/*.yaml` allow/deny/rate-limit rules hold; rejected prompts short-circuit before specialist agents; MCP tool-poisoning patterns are blocked.                                     |
 
-1. **Isolated business logic tests:** Verify domain rules, request handlers, input validators, and failure paths quickly without external dependencies.
-2. **Consumer-driven contract verification:** Protect asynchronous event exchanges in two sequential steps—consumers first generate their expected message contracts, and providers then verify they still satisfy those expectations.
-3. **Architecture boundary checks:** Automatically verify structural rules across projects to prevent services or layers from bypassing established boundaries.
-4. **Service schema compatibility checks:** Lint service interface definitions and compare proposed changes against a committed compatibility baseline before allowing breaking changes.
-5. **End-to-end customer journey tests:** Exercise high-value, customer-facing flows across client applications to confirm critical journeys work together seamlessly.
+## Explicit coverage gaps and risks
 
-Alongside these layers, teams verify six cross-cutting quality areas at the service or shared component that owns the behavior: authorization enforcement, privacy and redaction, validation and safe error responses, duplicate-request and retry behavior, messaging compatibility and correlation, and AI tool/prompt governance.
+| Gap or risk                                 | Current repository state                                                                                      | Recommended mitigation                                                                                                                      |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| **No backend `.IntegrationTests` projects** | **0 backend `.IntegrationTests` projects** exist in `BookWorm.slnx` (despite naming guidance in `AGENTS.md`). | Rely on Pact contracts + unit tests today; add Aspire/Testcontainers integration tests for critical PostgreSQL, Cosmos DB, and Kafka flows. |
+| **No unit tests for `Catalog.Ingestion`**   | `BookWorm.Catalog.Ingestion` has no `.UnitTests` project (9 of 10 backend services have unit test projects).  | Add unit tests covering `VectorBatchProcessor` advisory-lock contention, batch size `200`, and conditional revision `DELETE`.               |
+| **No E2E features for `Commerce`**          | Storefront has 9 Playwright BDD features and Backoffice has 6; **Commerce** has unit/component tests only.    | Exercise `/basket`, `/checkout`, and `/account` flows via Storefront cross-zone checkout E2E and add dedicated Commerce E2E scenarios.      |
 
-## 4. Trade-offs & Lessons Learned
+## Related documentation
 
-- **Checklists are prompts, not proof of full coverage:** Listing cross-cutting scenarios highlights what must be protected when making changes; it does not claim every edge case is already covered by existing tests.
-- **Sequencing matters for asynchronous contracts:** Because provider verification depends on contract artifacts produced by consumer tests, running those stages out of order leads to stale or invalid verification.
-- **Focused tests over bloated end-to-end suites:** End-to-end browser or client tests are reserved for high-value customer journeys rather than duplicating business logic or error mapping already tested at the service level.
-- **Documentation must evolve with guarantees:** Whenever a change alters an observed boundary or guarantee, tests and architecture documentation must be updated together.
-
-## 5. Technical Reference
-
-### Verification Layers & Tooling
-
-- **Unit tests:** Exercise domain rules, handlers, validators, and failure paths in isolation using `TUnit` with `Moq` and `Shouldly`.
-- **Consumer-driven contract tests:** Verify asynchronous message contracts and provider behavior. Generate consumer contracts before running provider verification, as both stages share generated Pact artifacts.
-- **Architecture tests:** Use `ArchUnitNET.TUnit` to check selected structural rules and prevent boundary drift.
-- **Protocol Buffer checks:** Lint `.proto` schema definitions and compare proposed changes against the committed compatibility baseline before updating that baseline.
-- **End-to-end tests:** Cover customer-facing flows in the client applications for high-value user journeys such as [[flow|user-checkout]], rather than replacing focused service tests.
-
-### Cross-Cutting Verification Matrix
-
-When changing a shared mechanism, include tests for the behavior at its actual boundary:
-
-| Concern                 | Evidence to verify                                                                                                               |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Authorization           | Unauthenticated requests, missing roles, and missing or insufficient service scopes are rejected.                                |
-| Privacy                 | Classified log fields are redacted, agent inputs and outputs follow the configured PII handling path.                            |
-| Validation and errors   | Invalid fields produce a stable validation response, unexpected exceptions do not leak implementation details.                   |
-| Idempotency and retries | Duplicate and concurrent requests, handler failures after key creation, and retryable versus non-retryable effects are explicit. |
-| Messaging               | Contract changes remain compatible, repeated delivery is safe where required, and correlation survives service boundaries.       |
-| AI governance           | Tool access follows policy, rejected prompts do not reach agents, and failure behavior is observable.                            |
-
-### Related Documentation
-
-- [[doc|development/005-testing]] — test framework, focused commands, and contract-test execution order
-- [[doc|development/004-engineering-standards]] — schema change conventions
-- [[adr|adr-bw-016-layered-architecture-verification]] — layered architecture verification decision record
-- [[flow|user-checkout]] — representative customer journey exercised end-to-end
+- [[doc|development/005-testing]] — Exact commands and filtered test runs.
+- [[doc|development/008-testing-matrix]] — Detailed framework versions, coverage settings, and pact pairs.
+- ADR-BW-016: Layered architecture verification — Decision record behind BookWorm's verification layers.
+- [[doc|development/004-engineering-standards]] — Schema change and coding conventions.

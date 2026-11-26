@@ -9,89 +9,143 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+This reference documents how BookWorm authenticates users, AI agents, and services. Microsoft Entra ID handles user and agent identity. User-assigned Managed Identities handle service-to-resource authorization, so Azure-managed data and AI services need no static passwords or keys.
 
-BookWorm serves distinct human user groups—customers, business staff, and administrators—alongside autonomous AI assistants and more than a dozen backend services that interact with databases, caches, object storage, and AI models.
+## Overview
 
-Relying on static database passwords, shared API keys, or broad service credentials creates major security and operational risks: secrets can leak, manual rotation slows down delivery, and shared service accounts obscure whether an action was initiated by a user, an AI agent, or a background job. BookWorm needs a passwordless identity and authorization architecture that enforces least privilege across humans, AI agents, and internal services.
+| Property                | Value                                                                                                                       |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**               | BookWorm platform (AppHost)                                                                                                 |
+| **Source**              | `src/Aspire/BookWorm.AppHost/Extensions/Security/EntraIdExtensions*.cs`, `Infra/entra-agent-identities.bicep`, `AppHost.cs` |
+| **Identity provider**   | Microsoft Entra ID (`entra`, `Aspire.Hosting.Azure.EntraId`)                                                                |
+| **Agent identities**    | `entra-agent-identities` (Microsoft Graph Bicep, publish mode only)                                                         |
+| **Service credentials** | User-assigned Managed Identities with Azure RBAC role assignments                                                           |
+| **Frontend sessions**   | Better Auth with Entra ID (`BETTER_AUTH_SECRET`)                                                                            |
 
-## 2. Business Value
+## Identity layers
 
-- **Elimination of Static Cloud Secrets**: Removing database passwords and storage keys across managed cloud infrastructure eliminates secret-rotation overhead and reduces the risk of credential compromise.
-- **Least-Privilege Blast Radius**: Every service receives only the permissions required for its domain—for instance, the basket service can reach the in-memory cache but has no access to order databases or AI models.
-- **Governed AI Agent Delegation**: Dedicated identities for AI assistants ensure agents act strictly on behalf of the authenticated user rather than operating with unconstrained backend privileges.
-- **Unified Role Governance**: Separating administrator, business user, and customer roles in one central identity provider provides consistent access control across both the customer storefront and back-office operations.
+The diagram shows the three identity flows.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/004-identity-and-rbac-matrix-diagram-1.mmd" />
 
-BookWorm splits authentication and authorization into two clear layers:
+## Entra ID application registration (`entra`)
 
-- **Human & AI Agent Identity**: Customers and internal staff sign in through the central identity provider via the public gateway for both the storefront and back-office portals. Users and client applications receive specific application roles and scoped permissions across BookWorm APIs. When AI assistants (such as the book chat agent or rating agent) need to call downstream services for a user, they authenticate using dedicated agent identities and federated trust to exchange tokens on the user's behalf.
-- **Service-to-Resource Authorization**: Internal workloads that access managed cloud databases, caches, file storage, or AI models each receive their own cloud managed identity, paired with explicit role assignments granting only the required access. A shared environment identity handles pulling container images during deployment.
-- **Stateless & External Exceptions**: Workloads that do not touch managed cloud stores—such as the API gateway and the two privacy-redaction sidecars—do not carry managed identities. The notification service also operates without a cloud managed identity because it connects exclusively to external messaging and email relays using configured deployment parameters.
+Source: `EntraIdExtensions.cs`. Aspire registers the application with `.WithApplicationIdUri()`, `.WithAllowWebApiToBeAuthorizedByACL()`, a local developer certificate credential in run mode, and a federated Managed Identity credential in publish mode.
 
-## 4. Trade-offs & Lessons Learned
+### App roles
 
-- **Per-Service Identities vs. Provisioning Complexity**: Issuing a dedicated managed identity and separate role assignments per service maximizes isolation and audit clarity, at the expense of maintaining more infrastructure definitions as the service catalog grows.
-- **Federated Agent Identities vs. Simpler Service Accounts**: Giving AI assistants dedicated agent identities with on-behalf-of delegation adds registration and trust setup, but prevents AI workflows from bypassing user-level permissions.
-- **Hybrid Credential Posture for External Services**: While all Azure-managed data and AI resources are fully passwordless, external dependencies (such as the event broker and email relay used by notifications) still rely on deployment parameters and require separate credential hygiene.
-- **Server-Level Relational Admin Grants**: Services accessing the relational database currently receive directory administrator membership on the server rather than granular per-database SQL roles—a pragmatic setup choice that may need tightening if stricter intra-server separation is required later.
+| Role value      | Display name | Allowed member types  | Description                              |
+| :-------------- | :----------- | :-------------------- | :--------------------------------------- |
+| `admin`         | Admin        | `User`, `Application` | Manages all aspects of the application   |
+| `business_user` | BusinessUser | `User`, `Application` | Manages books and catalog reference data |
+| `customer`      | Customer     | `User`, `Application` | Browses and purchases books              |
 
-## 5. Technical Reference
+### OAuth2 scopes
 
-BookWorm eliminates static database passwords and API keys across Azure-managed services. Authentication is split into two layers: **Microsoft Entra ID** ([[system|identity-provider]]) for user/agent identity and **User-Assigned Managed Identities** for service-to-resource authorization.
+`WithEntraId` in `EntraIdExtensions.Dotnet.cs` adds a `{resource}_read` and `{resource}_write` scope for each .NET project that calls it. `AppHost.cs` calls it on six APIs, which gives 12 scopes.
 
-### Identity Provider System Graph
+| Service      | Read scope      | Write scope      |
+| :----------- | :-------------- | :--------------- |
+| Catalog API  | `catalog_read`  | `catalog_write`  |
+| MCP Tools    | `mcptools_read` | `mcptools_write` |
+| Basket API   | `basket_read`   | `basket_write`   |
+| Ordering API | `ordering_read` | `ordering_write` |
+| Chat API     | `chatting_read` | `chatting_write` |
+| Rating API   | `rating_read`   | `rating_write`   |
+
+### Redirect URIs
+
+| Client           | Callback path                                                                                 | Source                                                      |
+| :--------------- | :-------------------------------------------------------------------------------------------- | :---------------------------------------------------------- |
+| Storefront       | `https://gateway.<aca-default-domain>/api/auth/oauth2/callback/microsoft-entra-id`            | `EntraIdExtensions.Frontend.cs`                             |
+| Backoffice       | `https://gateway.<aca-default-domain>/backoffice/api/auth/oauth2/callback/microsoft-entra-id` | `EntraIdExtensions.Frontend.cs` (path prefix `/backoffice`) |
+| Commerce         | — (no own registration; shares the Storefront session through `.WithoutEntraId()`)            | `FrontendExtensions.cs`                                     |
+| Quartz Dashboard | `<quartz-dashboard-endpoint>/signin-oidc`                                                     | `EntraIdExtensions.Quartz.cs`                               |
+
+In run mode, Aspire also registers the gateway's local HTTP endpoint as an extra redirect URI.
+
+The generated root Bicep passes `https://quartz-dashboard.${AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN}` as the Quartz Dashboard redirect URI. The generated `quartz-dashboard` ingress is external, so the scheme is HTTPS; a live Entra registration was not inspected.
+
+### Quartz Dashboard OpenID Connect settings
+
+| Environment variable                           | Value                               |
+| :--------------------------------------------- | :---------------------------------- |
+| `Quartz__Dashboard__Authentication__Mode`      | `OpenIdConnect`                     |
+| `Quartz__Dashboard__Authentication__Authority` | `<entra-instance>/<tenant-id>/v2.0` |
+| `Quartz__Dashboard__Authentication__ClientId`  | `entra` client ID                   |
+| `Quartz__Dashboard__Roles__Administrators__0`  | `admin`                             |
+
+## Entra Agent Identities (`entra-agent-identities`)
+
+Source: `Infra/entra-agent-identities.bicep`, `EntraIdExtensions.cs`. Aspire provisions these only in publish mode. Each Federated Identity Credential (FIC) trusts the parent `entra` service principal, uses issuer `<login-endpoint>/<tenant-id>/v2.0`, and uses audience `api://AzureADTokenExchange`.
+
+| Application                       | Unique name                                | Federated Identity Credential   | Bicep output     |
+| :-------------------------------- | :----------------------------------------- | :------------------------------ | :--------------- |
+| BookWorm Agent Identity Blueprint | `bookworm-agent-blueprint-<unique-suffix>` | `bookworm-parent-blueprint-fic` | `blueprintAppId` |
+| BookWorm Chat Agent               | `bookworm-chat-agent-<unique-suffix>`      | `bookworm-chat-agent-fic`       | `chatAgentId`    |
+| BookWorm Rating Agent             | `bookworm-rating-agent-<unique-suffix>`    | `bookworm-rating-agent-fic`     | `ratingAgentId`  |
+
+- `<unique-suffix>` is `{environment-name-lowercase}-entra-agent-identities`.
+- All applications use `signInAudience: AzureADMyOrg` and get a service principal.
+
+| Service    | Environment variable              | Value           |
+| :--------- | :-------------------------------- | :-------------- |
+| `chatting` | `AgentIdentities__DefaultAgentId` | `chatAgentId`   |
+| `chatting` | `AgentIdentities__Agents__rating` | `ratingAgentId` |
+| `rating`   | `AgentIdentities__DefaultAgentId` | `ratingAgentId` |
+
+## Managed Identity RBAC matrix
+
+Role assignments come from `WithRoleAssignments` and resource references in `AppHost.cs`. A dash (`—`) means the service has no access to that resource.
+
+| Service                                           | PostgreSQL    | Azure Managed Redis | Cosmos DB                | Azure Storage                 | Microsoft Foundry       | Other                                                  |
+| :------------------------------------------------ | :------------ | :------------------ | :----------------------- | :---------------------------- | :---------------------- | :----------------------------------------------------- |
+| `catalog`                                         | `catalogdb`   | Yes                 | —                        | Storage Blob Data Contributor | Cognitive Services User | —                                                      |
+| `catalog-ingestion`                               | `catalogdb`   | —                   | —                        | Storage Blob Data Owner       | Cognitive Services User | —                                                      |
+| `basket`                                          | —             | Yes                 | —                        | —                             | —                       | —                                                      |
+| `ordering`                                        | `orderingdb`  | Yes                 | —                        | —                             | —                       | —                                                      |
+| `finance`                                         | —             | —                   | —                        | Storage Blob Data Owner       | —                       | Durable Task Scheduler (`Authentication=DefaultAzure`) |
+| `chatting`                                        | —             | —                   | —                        | Storage Blob Data Contributor | Cognitive Services User | —                                                      |
+| `rating`                                          | —             | Yes                 | `ratingdb` / `feedbacks` | —                             | Cognitive Services User | —                                                      |
+| `notification`                                    | —             | Yes                 | —                        | —                             | —                       | —                                                      |
+| `scheduler`                                       | `schedulerdb` | —                   | —                        | —                             | —                       | —                                                      |
+| `mcptools`                                        | —             | —                   | —                        | —                             | —                       | —                                                      |
+| `gateway`, `storefront`, `commerce`, `backoffice` | —             | —                   | —                        | —                             | —                       | —                                                      |
+| `presidio-analyzer`, `presidio-anonymizer`        | —             | —                   | —                        | —                             | —                       | —                                                      |
+| Environment identity (`mi-<token>`)               | —             | —                   | —                        | —                             | —                       | `AcrPull` on ACR                                       |
+
+The generated PostgreSQL role modules add each assigned service principal as a Flexible Server administrator (not as a per-database role). Redis uses the database access policy named `default`. Cosmos uses the built-in SQL role definition ID `00000000-0000-0000-0000-000000000002`, assigned at the account scope; this is the Cosmos DB Built-in Data Contributor role.
+
+### Azure built-in role definitions
+
+| Role                          | Role definition GUID                   | Assigned to                                             |
+| :---------------------------- | :------------------------------------- | :------------------------------------------------------ |
+| AcrPull                       | `7f951dda-4ed3-4680-a7ca-43fe172d538d` | Environment identity (`mi-<token>`)                     |
+| Cognitive Services User       | `a97b65f3-24c7-4388-baec-2e87135dc908` | `catalog`, `catalog-ingestion`, `chatting`, `rating`    |
+| Storage Blob Data Owner       | `b7e6dc6d-f1e8-4753-8033-0f276bb0955b` | `catalog-ingestion`, `finance` (Functions host storage) |
+| Storage Blob Data Contributor | `ba92f5b4-2d11-453d-a403-e96b0029c9fe` | `catalog`, `chatting`                                   |
+
+## Non-Entra secrets
+
+These secrets are outside Managed Identity coverage. Rotate them as described in [[doc|operational/004-security-hardening-checklist]].
+
+| Secret                   | Aspire parameter                                                 | Environment variable          | Consumers                            | Origin                                           |
+| :----------------------- | :--------------------------------------------------------------- | :---------------------------- | :----------------------------------- | :----------------------------------------------- |
+| HMAC signing key         | `basket-hmac-key`, `ordering-hmac-key`, `notification-hmac-key`  | `HMAC__Key`                   | `basket`, `ordering`, `notification` | Generated (min length 32, no special characters) |
+| Better Auth secret       | `storefront-better-auth-secret`, `backoffice-better-auth-secret` | `BETTER_AUTH_SECRET`          | `storefront`, `backoffice`           | Generated (min length 32, no special characters) |
+| Kafka credentials        | `broker` connection string                                       | `ConnectionStrings__broker`   | Kafka consumers and producers        | External                                         |
+| Qdrant Cloud credentials | `vectordb` connection string                                     | `ConnectionStrings__vectordb` | `catalog`, `catalog-ingestion`       | External                                         |
+| SMTP password            | `email-smtp-password`                                            | `Email__Password`             | `notification`                       | External (SendGrid)                              |
+
+:::note
+Notification has a Managed Identity binding only for Azure Managed Redis. It reaches Kafka and the SendGrid SMTP relay with the external credentials listed above.
+:::
+
+## Related documentation
+
+- [[doc|platform/001-platform-overview]] — Ingress boundary and Entra ID proxy route.
+- [[doc|platform/002-compute-and-container-apps]] — Workloads and their auth configuration.
+- [[doc|platform/003-data-ai-and-messaging-resources]] — Resources protected by these role assignments.
+- [[doc|operational/003-incident-response-and-runbooks]] — RBAC and On-Behalf-Of (OBO) failure runbooks.
 
 <NodeGraph id="identity-provider" version="1.0.0" type="system" maxHeight="28" />
-
-### Entra ID Application & Agent Identities
-
-#### Core Application (`entra` module)
-
-Provisioned via the Bicep Microsoft Graph extension (`microsoftGraphV1`):
-
-- **App Roles:** `Admin` (`admin`), `BusinessUser` (`business_user`), and `Customer` (`customer`) supporting both `User` and `Application` member types.
-- **OAuth2 Scopes:** 14 scoped API permissions across BookWorm services.
-- **Gateway Redirect URIs:**
-  - `https://gateway.<ACA_DEFAULT_DOMAIN>/api/auth/oauth2/callback/microsoft-entra-id` (Storefront)
-  - `https://gateway.<ACA_DEFAULT_DOMAIN>/backoffice/api/auth/oauth2/callback/microsoft-entra-id` (Back Office)
-
-#### Entra Agent Identities (`entra-agent-identities` module)
-
-AI agents authenticate using dedicated Entra Agent Identity applications paired with Federated Identity Credentials (`api://AzureADTokenExchange`) trusting the parent Entra ID service principal:
-
-- **Blueprint Application:** `bookworm-agent-blueprint-<uniqueSuffix>`
-- **[[agent|book-agent]]:** `bookworm-chat-agent-<uniqueSuffix>` (on-behalf-of token exchange for [[service|chat-api]])
-- **[[agent|rating-agent]]:** Rating agent application (on-behalf-of token exchange for [[service|rating-api]])
-
-### Managed Identity RBAC Matrix
-
-Each service's `*-identity` Bicep module provisions a dedicated `Microsoft.ManagedIdentity/userAssignedIdentities` resource, and `*-roles-*` modules bind least-privilege permissions:
-
-| Managed Identity             | PostgreSQL (`flexibleServers/administrators`) | Redis (`accessPolicyAssignments`) | Cosmos DB (Custom RBAC) |        Storage Account        |    Microsoft Foundry    |
-| :--------------------------- | :-------------------------------------------: | :-------------------------------: | :---------------------: | :---------------------------: | :---------------------: |
-| `catalog-identity`           |                  Entra Admin                  |             `default`             |            —            | Storage Blob Data Contributor | Cognitive Services User |
-| `catalog-ingestion-identity` |                  Entra Admin                  |                 —                 |            —            |    Storage Blob Data Owner    | Cognitive Services User |
-| `basket-identity`            |                       —                       |             `default`             |            —            |               —               |            —            |
-| `ordering-identity`          |                  Entra Admin                  |             `default`             |            —            |               —               |            —            |
-| `chatting-identity`          |                       —                       |                 —                 |            —            | Storage Blob Data Contributor | Cognitive Services User |
-| `rating-identity`            |                       —                       |             `default`             |    Cosmos Data Role     |               —               | Cognitive Services User |
-| `scheduler-identity`         |                  Entra Admin                  |                 —                 |            —            |               —               |            —            |
-| `finance-identity`           |                       —                       |                 —                 |            —            |    Storage Blob Data Owner    |            —            |
-| `mcptools-identity`          |                       —                       |                 —                 |            —            |               —               |            —            |
-| `storefront-identity`        |                       —                       |                 —                 |            —            |               —               |            —            |
-| `backoffice-identity`        |                       —                       |                 —                 |            —            |               —               |            —            |
-
-#### Azure Built-in Role Definition IDs
-
-| Role Name                         | Role Definition GUID                   | Used By                                               |
-| :-------------------------------- | :------------------------------------- | :---------------------------------------------------- |
-| **AcrPull**                       | `7f951dda-4ed3-4680-a7ca-43fe172d538d` | `aca` environment identity (`mi-<token>`)             |
-| **Cognitive Services User**       | `a97b65f3-24c7-4388-baec-2e87135dc908` | `catalog`, `catalog-ingestion`, `chatting`, `rating`  |
-| **Storage Blob Data Owner**       | `b7e6dc6d-f1e8-4753-8033-0f276bb0955b` | `catalog-ingestion`, `finance` (Functions host state) |
-| **Storage Blob Data Contributor** | `ba92f5b4-2d11-453d-a403-e96b0029c9fe` | `catalog`, `chatting` (blobs)                         |
-
-:::info
-`gateway`, `notification`, `presidio-analyzer`, and `presidio-anonymizer` do not have dedicated user-assigned managed identities; [[service|notification-api]] authenticates to external Kafka and SMTP endpoints using configured deployment parameters.
-:::

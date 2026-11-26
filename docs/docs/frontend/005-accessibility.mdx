@@ -15,51 +15,156 @@ badges:
     textColor: blue
 ---
 
-## Explanation: Accessibility by Layer
+Use this guide to run automated and manual accessibility checks across **Storefront**, **Commerce**, and **Backoffice** before opening a pull request that modifies user-interface components, layouts, forms, or interactive controls. For BookWorm's WCAG 2.1 Level AA rationale and barrier reporting process, see [[doc|frontend/008-accessibility-principles]].
 
-BookWorm targets the **Web Content Accessibility Guidelines (WCAG) 2.1 Level AA** across both `storefront` and `backoffice`. Because BookWorm is a demonstration project, this target is an ongoing engineering practice rather than a claim of full conformance across every third-party dependency.
+## Prerequisites
 
-Automated tools alone cannot guarantee an accessible experience—especially for keyboard navigation and streaming AI chat responses—so BookWorm combines four layers:
+- Local frontend dependencies installed with `bun install` in `src/Clients` (see [[doc|development/002-getting-started]]).
+- For browser E2E accessibility checks: Playwright Chromium installed via `bunx turbo run playwright:install` from `src/Clients`, and the target application running at `BASE_URL` (defaults to `http://localhost:3000` for Storefront).
 
-1. **Accessible UI primitives & linting:** Shared components use semantic HTML and accessible headless primitives, checked on every lint run with `eslint-plugin-jsx-a11y`.
-2. **Automated browser audits:** Playwright E2E suites run `axe-core` scans, and Lighthouse CI enforces a minimum accessibility score of `0.9`.
-3. **Keyboard & focus management:** Interactive dialogs and drawers trap focus while open, close on `Escape`, and return focus to the button that opened them.
-4. **Live screen-reader announcements:** Status indicators (offline, rate-limit, syncing, basket updates) use `aria-live` regions, while `storefront` connects its AI chat stream to `@generative-a11y/react` and `@generative-a11y/ag-ui` so screen readers announce streaming text, tool calls, and prompts at a readable pace.
+## Steps
 
----
+<Steps>
+<Step title="Run static accessibility linting (`eslint-plugin-jsx-a11y`)">
 
-## How-to Guide: Contributor Accessibility Checklist
+From `src/Clients`, run ESLint across all three applications and shared `@workspace/*` packages (configured with `--max-warnings 0`):
 
-When making user-interface changes:
+<CodeGroup>
 
-1. **Run automated checks** from `src/Clients` (`bun run lint` and relevant Playwright accessibility specs—see [[doc|frontend/004-testing-and-quality-gates]]).
-2. **Perform a keyboard-only pass** for any interactive control: verify visible focus indicators, logical `Tab` order, keyboard activation, and `Escape` dismissal for dialogs and menus.
-3. **Use semantic HTML** and native controls where possible, with descriptive link text and meaningful `alt` text for images.
-4. **Avoid color-only cues** when communicating status, required fields, or validation errors.
-5. **Document your checks** and any known limitations in your pull request description.
+```bash
+bun run lint
+```
 
----
+</CodeGroup>
 
-## Reference
+CI (`.github/workflows/frontend-shared.yml`) enforces this check on every pull request.
 
-### Accessibility Priorities
+</Step>
+<Step title="Run Vitest component tests with accessible queries">
 
-- Keyboard access to all interactive functionality
-- Clear focus indicators and logical focus order
-- Semantic HTML and compatibility with assistive technologies
-- Sufficient color contrast and non-color indicators
-- Text alternatives for meaningful images and other non-text content
-- Clear labels, instructions, and error messages
-- Responsive layouts and readable content at increased text sizes
+From `src/Clients`, run unit and component tests (which assert accessible roles, labels, and keyboard interactions via Testing Library):
 
-### Supported Environments & Known Limitations
+<CodeGroup>
 
-- **Supported environments:** Modern desktop and mobile browsers, keyboard-only navigation, and common screen-reader workflows. Behavior may vary across browser, OS, and assistive-technology combinations; third-party embeds and dependencies are supported on a best-effort basis.
-- **Known limitations:** No formally tracked barriers are listed at this time; confirmed barriers are triaged and documented as prioritized.
+```bash
+bun run test
+```
 
-### Reporting an Accessibility Barrier
+</CodeGroup>
 
-- Open an issue using the [accessibility issue template](https://github.com/foxminchan/BookWorm/issues/new?template=accessibility.yml) with the affected page, reproduction steps, environment/assistive technology details, and severity.
-- Alternatively, email [nguyenxuannhan407@gmail.com](mailto:nguyenxuannhan407@gmail.com) (you do not need to disclose personal or medical information).
-- Do **not** include passwords, private data, or security-sensitive details in public issues; report security vulnerabilities via [SECURITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/SECURITY.md).
-- See [ACCESSIBILITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/ACCESSIBILITY.md) for the repository entrypoint.
+</Step>
+<Step title="Run the Playwright BDD accessibility suite (`axe-core` and keyboard flows)">
+
+From `src/Clients/apps/storefront`, generate BDD specs and run the 10 scenarios in `e2e/features/accessibility.feature` (tagged `@accessibility` and `@a11y`, covering skip-to-main-content, keyboard-only checkout across Storefront and Commerce, dialog focus trapping, landmarks, `axe-core` color contrast, mobile navigation, and heading hierarchy):
+
+<CodeGroup>
+
+```bash
+bun run bddgen && bunx playwright test --grep @accessibility
+```
+
+</CodeGroup>
+
+To target a non-default URL (such as the Aspire API Gateway origin), set `BASE_URL`:
+
+<CodeGroup>
+
+```bash
+BASE_URL=<gateway-url> bunx playwright test --grep @accessibility
+```
+
+```powershell
+$env:BASE_URL="<gateway-url>"; bunx playwright test --grep @accessibility
+```
+
+</CodeGroup>
+
+Where:
+
+- `<gateway-url>`: Running Storefront or API Gateway base URL (for example, `https://localhost:5000`).
+
+> [!NOTE]
+> `@bookworm/commerce` currently has unit and component tests only (no standalone E2E suite); its basket and checkout accessibility journeys are verified through Storefront's `accessibility.feature` via the gateway. `@bookworm/backoffice` installs `@axe-core/playwright`, though it does not yet have a dedicated `accessibility.feature` file.
+
+There is no dedicated Backoffice `accessibility.feature` or Lighthouse CI workflow in the repository. No future plan is recorded; ask the Backoffice owners before describing either as planned.
+
+</Step>
+<Step title="Perform a manual keyboard-only pass">
+
+Open each changed page in a desktop browser and navigate without a mouse:
+
+- Press `Tab` once from page load to confirm the **Skip to main content** link appears and moves focus to `<main>` on `Enter`.
+- Tab through all interactive controls (links, buttons, inputs, menus) to verify visible focus indicators and logical DOM order.
+- Open every dialog, drawer, or popover (such as the remove-item dialog in Commerce) with `Enter` or `Space`, verify focus is trapped inside, press `Escape` to close it, and confirm focus returns to the trigger button.
+
+</Step>
+<Step title="Verify semantics, color contrast, and screen-reader announcements">
+
+- Confirm each page has a single `<h1>`, no skipped heading levels, and proper landmark regions (`main`, `navigation`, `contentinfo`).
+- Verify form controls have associated `<label>` elements, icon-only buttons have accessible names (for example, `"Shopping basket"`), and meaningful images have descriptive `alt` text.
+- Verify status indicators, required fields, and validation errors never rely on color alone.
+- For status toasts, offline/rate-limit banners, basket updates, or Storefront AI chat streams (`@generative-a11y/react` and `@generative-a11y/ag-ui`), confirm updates announce through `aria-live` regions without flooding the screen reader.
+
+</Step>
+<Step title="Document verification in your pull request">
+
+Note which automated commands and manual keyboard or screen-reader checks you ran, along with any known limitations, in the pull request description.
+
+</Step>
+</Steps>
+
+## Verification
+
+Confirm that ESLint reports zero warnings/errors and all Playwright `@accessibility` scenarios pass:
+
+<CodeGroup>
+
+```bash
+bun run lint
+```
+
+</CodeGroup>
+
+Expected output (in `src/Clients`):
+
+<CodeGroup>
+
+```text
+ Tasks:    19 successful, 19 total
+```
+
+</CodeGroup>
+
+And from `src/Clients/apps/storefront` with the target server running:
+
+<CodeGroup>
+
+```bash
+bunx playwright test --grep @accessibility
+```
+
+</CodeGroup>
+
+Expected output:
+
+<CodeGroup>
+
+```text
+  10 passed
+```
+
+</CodeGroup>
+
+## Troubleshooting
+
+| Symptom                                                                     | Cause                                                                                                          | Fix                                                                                                           |
+| :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| `bun run lint` fails with `jsx-a11y/*` errors or warnings                   | Missing accessible name, invalid ARIA attribute, or clickable non-interactive element (`<div>` with `onClick`) | Replace with a native `<button>` or `<a>`, add an associated label or `aria-label`, and re-run `bun run lint` |
+| `playwright test --grep @accessibility` fails with `ERR_CONNECTION_REFUSED` | Target server is not running on `BASE_URL` (`http://localhost:3000` default)                                   | Start Storefront or the Aspire AppHost, or pass the active origin in `BASE_URL`                               |
+| `axe-core` reports a color-contrast violation                               | Text or interactive border fails WCAG 2.1 Level AA contrast (`4.5:1` normal text, `3:1` large text/UI)         | Adjust Tailwind CSS v4 design tokens in `@workspace/ui` and re-run the `@color-contrast` scenario             |
+| Focus is lost after closing a modal dialog                                  | Trigger element unmounted or dialog omitted focus restoration                                                  | Use `@workspace/ui` Base UI dialog primitives, which trap focus and restore focus to the trigger on `Escape`  |
+
+## Related documentation
+
+- [[doc|frontend/008-accessibility-principles]] — WCAG 2.1 Level AA target, four-layer defense model, and barrier reporting.
+- [[doc|frontend/004-testing-and-quality-gates]] — Full formatting, boundary, type-check, test, build, and E2E workflow.

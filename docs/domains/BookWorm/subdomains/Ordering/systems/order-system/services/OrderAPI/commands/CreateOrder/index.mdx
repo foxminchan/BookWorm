@@ -18,38 +18,70 @@ sidebar:
   badge: "POST"
 ---
 
-## 1. Context & Problem
+The `CreateOrder` command (`POST /api/v1/orders`) creates a `New` order in **Ordering API** (v1.0.0) for the authenticated buyer by reading the caller's active basket from **Basket API** over gRPC and resolving current prices from **Catalog API** over gRPC. External callers reach this endpoint through the YARP **API Gateway** at `/ordering/api/v1/orders`.
 
-When a buyer is ready to check out, the platform must convert their active shopping basket into a formal [[entity|order]]. Accepting product lists or prices directly from a customer's device would risk stale catalog data and price manipulation, and transient network failures during checkout could cause accidental duplicate submissions.
+## Overview
 
-## 2. Business Value
+| Property                    | Value                                                                                                                                                              |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                   | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                            |
+| **Source**                  | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Create/CreateOrderEndpoint.cs`, `CreateOrderCommand.cs`, `Domain/AggregatesModel/OrderAggregate/Order.cs` |
+| **Protocol / format**       | HTTP `POST`, JSON UUID response (`application/json`, API version `v1`)                                                                                             |
+| **Gateway endpoint**        | `POST /ordering/api/v1/orders`                                                                                                                                     |
+| **Direct service endpoint** | `POST /api/v1/orders` (local ports: HTTP `5244`, HTTPS `7203`)                                                                                                     |
+| **Authentication**          | Microsoft Entra ID JWT — default policy: role `customer` or `admin` plus scopes `ordering_read` and `ordering_write`                                               |
+| **Idempotency**             | Required `x-request-id` header (`IdempotencyEndpointFilter`, Redis key `POST:{path}:{x-request-id}`, 3600s TTL)                                                    |
+| **Concurrency lock**        | Redis distributed lock via FusionCache (`order-create:{userId}`, 1-minute acquisition duration)                                                                    |
+| **ETag**                    | Not used                                                                                                                                                           |
+| **Rate limit**              | `PerUserRateLimit` token bucket (30 burst, 20 tokens / 10s, queue limit 5) plus global concurrency (100) and IP fixed-window (30 req/min) limiters                 |
 
-- **Pricing integrity:** Resolves book details and prices directly from authoritative Shopping and Catalog sources rather than client input.
-- **Safe checkout retries:** Uses a required request tracking key so retried submissions do not produce duplicate orders.
-- **Streamlined checkout flow:** Reduces client complexity by avoiding redundant order-item submission at checkout.
+## Parameters and fields
 
-## 3. How It Works
+### Request headers
 
-1. An authenticated buyer initiates order creation and provides a unique request tracking key to guard against duplicate submissions.
-2. No itemized purchase body is sent by the caller.
-3. The ordering service retrieves the buyer's current basket from Shopping and resolves current book details and prices from Catalog.
-4. The service creates the [[entity|order]] and returns its newly assigned order identifier.
+`CreateOrder` accepts no request body; basket items and unit prices are resolved server-side.
 
-## 4. Trade-offs & Lessons Learned
+| Name           | Type     | Required | Default | Constraints               | Description                                                         |
+| :------------- | :------- | :------- | :------ | :------------------------ | :------------------------------------------------------------------ |
+| `x-request-id` | `string` | Yes      | —       | Non-empty, non-whitespace | Client-generated idempotency key tracked in Redis for 3600 seconds. |
 
-- **Server-side basket and price resolution:** Pulling basket contents and catalog prices at order creation guarantees authoritative pricing, at the cost of depending on Shopping and Catalog availability during checkout.
-- **Mandatory duplicate-submission protection:** Requiring a unique request tracking key adds a small responsibility for callers, but protects customers and operations from duplicate orders on unstable networks.
+### Response (`201 Created`)
 
-## 5. Technical Reference
+| Location          | Type                | Required | Default | Constraints                                             | Description                                                      |
+| :---------------- | :------------------ | :------- | :------ | :------------------------------------------------------ | :--------------------------------------------------------------- |
+| `Location` header | `string` (URI path) | Yes      | —       | Resolved via `GetOrderEndpoint` (`/api/v1/orders/{id}`) | Relative path to fetch the created order.                        |
+| Response body     | `string` (UUID)     | Yes      | —       | `OrderId` UUID v7                                       | Newly created order identifier serialized as a JSON UUID string. |
 
-- **Operation:** `POST /api/v1/orders`
-- **Required header:** `x-request-id` (idempotency key)
-- **Request body:** None
-- **Service dependencies:** Order API obtains the authenticated Buyer's current basket and resolves its book details and prices through Shopping and Catalog.
-- **Response:** `201 Created` returns the Order ID as a JSON UUID.
+## Behavior and side effects
+
+- **Server-side basket and price resolution:** `CreateOrderHandler` reads `BuyerId` from `ClaimTypes.NameIdentifier`, calls **Basket API** (`basket.v1.BasketGrpcService.GetBasket`, 10-second gRPC deadline), and calls **Catalog API** (`book.v1.BookGrpcService.GetBooks`, 10-second gRPC deadline) with the distinct book IDs. For each item, it selects `book.PriceSale ?? book.Price`. If any book in the basket is missing from **Catalog API**, it throws `NotFoundException` (`404 Not Found`).
+- **Distributed per-buyer lock:** Before saving the order, the handler acquires a FusionCache Redis distributed lock named `order-create:{userId}` (`TimeSpan.FromMinutes(1)`). If another checkout is already in progress for the same buyer, it throws `InvalidOperationException` (`409 Conflict`). The lock is released in a `finally` block.
+- **Persistence and event pipeline:** Inside the `[Transactional]` unit of work on PostgreSQL (`orderingdb`), Ordering API saves the `Order` (`Status.New`, `Note = null`) and raises `OrderPlacedEvent`. `OrderEventHandler` creates the Marten `OrderSummary` stream, and Marten's Async Daemon (`MartenEventPublisher`) maps `OrderPlacedEvent` via `EventMapper` to `UserCheckedOutIntegrationEvent`, publishing it through the Wolverine PostgreSQL outbox (`wolverine` schema) to Kafka topic `bookworm.{env}.ordering.user-checked-out` (partitioned by `OrderId`) to start **Finance** orchestration.
+- **Idempotency key lifecycle:** `IdempotencyEndpointFilter` claims `POST:{path}:{x-request-id}` in Redis for 3600 seconds (`409 Conflict` on replay) and deletes the key if the handler returns HTTP `5xx` or throws an exception.
+
+Basket gRPC `GetBasket` returns an empty response when no basket exists; it does not return `NotFound`. `CreateOrderHandler` has no empty-items guard, and `Order` accepts an empty item list, so the handler proceeds to persistence and the endpoint returns `201 Created` if that save succeeds. No unit test covers this empty-basket case.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                                                    | Recovery behavior                                                                                    |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Missing or whitespace `x-request-id` header (`ValidationException`), or non-GUID `NameIdentifier` claim (`ArgumentException`)                                                                | Provide a non-empty `x-request-id` header and valid token claims; do not retry unchanged.            |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                                           | Acquire a fresh Entra ID access token and retry.                                                     |
+| `403 Forbidden`             | Authenticated caller lacks `customer`/`admin` role or `ordering_read`/`ordering_write` scopes                                                                                                | Request the required Entra ID role and scopes before retrying.                                       |
+| `404 Not Found`             | One or more basket book IDs do not exist in **Catalog API** (`NotFoundException`)                                                                                                            | Refresh the customer's basket to remove unavailable items before retrying with a new `x-request-id`. |
+| `409 Conflict`              | Duplicate `x-request-id` within the 3600-second Redis TTL, or concurrent checkout lock held for the same buyer (`InvalidOperationException`: `"Other process is already creating an order"`) | Wait for the in-flight checkout to finish and query order history before retrying.                   |
+| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limits                                                                                                                                     | Wait for the `Retry-After` header interval before retrying.                                          |
+| `500 Internal Server Error` | Unhandled gRPC failure (`Basket API` or `Catalog API` timeout/error) or persistence failure                                                                                                  | Retry with backoff; `IdempotencyEndpointFilter` clears the Redis key on `5xx`/exception.             |
+
+## Related documentation
+
+- [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[event|UserCheckedOutIntegrationEvent]] — Kafka event published after order creation.
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Kafka topic specification.
+- [[service|basket-api]] — Upstream gRPC source for customer baskets.
+- [[service|catalog-api]] — Upstream gRPC source for authoritative book pricing.
+- [[entity|order]] — Order aggregate invariants and lifecycle statuses.
 
 <NodeGraph />
-
-### Schema
 
 <SchemaViewer file="schema.json" title="Request header JSON Schema" maxHeight="500" search="true" />

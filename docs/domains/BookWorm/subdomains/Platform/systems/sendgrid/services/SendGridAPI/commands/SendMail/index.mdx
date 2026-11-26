@@ -20,103 +20,94 @@ sidebar:
   badge: "POST"
 ---
 
-## 1. Context & Problem
+`SendMail` (`POST https://api.sendgrid.com/v3/mail/send`) represents the logical outbound email handoff to SendGrid in BookWorm's documentation, using SendGrid's Web API v3 contract. **At runtime, BookWorm does not call `POST /v3/mail/send`**: the **Notification** service (`BookWorm.Notification`) sends rendered MJML/HTML emails via `MailKit` over **SMTP**—connecting to **Mailpit** locally and to SendGrid's SMTP relay (`smtp://smtp.sendgrid.net:587`) in Azure—with **no PostgreSQL database and no email outbox**.
 
-BookWorm needs a standardized, well-documented way to represent outbound email handoffs to [[system|sendgrid]] so architects, analysts, and delivery teams understand both the logical integration boundary and how messages are submitted at runtime. Without clearly distinguishing between logical service modeling, provider request capabilities, and actual transport behavior, stakeholders can misread API documentation as the live runtime protocol or mistake provider acceptance for guaranteed customer inbox delivery.
+:::note
+The HTTP `POST /v3/mail/send` schema below documents SendGrid's external REST v3 API. BookWorm's `MailKitSender` (`src/Services/Notification/BookWorm.Notification/Infrastructure/Senders/MailKit/MailKitSender.cs`) does not transmit this JSON payload or read a `SENDGRID_API_KEY` variable; it connects over SMTP using Aspire-injected `Email__*` settings.
+:::
 
-## 2. Business Value
+## Overview
 
-- **Aligned architecture and operations:** Clarifies how [[service|notification-api]] logically connects to [[service|sendgrid-api]] while explaining how development and production email providers are switched cleanly.
-- **Reliable delivery resilience:** Protects customer notifications from temporary provider outages by preserving pending [[entity|outbox]] records and enforcing bounded retries instead of losing messages.
-- **Clear delivery expectations:** Helps product and support teams distinguish between "accepted by the email provider" and "delivered to the customer's inbox."
-- **Flexible future integration:** Documents the full provider capability—including multi-recipient personalization, rich content, and batch grouping—so future enhancements do not require guesswork.
+| Property                       | Value                                                                                                                                                                                                                                                                                                                            |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                      | External email provider (**SendGrid**); logical caller is **Notification** (`src/Services/Notification/BookWorm.Notification`, Aspire resource `notification`)                                                                                                                                                                   |
+| **Source**                     | External REST spec (`https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml`); BookWorm SMTP implementation in `MailKitSender.cs`, `MailKitClientFactory.cs`, `MailKitSettings.cs`, `ResilienceExtensions.cs`, and `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs` |
+| **External REST endpoint**     | `POST https://api.sendgrid.com/v3/mail/send` (`application/json`, `202 Accepted`) — **not called at runtime**                                                                                                                                                                                                                    |
+| **BookWorm runtime transport** | `MailKit` `5.0.0` over SMTP: **Mailpit** (port `587`) in local Aspire run mode; `smtp://smtp.sendgrid.net:587` (username `apikey`) in Azure publish mode                                                                                                                                                                         |
+| **Authentication**             | External REST: `Authorization: Bearer <sendgrid-api-key>`; BookWorm SMTP: `Email__Username` (default `apikey`) and `Email__Password` (Aspire secret `email-smtp-password`)                                                                                                                                                       |
+| **Contract version**           | `1.0.0`                                                                                                                                                                                                                                                                                                                          |
 
-## 3. How It Works
+## Parameters and fields
 
-1. **Logical handoff vs. runtime delivery:** Within BookWorm's architecture catalog, the notification capability sends this command to the external email service to represent logical email submission. At runtime, BookWorm delivers messages through standard mail transport—routing to a local test inbox in development environments and to the configured external email provider in production.
-2. **Preparing the message details:** A complete submission specifies a verified sender, one or more recipients, a subject, message content, and optional grouping metadata such as a mail batch identifier.
-3. **Asynchronous acceptance:** When the external provider receives a valid submission, it accepts the message into its delivery pipeline asynchronously and returns an acknowledgment that processing has started—not a confirmation that the recipient has received the email.
-4. **Recording outcomes and handling failures:** The [[system|notification-system]] records the provider's response, keeps the [[entity|outbox]] record intact whenever submission fails, and applies a bounded retry policy for temporary issues rather than retrying malformed requests indefinitely.
+### External SendGrid REST v3 request headers
 
-## 4. Trade-offs & Lessons Learned
+| Name            | Type     | Required | Default | Constraints                 | Description                                |
+| :-------------- | :------- | :------- | :------ | :-------------------------- | :----------------------------------------- |
+| `Authorization` | `string` | Yes      | —       | `Bearer <sendgrid-api-key>` | SendGrid API key with Mail Send permission |
+| `Content-Type`  | `string` | Yes      | —       | `application/json`          | JSON request media type                    |
 
-- **Logical contract vs. runtime transport:** Modeling the provider's web capability in the catalog gives teams full visibility into supported provider features, even though runtime delivery currently uses standard mail transport. Keeping this distinction explicit prevents teams from assuming web payloads are transmitted directly at runtime.
-- **Asynchronous handoff uncertainty:** Accepting a message asynchronously keeps BookWorm responsive and decoupled from slow downstream mail servers, but means operations teams cannot treat handoff success as end-user delivery proof.
-- **Bounded retries vs. invalid data:** Preserving failed [[entity|outbox]] items protects against transient outages, while requiring teams to distinguish temporary provider errors from invalid message data (such as unverified senders or oversized content) so bad messages are fixed rather than retried forever.
+### External SendGrid REST v3 request body (`SendMailRequest`)
 
-## 5. Technical Reference
+Additional SendGrid Web API v3 properties are permitted (`additionalProperties: true`).
 
-The `SendMail` command submits email content to [[system|sendgrid]]'s Mail Send API (`POST /v3/mail/send`). The request can contain one or more `personalizations`, sender and recipient addresses, message content, and optional metadata such as a mail batch ID.
+| Name                         | Type             | Required | Default | Constraints                                         | Description                                                             |
+| :--------------------------- | :--------------- | :------- | :------ | :-------------------------------------------------- | :---------------------------------------------------------------------- |
+| `personalizations`           | `object[]`       | Yes      | —       | Non-empty array (`minItems: 1`)                     | Recipient groups and per-recipient overrides                            |
+| `personalizations[].to`      | `EmailAddress[]` | Yes      | —       | Non-empty array (`minItems: 1`)                     | Target recipients (`email` required with email format; optional `name`) |
+| `personalizations[].subject` | `string`         | No       | —       | —                                                   | Optional recipient-specific subject overriding root `subject`           |
+| `from`                       | `EmailAddress`   | Yes      | —       | Verified sender `email` (required); optional `name` | Verified sender identity                                                |
+| `subject`                    | `string`         | No       | —       | —                                                   | Default email subject line                                              |
+| `content`                    | `object[]`       | Yes      | —       | Non-empty array (`minItems: 1`)                     | Ordered message body parts                                              |
+| `content[].type`             | `string`         | Yes      | —       | `text/plain` or `text/html`                         | MIME type of the content block                                          |
+| `content[].value`            | `string`         | Yes      | —       | —                                                   | Message body text or HTML                                               |
+| `batch_id`                   | `string`         | No       | —       | Valid batch ID from `CreateMailBatch`               | Optional batch identifier for scheduled-send grouping                   |
 
-The command is accepted asynchronously. A successful response means SendGrid accepted the request for processing; it is not confirmation that the message reached the recipient.
+### BookWorm runtime SMTP configuration (`MailKitSettings` / `EmailExtensions.cs`)
 
-### Notification connection
+| Environment variable | Aspire publish parameter | Required      | Default                              | Description                                                                     |
+| :------------------- | :----------------------- | :------------ | :----------------------------------- | :------------------------------------------------------------------------------ |
+| `Email__Endpoint`    | `email-smtp-endpoint`    | Yes (publish) | `smtp://smtp.sendgrid.net:587`       | SMTP relay URI (in local run mode, overridden by `ConnectionStrings__mailpit`)  |
+| `Email__Username`    | `email-smtp-username`    | Conditional   | `apikey`                             | SMTP username; must be paired with `Email__Password`                            |
+| `Email__Password`    | `email-smtp-password`    | Conditional   | —                                    | Secret SMTP password or SendGrid API key; must be paired with `Email__Username` |
+| `Email__From`        | `email-sender-address`   | Yes           | `support@bookworm.com` (Development) | Verified sender email address                                                   |
+| `Email__Name`        | `email-sender-name`      | No            | `BookWorm`                           | Optional sender display name                                                    |
 
-[[service|notification-api]] sends this command to [[service|sendgrid-api]] in
-the catalog's logical service graph. Its runtime submission uses MailKit over
-SMTP, with MailPit in development and SendGrid when configured as the provider.
-The HTTP operation and JSON request schema on this page document SendGrid's
-HTTP API; they do not imply that Notification calls that endpoint or sends
-this JSON payload over SMTP.
+## Behavior and side effects
 
-### Request
+- **Asynchronous acceptance (REST and SMTP):** Both SendGrid REST (`202 Accepted`) and SendGrid SMTP (`SendAsync` completion) confirm only that SendGrid accepted the message for delivery processing, not that it reached the recipient's inbox.
+- **BookWorm Notification runtime flow (no database outbox):**
+  1. **Wolverine** consumes `PlaceOrderCommand`, `CompleteOrderCommand`, or `CancelOrderCommand` from Kafka.
+  2. `IIntegrationEventIdempotencyGuard` acquires a 24-hour Redis/FusionCache lock keyed by `idempotency:{consumerName}:{eventId:N}` to prevent duplicate emails.
+  3. `MjmlTemplateRenderer` renders `Templates/Orders/OrderEmail.mjml` into HTML, and `OrderMimeMessageBuilder` constructs a `MimeMessage`.
+  4. `MailKitSender.SendAsync` executes inside the Polly resilience pipeline (`ResilienceExtensions.cs` + `appsettings.json`):
+     - **SMTP client timeout:** `10,000` ms per `SmtpClient` instance (`MailKitClientFactory.cs`).
+     - **Circuit breaker:** `FailureRatio: 0.3`, `MinimumThroughput: 5`, `SamplingDuration: 30s`, `DurationOfBreak: 60s`.
+     - **Retry:** `MaxRetryAttempts: 3`, `Delay: 1s`, exponential backoff with jitter on transient SMTP `CommandException`, `ProtocolException`, `IOException`, `TimeoutException`, and `TimeoutRejectedException`.
+     - **Overall timeout:** `45s` (`appsettings.json`, overriding the `30s` code default).
+  5. Unrecovered failures wrap the error in `NotificationException`, allowing Wolverine error handling and native Kafka dead-letter routing (`bookworm.{env}.notification.dead-letter-queue`) to handle the failed message.
 
-Send an authenticated `application/json` request. A minimal request contains a
-verified sender, at least one recipient, and message content:
+## Error responses
 
-<CodeGroup dropdown>
+### External SendGrid REST v3 status codes
 
-```json
-{
-	"personalizations": [
-		{
-			"to": [
-				{
-					"email": "reader@example.com",
-					"name": "BookWorm reader"
-				}
-			]
-		}
-	],
-	"from": {
-		"email": "notifications@example.com",
-		"name": "BookWorm"
-	},
-	"subject": "Your notification",
-	"content": [
-		{
-			"type": "text/plain",
-			"value": "Your requested notification is ready."
-		}
-	]
-}
-```
+The [SendGrid OpenAPI contract](https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml) lists `400`, `401`, `403`, `404`, `405`, `413`, and `500` error responses, each with an `ErrorResponse` body containing `errors[]` (and optional `id`). It does not list `429` or document an `X-Message-Id` response header; these are omissions from the specification, not proof the live service never emits them.
 
-</CodeGroup>
+| Code / status               | Condition                                                             | Recovery behavior                                    |
+| :-------------------------- | :-------------------------------------------------------------------- | :--------------------------------------------------- |
+| `400 Bad Request`           | Invalid JSON structure, unverified sender, or missing required fields | Fix the request payload; do not retry unchanged      |
+| `401 Unauthorized`          | Missing or invalid SendGrid API key                                   | Verify the API key in secret configuration and retry |
+| `403 Forbidden`             | API key lacks Mail Send permission or account is restricted           | Update SendGrid key scopes or account status         |
+| `404 Not Found`             | Referenced provider resource is unavailable                           | Verify the endpoint URL and referenced IDs           |
+| `405 Method Not Allowed`    | Request uses an HTTP method other than `POST`                         | Send an HTTP `POST` request to `/v3/mail/send`       |
+| `413 Content Too Large`     | Payload exceeds SendGrid size limits                                  | Reduce message or attachment size before retrying    |
+| `500 Internal Server Error` | SendGrid service-side error                                           | Retry with bounded exponential backoff               |
 
-The complete request contract, including personalization limits, content
-formats, batch association, and optional fields, is defined by the
-SendGrid OpenAPI specification attached to [[service|sendgrid-api]].
+## Related documentation
 
-### Schema
-
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
-
-### Response and failures
-
-- `202 Accepted` means SendGrid accepted the request for processing.
-- `400 Bad Request` indicates invalid message data or request structure.
-- `401 Unauthorized` indicates missing or invalid authentication.
-- `403 Forbidden` indicates that the caller is not allowed to send.
-- `404 Not Found` indicates that a referenced provider resource is unavailable.
-- `405 Method Not Allowed` indicates an unsupported HTTP method.
-- `413 Content Too Large` indicates that the request exceeds provider limits.
-- `500 Internal Server Error` indicates a provider-side failure.
-
-The [[system|notification-system]] should record the provider response, preserve the
-[[entity|outbox]] item when submission fails, and apply bounded retry behavior for
-transient failures.
-
-### Architecture
+- [[service|sendgrid-api]] — External email provider integration boundary and OpenAPI specification link.
+- [[command|CreateMailBatch]] — External SendGrid REST v3 `POST /v3/mail/batch` contract.
+- [[service|notification-api]] — BookWorm's Kafka, Redis, MJML, and MailKit email worker.
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

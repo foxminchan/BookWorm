@@ -1,0 +1,8 @@
+flowchart LR
+	client["Storefront / MCP Tools\n(REST or gRPC ListBooks)"] -->|"Request + filters"| api["Catalog API\n(.NET 11 + FusionCache)"]
+	api --> |"Check catalog: books:list/search:v1:*"| redis["Redis\n(FusionCache L1/L2)"]
+	api --> |"No search term: SQL filter & page"| pg["PostgreSQL (catalogdb)\n(Authoritative Books)"]
+	api --> |"Has search term: Embed query"| foundry["Microsoft Foundry\n(Cohere.EmbedV40)"]
+	foundry -->|"Query vector"| qdrant["Qdrant (vectordb)\n(Hybrid Vector + Keyword)"]
+	qdrant -->|"Candidate book UUIDs"| api
+	api -->|"Hydrate & filter candidates"| pg

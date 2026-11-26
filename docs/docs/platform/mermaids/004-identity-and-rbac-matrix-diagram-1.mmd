@@ -1,0 +1,16 @@
+flowchart LR
+	user["Customer or staff\n(Browser)"]
+	fe["Storefront, Commerce, Backoffice\n(Next.js 16 + Better Auth)"]
+	entra["Microsoft Entra ID\n(entra app registration)"]
+	api["BookWorm APIs\n(.NET 11, JWT bearer)"]
+	agent["Chat and Rating agents\n(Entra Agent Identities)"]
+	mi["Managed Identities\n(user-assigned)"]
+	res["Azure resources\n(PostgreSQL, Redis, Cosmos DB, Storage, Foundry)"]
+
+	user -->|"OAuth2 / OIDC sign-in"| entra
+	fe --> |"Bearer token: scopes"| api
+	entra -->|"Callback via gateway"| fe
+	agent --> |"OBO token exchange: api://AzureADTokenExchange"| entra
+	api -->|"Agent tokens"| agent
+	api -->|"Workload identity"| mi
+	mi -->|"Azure RBAC"| res

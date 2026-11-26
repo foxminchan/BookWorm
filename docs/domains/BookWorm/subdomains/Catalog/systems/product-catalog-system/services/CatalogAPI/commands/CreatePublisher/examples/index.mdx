@@ -1,68 +1,47 @@
 ---
-summary: Create a publisher through the Catalog API and handle validation failures.
+summary: Usage examples for Create publisher.
 ---
 
-## 1. Context & Problem
+## Create a publisher with curl
 
-Integrating admin portals and catalog import tools need concrete guidance on how to register a new publisher and how to handle missing or invalid input. Without clear usage examples, client teams risk either failing to retain the new publisher's unique identifier for later book assignments or repeatedly retrying invalid requests.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Faster integration**: Gives delivery teams a ready-to-follow pattern for publisher creation and error handling.
-- **Reliable book onboarding**: Ensures callers capture the newly generated publisher identifier before attempting to link books to that publisher.
-- **Reduced noise and wasted traffic**: Clarifies when requests should not be retried automatically, keeping error logs clean and avoiding unnecessary load.
-
-## 3. How It Works
-
-- **Creating a publisher**: The calling application sends a request containing a non-empty publisher name. When accepted, the catalog returns the generated unique identifier, which the caller stores before assigning the publisher to any book.
-- **Handling validation failures**: If the publisher name is omitted or empty, the catalog rejects the request and returns a structured validation error. The calling application should display the field error to the user and avoid retrying unchanged input.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Lightweight creation response**: Returning only the generated unique identifier keeps the response simple, but requires callers to retain that identifier in local state before creating or updating linked books.
-- **No automatic retries on validation errors**: Because missing or blank names fail deterministically, retrying the exact same input will always fail; client workflows must prompt for corrected input first.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### 1. Create a publisher
-
-The command requires a non-empty publisher name. A successful request returns `200` and the generated publisher UUID.
-
-#### Payload details
-
-- `name` is required and must contain at least one character.
-- Store the returned UUID before assigning the publisher to a book.
-- The endpoint accepts a JSON request body.
-
-#### Example response
-
-<CodeGroup dropdown>
-
-```ts
-const publisherId = "5e4a1c9b-3f72-4b8d-a605-7c2e9f1d8430";
+```bash
+curl --fail-with-body -X POST "<gateway-url>/catalog/api/v1/publishers" \
+  -H "Authorization: Bearer <access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Ace Books"}'
 ```
 
 </CodeGroup>
 
-#### Using this example
+Where:
 
-Use the returned UUID when assigning this publisher to a book.
+- `<gateway-url>`: Base URL of the BookWorm API Gateway.
+- `<access-token>`: Entra ID JWT satisfying the `business_user` policy.
 
-</Column>
+Expected response (`200 OK`):
 
-<Column>
+<CodeGroup>
 
-<CodeGroup dropdown>
+```json
+"0193f1a2-7b4c-7d8e-9f01-23456789abcd"
+```
 
-```ts create-publisher.ts
-const response = await fetch("https://api.example.com/api/v1/publishers", {
+</CodeGroup>
+
+## Create a publisher with TypeScript
+
+<CodeGroup>
+
+```typescript
+const response = await fetch("<gateway-url>/catalog/api/v1/publishers", {
 	method: "POST",
-	headers: { "Content-Type": "application/json" },
-	body: JSON.stringify({ name: "Example Publisher" }),
+	headers: {
+		Authorization: "Bearer <access-token>",
+		"Content-Type": "application/json",
+	},
+	body: JSON.stringify({ name: "Ace Books" }),
 });
 
 if (!response.ok) {
@@ -70,17 +49,21 @@ if (!response.ok) {
 }
 
 const publisherId = (await response.json()) as string;
-console.log(`Created publisher ${publisherId}`);
 ```
 
 </CodeGroup>
 
-</Column>
+Where:
 
-</Columns>
+- `<gateway-url>`: Base URL of the BookWorm API Gateway.
+- `<access-token>`: Entra ID JWT satisfying the `business_user` policy.
 
----
+Expected response (`200 OK`):
 
-### 2. Reject an invalid request
+<CodeGroup>
 
-Omitting `name` returns `400` with an RFC 7807 validation response. Display the field error and do not retry unchanged input.
+```json
+"0193f1a2-7b4c-7d8e-9f01-23456789abcd"
+```
+
+</CodeGroup>

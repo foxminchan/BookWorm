@@ -1,0 +1,10 @@
+flowchart LR
+	rating["Rating API\n(.NET 11 + Rating Agent)"]
+	cosmos[("Rating database\n(Cosmos DB: ratingdb/feedbacks)")]
+	kafka["Kafka Broker\n(rating.feedback-create/delete)"]
+	catalog["Catalog API\n(.NET 11 + catalogdb)"]
+
+	rating --> |"EF Core Cosmos: CRUD (/bookId)"| cosmos
+	rating --> |"Wolverine CosmosDb: Envelopes"| cosmos
+	rating --> |"Kafka: FeedbackCreated / Deleted"| kafka
+	kafka --> |"Kafka: Update rating summary"| catalog

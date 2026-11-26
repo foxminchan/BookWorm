@@ -9,61 +9,76 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+BookWorm satisfies its top five quality goals—**Correctness**, **Interoperability**, **Deployability**, **Modifiability**, and **Operability**—through six core architectural decisions: bounded-context decomposition with Vertical Slice Architecture, polyglot per-service persistence, explicit REST/gRPC/Kafka contracts, YARP multi-zone microfrontends (MFEs), governed multi-agent AI, and automated layered verification orchestrated with **Aspire** 17.
 
-BookWorm brings together distinct business capabilities—product catalog management, shopping baskets, order processing, customer reviews, conversational assistance, and shared platform operations. Without a clear structural strategy, growing e-commerce platforms tend to accumulate hidden cross-domain dependencies, shared databases, and tightly coupled business rules. When that happens, changing one rule risks breaking unrelated workflows, ownership becomes unclear, and teams lose the ability to release updates safely on their own.
+## Strategic pillars at a glance
 
-This solution strategy establishes how BookWorm avoids those traps. It anchors architectural choices to the system's quality priorities in [[doc|arc42/01-introduction-and-goals/003-quality-goals]] and the system-wide boundaries in [[doc|arc42/02-architecture-constraints]].
+The diagram below connects BookWorm's prioritized quality goals to the primary architectural mechanisms that realize them.
 
-## 2. Business Value
+<MermaidFileLoader file="mermaids/04-solution-strategy-diagram-1.mmd" />
 
-Aligning BookWorm's architecture to clear business boundaries delivers measurable value across product, delivery, and operations teams:
+## Quality goals to solution approaches
 
-- **Trusted checkout and order accuracy:** Keeping book facts, basket state, and order lifecycles with their rightful owners protects critical business rules at checkout.
-- **Safer, faster delivery:** When a change stays inside one capability and preserves existing agreements with other capabilities, teams can test and release it independently without full-platform coordination.
-- **Lower cost of change:** Business rules can evolve inside a capability without dragging unrelated capabilities or transferring data ownership.
-- **Clearer operational accountability:** When background schedules or customer notifications fail, operations teams can quickly identify which capability owns the failed step without confusing operational issues with business completion.
+| Priority | Quality goal         | Architectural strategy in BookWorm                                                                                                                                                                                                                                                                                                                                                                                                           | Verification and governing ADRs                                                                                                                |
+| :------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1**    | **Correctness**      | Keep `Book`, `Basket`, `Order`, and `Feedback` inside separate bounded contexts with dedicated stores. Validate checkout synchronously against **Basket API** and **Catalog API** over gRPC; persist purchase-time snapshots in **Ordering API** (PostgreSQL + Marten event store); isolate post-checkout cleanup and emails inside **Finance**'s Durable Task Scheduler saga so delivery retries never mutate authoritative `Order` status. | **TUnit** unit tests; ADR-BW-001, ADR-BW-008, Finance Durable Task ADR                                                                         |
+| **2**    | **Interoperability** | Expose explicit, versioned contracts (`ApiVersions.V1` HTTP, `edition = "2023"` gRPC `.proto`, CloudEvents JSON over Kafka via **Wolverine**, MCP Streamable HTTP, A2A gRPC, AG-UI) with clear producer ownership and compatibility reviews before adoption.                                                                                                                                                                                 | **PactNet** contract tests (8 pacts across 7 projects), Protocol Buffer linting/compatibility checks; ADR-BW-004, ADR-BW-005, ADR-BW-017       |
+| **3**    | **Deployability**    | Package 10 independent .NET 11 backend services and 3 Next.js 16 MFEs (**Storefront**, **Commerce**, **Backoffice**) behind a single YARP **API Gateway**, orchestrated via **Aspire** 17 and deployed to Azure Container Apps with `aspire deploy`.                                                                                                                                                                                         | Independent service projects, affected-only Turborepo builds, `apphost-cd.yml`; ADR-BW-002, ADR-BW-003, ADR-BW-015                             |
+| **4**    | **Modifiability**    | Structure every service with Vertical Slice Architecture, DDD aggregates (`BookWorm.SharedKernel`), `Mediator.SourceGenerator` CQRS (no `MediatR`), shared technical chassis (`BookWorm.Chassis`), and strict frontend Turborepo layer tags (`config`, `foundation`, `domain`, `app`).                                                                                                                                                       | `BookWorm.ArchTests` (`TngTech.ArchUnitNET.TUnit`), `turbo boundaries`, CSharpier, `TreatWarningsAsErrors`; ADR-BW-006, ADR-BW-009, ADR-BW-016 |
+| **5**    | **Operability**      | Standardize OpenTelemetry traces, metrics, and structured logs in `BookWorm.ServiceDefaults` with W3C correlation (`x-request-id`), budgeted HTTP retries, Kestrel/rate-limiting safeguards, Quartz execution history (`schedulerdb`), Durable Task state (`finance-taskhub`), and per-service Kafka native DLQs.                                                                                                                            | OpenTelemetry + Aspire Dashboard / Log Analytics, Quartz Dashboard, Kafka UI / DLQ inspection; ADR-BW-010, ADR-BW-012, ADR-BW-013              |
 
-### Quality goals and solution approaches
+## Core architectural decisions
 
-| Quality goal         | Architectural scenario                                                                                                                                               | Solution approach                                                                                                                                                                 | Details                                                    |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| **Correctness**      | At checkout, use the persisted basket and current Catalog facts; do not create an order for a missing book, and keep the accepted order lifecycle owned by Ordering. | Keep basket, book, and order responsibilities with their owning capabilities. Verify checkout behavior against those ownership boundaries and the documented business invariants. | [[doc\|arc42/01-introduction-and-goals/003-quality-goals]] |
-| **Interoperability** | A capability needs another capability's information or behavior, or a consumer must adopt a changed contract.                                                        | Integrate through explicit, owned service contracts and integration events. Review compatibility and consumer impact before adopting contract changes.                            | [[doc\|arc42/02-architecture-constraints]]                 |
-| **Deployability**    | A change is confined to one context and does not break its consumers.                                                                                                | Test and release that service independently when its contracts remain compatible; coordinate consumer migration for breaking changes.                                             | [[doc\|arc42/02-architecture-constraints]]                 |
-| **Modifiability**    | A business rule changes without transferring ownership of its data or changing unrelated contexts.                                                                   | Keep behavior and data with the responsible capability; avoid direct cross-service dependencies and shared mutable business state.                                                | [[doc\|arc42/02-architecture-constraints]]                 |
-| **Operability**      | A scheduled job or email delivery attempt fails, and an operator must identify the responsible capability and inspect its execution state.                           | Keep processing and delivery state observable, and distinguish those failures from business completion. The required operational detail and guarantees remain to be established.  | [[doc\|arc42/01-introduction-and-goals/003-quality-goals]] |
+### Technology and platform foundation
 
-## 3. How It Works
+- **Backend runtime and orchestration:** .NET 11 (`net11.0`), C# 15 (`preview`), **Aspire** 17 (`aspire start` locally, `aspire deploy` to Azure Container Apps), and `BookWorm.ServiceDefaults` for uniform telemetry, resilience, Kestrel limits, and rate limiting.
+- **Frontend multi-zone microfrontends:** Bun `1.4.4`, Turborepo, Next.js 16, React 19, Tailwind CSS v4, TanStack Query, and Better Auth split across **Storefront** (public discovery + AI chat), **Commerce** (authenticated basket, checkout, account), and **Backoffice** (staff administration) behind YARP **API Gateway**.
 
-BookWorm's strategy rests on five straightforward rules that guide every design and delivery decision:
+### Polyglot persistence by workload
 
-1. **Organize by business capability, not technical layers.** Rather than grouping the platform around a shared business-logic tier, BookWorm divides responsibilities across [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]]. Each capability owns its own rules and data, making ownership and change impact immediately visible.
-2. **Make every cross-capability dependency explicit.** Capabilities never reach directly into another capability's private data. When one capability needs information or wants to react to something that happened elsewhere, it uses documented interfaces and agreed business announcements with clear ownership.
-3. **Keep shared platform capabilities supportive, not authoritative.** Common operational capabilities—such as sending notifications and running scheduled work—handle recurring infrastructure tasks without taking ownership of commerce rules or business outcomes.
-4. **Build on a single unified platform foundation.** All teams work within the repository's established application platform rather than introducing incompatible runtimes or bespoke stacks, keeping tooling and operational practices consistent.
-5. **Verify boundaries continuously as the platform evolves.** Teams pair functional and integration verification with automated boundary and contract checks, while keeping architectural documentation aligned with the live system so drift is caught early.
+BookWorm matches each service's storage engine to its consistency and access pattern rather than forcing a single database technology:
 
-## 4. Trade-offs & Lessons Learned
+- **PostgreSQL (only 3 databases):** `catalogdb` (**Catalog API** & **Catalog Ingestion**), `orderingdb` (**Ordering API** with EF Core + Marten event store), and `schedulerdb` (**Scheduler** Quartz persistent store).
+- **Azure Cosmos DB:** `ratingdb` / `feedbacks` (partition key `/bookId`) for **Rating API** with EF Core Cosmos and Wolverine Cosmos DB transactional messaging.
+- **Redis (Azure Managed Redis):** Primary mutable `Basket` store for **Basket API**, FusionCache L1+L2 backplane and distributed locks, and 24-hour integration-event idempotency (including stateless **Notification**).
+- **Azure Durable Task Scheduler + Azure Storage:** Durable saga state (`finance-taskhub`) for **Finance**, cover images (`catalog-blob`) for **Catalog API**, and AG-UI conversation sessions (`chatting-blob`, prefix `ag-ui/`) for **Chat API**.
+- **Qdrant:** Vector index (`vectordb`) for hybrid semantic book search refreshed asynchronously by **Catalog Ingestion**.
 
-- **Explicit integration effort vs. hidden coupling:** Separating capabilities and enforcing owned contracts requires more upfront interface design and coordination than calling across a shared layer, but it prevents cascading failures and makes long-term evolution predictable.
-- **Coordinated migrations for breaking changes:** Independent release applies only when existing contracts remain compatible; whenever a breaking change is unavoidable, producers and consumers must plan a coordinated transition.
-- **Unresolved operational targets:** This strategy intentionally avoids claiming numerical latency, availability, throughput, or recovery targets, and does not prescribe production deployment topologies or external service providers. Those commitments require explicit stakeholder agreement and are tracked alongside system constraints in [[doc|arc42/02-architecture-constraints]] and technical boundaries in [[doc|arc42/03-context-and-scope/003-technical-context]].
+### Security, privacy, and governed AI
 
-## 5. Technical Reference
+- **Identity and RBAC:** **Microsoft Entra ID** enforces JWT authentication and policies (`admin`, `business_user`, `customer`) at endpoint boundaries, plus Entra Agent Identities (`blueprintAppId`, `chatAgentId`, `ratingAgentId`) with User/Agent On-Behalf-Of (OBO) token exchange.
+- **Governed multi-agent workflows:** **Chat API** and **Rating API** run on **Microsoft Agent Framework** backed by **Microsoft Foundry** (`ModelRouter`, `MicrosoftDecision1`, Cohere `EmbedV40`), protected by declarative governance policies (`Microsoft.AgentGovernance.Extensions.*`), read-only **MCP Tools**, and internal **Presidio** PII anonymization sidecars.
 
-### Platform & runtime decisions
+### Layered automated verification
 
-- **Technology foundation:** The documented platform targets `.NET 11` and `C# 15`, with `.NET Aspire` supporting the cloud-native service model. New services and modules use this established setup rather than introducing an incompatible runtime.
-- **Production topology & providers:** Production hosting topology and external providers are not specified by this strategy.
+- **Backend:** **TUnit** on Microsoft.Testing.Platform across 9 `.UnitTests` projects, 7 **PactNet** `.ContractTests` projects (8 pacts), and `BookWorm.ArchTests` (`ArchUnitNET`). _(Backend `.IntegrationTests` projects are not yet implemented in `BookWorm.slnx`.)_
+- **Frontend & docs:** Vitest + Testing Library, Playwright BDD + `@axe-core/playwright`, `turbo boundaries`, and EventCatalog lint/fitness checks.
 
-### Integration & contract mechanisms
+## Strategic trade-offs and open commitments
 
-- **Service contracts and integration events:** Cross-capability interactions use documented service interfaces and integration events with clear ownership.
-- **Protocol Buffers:** Protocol Buffers are used for defined service interfaces; however, do not assume that every interaction uses that protocol or that an unspecified broker or transport is in place.
+- **Contract discipline vs. development speed:** Per-context data stores and owned contracts require upfront schema design, Pact updates, and coordinated migrations for breaking changes, in exchange for independent deployment and isolated failure domains.
+- **Eventual consistency for derived views:** Vector search indexes (**Qdrant**) and **Catalog** rating summaries converge asynchronously via Kafka so core catalog and feedback writes remain fast and decoupled.
+- **Unapproved operational budgets:** Numerical SLOs (latency, availability, RTO/RPO, freshness lag) remain proposed in [[doc|arc42/10-quality-requirements/002-quality-scenarios]] pending formal stakeholder agreement.
 
-### Boundary & contract verification
+## Related architecture decisions
 
-- **Testing & checks:** Boundaries and contracts are validated continuously using business and integration tests, schema linting and compatibility checks for defined Protocol Buffer contracts, and architecture fitness checks.
-- **Documentation parity:** Architecture documentation is kept aligned with the implementation so structural or contract drift remains visible.
-- **Related references:** [[doc|arc42/01-introduction-and-goals/003-quality-goals]], [[doc|arc42/02-architecture-constraints]], and [[doc|arc42/03-context-and-scope/003-technical-context]].
+| ADR                               | Decision summary                                                      | Status   |
+| :-------------------------------- | :-------------------------------------------------------------------- | :------- |
+| ADR-BW-001                        | Bounded-context ownership and service decomposition                   | Accepted |
+| ADR-BW-003                        | Aspire orchestration and cloud-native service model                   | Accepted |
+| ADR-BW-008                        | Durable message handoffs with Wolverine and Kafka                     | Accepted |
+| ADR-BW-009                        | Local CQRS building blocks using `Mediator.SourceGenerator`           | Accepted |
+| ADR-BW-014                        | Composable AI governance and Presidio PII guardrails                  | Accepted |
+| ADR-BW-016                        | Layered architecture and contract verification                        | Accepted |
+| Rating Cosmos DB ADR              | Supersedes PostgreSQL for Rating with Azure Cosmos DB                 | Accepted |
+| Finance Durable Task ADR          | Supersedes PostgreSQL for Finance with Durable Task Scheduler         | Accepted |
+| Notification Stateless Worker ADR | Supersedes PostgreSQL outbox with stateless Kafka + Redis idempotency | Accepted |
+| Chat Blob Sessions ADR            | Supersedes in-memory sessions with Azure Blob Storage (`ag-ui/`)      | Accepted |
+
+## Related architecture documentation
+
+- [[doc|arc42/01-introduction-and-goals/003-quality-goals]] — Top five prioritized quality goals driving this strategy.
+- [[doc|arc42/02-architecture-constraints]] — Technical and organizational guardrails.
+- [[doc|arc42/03-context-and-scope/003-technical-context]] — Verified protocols and external technical neighbors.
+- [[doc|arc42/05-building-block-view]] — Concrete decomposition into containers and services.
+- [[doc|arc42/09-architecture-decisions]] — Complete platform and system ADR index.

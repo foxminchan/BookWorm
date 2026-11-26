@@ -1,0 +1,25 @@
+flowchart LR
+	edge["Edge & Frontends\n(YARP, Storefront, Commerce, Backoffice)"]
+	catalog["Catalog\n(Catalog API, Catalog Ingestion)"]
+	basket["Shopping\n(Basket API)"]
+	ordering["Ordering API\n(.NET 11 + Marten)"]
+	finance["Finance\n(Azure Durable Functions)"]
+	rating["Reviews\n(Rating API + Rating Agent)"]
+	chat["Chat API\n(.NET 11 + AG-UI)"]
+	mcp["MCP Tools\n(.NET 11 + /mcp)"]
+	scheduler["Scheduler\n(.NET 11 + Quartz.NET)"]
+	notification["Notification\n(.NET 11 Kafka Worker)"]
+
+	edge --> |"HTTPS: /catalog, /basket, /ordering"| ordering
+	edge --> |"HTTPS: /chatting, /rating"| chat
+	ordering --> |"gRPC: GetBasket"| basket
+	ordering --> |"gRPC: GetBooks"| catalog
+	basket --> |"gRPC: GetBook"| catalog
+	ordering --> |"Kafka: Checkout & status events"| finance
+	finance --> |"Kafka: Basket cleanup commands"| basket
+	finance --> |"Kafka: Order email commands"| notification
+	rating --> |"Kafka: Feedback events"| catalog
+	chat --> |"MCP HTTP: Read-only tools"| mcp
+	mcp --> |"gRPC: book.v1"| catalog
+	chat --> |"A2A gRPC: Review summaries"| rating
+	scheduler --> |"Kafka: scheduler.process-vector-batch"| catalog

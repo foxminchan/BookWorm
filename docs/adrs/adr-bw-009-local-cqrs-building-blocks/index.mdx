@@ -13,38 +13,67 @@ appliesTo:
 related:
   - id: adr-bw-011-shared-validation-and-error-contracts
   - id: adr-bw-016-layered-architecture-verification
+decisionMakers:
+  - contributor-team
+x-scope: "Whole system (backend API services)"
 ---
 
-## Context
+## Context and problem statement
 
-Service endpoints need testable business handlers and common validation and logging behaviors. Embedding all logic in endpoints duplicates technical concerns and makes focused tests harder.
+Service endpoints need isolated, testable command and query handlers wrapped in consistent logging, tracing, validation, and transaction behaviors. Placing domain orchestration directly inside HTTP Minimal API or gRPC endpoints duplicates cross-cutting plumbing and couples business logic to transport types.
 
-## Decision
-
-Follow the established local CQRS pattern with Mediator.SourceGenerator and reusable handler behaviors where applicable. Do not introduce MediatR as a competing mediator or expose another service's handlers as a shortcut around its contract.
-
-CQRS here is an in-process organization technique. It does not mandate event sourcing, separate physical read/write databases, or broker delivery for every command.
+BookWorm needs one compile-time, in-process CQRS mediator standard across services while ensuring local command and query records are never mistaken for cross-service integration contracts.
 
 ## Decision drivers
 
-- Testability of handlers and domain behavior.
-- Consistent validation and logging pipelines.
-- Compatibility with existing repository libraries and conventions.
+- **Testability:** Unit-test commands, queries, and domain invariants independently of ASP.NET Core or gRPC transports.
+- **Performance and AOT readiness:** Generate dispatch tables at compile time without reflection-based runtime scanning.
+- **Pipeline consistency:** Reuse standardized behaviors from `BookWorm.Chassis` across every API service.
 
-## Alternatives considered
+## Considered options
 
-| Alternative                                  | Assessment                                                                 |
-| -------------------------------------------- | -------------------------------------------------------------------------- |
-| Endpoint-only business logic                 | Reduces indirection but repeats cross-cutting behavior and mixes concerns. |
-| Introduce a second mediator library          | Adds dependency and pipeline variation without an established need.        |
-| Use local handlers across service boundaries | Reuses implementation at the cost of deployment and ownership coupling.    |
+1. Use local Vertical Slice CQRS handlers with `Mediator.SourceGenerator` (`3.0.2`) and `BookWorm.Chassis` pipeline behaviors
+2. Adopt `MediatR` as the in-process mediator library
+3. Implement business logic directly inside HTTP and gRPC endpoints
+4. Share local command handlers directly across service boundaries
 
-## Consequences
+## Decision outcome
 
-- Business behavior can be tested apart from transport entry points.
-- Contributors must understand handler and pipeline conventions.
-- Shared pipeline changes need tests at registered host boundaries; local command types are not automatically integration contracts.
+Chosen option: **Use local Vertical Slice CQRS handlers with `Mediator.SourceGenerator` (`3.0.2`) and `BookWorm.Chassis` pipeline behaviors**, because source generation eliminates reflection overhead while keeping validation, telemetry, and transaction handling uniform across services.
 
-## Evidence
+API services register `Mediator.SourceGenerator` (`3.0.2`) and `Mediator.Abstractions` (`3.0.2`) alongside `BookWorm.Chassis.CQRS` behaviors (`LoggingBehavior`, `ActivityBehavior`, `ValidationBehavior`, and `TransactionBehavior` where applicable) plus command and query metrics. Services must not add `MediatR` as a competing mediator. CQRS here is strictly an in-process code organization pattern; it does not mandate event sourcing or separate read/write databases (only Ordering API pairs CQRS with Marten event sourcing).
 
-See [[doc|development/004-engineering-standards]] and [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]].
+### Consequences
+
+- **Positive:** Handlers remain small, `sealed`, and directly testable under TUnit with `Moq` and `Shouldly`, while compile-time source generation catches missing registrations early.
+- **Negative:** Contributors must follow `Mediator.SourceGenerator` handler signatures and pipeline registration order, and changes to shared behaviors require testing across all host boundaries.
+- **Follow-up:** Enforce handler naming, sealing, and vertical-slice boundaries automatically in `tests/BookWorm.ArchTests`.
+
+## Pros and cons of the options
+
+### Use local Vertical Slice CQRS handlers with `Mediator.SourceGenerator` (`3.0.2`) and `BookWorm.Chassis` pipeline behaviors
+
+- **Good**, because compile-time source generation removes runtime reflection overhead and aligns with modern .NET 11 patterns.
+- **Good**, because every registered service reuses `LoggingBehavior`, `ActivityBehavior`, `ValidationBehavior`, and `TransactionBehavior`.
+- **Bad**, because developers unfamiliar with source-generated mediators must learn its registration and lifetime rules (`ServiceLifetime.Scoped`).
+
+### Adopt `MediatR` as the in-process mediator library
+
+- **Good**, because `MediatR` is widely recognized across older .NET codebases.
+- **Bad**, because BookWorm explicitly bans `MediatR` to avoid reflection dispatch, commercial licensing friction, and competing mediator abstractions inside `BookWorm.Chassis`.
+
+### Implement business logic directly inside HTTP and gRPC endpoints
+
+- **Good**, because request handling avoids an extra handler indirection layer.
+- **Bad**, because endpoints duplicate validation, logging, tracing, and transaction management and become harder to unit-test in isolation.
+
+### Share local command handlers directly across service boundaries
+
+- **Good**, because services avoid writing cross-boundary DTOs.
+- **Bad**, because sharing internal handlers couples service deployments and violates ADR-BW-001 and ADR-BW-004.
+
+## Verification and links
+
+- **Verified against:** `Directory.Packages.props`, `src/BuildingBlocks/BookWorm.Chassis/CQRS/`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `tests/BookWorm.ArchTests/`
+- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]], [[doc|development/004-engineering-standards]]
+- **Related ADRs:** ADR-BW-002, ADR-BW-011, ADR-BW-016, [[doc|arc42/09-architecture-decisions]]

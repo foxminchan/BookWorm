@@ -1,0 +1,9 @@
+flowchart LR
+	source["Authoritative Owner\n(Bounded Context DB)"]
+	contract["Explicit Contract\n(HTTP v1 / gRPC / Kafka)"]
+	derived["Derived Projection\n(Cache / Qdrant / Rating Summary)"]
+	ops["Operational Worker\n(Scheduler / Notification)"]
+
+	source -->|"Publish versioned contract"| contract
+	contract -->|"Async update (rebuildable)"| derived
+	contract -->|"Trigger delivery or job"| ops

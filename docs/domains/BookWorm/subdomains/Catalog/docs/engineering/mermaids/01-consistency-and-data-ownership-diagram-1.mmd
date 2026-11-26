@@ -1,0 +1,8 @@
+flowchart LR
+	api["Catalog API\n(.NET 11 Minimal API)"] --> |"SQL: Commit + trigger"| pg["PostgreSQL (catalogdb)\n(System of Record)"]
+	api --> |"Invalidate book: {id}"| redis["Redis\n(FusionCache L1/L2)"]
+	api -->|"Upload / SAS URN"| blob["Azure Blob Storage\n(catalog-blob)"]
+	sched["Scheduler\n(Quartz.NET 5m UTC)"] --> |"Kafka: scheduler.process-vector-batch"| ing["Catalog Ingestion\n(Azure Functions)"]
+	ing -->|"Lock 740031001 + read 200"| pg
+	ing -->|"Foundry Cohere.EmbedV40 + Upsert/Delete"| qdrant["Qdrant (vectordb)\n(Search Projection)"]
+	rating["Rating API\n(Cosmos DB ratingdb)"] --> |"Kafka: rating.feedback-create/delete"| api

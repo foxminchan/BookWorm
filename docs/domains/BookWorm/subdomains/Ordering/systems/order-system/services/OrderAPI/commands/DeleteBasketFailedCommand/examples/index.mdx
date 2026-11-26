@@ -1,117 +1,30 @@
 ---
-summary: Consume Finance's failed basket-cleanup outcome and soft-delete the affected Order.
+summary: Usage examples for Basket deletion failed.
 ---
 
-## 1. Context & Problem
+## CloudEvents `data` payload
 
-If cleaning up a customer's shopping basket fails after checkout, leaving the newly created order active can create inconsistencies between the customer's basket and their order history. The ordering service needs a dependable recovery path when Finance reports that basket cleanup failed.
+<CodeGroup>
 
-## 2. Business Value
-
-- **Consistent customer experience:** Prevents half-completed checkout flows from leaving active orders behind when basket cleanup fails.
-- **Resilient recovery:** Safely ignores orders that no longer exist so repeated failure notifications do not cause processing errors.
-- **Preserved audit history:** Marks the affected order as removed rather than permanently erasing it, and avoids misrepresenting a technical recovery as a customer-driven cancellation.
-
-## 3. How It Works
-
-1. When Finance detects that basket cleanup has failed, it sends this recovery notification to [[service|order-api]].
-2. The notification includes a message identifier, timestamp, the affected order identifier, the basket identifier, the purchase amount, and an optional customer email reference.
-3. The ordering service looks up the matching order.
-4. If the order no longer exists, the service safely takes no action.
-5. If the order exists, the service marks it as removed (soft-deleted) without changing its business status to Cancelled.
-6. This Finance recovery command is separate from Basket's own failure notification ([[event|BasketDeletedFailedIntegrationEvent]]).
-
-## 4. Trade-offs & Lessons Learned
-
-- **Soft removal instead of Cancelled status:** Soft-deleting the order removes it from active order views while keeping historical records intact and avoiding confusion with business cancellations, though downstream reporting must account for soft-deleted records.
-- **Idempotent missing-order handling:** Treating an absent order as a safe no-action path protects against duplicate or out-of-order recovery messages, at the cost of silently skipping orders that were already removed.
-
-## 5. Technical Reference
-
-<Columns cols={2}>
-
-<Column>
-
-### Receive failed cleanup
-
-Finance publishes this command when basket cleanup fails.
-[[service|order-api]] consumes it through
-[[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]].
-
-- `id` identifies this integration message; `creationDate` is its UTC timestamp.
-- `orderId` identifies the Order requiring recovery.
-- `basketId` identifies the basket whose cleanup failed.
-- `email` is required but may contain null.
-- `totalMoney` preserves the purchase amount.
-
-</Column>
-
-<Column>
-
-<CodeGroup dropdown>
-
-```csharp DeleteBasketFailedCommand.cs
-[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "delete-basket-failed")]
-public sealed record DeleteBasketFailedCommand(
-    Guid BasketId,
-    string? Email,
-    Guid OrderId,
-    decimal TotalMoney
-) : IntegrationEvent;
-```
-
-</CodeGroup>
-
-</Column>
-
-</Columns>
-
----
-
-### Payload
-
-<CodeGroup dropdown>
-
-```json failed-cleanup-payload.json
+```json
 {
-	"id": "019a1c00-0000-7000-8000-000000000005",
-	"creationDate": "2026-11-01T14:01:00Z",
-	"basketId": "11111111-1111-1111-1111-111111111111",
-	"email": null,
-	"orderId": "55555555-5555-5555-5555-555555555555",
-	"totalMoney": 49.95
+	"id": "0193f1a2-8c01-7d8e-9f01-23456789abcd",
+	"creationDate": "2026-11-25T16:12:00Z",
+	"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
+	"email": "reader@example.com",
+	"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
+	"totalMoney": 59.98
 }
 ```
 
 </CodeGroup>
 
-### Apply the recovery path
+Expected database effect on `orderingdb`:
 
-The example shows the camelCase JSON data inside the BookWorm
-CloudEvents-compatible envelope. Order API soft-deletes the matching Order if
-it still exists. A missing Order is a no-op; soft deletion does not change
-the Order's business status to Cancelled.
+<CodeGroup>
 
-This command is distinct from Basket's
-[[event|BasketDeletedFailedIntegrationEvent]].
-
-<CodeGroup dropdown>
-
-```csharp DeleteBasketFailedCommandHandler.cs
-[WolverineHandler]
-public async Task Handle(DeleteBasketFailedCommand message, CancellationToken cancellationToken)
-{
-    var order = await repository.GetByIdAsync(message.OrderId, cancellationToken);
-
-    if (order is null)
-    {
-        return;
-    }
-
-    order.Delete();
-
-    await repository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
-}
+```text
+Order 0193f1a2-1111-7d8e-9f01-23456789abcd updated with is_deleted = true; status remains unchanged (New); no integration events emitted.
 ```
 
 </CodeGroup>

@@ -1,0 +1,15 @@
+sequenceDiagram
+	participant Browser as Customer Browser
+	participant Gateway as API Gateway (YARP)
+	participant Storefront as Storefront (Next.js 16)
+	participant Commerce as Commerce (Next.js 16)
+
+	Browser ->> Gateway: HTTPS GET /basket
+	Gateway ->> Commerce: HTTP GET /basket
+	Commerce -->> Browser: 307 Redirect /login?callbackUrl=/basket
+	Browser ->> Gateway: HTTPS GET /login?callbackUrl=/basket
+	Gateway ->> Storefront: HTTP GET /login?callbackUrl=/basket
+	Storefront -->> Browser: Better Auth + Microsoft Entra ID sign-in
+	Browser ->> Gateway: HTTPS GET /basket (with session cookie)
+	Gateway ->> Commerce: HTTP GET /basket
+	Commerce -->> Browser: 200 OK (X-Mfe-Zone: commerce)

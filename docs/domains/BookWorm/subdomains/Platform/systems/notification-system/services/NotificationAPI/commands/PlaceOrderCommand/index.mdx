@@ -14,52 +14,68 @@ owners:
   - contributor-team
 ---
 
-## 1. Context & Problem
+`PlaceOrderCommand` (`BookWorm.Contracts.PlaceOrderCommand`) is an asynchronous Kafka integration command published by **Finance** after checkout and consumed independently by **Basket API** (to delete the customer's Redis basket) and **Notification** (to send a new-order confirmation email). Neither consumer creates or modifies orders in **Ordering API**.
 
-Once a customer checks out and an order is placed, multiple business capabilities need to act on that milestone—such as sending a confirmation email to the customer and cleaning up the shopping basket. Without a shared, standardized order-placement instruction, Finance would have to maintain separate point-to-point integrations for every downstream consumer.
+## Overview
 
-## 2. Business Value
+| Property               | Value                                                                                                                                                                                                                                                                                                             |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**              | **Finance** (`finance`) produces; **Basket API** (`basket`) and **Notification** (`notification`) consume                                                                                                                                                                                                         |
+| **Source**             | `src/Services/Finance/BookWorm.Finance/Features/Orders/PlaceOrder/PublishPlaceOrderActivity.cs`, `src/Services/Basket/BookWorm.Basket/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs` |
+| **Protocol / format**  | Kafka + **Wolverine**, CloudEvents JSON (`CloudEventsOnlyKafkaMapper`), camelCase payload                                                                                                                                                                                                                         |
+| **Kafka topic**        | `bookworm.{env}.finance.place-order` (`[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "place-order")]`)                                                                                                                                                                                     |
+| **Partition key**      | `OrderId` (`opts.MessagePartitioning.ByPropertyNamed(nameof(OrderId))`)                                                                                                                                                                                                                                           |
+| **Dead-letter queues** | `bookworm.{env}.basket.dead-letter-queue` (**Basket API**), `bookworm.{env}.notification.dead-letter-queue` (**Notification**)                                                                                                                                                                                    |
+| **Authentication**     | Internal Kafka broker transport (Confluent Cloud in publish mode; local Kafka container in development)                                                                                                                                                                                                           |
 
-- **Decoupled collaboration**: Multiple downstream teams can react independently to the same business milestone without coupling Finance to each consumer's internal workflow.
-- **Consistent customer communication**: Delivers standardized customer contact details, order reference, and order total for timely new-order confirmation emails.
-- **Graceful handling of missing details**: Blank email addresses are safely skipped, and missing customer names fall back to a generic customer greeting instead of failing the flow.
+:::note
+`PlaceOrderCommand` initiates post-checkout cleanup and confirmation email delivery only. To submit a new order over HTTP, see [[command|CreateOrder]].
+:::
 
-## 3. How It Works
+## Parameters and fields
 
-1. Finance publishes the place-order instruction to a shared order-placement channel after checkout and may send it again if placement coordination times out.
-2. Notification receives the instruction and treats it strictly as a trigger to prepare a "new order" email—never as an instruction to create or modify the order itself.
-3. Before generating an email, Notification checks the recipient address; if it is missing or blank, email processing is skipped cleanly.
-4. When a valid address is present, Notification prepares the order email using the customer's name (or a generic customer greeting if missing), order reference, and total amount, saves a record of the outbound email, submits it to the mail delivery server, and marks the record as sent upon handoff.
-5. Any preparation or submission error is surfaced back for retry handling rather than publishing a separate delivery-result message to Finance.
+| Name           | Type                    | Required | Default                               | Constraints                     | Description                                                                                                                               |
+| :------------- | :---------------------- | :------- | :------------------------------------ | :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | `string` (UUID v7)      | Yes      | Generated (`IntegrationEvent`)        | Valid UUID                      | Unique integration message identifier used for 24-hour Redis deduplication in **Notification**.                                           |
+| `creationDate` | `string` (ISO 8601 UTC) | Yes      | Generated (`IntegrationEvent`)        | Valid `date-time`               | UTC timestamp when the command record was instantiated.                                                                                   |
+| `basketId`     | `string` (UUID)         | Yes      | —                                     | Valid UUID                      | Buyer/basket identifier deleted from Redis by **Basket API**. Ignored by **Notification**.                                                |
+| `orderId`      | `string` (UUID)         | Yes      | —                                     | Valid UUID; Kafka partition key | Identifier of the placed order; used as the deduplication key by **Basket API**.                                                          |
+| `fullName`     | `string` or `null`      | No       | `"Customer"` (in Notification mapper) | Nullable                        | Customer display name; **Notification** maps `null` to `"Customer"`. Ignored by **Basket API**.                                           |
+| `email`        | `string` or `null`      | No       | —                                     | Nullable                        | Recipient email address; forwarded by **Basket API** on deletion failure and used by **Notification** (null/whitespace skips email work). |
+| `totalMoney`   | `number` (`decimal`)    | Yes      | —                                     | C# `decimal`                    | Order total displayed in the new-order email and echoed in **Basket API** result events.                                                  |
 
-## 4. Trade-offs & Lessons Learned
+`additionalProperties` is `false` in the command JSON Schema.
 
-- **Shared contract vs. tailored payloads**: Keeping one shared command for multiple consumers simplifies upstream publishing, even though Notification ignores the basket reference field carried in the message.
-- **Duplicate emails on timeout retries**: Because Finance may reissue the instruction on timeout and Notification processes each valid delivery, repeated deliveries can produce another confirmation email.
-- **No end-to-end delivery confirmation**: Mail-server acceptance confirms handoff rather than inbox arrival, and no notification-result event is returned to upstream workflows.
+## Behavior and side effects
 
-## 5. Technical Reference
+- **Finance publishing and timeout retries:** After **Ordering API** emits `UserCheckedOutIntegrationEvent`, **Finance**'s Azure Durable Functions `OrderOrchestrator` publishes `PlaceOrderCommand` via `PublishPlaceOrderActivity`. If post-checkout basket cleanup times out before `MaxAttempts` is reached, `PlaceOrderTimeoutStep` invokes `PublishPlaceOrderActivity` again with a newly constructed `PlaceOrderCommand` (carrying a new `id`).
+- **Basket API consumer (`BookWorm.Basket`):**
+  - Deduplicates by `command.OrderId` via `IIntegrationEventIdempotencyGuard.TryAcquireAsync(command.OrderId, nameof(PlaceOrderCommandHandler), ...)` (24-hour Redis/FusionCache TTL). Because the key is `OrderId`, even a reissued timeout-retry command with a new `id` does not delete the basket twice and immediately returns `BasketDeletedCompleteIntegrationEvent`.
+  - Deletes `command.BasketId.ToString()` from Redis via `IBasketRepository.DeleteBasketAsync`.
+  - Emits `BasketDeletedCompleteIntegrationEvent` when deletion succeeds or `BasketDeletedFailedIntegrationEvent` when deletion returns `false`. If an exception occurs, the handler releases the idempotency lock and rethrows for retry.
+- **Notification consumer (`BookWorm.Notification`):**
+  - Deduplicates by `message.Id` via `IIntegrationEventIdempotencyGuard.ExecuteAsync(message.Id, nameof(PlaceOrderCommandHandler), ...)` (24-hour Redis/FusionCache TTL). Redeliveries of the same Kafka message `id` are skipped, whereas a Finance timeout retry minting a new `id` triggers another email send.
+  - Has no SQL database and writes no email outbox table. Maps the command to Notification's internal `Status.New` model, skips null/whitespace `email`, renders `Orders/OrderEmail` via `MjmlTemplateRenderer`, builds a `MimeMessage` with `OrderMimeMessageBuilder`, and sends via `MailKitSender` (**Mailpit** locally, **SendGrid** SMTP in publish mode).
+  - Emits no return event; SMTP acceptance confirms provider handoff, not inbox arrival.
 
-### Overview
+## Error responses
 
-Finance's order saga publishes this command through
-[[channel|bookworm.&#123;env&#125;.finance.place-order]] and may reissue it on
-placement timeout. [[service|notification-api]] maps it to the new-order email
-status, not to an order write. Other consumers can handle the same shared
-business command independently.
+| Code / status                                  | Condition                                                                                                                                                    | Recovery behavior                                                                                                                                                                      |
+| :--------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Basket deletion returns `false`                | Redis basket key is missing or could not be deleted cleanly                                                                                                  | **Basket API** publishes `BasketDeletedFailedIntegrationEvent` so **Finance** can instruct **Ordering API** to compensate (`DeleteBasketFailedCommand`).                               |
+| Redis or transport exception in **Basket API** | Transient Redis failure during `DeleteBasketAsync`                                                                                                           | Handler releases its `OrderId` idempotency lock and rethrows; **Wolverine** retries (`50ms` / `250ms` / `1s` with jitter) before routing to `bookworm.{env}.basket.dead-letter-queue`. |
+| Transient SMTP failure in **Notification**     | Temporary SMTP or network error (`CommandException` where `IsTransient`, `ProtocolException`, `IOException`, `TimeoutException`, `TimeoutRejectedException`) | Retried by **Notification**'s Polly pipeline (circuit breaker + exponential backoff with jitter + 30-second default timeout).                                                          |
+| `NotificationException`                        | Permanent SMTP failure or exhausted Polly pipeline                                                                                                           | **Wolverine** retries (`50ms` / `250ms` / `1s` with jitter) before routing to `bookworm.{env}.notification.dead-letter-queue`.                                                         |
+| Blank or null `email` in **Notification**      | Command arrives without a recipient email address                                                                                                            | **Notification** returns without error and skips template rendering and SMTP submission.                                                                                               |
 
-The payload contains inherited `id` (UUID v7) and `creationDate` (UTC timestamp),
-plus `basketId`, `orderId`, `totalMoney` (C# decimal), and nullable `fullName`
-and `email`. Notification does not use `basketId`; a null name becomes `Customer`.
-This command carries the payload schema; Notification's AsyncAPI specification
-provides examples. Wolverine uses identity `BookWorm.Contracts.PlaceOrderCommand`.
+## Related documentation
 
-Null, empty, or whitespace-only email addresses skip email work. Otherwise
-Notification renders `Orders/OrderEmail`, saves an email outbox record, submits
-through SMTP, and marks the record sent on success. Failures propagate; there
-is no notification result event. Reissued commands can produce another email,
-and SMTP acceptance is not proof of final recipient delivery.
-
-### Architecture
+- [[command|CreateOrder]] — Ordering API HTTP command that creates the order and emits `UserCheckedOutIntegrationEvent`.
+- [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Kafka channel configuration for `bookworm.{env}.finance.place-order`.
+- [[event|UserCheckedOutIntegrationEvent]] — Upstream Ordering event that starts `OrderOrchestrator`.
+- [[event|BasketDeletedCompleteIntegrationEvent]] — Success event published by **Basket API**.
+- [[event|BasketDeletedFailedIntegrationEvent]] — Failure event published by **Basket API**.
+- [[service|notification-api]] — Stateless email worker architecture and SMTP configuration.
+- [[service|basket-api]] — Redis basket storage and checkout cleanup behavior.
 
 <NodeGraph />

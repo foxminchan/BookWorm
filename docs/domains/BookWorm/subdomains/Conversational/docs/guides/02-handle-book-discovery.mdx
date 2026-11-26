@@ -10,45 +10,49 @@ badges:
     textColor: teal
 ---
 
-import Footer from "@catalog/components/footer.astro";
+BookWorm handles catalog search, title lookups, and tailored recommendations through **Book Agent** (`book`) inside Chat API (`chatting`). Rather than running a heavy multi-step research pipeline on every turn, Book Agent adapts dynamically: it answers simple lookups directly via read-only Model Context Protocol (MCP) tools, delegates complex multi-criteria requests to two concurrent specialist researchers, and enforces explicit catalog grounding so missing facts are never invented.
 
-## 1. Context & Problem
+## Context and motivation
 
-Book discovery requests vary widely—from quick factual lookups on a known title to open-ended, multi-criteria recommendation inquiries. Treating every inquiry identically creates two risks: simple questions become unnecessarily slow if heavy research runs every time, while complex questions produce shallow or inaccurate results if answered without thorough catalog verification and preference matching. Most importantly, guessing missing titles, prices, or availability damages customer trust.
+Customer book discovery spans a wide complexity spectrum—from single-step factual questions (_"Do you have books by Frank Herbert?"_) to open-ended, multi-constraint recommendations (_"Find two short science-fiction novels under $20 similar to Dune and verify which authors are in stock"_).
 
-## 2. Business Value
+Running multi-agent research on simple queries adds unnecessary latency and token cost, while answering complex queries with a single shallow lookup produces incomplete or hallucinated recommendations. BookWorm resolves this tension by combining direct MCP tool calls, optional Plan Mode approval, concurrent sub-agent delegation, and strict catalog-only grounding.
 
-- **Fast answers for simple queries**: Direct lookups resolve immediately without unnecessary multi-step overhead.
-- **Higher-quality recommendations**: Complex requests combine verified catalog facts with tailored preference matching for relevant, deduplicated shortlists.
-- **Grounded accuracy**: Refusing to invent titles, authors, prices, availability, or ratings builds lasting customer confidence.
+## How it works
 
-## 3. How It Works
+`BookAgentRegistration.cs` configures Book Agent (`Agents/BookSearch/book-agent.yaml`) with four read-only MCP catalog tools from MCP Tools (`mcptools` `/mcp`), two concurrent sub-agent researchers (`AllowConcurrentInvocation = true`), planning and memory harness providers, and Storefront AG-UI client-side tools.
 
-1. **Direct Handling and Clarification**: Straightforward searches and simple book questions are answered directly. When a customer's preferences would materially change a recommendation, the assistant asks clarifying questions before suggesting titles.
-2. **Parallel Research for Complex Inquiries**: When a request involves both independent factual verification and preference-based curation, the lead book specialist delegates both tracks concurrently—one researcher gathers confirmed catalog facts while a second researcher prepares a preference-matched shortlist. The lead specialist combines the findings and removes duplicates before replying.
-3. **Plan Approval for Multi-Step Research**: When operating in planning mode for multi-step discovery, the assistant presents its proposed research plan and waits for customer approval before starting. Simple, single-step lookups skip this planning cycle.
-4. **Transparent Result Presentation**: Recommendations are explained in relation to the customer's stated preferences. Confirmed catalog facts are clearly separated from unavailable details, and any gaps in research evidence are stated openly rather than filled with assumptions.
+The diagram below shows how Book Agent retrieves catalog facts through MCP Tools, fans out complex queries to parallel researchers, and coordinates handoffs or rich UI rendering.
 
-## 4. Trade-offs & Lessons Learned
+<MermaidFileLoader file="mermaids/02-handle-book-discovery-diagram-1.mmd" />
 
-- **Responsiveness vs. research depth**: Delegation is reserved for complex multi-part requests; a direct answer or clarifying question is treated as a valid, preferred outcome for simpler queries.
-- **Honesty over false completeness**: Explicitly calling out what could not be confirmed prevents fabricated prices, availability, or ratings, even if it leaves a response partial.
-- **Approval friction vs. alignment**: Pausing for customer sign-off in planning mode adds a conversational turn, but prevents wasted research effort when requirements are ambiguous.
+Five verified mechanisms shape Book Agent's discovery workflow:
 
-## 5. Technical Reference
+- **Read-only MCP catalog grounding:** Book Agent and both researchers call only four read-only tools exposed by `mcptools` (`/mcp`) over MCP Streamable HTTP: `search_catalog`, `get_book`, `list_categories`, and `list_authors` (which call Catalog API's `book.v1.BookGrpcService` over gRPC). Book Agent also loads the `book-catalog` skill (`Skills/book-catalog/`) for catalog conventions and listing templates. When a price, rating, or availability fact is absent from tool output, Book Agent states that the detail is unavailable instead of guessing.
+- **Direct handling vs. concurrent researcher delegation:** For single-step lookups or preference clarifications, Book Agent calls MCP tools directly. For complex requests that combine independent factual verification and preference-based curation, Book Agent invokes `delegate_book_catalog_researcher` (`book-catalog-researcher`, temperature `0.2`, max `1200` tokens) and `delegate_book_recommendation_researcher` (`book-recommendation-researcher`, temperature `0.4`, max `1200` tokens) concurrently, then synthesizes and deduplicates their findings into one transparent reply.
+- **Plan Mode and Execute Mode harness:** `HarnessProviderFactory.CreatePlanningProviders()` injects `AgentModeProvider` (`mode_get`, `mode_set`) and `TodoProvider` (`todos_add`, `todos_complete`, `todos_get_remaining`, `todos_get_all`, `todos_remove`). In **Plan Mode**, Book Agent decomposes multi-step research into todos, optionally saves the plan via `FileMemoryProvider` (`file_memory_*` tools), presents the plan, and waits for customer approval before switching to **Execute Mode**. Single-step lookups bypass todos, file memory, and approval.
+- **Memory and context compaction:** `FoundryMemoryProvider` recalls user-scoped reading preferences and constraints (keyed by Microsoft Entra ID user claims in store `bookworm-book-agent-session-memories`) so Book Agent tailors suggestions without inferring demographics or stereotypes. `CompactionPipelineFactory.CreateFull()` compacts long conversations while `FileMemoryProvider` preserves multi-step research findings across compaction boundaries.
+- **Storefront AG-UI UI tools and specialist handoffs:** When Storefront (`@bookworm/storefront`) supplies client-side UI tools in `<ag_ui_context>`, Book Agent invokes `showBookCard`, `showBookList`, `viewBasket`, `showBasketSummary`, or `addToBasket` (which enforces user confirmation in the browser); otherwise it falls back to clean Markdown. For review analysis, Book Agent resolves a single book ID with `search_catalog` before calling `handoff_to_rating`; for store policies, it resolves the book task and calls `handoff_to_qa`.
 
-### Primary and delegated agents
+All Book Agent and researcher tool calls pass through `UsePIIMiddleware(sp)` (Presidio), `UseGuardrailMiddleware()`, `UseDecisionToolSelection()`, and `Policies/chat-agents.yaml` default-deny governance rules.
 
-- Primary handler: [[agent\|book-agent]]
-- Concurrent research specialists (when delegated):
-  - [[agent\|book-catalog-researcher]] — returns factual Catalog findings.
-  - [[agent\|book-recommendation-researcher]] — prepares a preference-matched shortlist.
+## Design trade-offs
 
-### Operational rules
+| Decision                                                  | Benefits                                                                                                                                     | Costs and limits                                                                                                         |
+| :-------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| **Conditional delegation to two specialized researchers** | Keeps simple lookups fast while pairing low-temperature factual verification (`0.2`) with recommendation curation (`0.4`) on complex queries | Adds coordination, synthesis, and deduplication logic when one research branch returns partial results                   |
+| **Plan Mode approval gate for multi-step research**       | Prevents wasted tool calls when customer criteria are ambiguous and keeps research steps transparent                                         | Adds an extra conversational turn that can resemble stalled research if the customer has not approved the plan           |
+| **Strict catalog-only grounding**                         | Eliminates fabricated titles, authors, prices, stock states, or popularity claims                                                            | Produces narrower answers when Catalog API metadata or Qdrant vector matches are incomplete                              |
+| **Client-side Storefront AG-UI basket tools**             | Lets customers inspect or add recommended books without giving Chat API backend direct write authority over Basket API                       | Rich cards and basket actions depend on Storefront tool registration; non-Storefront AG-UI clients receive Markdown only |
 
-- `Book Agent` synthesizes concurrent outputs from both researchers and deduplicates results before responding.
-- **Plan Mode**: Present a plan and wait for customer approval before starting multi-step research; single-step lookups do not require this cycle.
-- **Grounding**: Keep factual answers grounded in available Catalog information; never invent titles, authors, availability, ratings, or prices.
-- **Presentation**: Relate recommendations to stated preferences, distinguish confirmed Catalog facts from unavailable details, and state explicitly what could not be confirmed when evidence is incomplete.
+## Alternatives considered
 
-<Footer />
+- **Running parallel researchers on every book query:** Rejected because most customer queries are single-step title, author, or category lookups where sub-agent fan-out doubles latency and token usage without improving accuracy.
+- **Exposing Catalog API gRPC directly inside Chat API:** Rejected in favor of routing read-only catalog access through `mcptools` (`/mcp`), which centralizes read-only MCP governance (`Policies/mcp-tools.yaml`), enables MCP Inspector debugging locally, and keeps Catalog access reusable across `Chat` and `Rating`.
+
+## Related documentation
+
+- How BookWorm routes customer chat requests — How requests reach `Book Agent` and how handoffs work.
+- How BookWorm handles book feedback in conversation — How Book Agent handles emotional book opinions and `Rating Agent` handoffs.
+- How to triage incomplete or inconsistent book research — Operational triage when delegated research branches fail or disagree.
+- Conversational architecture and domain boundaries reference — Full stage, memory, and governance specifications.

@@ -13,7 +13,7 @@ appliesTo:
   - type: system
     id: scheduler-system
   - type: container
-    id: sheduler-database
+    id: scheduler-database
 badges:
   - content: Data
     backgroundColor: blue
@@ -52,7 +52,7 @@ Background schedules—such as recurring maintenance and batch processing trigge
 ## 5. Technical Reference
 
 - **Decision status**: Accepted (`2026-10-27`)
-- **Persistent store**: [[container|sheduler-database]] (PostgreSQL database owned by [[system|scheduler-system]])
+- **Persistent store**: [[container|scheduler-database]] (PostgreSQL database owned by [[system|scheduler-system]])
 - **Authoritative Quartz state**: Job details, triggers, fired triggers, scheduler check-ins, locks, execution history, and misfire history.
 - **History retention**: 30 days, up to 100,000 entries per scheduler, as documented by the Scheduler Database resource.
 - **Operational constraints**:

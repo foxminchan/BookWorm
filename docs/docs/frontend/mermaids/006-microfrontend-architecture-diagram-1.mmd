@@ -1,0 +1,19 @@
+flowchart LR
+    browser["Customer Browser\n(Single HTTPS Origin)"]
+    config["microfrontends.json\n(Shared Route Manifest)"]
+    gateway["API Gateway\n(YARP Reverse Proxy)"]
+    backends["Backend APIs\n(/catalog, /basket, /ordering, /rating, /chatting)"]
+    entra["Microsoft Entra ID\n(/entra/*)"]
+    backoffice["Backoffice\n(Next.js 16, /backoffice/*)"]
+    commerce["Commerce\n(Next.js 16 MFE, /basket, /checkout/*, /account/*)"]
+    storefront["Storefront\n(Next.js 16 MFE, Catch-All Fallback)"]
+
+    browser -->|"HTTPS: Request"| gateway
+    config -.->|"Build & Startup: Load routes"| gateway
+    config -.->|"Next.js Config: Asset & link rules"| commerce
+    config -.->|"Next.js Config: Fallback rules"| storefront
+    gateway -->|"HTTP: Orders 0..4"| backends
+    gateway -->|"HTTPS: Order 5"| entra
+    gateway -->|"HTTP: X-Mfe-Zone=backoffice"| backoffice
+    gateway -->|"HTTP: X-Mfe-Zone=commerce"| commerce
+    gateway -->|"HTTP: X-Mfe-Zone=storefront"| storefront

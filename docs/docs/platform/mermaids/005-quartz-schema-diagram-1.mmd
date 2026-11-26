@@ -1,0 +1,11 @@
+erDiagram
+	qrtz_job_details ||--o{ qrtz_triggers : "schedules"
+	qrtz_job_details ||--o| qrtz_job_status : "summarizes"
+	qrtz_triggers ||--o| qrtz_cron_triggers : "extends"
+	qrtz_triggers ||--o| qrtz_simple_triggers : "extends"
+	qrtz_triggers ||--o| qrtz_simprop_triggers : "extends"
+	qrtz_triggers ||--o| qrtz_blob_triggers : "extends"
+	qrtz_calendars ||--o{ qrtz_triggers : "excludes dates"
+	qrtz_triggers ||--o{ qrtz_fired_triggers : "active firing"
+	qrtz_triggers ||--o{ qrtz_execution_history : "logs run"
+	qrtz_triggers ||--o{ qrtz_misfire_history : "logs misfire"

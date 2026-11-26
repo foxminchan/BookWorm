@@ -1,0 +1,21 @@
+flowchart LR
+	users["Customers and staff\n(Browser)"]
+	entra["Microsoft Entra ID\n(OAuth2 / OIDC)"]
+	gateway["API Gateway\n(YARP, external ingress)"]
+	quartz["Quartz Dashboard\n(External, Entra ID admin)"]
+	mfe["Storefront, Commerce, Backoffice\n(Next.js 16, internal)"]
+	apis["Backend APIs and workers\n(.NET 11, Azure Functions, internal)"]
+	presidio["Presidio sidecars\n(HTTP 3000, internal)"]
+	platform["Shared platform\n(ACR, Log Analytics, Aspire Dashboard)"]
+	data["Azure data and AI\n(PostgreSQL, Redis, Cosmos DB, Storage, Foundry, DTS)"]
+	external["External services\n(Kafka, Qdrant Cloud, SendGrid SMTP)"]
+
+	users -->|"HTTPS"| gateway
+	users --> |"HTTPS: /quartz"| quartz
+	gateway --> |"HTTP: /entra/*"| entra
+	gateway --> |"HTTP: frontend routes"| mfe
+	gateway --> |"HTTP: /{service}/*"| apis
+	apis --> |"HTTP: analyze / anonymize"| presidio
+	apis -->|"Entra ID RBAC"| data
+	apis -->|"Kafka, gRPC, SMTP"| external
+	platform -->|"AcrPull, OTLP, logs"| apis

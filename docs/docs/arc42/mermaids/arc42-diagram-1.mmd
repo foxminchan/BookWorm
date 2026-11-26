@@ -1,0 +1,16 @@
+flowchart LR
+	edge["Edge & Frontends\n(YARP, Storefront, Commerce, Backoffice)"]
+	catalog["Catalog\n(Catalog API, Catalog Ingestion)"]
+	shopping["Shopping\n(Basket API)"]
+	ordering["Ordering\n(Ordering API, Finance)"]
+	reviews["Reviews\n(Rating API)"]
+	conv["Conversational\n(Chat API, MCP Tools)"]
+	platform["Platform\n(Scheduler, Notification)"]
+
+	edge --> |"HTTPS: /catalog, /basket, /ordering"| ordering
+	edge --> |"HTTPS: /catalog, /rating, /chatting"| conv
+	ordering --> |"gRPC & Kafka: Checkout"| shopping
+	ordering --> |"Kafka: Order emails"| platform
+	reviews --> |"Kafka: Rating projection"| catalog
+	conv --> |"MCP & A2A gRPC: Read-only"| reviews
+	platform --> |"Kafka: Vector batch trigger"| catalog

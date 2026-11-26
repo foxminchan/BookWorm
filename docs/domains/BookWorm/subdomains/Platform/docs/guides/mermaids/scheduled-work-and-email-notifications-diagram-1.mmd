@@ -1,0 +1,14 @@
+flowchart LR
+	scheduler["Scheduler\n(Quartz.NET + schedulerdb)"]
+	ingestion["Catalog Ingestion\n(Azure Functions + catalogdb)"]
+	qdrant["Qdrant\n(vectordb)"]
+	finance["Finance\n(Azure Functions + finance-taskhub)"]
+	notification["Notification\n(MailKit + Mjml.Net + Redis)"]
+	smtp["SMTP Server\n(Mailpit Dev / SendGrid Cloud)"]
+	dlq["Notification DLQ\n(Kafka Dead-Letter Queue)"]
+
+	scheduler --> |"Kafka: scheduler.process-vector-batch"| ingestion
+	ingestion -->|"Upsert/Delete Vectors"| qdrant
+	finance --> |"Kafka: bookworm.{env}.finance.*"| notification
+	notification -->|"SMTP + Polly Resilience"| smtp
+	notification -->|"Retries Exhausted"| dlq

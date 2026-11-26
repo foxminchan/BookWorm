@@ -9,60 +9,74 @@ badges:
     textColor: purple
 ---
 
-## 1. Context & Problem
+BookWorm enforces strict service isolation by forbidding cross-service database access: every bounded context communicates exclusively through versioned synchronous contracts (REST, gRPC, MCP, A2A gRPC) or asynchronous Kafka CloudEvents messages orchestrated by **Wolverine**. Each messaging host selects a durability strategy matching its persistence store—PostgreSQL outbox/inbox, Azure Cosmos DB persistence, or Redis idempotency—backed by standardized retries and native per-service Kafka dead-letter queues.
 
-In a modular platform like BookWorm, different business capabilities—such as catalog management, shopping baskets, ratings, and ordering—evolve at different speeds. If one capability reads or writes directly inside another capability's internal database, small internal changes can unexpectedly break other parts of the business, blur ownership of business rules, and make releases risky.
+## Synchronous and agent contract forms
 
-BookWorm solves this by requiring capabilities to interact exclusively through explicit, published contracts and asynchronous business announcements. Each capability owns both the meaning and the lifecycle of its data.
+| Protocol                      | Owning services & endpoints                                                                                                                    | Schema & compatibility tooling                                                                           | Consumers                                                                     |
+| :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------- |
+| **HTTP / REST (JSON)**        | **Catalog API**, **Basket API**, **Ordering API**, **Rating API** (`/api/v1/*`, explicit `ApiVersions.V1`, URL segment + `api-version` header) | OpenAPI `/openapi/v1.json` + Scalar (Dev only); `IEndpoint` Scrutor discovery; ETag & pagination headers | **Storefront**, **Commerce**, **Backoffice** (via **API Gateway**)            |
+| **gRPC (`edition = "2023"`)** | **Catalog API** (`book.v1.BookGrpcService`), **Basket API** (`basket.v1.BasketGrpcService`)                                                    | `.proto` schemas with `buf.yaml` lint and breaking-change checks (`mise run setup:buf`)                  | **Ordering API** → Basket & Catalog; **Basket API** & **MCP Tools** → Catalog |
+| **A2A gRPC**                  | **Rating API** (`MapGrpcA2A` + `/agents` discovery)                                                                                            | `A2A.Grpc.AspNetCore` agent card & gRPC contract                                                         | **Chat API** (`RatingWorkflowExecutor`)                                       |
+| **MCP Streamable HTTP**       | **MCP Tools** (`/mcp`, stateless)                                                                                                              | `ModelContextProtocol.AspNetCore` tool & prompt schemas (`Policies/mcp-tools.yaml`)                      | **Chat API**, **Rating API**, MCP Inspector (Dev)                             |
+| **AG-UI**                     | **Chat API** (`/ag-ui`)                                                                                                                        | Microsoft Agent Framework AG-UI streaming protocol                                                       | **Storefront** (`@ag-ui/client`, CopilotKit)                                  |
 
-## 2. Business Value
+## Asynchronous messaging architecture
 
-- **Clear business ownership:** Each team controls its own business rules and internal data without external consumers coupling to private storage details.
-- **Safer, faster delivery:** Teams can evolve internal implementations independently as long as published contracts remain compatible.
-- **Resilient cross-capability workflows:** Asynchronous event delivery allows downstream capabilities to react to business changes without requiring every downstream system to be online at the exact same moment.
-- **End-to-end traceability:** Correlating originating request and user context across asynchronous steps helps support and operations teams trace a business flow from start to finish.
+This flowchart illustrates BookWorm's Kafka CloudEvents transport, per-service durability tiers, and native dead-letter routing.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/002-contracts-and-messaging-diagram-1.mmd" />
 
-BookWorm connects capabilities using two main styles of interaction:
+### Topic naming and partitioning rules
 
-1. **Direct service contracts (request/response):** When one capability needs an immediate answer or action from another, it calls a published service interface rather than accessing internal logic or data storage directly.
-2. **Asynchronous business events (publish/subscribe):** When something meaningful happens in one capability—such as new customer feedback being created—the owning capability publishes an event announcement. Interested capabilities listen to that announcement and update their own local view without taking ownership of the source data.
+`KafkaTopicRouter` (`src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs`) enforces deterministic topic naming and partition affinity:
 
-To keep asynchronous announcements reliable and traceable:
+- **Standard prefixed topics (`AppendPrefix = true`):** `bookworm.{environment-kebab}.{owner-service}.{topic-name}` (13 of 14 integration topics).
+- **Unprefixed topic exception (`AppendPrefix = false`):** `scheduler.process-vector-batch` (`ProcessVectorBatchIntegrationEvent`, consumed by **Catalog Ingestion**'s `[KafkaTrigger]`).
+- **Native dead-letter topic:** `bookworm.{environment-kebab}.{service-kebab}.dead-letter-queue`, attached to every `[WolverineHandler]` listener via `EnableNativeDeadLetterQueue()`.
+- **Partition keys (`PropagateGroupIdToPartitionKey()`):** Ordering, Basket, Finance, and Notification partition by `OrderId`; Catalog and Rating partition by `BookId` and `FeedbackId` so related events stay ordered within one Kafka partition.
 
-- **Durable message handling:** When a message broker is active for a host, outgoing announcements and incoming receipts are durably recorded alongside local state changes so work is not silently lost during process restarts.
-- **Correlation context:** Message envelopes carry routing metadata along with the originating request and user identifiers where available, linking downstream work back to the initiating user action.
-- **Coordinated contract changes:** Updating any shared contract follows a disciplined five-step process:
-  1. Identify the owning capability and all known consumers.
-  2. Prefer additive changes that preserve existing consumer behavior.
-  3. Verify asynchronous contract compatibility between consumers and providers before release.
-  4. Run schema linting and breaking-change checks against the committed baseline for binary service interfaces.
-  5. Update service and flow documentation whenever business meaning—not just field structure—changes.
+### Topic creation and broker-managed settings
 
-## 4. Trade-offs & Lessons Learned
+Aspire and Wolverine have separate responsibilities. In `AppHost.cs`, `AddKafka(Components.Broker).WithKafkaUI()` runs only in Aspire Run mode and provides a local development broker; publish mode uses `AddConnectionString(Components.Broker)` and expects an externally managed broker connection string. The [Aspire Kafka guide](https://aspire.dev/integrations/messaging/apache-kafka/apache-kafka-host/) describes its `confluent-local` container as intended for local experimentation, not production. This repository does not provision a production Kafka cluster or configure broker-level topic settings through Aspire.
 
-- **Eventual consistency over shared databases:** Downstream views (such as catalog feedback projections) may lag slightly behind the source capability. This is an intentional trade-off to preserve service independence and resilience.
-- **At-least-once delivery requires duplicate safety:** Durable storage protects work across restarts, but it does not guarantee that a business effect happens only once. Consumers must tolerate repeated delivery and rely on their own owned state to detect whether work is already complete.
-- **Host-dependent messaging activation:** The durable messaging transport is only enabled when a broker connection is configured; hosts without a broker configuration skip transport setup rather than failing to start, so deployment configuration determines whether asynchronous paths are active.
-- **Correlation is not authorization:** Propagated request and user identifiers exist strictly for tracing and diagnosis—they must never be treated as security credentials or proof of permission.
+When a `broker` connection string is configured, `UseEventFramework()` registers Wolverine's Kafka transport with `.AutoProvision()`. `ConfigureIntegrationEventTopicsIn()` discovers integration messages and registers their publish/listener routes; Wolverine creates those declared topics and the configured native DLQ when the broker permits topic creation. BookWorm does not manually provision application topics through Kafka UI or CLI; Wolverine handles topic creation at startup. With no broker connection string, `UseEventFramework()` returns without configuring Kafka.
 
-## 5. Technical Reference
+Auto-provisioning does not define a BookWorm-specific production sizing or retention policy. With no explicit topic specification, Wolverine uses broker defaults for partition count (usually one) and replication factor; BookWorm supplies no topic retention configuration. No in-repository value overrides those defaults. Verify the effective production settings with the external broker owner or add an explicitly approved Wolverine topic specification. The declared endpoints are not marked `.ExternallyOwned()`, so the broker credentials must permit Wolverine's topic provisioning. See the [Wolverine Kafka transport guide](https://github.com/JasperFx/wolverine/blob/main/docs/guide/messaging/transports/kafka.md) for topic defaults, specifications, and externally owned topics.
 
-### Contract Forms
+### Per-service durability and idempotency tiers
 
-- **HTTP APIs:** Expose service-owned REST operations, with OpenAPI documents defining the REST contracts where provided. Clients must use the owning service's contract rather than coupling to internal handlers or persistence models.
-- **gRPC APIs:** Use Protocol Buffer (`.proto`) definitions for the documented [[service|basket-api]] and [[service|catalog-api]] interfaces. Schema changes must pass Protocol Buffer lint and breaking-change checks against the committed baseline before consumers adopt them or update the baseline.
-- **Integration events:** Use shared contract types following the `IntegrationEvent` naming pattern with explicit ownership and identity metadata for routing. Contracts describe the boundary, not the implementation's persistence model—for example, [[event|FeedbackCreatedIntegrationEvent]] communicates a feedback change without making Catalog authoritative for the source feedback data.
+When no `broker` connection string is configured, `UseEventFramework()` returns without registering a transport so services can start in isolated modes. When Kafka is active, hosts use one of three verified persistence models:
 
-### Event Transport, Durability, and Correlation
+| Durability tier                             | Services                                                                | Mechanism                                                                                                                               |
+| :------------------------------------------ | :---------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| **PostgreSQL durable outbox/inbox**         | **Catalog API**, **Catalog Ingestion**, **Ordering API**, **Scheduler** | `UsePostgresOutbox` (`wolverine` schema + EF Core transactions, `KeepAfterMessageHandling = 1h`); Catalog also layers Redis idempotency |
+| **Cosmos DB persistence**                   | **Rating API**                                                          | `UseCosmosDbPersistence("ratingdb")` + Redis `IIntegrationEventIdempotencyGuard` (no PostgreSQL)                                        |
+| **Stateless transport + Redis idempotency** | **Basket API**, **Notification**                                        | No database outbox; `FusionCacheIdempotencyGuard` executes atomic Redis `SET NX` (24-hour TTL, released on failure)                     |
+| **Azure Functions Kafka triggers**          | **Finance**, **Catalog Ingestion**                                      | `[KafkaTrigger]` inputs + Wolverine Kafka publisher; Finance checkpoints saga state in Durable Task Scheduler (`finance-taskhub`)       |
+| **No Kafka / EventBus**                     | **Chat API**, **MCP Tools**                                             | Synchronous HTTP/gRPC/AG-UI/A2A/MCP only                                                                                                |
 
-- **Broker & outbox/inbox:** Where a broker connection string is configured, the shared Wolverine integration configures Kafka transport with CloudEvents-compatible mapping and per-service PostgreSQL durable outbox and inbox policies. The [[system|product-catalog-system]] and [[system|rating-system]] use this path for their documented feedback projection. When no broker connection string is present, the event framework returns without configuring a transport.
-- **Native dead-letter channels & retry policy:** Each Wolverine host configures a per-service Kafka dead-letter topic named `bookworm.{env}.{service}.dead-letter-queue` via `KafkaTopicRouter.CreateDeadLetterTopicName` and attaches `EnableNativeDeadLetterQueue()` to every handled integration topic (`[WolverineHandler]`). `ConfigureDefaultErrorHandling` retries transient failures (`TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, and transient `NpgsqlException`) with `50ms`, `250ms`, and `1s` full-jitter cooldowns before moving exhausted envelopes to the error queue, moves `JsonException` deserialization errors immediately, and sets a 7-day durable DLQ expiration (`DeadLetterQueueExpiration`). In the catalog, every Kafka channel sets `type: stream` and Wolverine-consumed channels link their `deadLetterChannel`.
-- **Envelope metadata:** The envelope policy supplies message type, destination, response address, and source metadata when available, and propagates request and user identifiers from an originating message as correlation context.
+### Serialization, correlation, retries, and DLQ
 
-### Related Documentation
+- **CloudEvents envelope:** `CloudEventsOnlyKafkaMapper` serializes payloads as CloudEvents JSON (`JsonSerializerDefaults.Web`), stamps `source = urn:bookworm:{service}`, propagates W3C trace context and `requestid`, and attaches HTTP `UserId` via `UserIdEnvelopeMiddleware`. Propagated IDs are for tracing only—never treat them as authorization credentials.
+- **Retry and error policy (`ConfigureDefaultErrorHandling`):**
+  - Transient exceptions (`TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException`) retry with `50ms`, `250ms`, and `1s` full-jitter cooldowns, then move to the native Kafka DLQ.
+  - Deserialization errors (`JsonException`, `FormatException`) move immediately to the DLQ without retrying.
+  - Wolverine durable message-store DLQ expiration is **7 days** (`DeadLetterQueueExpiration = TimeSpan.FromDays(7)`). This is not Kafka topic retention; Kafka DLQ records follow the broker topic's retention policy.
+- **At-least-once delivery:** Durable outboxes and retries prevent silent message loss across restarts, not duplicate delivery. Consumers must remain idempotent and verify authoritative state where side effects matter.
 
-- [[doc|arc42/05-building-block-view]] — service ownership boundaries
-- [[doc|arc42/06-runtime-view]] — representative runtime message flows
-- [[doc|development/004-engineering-standards]] — repository contract conventions and `IntegrationEvent` standards
+## Contract evolution workflow
+
+When modifying any REST, gRPC, or Kafka integration contract:
+
+1. Identify the owning service and all registered consumers (check `tests/pacts/` for messaging pairs).
+2. Prefer additive, backward-compatible field changes over renames or removals.
+3. Run consumer-then-provider Pact tests (`mise run test`) so generated consumer pacts verify against providers in order.
+4. Run Buf lint and breaking-change checks against committed `.proto` baselines for `BookGrpcService` and `BasketGrpcService`.
+5. Update service and runtime documentation whenever business semantics—not only field shapes—change.
+
+## Related documentation
+
+- [[doc|platform/006-api-and-contracts]] — Complete inventory of HTTP, gRPC, and Kafka contracts.
+- [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] — Pact contract testing and Buf schema verification gates.
+- [[doc|development/004-engineering-standards]] — `IntegrationEvent` naming and versioning conventions.

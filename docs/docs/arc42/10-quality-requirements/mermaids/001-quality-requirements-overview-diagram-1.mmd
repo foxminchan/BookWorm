@@ -1,0 +1,22 @@
+flowchart TD
+	root["BookWorm Quality\n(arc42 Q42 Tree)"]
+
+	c1["Correctness (P1)\nQR-01, QR-02"]
+	c2["Interoperability (P2)\nQR-03"]
+	c3["Deployability (P2)\nQR-04"]
+	c4["Modifiability (P2-P3)\nQR-05, QR-17"]
+	c5["Operability (P2)\nQR-06"]
+	c6["Reliability & Recovery (P1-P2)\nQR-07, QR-08, QR-13, QR-14"]
+	c7["Security & Privacy (P1)\nQR-09, QR-10, QR-15"]
+	c8["Performance Efficiency (P2)\nQR-12"]
+	c9["Usability & Accessibility (P2)\nQR-11, QR-16"]
+
+	root -->|"Checkout & order integrity"| c1
+	root -->|"Owned contracts"| c2
+	root -->|"Independent releases"| c3
+	root -->|"Bounded autonomy"| c4
+	root -->|"Incident attribution"| c5
+	root -->|"Durable work & restore"| c6
+	root -->|"AuthZ, PII & AI policy"| c7
+	root -->|"Interactive latency"| c8
+	root -->|"Clear UX & WCAG"| c9

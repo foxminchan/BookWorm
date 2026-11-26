@@ -1,0 +1,29 @@
+flowchart TD
+	ingress["AG-UI Ingress\n(AGUIWorkflowAgent /ag-ui)"]
+	validate["InputValidationExecutor\n(Regex + Governance + 2000c Cap)"]
+	rejectVal["RejectedOutputExtractor\n(Validation Rejection)"]
+	router["DecisionRouterExecutor\n(Microsoft-Decision-1)"]
+	rejectDec["DecisionRejectedOutputExtractor\n(Unsafe / NonEnglish / OutOfScope)"]
+	disambig["RouteDisambiguationPort\n(HITL Pause if conf < 0.6)"]
+	book["BookWorkflowExecutor\n(Book Agent + Researchers)"]
+	qa["QAWorkflowExecutor\n(QA Agent + Store Policies)"]
+	rating["RatingWorkflowExecutor\n(Rating API A2A gRPC)"]
+	format["ResponseFormatterExecutor\n(Sanitize + Fallback)"]
+
+	ingress --> |"In-process: Resume normalize"| validate
+	validate -->|"Rejected"| rejectVal
+	validate -->|"AcceptedInput"| router
+	router -->|"P < 0.5 Guardrail"| rejectDec
+	router -->|"In-Scope conf < 0.6"| disambig
+	router -->|"RouteTarget.Book"| book
+	router -->|"RouteTarget.QA"| qa
+	router -->|"RouteTarget.Rating"| rating
+	disambig -->|"User Selection"| book
+	disambig -->|"User Selection"| qa
+	disambig -->|"User Selection"| rating
+	qa -.->|"handoff_to_book"| book
+	book -.->|"handoff_to_qa"| qa
+	book -.->|"handoff_to_rating"| rating
+	book -->|"ChatMessage[]"| format
+	qa -->|"ChatMessage[]"| format
+	rating -->|"ChatMessage[]"| format

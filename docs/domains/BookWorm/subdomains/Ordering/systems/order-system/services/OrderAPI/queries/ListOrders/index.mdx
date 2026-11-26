@@ -18,61 +18,67 @@ sidebar:
   badge: "GET"
 ---
 
-## 1. Context & Problem
+`ListOrders` queries **Ordering API** (`GET /api/v1/orders`) to return a paginated list of order summaries (`OrderDto[]`) with optional status and buyer filters. Non-administrator callers are automatically scoped to their own authenticated Microsoft Entra ID buyer ID, while administrators (`admin` role) can filter across buyers.
 
-Customers reviewing their purchase history and administrators monitoring store activity need to browse orders cleanly without retrieving every historical order at once, while enforcing strict privacy boundaries so shoppers only see their own orders.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                                |
+| :-------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                              |
+| **Source**            | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/List/ListOrdersEndpoint.cs`, `ListOrdersQuery.cs`, `ListOrdersValidator.cs` |
+| **Protocol / format** | HTTP `GET /api/v1/orders` (via API Gateway: `GET /ordering/api/v1/orders`), `ApiVersions.V1`, JSON (`application/json`)              |
+| **Authentication**    | Microsoft Entra ID JWT required (`customer` or `admin` role; scopes `ordering_read`, `ordering_write`)                               |
+| **Rate limiting**     | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters        |
+| **Backing store**     | PostgreSQL (`orderingdb`, EF Core)                                                                                                   |
+| **Contract version**  | `1.0.0`                                                                                                                              |
 
-- **Data privacy by default**: Non-administrator callers are automatically restricted to their own [[entity|order]] records, preventing unauthorized cross-customer visibility.
-- **Targeted order lookup**: Optional filtering by order status and buyer helps customers track open orders and enables staff to focus on specific lifecycle stages or accounts.
-- **Predictable error handling**: Invalid filter values are caught immediately with clear validation feedback rather than returning misleading results.
+## Parameters and fields
 
-## 3. How It Works
+### Query parameters
 
-1. An authenticated caller requests a page of [[entity|order]] summaries, optionally specifying page size, page number, an order status filter (`New`, `Cancelled`, or `Completed`), or a buyer filter.
-2. If paging preferences are omitted, the service applies standard default page settings.
-3. Ordering enforces access scope: standard callers always receive only orders belonging to their own authenticated buyer profile, whereas administrators can filter across buyers.
-4. If any filter or paging input is invalid, the service rejects the request with validation details; otherwise, it returns the matching page of order summaries containing identifier, date, total amount, and status.
+| Name        | Type            | Required | Default | Constraints                           | Description                                                                                                     |
+| :---------- | :-------------- | :------- | :------ | :------------------------------------ | :-------------------------------------------------------------------------------------------------------------- |
+| `PageIndex` | `integer`       | No       | `1`     | `> 0` (`ListOrdersValidator`)         | 1-based page number to retrieve                                                                                 |
+| `PageSize`  | `integer`       | No       | `20`    | `> 0` (`ListOrdersValidator`)         | Maximum number of order summaries per page                                                                      |
+| `Status`    | `string`        | No       | —       | Enum: `New`, `Cancelled`, `Completed` | Filters orders by lifecycle status                                                                              |
+| `BuyerId`   | `string` (UUID) | No       | —       | Valid UUID (`Guid`)                   | Filters orders by buyer ID for `admin` callers; overridden with the caller's own buyer ID for non-admin callers |
 
-## 4. Trade-offs & Lessons Learned
+### Response headers
 
-- **Server-enforced buyer scoping**: Scoping buyer filtering on the server for non-administrators guarantees privacy even if a caller supplies another buyer identifier, while requiring explicit administrative privileges for cross-customer queries.
-- **Compact summary payload**: Returning order summaries (identifier, date, total, and status) rather than full line-item details keeps list views fast, though callers must retrieve individual orders when line items are needed.
-- **Flat page response without total counts**: Returning a direct list of summaries keeps payloads lean, meaning client interfaces must infer pagination boundaries from returned item counts.
+`ListOrdersEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
 
-## 5. Technical Reference
+| Header             | Format                                    | Description                                                                                                          |
+| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| `Pagination-Count` | Integer string (for example, `57`)        | Total number of orders matching the active status and buyer filters across all pages                                 |
+| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations preserving query filters |
 
-- **Endpoint**: `GET /api/v1/orders`
-- **Status codes**: `200`, `400`
-- **Entities**: [[entity|order]]
+### Response schema (`OrderDto[]`)
+
+A `200 OK` response body serializes `PagedResult<OrderDto>` as a JSON array of `OrderDto` summary objects. To retrieve line items for an order, call [[query|GetOrder]].
+
+| Field       | Type     | Required | Constraints                           | Description                             |
+| :---------- | :------- | :------- | :------------------------------------ | :-------------------------------------- |
+| `[].id`     | `string` | Yes      | UUID                                  | Unique identifier of the order          |
+| `[].date`   | `string` | Yes      | ISO 8601 `date-time`                  | UTC timestamp when the order was placed |
+| `[].total`  | `number` | Yes      | Decimal currency amount               | Total recorded amount for the order     |
+| `[].status` | `string` | Yes      | Enum: `New`, `Cancelled`, `Completed` | Current lifecycle status of the order   |
+
+## Error responses
+
+| Code / status           | Condition                                                                                                                                                    | Recovery behavior                                                   |
+| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| `400 Bad Request`       | `PageIndex <= 0`, `PageSize <= 0`, unrecognized `Status` enum value, or malformed `BuyerId` UUID (`application/problem+json` `HttpValidationProblemDetails`) | Correct invalid query parameters; do not retry unchanged            |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                                                                           | Re-authenticate and retry                                           |
+| `403 Forbidden`         | Authenticated principal lacks Ordering API roles or scopes                                                                                                   | Request a token with `customer` or `admin` role and Ordering scopes |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                                                  | Wait for the `Retry-After` duration before retrying                 |
+
+## Related documentation
+
+- [[service|order-api]] — Service overview, PostgreSQL/Marten persistence, and endpoints.
+- [[query|GetOrder]] — Retrieve full order details including line items.
+- [[command|CreateOrder]] — Place a new order from the active basket.
+- [[entity|order]] — Domain model for accepted orders.
 
 <NodeGraph />
-
-### Query parameters and response
-
-| Parameter   | Description                                                                                   | Default |
-| ----------- | --------------------------------------------------------------------------------------------- | ------- |
-| `PageIndex` | Page number to return.                                                                        | `1`     |
-| `PageSize`  | Number of results per page.                                                                   | `20`    |
-| `Status`    | Optional Order status filter: `New`, `Cancelled`, or `Completed`.                             | None    |
-| `BuyerId`   | Optional Buyer identifier filter. Non-administrators are scoped to their authenticated Buyer. | None    |
-
-The OpenAPI contract documents the `200 OK` response as a JSON array of
-`OrderDto` values containing ID, date, total, and status. `400 Bad Request`
-returns validation problem details.
-
-### Query using CURL
-
-<CodeGroup dropdown>
-
-```sh list-orders.sh
-curl -H "Authorization: Bearer <access-token>" \
-  "https://api.example.com/api/v1/orders?PageIndex=1&PageSize=20&Status=New"
-```
-
-</CodeGroup>
-
-### Schema
 
 <SchemaViewer file="schema.json" title="OrderDto array JSON Schema" maxHeight="500" search="true" />

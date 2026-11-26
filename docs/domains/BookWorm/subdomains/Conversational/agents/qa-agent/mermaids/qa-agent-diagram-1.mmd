@@ -1,0 +1,11 @@
+flowchart LR
+	router["Decision Router\n(Microsoft-Decision-1)"]
+	qa["QA Agent\n(qa / Agent Framework)"]
+	skills["Store Policies Skill\n(Skills/store-policies)"]
+	presidio["Presidio\n(Analyzer + Anonymizer)"]
+	book["Book Agent\n(In-Process Handoff)"]
+
+	router --> |"Workflow: RouteTarget.QA"| qa
+	qa --> |"Context: load_skill / read_skill_resource"| skills
+	qa --> |"HTTP Middleware: AnalyzeText / AnonymizeText"| presidio
+	qa --> |"Handoff: handoff_to_book"| book

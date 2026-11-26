@@ -35,40 +35,71 @@ properties:
         description: Province or state.
 ---
 
-## 1. Context & Problem
+`Buyer` is the Ordering aggregate root for a customer's ordering profile and delivery address. Ordering API owns it and persists it in PostgreSQL (`orderingdb`).
 
-To fulfill purchases accurately, Ordering needs a dedicated customer profile—capturing who is placing the order and where books must be delivered—without tightly coupling Order processing to external authentication systems. At the same time, storing order-by-order fulfillment state on the customer record would blur ownership boundaries and complicate multi-order history. The **Buyer** entity provides a clean, self-contained Ordering profile for each customer.
+## Overview
 
-## 2. Business Value
+| Property                  | Value                                                                                                    |
+| :------------------------ | :------------------------------------------------------------------------------------------------------- |
+| **Owner**                 | Ordering bounded context / **Ordering API** (`ordering`)                                                 |
+| **Source**                | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/BuyerAggregate/Buyer.cs`                 |
+| **EF Core configuration** | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EntityConfigurations/BuyerConfiguration.cs`      |
+| **Backing store**         | PostgreSQL database `orderingdb`, table `buyers` (`snake_case`)                                          |
+| **Base type**             | `Entity<BuyerId>`, `IAggregateRoot`                                                                      |
+| **Identifier**            | `BuyerId` (Vogen value object wrapping `Guid`); the constructor receives the authenticated customer's ID |
 
-- **Clear customer & order separation:** Allows a customer to place many Orders over time while keeping their core Ordering identity and delivery address organized in one place.
-- **Reliable delivery details:** Guarantees every Buyer record carries a required name and structured delivery address (street, city, and province or state).
-- **Focused domain ownership:** Keeps customer Ordering profiles under Business Strategy ownership without entangling profile data with individual Order lifecycle transitions.
+`Buyer` has no audit timestamps, row version, or soft-delete flag.
 
-## 3. How It Works
+## Parameters and fields
 
-- Each **Buyer** represents the Ordering profile linked to an authenticated customer.
-- The profile stores the customer's unique identifier, name, and required delivery address (street, city, and province or state).
-- A single Buyer can place multiple Orders over time, with each Order referencing its Buyer by identifier.
-- The Buyer holds only customer profile and delivery details—it does not own or control an Order's lifecycle status, which each Order manages independently.
+| Name               | Type               | Required | Default               | Constraints                                     | Description                      |
+| :----------------- | :----------------- | :------- | :-------------------- | :---------------------------------------------- | :------------------------------- |
+| `id`               | `BuyerId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                                     | Buyer identifier                 |
+| `name`             | `string`           | Yes      | —                     | Non-whitespace; max 20 chars                    | Buyer name                       |
+| `address.street`   | `string`           | Yes      | —                     | Non-whitespace; max 50 chars                    | Street address                   |
+| `address.city`     | `string`           | Yes      | —                     | Non-whitespace; max 50 chars                    | City                             |
+| `address.province` | `string`           | Yes      | —                     | Non-whitespace; max 50 chars                    | Province or state                |
+| `fullAddress`      | `string`           | —        | Computed              | `[NotMapped]`; `"{Street}, {City}, {Province}"` | Formatted address; not persisted |
+| `orders`           | `Order[]`          | —        | `[]`                  | Inverse navigation                              | Orders placed by the buyer       |
 
-## 4. Trade-offs & Lessons Learned
+`Address` is a value object stored as an EF Core complex property inside the `buyers` table.
 
-- **Identifier reference vs. duplicating profile data:** Having Orders reference Buyer by identifier keeps multi-order customer history normalized and clean, though teams must take care not to expose Buyer address or contact details unnecessarily in logs, events, or incident reports.
-- **Dedicated Ordering profile vs. direct auth coupling:** Keeping a Buyer profile inside Ordering isolates Ordering from external identity-system changes, at the trade-off that a customer must have a Buyer profile established before checking out.
+The EF Core `Address` complex property maps `Street`, `City`, and `Province` as required columns. Confirm exact generated column names from the Ordering migration snapshot before writing database SQL.
 
-## 5. Technical Reference
+## Invariants and behavior
 
-### Overview
+- **Name required:** The constructor throws `OrderingDomainException("Name is required")` for null or whitespace names.
+- **Address required:** `Address` throws `OrderingDomainException` with `"Street is required"`, `"City is required"`, or `"Province is required"`.
+- **Address replacement:** `UpdateAddress(street, city, province)` replaces the whole `Address` value object.
+- **PII:** `name` and `address` contain personal data. Keep them out of logs, events, and incident reports.
 
-The Buyer aggregate (`id: buyer`, `aggregateRoot: true`, `identifier: id`, owned by `business-strategy`) stores the customer's name and address used by Ordering.
-An Order refers to its Buyer by ID; the Buyer profile does not own Order
-lifecycle state.
+## Relationships
 
-### Entity Properties
+| Related entity    | Cardinality              | Mapping                                                               |
+| :---------------- | :----------------------- | :-------------------------------------------------------------------- |
+| [[entity\|order]] | One buyer to many orders | `orders.buyer_id`; `BuyerConfiguration` declares `ON DELETE SET NULL` |
 
-<EntityPropertiesTable />
+## Examples
 
-### Relationships
+### Buyer record
 
-- A Buyer can place multiple [[entity|order]]s.
+<CodeGroup>
+
+```json
+{
+	"id": "0193f1a2-7b4c-7d8e-9f01-0000000b0001",
+	"name": "Nhan Nguyen",
+	"address": {
+		"street": "123 Nguyen Hue",
+		"city": "Ho Chi Minh City",
+		"province": "Ho Chi Minh"
+	},
+	"fullAddress": "123 Nguyen Hue, Ho Chi Minh City, Ho Chi Minh"
+}
+```
+
+</CodeGroup>
+
+## Related documentation
+
+- [[entity|order]] — Orders placed by a buyer.

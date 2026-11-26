@@ -1,0 +1,13 @@
+flowchart TD
+	edge["Edge tier\n(gateway, quartz-dashboard)"]
+	fe["Frontend tier\n(storefront, commerce, backoffice: Next.js 16)"]
+	api["API tier\n(catalog, basket, ordering, rating, chatting, mcptools: .NET 11)"]
+	workers["Worker tier\n(notification, scheduler: .NET 11)"]
+	functions["Functions tier\n(finance, catalog-ingestion: Azure Functions)"]
+	sidecars["Privacy tier\n(presidio-analyzer, presidio-anonymizer)"]
+
+	edge --> |"HTTP: frontend routes"| fe
+	edge --> |"HTTP: /{service}/*"| api
+	api --> |"HTTP 3000: PII redaction"| sidecars
+	api --> |"Kafka: integration events"| workers
+	api --> |"Kafka: integration events"| functions

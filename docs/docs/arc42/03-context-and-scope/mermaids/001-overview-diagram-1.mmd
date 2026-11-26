@@ -1,0 +1,26 @@
+flowchart LR
+	customer["Customer\n(Storefront & Commerce)"]
+	admin["Store Administrator\n(Backoffice & Quartz UI)"]
+
+	subgraph inside["Inside BookWorm Boundary"]
+		edge["Edge & Frontends\n(YARP Gateway, Storefront, Commerce, Backoffice)"]
+		core["Core Commerce\n(Catalog, Shopping, Ordering)"]
+		engage["Engagement & AI\n(Reviews, Conversational, Presidio PII)"]
+		platform["Platform Services\n(Notification, Scheduler)"]
+	end
+
+	entra["Microsoft Entra ID\n(Identity & Agent IDs)"]
+	foundry["Microsoft Foundry\n(Models & Embeddings)"]
+	smtp["SendGrid / Mailpit\n(SMTP Delivery)"]
+	managed["Cloud Infra\n(Confluent Kafka, Qdrant Cloud)"]
+
+	customer -->|"HTTPS"| edge
+	admin -->|"HTTPS"| edge
+	edge -->|"HTTP / AG-UI"| core
+	edge -->|"HTTP / AG-UI"| engage
+	core -->|"Kafka Events"| platform
+	inside <-->|"OAuth2 / OIDC"| entra
+	engage -->|"HTTPS"| foundry
+	core --> |"HTTPS: Embeddings"| foundry
+	platform -->|"SMTP (587)"| smtp
+	inside <-->|"Kafka / gRPC"| managed

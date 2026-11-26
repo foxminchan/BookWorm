@@ -10,86 +10,122 @@ badges:
     textColor: orange
 ---
 
-import Footer from "@catalog/components/footer.astro";
+Use this runbook when a Quartz.NET job in **Scheduler** (`scheduler`) misses its UTC schedule, appears paused or failed in **Quartz Dashboard** (`quartz-dashboard`), or reports success while **Catalog Ingestion** (`catalog-ingestion`) makes no vector indexing progress. **Scheduler** runs only two jobs (`ProcessVectorBatchJob` and `HeartbeatJob`); email notification delivery is event-driven and not scheduled here.
 
-## 1. Context & Problem
+## Prerequisites
 
-BookWorm relies on the Platform Scheduler to regularly prompt background tasks across different domains—such as refreshing Catalog search indexes and triggering Notification email retries and cleanup. Failures can look misleading: sometimes a scheduled job misses its window, pauses, or errors outright; other times, the scheduler reports success while the downstream business system makes no actual progress.
+- Microsoft Entra ID account with the `admin` role to sign in to **Quartz Dashboard** (`/quartz`).
+- Read access to **Aspire Dashboard** (locally) or **Azure Log Analytics** (Azure Container Apps) for `scheduler` and `catalog-ingestion` logs.
+- Read access to **Kafka UI** (locally) or **Confluent Cloud** for the unprefixed `scheduler.process-vector-batch` topic.
+- Read-only SQL access to `catalogdb` (PostgreSQL) to inspect `pending_vector_updates` and `schedulerdb` health metrics.
 
-When these symptoms occur, teams need a clear diagnostic path to distinguish between a scheduler outage, an authentication or connectivity problem, and a downstream processing stall—without tampering with the scheduler's internal database or creating duplicate work.
+## Steps
 
-## 2. Business Value
+<Steps>
+<Step title="Verify the Scheduler service is running">
 
-- **Faster Incident Resolution:** Helps operations distinguish scheduler faults from downstream service failures in minutes rather than chasing the wrong component.
-- **Prevents Data Corruption & Duplicates:** Establishes guardrails against editing internal scheduler tables or blindly re-running jobs that may already have timed out mid-flight.
-- **Protects Security Boundaries:** Guides teams to resolve credential or permission mismatches through proper deployment channels without exposing tokens or secrets.
-- **Ensures End-to-End Reliability:** Keeps search indexing and email maintenance flowing smoothly by confirming true downstream progress rather than relying on scheduler status alone.
+Check `scheduler` state in Aspire Dashboard or Azure Container Apps.
 
-## 3. How It Works
+> [!NOTE]
+> In local Aspire runs, `scheduler` is configured with `.WithExplicitStart()` in `AppHost.cs`. Start the `scheduler` resource manually from Aspire Dashboard before expecting jobs to fire locally.
 
-### Recognizing a Failure
+In local Development, check the liveness and readiness endpoints (Development only):
 
-Operators typically investigate when a job misses its expected UTC cadence, shows as paused, blocked, or failed in execution history, or reports success while the target system's work queue remains stuck.
+<CodeGroup>
 
-### Investigation Flow
+```bash
+curl -sS "https://localhost:7062/health"
+```
 
-1. **Check Scheduler Health & Timing:** Review instance check-ins, job and trigger states, next scheduled run time, and verify times are being read in UTC.
-2. **Review Execution History:** Check recent run durations and sanitized error summaries, taking care never to copy authentication headers or secrets into incident logs.
-3. **Check Pause & Misfire Rules:** Confirm whether a trigger was paused. If a job missed its run window, Platform triggers are configured to catch up with a single immediate execution rather than replaying every missed interval.
-4. **Inspect the Target System:** If the scheduler itself completed without error, investigate the receiving domain directly:
-   - For search index updates, verify Catalog service authorization, the pending-update backlog, and search store health.
-   - For email maintenance, verify message publication, Notification service health, and the email outbox state.
-5. **Check Authorization Failures:** When a protected call to Catalog fails access checks, distinguish between missing/invalid credentials and an identity that lacks permission, then fix runtime secrets or identity settings safely without exposing secret values.
+</CodeGroup>
 
-### Safe Recovery & Verification
+Expected output:
 
-- Restore database or network connectivity and apply any configuration fixes through the standard deployment workflow.
-- Only resume or adjust a paused trigger using approved operational permissions and change processes.
-- After fixing the underlying issue, prefer waiting for the next scheduled run. Before triggering a manual retry, inspect the target system's state to account for timeouts or duplicate-submission risk.
-- Never modify target-system data through the scheduler database.
-- Confirm full recovery only when the trigger shows a valid next run time, fresh execution history succeeds, and the target system's own queue or outbox shows measurable progress. Route scheduler, schedule, or authentication issues to the platform team and target-system processing issues to the contributor team.
+<CodeGroup>
 
-## 4. Trade-offs & Lessons Learned
+```text
+Healthy
+```
 
-- **Single Catch-Up vs. Full Replay:** Recovering from a missed window with one immediate execution avoids flooding downstream services with a backlog of redundant triggers, though any interval-specific expectations must tolerate skipped intermediate runs.
-- **Asynchronous Dispatch vs. End-to-End Proof:** Because scheduler history only proves a trigger fired or a message was published, operators cannot rely on green scheduler checks as proof of downstream completion.
-- **Strict Database Isolation:** Prohibiting direct edits to target records via the scheduler database preserves clean service ownership and prevents hard-to-trace state drift.
+</CodeGroup>
 
-## 5. Technical Reference
+</Step>
+<Step title="Inspect job state, triggers, and execution history in Quartz Dashboard">
 
-### Symptoms
+Open **Quartz Dashboard** at `https://<quartz-dashboard-host>/quartz` (authenticate with Entra ID `admin` role) and inspect both jobs defined in `src/Services/Scheduler/BookWorm.Scheduler/jobs.json`:
 
-- A Platform job has not fired at its expected UTC cadence.
-- A trigger is paused, misfired, or blocked, or the execution history records a failure.
-- Scheduler reports success but the target system's work is not progressing.
+- **`ProcessVectorBatchJob`** (`ProcessVectorBatchTrigger`): cron `0 0/5 * * * ?` UTC (every 5 minutes), `[DisallowConcurrentExecution]`, misfire instruction `FireOnceNow`.
+- **`HeartbeatJob`** (`HeartbeatTrigger`): cron `0/30 * * * * ?` UTC (every 30 seconds), misfire instruction `FireOnceNow`.
 
-### Diagnose
+Verify:
 
-1. Open the [[service|sheduler-dashboard]] and check Scheduler instance check-ins, job and trigger state, next-fire time, and UTC time zone.
-2. Inspect fired-trigger and execution-history records for the job and trigger. Note duration and sanitized failure details; do not copy authorization headers or credentials.
-3. Check whether the trigger is paused and review the configured misfire behavior. Jobs use `FireOnceNow`, which makes one execution eligible after a misfire instead of replaying every missed interval.
-4. If the Scheduler invocation completed, inspect the target system:
-   - `ProcessVectorBatchJob`: check Catalog Ingestion authorization, `pending_vector_updates`, and vector-store health.
-   - `ResendErrorEmailJob` or `CleanUpSentEmailJob`: check Kafka publication, Notification consumer health, and outbox state.
-5. For Catalog's protected HTTP request, distinguish `401` (missing or invalid credentials) from `403` (the caller identity is not authorized). Check runtime secret configuration and service identity; never reveal token values.
+- Scheduler instance check-ins are current in `schedulerdb`.
+- Triggers are in `NORMAL` (not `PAUSED`, `ERROR`, or `BLOCKED`) state and display a valid next fire time in UTC.
+- Execution history (retained for `30` days / up to `100,000` entries in `schedulerdb`) shows recent run durations and any sanitized `JobExecutionException` details.
 
-### Recover
+</Step>
+<Step title="Check `schedulerdb` and Wolverine outbox publication">
 
-- Restore Scheduler database or downstream connectivity, and correct the runtime configuration through the normal deployment process.
-- Resume or otherwise adjust a paused trigger only with the approved operational permissions and change process.
-- Prefer the next scheduled firing after restoring the target. Before a manual retry, confirm target-side state and account for timeouts or duplicate submissions; Scheduler history cannot prove whether downstream work finished.
-- Do not edit target-system records through the Scheduler database.
+If `ProcessVectorBatchJob` failed with `JobExecutionException`, inspect `scheduler` logs for PostgreSQL (`schedulerdb`) or Kafka broker connectivity errors. `ProcessVectorBatchJob` publishes `ProcessVectorBatchIntegrationEvent` through Wolverine's PostgreSQL outbox (`wolverine` schema in `schedulerdb`) to the unprefixed Kafka topic `scheduler.process-vector-batch`.
 
-### Verify
+Never edit `catalogdb` rows through `schedulerdb`, and never copy connection strings or credentials into incident notes.
 
-- The expected trigger has a valid next-fire time and new execution history.
-- The target system's own queue or outbox shows progress.
-- For email, confirm Notification state and SMTP health; for vector indexing, confirm the Catalog queue and search index. A successful Scheduler execution by itself is not sufficient.
+</Step>
+<Step title="Verify downstream Catalog Ingestion progress when Scheduler succeeds">
 
-### Escalation
+A successful `ProcessVectorBatchJob` run confirms only that `ProcessVectorBatchIntegrationEvent` was published to Kafka—not that vectors updated in Qdrant (`vectordb`). Inspect the downstream pipeline:
 
-- Contact [[team|platform-team]] for Scheduler health, schedules, authentication configuration, or infrastructure.
-- Contact [[team|contributor-team]] for target-system processing behavior.
-- Use the established support or on-call channel for urgent incidents; no specific channel or rotation is documented here.
+- **Kafka topic:** Confirm messages arrive on `scheduler.process-vector-batch` and check lag for consumer group `catalog-ingestion`.
+- **Pending queue in `catalogdb`:** Run a read-only count of pending vector updates:
 
-<Footer />
+  ```sql
+  SELECT COUNT(*) AS pending_count, MIN(updated_at) AS oldest_updated_at
+  FROM pending_vector_updates;
+  ```
+
+- **Catalog Ingestion logs (`catalog-ingestion`):** Check `ProcessVectorBatchFunction` and `VectorBatchProcessor` logs for:
+  - PostgreSQL advisory lock `740031001` contention (`pg_try_advisory_lock` returns `false` when another batch is still running, causing a clean `0`-item skip).
+  - Microsoft Foundry `embedding` deployment errors (`Cohere.EmbedV40` quota, auth, or incomplete batch errors).
+  - Qdrant (`vectordb`) upsert/delete errors.
+  - Note that each batch processes at most `200` rows (`BatchSize = 200`), so a large backlog drains across multiple 5-minute cycles.
+
+</Step>
+<Step title="Recover safely">
+
+- Restore the failing dependency (`schedulerdb`, Kafka broker, `catalog-ingestion`, Microsoft Foundry access, or Qdrant `vectordb`) through standard operational or deployment workflows.
+- Resume a paused trigger in **Quartz Dashboard** only under your team's approved change procedure.
+- After restoring downstream dependencies, prefer waiting for the next 5-minute scheduled firing (or `FireOnceNow` catch-up) rather than triggering multiple manual runs concurrently.
+- Escalate Scheduler, `schedulerdb`, Quartz Dashboard Entra ID OIDC, or Kafka broker issues to platform infrastructure owners, and `BookWorm.Catalog.Ingestion` / embedding / Qdrant issues to Catalog maintainers.
+
+</Step>
+</Steps>
+
+## Verification
+
+Confirm both Scheduler and downstream Catalog Ingestion are healthy:
+
+1. In **Quartz Dashboard**, confirm `HeartbeatTrigger` fires every 30 seconds UTC and `ProcessVectorBatchTrigger` shows a valid next 5-minute UTC fire time with `Succeeded` execution history.
+2. In `catalogdb`, re-run the read-only pending count query across two 5-minute cycles and confirm `pending_count` trends downward toward `0`:
+
+   ```sql
+   SELECT COUNT(*) AS pending_count, MIN(updated_at) AS oldest_updated_at
+   FROM pending_vector_updates;
+   ```
+
+3. Confirm `catalog-ingestion` logs record `"Processed <count> pending vector updates"` with no new errors.
+
+## Troubleshooting
+
+| Symptom                                                                                        | Cause                                                                                                                                                    | Fix                                                                                                                           |
+| :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| No jobs fire locally in Aspire                                                                 | `scheduler` is registered with `.WithExplicitStart()` in `AppHost.cs`                                                                                    | Start the `scheduler` resource explicitly in Aspire Dashboard                                                                 |
+| `ProcessVectorBatchJob` fails with `JobExecutionException`                                     | `schedulerdb` PostgreSQL unavailable or Kafka broker unreachable during Wolverine publish                                                                | Restore `schedulerdb` or Kafka connectivity; allow next scheduled firing or `FireOnceNow` catch-up                            |
+| Trigger stays in `PAUSED` or `ERROR` state in Quartz Dashboard                                 | Operator paused the trigger or persistent store error occurred                                                                                           | Resolve underlying `schedulerdb` fault and resume the trigger in Quartz Dashboard with `admin` role                           |
+| `ProcessVectorBatchJob` succeeds every 5 minutes, but `pending_vector_updates` does not shrink | `catalog-ingestion` consumer stopped, advisory lock `740031001` held by a stuck session, Microsoft Foundry embedding error, or Qdrant (`vectordb`) error | Inspect `catalog-ingestion` logs and Kafka lag on `scheduler.process-vector-batch`; restore the failing downstream dependency |
+| `401` / `403` signing in to `/quartz`                                                          | User lacks Microsoft Entra ID `admin` app role for `quartz-dashboard`                                                                                    | Assign the `admin` role in Entra ID and sign in again                                                                         |
+
+## Related documentation
+
+- Platform integration boundaries reference — Scheduler and Notification contracts and storage ownership.
+- Scheduled work and email notifications — How Quartz.NET jobs and stateless notifications work.
+- How to troubleshoot a Notification delivery backlog — Separate runbook for email delivery lag and DLQ triage.

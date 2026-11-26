@@ -20,65 +20,72 @@ sidebar:
   badge: "POST"
 ---
 
-## 1. Context & Problem
+`CreateMailBatch` (`POST https://api.sendgrid.com/v3/mail/batch`) is an external SendGrid Web API v3 operation that generates a `batch_id` for grouping scheduled email submissions. **BookWorm does not call this endpoint at runtime**: the **Notification** service (`BookWorm.Notification`) sends individual order emails via `MailKit` over SMTP (**Mailpit** locally, SendGrid SMTP relay in Azure) and has no SendGrid REST client or batch-tracking database.
 
-When BookWorm needs to coordinate or schedule a group of related email notifications, individual mail submissions need a shared reference to tie them together. Without a dedicated step to generate that reference upfront, separate email requests cannot be grouped for scheduled-send management at the provider.
+:::note
+This page documents an external provider capability cataloged for future REST integration. In the current BookWorm codebase (`src/Services/Notification/BookWorm.Notification/` and `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs`), there is no `SendGrid` NuGet package, no `SENDGRID_API_KEY` environment variable, and no HTTP calls to `/v3/mail/batch`.
+:::
 
-At the same time, teams must not confuse reserving a batch identifier with actually sending or delivering an email.
+## Overview
 
-## 2. Business Value
+| Property                    | Value                                                                                                                                                                                                                        |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                   | External email provider (**SendGrid**, modeled under Platform bounded context)                                                                                                                                               |
+| **Source**                  | External provider contract (`https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml`); BookWorm SMTP config in `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs` |
+| **Protocol / format**       | External HTTPS `POST`, empty request body, `application/json` response                                                                                                                                                       |
+| **Endpoint**                | `POST https://api.sendgrid.com/v3/mail/batch`                                                                                                                                                                                |
+| **Authentication**          | SendGrid API key in `Authorization: Bearer <sendgrid-api-key>` header (not managed by Microsoft Entra ID)                                                                                                                    |
+| **BookWorm runtime status** | Not called at runtime; `BookWorm.Notification` uses `MailKit` `5.0.0` over SMTP (`smtp://smtp.sendgrid.net:587` in publish mode)                                                                                             |
+| **Contract version**        | `1.0.0`                                                                                                                                                                                                                      |
 
-- **Coordinated scheduled delivery**: Enables BookWorm to group one or more email submissions under a single identifier for scheduled-send workflows.
-- **Clear operational boundaries**: Separates batch preparation from message transmission, preventing false assumptions that creating a batch means customers have been notified.
+## Parameters and fields
 
-## 3. How It Works
+### Request headers
 
-The **Create mail batch** command requests a new batch identifier from [[system|sendgrid]].
+The [SendGrid OpenAPI contract](https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml) confirms that `on-behalf-of` is an optional header for this endpoint, but does not map `POST /v3/mail/batch` to an exact API-key permission. SendGrid's [API key guidance](https://www.twilio.com/docs/sendgrid/ui/account-and-settings/api-keys) recommends API keys, custom/restricted permissions, and keeping keys out of source control. The permission UI lists **Mail Send** and **Scheduled Sends** separately; the batch endpoint creates an ID for scheduled sends, but the public contract does not establish which exact combination authorizes this endpoint. Grant only the permissions verified as necessary for the account and do not use account-wide **Full Access**.
 
-1. The [[system|notification-system]] issues a batch-creation request using its configured provider credentials (and optional subuser context), with no message content attached.
-2. SendGrid returns a new batch identifier.
-3. The [[system|notification-system]] saves that identifier alongside the workflow that will use it and attaches it to subsequent [[command|SendMail]] submissions when grouping is needed.
+| Name            | Type     | Required | Default | Constraints                     | Description                                                                                                                                                 |
+| :-------------- | :------- | :------- | :------ | :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Authorization` | `string` | Yes      | —       | `Bearer <sendgrid-api-key>`     | SendGrid API key. Use a restricted key scoped to the required Mail Send/Scheduled Sends actions; the endpoint contract does not identify the minimum scope. |
+| `on-behalf-of`  | `string` | No       | —       | Valid SendGrid subuser username | Optional subuser context header supported by SendGrid Web API v3                                                                                            |
 
-Creating a batch does not send any email and does not confirm delivery; the [[system|notification-system]] retains full ownership of delivery state.
+### Request body
 
-## 4. Trade-offs & Lessons Learned
+`POST /v3/mail/batch` accepts no request body.
 
-- **Preparation step adds state to manage**: The workflow must persist the returned batch identifier until all associated messages are submitted, rather than sending fire-and-forget requests.
-- **Not a delivery signal**: Monitoring and business logic must treat batch creation purely as a prerequisite setup action, never as proof of notification completion.
-- **Authentication and permission sensitivity**: Failures commonly stem from missing or unauthorized provider credentials, requiring runtime secret hygiene and clear error handling.
+### Success response (`201 Created`)
 
-## 5. Technical Reference
+| Name       | Type     | Required | Default | Constraints                       | Description                                                                               |
+| :--------- | :------- | :------- | :------ | :-------------------------------- | :---------------------------------------------------------------------------------------- |
+| `batch_id` | `string` | Yes      | —       | Non-empty string (`minLength: 1`) | Provider-generated batch identifier to attach to subsequent `POST /v3/mail/send` requests |
 
-### Request & Operation Contract
+## Behavior and side effects
 
-- **Operation**: `POST /v3/mail/batch`
-- **Request body**: None. SendGrid authentication and optional subuser context are supplied through the API request headers.
-- **Response schema file**: `schema.json`
+- **Provider-side reservation only:** Calling `POST /v3/mail/batch` allocates a `batch_id` inside SendGrid; it does not send any email or confirm message delivery.
+- **BookWorm runtime behavior:** `BookWorm.Notification` does not reserve mail batches or persist batch IDs. Instead, it consumes Kafka commands (`PlaceOrderCommand`, `CompleteOrderCommand`, `CancelOrderCommand`) through **Wolverine**, enforces 24-hour duplicate protection in Redis (`IIntegrationEventIdempotencyGuard`), renders MJML templates (`Mjml.Net`), and transmits individual messages over SMTP via `MailKitSender`.
+- **BookWorm SMTP credentials:** In Azure publish mode, AppHost configures SMTP through `Email__Endpoint` (default `smtp://smtp.sendgrid.net:587`), `Email__Username` (default `apikey`), `Email__Password` (Aspire parameter `email-smtp-password`), `Email__From`, and optional `Email__Name`.
+- **Credential handling:** Keep REST API keys in a secret manager or environment-backed secret configuration, never commit or log them, and rotate/revoke compromised keys. The current SMTP runtime uses a separate SMTP credential; do not substitute a REST API key unless deliberately migrating the integration.
 
-### Example Response
+## Error responses
 
-<CodeGroup dropdown>
+The OpenAPI contract lists `400`, `401`, `403`, `404`, `405`, and `500` error responses for `POST /v3/mail/batch`; each uses an `ErrorResponse` object with an `errors` array (and optional `id`). It does not list `429`, which means this specification does not document that response—not that the service can never return it.
 
-```json
-{
-	"batch_id": "YWJjZDEyMzQtZWY1Ni03ODkwLWFiY2QtZWYxMjM0NTY3ODkw"
-}
-```
+| Code / status               | Condition                                        | Recovery behavior                                                           |
+| :-------------------------- | :----------------------------------------------- | :-------------------------------------------------------------------------- |
+| `400 Bad Request`           | Malformed request or invalid headers             | Fix the request before retrying                                             |
+| `401 Unauthorized`          | Missing or invalid SendGrid API key              | Verify the bearer API key in secret configuration and retry                 |
+| `403 Forbidden`             | API key lacks permission for mail batch creation | Grant the required SendGrid API key permission                              |
+| `404 Not Found`             | Referenced provider resource is unavailable      | Verify the endpoint URL and account configuration                           |
+| `405 Method Not Allowed`    | Request uses an HTTP method other than `POST`    | Send an HTTP `POST` request to `/v3/mail/batch`                             |
+| `500 Internal Server Error` | SendGrid service-side error                      | Reconcile before issuing a replacement batch ID; retry with bounded backoff |
 
-</CodeGroup>
+## Related documentation
 
-### Schema
-
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
-
-### Status Codes & Failures
-
-- `201 Created`: Returns the new `batch_id`.
-- `400 Bad Request`: Indicates an invalid request.
-- `401 Unauthorized`: Indicates missing or invalid authentication.
-- `403 Forbidden`: Indicates that the caller is not allowed to perform the operation.
-- `404 Not Found`: Indicates that the requested provider resource is unavailable.
-- `405 Method Not Allowed`: Indicates an unsupported HTTP method.
-- `500 Internal Server Error`: Indicates a provider-side failure.
+- [[service|sendgrid-api]] — External email provider integration boundary and OpenAPI specification link.
+- [[command|SendMail]] — SendGrid REST v3 `POST /v3/mail/send` contract and BookWorm's actual MailKit SMTP delivery path.
+- [[query|GetMailBatch]] — Validate an existing SendGrid batch identifier (`GET /v3/mail/batch/{batch_id}`).
+- [[service|notification-api]] — BookWorm's Kafka, Redis, MJML, and MailKit email worker.
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

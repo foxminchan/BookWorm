@@ -14,62 +14,75 @@ sidebar:
   badge: "gRPC"
 ---
 
-## 1. Context & Problem
+`GetDashboardGrpc` invokes the admin-protected `book.v1.BookGrpcService/GetDashboard` gRPC unary RPC on **Catalog API** to retrieve total catalog book counts and per-category book counts. **Ordering API** calls this RPC using its `dashboard-catalog` gRPC client with an exchanged Microsoft Entra ID administrator token when refreshing the Backoffice dashboard.
 
-Operations and business teams viewing the administrative dashboard need an at-a-glance summary of catalog inventory—specifically total [[entity|book]] counts and breakdowns by [[entity|category]]. Because that summary powers an administrative dashboard hosted alongside order metrics in [[service|order-api]], [[service|order-api]] needs a secure, efficient way to pull aggregated catalog counts from [[service|catalog-api]] without scanning individual product records or exposing internal inventory metrics publicly.
+## Overview
 
-## 2. Business Value
+| Property                | Value                                                                                                                                                                                                                                |
+| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner (gRPC server)** | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                                                 |
+| **Primary caller**      | **Ordering API** (`ordering`, named `dashboard-catalog` gRPC client)                                                                                                                                                                 |
+| **Source**              | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs`, `src/Services/Catalog/BookWorm.Catalog/Features/Dashboard/GetCatalogDashboardQuery.cs` |
+| **Protocol / format**   | gRPC unary RPC (`book.v1.BookGrpcService/GetDashboard`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"`                                                                                          |
+| **Authentication**      | `[Authorize(Policy = Authorization.Policies.Admin)]` — Microsoft Entra ID JWT (`admin` role + `catalog_read`/`catalog_write` scopes) via `Authorization: Bearer <token>` metadata                                                    |
+| **Caching**             | Dispatches `GetCatalogDashboardQuery`, querying PostgreSQL (`catalogdb`) and caching results in FusionCache (`CatalogCacheKeys.Dashboard`) for `15 seconds`                                                                          |
+| **Contract version**    | `1.0.0`                                                                                                                                                                                                                              |
 
-- **Clear operational visibility**: Gives administrators immediate insight into overall catalog size and how books are distributed across categories.
-- **Protected business metrics**: Restricts access to authorized administrative contexts so internal catalog statistics are not exposed to unauthenticated callers.
-- **Responsive dashboard experience**: Pre-aggregated counts combined with dashboard caching in [[service|order-api]] keep administrative reporting fast.
+## Parameters and fields
 
-## 3. How It Works
+### Request message (`GetDashboardRequest`)
 
-1. When [[service|order-api]] refreshes its cached administrative dashboard, it obtains an administrative access token scoped for [[service|catalog-api]] and submits an empty dashboard summary request.
-2. [[service|catalog-api]] verifies that the caller satisfies the administrative authorization policy.
-3. Once authorized, [[service|catalog-api]] computes and returns the total number of [[entity|book]]s alongside the count of books per [[entity|category]].
-4. [[service|order-api]] caches the aggregated results so administrative users see fast dashboard updates without repeatedly recalculating catalog totals.
+`GetDashboardRequest` is an empty Protobuf message with no fields.
 
-## 4. Trade-offs & Lessons Learned
+### Response message (`GetDashboardResponse`)
 
-- **Authorized service-to-service exchange vs. open internal read**: Unlike standard public catalog lookups, dashboard totals require explicit administrative authorization and token exchange, adding security configuration complexity in exchange for strict access control.
-- **Cached summary vs. live count**: Refreshing a cached administrative dashboard reduces load on [[service|catalog-api]], meaning dashboard counts reflect the most recent refresh rather than every instantaneous catalog change.
-- **Synchronous aggregation**: Computing totals directly on [[service|catalog-api]] keeps ownership clean inside the catalog boundary, though dashboard refreshes depend on [[service|catalog-api]] availability.
+| Field                | Protobuf type                | Tag | Description                              |
+| :------------------- | :--------------------------- | :-- | :--------------------------------------- |
+| `total_books`        | `int64`                      | `1` | Sum of book counts across all categories |
+| `categories`         | `repeated DashboardCategory` | `2` | Per-category book counts                 |
+| `categories[].name`  | `string`                     | `1` | Category display name                    |
+| `categories[].value` | `int64`                      | `2` | Number of books assigned to the category |
 
-## 5. Technical Reference
+### Protobuf contract
 
-`GetDashboard` is an admin-protected, read-only RPC defined in the `book.v1` gRPC contract (`BookGrpcService`). It returns the total number of [[entity|book]]s and aggregated [[entity|category]] counts for the Catalog dashboard.
+<CodeGroup>
 
-- **Producer / Caller**: [[service|order-api]] produces this query when refreshing its cached administrative dashboard, using the named `dashboard-catalog` gRPC client with a token exchanged for Catalog.
-- **Consumer**: [[service|catalog-api]] consumes this synchronous service-to-service query and enforces the admin authorization policy.
-- **Request**: Empty `GetDashboardRequest`.
-- **Response**: `GetDashboardResponse` containing `total_books` and repeated `DashboardCategory` values (`Name`, `Value`).
+```protobuf
+edition = "2023";
 
-<NodeGraph />
+package book.v1;
 
-### Schema
+service BookGrpcService {
+  rpc GetDashboard (GetDashboardRequest) returns (GetDashboardResponse);
+}
 
-<Schema file="schema.proto" lang="protobuf" title="GetDashboard gRPC schema" />
+message GetDashboardRequest {}
 
-### Examples
+message GetDashboardResponse {
+  int64 total_books = 1;
+  repeated DashboardCategory categories = 2;
+}
 
-<CodeGroup dropdown>
-
-```csharp title="GetDashboard gRPC example"
-using Grpc.Net.Client;
-using BookWorm.Catalog.Grpc.Services;
-
-using var channel = GrpcChannel.ForAddress(Services.CatalogApi);
-var client = new BookGrpcService.BookGrpcServiceClient(channel);
-
-var response = await client.GetDashboardAsync(new GetDashboardRequest());
-
-Console.WriteLine($"Books: {response.TotalBooks}");
-foreach (var category in response.Categories)
-{
-    Console.WriteLine($"{category.Name}: {category.Value}");
+message DashboardCategory {
+  string name = 1;
+  int64 value = 2;
 }
 ```
 
 </CodeGroup>
+
+## Error responses
+
+| Code / status            | Condition                                                            | Recovery behavior                                                     |
+| :----------------------- | :------------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| `Unauthenticated` (`16`) | Missing, expired, or invalid Entra ID bearer token in gRPC metadata  | Exchange a valid administrator token scoped for Catalog API and retry |
+| `PermissionDenied` (`7`) | Authenticated caller does not satisfy `Authorization.Policies.Admin` | Authenticate with an `admin` role principal                           |
+| `Unavailable` (`14`)     | Catalog API is unreachable                                           | Retry within the budgeted resilience policy                           |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and gRPC services.
+- [[service|order-api]] — Primary caller hosting the administrative dashboard.
+- [[query|ListCategoriesGrpc]] — Anonymous gRPC category listing.
+
+<NodeGraph />

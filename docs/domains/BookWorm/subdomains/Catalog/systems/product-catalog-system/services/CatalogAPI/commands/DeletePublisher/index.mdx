@@ -18,40 +18,55 @@ sidebar:
   badge: "DELETE"
 ---
 
-## 1. Context & Problem
+`DeletePublisher` permanently deletes a publisher record from **Catalog API** (`DELETE /api/v1/publishers/{id}`) and returns `204 No Content`. The command rejects deletion with `400 Bad Request` when any active book references the publisher.
 
-Publisher records identify who issues the books sold in BookWorm. When duplicate publisher entries are created, test data is cleaned up, or a publisher is no longer part of the catalog, teams need a controlled way to remove the record so staff and automated workflows do not select obsolete publishers.
+## Overview
 
-## 2. Business Value
+| Property              | Value                                                                                                                             |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                              |
+| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Publishers/Delete/`                                                               |
+| **Protocol / format** | HTTP `DELETE`, path parameter only, empty response body (`204 No Content`)                                                        |
+| **Endpoint**          | Direct: `DELETE /api/v1/publishers/{id}` (local HTTP `5100`, HTTPS `7187`); API Gateway: `DELETE /catalog/api/v1/publishers/{id}` |
+| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)      |
+| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                          |
+| **Idempotency**       | Not idempotent across retries; repeating a completed delete returns `404 Not Found`; no `x-request-id` header is enforced         |
+| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-- **Data hygiene:** Prevents duplicate or retired publishers from cluttering catalog management screens and picklists.
-- **Simple execution:** Removes a target publisher in a single step using only its unique identifier.
-- **Clear feedback:** Explicitly distinguishes between a completed deletion and a lookup that found no matching publisher.
+## Parameters and fields
 
-## 3. How It Works
+### Path parameters
 
-1. A caller specifies the [[entity|publisher]] to remove using its unique identifier, with no extra details required.
-2. The catalog service searches for a publisher matching that identifier.
-3. If the publisher exists, it is permanently removed from the catalog and the caller receives an empty confirmation.
-4. If no publisher matches the identifier, the catalog remains unchanged and the caller is notified that the publisher could not be found.
+`DELETE /api/v1/publishers/{id}` accepts no request body.
 
-## 4. Trade-offs & Lessons Learned
+| Name | Type   | Required | Default | Constraints                                                           | Description                                  |
+| :--- | :----- | :------- | :------ | :-------------------------------------------------------------------- | :------------------------------------------- |
+| `id` | `uuid` | Yes      | —       | Valid UUID (`PublisherId`); must not be referenced by any active book | Unique identifier of the publisher to delete |
 
-- **Irreversible action:** Deleting a publisher is a permanent catalog mutation rather than a soft disable. Teams should confirm the publisher is no longer needed by existing books before removing it.
-- **Explicit not-found handling:** Returning a missing-resource notice rather than silently succeeding helps catch stale references early; callers should treat an already-absent publisher as deleted only when explicitly appropriate for their workflow.
+## Behavior and side effects
 
-## 5. Technical Reference
+- **Referential integrity guard:** Before loading the publisher, `DeletePublisherValidator` runs `BookFilterSpec(null, [publisherId])` against active (non-soft-deleted) books. If any active book references the publisher, FluentValidation fails with `400 Bad Request` (`"Publisher has books and cannot be deleted"`).
+- **Hard delete and foreign-key handling:** `Publisher` does not implement `ISoftDelete`; `DeletePublisherHandler` calls `repository.Delete(publisher)` to remove the row permanently from PostgreSQL (`publishers`). For any soft-deleted book rows still referencing the publisher, `BookConfiguration.cs` configures `OnDelete(DeleteBehavior.SetNull)`, setting their `publisher_id` to `NULL`.
+- **Cache invalidation:** Dispatches `PublisherDeletedEvent` on save; `PublisherChangedEventHandler` removes `catalog:publishers:v1` and invalidates FusionCache tags `book` and `books:list`.
+- **Vector index queueing:** PostgreSQL trigger `publishers_vector_update` (`BEFORE UPDATE OR DELETE ON publishers`) enqueues any linked `book_id` rows into `pending_vector_updates` for asynchronous Qdrant reconciliation by **Catalog Ingestion**.
+
+## Error responses
+
+| Code / status               | Condition                                                                                                                                                             | Recovery behavior                                                              |
+| :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| `400 Bad Request`           | Publisher is still linked to one or more active books (`"Publisher has books and cannot be deleted"`), or `{id}` is not a valid UUID (`HttpValidationProblemDetails`) | Reassign or delete linked books first, or fix the UUID; do not retry unchanged |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                                                             | Acquire a valid Entra ID access token and retry                                |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                                                       | Request the required Entra ID app role and scopes                              |
+| `404 Not Found`             | No publisher exists with the supplied `{id}` (`{ "detail": "The requested resource was not found." }`)                                                                | Verify the UUID; treat as already absent only if your workflow allows it       |
+| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                                                              | Wait for the `Retry-After` interval before retrying                            |
+| `500 Internal Server Error` | Unhandled server or PostgreSQL failure (`ProblemDetails` with `traceId`)                                                                                              | Inspect Catalog API logs using `traceId`                                       |
+
+## Related documentation
+
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[command|CreatePublisher]] — Create a new publisher record.
+- [[command|UpdatePublisher]] — Rename an existing publisher.
 
 <NodeGraph />
-
-### Endpoint & Contract
-
-- **Operation:** `DELETE /api/v1/publishers/{id}`
-- **Path parameter:** `{id}` — UUID of the publisher resource to delete.
-- **Request body:** None.
-- **Success response:** `204 No Content` with an empty body.
-- **Missing resource response:** `404` when no publisher exists with the supplied UUID. A client can safely treat an already-absent resource as deleted only when that is explicitly acceptable for its workflow.
-
-### Schema
 
 <SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />

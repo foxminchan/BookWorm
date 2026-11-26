@@ -1,0 +1,9 @@
+flowchart LR
+	admin["Store Administrator\n(Backoffice)"] --> |"HTTPS: Create/Update/Delete"| api["Catalog API\n(.NET 11 Minimal API)"]
+	api --> |"SQL: Commit + trigger upsert"| db["PostgreSQL (catalogdb)\n(books + pending_vector_updates)"]
+	scheduler["Scheduler\n(Quartz.NET every 5m UTC)"] --> |"Kafka: scheduler.process-vector-batch"| kafka["Kafka Broker\n(CloudEvents JSON)"]
+	kafka -->|"KafkaTrigger (catalog-ingestion)"| worker["Catalog Ingestion\n(Azure Functions)"]
+	worker --> |"SQL: Advisory lock + read 200"| db
+	worker --> |"HTTPS: Cohere.EmbedV40"| foundry["Microsoft Foundry\n(Embedding Deployment)"]
+	worker --> |"gRPC/HTTP: Upsert & Delete"| qdrant["Qdrant (vectordb)\n(data-bookworm-snippets)"]
+	worker --> |"SQL: Revision-checked DELETE"| db

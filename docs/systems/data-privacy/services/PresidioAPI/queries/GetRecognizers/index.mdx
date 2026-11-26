@@ -18,27 +18,53 @@ sidebar:
   badge: "GET"
 ---
 
+`GetRecognizers` queries the upstream Presidio Analyzer HTTP service (`GET /recognizers`) to list the PII recognizers available for a language. This endpoint is an upstream capability discovery query; BookWorm's runtime PII middleware calls only `POST /analyze` (defaulting to `language: "en"`) and does not invoke `GET /recognizers`.
+
 ## Overview
 
-The `GetRecognizers` query lists the recognizers available from [[service|PresidioAPI]] Analyzer. Use the optional `language` query parameter to select a language using its two-character ISO 639-1 code.
+| Property              | Value                                                                                                                                                             |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**             | Data privacy external integration (**Presidio**, Aspire resource `presidio-analyzer`)                                                                             |
+| **Source**            | `src/Integrations/BookWorm.Hosting.Presidio/PresidioResourceBuilderExtensions.cs`, `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/Clients/IPresidioAnalyzer.cs` |
+| **Protocol / format** | HTTP `GET /recognizers`, JSON response (`application/json`)                                                                                                       |
+| **Network & TLS**     | Internal sidecar on container port `3000` (HTTPS with developer certificate in local Aspire run mode; internal HTTP in Azure Container Apps)                      |
+| **Authentication**    | None (internal service-to-service network boundary; not exposed through API Gateway)                                                                              |
+| **Contract version**  | `1.0.0`                                                                                                                                                           |
+
+:::note
+BookWorm's `IPresidioAnalyzer` client sends only `POST /analyze` with `AnalyzerRequest.Language = "en"`. Use `GET /recognizers` to inspect loaded recognizers when troubleshooting detection behavior or testing new languages.
+:::
+
+## Parameters and fields
+
+### Query parameters
+
+| Name       | Type     | Required | Default                                                                           | Constraints                                      | Description                                                             |
+| :--------- | :------- | :------- | :-------------------------------------------------------------------------------- | :----------------------------------------------- | :---------------------------------------------------------------------- |
+| `language` | `string` | No       | Configured supported languages; the stock Presidio Analyzer configuration is `en` | Two-character ISO 639-1 code (for example, `en`) | Filters returned recognizers to those loaded for the specified language |
+
+The upstream OpenAPI marks `language` optional but defines no default. The current upstream [Analyzer API](https://github.com/data-privacy-stack/presidio/blob/main/presidio-analyzer/app.py) passes an omitted value through to the engine, which uses its configured supported languages; the stock [analyzer configuration](https://github.com/data-privacy-stack/presidio/blob/main/presidio-analyzer/presidio_analyzer/conf/default_analyzer.yaml) configures `en`. The mutable `latest` image may use different configuration. Pass `language` explicitly when deterministic selection is required.
+
+### Response schema
+
+The `200 OK` response body is a JSON array of strings (`GetRecognizersResponse`).
+
+| Field      | Type       | Required | Constraints                             | Description                                                                     |
+| :--------- | :--------- | :------- | :-------------------------------------- | :------------------------------------------------------------------------------ |
+| Root value | `string[]` | Yes      | Array of recognizer class/display names | Names of PII recognizers loaded in Presidio Analyzer for the requested language |
+
+## Error responses
+
+The upstream [Presidio OpenAPI contract](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) documents `200 OK` only for `GET /recognizers`; it does not define non-200 status codes or error payloads. In the current upstream [Analyzer API implementation](https://github.com/data-privacy-stack/presidio/blob/main/presidio-analyzer/app.py), an unsupported language reaches the engine's no-matching-recognizers error and is returned as `500` with an `error` field. This is implementation behavior, not an OpenAPI guarantee or a promise for the deployed `latest` image.
+
+## Related documentation
+
+- [[service|PresidioAPI]] — Service overview and privacy middleware integration.
+- [[command|AnalyzeText]] — Runtime `POST /analyze` command used by Chat API and Rating API.
+- [[query|GetSupportedEntities]] — List detectable PII entity types in Presidio Analyzer.
+- [[query|GetAnonymizers]] — List built-in anonymization operators in Presidio Anonymizer.
 
 <NodeGraph />
-
-## Query parameters and response
-
-`language` is optional. A `200 OK` response returns an array of recognizer names.
-
-### Query using cURL
-
-<CodeGroup dropdown>
-
-```sh GetRecognizers.sh
-curl --get --data-urlencode "language=en" "$ANALYZER_URL/recognizers"
-```
-
-</CodeGroup>
-
-## Schema
 
 <SchemaViewer
 	file="schema.json"

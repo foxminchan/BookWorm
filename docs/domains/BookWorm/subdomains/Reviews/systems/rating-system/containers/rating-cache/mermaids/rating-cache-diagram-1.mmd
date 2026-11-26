@@ -1,0 +1,11 @@
+flowchart LR
+	caller["Storefront / Caller\n(HTTPS)"]
+	rating["Rating API\n(.NET 11 + FusionCache L1)"]
+	redis[("Redis\n(L2 Cache + Backplane)")]
+	cosmos[("Rating database\n(Cosmos DB: ratingdb/feedbacks)")]
+	foundry["Microsoft Foundry\n(ModelRouter)"]
+
+	caller --> |"HTTPS: SummarizeFeedback"| rating
+	rating --> |"RESP: Get/Set rating:summary:v1:{BookId}"| redis
+	rating --> |"HTTPS: Query feedbacks on miss"| cosmos
+	rating --> |"HTTPS: Map-Reduce summarization"| foundry

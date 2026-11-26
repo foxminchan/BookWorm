@@ -19,55 +19,68 @@ styles:
   icon: /icons/third-party/entra-id.svg
 ---
 
+Microsoft Entra ID serves as BookWorm's external OAuth 2.0 and OpenID Connect (OIDC) identity provider (`oauth-api`). It authenticates customers and store administrators, issues JWT access tokens and Entra Agent Identity On-Behalf-Of (OBO) tokens, and leaves fine-grained business authorization to each BookWorm service.
+
 ## Overview
 
-The OAuth API is the integration surface for the external
-[[system|identity-provider]]. It supports the authentication and
-identity-verification responsibilities used by [[domain|BookWorm]] applications before
-they process protected requests.
+| Property                | Value                                                                                                                    |
+| :---------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| **External provider**   | Microsoft Entra ID (`Aspire.Hosting.Azure.EntraId` `17.0.0-preview.1.26567.5`)                                           |
+| **Aspire resource IDs** | `entra` (core app registration + roles) and `entra-agent-identities` (`Infra/entra-agent-identities.bicep`)              |
+| **Source**              | `src/Aspire/BookWorm.AppHost/Extensions/Security/EntraIdExtensions*.cs`, `src/BuildingBlocks/BookWorm.Chassis/Security/` |
+| **Gateway proxy route** | `/entra/{**remainder}` (API Gateway strips `/entra` and forwards to Entra ID)                                            |
+| **Backend libraries**   | `Microsoft.Identity.Web` `4.18.0`, `Microsoft.Identity.Web.AgentIdentities`                                              |
+| **Frontend library**    | `better-auth` `^1.7.28` (`@workspace/auth`, callback `/api/auth/oauth2/callback/microsoft-entra-id`)                     |
+| **Credentials**         | Local dev certificate credential (local run); Federated Managed Identity + Microsoft Graph SPs/FICs (Azure publish)      |
 
-The service provides identity evidence; each consuming BookWorm service
-remains responsible for validating the request context and applying its own
-authorization policy. The OAuth API does not own [[domain|catalog]],
-[[domain|shopping]], [[domain|ordering]], or [[domain|reviews]] business data.
+## Authentication architecture
 
-## Core capabilities
+Storefront and Backoffice sign users in via Microsoft Entra ID and Better Auth; Commerce shares the customer session; backend APIs validate JWTs and use Entra Agent Identities for OBO calls between Chat, Rating, and MCP Tools.
 
-| Capability            | Behavior                                                                                                         |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| User authentication   | Authenticates customers and administrators through the configured identity provider.                             |
-| Token issuance        | Returns OAuth-compatible access credentials for authenticated clients.                                           |
-| Identity verification | Provides the token and claim information needed by BookWorm services to establish an authenticated caller.       |
-| Provider policy       | Applies provider-side account and authentication rules without making BookWorm business authorization decisions. |
+<MermaidFileLoader file="mermaids/OAuthAPI-diagram-1.mmd" />
 
-## Authentication flow
+## App roles and service scopes
 
-1. A customer or administrator starts an authentication request with the
-   provider.
-2. The provider verifies the identity and issues an access token for the
-   requested client and audience.
-3. The client sends the token when calling a protected BookWorm API.
-4. The receiving service validates the token before applying endpoint,
-   resource-ownership, or administrator policies.
+### Application roles
 
-The token establishes identity, but it does not automatically authorize every
-operation. Individual BookWorm services remain the source of truth for
-business permissions and access decisions.
+| App role        | Intended principal                 | Primary surfaces                                                                                                                        |
+| :-------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| `customer`      | Authenticated bookstore shoppers   | Storefront, Commerce, Basket API, Ordering API (own records), Chat API (`/ag-ui`), Rating API (submit/summarize)                        |
+| `business_user` | Catalog managers                   | Catalog API write/management routes (`business_user` policy)                                                                            |
+| `admin`         | Store administrators and operators | Backoffice, Ordering admin & dashboard SSE, Catalog admin & `GetDashboard` gRPC, Rating feedback deletion, Quartz Dashboard (`/quartz`) |
 
-## Security and operational considerations
+### Service OAuth scopes
 
-- Keep access tokens, refresh credentials, client secrets, and provider
-  configuration outside source control and application logs.
-- Validate the issuer, audience, signature or introspection result, expiry, and
-  required claims before accepting a token.
-- Fail closed for protected requests when the provider or token-validation
-  dependency is unavailable; do not silently downgrade the request to
-  anonymous access.
-- Monitor authentication failures, token-validation failures, and provider
-  availability without recording token contents or unnecessary personal data.
-- Rotate provider credentials and signing keys according to the provider's
-  operational policy, with a controlled rollover path for consumers.
+| Service (`Services.*`)               | Scopes                            | Notes                                                                                            |
+| :----------------------------------- | :-------------------------------- | :----------------------------------------------------------------------------------------------- |
+| [[service\|catalog-api]] (`catalog`) | `catalog_read`, `catalog_write`   | Default `catalog_read`; writes require `business_user` or `admin` role + both scopes             |
+| [[service\|basket-api]] (`basket`)   | `basket_read`, `basket_write`     | Requires `customer` role + both scopes                                                           |
+| [[service\|order-api]] (`ordering`)  | `ordering_read`, `ordering_write` | Requires `customer` or `admin` role + both scopes; dashboard also requires `catalog_read`        |
+| [[service\|rating-api]] (`rating`)   | `rating_read`, `rating_write`     | `read` policy (`rating_read`) protects A2A gRPC; `admin` deletion requires `admin` + both scopes |
+| [[service\|chat-api]] (`chatting`)   | `chatting_read`, `chatting_write` | `customer` or `admin` policy + both scopes                                                       |
+| [[service\|mcp-server]] (`mcptools`) | `mcptools_read`                   | Default policy on `/mcp`                                                                         |
 
-## Architecture
+## Entra Agent Identities and consuming resources
+
+- **Agent Identities (`Infra/entra-agent-identities.bicep`):** Provisions Microsoft Graph applications, service principals, and federated identity credentials (`blueprintAppId`, `chatAgentId`, `ratingAgentId`) used by [[service|chat-api]] and [[service|rating-api]] for delegated OBO token exchange and claims-based agent isolation.
+- **Consuming Aspire resources:** `catalog`, `mcptools`, `basket`, `ordering`, `chatting`, `rating`, `quartz-dashboard` (OIDC `admin` role), `gateway`, `storefront`, `backoffice`, and `scalar` (Development-only OAuth2 Auth Code + PKCE for interactive OpenAPI testing).
+- **Commerce session sharing:** `@bookworm/commerce` runs with `WithoutEntraId()` in `AppHost.cs` and reuses the authenticated session established by `@bookworm/storefront` behind the shared YARP gateway origin.
+
+## Security and operational requirements
+
+- **Fail closed:** Protected BookWorm APIs reject requests with `401 Unauthorized` when Entra ID metadata or token validation fails; never downgrade to anonymous access.
+- **Strict claim validation:** Services validate issuer, audience, signing keys, expiry, roles, and scopes before applying resource-ownership checks (such as Buyer or Basket identity matching).
+- **Secret hygiene:** Keep `BETTER_AUTH_SECRET`, client secrets, and access tokens out of source control and structured logs.
+
+## Messages
+
+<MessageTable format="all" limit={10} />
+
+## Related documentation
+
+- [[doc|platform/006-api-and-contracts]] — Consolidated service authentication and route index.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Platform-wide Azure RBAC and Entra ID permissions.
+- [[service|chat-api]] — Consumer of `chatAgentId` and OBO token exchange.
+- [[service|rating-api]] — Consumer of `ratingAgentId` and A2A `rating_read` policy.
 
 <NodeGraph />

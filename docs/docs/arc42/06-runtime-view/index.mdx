@@ -9,66 +9,50 @@ badges:
     textColor: blue
 ---
 
-## 1. Context & Problem
+The runtime view explains how BookWorm's services collaborate over time across five representative commerce, discovery, feedback, AI, and platform journeys. Use this chapter to trace synchronous request paths, asynchronous Kafka choreography, compensation boundaries, and authoritative state ownership across bounded contexts.
 
-Static architecture diagrams show which business capabilities exist in BookWorm, how they are separated, and who owns them—but they do not explain what happens over time when a customer places an order, searches for a book, or submits a review. Without a runtime view, solution architects, product managers, business analysts, and developers can easily make conflicting assumptions about who owns a piece of business state, which steps finish immediately versus in the background, and how the platform behaves when something goes wrong partway through.
+## Scope and constraints
 
-This chapter fills that gap by documenting representative runtime scenarios and clear ownership rules across commerce, discovery, customer feedback, and platform operations.
+- **Scope:** End-to-end runtime interactions across BookWorm's microfrontends (**Storefront**, **Commerce**, **Backoffice**), **API Gateway** (YARP), 10 backend services/workers, and their backing data stores and brokers.
+- **Out of scope:** Exhaustive CRUD endpoint documentation (see [[doc|platform/006-api-and-contracts]]) and Azure hosting/networking topology (see [[doc|arc42/07-deployment-view]]).
+- **Key constraint:** Each bounded context owns its private persistence store. Services never share databases and interact exclusively through versioned HTTP/REST APIs, gRPC, Kafka CloudEvents, AG-UI, Agent-to-Agent (A2A) gRPC, or Model Context Protocol (MCP).
 
-## 2. Business Value
+## Runtime scenario map
 
-- **Shared end-to-end understanding:** Gives business and technical teams a common view of how customer actions translate into cross-capability work, background processing, and customer-visible outcomes.
-- **Clear data accountability:** Prevents conflicting updates by making it explicit which capability is the single source of truth for orders, shopping baskets, book catalog details, customer reviews, and outbound notifications.
-- **Predictable failure and delay handling:** Clarifies why background work (such as updating search indexes or delivering emails) can finish after a customer's action succeeds, and how failures are compensated rather than leaving records out of sync.
-- **Safer cross-team delivery:** Helps delivery teams design and review changes without breaking assumptions across service boundaries.
+This flowchart summarizes how customer entry points and scheduled triggers enter BookWorm's five primary runtime scenarios.
 
-## 3. How It Works
+<MermaidFileLoader file="mermaids/06-runtime-view-diagram-1.mmd" />
 
-The runtime view focuses on five representative business and operational journeys rather than trying to catalog every possible interaction:
+## Representative runtime scenarios
 
-- **Checkout and order coordination** ([[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]]): Follows a customer checkout from current shopping basket and catalog facts through order creation and coordinated basket cleanup.
-- **Catalog search index maintenance** ([[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]]): Explains how updates to the book catalog flow through queued background work and a scheduled batch to keep the search index fresh.
-- **Feedback and rating projection** ([[doc|arc42/06-runtime-view/003-feedback-and-rating-projection]]): Traces how customer feedback updates a book's overall rating summary, including corrective compensation if feedback references an invalid book.
-- **Conversational book discovery** ([[doc|arc42/06-runtime-view/004-conversational-book-discovery]]): Describes how a conversational discovery request is validated, routed to an assistant, optionally enriched with parallel research, and connected to catalog information.
-- **Notification delivery and maintenance** ([[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]]): Covers how outbound emails are durably queued for delivery, along with scheduled resend and cleanup maintenance.
+| Scenario                                                                 | Trigger                                           | Participating services                                                                                          | Protocols & messaging                                                                                                            | Backing stores                                                                               |
+| :----------------------------------------------------------------------- | :------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| [[doc\|arc42/06-runtime-view/001-checkout-and-order-coordination]]       | Customer checks out in **Commerce** (`/checkout`) | **Commerce**, **API Gateway**, **Ordering API**, **Basket API**, **Catalog API**, **Finance**, **Notification** | HTTPS REST (`x-request-id`), gRPC (`GetBasket`, `GetBooks`), Kafka CloudEvents, Durable Functions saga                           | PostgreSQL (`orderingdb` + Marten), Redis, Durable Task Scheduler (`finance-taskhub`)        |
+| [[doc\|arc42/06-runtime-view/002-catalog-search-index-maintenance]]      | Book write in **Catalog API** + 5-min Quartz cron | **Catalog API**, **Scheduler**, **Catalog Ingestion**                                                           | PostgreSQL trigger queue, Kafka (`scheduler.process-vector-batch`), Foundry Embeddings, Qdrant gRPC/HTTP                         | PostgreSQL (`catalogdb`, `schedulerdb`), Qdrant (`vectordb`)                                 |
+| [[doc\|arc42/06-runtime-view/003-feedback-and-rating-projection]]        | Customer creates or deletes review                | **Rating API**, **Catalog API**                                                                                 | HTTPS REST, Kafka CloudEvents (`rating.feedback-create`, `rating.feedback-delete`, `catalog.book-update-rating-failed`)          | Azure Cosmos DB (`ratingdb`/`feedbacks`), PostgreSQL (`catalogdb`), Redis                    |
+| [[doc\|arc42/06-runtime-view/004-conversational-book-discovery]]         | Customer prompts AI chat in **Storefront**        | **Storefront**, **Chat API**, **MCP Tools**, **Catalog API**, **Rating API**, **Presidio**                      | AG-UI (`/ag-ui`), Microsoft Foundry (`ModelRouter`, `MicrosoftDecision1`), MCP Streamable HTTP (`/mcp`), A2A gRPC, Presidio HTTP | Azure Blob Storage (`chatting-blob`), Azure Cosmos DB (`ratingdb`), PostgreSQL (`catalogdb`) |
+| [[doc\|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] | **Finance** order commands + Quartz cron          | **Finance**, **Notification**, **Scheduler**, **Catalog Ingestion**                                             | Kafka CloudEvents, MailKit SMTP (`587`), Quartz.NET                                                                              | Redis (24h idempotency), PostgreSQL (`schedulerdb`), Mailpit / SendGrid SMTP                 |
 
-Across every scenario, four plain-language coordination principles govern how capabilities interact:
+## Authoritative state ownership
 
-1. **Authoritative state stays with its owner:** Ordering owns order status, Shopping owns basket state, Reviews owns individual feedback, Catalog owns book records along with derived rating and search summaries, and Notification owns email outbox state.
-2. **Handing off background work is not the same as finishing it:** Acknowledging a customer request, accepting a scheduled job, handing an email to a mail provider, or completing a coordination step only proves the handoff occurred—not that downstream business work is finished.
-3. **Retries can repeat work:** When steps are retried automatically, consumers and operators should check the owning capability's actual business state rather than assuming a repeated attempt succeeded cleanly.
-4. **Logical behavior stays separate from hosting details:** These scenarios describe logical interactions and documented contracts without assuming an undocumented production topology or unspecified infrastructure providers.
+| Bounded context    | Authoritative owner              | Persistence store                                             | Owned business state                                                                                           | Derived or transient state elsewhere                                                                                           |
+| :----------------- | :------------------------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| **Catalog**        | **Catalog API**                  | PostgreSQL (`catalogdb`) + Azure Blob (`catalog-blob`)        | Canonical books, authors, categories, publishers, prices, cover images, pending vector queue                   | Qdrant (`vectordb`) semantic index; derived average rating & review count on `Book`; purchase-time price snapshots in Ordering |
+| **Shopping**       | **Basket API**                   | Redis (`redis`)                                               | Customer-scoped mutable pre-order baskets                                                                      | None (no relational DB)                                                                                                        |
+| **Ordering**       | **Ordering API**                 | PostgreSQL (`orderingdb`, EF Core + Marten event store)       | Accepted orders, immutable purchase snapshots, lifecycle statuses (`New`, `Cancelled`, `Completed`)            | Durable orchestration state in **Finance** (`finance-taskhub`)                                                                 |
+| **Reviews**        | **Rating API**                   | Azure Cosmos DB (`ratingdb`/`feedbacks`, partition `/bookId`) | Individual customer `Feedback` records                                                                         | Derived book rating summary in **Catalog API**                                                                                 |
+| **Conversational** | **Chat API**                     | Azure Blob Storage (`chatting-blob`, prefix `ag-ui/`)         | AG-UI conversation session transcripts                                                                         | None (read-only access to Catalog via MCP and Rating via A2A)                                                                  |
+| **Platform**       | **Scheduler** / **Notification** | PostgreSQL (`schedulerdb`) / Redis (`redis`)                  | Quartz job definitions and 30-day history (**Scheduler**); 24-hour email deduplication keys (**Notification**) | Notification holds no persistent email outbox                                                                                  |
 
-## 4. Trade-offs & Lessons Learned
+## Cross-scenario runtime invariants
 
-- **Immediate responsiveness vs. eventual background updates:** Derived views such as search indexes and rating summaries are updated asynchronously after source changes. This keeps customer-facing actions fast and isolated, at the cost of a short delay before updates appear in search or ratings.
-- **Representative scenarios vs. exhaustive documentation:** Documenting the most architecturally significant flows—including happy paths, background processing, and representative failure compensation—keeps the documentation maintainable without duplicating every minor endpoint.
-- **Verification via authoritative state vs. assuming handoff success:** Because asynchronous work and retries can be delayed or repeated, operational monitoring and downstream consumers must inspect the owning capability's state instead of relying solely on acknowledgment signals.
-- **Logical clarity vs. deployment assumptions:** Keeping runtime flows independent of undocumented production details avoids locking architecture decisions to unconfirmed environment configurations.
+1. **Authoritative state stays with its owner:** Downstream caches, search indexes, rating projections, and saga states are derived or operational views. Always query the owning service to confirm business truth.
+2. **Handoff is not completion:** Returning `201 Created`, publishing a Kafka command, firing a Quartz trigger, or receiving SMTP `250 OK` proves only that the handoff succeeded—not that downstream processing or mailbox delivery finished.
+3. **At-least-once delivery requires idempotent consumers:** Network retries, Wolverine cooldown retries (`50ms / 250ms / 1s`), and Finance saga reissues can repeat work. Consumers rely on PostgreSQL/Cosmos DB durable inboxes or Redis 24-hour idempotency guards to stay safe.
+4. **Explicit compensation beats distributed locks:** When cross-service invariants fail asynchronously (such as failed basket cleanup or feedback referencing a missing book), services emit explicit failure events to trigger bounded compensation rather than holding cross-service transactions.
 
-## 5. Technical Reference
+## Related documentation
 
-### Representative Scenario Index
-
-- [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] — Checkout from Basket and Catalog facts through Order creation and Finance-coordinated basket cleanup.
-- [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]] — Catalog changes propagating to the derived vector index via durable queued work and a scheduled batch.
-- [[doc|arc42/06-runtime-view/003-feedback-and-rating-projection]] — Customer feedback flowing into the Catalog rating projection, including compensation for an invalid book reference.
-- [[doc|arc42/06-runtime-view/004-conversational-book-discovery]] — Request validation, agent routing, optional parallel research, and Catalog tool access for book discovery.
-- [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] — Durable email submission plus scheduled resend and cleanup operations.
-
-### Authoritative State Ownership & Runtime Boundaries
-
-- **Authoritative state stays with its owner:**
-  - **Ordering** owns Order status.
-  - **Shopping** owns Basket state.
-  - **Reviews** owns individual feedback.
-  - **Catalog** owns books and its derived rating and search projections.
-  - **Notification** owns email outbox state.
-- **Asynchronous completion is distinct from request or scheduler completion:** A published command, an acknowledged HTTP invocation, an SMTP acceptance, or a Finance saga outcome does not prove that another capability's business work has completed.
-- **Retries can repeat work:** Consumers and operators should use the target system's state and documented retry behavior rather than infer success from a repeated invocation.
-- **Unknown infrastructure details remain unspecified:** The scenarios use the contracts and mechanisms documented for BookWorm and do not assume production topology or unspecified providers.
-
-### Related Documentation
-
-- [[doc|arc42/05-building-block-view]] for the static decomposition.
-- Linked capability flows and runbooks for detailed contracts and operational guidance.
+- [[doc|arc42/05-building-block-view]] — Static decomposition of domains, services, and data stores.
+- [[doc|arc42/08-crosscutting-concepts]] — Shared security, messaging, resilience, observability, AI governance, and testing rules.
+- [[doc|arc42/09-architecture-decisions]] — Formal decisions behind BookWorm's runtime boundaries and storage choices.

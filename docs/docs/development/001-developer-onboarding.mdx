@@ -9,59 +9,53 @@ badges:
     textColor: teal
 ---
 
-## 1. Context & Problem
+BookWorm is an open-source, cloud-native online bookstore demonstrating .NET 11 microservices orchestrated by Aspire 17, Domain-Driven Design (DDD), Vertical Slice Architecture (VSA), event-driven choreography and sagas with Wolverine over Kafka, Next.js 16 microfrontends, and governed multi-agent AI built on Microsoft Foundry. Understanding how its six bounded contexts own state and communicate lets you locate changes accurately without introducing cross-service coupling.
 
-BookWorm brings together multiple independent business services, frontend experiences, and AI-enabled capabilities under shared architectural boundaries. For new contributors—and for teams coordinating cross-cutting work—diving directly into code without understanding how environments are prepared, where service boundaries lie, and how changes are verified leads to slow ramp-up, accidental coupling across capabilities, and avoidable review delays.
+## Context and motivation
 
-This guide serves as the single starting point for onboarding onto BookWorm development and understanding the end-to-end contribution path.
+E-commerce systems combine fast-changing product discovery, transient customer shopping intent, durable financial orders, user-generated reviews, and conversational AI support. Grouping all of those capabilities into a shared database or layered middle tier blurs accountability: a basket schema edit can break order reporting, or a review query spike can degrade checkout latency.
 
-## 2. Business Value
+BookWorm decomposes the platform along **business capabilities (bounded contexts)**. Each service owns its business state and persistence technology, exposes explicit HTTP/gRPC or Kafka contracts, and relies on a shared technical chassis (`BookWorm.Chassis`, `BookWorm.ServiceDefaults`, `BookWorm.AppHost`) only for infrastructure plumbing—never for shared business logic.
 
-A clear, repeatable onboarding path benefits both delivery teams and the broader organization:
+## How it works
 
-- **Faster ramp-up (PM & Engineering)**: Moves new contributors smoothly from initial workspace setup to productive, confident delivery.
-- **Protected architectural integrity (SA & BA)**: Encourages contributors to identify the owning business capability and respect service boundaries before making changes.
-- **Consistent quality and compliance**: Aligns documentation updates, automated checks, and peer review habits across all contributors from day one.
+External traffic enters exclusively through a single YARP **API Gateway** (`gateway`), which routes browser requests to three Next.js 16 web applications and API requests to internal .NET 11 services. Services communicate synchronously over **gRPC** when immediate read data is required (for example, Ordering reading Basket and Catalog prices during checkout) and asynchronously via **Wolverine + Kafka** CloudEvents for cross-context state propagation.
 
-## 3. How It Works
+High-level platform context showing the single API Gateway boundary, three frontend applications, and six backend bounded contexts:
 
-Onboarding follows a structured, five-stage progression that builds context step by step:
+<MermaidFileLoader file="mermaids/001-developer-onboarding-diagram-1.mmd" />
 
-1. **Workspace preparation**: Create a personal copy of the project, configure version control, and review the core project guide.
-2. **Daily workflow**: Learn how to isolate work into focused change sets and make effective use of the repository's built-in helper guides.
-3. **Shared standards**: Understand the conventions that keep communication contracts, domain boundaries, and implementation styles consistent across the platform.
-4. **Verification**: Choose the right level of automated checks to confirm that changes work as intended without breaking neighboring capabilities.
-5. **Review and integration**: Package focused changes—together with matching test and documentation updates—for team review.
+### Bounded contexts and repository shape
 
-Before starting any change, contributors follow four core habits: confirm which capability owns the target behavior, review relevant instructions, keep work tightly scoped with matching documentation and verification updates, and run covering checks prior to requesting review.
+| Bounded context       | Services / Apps                                                                                                      | Primary backing store                                                                       | Repository path                                           | Authoritative ownership                                                                                                                   |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ | :-------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Catalog**           | **Catalog API** (`catalog`), **Catalog Ingestion** (`catalog-ingestion`)                                             | PostgreSQL (`catalogdb`), Qdrant (`vectordb`), Azure Blob (`catalog-blob`), Redis           | `src/Services/Catalog/`                                   | Canonical books, categories, authors, publishers, prices, search index, and derived rating summary                                        |
+| **Shopping**          | **Basket API** (`basket`)                                                                                            | Redis (`redis`)                                                                             | `src/Services/Basket/`                                    | Mutable, customer-scoped pre-order baskets (not orders or inventory reservations)                                                         |
+| **Ordering**          | **Ordering API** (`ordering`), **Finance** (`finance`)                                                               | PostgreSQL (`orderingdb` + Marten), Redis; Azure Durable Task Scheduler (`finance-taskhub`) | `src/Services/Ordering/`, `src/Services/Finance/`         | Accepted orders, purchase-time price snapshots, lifecycle statuses (`New`, `Cancelled`, `Completed`), and post-checkout saga coordination |
+| **Reviews**           | **Rating API** (`rating`)                                                                                            | Azure Cosmos DB (`ratingdb`/`feedbacks`), Redis                                             | `src/Services/Rating/`                                    | Individual customer `Feedback` records and AI-generated review summaries                                                                  |
+| **Conversational**    | **Chat API** (`chatting`), **MCP Tools** (`mcptools`)                                                                | Azure Blob Storage (`chatting-blob`); stateless MCP server                                  | `src/Services/Chat/`, `src/Services/McpTools/`            | Read-only advisory multi-agent book discovery, Q&A, and scoped Catalog MCP tools                                                          |
+| **Platform**          | **Notification** (`notification`), **Scheduler** (`scheduler`)                                                       | Redis (Notification idempotency; no SQL DB); PostgreSQL (`schedulerdb`)                     | `src/Services/Notification/`, `src/Services/Scheduler/`   | Asynchronous SMTP email delivery (Mailpit locally, SendGrid in cloud) and recurring Quartz.NET batch jobs                                 |
+| **Edge & Frontend**   | **API Gateway** (`gateway`), **Storefront** (`storefront`), **Commerce** (`commerce`), **Backoffice** (`backoffice`) | Shared Better Auth + Microsoft Entra ID sessions                                            | `src/Aspire/BookWorm.AppHost/`, `src/Clients/`            | Public routing, customer microfrontends (Storefront + Commerce), and staff dashboard (Backoffice)                                         |
+| **Shared Foundation** | **AppHost**, **ServiceDefaults**, **BuildingBlocks**, **Presidio**                                                   | —                                                                                           | `src/Aspire/`, `src/BuildingBlocks/`, `src/Integrations/` | Aspire 17 orchestration, OpenTelemetry, FusionCache, Wolverine setup, DDD primitives, and PII redaction sidecars                          |
 
-## 4. Trade-offs & Lessons Learned
+## Design trade-offs
 
-- **Guided sequence vs. trial-and-error**: Investing a short amount of time upfront to follow the five-stage path prevents expensive rework caused by crossing capability boundaries or missing required checks.
-- **Explicit ownership checks before editing**: Pausing to confirm which domain or service owns a rule avoids duplicating logic in the wrong layer—a common pitfall in distributed systems.
-- **Documentation and verification as part of "done"**: Requiring updated tests and docs alongside code changes keeps the architecture catalog accurate rather than letting documentation drift behind implementation.
+| Decision                                                                                                        | Benefits                                                                                                                         | Costs and limits                                                                                                                        |
+| :-------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| **Polyglot service-owned storage** (PostgreSQL, Cosmos DB, Redis, Qdrant, Blob Storage, Durable Task Scheduler) | Matches each workload to the right storage model and prevents cross-service table coupling                                       | Increases operational surface area and requires eventual consistency for projections (such as book rating summaries and search vectors) |
+| **Single YARP API Gateway for external traffic**                                                                | Centralizes TLS termination, Microsoft Entra ID auth routing, and microfrontend zone routing while keeping 15+ workloads private | Makes gateway availability and scaling critical to all customer and staff journeys                                                      |
+| **Advisory-only conversational AI**                                                                             | Eliminates transactional risk from LLM hallucinations by keeping Chat API and MCP Tools read-only                                | Customers still complete basket edits and checkout through standard Storefront/Commerce UI flows                                        |
+| **Shared technical chassis, zero shared business layer**                                                        | Standardizes resilience, OpenTelemetry, versioning, and Entra ID auth across all 10 backend projects                             | Cross-context business workflows require explicit integration events, Pact contracts, and Finance sagas                                 |
 
-## 5. Technical Reference
+## Alternatives considered
 
-### Welcome to BookWorm Development
+- **Single modular monolith:** Reduces network hops and deployment complexity, but would not demonstrate independent service deployment, polyglot persistence, Kafka choreography, or Aspire distributed orchestration—BookWorm's primary showcase goals.
+- **Technical-layer microservices (shared database or shared business-logic tier):** Simplifies ad-hoc joins across books, orders, and reviews, but causes schema coupling and breaks bounded-context ownership.
 
-[[domain|BookWorm]] is a cloud-native microservices application built with .NET Aspire, Domain-Driven Design, and AI integration. This guide helps you set up your environment, understand the development workflow, and contribute changes confidently.
+## Related documentation
 
-### Onboarding Path
-
-1. [[doc|development/002-getting-started]]: Fork and clone BookWorm, configure Git, and review the project guide.
-2. [[doc|development/003-development-workflow]]: Create branches, make changes, and use the repository's agent skills.
-3. [[doc|development/004-engineering-standards]]: Follow conventions for C#, integration events, and Protocol Buffers.
-4. [[doc|development/005-testing]]: Choose the right test approach and run the relevant checks.
-5. [[doc|development/006-pull-request-process]]: Prepare your changes for review and get help when needed.
-
-For client-side architecture, workspace boundaries, and Next.js patterns, continue with the **Frontend Reference** starting at [[doc|frontend/001-monorepo-architecture]].
-
-For detailed project prerequisites, setup instructions, and architecture context, start with the [repository's AGENTS.md](https://github.com/foxminchan/BookWorm/blob/main/AGENTS.md) and [README](https://github.com/foxminchan/BookWorm/blob/main/README.md).
-
-### Before Making a Change
-
-- Find the owning service or domain and understand its boundaries.
-- Read the relevant repository instructions and load the skills for your task.
-- Keep changes focused, and update related tests and documentation.
-- Run the checks that cover your changes before opening a pull request.
+- [[doc|development/000-local-quickstart]] — Zero-to-running local walkthrough.
+- [[doc|development/002-getting-started]] — Fork, `mise`, and workspace setup.
+- [[doc|development/004-engineering-standards]] — Coding, DDD, event, Protobuf, and frontend rules.
+- [[doc|arc42/00-c4-overview]] — Deeper C4 Context and Container architecture diagrams.
+- [[doc|arc42/09-architecture-decisions]] — Formal architectural decision log.

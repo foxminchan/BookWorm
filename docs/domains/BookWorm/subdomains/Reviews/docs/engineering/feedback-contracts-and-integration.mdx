@@ -10,93 +10,94 @@ badges:
     textColor: green
 ---
 
-import Footer from "@catalog/components/footer.astro";
+This reference defines the HTTP v1 API, validation constraints, **Azure Cosmos DB** (`ratingdb` / `feedbacks`) storage model, Kafka event contracts, and read-only AI summarization rules for **Rating API** (`rating`) in the **Reviews** subdomain.
 
-## 1. Context & Problem
+## Overview
 
-In BookWorm, customer reviews and product catalog listings serve different business needs and change at different speeds. Customers expect to submit and read individual reviews, while shoppers browsing the catalog only need a book's overall rating and review count.
+| Property                | Value                                                                                                                                                                                                                      |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**               | Reviews subdomain (**Rating API**, `rating`)                                                                                                                                                                               |
+| **Source**              | `src/Services/Rating/BookWorm.Rating/`                                                                                                                                                                                     |
+| **Primary store**       | **Azure Cosmos DB** (`cosmos`): database `ratingdb`, container `feedbacks`, partition key `/bookId`, EF Core Cosmos provider with ETag concurrency, Wolverine Cosmos DB persistence (**no PostgreSQL**)                    |
+| **Cache & idempotency** | **Redis** (`redis`): FusionCache (`ListFeedbacks` 10-minute TTL tagged by `BookId`) and 24-hour `IIntegrationEventIdempotencyGuard`                                                                                        |
+| **Protocols**           | HTTP v1 (`/api/v1/feedbacks` via API Gateway `/rating/api/v1/feedbacks`), A2A gRPC (`MapGrpcA2A`, `read` policy), MCP client (`mcptools`), Kafka CloudEvents JSON                                                          |
+| **Authentication**      | Microsoft Entra ID JWT + Entra Agent Identity (`ratingAgentId`); `admin` policy (`admin` role + `rating_read`/`rating_write`) on `DELETE`; authenticated caller on `/summarize`; `read` policy (`rating_read`) on A2A gRPC |
 
-Without clear ownership and integration rules, teams risk coupling the two areas—for example, by letting one service read another's database directly or storing duplicate copies of customer comments. This engineering guidance establishes strict boundaries, business rules, and safe integration patterns between Reviews and Catalog.
+## Integration boundary overview
 
-## 2. Business Value
+Rating API persists individual `Feedback` documents in Azure Cosmos DB, publishes post-commit Kafka events to Catalog API (PostgreSQL `catalogdb`), and exposes read-only AI summarization via `rating-agent`.
 
-- **Clear domain ownership**: Eliminates ambiguity over which team and service owns individual reviews versus aggregated book ratings.
-- **Data integrity**: Enforces consistent validation rules—such as one review per reviewer per book and valid score ranges—regardless of how feedback enters the system.
-- **Resilient customer experience**: Decouples review submission from catalog updates so temporary downstream delays do not block customers from submitting feedback.
-- **Safe change management**: Gives architects, product owners, and developers a concrete pre-release checklist to prevent breaking downstream rating summaries or AI insights.
+<MermaidFileLoader file="mermaids/feedback-contracts-and-integration-diagram-1.mmd" />
 
-## 3. How It Works
+## HTTP API contract
 
-The contract between Reviews and Catalog is built around four core principles:
+All routes are versioned under `ApiVersions.V1` (`/api/v1/feedbacks`, routed externally via `/rating/api/v1/feedbacks`) and apply `PerUserRateLimit`:
 
-1. **Single source of truth per domain**: Reviews owns individual [[entity|feedback]] records and their full lifecycle. Catalog owns [[entity|book]] records and maintains only a derived summary (average rating and total review count). Neither domain reads the other's data store or keeps a duplicate copy of individual reviews.
-2. **Strict business rules on every review**: Every feedback entry must reference a valid book, include the reviewer's first and last name, and carry an integer score between 0 and 5. Only one review is allowed per reviewer name and book combination. Trying to remove a review that does not exist is treated as an explicit not-found condition, never a silent success.
-3. **Post-commit event notifications and compensation**: Reviews notifies Catalog only after a creation or deletion is safely saved. Because notifications can be delivered more than once, Catalog processes updates safely under retries. If Catalog rejects a newly created review because the book no longer exists, it sends a failure notice so Reviews can automatically clean up the invalid feedback record.
-4. **Read-only AI summarization**: Automated summaries read current book context and raw reviews within strict governance and usage limits, returning explicitly derived insights that never overwrite stored feedback or official catalog ratings.
+| Method   | Path                               | Authorization                                                | Success response                                           | Behavior                                                                                                                                             |
+| :------- | :--------------------------------- | :----------------------------------------------------------- | :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST`   | `/api/v1/feedbacks`                | Rate-limited (`PerUserRateLimit`)                            | `200 OK` (`FeedbackId` UUIDv7)                             | Validates payload, saves `Feedback` to Cosmos DB `ratingdb`/`feedbacks`, and publishes `FeedbackCreatedIntegrationEvent` after commit                |
+| `GET`    | `/api/v1/feedbacks`                | Rate-limited (`PerUserRateLimit`)                            | `200 OK` (`PagedResult<FeedbackDto>` + pagination headers) | Returns cached (10-minute FusionCache) paged feedback for `bookId` with optional `pageIndex`, `pageSize`, `orderBy`, `isDescending`                  |
+| `DELETE` | `/api/v1/feedbacks/{id}`           | `admin` policy (`admin` role + `rating_read`/`rating_write`) | `204 No Content`                                           | Loads feedback by `id` (returns `404 Not Found` if missing), removes it from Cosmos DB, and publishes `FeedbackDeletedIntegrationEvent` after commit |
+| `GET`    | `/api/v1/feedbacks/{id}/summarize` | Authenticated (`RequireAuthorization()`)                     | `200 OK` (`SummarizeResult`)                               | Runs read-only `rating-agent` over current Catalog context and raw feedback for book `id`                                                            |
 
-## 4. Trade-offs & Lessons Learned
+## Parameters and validation rules
 
-- **Eventual consistency vs. distributed locking**: Accepting a brief delay before Catalog's rating summary reflects a new or deleted review avoids brittle cross-service transactions and keeps both domains independently deployable.
-- **Idempotency is mandatory**: At-least-once event delivery improves reliability against network blips, but requires both Catalog's rating projection and Reviews' cleanup handler to handle duplicate messages safely without double-counting or failing on already-removed records.
-- **Boundary enforcement**: Enforcing uniqueness and score bounds both at the incoming request boundary and inside the core domain model ensures internal callers cannot accidentally bypass business rules.
+### `CreateFeedbackCommand` fields
 
-## 5. Technical Reference
+| Field       | Type     | Required | Constraints                                           | Notes                                                                                                  |
+| :---------- | :------- | :------- | :---------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| `bookId`    | `Guid`   | Yes      | Non-empty UUID                                        | Cosmos DB partition key (`/bookId`)                                                                    |
+| `firstName` | `string` | Yes      | Non-empty, max `50` chars (`DataSchemaLength.Medium`) | Tagged `[PIIData]` for log redaction                                                                   |
+| `lastName`  | `string` | Yes      | Non-empty, max `50` chars (`DataSchemaLength.Medium`) | Tagged `[PIIData]` for log redaction                                                                   |
+| `comment`   | `string` | No       | Max `1000` chars (`DataSchemaLength.Max`)             | Optional review text                                                                                   |
+| `rating`    | `int`    | Yes      | Inclusive integer `0`–`5`                             | Enforced in both `CreateFeedbackValidator` and `Feedback` domain constructor (`RatingDomainException`) |
 
-### Ownership boundary
+### `ListFeedbacksQuery` parameters
 
-[[service|rating-api]] owns the [[entity|feedback]] lifecycle and persists individual records in [[container|rating-database]]. Catalog owns [[entity|book]]s and its derived rating summary. Do not introduce a shared database read, a Catalog write from Reviews, or a second persisted copy of individual feedback.
+| Parameter      | Type     | Required | Default  | Constraints        |
+| :------------- | :------- | :------- | :------- | :----------------- |
+| `bookId`       | `Guid`   | Yes      | —        | Target book UUID   |
+| `pageIndex`    | `int`    | No       | `1`      | Greater than `0`   |
+| `pageSize`     | `int`    | No       | `10`     | Greater than `0`   |
+| `orderBy`      | `string` | No       | `Rating` | Sort property name |
+| `isDescending` | `bool`   | No       | `false`  | Sort direction     |
 
-### API contract
+## Kafka integration contracts
 
-The versioned contract is exposed at `/api/v1/feedbacks`:
+All Reviews and Catalog rating topics use CloudEvents JSON over Kafka, partitioned by `BookId` or `FeedbackId`, with at-least-once delivery and 24-hour Redis `IIntegrationEventIdempotencyGuard`:
 
-| Method   | Path                               | Responsibility                          | Success                         |
-| -------- | ---------------------------------- | --------------------------------------- | ------------------------------- |
-| `POST`   | `/api/v1/feedbacks`                | [[command\|CreateFeedback]] for a Book  | `200 OK` with the feedback ID   |
-| `GET`    | `/api/v1/feedbacks`                | [[query\|ListFeedbacks]] by Book ID     | `200 OK` with a paged result    |
-| `DELETE` | `/api/v1/feedbacks/{id}`           | [[command\|DeleteFeedback]]             | `204 No Content`                |
-| `GET`    | `/api/v1/feedbacks/{id}/summarize` | [[query\|SummarizeFeedback]] by Book ID | `200 OK` with `SummarizeResult` |
+| Event                                     | Kafka topic                                        | Producer → Consumer      | Payload fields                   | Semantics                                                                                                                      |
+| :---------------------------------------- | :------------------------------------------------- | :----------------------- | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `FeedbackCreatedIntegrationEvent`         | `bookworm.{env}.rating.feedback-create`            | Rating API → Catalog API | `BookId`, `Rating`, `FeedbackId` | Published after Cosmos DB commit; Catalog calls `book.AddRating(Rating)` in `catalogdb`                                        |
+| `FeedbackDeletedIntegrationEvent`         | `bookworm.{env}.rating.feedback-delete`            | Rating API → Catalog API | `BookId`, `Rating`, `FeedbackId` | Published after Cosmos DB delete (`Feedback.Remove()`); Catalog calls `book.RemoveRating(Rating)`                              |
+| `BookUpdatedRatingFailedIntegrationEvent` | `bookworm.{env}.catalog.book-update-rating-failed` | Catalog API → Rating API | `FeedbackId`                     | Published when Catalog cannot find `BookId`; Rating calls `feedback.Revert()` and deletes the record (no-op if already absent) |
 
-Use the service's problem-details behavior for validation and not-found failures. A missing feedback must not be converted into a successful delete.
+## Error responses
 
-### Domain invariants
+| Status                  | Condition                                                                                                                              | Recovery behavior                                               |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `400 Bad Request`       | Validation failure (empty `bookId`/`firstName`/`lastName`, `rating` outside `0`–`5`, `comment` > `1000` chars, or non-positive paging) | Fix request payload; do not retry unchanged                     |
+| `401 Unauthorized`      | Missing or invalid Microsoft Entra ID token on `/summarize` or `DELETE`                                                                | Re-authenticate and retry                                       |
+| `403 Forbidden`         | Authenticated caller lacks `admin` policy on `DELETE /api/v1/feedbacks/{id}`                                                           | Use an administrator account                                    |
+| `404 Not Found`         | `DELETE` targets a nonexistent `FeedbackId` or `/summarize` targets an unknown book                                                    | Verify identifier; missing feedback is never converted to `204` |
+| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit`                                                                                                     | Wait for `Retry-After` duration before retrying                 |
 
-- Book ID, reviewer first name, and reviewer last name are non-empty.
-- Rating is an inclusive integer from 0 through 5.
-- At most one feedback record exists for a Book ID and reviewer-name combination.
-- Feedback creation and deletion publish integration changes only after the lifecycle operation commits.
-- The Catalog rating projection is derived and eventually consistent; it is never the source of truth for individual feedback.
+## AI summarization boundary
 
-Validate these rules at the request boundary and in the domain model so non-HTTP callers cannot bypass them.
+- **Read-only agent:** `rating-agent` (defined in `Agents/rating-agent.yaml`, governed by `Policies/rating-agent.yaml` and Presidio PII middleware) reads Catalog context via MCP `get_book` and raw feedback via `GetCustomerReviews`.
+- **No mutations:** Summarization never writes to Cosmos DB `ratingdb`/`feedbacks` or Catalog `catalogdb`.
+- **Derived output:** Classification, metrics, justification, and confidence in `SummarizeResult` are read-time derived insights, never authoritative rating scores.
 
-### Integration event rules
+## Pre-merge change checklist
 
-Publish:
+1. Update FluentValidation rules, OpenAPI v1 metadata, and `ProblemDetails` responses for any HTTP change.
+2. Preserve Cosmos DB container `feedbacks` mapping, `/bookId` partition key, and ETag concurrency in `FeedbackConfiguration.cs`.
+3. Verify `FeedbackCreatedIntegrationEvent` and `FeedbackDeletedIntegrationEvent` emit only after commit, and `Feedback.Revert()` does not emit `FeedbackDeletedIntegrationEvent`.
+4. Verify duplicate Kafka delivery and missing-book compensation (`BookUpdatedRatingFailedIntegrationEvent`).
+5. Run `mise run format`, `mise run build`, and `mise run test` (confirming Pact suites `Rating-Catalog` and `Catalog-Rating` pass).
 
-- [[event|FeedbackCreatedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] after a successful create.
-- [[event|FeedbackDeletedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]] after a successful delete.
+## Related documentation
 
-Include the `feedbackId`, `bookId`, and `rating` needed by Catalog to apply a projection delta. Preserve Kafka trace and correlation context. The channels are at-least-once, so Catalog consumers and the Reviews compensation handler must be safe under duplicate delivery and retries.
-
-When Catalog cannot apply a create because the Book is absent, it publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]. The compensation handler must locate the exact feedback ID and treat an already deleted record as a no-op.
-
-### Summarization safety
-
-The [[agent|rating-agent]] is a read-only collaborator. It may call `get_book` for current Catalog context and `GetCustomerReviews` for raw feedback, subject to authentication, rate limiting, and agent governance. It must not mutate feedback, Catalog projections, or the rating database.
-
-Keep the summarize response explicitly derived: classification, metrics, justification, and confidence must not be presented as a persisted rating or as a replacement for customer feedback.
-
-### Change checklist
-
-Before changing the API or event contract:
-
-1. Update request/response validation and problem-details behavior.
-2. Update the service's contract/schema documentation.
-3. Verify uniqueness, rating bounds, and transaction boundaries.
-4. Verify that create and delete events are emitted only after commit.
-5. Verify payload fields and channel routing for both normal paths.
-6. Test duplicate event delivery and the missing-Book compensation path.
-7. Confirm that summarize tooling remains read-only and rate-limited.
-8. Update the relevant ADR when ownership, persistence, or integration semantics change.
-
-<Footer />
+- Feedback lifecycle — Architectural model of Reviews, Catalog projections, and compensation.
+- How to recover a failed Catalog rating projection — Operational triage for `BookUpdatedRatingFailedIntegrationEvent`.
+- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts.

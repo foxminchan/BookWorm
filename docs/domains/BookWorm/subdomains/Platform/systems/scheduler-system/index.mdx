@@ -10,13 +10,13 @@ scope: internal
 owners:
   - contributor-team
 services:
-  - id: sheduler-dashboard
+  - id: scheduler-dashboard
     version: 1.0.0
 flows:
   - id: product-ingestion
     version: 1.0.0
 containers:
-  - id: sheduler-database
+  - id: scheduler-database
     version: 1.0.0
 entities:
   - id: qrtz-job-details
@@ -123,7 +123,7 @@ The Scheduler must not read or write Catalog, Notification, or other domain tabl
 
 ### Persistence, reliability, and security
 
-- **Quartz persistence**: Operational state resides in `sheduler-database` across [[entity|qrtz-job-details]], [[entity|qrtz-triggers]], cron/simple/blob/calendar tables, paused trigger/job-group tables, [[entity|qrtz-fired-triggers]], [[entity|qrtz-scheduler-state]], locks, job-status, execution-history, and misfire-history entities. Consumers must not query Quartz tables as a job API or infer Catalog/Notification business state from scheduler rows.
+- **Quartz persistence**: Operational state resides in `scheduler-database` across [[entity|qrtz-job-details]], [[entity|qrtz-triggers]], cron/simple/blob/calendar tables, paused trigger/job-group tables, [[entity|qrtz-fired-triggers]], [[entity|qrtz-scheduler-state]], locks, job-status, execution-history, and misfire-history entities. Consumers must not query Quartz tables as a job API or infer Catalog/Notification business state from scheduler rows.
 - **Reliability**: Durable trigger state survives restarts; misfires must remain visible and follow configured recovery policies (never silently skipped); non-concurrent jobs and target-side locks prevent overlapping work; failed invocations remain observable with job, trigger, target, and execution context; retries must be bounded and idempotent.
 - **Monitoring & secrets**: Operators monitor scheduler-instance check-ins, fired-trigger age, misfire/failure counts, execution duration, and last successful run, comparing them against pending vector updates (Catalog) or outbox state and provider health (Notification). Outbound credentials belong in runtime secret configuration; authorization headers, notification content, and personal data must never appear in Quartz metadata or routine logs.
 

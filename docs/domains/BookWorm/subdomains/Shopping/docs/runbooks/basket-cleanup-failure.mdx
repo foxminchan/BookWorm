@@ -9,90 +9,90 @@ badges:
     textColor: orange
 ---
 
-import Footer from "@catalog/components/footer.astro";
+Use this runbook when **Basket API** (`basket`) publishes `BasketDeletedFailedIntegrationEvent` on `bookworm.<env>.basket.delete-failed`, when `PlaceOrderCommand` messages land in `bookworm.<env>.basket.dead-letter-queue`, or when a customer's basket remains in **Redis** (`basket:<customer-id>`) after checkout. Always verify the downstream order status in **Ordering API** before deleting any basket. For Finance retry loops and Ordering soft-delete behavior, see How to troubleshoot stalled or failed checkout basket cleanup.
 
-## 1. Context & Problem
+## Prerequisites
 
-After a customer submits a purchase at checkout, the shopping basket must be deleted so the same selection cannot be accidentally submitted a second time. Occasionally, transient infrastructure outages, message delivery errors, or data mismatches prevent that cleanup from completing—leaving the submitted [[entity|basket]] still active and emitting a cleanup-failure notification.
+- Read access to **Ordering API** (`GET /ordering/api/v1/orders/{id}`) with an authorized administrator Microsoft Entra ID token.
+- Read access to **Aspire Dashboard** (locally) or **Azure Log Analytics** for `basket`, `finance`, and `ordering` logs and traces.
+- Read access to **Kafka UI** (locally) or **Confluent Cloud** for basket/finance topics and dead-letter queues (DLQs).
+- Read-only access to **RedisInsight** (locally) or Azure Managed Redis monitoring for `redis` (Basket API uses Redis only—there is no SQL database).
 
-Operations and engineering teams need a clear, standardized procedure to diagnose why cleanup failed and recover safely without deleting a customer's cart prematurely when an order was not actually accepted.
+## Steps
 
-## 2. Business Value
+<Steps>
+<Step title="Collect privacy-safe correlation identifiers">
 
-- **Protects customer trust:** Prevents accidental deletion of a customer's cart before confirming whether their purchase was accepted by Ordering.
-- **Eliminates duplicate orders:** Ensures lingering baskets from accepted orders are cleanly removed so customers cannot inadvertently re-submit the same purchase.
-- **Faster, safer incident resolution:** Gives on-call teams a repeatable triage path that avoids risky manual database edits and preserves a complete audit trail.
-- **Clear escalation paths:** Routes ambiguous order states to the right domain owners early, reducing downtime and cross-team handoff delays.
+Record the event ID, environment (`<env>`), UTC timestamp, `<customer-id>` / `<basket-id>`, and `<order-id>`. Do not include customer credentials, tokens, or personal details in incident tickets.
 
-## 3. How It Works
+</Step>
+<Step title="Check the downstream order status in Ordering API first">
 
-When a basket cleanup failure is detected, responders follow a cautious, verify-first workflow:
+Before touching the basket, verify whether **Ordering API** accepted, soft-deleted, or rejected the purchase:
 
-1. **Gather context without modifying state:** Collect the incident identifiers—such as the customer, basket, and order identifiers, along with environment and timing details—and verify whether the failure was caused by a temporary outage or a deeper data mismatch.
-2. **Confirm the downstream order outcome first:** Before touching the basket, check whether the downstream order workflow accepted, rejected, or is still processing the purchase. A cleanup failure does **not** mean the order or payment failed.
-3. **Execute the matching recovery path:**
-   - **Temporary service or delivery issue:** Restore the unhealthy dependency or message consumer, then replay the failed cleanup request through approved recovery tooling until a completion outcome confirms the basket is gone.
-   - **Order accepted, basket still present:** Verify that the order and basket match the same checkout attempt, trigger the approved repeatable cleanup action, and confirm the basket is no longer accessible.
-   - **Order rejected or status unclear:** Stop immediately without deleting the basket and escalate to the Ordering and Finance owners until the purchase outcome is confirmed.
-4. **Verify and document:** Confirm that a completion outcome is emitted only after actual deletion, that the customer sees a consistent checkout state, and that the incident record keeps the original failure details without exposing customer secrets or credentials.
+<CodeGroup>
 
-## 4. Trade-offs & Lessons Learned
+```bash
+curl -sS -H "Authorization: Bearer <admin-token>" \
+  "https://<gateway-host>/ordering/api/v1/orders/<order-id>"
+```
 
-- **Order verification before deletion vs. immediate cleanup:** Pausing to confirm the downstream order status adds an investigation step during incidents, but prevents irreversible cart loss if checkout actually failed.
-- **Approved replay/recovery actions vs. direct database edits:** Preferring repeatable, audited recovery flows over manual database mutations keeps downstream consumers synchronized and preserves auditability.
-- **Strict data-hygiene in incident logs:** Retaining correlation identifiers while excluding credentials and sensitive customer secrets enables thorough post-incident auditing without creating security exposure.
-- **Distinguishing transient vs. contract errors:** Separating temporary availability/delivery issues from schema or data mismatches prevents endless message replays on permanently broken payloads.
+</CodeGroup>
 
-## 5. Technical Reference
+Where:
 
-### Trigger conditions
+- `<admin-token>`: Valid Microsoft Entra ID bearer token with the `admin` role and `ordering_read` scope.
+- `<gateway-host>`: API Gateway hostname (or local Aspire gateway address).
+- `<order-id>`: UUID of the order associated with the cleanup failure.
 
-Use this procedure when [[event|BasketDeletedFailedIntegrationEvent]] is published on [[channel|bookworm.&#123;env&#125;.basket.delete-failed]], or when monitoring reports that a submitted [[entity|basket]] remains available after checkout.
+> [!CAUTION]
+> Do not delete a customer's basket until you confirm the downstream order was accepted. If the order was not accepted or its status is ambiguous, stop immediately and escalate to the Ordering/Finance owners.
 
-### Safety rules
+</Step>
+<Step title="Distinguish the two verified `PlaceOrderCommandHandler` failure modes">
 
-- Treat the event as a cleanup failure, not as an Order or payment failure.
-- Confirm the customer and basket identifiers before taking action.
-- Do not delete a basket manually until the downstream order workflow has confirmed whether the purchase was accepted.
-- Prefer an idempotent replay or the platform's normal recovery command over a direct database mutation.
+Inspect `basket` logs, Redis key `basket:<customer-id>`, and Kafka topics (`bookworm.<env>.finance.place-order`, `bookworm.<env>.basket.delete-failed`, `bookworm.<env>.basket.dead-letter-queue`):
 
-### Investigation steps
+- **Mode A — `BasketDeletedFailedIntegrationEvent` emitted (`DeleteBasketAsync` returned `false`):** Redis was reachable, but key `basket:<customer-id>` was already absent when `PlaceOrderCommandHandler` attempted `KeyDeleteAsync`. Note that Finance reacts to `BasketDeletedFailedIntegrationEvent` by sending `DeleteBasketFailedCommand` to Ordering API, which soft-deletes the order (`order.Delete()`, causing `GET /ordering/api/v1/orders/<order-id>` to return `404 Not Found`).
+- **Mode B — Transient Redis/broker exception (message retried or in DLQ):** If Redis threw an exception, `PlaceOrderCommandHandler` released its 24-hour `OrderId` idempotency guard and threw so Wolverine retried (`50ms / 250ms / 1s` with full jitter) before moving `PlaceOrderCommand` to `bookworm.<env>.basket.dead-letter-queue`. In this case, `basket:<customer-id>` typically still exists in Redis.
 
-1. Record the event ID, environment, timestamp, customer identifier, basket identifier, and order identifier.
-2. Check the [[service|basket-api]] logs for the delete request and the underlying database error.
-3. Check the [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] consumer logs for delivery or processing failures.
-4. Check the downstream order workflow to establish whether the Order was created, is still pending, or was rejected.
-5. Determine whether the failure is transient (availability, timeout, or broker delivery) or requires engineering intervention (data or contract mismatch).
+</Step>
+<Step title="Execute the matching recovery path">
 
-### Recovery procedures
+- **Transient Redis or consumer failure (Mode B, order accepted and `New`):**
+  1. Restore `redis` or `basket` service health.
+  2. Replay the failed `PlaceOrderCommand` from `bookworm.<env>.basket.dead-letter-queue` to `bookworm.<env>.finance.place-order` using approved broker tooling.
+  3. Confirm `PlaceOrderCommandHandler` deletes `basket:<customer-id>` and emits `BasketDeletedCompleteIntegrationEvent` on `bookworm.<env>.basket.delete-complete`.
+- **Order accepted, basket still present in Redis, no DLQ message:**
+  1. Confirm `<order-id>` and `<basket-id>` belong to the same checkout attempt.
+  2. Run the approved idempotent cleanup action (replay `PlaceOrderCommand` or authorized customer/admin basket delete) rather than ad-hoc raw Redis mutations whenever possible, so `BasketDeletedCompleteIntegrationEvent` stays synchronized with Finance.
+- **Order soft-deleted (`404 Not Found` after Mode A) or purchase outcome ambiguous:**
+  1. Stop without modifying Redis or issuing manual order transitions.
+  2. Escalate to the Ordering and Finance maintainers with `<order-id>`, `<basket-id>`, `BasketDeletedFailedIntegrationEvent` metadata, and timestamps.
 
-#### Transient service or delivery failure
+</Step>
+</Steps>
 
-1. Restore the affected dependency or consumer.
-2. Replay the failed integration message using the approved broker tooling.
-3. Verify that the basket deletion succeeds and that a completion event is emitted.
-4. Confirm that the completion event is processed exactly once by each downstream consumer.
+## Verification
 
-#### Order accepted but basket still exists
+Confirm that cleanup completed and downstream consumers are healthy:
 
-1. Confirm the Order ID and basket ID belong to the same checkout attempt.
-2. Run the approved idempotent basket-deletion recovery action.
-3. Verify the customer-scoped basket is no longer available.
-4. Attach the recovery result to the incident and retain the original failure event for auditability.
+1. Verify `basket:<customer-id>` is no longer present in Redis (or `GET /basket/api/v1/baskets` for that customer returns `404 Not Found`).
+2. Confirm `BasketDeletedCompleteIntegrationEvent` was published on `bookworm.<env>.basket.delete-complete` (and never emitted while the basket still existed).
+3. Confirm consumer lag on `bookworm.<env>.finance.place-order` is `0` and `bookworm.<env>.basket.dead-letter-queue` is no longer growing.
+4. Attach the original failure event ID and recovery outcome to the incident record without secrets or PII.
 
-#### Order not accepted or status is ambiguous
+## Troubleshooting
 
-Stop before deleting the basket. Escalate to the [[domain|ordering]]/Finance owner with the identifiers and evidence collected above. The basket must not be removed until the purchase outcome is resolved.
+| Symptom                                                                                                         | Cause                                                                                                                                                              | Fix                                                                                                          |
+| :-------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| `PlaceOrderCommand` landed in `bookworm.<env>.basket.dead-letter-queue` and `basket:<customer-id>` still exists | Transient `redis` or `basket` outage caused `PlaceOrderCommandHandler` to release the `OrderId` guard and exhaust Wolverine retries                                | Restore `redis`/`basket`, confirm order exists in Ordering API, and replay the DLQ message                   |
+| `BasketDeletedFailedIntegrationEvent` fired and `GET /ordering/api/v1/orders/<order-id>` returns `404`          | `basket:<customer-id>` was already absent when `PlaceOrderCommandHandler` ran; Finance sent `DeleteBasketFailedCommand` and Ordering soft-deleted the order        | Follow How to troubleshoot stalled or failed checkout basket cleanup and escalate to Ordering/Finance owners |
+| Duplicate `PlaceOrderCommand` arrived within 24 hours after cleanup already succeeded                           | Finance open orchestration timer reissued `PlaceOrderCommand`; Basket's `OrderId` Redis guard deduplicated it and returned `BasketDeletedCompleteIntegrationEvent` | Expected Basket idempotency behavior; inspect Finance orchestration history if retries persist               |
+| Order status is unknown or checkout timed out before creating an order                                          | Downstream order acceptance is unconfirmed                                                                                                                         | Stop immediately; do not delete `basket:<customer-id>` and escalate to Ordering/Finance owners               |
 
-### Verification criteria
+## Related documentation
 
-- The original failure is correlated to a recovery action.
-- A successful deletion produces [[event|BasketDeletedCompleteIntegrationEvent]].
-- No completion event is emitted while the basket remains present.
-- The customer sees a consistent checkout result and cannot accidentally submit the same accepted purchase again.
-
-### Escalation
-
-Escalate persistent failures to the [[domain|shopping]] owner ([[team|contributor-team]]) with the event payload, correlation IDs, dependency health, and the last successful cleanup timestamp. Do not include credentials or full customer secrets in the incident record.
-
-<Footer />
+- How to troubleshoot stalled or failed checkout basket cleanup — Ordering and Finance side of stalled or failed cleanup.
+- Shopping Basket API contracts reference — Redis key format, Kafka topics, and `OrderId` idempotency guard.
+- Checkout lifecycle — Architectural handoff between Shopping, Ordering, and Finance.

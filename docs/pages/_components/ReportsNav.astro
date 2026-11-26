@@ -1,15 +1,25 @@
 ---
-import { REPORT_SUITES } from "../_data/reports";
+import { DEFAULT_REPORT_SUITE_ID, REPORT_SUITES } from "../_data/reports";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const currentPath = Astro.url.pathname.replace(/\/$/, "");
 const links = [
-	{ href: `${base}/custom/reports`, label: "Overview" },
 	...REPORT_SUITES.map((suite) => ({
-		href: `${base}/custom/reports/${suite.id}`,
+		href:
+			suite.id === DEFAULT_REPORT_SUITE_ID
+				? `${base}/custom/reports`
+				: `${base}/custom/reports/${suite.id}`,
+		matches:
+			suite.id === DEFAULT_REPORT_SUITE_ID
+				? [`${base}/custom/reports`, `${base}/custom/reports/${suite.id}`]
+				: [`${base}/custom/reports/${suite.id}`],
 		label: suite.name,
 	})),
-	{ href: `${base}/custom/reports/tunit`, label: "TUnit HTML (Backend)" },
+	{
+		href: `${base}/custom/reports/tunit`,
+		matches: [`${base}/custom/reports/tunit`],
+		label: "TUnit HTML (Backend)",
+	},
 ];
 ---
 
@@ -18,15 +28,15 @@ const links = [
 	class="flex flex-wrap items-center gap-2 border-b border-[rgb(var(--ec-page-border))] pb-3"
 >
 	{
-		links.map(({ href, label }) => {
-			const isActive = currentPath === href;
+		links.map(({ href, matches, label }) => {
+			const isActive = matches.includes(currentPath);
 			return (
 				<a
 					href={href}
 					class={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
 						isActive
-							? "border border-[rgb(var(--ec-accent)/0.4)] bg-[rgb(var(--ec-accent-subtle))] text-[rgb(var(--ec-accent))]"
-							: "text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-accent-subtle))] hover:text-[rgb(var(--ec-page-text))]"
+							? "border border-[rgb(var(--ec-accent)/0.4)] bg-[rgb(var(--ec-accent-subtle))] text-[rgb(var(--ec-accent-text))]"
+							: "text-[rgb(var(--ec-page-text-muted))] hover:bg-[rgb(var(--ec-content-hover))] hover:text-[rgb(var(--ec-page-text))]"
 					}`}
 				>
 					{label}
