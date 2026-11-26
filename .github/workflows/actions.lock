@@ -7,7 +7,7 @@ workflows:
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
         - 'actions/github-script@v9.0.0'
-        - 'github/gh-aw-actions@v1.2.2'
+        - 'github/gh-aw-actions@v1.3.1'
     '.github/workflows/apphost-cd.yml':
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
@@ -29,7 +29,7 @@ workflows:
         - 'actions/github-script@v9.0.0'
         - 'actions/setup-node@v7.1.0'
         - 'actions/upload-artifact@v7.0.2'
-        - 'github/gh-aw-actions@v1.2.2'
+        - 'github/gh-aw-actions@v1.3.1'
     '.github/workflows/copilot-setup-steps.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-dotnet@v6.1.0'
@@ -59,7 +59,7 @@ workflows:
         - 'actions/github-script@v9.0.0'
         - 'actions/setup-node@v7.1.0'
         - 'actions/upload-artifact@v7.0.2'
-        - 'github/gh-aw-actions@v1.2.2'
+        - 'github/gh-aw-actions@v1.3.1'
     '.github/workflows/pr-validation.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/dependency-review-action@v5.0.1'
@@ -236,9 +236,9 @@ dependencies:
         commit: 'sha1-1bd86f2fdb4b86187fa4059f16f31a3202acc9ea'
         owner_id: 9919
         repo_id: 259445878
-    'github/gh-aw-actions@v1.2.2':
-        ref: 'v1.2.2'
-        commit: 'sha1-53d0749e19424a918acd82b4d140264ce48f2f14'
+    'github/gh-aw-actions@v1.3.1':
+        ref: 'v1.3.1'
+        commit: 'sha1-dfe97a19c8249d41e2adfc95f92db2b8facea58f'
         owner_id: 9919
         repo_id: 1156386970
     'jdx/mise-action@v5.2.10':
