@@ -4,163 +4,147 @@ name: Book
 version: 1.0.0
 identifier: id
 aggregateRoot: true
-summary: Book domain entity, encapsulates book information and business rules
-
+summary: Canonical sellable title in the product catalog, encapsulating descriptive metadata, pricing, stock availability, taxonomy links, and derived rating summaries.
+owners:
+  - catalog-experience-team
+badges:
+  - content: Aggregate Root
+    backgroundColor: blue
+    textColor: blue
 properties:
   - name: id
     type: UUID
     required: true
-    description: Unique identifier for the book
+    description: Globally unique UUIDv7 identifier for the book.
   - name: name
     type: string
     required: true
-    description: A title of the book
+    description: Display title of the book (non-whitespace, up to 50 characters).
   - name: description
     type: string
-    required: false
-    description: Description of the book
+    required: true
+    description: Synopsis or editorial description of the book (up to 1,000 characters).
   - name: image
     type: string
     required: false
-    description: Image of the book
+    description: Cover image asset reference or URL (up to 255 characters).
   - name: price
-    type: Price
+    type: object
     required: true
-    description: Price of the book include Original price and Sale price
+    description: Regular price and optional promotional sale price.
+    properties:
+      - name: originalPrice
+        type: decimal
+        required: true
+        description: Regular non-negative unit price.
+      - name: discountPrice
+        type: decimal
+        required: false
+        description: Optional sale price; must be non-negative and not exceed originalPrice.
   - name: status
-    type: int
+    type: string
     required: true
-    description: Status of the book
+    description: Catalog listing availability state.
+    enum:
+      - InStock
+      - OutOfStock
   - name: averageRating
     type: double
     required: true
-    description: Average rating of the book
+    description: Derived mean rating projected asynchronously from customer feedback.
   - name: totalReviews
-    type: int
+    type: integer
     required: true
-    description: Total number of reviews for the book
+    description: Derived count of customer reviews projected asynchronously.
   - name: categoryId
     type: UUID
-    required: true
-    description: Unique identifier for the category
+    required: false
+    description: Identifier of the assigned Category, if any.
     references: category
-    relationType: hasOne
     referencesIdentifier: id
+    relationType: belongsTo
   - name: publisherId
     type: UUID
-    required: true
-    description: Unique identifier for the publisher
-    references: publisher
-    relationType: hasOne
-    referencesIdentifier: id
-  - name: isDeleted
-    type: bool
-    required: true
-    description: Whether the book is deleted or not
-  - name: createdAt
-    type: DateTime
-    required: true
-    description: The date and time the book was created
-  - name: lastModifiedAt
-    type: DateTime
     required: false
-    description: The date and time the book was updated
-  - name: version
-    type: UUID
+    description: Identifier of the assigned Publisher, if any.
+    references: publisher
+    referencesIdentifier: id
+    relationType: publishedBy
+  - name: authorIds
+    type: array
+    required: false
+    description: Identifiers of the Authors credited on this book.
+    references: author
+    referencesIdentifier: id
+    relationType: writtenBy
+    items:
+      type: UUID
+  - name: isDeleted
+    type: boolean
     required: true
-    description: Version of the record for optimistic concurrency control
-owners:
-  - catalog-experience-team
+    description: Soft-delete marker hiding retired books from standard queries.
+  - name: createdAt
+    type: datetime
+    required: true
+    description: UTC timestamp when the book was created.
+  - name: lastModifiedAt
+    type: datetime
+    required: false
+    description: UTC timestamp of the most recent modification.
+  - name: rowVersion
+    type: string
+    required: true
+    description: Persistence-managed optimistic concurrency token.
 ---
 
-`Book` is the Catalog aggregate root for a sellable title. Catalog API owns it and persists it in PostgreSQL (`catalogdb`) through EF Core with `snake_case` naming.
+## Domain Role & Boundary
 
-## Overview
+**Book** is the central Aggregate Root in the [[domain|catalog]] bounded context, representing a sellable title with its descriptive metadata, pricing value object, availability status, taxonomy associations, and derived rating summary. Owned by [[service|catalog-api]] (with vector index synchronization handled by [[service|catalog-ingestion]]), it serves as the single source of truth for product discovery and checkout price resolution. It explicitly does **not** own customer shopping baskets ([[domain|shopping]]), locked purchase-time order prices ([[domain|ordering]]), or individual customer reviews ([[domain|reviews]]).
 
-| Property                  | Value                                                                                            |
-| :------------------------ | :----------------------------------------------------------------------------------------------- |
-| **Owner**                 | Catalog bounded context / **Catalog API** (`catalog`)                                            |
-| **Source**                | `src/Services/Catalog/BookWorm.Catalog/Domain/AggregatesModel/BookAggregate/Book.cs`             |
-| **EF Core configuration** | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/EntityConfigurations/BookConfiguration.cs` |
-| **Backing store**         | PostgreSQL database `catalogdb`, table `books` (`EFCore.NamingConventions` `snake_case`)         |
-| **Base type**             | `AuditableEntity<BookId>`, `IAggregateRoot`, `ISoftDelete`                                       |
-| **Identifier**            | `BookId` (Vogen value object wrapping `Guid`)                                                    |
+## Entity Profile
 
-## Parameters and fields
+| Property                      | Value                                                                       |
+| :---------------------------- | :-------------------------------------------------------------------------- |
+| **Bounded Context / Domain**  | [[domain\|catalog]]                                                         |
+| **Owning Service**            | [[service\|catalog-api]]                                                    |
+| **DDD Role**                  | Aggregate Root                                                              |
+| **Identifier Strategy**       | UUIDv7 generated at persistence                                             |
+| **Persistence Store**         | Catalog relational database (`books`)                                       |
+| **Deletion Semantics**        | Soft-delete (`isDeleted` flag excludes retired books from standard queries) |
+| **Concurrency Control**       | Optimistic concurrency via persistence-managed row version                  |
+| **PII / Data Classification** | Public catalog metadata (non-PII)                                           |
 
-| Name                  | Type                   | Required       | Default                    | Constraints                                       | Description                                |
-| :-------------------- | :--------------------- | :------------- | :------------------------- | :------------------------------------------------ | :----------------------------------------- |
-| `id`                  | `BookId` (`Guid`)      | Yes            | `uuidv7()` (database)      | Primary key                                       | Unique book identifier                     |
-| `name`                | `string`               | Yes            | â€”                        | Non-whitespace; max 50 chars; indexed             | Book title                                 |
-| `description`         | `string`               | Yes (database) | â€”                        | Max 1,000 chars                                   | Book description                           |
-| `image`               | `string`               | No             | â€”                        | Max 255 chars                                     | Blob name or URL of the cover image        |
-| `price.originalPrice` | `decimal`              | Yes            | â€”                        | `>= 0`; precision `(18,2)`                        | Regular price                              |
-| `price.discountPrice` | `decimal`              | No             | â€”                        | `>= 0` and `<= originalPrice`; precision `(18,2)` | Sale price                                 |
-| `status`              | `Status` (`byte`)      | Yes            | `InStock`                  | `InStock` = 0, `OutOfStock` = 1; indexed          | Availability; serialized as a string       |
-| `averageRating`       | `double`               | Yes            | `0.0`                      | Derived                                           | Rating summary average from Reviews events |
-| `totalReviews`        | `int`                  | Yes            | `0`                        | Derived                                           | Rating summary count from Reviews events   |
-| `categoryId`          | `CategoryId` (`Guid`)  | No             | â€”                        | FK to `categories.id`; `ON DELETE SET NULL`       | Owning category                            |
-| `publisherId`         | `PublisherId` (`Guid`) | No             | â€”                        | FK to `publishers.id`; `ON DELETE SET NULL`       | Owning publisher                           |
-| `bookAuthors`         | `BookAuthor[]`         | â€”            | `[]`                       | Child rows in `book_authors`                      | Join links to `Author` (`book_authors`)    |
-| `isDeleted`           | `bool`                 | Yes            | `false`                    | Global query filter `!IsDeleted`                  | Soft-delete flag                           |
-| `createdAt`           | `DateTime`             | Yes            | `NOW() AT TIME ZONE 'UTC'` | UTC                                               | Creation timestamp                         |
-| `lastModifiedAt`      | `DateTime`             | No             | `NOW() AT TIME ZONE 'UTC'` | UTC                                               | Last modification timestamp                |
-| `rowVersion`          | `uint`                 | Yes            | Managed by PostgreSQL      | `.IsRowVersion()` mapped to `xmin`                | Optimistic concurrency token               |
+## Attributes & Constraints
 
-The EF Core `ComplexProperty` stores the original and discount prices as `Price.OriginalPrice` and `Price.DiscountPrice` under the mapped `Price` complex property. Confirm exact generated column names from the current migration snapshot before writing database SQL.
+<EntityPropertiesTable />
 
-The `Book` constructor accepts a nullable description, but `BookConfiguration` marks the mapped description as required. `SetMetadata` and `Update` reject empty or whitespace descriptions, so create/update behavior should treat a non-empty description as required even though the aggregate constructor parameter remains nullable.
+| Attribute                       | Business Rule / Constraint                                                                 | Sensitivity / Notes          |
+| :------------------------------ | :----------------------------------------------------------------------------------------- | :--------------------------- |
+| `name`                          | Required; non-whitespace, max 50 characters, indexed for lookup.                           | Public                       |
+| `description`                   | Required on persistence and update; non-whitespace, max 1,000 characters.                  | Public                       |
+| `price`                         | Embedded value object (`originalPrice >= 0`; `discountPrice >= 0` and `<= originalPrice`). | Monetary precision `(18, 2)` |
+| `status`                        | Defaults to `InStock`; transitions between `InStock` and `OutOfStock`.                     | Availability indicator only  |
+| `averageRating`, `totalReviews` | Default to `0.0` and `0`; updated exclusively via asynchronous feedback events.            | Derived projection           |
+| `categoryId`, `publisherId`     | Nullable taxonomy references; cleared to null if the parent taxonomy is deleted.           | Optional foreign keys        |
 
-## Invariants and behavior
+## Domain Invariants & Lifecycle
 
-- **Name required:** The constructor and `Update(...)` throw `CatalogDomainException("Book name is required.")` for null or whitespace names.
-- **Price rules:** `Price` throws `CatalogDomainException` when `originalPrice < 0` or when `discountPrice` is negative or greater than `originalPrice`.
-- **Initial status:** New books start as `InStock`.
-- **Rating summary:** `AddRating(rating)` and `RemoveRating(rating)` recompute `averageRating` and `totalReviews`. When `totalReviews <= 1`, `RemoveRating` resets both to `0`.
-- **Author replacement:** `Update(...)` clears and replaces all `BookAuthor` links. `SetMetadata(...)` appends links and requires a non-whitespace description.
-- **Soft delete:** `Delete()` sets `isDeleted = true`. EF Core hides deleted books and their `BookAuthor` rows through global query filters.
-- **Domain events:** The constructor raises `BookCreatedEvent`. `Update`, `AddRating`, `RemoveRating`, and `Delete` raise `BookChangedEvent(Id)`.
+- **Pricing integrity:** Original price cannot be negative, and an optional discount price must be non-negative and never exceed the original price.
+- **Availability semantics:** New books default to `InStock`. Catalog availability indicates listing status for discovery and never acts as an inventory reservation or fulfillment guarantee.
+- **Derived rating summary:** `averageRating` and `totalReviews` are rebuilt from [[domain|reviews]] events; removing the last review resets both fields to `0`.
+- **Soft-delete isolation:** Deleting a book marks `isDeleted = true` rather than removing the record, automatically hiding the book and its author links from standard catalog queries.
+- **Taxonomy replacement:** Updating a book replaces its credited [[entity|author]] links as a complete set.
 
-## Relationships
+:::warning
+Catalog price updates never retroactively change prices on existing [[entity|order-item]] records. Conversely, if a [[domain|reviews]] event arrives for a soft-deleted or nonexistent book, [[service|catalog-api]] emits [[event|BookUpdatedRatingFailedIntegrationEvent]] so Reviews can compensate.
+:::
 
-| Related entity                                  | Cardinality                         | Mapping                                                                                |
-| :---------------------------------------------- | :---------------------------------- | :------------------------------------------------------------------------------------- |
-| [[entity\|category]]                            | Many books to zero or one category  | `category_id`, `ON DELETE SET NULL`, `AutoInclude()`                                   |
-| [[entity\|publisher]]                           | Many books to zero or one publisher | `publisher_id`, `ON DELETE SET NULL`, `AutoInclude()`                                  |
-| [[entity\|author]]                              | Many-to-many                        | Join table `book_authors` (`book_id` cascade delete from `Book`, `author_id` restrict) |
-| [[entity\|feedback]]                            | One book to many feedback records   | Cross-service reference by `bookId`; no foreign key                                    |
-| [[entity\|basket-item]], [[entity\|order-item]] | Referenced by ID                    | Cross-service references; no foreign key                                               |
+## Relationships & Associated Operations
 
-## Examples
-
-### Book record
-
-<CodeGroup>
-
-```json
-{
-	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
-	"name": "Domain-Driven Design",
-	"description": "Tackling complexity in the heart of software.",
-	"image": "domain-driven-design.webp",
-	"price": {
-		"originalPrice": 59.99,
-		"discountPrice": 49.99
-	},
-	"status": "InStock",
-	"averageRating": 4.5,
-	"totalReviews": 12,
-	"categoryId": "0193f1a2-7b4c-7d8e-9f01-000000000001",
-	"publisherId": "0193f1a2-7b4c-7d8e-9f01-000000000002",
-	"isDeleted": false,
-	"createdAt": "2026-11-25T08:00:00Z",
-	"lastModifiedAt": "2026-11-25T09:30:00Z"
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[entity|author]] â€” Author records linked to books via `book_authors`.
-- [[entity|feedback]] â€” Source of the derived rating summary.
+| Category                     | Resource                                                                                                                                                                        | Role / Interaction                                         |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------- |
+| **Related Entities**         | [[entity\|author]], [[entity\|category]], [[entity\|publisher]]                                                                                                                 | Intra-context taxonomy and authorship relationships        |
+| **Cross-Context References** | [[entity\|feedback]], [[entity\|basket-item]], [[entity\|order-item]]                                                                                                           | Referenced strictly by `bookId` across service boundaries  |
+| **Mutating Commands**        | [[command\|CreateBook]], [[command\|UpdateBook]], [[command\|DeleteBook]]                                                                                                       | Manage book lifecycle, metadata, and soft deletion         |
+| **Read Queries**             | [[query\|GetBook]], [[query\|ListBooks]], [[query\|GetBookGrpc]], [[query\|GetBooksGrpc]], [[query\|ListBooksGrpc]], [[query\|GetBookDetailsGrpc]], [[query\|GetDashboardGrpc]] | HTTP discovery, hybrid search, and internal gRPC lookups   |
+| **Events**                   | [[event\|FeedbackCreatedIntegrationEvent]], [[event\|FeedbackDeletedIntegrationEvent]], [[event\|BookUpdatedRatingFailedIntegrationEvent]]                                      | Consume rating deltas and signal missing-book compensation |

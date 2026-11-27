@@ -4,96 +4,86 @@ name: Order Item
 version: 1.0.0
 identifier: id
 aggregateRoot: false
-summary: A child record on an Order that captures a book, its quantity, and its purchase-time price.
+summary: Child entity within an Order capturing a purchased book identifier, positive quantity, and locked checkout-time unit price.
 owners:
   - commerce-fulfillment-team
+badges:
+  - content: Child Entity
+    backgroundColor: teal
+    textColor: teal
 properties:
   - name: id
     type: UUID
     required: true
-    description: Unique identifier for the Order item.
+    description: Globally unique UUIDv7 identifier for the order line item.
   - name: orderId
     type: UUID
     required: true
-    description: Identifier of the parent Order.
+    description: Identifier of the parent Order aggregate.
     references: order
     referencesIdentifier: id
     relationType: belongsTo
   - name: bookId
     type: UUID
     required: true
-    description: Identifier of the Catalog book captured by this item.
+    description: Cross-context identifier of the Catalog Book purchased on this line.
     references: book
     referencesIdentifier: id
     relationType: references
   - name: quantity
     type: integer
     required: true
-    description: Number of copies; must be greater than zero.
+    description: Positive number of copies purchased (must be greater than zero).
   - name: price
     type: decimal
     required: true
-    description: Non-negative per-book price selected when the Order was created.
+    description: Non-negative per-unit price locked at checkout time.
 ---
 
-`OrderItem` is a child entity of the `Order` aggregate that records one book, its quantity, and its purchase-time unit price. Ordering API persists it in PostgreSQL (`orderingdb`).
+## Domain Role & Boundary
 
-## Overview
+**Order Item** is a child Entity owned by the [[entity|order]] Aggregate Root in the [[domain|ordering]] bounded context. Persisted by [[service|order-api]], it records a single purchased title, its quantity, and its immutable checkout-time unit price. It explicitly does **not** own live book titles, descriptions, or promotional pricing (owned by [[domain|catalog]] and referenced strictly by `bookId`).
 
-| Property                  | Value                                                                                                   |
-| :------------------------ | :------------------------------------------------------------------------------------------------------ |
-| **Owner**                 | Ordering bounded context / **Ordering API** (`ordering`)                                                |
-| **Parent aggregate**      | [[entity\|order]]                                                                                       |
-| **Source**                | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/OrderAggregate/OrderItem.cs`            |
-| **EF Core configuration** | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EntityConfigurations/OrderItemConfiguration.cs` |
-| **Backing store**         | PostgreSQL database `orderingdb`, table `order_items` (`snake_case`)                                    |
-| **Base type**             | `Entity` (`Guid Id`); not an aggregate root                                                             |
+## Entity Profile
 
-## Parameters and fields
+| Property                      | Value                                                                                                   |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------ |
+| **Bounded Context / Domain**  | [[domain\|ordering]]                                                                                    |
+| **Owning Service**            | [[service\|order-api]]                                                                                  |
+| **DDD Role**                  | Child Entity (owned by [[entity\|order]])                                                               |
+| **Identifier Strategy**       | UUIDv7 generated at persistence                                                                         |
+| **Persistence Store**         | Ordering relational database (`order_items`)                                                            |
+| **Deletion Semantics**        | Cascade-deleted if parent is purged; hidden automatically when parent [[entity\|order]] is soft-deleted |
+| **Concurrency Control**       | Governed by parent [[entity\|order]] aggregate concurrency token                                        |
+| **PII / Data Classification** | Internal transactional record (non-PII)                                                                 |
 
-| Name       | Type               | Required | Default               | Constraints                            | Description                                   |
-| :--------- | :----------------- | :------- | :-------------------- | :------------------------------------- | :-------------------------------------------- |
-| `id`       | `Guid`             | Yes      | `uuidv7()` (database) | Primary key                            | Unique line identifier                        |
-| `orderId`  | `OrderId` (`Guid`) | Yes      | â€”                   | FK to `orders.id`; `ON DELETE CASCADE` | Parent order                                  |
-| `bookId`   | `Guid`             | Yes      | â€”                   | Unique with `order_id`                 | Catalog book ID; no cross-service foreign key |
-| `quantity` | `int`              | Yes      | â€”                   | `> 0`                                  | Number of copies                              |
-| `price`    | `decimal`          | Yes      | â€”                   | `>= 0`                                 | Unit price captured at checkout               |
+## Attributes & Constraints
 
-## Invariants and behavior
+<EntityPropertiesTable />
 
-- **Positive quantity:** The constructor throws `OrderingDomainException("Quantity must be greater than zero")` when `quantity <= 0`.
-- **Non-negative price:** The constructor throws `OrderingDomainException("Price must be greater than or equal to zero")` when `price < 0`.
-- **One line per book:** A unique index on `(book_id, order_id)` prevents two lines for the same book in one order.
-- **Line total:** `GetTotalPrice()` returns `price * quantity`. `Order.totalPrice` sums these values.
-- **Parent visibility:** A global query filter (`!e.Order!.IsDeleted`) hides items of soft-deleted orders.
-- **Price snapshot:** `price` does not change when Catalog prices change.
+| Attribute  | Business Rule / Constraint                                                                 | Sensitivity / Notes        |
+| :--------- | :----------------------------------------------------------------------------------------- | :------------------------- |
+| `orderId`  | Required foreign key to parent [[entity\|order]].                                          | Aggregate containment      |
+| `bookId`   | Required; unique per `(bookId, orderId)` so each book appears at most once per order.      | Cross-context ID reference |
+| `quantity` | Required; must be strictly greater than zero (`> 0`).                                      | Domain invariant           |
+| `price`    | Required; must be non-negative (`>= 0`), snapshotted from [[domain\|catalog]] at checkout. | Immutable after creation   |
 
-## Relationships
+## Domain Invariants & Lifecycle
 
-| Related entity    | Cardinality             | Mapping                                                                   |
-| :---------------- | :---------------------- | :------------------------------------------------------------------------ |
-| [[entity\|order]] | Many items to one order | `order_id`, `ON DELETE CASCADE`, loaded with `AutoInclude()` from `Order` |
-| [[entity\|book]]  | Many items to one book  | `book_id`; cross-service reference to Catalog                             |
+- **Positive quantity:** Zero or negative item quantities are rejected at creation.
+- **Non-negative price snapshot:** Unit prices must be zero or greater and remain immutable even when [[entity|book]] prices later change in [[domain|catalog]].
+- **One line per book:** An [[entity|order]] cannot contain duplicate line items for the same `bookId`.
+- **Parent visibility coupling:** Order items have no independent lifecycle; soft-deleting the parent [[entity|order]] excludes all of its items from standard queries.
 
-## Examples
+:::note
+Order Item calculates its line subtotal (`price * quantity`), which the parent [[entity|order]] sums to derive `totalPrice`.
+:::
 
-### Order item record
+## Relationships & Associated Operations
 
-<CodeGroup>
-
-```json
-{
-	"id": "0193f1a2-7b4c-7d8e-9f01-0000000c0001",
-	"orderId": "0193f1a2-7b4c-7d8e-9f01-0000000a0001",
-	"bookId": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
-	"quantity": 2,
-	"price": 49.99
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[entity|order]] â€” Parent aggregate and lifecycle.
-- [[entity|book]] â€” Catalog source of current prices.
+| Category                     | Resource                                           | Role / Interaction                                                    |
+| :--------------------------- | :------------------------------------------------- | :-------------------------------------------------------------------- |
+| **Parent Aggregate**         | [[entity\|order]]                                  | Owned child collection (`orderItems`)                                 |
+| **Cross-Context References** | [[entity\|book]]                                   | Referenced strictly by `bookId` (no database foreign key)             |
+| **Mutating Commands**        | [[command\|CreateOrder]], [[command\|DeleteOrder]] | Created atomically with the parent order; hidden on order soft-delete |
+| **Read Queries**             | [[query\|GetOrder]], [[query\|ListOrders]]         | Included as part of parent order projections                          |

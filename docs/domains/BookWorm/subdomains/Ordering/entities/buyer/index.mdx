@@ -4,9 +4,16 @@ name: Buyer
 version: 1.0.0
 identifier: id
 aggregateRoot: true
-summary: The Ordering profile associated with a customer and the Orders they place.
+summary: Represents a customer's ordering profile and delivery address within the Ordering bounded context.
 owners:
   - commerce-fulfillment-team
+badges:
+  - content: Aggregate Root
+    backgroundColor: blue
+    textColor: blue
+  - content: Contains PII
+    backgroundColor: yellow
+    textColor: yellow
 properties:
   - name: id
     type: UUID
@@ -15,91 +22,67 @@ properties:
   - name: name
     type: string
     required: true
-    description: Buyer's name.
+    description: Buyer's display name (non-whitespace, up to 20 characters).
   - name: address
     type: object
     required: true
-    description: Buyer's delivery address.
+    description: Buyer's delivery address value object.
     properties:
       - name: street
         type: string
         required: true
-        description: Street address.
+        description: Street address line (non-whitespace, up to 50 characters).
       - name: city
         type: string
         required: true
-        description: City.
+        description: City name (non-whitespace, up to 50 characters).
       - name: province
         type: string
         required: true
-        description: Province or state.
+        description: Province or state name (non-whitespace, up to 50 characters).
 ---
 
-`Buyer` is the Ordering aggregate root for a customer's ordering profile and delivery address. Ordering API owns it and persists it in PostgreSQL (`orderingdb`).
+## Domain Role & Boundary
 
-## Overview
+**Buyer** is an Aggregate Root in the [[domain|ordering]] bounded context representing a customer's ordering profile and delivery address. Owned by [[service|order-api]], it links an authenticated customer identity to their placed [[entity|order]] history. It explicitly does **not** own authentication credentials or roles (owned by [[system|identity-provider]]) or pre-purchase shopping baskets (owned by [[domain|shopping]]).
 
-| Property                  | Value                                                                                                    |
-| :------------------------ | :------------------------------------------------------------------------------------------------------- |
-| **Owner**                 | Ordering bounded context / **Ordering API** (`ordering`)                                                 |
-| **Source**                | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/BuyerAggregate/Buyer.cs`                 |
-| **EF Core configuration** | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EntityConfigurations/BuyerConfiguration.cs`      |
-| **Backing store**         | PostgreSQL database `orderingdb`, table `buyers` (`snake_case`)                                          |
-| **Base type**             | `Entity<BuyerId>`, `IAggregateRoot`                                                                      |
-| **Identifier**            | `BuyerId` (Vogen value object wrapping `Guid`); the constructor receives the authenticated customer's ID |
+## Entity Profile
 
-`Buyer` has no audit timestamps, row version, or soft-delete flag.
+| Property                      | Value                                                                                               |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**  | [[domain\|ordering]]                                                                                |
+| **Owning Service**            | [[service\|order-api]]                                                                              |
+| **DDD Role**                  | Aggregate Root                                                                                      |
+| **Identifier Strategy**       | Authenticated customer UUID                                                                         |
+| **Persistence Store**         | Ordering relational database (`buyers`)                                                             |
+| **Deletion Semantics**        | Hard-delete; clears `buyerId` to null on existing [[entity\|order]] records without deleting orders |
+| **Concurrency Control**       | Buyer-scoped distributed write locks during mutations                                               |
+| **PII / Data Classification** | Confidential PII (`name`, `address`) — redacted from logs, events, and incident reports             |
 
-## Parameters and fields
+## Attributes & Constraints
 
-| Name               | Type               | Required | Default               | Constraints                                     | Description                      |
-| :----------------- | :----------------- | :------- | :-------------------- | :---------------------------------------------- | :------------------------------- |
-| `id`               | `BuyerId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                                     | Buyer identifier                 |
-| `name`             | `string`           | Yes      | â€”                   | Non-whitespace; max 20 chars                    | Buyer name                       |
-| `address.street`   | `string`           | Yes      | â€”                   | Non-whitespace; max 50 chars                    | Street address                   |
-| `address.city`     | `string`           | Yes      | â€”                   | Non-whitespace; max 50 chars                    | City                             |
-| `address.province` | `string`           | Yes      | â€”                   | Non-whitespace; max 50 chars                    | Province or state                |
-| `fullAddress`      | `string`           | â€”      | Computed              | `[NotMapped]`; `"{Street}, {City}, {Province}"` | Formatted address; not persisted |
-| `orders`           | `Order[]`          | â€”      | `[]`                  | Inverse navigation                              | Orders placed by the buyer       |
+<EntityPropertiesTable />
 
-`Address` is a value object stored as an EF Core complex property inside the `buyers` table.
+| Attribute | Business Rule / Constraint                                                                        | Sensitivity / Notes             |
+| :-------- | :------------------------------------------------------------------------------------------------ | :------------------------------ |
+| `id`      | Required; derived from the authenticated customer identity.                                       | Internal/Customer identifier    |
+| `name`    | Required; non-whitespace, max 20 characters.                                                      | PII — redact in structured logs |
+| `address` | Embedded value object (`street`, `city`, `province` each required, non-whitespace, max 50 chars). | PII — redact in structured logs |
 
-The EF Core `Address` complex property maps `Street`, `City`, and `Province` as required columns. Confirm exact generated column names from the Ordering migration snapshot before writing database SQL.
+## Domain Invariants & Lifecycle
 
-## Invariants and behavior
+- **Required profile fields:** Both the buyer's name and all three delivery address components (`street`, `city`, `province`) must be non-whitespace; invalid inputs are rejected at creation and update.
+- **Whole-address replacement:** Updating a buyer's delivery address replaces the entire `address` value object atomically rather than patching individual fields.
+- **Order preservation on delete:** Deleting a buyer removes the buyer profile while preserving historical [[entity|order]] records with `buyerId` set to null.
 
-- **Name required:** The constructor throws `OrderingDomainException("Name is required")` for null or whitespace names.
-- **Address required:** `Address` throws `OrderingDomainException` with `"Street is required"`, `"City is required"`, or `"Province is required"`.
-- **Address replacement:** `UpdateAddress(street, city, province)` replaces the whole `Address` value object.
-- **PII:** `name` and `address` contain personal data. Keep them out of logs, events, and incident reports.
+:::warning
+`name` and `address` are Personal Identifiable Information (PII). Never emit raw buyer names or street addresses into structured application logs, integration events, or telemetry traces.
+:::
 
-## Relationships
+## Relationships & Associated Operations
 
-| Related entity    | Cardinality              | Mapping                                                               |
-| :---------------- | :----------------------- | :-------------------------------------------------------------------- |
-| [[entity\|order]] | One buyer to many orders | `orders.buyer_id`; `BuyerConfiguration` declares `ON DELETE SET NULL` |
-
-## Examples
-
-### Buyer record
-
-<CodeGroup>
-
-```json
-{
-	"id": "0193f1a2-7b4c-7d8e-9f01-0000000b0001",
-	"name": "Nhan Nguyen",
-	"address": {
-		"street": "123 Nguyen Hue",
-		"city": "Ho Chi Minh City",
-		"province": "Ho Chi Minh"
-	},
-	"fullAddress": "123 Nguyen Hue, Ho Chi Minh City, Ho Chi Minh"
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[entity|order]] â€” Orders placed by a buyer.
+| Category              | Resource                                                                       | Role / Interaction                                                  |
+| :-------------------- | :----------------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **Related Entities**  | [[entity\|order]]                                                              | One buyer places zero or more orders                                |
+| **Mutating Commands** | [[command\|CreateBuyer]], [[command\|UpdateAddress]], [[command\|DeleteBuyer]] | Register buyer profile, replace delivery address, or remove profile |
+| **Read Queries**      | [[query\|GetBuyer]], [[query\|ListBuyers]]                                     | Retrieve individual buyer details or paginated buyer lists          |
